@@ -37,7 +37,7 @@ async def register_user(user_data: UserRegistration):
 
     new_user = None
     try:
-        user_session = supabase.auth.sign_up({
+        user_session = supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
         })
