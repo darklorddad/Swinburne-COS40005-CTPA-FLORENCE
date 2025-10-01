@@ -1,22 +1,17 @@
 # main.py
-
 import os
 from fastapi import FastAPI, Depends, HTTPException, Header, Request
-from supabase import create_client, Client
-from gotrue.errors import AuthApiError
-from dotenv import load_dotenv
-from pydantic import BaseModel
 from typing import Optional, Dict, Any
 
-# Load environment variables from .env file
-load_dotenv()
+# Import the router from your new authentication file
+from .routers import authentication
+# Import the Supabase client from its dedicated file
+from .client import supabase
 
 app = FastAPI()
 
-# Initialize Supabase client
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
-supabase: Client = create_client(url, key)
+# Include the authentication router in your main application
+app.include_router(authentication.router)
 
 @app.get("/all-data")
 def get_all_database_info():
@@ -85,14 +80,6 @@ def get_organisations():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/users")
-def get_users():
-    """Fetches all records from the 'users' table."""
-    try:
-        response = supabase.table('users').select('*').execute()
-        return response.data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/patient_profiles")
 def get_patient_profiles():
