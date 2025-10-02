@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from supabase_auth.errors import AuthApiError
@@ -30,6 +30,11 @@ class UserLogin(BaseModel):
     password: str
 
 
+class AdminRegistration(BaseModel):
+    email: EmailStr
+    password: str
+
+
 DEFAULT_THRESHOLDS = [
     {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
     {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
@@ -48,7 +53,7 @@ DEFAULT_THRESHOLDS = [
 
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
-    if user_data.role == 'CLINICAN' and user_data.organisation_id is None:
+    if user_data.role == 'CLINICIAN' and user_data.organisation_id is None:
         raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
 
     new_user = None
@@ -93,6 +98,48 @@ async def register_user(user_data: UserRegistration):
         if new_user:
             supabase.auth.admin.delete_user(new_user.id)
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
+
+
+async def get_current_admin_user(authorization: str = Header(...)):
+    """Dependency to get the current user and verify they are an admin."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
+    token = authorization.split(" ")[1]
+    
+    try:
+        user_response = supabase.auth.get_user(token)
+        user = user_response.user
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token.")
+        
+        if user.user_metadata.get('role') != 'ADMIN':
+            raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
+            
+        return user
+    except AuthApiError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
+async def register_admin(user_data: AdminRegistration):
+    """Registers a new admin user. This endpoint is protected and only accessible by other admins."""
+    try:
+        supabase.auth.admin.create_user({
+            "email": user_data.email,
+            "password": user_data.password,
+            "email_confirm": True,
+            "user_metadata": {"role": "ADMIN"},
+        })
+        return {"message": "Admin registered successfully."}
+    except AuthApiError as e:
+        raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
 @router.post("/login")
