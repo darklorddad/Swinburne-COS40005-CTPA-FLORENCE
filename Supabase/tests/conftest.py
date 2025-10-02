@@ -60,7 +60,7 @@ def registered_admin_user(admin_user_payload):
             "email": admin_user_payload["email"],
             "password": admin_user_payload["password"],
             "email_confirm": True,
-            "user_metadata": {"role": "ADMIN"},
+            "app_metadata": {"role": "ADMIN"},
         })
         user = user_res.user
         yield user

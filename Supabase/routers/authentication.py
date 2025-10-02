@@ -113,7 +113,7 @@ async def get_current_admin_user(authorization: str = Header(...)):
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
         
-        if user.user_metadata.get('role') != 'ADMIN':
+        if user.app_metadata.get('role') != 'ADMIN':
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
             
         return user
@@ -133,7 +133,7 @@ async def register_admin(user_data: AdminRegistration):
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
-            "user_metadata": {"role": "ADMIN"},
+            "app_metadata": {"role": "ADMIN"},
         })
         return {"message": "Admin registered successfully."}
     except AuthApiError as e:
