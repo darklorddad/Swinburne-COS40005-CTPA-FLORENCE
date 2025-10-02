@@ -1,13 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 import uuid
-from dotenv import load_dotenv
-
 from Supabase.client import supabase
 
-# Load .env file from project root, if it exists
-load_dotenv()
-
+# .env file is now loaded by Supabase/client.py
 from Supabase.main import app
 
 client = TestClient(app)
