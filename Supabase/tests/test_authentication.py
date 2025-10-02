@@ -23,7 +23,7 @@ test_user_payload = {
     "emergency_contact_phone": "0987654321"
 }
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def register_test_user():
     """
     A fixture that runs once per module to register a user.
