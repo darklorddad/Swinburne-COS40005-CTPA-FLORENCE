@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from supabase_auth.errors import AuthApiError
@@ -107,3 +107,20 @@ async def login_user(credentials: UserLogin):
     except AuthApiError as e:
         # Supabase often returns a generic "Invalid login credentials" message.
         raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
+
+
+@router.get("/me")
+async def get_current_user(authorization: str = Header(...)):
+    """Retrieves the profile of the currently authenticated user based on the JWT."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
+    token = authorization.split(" ")[1]
+    
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response.user
+    except AuthApiError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
