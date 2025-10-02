@@ -7,34 +7,34 @@ from datetime import datetime, timezone
 load_dotenv()
 
 from Supabase.main import app
-# The test_user_payload is now injected from the fixture in conftest.py
+# The patient_user_payload is now injected from the fixture in conftest.py
 
 client = TestClient(app)
 
 @pytest.fixture(scope="module")
-def authenticated_patient_token(test_user_payload):
+def authenticated_patient_token(patient_user_payload):
     """
     Fixture to log in the test patient and provide an auth token.
-    This relies on the session-scoped `register_test_user` fixture
+    This relies on the session-scoped `register_test_patient` fixture
     in `conftest.py` having already run.
     """
     login_credentials = {
-        "email": test_user_payload["email"],
-        "password": test_user_payload["password"]
+        "email": patient_user_payload["email"],
+        "password": patient_user_payload["password"]
     }
     response = client.post("/auth/login", json=login_credentials)
     assert response.status_code == 200, f"Failed to log in test patient: {response.text}"
     return response.json()["access_token"]
 
-def test_get_own_patient_profile(authenticated_patient_token, test_user_payload):
+def test_get_own_patient_profile(authenticated_patient_token, patient_user_payload):
     """Tests that a patient can retrieve their own profile."""
     headers = {"Authorization": f"Bearer {authenticated_patient_token}"}
     response = client.get("/patients/me", headers=headers)
     
     assert response.status_code == 200
     profile = response.json()
-    assert profile["name"] == test_user_payload["name"]
-    assert profile["phone_number"] == test_user_payload["phone_number"]
+    assert profile["name"] == patient_user_payload["name"]
+    assert profile["phone_number"] == patient_user_payload["phone_number"]
     assert profile["user_id"] is not None
 
 def test_update_own_patient_profile(authenticated_patient_token):
@@ -92,6 +92,34 @@ def test_patient_monitor_data_crud_flow(authenticated_patient_token):
     updated_item = next((d for d in get_response_after_update.json() if d["id"] == data_id), None)
     assert updated_item is not None
     assert updated_item["value"] == 125.0
+
+def test_patient_daily_logs_crud_flow(authenticated_patient_token):
+    """Tests the create and read flow for patient daily logs."""
+    headers = {"Authorization": f"Bearer {authenticated_patient_token}"}
+    log_date = datetime.now(timezone.utc).date().isoformat()
+
+    # 1. POST: Add a new daily log
+    post_payload = {
+        "log_date": log_date,
+        "meal_time": "BREAKFAST",
+        "glucose_before_meal": 95.0
+    }
+    post_response = client.post("/patients/me/daily-logs", headers=headers, json=post_payload)
+    assert post_response.status_code == 200, f"Failed to post daily log: {post_response.text}"
+    new_log = post_response.json()
+    assert new_log["log_date"] == log_date
+    assert new_log["meal_time"] == "BREAKFAST"
+    assert new_log["glucose_before_meal"] == 95.0
+
+    # 2. GET: Retrieve all logs and verify the new one is there
+    get_response = client.get("/patients/me/daily-logs", headers=headers)
+    assert get_response.status_code == 200
+    all_logs = get_response.json()
+    assert any(log["id"] == new_log["id"] for log in all_logs)
+
+    # 3. POST (Failure): Try to add a duplicate log
+    duplicate_response = client.post("/patients/me/daily-logs", headers=headers, json=post_payload)
+    assert duplicate_response.status_code == 409, f"Expected 409 Conflict on duplicate log, but got {duplicate_response.status_code}"
 
 def test_get_own_thresholds(authenticated_patient_token):
     """Tests that a patient can retrieve their health thresholds."""

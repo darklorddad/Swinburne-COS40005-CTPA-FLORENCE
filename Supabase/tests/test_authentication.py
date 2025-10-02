@@ -9,14 +9,14 @@ from Supabase.main import app
 
 client = TestClient(app)
 
-# The test_user_payload and register_test_user fixtures have been moved to conftest.py
-# to be shared across test modules reliably.
+# The patient_user_payload and register_test_patient fixtures are in conftest.py
+# and shared across test modules reliably.
 
-def test_login_successful(test_user_payload):
+def test_login_successful(patient_user_payload):
     """Tests that a registered user can successfully log in."""
     login_credentials = {
-        "email": test_user_payload["email"],
-        "password": test_user_payload["password"]
+        "email": patient_user_payload["email"],
+        "password": patient_user_payload["password"]
     }
     response = client.post("/auth/login", json=login_credentials)
     
@@ -25,12 +25,12 @@ def test_login_successful(test_user_payload):
     data = response.json()
     assert "access_token" in data
     assert "refresh_token" in data
-    assert data["user"]["email"] == test_user_payload["email"]
+    assert data["user"]["email"] == patient_user_payload["email"]
 
-def test_login_failed_wrong_password(test_user_payload):
+def test_login_failed_wrong_password(patient_user_payload):
     """Tests that login fails when an incorrect password is provided."""
     login_credentials = {
-        "email": test_user_payload["email"],
+        "email": patient_user_payload["email"],
         "password": "this-is-the-wrong-password"
     }
     response = client.post("/auth/login", json=login_credentials)
@@ -39,12 +39,12 @@ def test_login_failed_wrong_password(test_user_payload):
     assert "Invalid login credentials" in response.json()["detail"]
 
 
-def test_get_me_successful(test_user_payload):
+def test_get_me_successful(patient_user_payload):
     """Tests that an authenticated user can retrieve their own profile."""
     # First, log in to get a token
     login_credentials = {
-        "email": test_user_payload["email"],
-        "password": test_user_payload["password"]
+        "email": patient_user_payload["email"],
+        "password": patient_user_payload["password"]
     }
     login_response = client.post("/auth/login", json=login_credentials)
     assert login_response.status_code == 200
@@ -57,7 +57,7 @@ def test_get_me_successful(test_user_payload):
     assert me_response.status_code == 200, f"Failed to get user profile. Response: {me_response.text}"
     
     user_data = me_response.json()
-    assert user_data["email"] == test_user_payload["email"]
+    assert user_data["email"] == patient_user_payload["email"]
     assert "id" in user_data
 
 def test_get_me_failed_invalid_token():
