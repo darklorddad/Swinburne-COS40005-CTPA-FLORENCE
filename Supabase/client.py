@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_KEY")
+key: str = os.environ.get("SUPABASE_SERVICE_KEY")
 
 # To resolve the deprecation warnings, we configure the timeout and other
 # connection settings directly on an httpx.Client and pass it to Supabase.
