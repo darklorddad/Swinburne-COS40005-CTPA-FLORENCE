@@ -43,7 +43,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | id (PK)             |   | id (PK)                  |   | id (PK)            |   |-----------------------|
 | patient_id (FK) ----+   | patient_id (FK) ---------+   | patient_id (FK) ---+---+ patient_id (FK)       |
 | clinician_id (FK) <-+---| log_date, meal_time(ENUM)|   | data_type (ENUM)   |   | data_type (ENUM)      |
-| note_content (TEXT) |   | diet_log, glucose_value  |   | value (NUMREIC(8, 2))| | min_value, max_value  |
+| note_content (TEXT) |   | diet_log                 |   | value (NUMREIC(8, 2))| | min_value, max_value  |
 | ...                 |   | ...                      |   | measured_at        |   +-----------------------+
 +---------------------+   +--------------------------+   +--------------------+
 ```
@@ -95,8 +95,9 @@ This is the foundational structure of your data storage, designed for a Supabase
 *   **`daily_patient_logs`**
     *   `id` (PK, INT, Auto-increment)
     *   `patient_id` (FK to `patient_profiles.id`, NOT NULL)
-    *   `meal_time` (ENUM('BREAKFAST_BEFORE', 'BREAKFAST_AFTER', 'LUNCH_BEFORE', 'LUNCH_AFTER', 'DINNER_BEFORE', 'DINNER_AFTER'), NOT NULL)
-    *   `glucose_value` (NUMERIC)
+    *   `meal_time` (ENUM('BREAKFAST', 'LUNCH', 'DINNER'), NOT NULL)
+    *   `glucose_before_meal` (NUMERIC(8, 2), NOT NULL)
+    *   `glucose_after_meal` (NUMERIC(8, 2), NOT NULL)
 
 *   **`clinician_notes`**
     *   `id` (PK, INT, Auto-increment)
