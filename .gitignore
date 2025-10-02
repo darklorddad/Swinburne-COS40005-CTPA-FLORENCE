@@ -31,6 +31,7 @@ COS40005-EAT40005-Team-and-Project-Plan-V1.md
 *.log
 *.pyc
 *.swp
+*.sql
 .buildlog/
 .history
 
