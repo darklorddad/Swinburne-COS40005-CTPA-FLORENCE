@@ -44,19 +44,41 @@ def register_test_patient(patient_user_payload):
 # --- Admin Fixtures ---
 
 @pytest.fixture(scope="session")
-def admin_user_payload():
-    """Returns the static credentials for the pre-existing admin user."""
-    return {
-        "email": "admin@example.com",
-        "password": "your-secure-password",
+def registered_admin_user():
+    """
+    Creates a temporary admin user directly via the Supabase client for the test session,
+    and cleans it up afterward. This avoids reliance on a pre-existing user.
+    """
+    admin_payload = {
+        "email": f"test.admin.{uuid.uuid4()}@example.com",
+        "password": "a-secure-admin-password-for-tests",
     }
+    user = None
+    try:
+        # Create the user with admin privileges in app_metadata.
+        # This requires the Supabase client to be authenticated with the service_role key.
+        user_res = supabase.auth.admin.create_user({
+            "email": admin_payload["email"],
+            "password": admin_payload["password"],
+            "email_confirm": True,
+            "app_metadata": {"role": "ADMIN"},
+        })
+        user = user_res.user
+        assert user is not None, "Failed to create admin user for tests. Check service_role key."
+        
+        yield admin_payload
+        
+    finally:
+        # Teardown: delete the admin user from Supabase Auth
+        if user:
+            supabase.auth.admin.delete_user(user.id)
 
 @pytest.fixture(scope="session")
-def admin_token(admin_user_payload):
-    """Logs in the admin user and returns an auth token."""
+def admin_token(registered_admin_user):
+    """Logs in the dynamically created admin user and returns an auth token."""
     login_credentials = {
-        "email": admin_user_payload["email"],
-        "password": admin_user_payload["password"]
+        "email": registered_admin_user["email"],
+        "password": registered_admin_user["password"]
     }
     response = client.post("/auth/login", json=login_credentials)
     assert response.status_code == 200, f"Failed to log in as admin for test setup: {response.text}"
