@@ -7,17 +7,16 @@ from datetime import datetime, timezone
 load_dotenv()
 
 from Supabase.main import app
-# Import the user payload from the authentication tests to log in
-from Supabase.tests.test_authentication import test_user_payload
+# The test_user_payload is now injected from the fixture in conftest.py
 
 client = TestClient(app)
 
 @pytest.fixture(scope="module")
-def authenticated_patient_token():
+def authenticated_patient_token(test_user_payload):
     """
     Fixture to log in the test patient and provide an auth token.
     This relies on the session-scoped `register_test_user` fixture
-    in `test_authentication.py` having already run.
+    in `conftest.py` having already run.
     """
     login_credentials = {
         "email": test_user_payload["email"],
@@ -27,7 +26,7 @@ def authenticated_patient_token():
     assert response.status_code == 200, f"Failed to log in test patient: {response.text}"
     return response.json()["access_token"]
 
-def test_get_own_patient_profile(authenticated_patient_token):
+def test_get_own_patient_profile(authenticated_patient_token, test_user_payload):
     """Tests that a patient can retrieve their own profile."""
     headers = {"Authorization": f"Bearer {authenticated_patient_token}"}
     response = client.get("/patients/me", headers=headers)
