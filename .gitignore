@@ -10,6 +10,9 @@ Pro_Grocery-main/
 
 ---
 
+#SQL
+*.sql
+
 # Documents (contains sensitive information such as name, student ID, email and etc.)
 Group-List.xlsx 
 Group-to-Client-Email
@@ -31,7 +34,6 @@ COS40005-EAT40005-Team-and-Project-Plan-V1.md
 *.log
 *.pyc
 *.swp
-*.sql
 .buildlog/
 .history
 
