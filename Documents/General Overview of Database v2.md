@@ -43,8 +43,9 @@ This is the foundational structure of your data storage, designed for a Supabase
 | id (PK)             |   | id (PK)                  |   | id (PK)            |   |-----------------------|
 | patient_id (FK) ----+   | patient_id (FK) ---------+   | patient_id (FK) ---+---+ patient_id (FK)       |
 | clinician_id (FK) <-+---| log_date, meal_time(ENUM)|   | data_type (ENUM)   |   | data_type (ENUM)      |
-| note_content (TEXT) |   | diet_log                 |   | value (NUMREIC(8, 2))| | min_value, max_value  |
-| ...                 |   | ...                      |   | measured_at        |   +-----------------------+
+| note_content (TEXT) |   | diet_log (TEXT)          |   | value (NUMERIC(8, 2))| | min_value, max_value  |
+|                     |   | glucose_before_meal      |   | measured_at        |   +-----------------------+
+|                     |   | glucose_after_meal       |   |                    |
 +---------------------+   +--------------------------+   +--------------------+
 ```
 
