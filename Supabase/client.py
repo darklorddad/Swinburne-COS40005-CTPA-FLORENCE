@@ -10,7 +10,7 @@ project_root = Path(__file__).resolve().parent.parent
 load_dotenv(dotenv_path=project_root / '.env')
 
 url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+key: str = os.environ.get("SUPABASE_KEY")
 
 # To resolve the deprecation warnings, we configure the timeout and other
 # connection settings directly on an httpx.Client and pass it to Supabase.
