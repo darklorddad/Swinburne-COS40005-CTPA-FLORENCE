@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 # Load .env file from project root, if it exists
 load_dotenv()
 
-from ..main import app
+from Supabase.main import app
 
 client = TestClient(app)
 
