@@ -97,8 +97,8 @@ async def update_own_patient_profile(
         raise HTTPException(status_code=400, detail="No update data provided.")
 
     try:
-        updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).single().execute()
-        return updated_profile_response.data
+        updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+        return updated_profile_response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
@@ -126,8 +126,8 @@ async def add_own_monitor_data(
     insert_dict = data.model_dump()
     insert_dict['patient_id'] = patient_profile['id']
     try:
-        new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).single().execute()
-        return new_data_response.data
+        new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
+        return new_data_response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add monitor data: {str(e)}")
 
@@ -151,8 +151,8 @@ async def update_own_monitor_data(
         if existing_data_res.count == 0:
             raise HTTPException(status_code=404, detail="Monitor data entry not found or access denied.")
 
-        updated_data_response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).single().execute()
-        return updated_data_response.data
+        updated_data_response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
+        return updated_data_response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
