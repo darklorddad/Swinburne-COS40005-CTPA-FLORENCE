@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
-from gotrue.errors import AuthApiError
+from supabase_auth.errors import AuthApiError
 
 # Import the shared Supabase client
 from ..client import supabase
@@ -56,6 +56,7 @@ async def register_user(user_data: UserRegistration):
         user_session = supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
+            "email_confirm": True,  # Auto-confirm user for simplicity.
         })
         new_user = user_session.user
         if not new_user:
