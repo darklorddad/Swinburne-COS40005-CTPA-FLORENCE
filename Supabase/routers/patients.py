@@ -123,7 +123,7 @@ async def add_own_monitor_data(
     Adds a new health monitor data point (e.g., a glucose reading) for the
     currently authenticated patient.
     """
-    insert_dict = data.model_dump()
+    insert_dict = data.model_dump(mode='json')
     insert_dict['patient_id'] = patient_profile['id']
     try:
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
@@ -141,7 +141,7 @@ async def update_own_monitor_data(
     Updates a specific health monitor data entry belonging to the
     currently authenticated patient.
     """
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
