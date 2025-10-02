@@ -92,12 +92,15 @@ This is the foundational structure of your data storage, designed for a Supabase
     *   `max_value` (NUMERIC(8, 2), NOT NULL)
     *   *Constraint:* `UNIQUE(patient_id, data_type)`
 
-*   **`daily_patient_logs`**
+*   **`daily_patient_logs`** (Redesigned)
     *   `id` (PK, INT, Auto-increment)
     *   `patient_id` (FK to `patient_profiles.id`, NOT NULL)
+    *   `log_date` (DATE, NOT NULL)
     *   `meal_time` (ENUM('BREAKFAST', 'LUNCH', 'DINNER'), NOT NULL)
-    *   `glucose_before_meal` (NUMERIC(8, 2), NOT NULL)
-    *   `glucose_after_meal` (NUMERIC(8, 2), NOT NULL)
+    *   `glucose_before_meal` (NUMERIC(8, 2)) -- Nullable, in case user only enters one value
+    *   `glucose_after_meal` (NUMERIC(8, 2)) -- Nullable
+    *   *Constraint:* `UNIQUE(patient_id, log_date, meal_time)` - A patient can only have one log entry per meal per day.
+    *   *Constraint:* `CHECK (glucose_before_meal IS NOT NULL OR glucose_after_meal IS NOT NULL)` - At least one of the two values must be provided.
 
 *   **`clinician_notes`**
     *   `id` (PK, INT, Auto-increment)
