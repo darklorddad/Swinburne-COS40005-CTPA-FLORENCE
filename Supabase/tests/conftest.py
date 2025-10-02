@@ -67,14 +67,14 @@ def admin_token(admin_user_payload):
 
 @pytest.fixture(scope="session")
 def test_organisation():
-    """Creates a test organisation and cleans up after."""
+    """Creates a test organisation directly via the Supabase client and cleans up after."""
     org_payload = {"name": f"Test Org {uuid.uuid4()}"}
-    response = client.post("/insert/organisations", json=org_payload)
-    assert response.status_code == 200, f"Failed to create organisation for test setup: {response.text}"
-    org_data = response.json()["data"][0]
+    response = supabase.table('organisations').insert(org_payload).execute()
+    assert len(response.data) > 0, "Failed to create organisation for test setup"
+    org_data = response.data[0]
     yield org_data
     # Teardown
-    client.delete(f"/delete/organisations/{org_data['id']}")
+    supabase.table('organisations').delete().eq('id', org_data['id']).execute()
 
 @pytest.fixture(scope="session")
 def clinician_user_payload(test_organisation):
@@ -90,24 +90,44 @@ def clinician_user_payload(test_organisation):
 
 @pytest.fixture(scope="session")
 def registered_clinician(clinician_user_payload):
-    """Registers a clinician user and returns their profile from the DB."""
-    response = client.post("/auth/register", json=clinician_user_payload)
-    assert response.status_code == 200, f"Failed to register clinician for test setup: {response.text}"
-    
-    # Log in to get the profile via /me endpoint
-    login_resp = client.post("/auth/login", json={"email": clinician_user_payload["email"], "password": clinician_user_payload["password"]})
-    assert login_resp.status_code == 200, f"Failed to log in as new clinician: {login_resp.text}"
-    token = login_resp.json()["access_token"]
-    headers = {"Authorization": f"Bearer {token}"}
-    profile_resp = client.get("/clinicians/me", headers=headers)
-    assert profile_resp.status_code == 200, f"Failed to fetch new clinician's profile: {profile_resp.text}"
-    
-    yield profile_resp.json()
-    # Teardown of user is not implemented, following project convention.
+    """
+    Registers a clinician user directly using the Supabase client and returns their profile.
+    This bypasses the API for a more reliable test setup.
+    """
+    user = None
+    try:
+        # 1. Create auth user
+        user_res = supabase.auth.admin.create_user({
+            "email": clinician_user_payload["email"],
+            "password": clinician_user_payload["password"],
+            "email_confirm": True,
+        })
+        user = user_res.user
+        assert user is not None, "Failed to create clinician auth user for tests."
+
+        # 2. Create clinician profile
+        profile_data = {
+            "user_id": user.id,
+            "name": clinician_user_payload["name"],
+            "phone_number": clinician_user_payload["phone_number"],
+            "organisation_id": clinician_user_payload["organisation_id"],
+        }
+        profile_res = supabase.table('clinician_profiles').insert(profile_data).execute()
+        assert len(profile_res.data) > 0, "Failed to create clinician profile for tests."
+        
+        yield profile_res.data[0]
+
+    finally:
+        # Teardown: delete the auth user. The profile should cascade delete.
+        if user:
+            supabase.auth.admin.delete_user(user.id)
 
 @pytest.fixture(scope="session")
-def clinician_token(clinician_user_payload):
-    """Logs in the clinician and returns an auth token."""
+def clinician_token(registered_clinician, clinician_user_payload):
+    """
+    Logs in the clinician and returns an auth token.
+    Depends on `registered_clinician` to ensure the user exists.
+    """
     login_credentials = {
         "email": clinician_user_payload["email"],
         "password": clinician_user_payload["password"]
