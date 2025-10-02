@@ -24,6 +24,12 @@ class UserRegistration(BaseModel):
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
 
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
 DEFAULT_THRESHOLDS = [
     {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
     {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
@@ -86,3 +92,17 @@ async def register_user(user_data: UserRegistration):
         if new_user:
             supabase.auth.admin.delete_user(new_user.id)
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
+
+
+@router.post("/login")
+async def login_user(credentials: UserLogin):
+    """Logs in a user and returns a session object with an access token."""
+    try:
+        session = supabase.auth.sign_in_with_password({
+            "email": credentials.email,
+            "password": credentials.password
+        })
+        return session
+    except AuthApiError as e:
+        # Supabase often returns a generic "Invalid login credentials" message.
+        raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
