@@ -116,7 +116,8 @@ This is the foundational structure of your data storage, designed for a Supabase
 | Method    | Endpoint                                          | Description                                                               | Who Can Access?   |
 | :---      | :---                                              | :---                                                                      | :---              |
 | **Authentication**                                                                                                                        |
-| `POST`    | `/auth/register`                                  | Register new Patient/Clinician.                                           | Public            |
+| `POST`    | `/auth/register`                                  | Register new Patient/Clinician implement role in app metadata.            | Public            |
+| `POST`    | `/auth/register_admin`                            | Register new Admin implement role in app metadata.                        | Authenticated Admin|
 | `POST`    | `/auth/login`                                     | Log in to get an access token (JWT).                                      | Public            |
 | `GET`	    | `/auth/me`                    	                | Get profile of the currently logged-in user.	                            | Authenticated     |
 | **Patient (Self-Service)**                                                                                                                |
