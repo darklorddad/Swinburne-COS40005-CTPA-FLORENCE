@@ -13,7 +13,8 @@ key: str = os.environ.get("SUPABASE_KEY")
 # connection settings directly on an httpx.Client and pass it to Supabase.
 # This is the modern, future-compatible approach.
 options = ClientOptions(
-    http_client=httpx.Client(timeout=10.0)
+    postgrest_client_httpx_client=httpx.Client(timeout=10.0),
+    storage_client_httpx_client=httpx.Client(timeout=60.0),
 )
 
 supabase: Client = create_client(url, key, options=options)
