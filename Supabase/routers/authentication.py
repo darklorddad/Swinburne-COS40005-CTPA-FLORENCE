@@ -99,11 +99,11 @@ async def register_user(user_data: UserRegistration):
 async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
     try:
-        session = supabase.auth.sign_in_with_password({
+        response = supabase.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })
-        return session
+        return response.session
     except AuthApiError as e:
         # Supabase often returns a generic "Invalid login credentials" message.
         raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
