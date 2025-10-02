@@ -42,3 +42,28 @@ def register_test_patient(patient_user_payload):
     # Using unique emails per test run avoids collisions.
 
 
+# --- Organisation and Clinician Fixtures ---
+
+@pytest.fixture(scope="session")
+def test_organisation():
+    """Creates a test organisation directly via the Supabase client and cleans up after."""
+    org_payload = {"name": f"Test Org {uuid.uuid4()}"}
+    response = supabase.table('organisations').insert(org_payload).execute()
+    assert len(response.data) > 0, "Failed to create organisation for test setup"
+    org_data = response.data[0]
+    yield org_data
+    # Teardown
+    supabase.table('organisations').delete().eq('id', org_data['id']).execute()
+
+@pytest.fixture(scope="session")
+def clinician_user_payload(test_organisation):
+    """Generates a unique clinician payload."""
+    return {
+        "email": f"test.clinician.{uuid.uuid4()}@example.com",
+        "password": "a-very-secure-clinician-password-123",
+        "role": "CLINICIAN",
+        "name": "Test Clinician",
+        "phone_number": "111222333",
+        "organisation_id": test_organisation["id"]
+    }
+
