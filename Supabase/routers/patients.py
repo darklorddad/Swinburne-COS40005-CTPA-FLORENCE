@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Header
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional
 from supabase_auth.errors import AuthApiError
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 
 from ..client import supabase
@@ -67,6 +67,25 @@ class MonitorDataCreate(BaseModel):
 class MonitorDataUpdate(BaseModel):
     value: Optional[float] = None
     measured_at: Optional[datetime] = None
+
+class MealTime(str, Enum):
+    BREAKFAST = 'BREAKFAST'
+    LUNCH = 'LUNCH'
+    DINNER = 'DINNER'
+
+class DailyLogCreate(BaseModel):
+    log_date: date
+    meal_time: MealTime
+    glucose_before_meal: Optional[float] = None
+    glucose_after_meal: Optional[float] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def check_at_least_one_glucose_reading(cls, values):
+        before, after = values.get('glucose_before_meal'), values.get('glucose_after_meal')
+        if before is None and after is None:
+            raise ValueError('At least one of glucose_before_meal or glucose_after_meal must be provided.')
+        return values
 
 # --- Router Definition ---
 
@@ -157,6 +176,40 @@ async def update_own_monitor_data(
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
+
+@router.get("/me/daily-logs", summary="Get all my daily logs")
+async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):
+    """
+    Retrieves all daily logs for the currently authenticated patient.
+    """
+    try:
+        logs_response = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_profile['id']).execute()
+        return logs_response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
+
+
+@router.post("/me/daily-logs", summary="Add a new daily log for myself")
+async def add_own_daily_log(
+    log_data: DailyLogCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Adds a new daily log entry for the currently authenticated patient.
+    """
+    try:
+        insert_dict = log_data.model_dump(mode='json')
+        insert_dict['patient_id'] = patient_profile['id']
+        
+        new_log_response = supabase.table('daily_patient_logs').insert(insert_dict).execute()
+        return new_log_response.data[0]
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        if "duplicate key value violates unique constraint" in str(e):
+            raise HTTPException(status_code=409, detail="A log for this date and meal time already exists.")
+        raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
+
 
 @router.get("/me/thresholds", summary="Get my own defined health thresholds")
 async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient_profile)):

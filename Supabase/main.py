@@ -4,7 +4,7 @@ from fastapi import FastAPI, Depends, HTTPException, Header, Request
 from typing import Optional, Dict, Any
 
 # Import the router from your new authentication file
-from .routers import authentication, patients
+from .routers import authentication, patients, clinicians, admin
 # Import the Supabase client from its dedicated file
 from .client import supabase
 
@@ -13,6 +13,8 @@ app = FastAPI()
 # Include the authentication router in your main application
 app.include_router(authentication.router)
 app.include_router(patients.router)
+app.include_router(clinicians.router)
+app.include_router(admin.router)
 
 @app.get("/all-data")
 def get_all_database_info():
