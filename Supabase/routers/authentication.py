@@ -113,7 +113,7 @@ async def get_current_admin_user(authorization: str = Header(...)):
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
         
-        if user.app_metadata.get('role') != 'ADMIN':
+        if user.app_metadata.get('role', '').upper() != 'ADMIN':
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
             
         return user
