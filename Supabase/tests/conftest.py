@@ -1,6 +1,13 @@
 import pytest
 from fastapi.testclient import TestClient
 import uuid
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file if it exists.
+# This ensures that environment variables are available before other modules,
+# especially Supabase.client, are imported.
+load_dotenv()
+
 from Supabase.client import supabase
 
 # .env file is now loaded by Supabase/client.py
