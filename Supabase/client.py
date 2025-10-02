@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 # Load environment variables from .env file in the project root.
 # This ensures that the .env file is found regardless of the current working directory.
 project_root = Path(__file__).resolve().parent.parent
-load_dotenv(dotenv_path=project_root / '.env')
+load_dotenv(dotenv_path=project_root / '.env', override=True)
 
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")

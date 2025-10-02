@@ -45,32 +45,14 @@ def register_test_patient(patient_user_payload):
 
 @pytest.fixture(scope="session")
 def admin_user_payload():
-    """Generates a unique admin user payload."""
+    """Returns the static credentials for the pre-existing admin user."""
     return {
-        "email": f"test.admin.{uuid.uuid4()}@example.com",
-        "password": "a-very-secure-admin-password-123",
+        "email": "admin@example.com",
+        "password": "your-secure-password",
     }
 
 @pytest.fixture(scope="session")
-def registered_admin_user(admin_user_payload):
-    """Creates an admin user directly via Supabase client and cleans up after."""
-    user = None
-    try:
-        user_res = supabase.auth.admin.create_user({
-            "email": admin_user_payload["email"],
-            "password": admin_user_payload["password"],
-            "email_confirm": True,
-            "app_metadata": {"role": "ADMIN"},
-        })
-        user = user_res.user
-        yield user
-    finally:
-        # Teardown: delete the admin user
-        if user:
-            supabase.auth.admin.delete_user(user.id)
-
-@pytest.fixture(scope="session")
-def admin_token(registered_admin_user, admin_user_payload):
+def admin_token(admin_user_payload):
     """Logs in the admin user and returns an auth token."""
     login_credentials = {
         "email": admin_user_payload["email"],
