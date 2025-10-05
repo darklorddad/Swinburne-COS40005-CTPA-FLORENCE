@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class DeepSeekService {
-  static const String _apiToken = "cpk_1c9adce1fd244f5e879cc45afa88c5c4.986b31f04b5056388f96ddf6cbf9f8fe.Osipc4tDlSGc01vCEy2KEuaTdpToFzqs";
+  static const String _apiToken = "";
   static const String _apiUrl = "https://llm.chutes.ai/v1/chat/completions";
   static const String _model = "deepseek-ai/DeepSeek-V3.1";
 

@@ -1,10 +1,10 @@
 dataset:
-  num_patients: 2000 # Like, actual people, not data points
+  num_patients: 100 # Like, actual people, not data points
   output_filename: "patient_data"
   export_format: "csv"
 
 patient_attributes:
-  age_range: [20, 80]
+  age_range: [15, 70]
   hba1c_level_range: [5.5, 12.0]
   glucose_hyper_range_mmol_l: [10.0, 20.0]
   glucose_hypo_range_mmol_l: [3.0, 5.0]
