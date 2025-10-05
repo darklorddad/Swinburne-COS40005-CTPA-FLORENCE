@@ -1,4 +1,10 @@
-### **Project Backend & Database: The Full Overview**
+Of course. The `meal_desc` field has been added to the `daily_patient_logs` table. This is a great addition for providing more context to the glucose readings.
+
+Here is the updated document with the changes clearly marked.
+
+***
+
+### **Project Backend & Database: The Full Overview (Updated)**
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
 
@@ -43,7 +49,8 @@ This is the foundational structure of your data storage, designed for a Supabase
 | clinician_id (FK) <-+---| log_date, meal_time(ENUM)|   | data_type (ENUM)   |   | data_type (ENUM)      |
 | note_content (TEXT) |   | glucose_before_meal      |   | value (NUMERIC(8, 2))| | min_value, max_value  |
 |                     |   | glucose_after_meal       |   | measured_at        |   +-----------------------+
-+---------------------+   +--------------------------+   +--------------------+
++---------------------+   | meal_desc (TEXT)         |   +--------------------+
+                          +--------------------------+
 ```
 
 #### **Detailed Table Definitions**
@@ -95,6 +102,7 @@ This is the foundational structure of your data storage, designed for a Supabase
     *   `meal_time` (ENUM('BREAKFAST', 'LUNCH', 'DINNER'), NOT NULL)
     *   `glucose_before_meal` (NUMERIC(8, 2))
     *   `glucose_after_meal` (NUMERIC(8, 2))
+    *   `meal_desc` (TEXT, NULLABLE)
     *   *Constraint:* `UNIQUE(patient_id, log_date, meal_time)`
     *   *Constraint:* `CHECK (glucose_before_meal IS NOT NULL OR glucose_after_meal IS NOT NULL)`
 
@@ -107,6 +115,8 @@ This is the foundational structure of your data storage, designed for a Supabase
 ---
 
 ### 2. API Endpoint Design (The Interactions)
+
+The API endpoints remain the same. The `POST` and `PUT` requests to `/patients/me/daily-logs` (and corresponding admin endpoints) will now accept the optional `meal_desc` field in the request body. `GET` requests for daily logs will now include this field in the response.
 
 | Method    | Endpoint                                          | Description                                                               | Who Can Access?   |
 | :---      | :---                                              | :---                                                                      | :---              |
@@ -142,27 +152,29 @@ This is the foundational structure of your data storage, designed for a Supabase
 
 ### 3. Roles & Permissions Matrix (The Rules)
 
+No changes are needed here. The new `meal_desc` column in `daily_patient_logs` is covered by the existing Row-Level Security policies for that table. Patients can add/edit their own, and assigned clinicians can view it.
+
 | Action | Patient | Clinician | Admin | Backend Logic Notes |
-| :--- | :-: | :-: | :-: | :--- |
-| **User Onboarding** |
-| Create Patient/Clinician | ✅ | ✅ | ✅ | Backend API handles profile creation. |
-| Create Admin | ❌ | ❌ | ✅ | Admin created via secure API or manually. |
-| **Account & Profile** |
-| Edit own account/profile | ✅ | ✅ | ✅ | Scoped to `user_id`. |
-| View profile of *assigned* patient| - | ✅ | ✅ | RLS: `patient.clinician_id == my_clinician_id`. |
-| View profile of *unassigned* patient | ❌ | ❌ | ✅ | Clinician access denied. Admin has global access. |
-| **Monitor Data (`patient_monitor_data`)** |
-| Add/View/Edit own data | ✅ | - | - | RLS: `patient_id` must match user's profile ID. |
-| View data of *assigned* patient | - | ✅ | ✅ | RLS: `SELECT` only. |
-| Add/Edit data of *any* patient | ❌ | ❌ | ✅ | RLS: Admin has full `INSERT/UPDATE` access. |
-| **Daily Logs (`daily_patient_logs`)** |
-| Add/View/Edit own logs | ✅ | - | - | RLS: `patient_id` must match user's profile ID. |
-| View logs of *assigned* patient | - | ✅ | ✅ | RLS: `SELECT` only. |
-| Add/Edit logs of *any* patient | ❌ | ❌ | ✅ | RLS: Admin has full `INSERT/UPDATE` access. |
-| **Thresholds (`patient_thresholds`)** |
-| View own thresholds | ✅ | - | - | RLS: `SELECT` only. |
-| View/Edit thresholds of *assigned* patient | - | ✅ | ✅ | RLS: `SELECT` and `UPDATE` allowed. |
-| View/Edit thresholds of *any* patient | ❌ | ❌ | ✅ | RLS: Admin has full `SELECT/UPDATE` access. |
+| :-------------------------------------------: | :-: | :-: | :-: | :--- |
+| **User Onboarding**                                                                                   |
+| Create Patient/Clinician                      | ✅ | ✅ | ✅ | Backend API handles profile creation. |
+| Create Admin                                  | ❌ | ❌ | ✅ | Admin created via secure API or manually. |
+| **Account & Profile**                                                                                         |
+| Edit own account/profile                      | ✅ | ✅ | ✅ | Scoped to `user_id`. |
+| View profile of *assigned* patient            |  -  | ✅ | ✅ | RLS: `patient.clinician_id == my_clinician_id`. |
+| View profile of *unassigned* patient          | ❌ | ❌ | ✅ | Clinician access denied. Admin has global access. |
+| **Monitor Data (`patient_monitor_data`)**     |
+| Add/View/Edit own data                        | ✅ | -  | -  | RLS: `patient_id` must match user's profile ID. |
+| View data of *assigned* patient               | -  | ✅ | ✅ | RLS: `SELECT` only. |
+| Add/Edit data of *any* patient                | ❌ | ❌ | ✅ | RLS: Admin has full `INSERT/UPDATE` access. |
+| **Daily Logs (`daily_patient_logs`)**         |
+| Add/View/Edit own logs                        | ✅ | -  | -   | RLS: `patient_id` must match user's profile ID. |
+| View logs of *assigned* patient               | -  | ✅ | ✅  | RLS: `SELECT` only. |
+| Add/Edit logs of *any* patient                | ❌ | ❌ | ✅  | RLS: Admin has full `INSERT/UPDATE` access. |
+| **Thresholds (`patient_thresholds`)**         |
+| View own thresholds                           | ✅ | -  | -  | RLS: `SELECT` only. |
+| View/Edit thresholds of *assigned* patient    | -  | ✅ | ✅ | RLS: `SELECT` and `UPDATE` allowed. |
+| View/Edit thresholds of *any* patient         | ❌ | ❌ | ✅ | RLS: Admin has full `SELECT/UPDATE` access. |
 | **Clinician Notes (`clinician_notes`)** |
-| See *any* notes about them | ❌ | - | - | **Privacy Rule:** Patient access is completely denied. |
-| Add/View notes for *assigned* patient| - | ✅ | ✅ | RLS: `patient.clinician_id` checked. |
+| See *any* notes about them                    | ❌ | -  | -  | **Privacy Rule:** Patient access is completely denied. |
+| Add/View notes for *assigned* patient         | -  | ✅ | ✅ | RLS: `patient.clinician_id` checked. |
