@@ -158,7 +158,13 @@ async def login_user(credentials: UserLogin):
         })
         return response.session
     except AuthApiError as e:
-        # Supabase often returns a generic "Invalid login credentials" message.
+        # Check for a specific server-side configuration error.
+        if "Database error querying schema" in e.message:
+            raise HTTPException(
+                status_code=500, 
+                detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
+            )
+        # Otherwise, it's likely a normal authentication failure.
         raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
 
 
