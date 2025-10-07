@@ -63,6 +63,8 @@ This is the foundational structure of your data storage, designed for a Supabase
     *   `user_id` (FK to `auth.users.id`, UNIQUE, NOT NULL)
     *   `name` (VARCHAR)
     *   `phone_number` (VARCHAR)
+    *   `gender` (VARCHAR, NULLABLE)
+    *   `date_of_birth` (DATE, NULLABLE)
     *   `organisation_id` (FK to `organisations.id`, NULLABLE)
     *   `clinician_id` (FK to `clinician_profiles.id`, NULLABLE)
     *   `emergency_contact_name`, `emergency_contact_relationship`, `emergency_contact_phone` (VARCHAR)
@@ -209,6 +211,8 @@ CREATE TABLE IF NOT EXISTS public.patient_profiles (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     name TEXT,
     phone_number TEXT,
+    gender TEXT,
+    date_of_birth DATE,
     organisation_id BIGINT REFERENCES public.organisations(id),
     clinician_id BIGINT REFERENCES public.clinician_profiles(id),
     emergency_contact_name TEXT,
