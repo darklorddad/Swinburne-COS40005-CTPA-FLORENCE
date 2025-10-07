@@ -6,10 +6,15 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 from json import JSONDecodeError
+import uvicorn
+import threading
+import time
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
+
+from Supabase.main import app
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path=project_root / '.env', override=True)
@@ -110,4 +115,17 @@ status_text.config(state=tk.DISABLED)
 
 # --- Main Loop ---
 if __name__ == "__main__":
+    def run_server():
+        """Runs the FastAPI server using uvicorn."""
+        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+
+    # Start the server in a daemon thread so it exits when the main app closes.
+    server_thread = threading.Thread(target=run_server, daemon=True)
+    server_thread.start()
+    print("Starting FastAPI server in background...")
+    
+    # Give the server a moment to start up.
+    time.sleep(2)
+    print("Server should be running. Launching GUI.")
+
     root.mainloop()
