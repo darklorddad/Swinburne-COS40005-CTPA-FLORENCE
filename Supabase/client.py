@@ -30,10 +30,8 @@ class _SupabaseClientProxy:
 
             # Configure client with a timeout.
             options = ClientOptions(
-                postgrest_client_timeout=10.0,
-                storage_client_timeout=10.0,
-                gotrue_client_timeout=10.0,
-                function_client_timeout=10.0,
+                postgrest_client_timeout=10,
+                storage_client_timeout=10,
             )
 
             self._client = create_client(url, key, options=options)
