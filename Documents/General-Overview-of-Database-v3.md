@@ -299,7 +299,7 @@ ON public.daily_patient_logs (patient_id, log_date DESC);
 -- =================================================================
 -- Note: These functions are required for the RLS policies to work correctly.
 
-CREATE OR REPLACE FUNCTION public.get_user_role()
+CREATE OR REPLACE FUNCTION public.get_user_role(claims jsonb)
 RETURNS TEXT
 LANGUAGE plpgsql
 STABLE
