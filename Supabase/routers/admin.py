@@ -176,6 +176,97 @@ async def get_all_organisations():
         raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
 
 
+@router.get("/daily-logs", summary="Get a list of all daily patient logs")
+async def get_all_daily_logs():
+    """Retrieves a list of all daily patient logs with patient names."""
+    try:
+        logs_response = supabase.table('daily_patient_logs').select(
+            "log_date, meal_time, meal_desc, glucose_before_meal, glucose_after_meal, "
+            "patient_profiles(name)"
+        ).execute()
+
+        processed_logs = []
+        for log in logs_response.data:
+            patient_data = log.get('patient_profiles')
+            processed_log = {
+                "Patient Name": patient_data.get("name") if patient_data else None,
+                "Meal Time": log.get("meal_time"),
+                "Description": log.get("meal_desc"),
+                "Glucose Before Meal": log.get("glucose_before_meal"),
+                "Glucose After Meal": log.get("glucose_after_meal"),
+                "Log Date": log.get("log_date")
+            }
+            processed_logs.append(processed_log)
+        
+        return processed_logs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
+
+
+@router.get("/monitor-data", summary="Get a list of all patient monitor data")
+async def get_all_monitor_data():
+    """Retrieves a list of all patient monitor data points with patient names."""
+    
+    # Define units for each data type
+    UNITS = {
+        'BLOOD_PRESSURE_SYSTOLIC': 'mmHg',
+        'BLOOD_PRESSURE_DIASTOLIC': 'mmHg',
+        'GLUCOSE': 'mg/dL',
+        'BMI': 'kg/m²',
+        'HBA1C': '%',
+        'ECG': 'bpm',
+        'CHOLESTEROL': 'mg/dL'
+    }
+
+    try:
+        data_response = supabase.table('patient_monitor_data').select(
+            "data_type, value, measured_at, "
+            "patient_profiles(name)"
+        ).execute()
+
+        processed_data = []
+        for item in data_response.data:
+            patient_data = item.get('patient_profiles')
+            data_type = item.get("data_type")
+            processed_item = {
+                "Patient Name": patient_data.get("name") if patient_data else None,
+                "Type": data_type,
+                "Unit": UNITS.get(data_type, "N/A"),
+                "Value": item.get("value"),
+                "Measured at": item.get("measured_at")
+            }
+            processed_data.append(processed_item)
+        
+        return processed_data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
+
+
+@router.get("/thresholds", summary="Get a list of all patient thresholds")
+async def get_all_thresholds():
+    """Retrieves a list of all patient thresholds with patient names."""
+    try:
+        thresholds_response = supabase.table('patient_thresholds').select(
+            "data_type, min_value, max_value, "
+            "patient_profiles(name)"
+        ).execute()
+
+        processed_thresholds = []
+        for threshold in thresholds_response.data:
+            patient_data = threshold.get('patient_profiles')
+            processed_threshold = {
+                "Patient Name": patient_data.get("name") if patient_data else None,
+                "Type": threshold.get("data_type"),
+                "Minimum": threshold.get("min_value"),
+                "Maximum": threshold.get("max_value")
+            }
+            processed_thresholds.append(processed_threshold)
+        
+        return processed_thresholds
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+
+
 @router.put("/patients/{patient_id}", summary="Edit any patient (including risk level)")
 async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAdminUpdate):
     """Updates any patient's profile. Can be used to change risk level or other details."""

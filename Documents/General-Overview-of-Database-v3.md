@@ -146,6 +146,9 @@ This is the foundational structure of your data storage, designed for a Supabase
 | `GET`     | `/admin/patients`                                 | Get a list of all patients.                                               | Admin             |
 | `GET`     | `/admin/clinicians`                               | Get a list of all clinicians and their assigned patients.                 | Admin             |
 | `GET`     | `/admin/organisations`                            | Get a list of all organisations.                                          | Admin             |
+| `GET`     | `/admin/daily-logs`                               | Get a list of all daily patient logs.                                     | Admin             |
+| `GET`     | `/admin/monitor-data`                             | Get a list of all patient monitor data.                                   | Admin             |
+| `GET`     | `/admin/thresholds`                               | Get a list of all patient thresholds.                                     | Admin             |
 | `PUT`     | `/admin/organisations/{organisationId}`           | Edit any organisation.                                                    | Admin             |
 | `DELETE`  | `/admin/organisations/{organisationId}`           | Remove any organisation.                                                  | Admin             |
 | `PUT`     | `/admin/clinicians/{clinicianId}`                 | Edit any clinician's profile.                                             | Admin             |
