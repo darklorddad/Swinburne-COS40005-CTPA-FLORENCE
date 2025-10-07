@@ -154,7 +154,7 @@ async def login_user(credentials: UserLogin):
             "email": credentials.email,
             "password": credentials.password
         })
-        return response.session
+        return response
     except AuthApiError as e:
         # Check for a specific server-side configuration error.
         if "Database error querying schema" in e.message:
