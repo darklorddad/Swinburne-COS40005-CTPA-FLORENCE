@@ -310,9 +310,9 @@ AS $$
 DECLARE
   user_role TEXT;
 BEGIN
-  -- First, check for an admin role in the user's metadata.
+  -- First, check for an admin role in the user's metadata (case-insensitive).
   SELECT raw_app_meta_data->>'role' INTO user_role FROM auth.users WHERE id = auth.uid();
-  IF user_role = 'ADMIN' THEN
+  IF UPPER(user_role) = 'ADMIN' THEN
     RETURN 'ADMIN';
   END IF;
 
@@ -412,16 +412,16 @@ CREATE POLICY "Clinicians can manage notes for their patients" ON public.clinici
 
 -- Run this command to create your first admin user.
 -- Remember to set up the 'get_user_role' custom claim in Supabase Auth Settings.
--- INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, created_at, updated_at)
--- VALUES (
---   '00000000-0000-0000-0000-000000000000',
---   uuid_generate_v4(),
---   'authenticated',
---   'authenticated',
---   'admin@example.com',
---   crypt('your-secure-password', gen_salt('bf')),
---   now(),
---   '{"provider": "email", "providers": ["email"], "role": "ADMIN"}',
---   now(),
---   now()
--- );
+INSERT INTO auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at, raw_app_meta_data, created_at, updated_at)
+VALUES (
+  '00000000-0000-0000-0000-000000000000',
+  uuid_generate_v4(),
+  'authenticated',
+  'authenticated',
+  'admin@gmail.com',
+  crypt('your-secure-password', gen_salt('bf')),
+  now(),
+  '{"provider": "email", "providers": ["email"], "role": "ADMIN"}',
+  now(),
+  now()
+);
