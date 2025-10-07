@@ -27,7 +27,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | id (PK)              |                                | id (PK)                       |
 | user_id (FK -> users)|                                | user_id (FK -> users)         |
 | name, phone_number   |                                | name, phone_number            |
-|                      |                                | gender, date_of_birth         |
+| gender               |                                | gender, date_of_birth         |
 | organisation_id (FK) |<-------------------------------| emergency_contact_*           |
 |   **(NOT NULL)**     |                                | risk_level (ENUM)             |
 +----------------------+                                | last_risk_assessment          |
@@ -77,6 +77,7 @@ This is the foundational structure of your data storage, designed for a Supabase
     *   `user_id` (FK to `auth.users.id`, UNIQUE, NOT NULL)
     *   `name` (VARCHAR)
     *   `phone_number` (VARCHAR)
+    *   `gender` (VARCHAR, NULLABLE)
     *   `organisation_id` (FK to `organisations.id`, **NOT NULL**)
 
 *   **`patient_monitor_data`** (Patient's recorded health metrics)
@@ -203,6 +204,7 @@ CREATE TABLE IF NOT EXISTS public.clinician_profiles (
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE,
     name TEXT,
     phone_number TEXT,
+    gender TEXT,
     organisation_id BIGINT NOT NULL REFERENCES public.organisations(id)
 );
 

@@ -31,6 +31,7 @@ class ClinicianProfileAdminUpdate(BaseModel):
     """Fields an admin is allowed to update on a clinician's profile."""
     name: Optional[str] = None
     phone_number: Optional[str] = None
+    gender: Optional[str] = None
     organisation_id: Optional[int] = None
 
 class OrganisationAdminUpdate(BaseModel):
@@ -140,7 +141,7 @@ async def get_all_clinicians():
     try:
         # Fetch clinicians with their organisation and assigned patients' names
         clinicians_response = supabase.table('clinician_profiles').select(
-            "name, phone_number, "
+            "name, phone_number, gender, "
             "organisations(name), "
             "patient_profiles(name)"
         ).execute()
@@ -154,6 +155,7 @@ async def get_all_clinicians():
             processed_clinician = {
                 "Name": clinician.get("name"),
                 "Phone Number": clinician.get("phone_number"),
+                "Gender": clinician.get("gender"),
                 "Organisation Name": org_data.get("name") if org_data else None,
                 "Assigned Patients": [patient['name'] for patient in patients_data if patient.get('name')]
             }

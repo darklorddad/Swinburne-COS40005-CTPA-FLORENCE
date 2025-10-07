@@ -18,10 +18,10 @@ class UserRegistration(BaseModel):
     role: Literal['PATIENT', 'CLINICIAN']
     name: str
     phone_number: str
+    gender: Optional[str] = None
     # Clinician specific
     organisation_id: Optional[int] = None
     # Patient specific
-    gender: Optional[str] = None
     date_of_birth: Optional[date] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
@@ -93,6 +93,7 @@ async def register_user(user_data: UserRegistration):
         elif user_data.role == 'CLINICIAN':
             profile_data = {
                 "user_id": new_user.id, "name": user_data.name, "phone_number": user_data.phone_number,
+                "gender": user_data.gender,
                 "organisation_id": user_data.organisation_id,
             }
             supabase.table('clinician_profiles').insert(profile_data).execute()
