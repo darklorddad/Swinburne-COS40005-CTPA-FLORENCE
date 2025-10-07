@@ -15,7 +15,7 @@ load_dotenv(dotenv_path=project_root / '.env', override=True)
 
 # --- Configuration ---
 API_BASE_URL = "http://127.0.0.1:8000"
-ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "") # Pre-fill from .env if available
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "TEST_ADMIN_PASSWORD") # Pre-fill from .env if available
 
 # --- Login Logic ---
 def attempt_login():
