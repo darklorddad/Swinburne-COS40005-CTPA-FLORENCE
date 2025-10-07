@@ -14,6 +14,7 @@ def get_current_time(timezone: str) -> str:
         response = requests.get(f"http://worldtimeapi.org/api/timezone/{timezone}")
         response.raise_for_status()
         time_data = response.json()
+        print(f"--- TOOL EXECUTING: Received full response from time API:\n{json.dumps(time_data, indent=2)} ---")
         return time_data.get('datetime', 'Time not found')
     except requests.exceptions.RequestException as e:
         return f"API Error: {e}"
@@ -71,10 +72,12 @@ If the user's request does not require a tool, answer their question directly as
     }
 
     try:
+        print(f"--- LLM BRAIN: Sending payload:\n{json.dumps(data, indent=2)} ---")
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
         
         response_json = response.json()
+        print(f"--- LLM BRAIN: Received full response:\n{json.dumps(response_json, indent=2)} ---")
         llm_output = response_json['choices'][0]['message']['content']
         
         print("--- LLM BRAIN: Received raw output from API. ---")
