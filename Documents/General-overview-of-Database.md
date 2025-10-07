@@ -1,16 +1,14 @@
-Of course. Here is the complete and final overview of your project's backend and database architecture. This single document consolidates all requirements and clarifications we've discussed into a comprehensive blueprint.
-
----
-
-### **Project Backend & Database: The Full Overview**
+### Project Backend & Database: The Full Overview
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
+
+---
 
 ### 1. Database Schema (The Blueprint)
 
 This is the foundational structure of your data storage.
 
-#### **Entity Relationship Diagram (ERD)**
+#### Entity Relationship Diagram (ERD)
 
 ```
 +------------------+           +----------------------+
@@ -53,7 +51,7 @@ This is the foundational structure of your data storage.
                           +--------------------------+   +--------------------+
 ```
 
-#### **Detailed Table Definitions**
+#### Detailed Table Definitions
 
 *   **`users`** (Core identity and access control)
     *   `id` (PK, INT, Auto-increment)
