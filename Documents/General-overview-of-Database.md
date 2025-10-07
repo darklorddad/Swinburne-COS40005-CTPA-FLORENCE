@@ -1,16 +1,14 @@
-Of course. Here is the complete and final overview of your project's backend and database architecture. This single document consolidates all requirements and clarifications we've discussed into a comprehensive blueprint.
-
----
-
-### **Project Backend & Database: The Full Overview**
+### Project Backend & Database: The Full Overview
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
+
+---
 
 ### 1. Database Schema (The Blueprint)
 
 This is the foundational structure of your data storage.
 
-#### **Entity Relationship Diagram (ERD)**
+#### Entity Relationship Diagram (ERD)
 
 ```
 +------------------+           +----------------------+
@@ -48,12 +46,12 @@ This is the foundational structure of your data storage.
 | patient_id (FK) ----+   | patient_id (FK) ---------+   | patient_id (FK) ---+     |
 | clinician_id (FK) <-+---|                                                         |
 | note_content (TEXT) |   | log_date, meal_time (ENUM) |   | data_type (ENUM)   |
-| created_at          |   | diet_log, glucose_value  |   | value_1, value_2   |
+| created_at          |   | diet_log, glucose_value  |   | value   |
 +---------------------+   | ...                      |   | measured_at        |
                           +--------------------------+   +--------------------+
 ```
 
-#### **Detailed Table Definitions**
+#### Detailed Table Definitions
 
 *   **`users`** (Core identity and access control)
     *   `id` (PK, INT, Auto-increment)
@@ -94,7 +92,7 @@ This is the foundational structure of your data storage.
 *   **`patient_monitor_data`** (Patient's periodic health metrics)
     *   `id` (PK, INT, Auto-increment)
     *   `patient_id` (FK to `patient_profiles.id`, NOT NULL)
-    *   `data_type` (ENUM('BLOOD_PRESSURE', 'GLUCOSE', 'BMI', 'HBA1C', 'ECG', 'Cholesterol'), NOT NULL)
+    *   `data_type` (ENUM('BLOOD_PRESSURE', 'GLUCOSE', 'BMI', 'HBA1C', 'ECG', 'CHOLESTEROL'), NOT NULL)
     *   `value` (VARCHAR, NOT NULL)
     *   `measured_at` (TIMESTAMP, NOT NULL)
 
