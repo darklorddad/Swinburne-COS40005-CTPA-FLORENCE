@@ -27,8 +27,11 @@ class PatientProfileAdminUpdate(BaseModel):
     organisation_id: Optional[int] = None
     clinician_id: Optional[int] = None
 
-class AssignClinician(BaseModel):
-    clinician_id: Optional[int] = None # Use None to unassign
+class ClinicianProfileAdminUpdate(BaseModel):
+    """Fields an admin is allowed to update on a clinician's profile."""
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    organisation_id: Optional[int] = None
 
 # --- New Pydantic Models for Admin Updates ---
 
@@ -162,6 +165,24 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update patient profile: {str(e)}")
+
+
+@router.put("/clinicians/{clinician_id}", summary="Edit any clinician")
+async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianProfileAdminUpdate):
+    """Updates any clinician's profile."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        updated_profile_response = supabase.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
+        if not updated_profile_response.data:
+            raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
+        return updated_profile_response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update clinician profile: {str(e)}")
 
 
 @router.put("/daily-logs/{log_id}", summary="Edit any daily patient log")
@@ -336,16 +357,3 @@ async def delete_clinician_by_admin(clinician_id: int):
         raise HTTPException(status_code=500, detail=f"Failed to delete clinician: {str(e)}")
 
 
-@router.put("/patients/{patient_id}/assign-clinician", summary="Assign/unassign a clinician to a patient")
-async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinician):
-    """Assigns a clinician to a patient, or unassigns them if clinician_id is null."""
-    update_dict = {"clinician_id": assignment.clinician_id}
-    try:
-        response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
-        if not response.data:
-            raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
-        return response.data[0]
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to assign clinician: {str(e)}")
