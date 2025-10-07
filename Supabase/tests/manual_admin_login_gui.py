@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 from dotenv import load_dotenv
+from json import JSONDecodeError
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -15,7 +16,7 @@ load_dotenv(dotenv_path=project_root / '.env', override=True)
 
 # --- Configuration ---
 API_BASE_URL = "http://127.0.0.1:8000"
-ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "TEST_ADMIN_PASSWORD") # Pre-fill from .env if available
+ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL", "") # Pre-fill from .env if available
 
 # --- Login Logic ---
 def attempt_login():
@@ -56,7 +57,10 @@ def attempt_login():
 
     except httpx.HTTPStatusError as e:
         # Handle API errors (e.g., wrong password)
-        error_detail = e.response.json().get("detail", e.response.text)
+        try:
+            error_detail = e.response.json().get("detail", e.response.text)
+        except JSONDecodeError:
+            error_detail = e.response.text
         messagebox.showerror("Login Failed", f"Error: {e.response.status_code}\n{error_detail}")
         status_text.config(state=tk.NORMAL)
         status_text.insert(tk.END, f"Login failed: {error_detail}\n")
