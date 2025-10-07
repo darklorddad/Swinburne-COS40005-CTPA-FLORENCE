@@ -55,7 +55,11 @@ def test_register_patient(test_patient_credentials):
         "role": "PATIENT",
         "name": "Test Patient",
         "phone_number": "123456789",
-        "date_of_birth": date(1990, 1, 1).isoformat()
+        "date_of_birth": date(1990, 1, 1).isoformat(),
+        "gender": "Female",
+        "emergency_contact_name": "Jane Doe",
+        "emergency_contact_relationship": "Spouse",
+        "emergency_contact_phone": "111222333"
     })
     assert response.status_code == 200, response.text
     assert "Patient registered successfully" in response.json()["message"]
@@ -68,7 +72,8 @@ def test_register_clinician(test_clinician_credentials):
         "role": "CLINICIAN",
         "name": "Test Clinician",
         "phone_number": "987654321",
-        "organisation_id": test_clinician_credentials["organisation_id"]
+        "organisation_id": test_clinician_credentials["organisation_id"],
+        "gender": "Male"
     })
     assert response.status_code == 200, response.text
     assert "Clinician registered successfully" in response.json()["message"]
