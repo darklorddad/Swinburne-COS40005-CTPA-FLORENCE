@@ -421,7 +421,7 @@ CREATE POLICY "Clinicians can manage notes for their patients" ON public.clinici
 --   'admin@example.com',
 --   crypt('your-secure-password', gen_salt('bf')),
 --   now(),
---   '{"provider": "email", "providers": ["email"], "role": "admin"}',
+--   '{"provider": "email", "providers": ["email"], "role": "ADMIN"}',
 --   now(),
 --   now()
 -- );
