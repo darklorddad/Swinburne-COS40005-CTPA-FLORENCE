@@ -1,18 +1,14 @@
-Of course. The `meal_desc` field has been added to the `daily_patient_logs` table. This is a great addition for providing more context to the glucose readings.
-
-Here is the updated document with the changes clearly marked.
-
-***
-
-### **Project Backend & Database: The Full Overview (Updated)**
+### Project Backend & Database: The Full Overview (Updated)
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
+
+---
 
 ### 1. Database Schema (The Blueprint)
 
 This is the foundational structure of your data storage, designed for a Supabase environment.
 
-#### **Entity Relationship Diagram (ERD)**
+#### Entity Relationship Diagram (ERD)
 
 ```
 +------------------+         +--------------------------+
@@ -53,7 +49,7 @@ This is the foundational structure of your data storage, designed for a Supabase
                           +--------------------------+
 ```
 
-#### **Detailed Table Definitions**
+#### Detailed Table Definitions
 
 *   **`auth.users` (Supabase Authentication)**
     *   Managed by Supabase. Its `id` (UUID) is the foreign key link to our profile tables. An admin role is stored in `raw_app_meta_data`.
