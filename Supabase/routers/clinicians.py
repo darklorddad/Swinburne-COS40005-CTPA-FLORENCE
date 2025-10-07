@@ -194,3 +194,48 @@ async def set_patient_thresholds(patient_id: int, thresholds: List[PatientThresh
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to set thresholds: {str(e)}")
+
+
+@router.delete("/me", summary="Delete my own clinician profile")
+async def delete_own_clinician_profile(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """
+    Deletes the currently authenticated clinician's profile, unassigns their patients,
+    preserves their notes, and deletes the corresponding user from Supabase Auth.
+    """
+    try:
+        clinician_id = clinician_profile.get("id")
+        user_id = clinician_profile.get("user_id")
+        clinician_name = clinician_profile.get("name")
+
+        # Step 1: Unassign all patients from this clinician.
+        supabase.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
+
+        # Step 2: Preserve notes by detaching them from the clinician and snapshotting their name.
+        supabase.table('clinician_notes').update({
+            "clinician_id": None,
+            "clinician_name_snapshot": clinician_name
+        }).eq('clinician_id', clinician_id).execute()
+
+        # Step 3: Delete the clinician's profile.
+        deleted_profile_response = supabase.table('clinician_profiles').delete().eq('id', clinician_id).execute()
+        
+        if not deleted_profile_response.data:
+            raise HTTPException(status_code=500, detail=f"Failed to delete own clinician profile {clinician_id} after it was found.")
+        
+        # Step 4: If there's an associated auth user, delete them.
+        if not user_id:
+            return {"message": f"Clinician profile with id {clinician_id} deleted, but no associated auth user to delete."}
+
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception as auth_error:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Clinician profile {clinician_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
+            )
+
+        return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete own clinician profile: {str(e)}")

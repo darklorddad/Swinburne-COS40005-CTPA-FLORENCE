@@ -128,6 +128,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | `GET`     | `/patients/me/thresholds`                         | Get my own defined health thresholds.                                     | Patient           |
 | **Clinician (Management)**                                                                                                                |
 | `GET`     | `/clinicians/me`                                  | Get my own clinician profile.                                             | Clinician         |
+| `DELETE`  | `/clinicians/me`                                  | Delete my own clinician profile.                                          | Clinician         |
 | `GET`     | `/clinicians/me/patients`                         | Get a list of all patients **assigned to me**.                            | Clinician         |
 | `GET`     | `/clinicians/me/patients/{patientId}`             | Get full profile & data for **an assigned patient only**.                 | Clinician         |
 | `PUT`     | `/clinicians/me/patients/{patientId}/assess-risk` | Update the risk level for **an assigned patient only**.                   | Clinician         |
