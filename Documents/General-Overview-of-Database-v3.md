@@ -143,6 +143,7 @@ The API endpoints remain the same. The `POST` and `PUT` requests to `/patients/m
 | `PUT`     | `/clinicians/me/patients/{patientId}/thresholds`  | Set/Update thresholds for an assigned patient.                            | Clinician         |
 | **Admin (Global Management)**                                                                                                             |
 | `GET`     | `/admin/patients`                                 | Get a list of all patients.                                               | Admin             |
+| `GET`     | `/admin/clinicians`                               | Get a list of all clinicians and their assigned patients.                 | Admin             |
 | `PUT`     | `/admin/patients/{patientId}`                     | Edit any patient (including risk level).                                  | Admin             |
 | `DELETE`  | `/admin/patients/{patientId}`                     | Remove any patient.                                                       | Admin             |
 | `PUT`     | `/admin/patients/{patientId}/assign-clinician`    | Assign/unassign a clinician to a patient.                                 | Admin             |

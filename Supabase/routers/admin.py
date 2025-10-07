@@ -78,6 +78,37 @@ async def get_all_patients():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 
+
+@router.get("/clinicians", summary="Get a list of all clinicians and their assigned patients")
+async def get_all_clinicians():
+    """Retrieves a list of all clinicians, their details, and the names of patients assigned to them."""
+    try:
+        # Fetch clinicians with their organisation and assigned patients' names
+        clinicians_response = supabase.table('clinician_profiles').select(
+            "name, phone_number, "
+            "organisations(name), "
+            "patient_profiles(name)"
+        ).execute()
+
+        # Process the data to create the desired flat structure
+        processed_clinicians = []
+        for clinician in clinicians_response.data:
+            org_data = clinician.get('organisations')
+            patients_data = clinician.get('patient_profiles', [])
+            
+            processed_clinician = {
+                "Name": clinician.get("name"),
+                "Phone Number": clinician.get("phone_number"),
+                "Organisation Name": org_data.get("name") if org_data else None,
+                "Assigned Patients": [patient['name'] for patient in patients_data if patient.get('name')]
+            }
+            processed_clinicians.append(processed_clinician)
+            
+        return processed_clinicians
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
+
+
 @router.put("/patients/{patient_id}", summary="Edit any patient (including risk level)")
 async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAdminUpdate):
     """Updates any patient's profile. Can be used to change risk level or other details."""
