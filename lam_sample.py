@@ -85,7 +85,7 @@ If the user's request does not require a tool, answer their question directly as
         except json.JSONDecodeError:
             # If it's not JSON, it's a regular text response
             print("--- LLM BRAIN: Decided no tool was needed. Responding with text. ---")
-            return ll_output
+            return llm_output
 
     except requests.exceptions.RequestException as e:
         return f"An error occurred with the LLM API: {e}"
