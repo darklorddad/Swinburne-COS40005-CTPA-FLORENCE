@@ -28,9 +28,12 @@ class _SupabaseClientProxy:
                     "Ensure you have a .env file in the project root with SUPABASE_URL and a service key."
                 )
 
-            # Configure httpx client with a timeout.
+            # Configure client with a timeout.
             options = ClientOptions(
-                httpx_client=httpx.Client(timeout=10.0)
+                postgrest_client_timeout=10.0,
+                storage_client_timeout=10.0,
+                gotrue_client_timeout=10.0,
+                function_client_timeout=10.0,
             )
 
             self._client = create_client(url, key, options=options)
