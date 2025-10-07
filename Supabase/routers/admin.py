@@ -204,6 +204,7 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
             "email": patient_data.email,
             "password": patient_data.password,
             "email_confirm": True,  # Auto-confirm user
+            "app_metadata": {"role": "PATIENT"}
         })
         new_user = user_session.user
         if not new_user:
@@ -286,6 +287,7 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
             "email": clinician_data.email,
             "password": clinician_data.password,
             "email_confirm": True,  # Auto-confirm user
+            "app_metadata": {"role": "CLINICIAN"}
         })
         new_user = user_session.user
         if not new_user:

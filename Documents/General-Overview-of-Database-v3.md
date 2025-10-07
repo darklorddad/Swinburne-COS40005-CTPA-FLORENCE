@@ -310,24 +310,11 @@ AS $$
 DECLARE
   user_role TEXT;
 BEGIN
-  -- First, check for an admin role in the user's metadata (case-insensitive).
+  -- Get the role from the user's app_metadata.
   SELECT raw_app_meta_data->>'role' INTO user_role FROM auth.users WHERE id = auth.uid();
-  IF UPPER(user_role) = 'ADMIN' THEN
-    RETURN 'ADMIN';
-  END IF;
 
-  -- If not an admin, check if they are a clinician by looking for a profile.
-  IF EXISTS (SELECT 1 FROM public.clinician_profiles WHERE user_id = auth.uid()) THEN
-    RETURN 'CLINICIAN';
-  END IF;
-
-  -- If not a clinician, check if they are a patient.
-  IF EXISTS (SELECT 1 FROM public.patient_profiles WHERE user_id = auth.uid()) THEN
-    RETURN 'PATIENT';
-  END IF;
-
-  -- If the user has no specific role or profile, return null.
-  RETURN NULL;
+  -- Return the role in uppercase for consistency, or NULL if not found.
+  RETURN UPPER(user_role);
 END;
 $$;
 
