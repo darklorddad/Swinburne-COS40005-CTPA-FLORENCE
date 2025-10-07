@@ -1,14 +1,14 @@
----
-
-### **Project Backend & Database: The Full Overview**
+### Project Backend & Database: The Full Overview
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
+
+---
 
 ### 1. Database Schema (The Blueprint)
 
 This is the foundational structure of your data storage, designed for a Supabase environment.
 
-#### **Entity Relationship Diagram (ERD)**
+#### Entity Relationship Diagram (ERD)
 
 ```
 +------------------+         +--------------------------+
@@ -49,7 +49,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 +---------------------+   +--------------------------+   +--------------------+
 ```
 
-#### **Detailed Table Definitions**
+#### Detailed Table Definitions
 
 *   **`auth.users` (Supabase Authentication)**
     *   Managed by Supabase. Its `id` (UUID) is the foreign key link to our profile tables.
@@ -168,39 +168,43 @@ This is the foundational structure of your data storage, designed for a Supabase
 | View/Edit/Delete ANY Patient | - | - | ✅ | Global CRUD access. Includes changing risk level and thresholds. |
 | Assign/Unassign a patient | - | - | ✅ | Admin updates the `clinician_id` field on the `patient_profiles` table. |
 
+---
+
 ### 4. Notes on Data Types and Units
 
-#### **1. GLUCOSE**
+#### 4.1. GLUCOSE
 *   **Unit:** `mg/dL` (milligrams per deciliter)
 *   **Description:** This measures the concentration of glucose (sugar) in the blood at a specific moment. The provided range (70-180 mg/dL) is typical for daily monitoring, often for individuals with diabetes.
 *   **Critical Note:** This unit is standard in the United States. Many other parts of the world (e.g., UK, Canada, Australia) use `mmol/L` (millimoles per liter). Your app **must** be clear about which unit it uses or allow the user to select their preference.
 
-#### **2. HBA1C**
+#### 4.2. HBA1C
 *   **Unit:** `%` (Percentage)
 *   **Description:** Hemoglobin A1c is a measure of your average blood glucose level over the past 2-3 months. It's a key indicator for long-term glucose control. A value of 7% corresponds to an estimated average glucose of ~154 mg/dL.
 
-#### **3. BMI**
+#### 4.3. BMI
 *   **Unit:** `kg/m²`
 *   **Description:** Body Mass Index is a calculated value derived from a person's weight (in kilograms) and height (in meters squared). It's used as a general indicator of body fat and to categorize weight status (underweight, normal weight, overweight, obesity). While its unit is technically kg/m², the result is usually presented as a unitless number (e.g., "BMI of 22.5").
 
-#### **4. CHOLESTEROL**
+#### 4.4. CHOLESTEROL
 *   **Unit:** `mg/dL` (milligrams per deciliter)
 *   **Description:** This likely refers to **Total Cholesterol**, which is the overall amount of cholesterol in the blood. It's a key metric for assessing cardiovascular risk.
 *   **Note:** Like glucose, the alternate unit is `mmol/L`. It's also important to note that a full cholesterol panel breaks this down into LDL ("bad"), HDL ("good"), and Triglycerides, which have their own specific thresholds.
 
-#### **5. ECG**
+#### 4.5. ECG
 *   **Unit:** `bpm` (beats per minute)
 *   **Description:** The value you are storing represents the **Heart Rate**, which is often derived from an ECG (Electrocardiogram). An ECG itself is a test that records the electrical activity of the heart, but the most common single-value metric taken from it for monitoring is the heart rate. The range 60-100 bpm is considered the normal resting heart rate for most adults.
 
-#### **6. BLOOD_PRESSURE_SYSTOLIC**
+#### 4.6. BLOOD_PRESSURE_SYSTOLIC
 *   **Unit:** `mmHg` (millimeters of mercury)
 *   **Description:** This is the **"top number"** in a blood pressure reading. It measures the maximum pressure your heart exerts while beating, pushing blood through your arteries.
 
-#### **7. BLOOD_PRESSURE_DIASTOLIC**
+#### 4.7. BLOOD_PRESSURE_DIASTOLIC
 *   **Unit:** `mmHg` (millimeters of mercury)
 *   **Description:** This is the **"bottom number"** in a blood pressure reading. It measures the amount of pressure in your arteries when the heart is resting between beats.
 
-### **Summary Table for Quick Reference**
+---
+
+### Summary Table for Quick Reference
 
 | `data_type` | Unit | Description |
 | :--- | :--- | :--- |
@@ -211,3 +215,5 @@ This is the foundational structure of your data storage, designed for a Supabase
 | `ECG` | `bpm` | Heart Rate (beats per minute), derived from ECG. |
 | `BLOOD_PRESSURE_SYSTOLIC`| `mmHg` | Top number: pressure when heart beats. |
 | `BLOOD_PRESSURE_DIASTOLIC`| `mmHg` | Bottom number: pressure when heart rests. |
+
+
