@@ -162,7 +162,7 @@ async def login_user(credentials: UserLogin):
         if "Database error querying schema" in e.message:
             raise HTTPException(
                 status_code=500, 
-                detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
+                detail="Login failed due to a server-side database configuration issue. Please contact an administrator. This is likely because the 'get_user_role' SQL function in your Supabase database is incorrect. Please ensure it has been updated with the latest version from 'Documents/General-Overview-of-Database-v3.md'."
             )
         # Otherwise, it's likely a normal authentication failure.
         raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
