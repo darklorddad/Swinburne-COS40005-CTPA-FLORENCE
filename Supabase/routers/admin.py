@@ -33,6 +33,10 @@ class ClinicianProfileAdminUpdate(BaseModel):
     phone_number: Optional[str] = None
     organisation_id: Optional[int] = None
 
+class OrganisationAdminUpdate(BaseModel):
+    """Fields an admin is allowed to update on an organisation."""
+    name: Optional[str] = None
+
 # --- New Pydantic Models for Admin Updates ---
 
 class MealTime(str, Enum):
@@ -183,6 +187,24 @@ async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianPro
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update clinician profile: {str(e)}")
+
+
+@router.put("/organisations/{organisation_id}", summary="Edit any organisation")
+async def update_organisation_by_admin(organisation_id: int, update_data: OrganisationAdminUpdate):
+    """Updates any organisation's details."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        response = supabase.table('organisations').update(update_dict).eq('id', organisation_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Organisation with id {organisation_id} not found.")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update organisation: {str(e)}")
 
 
 @router.put("/daily-logs/{log_id}", summary="Edit any daily patient log")
