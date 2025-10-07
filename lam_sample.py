@@ -26,13 +26,13 @@ AVAILABLE_TOOLS = {
 
 
 # --- LAM Model (The "Brain") ---
-# This function calls a real LLM to process a prompt and decide to call a tool.
-def run_llm_agent(user_prompt: str) -> dict | str:
+# This function calls a real LLM to process a conversation and decide to call a tool.
+def run_llm_agent(messages: list) -> dict | str:
     """
     Calls a real LLM to decide whether to call a tool or respond with text.
     Returns a "tool call" dictionary or a string response.
     """
-    print(f"\n--- LLM BRAIN: Processing prompt: '{user_prompt}' ---")
+    print(f"\n--- LLM BRAIN: Processing conversation... ---")
 
     api_token = "cpk_1c9adce1fd244f5e879cc45afa88c5c4.986b31f04b5056388f96ddf6cbf9f8fe.Osipc4tDlSGc01vCEy2KEuaTdpToFzqs"
     url = "https://llm.chutes.ai/v1/chat/completions"
@@ -41,32 +41,9 @@ def run_llm_agent(user_prompt: str) -> dict | str:
         "Content-Type": "application/json",
     }
 
-    system_prompt = """You are an expert assistant AI. Your task is to help users by answering their questions or by using available tools to get information.
-
-When a user asks for information that requires a tool, you must respond ONLY with a JSON object in the following format:
-{
-  "tool_name": "name_of_the_tool",
-  "arguments": {
-    "arg1": "value1"
-  }
-}
-
-Do not add any other text, explanation, or markdown formatting around the JSON.
-
-Here are the available tools:
-- Tool: `get_current_time`
-  - Description: Retrieves the current time for a specific timezone (e.g., 'Europe/London', 'America/New_York').
-  - Arguments:
-    - `timezone` (string): The timezone in 'Area/Location' format.
-
-If the user's request does not require a tool, answer their question directly as a helpful assistant."""
-
     data = {
         "model": "deepseek-ai/DeepSeek-V3.1",
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
+        "messages": messages,
         "max_tokens": 1024,
         "temperature": 0.1  # Lower temperature for more deterministic tool-calling
     }
@@ -104,21 +81,58 @@ def execute_lam(user_prompt: str):
     """
     Main execution loop for the LAM system.
     1. Gets a decision from the LLM brain.
-    2. If a tool is chosen, it executes it using the framework.
+    2. If a tool is chosen, it executes it, sends the result back to the brain,
+       and gets a final answer.
     """
-    llm_response = run_llm_agent(user_prompt)
+    system_prompt = """You are an expert assistant AI. Your task is to help users by answering their questions or by using available tools to get information.
 
-    if isinstance(llm_response, dict): # It's a tool call
+When a user asks for information that requires a tool, you must respond ONLY with a JSON object in the following format:
+{
+  "tool_name": "name_of_the_tool",
+  "arguments": {
+    "arg1": "value1"
+  }
+}
+
+Do not add any other text, explanation, or markdown formatting around the JSON.
+
+Here are the available tools:
+- Tool: `get_current_time`
+  - Description: Retrieves the current time for a specific timezone (e.g., 'Europe/London', 'America/New_York').
+  - Arguments:
+    - `timezone` (string): The timezone in 'Area/Location' format.
+
+If the user's request does not require a tool, answer their question directly as a helpful assistant."""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    # First call to the LLM
+    llm_response = run_llm_agent(messages)
+
+    if isinstance(llm_response, dict):  # It's a tool call
         tool_name = llm_response.get("tool_name")
         tool_arguments = llm_response.get("arguments")
         tool_function = AVAILABLE_TOOLS.get(tool_name)
 
         if tool_function and tool_arguments is not None:
-            result = tool_function(**tool_arguments)
-            print(f"\n--- FINAL RESULT: The current time is {result}. ---")
+            # Execute the tool and get the result
+            tool_result = tool_function(**tool_arguments)
+            print(f"--- TOOL RESULT: {tool_result} ---")
+
+            # Append the LLM's tool call and the tool's result to the message history
+            # This is a simplified way to represent tool interaction for the LLM
+            messages.append({"role": "assistant", "content": json.dumps(llm_response)})
+            messages.append({"role": "user", "content": f"The tool returned the following result: {tool_result}. Now, please answer my original question using this information."})
+
+            # Second call to the LLM, now with the tool result in context
+            final_response = run_llm_agent(messages)
+            print(f"\n--- FINAL RESULT: {final_response} ---")
         else:
             print(f"--- ERROR: Tool '{tool_name}' not found or arguments missing. ---")
-    else: # It's a text response
+    else:  # It's a text response
         print(f"\n--- FINAL RESULT: {llm_response} ---")
 
 
