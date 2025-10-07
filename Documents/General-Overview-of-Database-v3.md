@@ -136,6 +136,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | **Admin (Global Management)**                                                                                                             |
 | `GET`     | `/admin/patients`                                 | Get a list of all patients.                                               | Admin             |
 | `GET`     | `/admin/clinicians`                               | Get a list of all clinicians and their assigned patients.                 | Admin             |
+| `DELETE`  | `/admin/clinicians/{clinicianId}`                 | Remove any clinician.                                                     | Admin             |
 | `PUT`     | `/admin/patients/{patientId}`                     | Edit any patient (including risk level).                                  | Admin             |
 | `DELETE`  | `/admin/patients/{patientId}`                     | Remove any patient.                                                       | Admin             |
 | `PUT`     | `/admin/patients/{patientId}/assign-clinician`    | Assign/unassign a clinician to a patient.                                 | Admin             |

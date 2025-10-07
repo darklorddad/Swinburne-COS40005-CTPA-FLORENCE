@@ -175,6 +175,53 @@ async def delete_patient_by_admin(patient_id: int):
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
         raise HTTPException(status_code=500, detail=f"Failed to delete patient: {str(e)}")
 
+
+@router.delete("/clinicians/{clinician_id}", summary="Remove any clinician")
+async def delete_clinician_by_admin(clinician_id: int):
+    """
+    Deletes a clinician's profile, unassigns their patients, removes their notes,
+    and deletes the corresponding user from Supabase Auth.
+    """
+    try:
+        # Step 1: Retrieve the clinician's profile to get user_id.
+        clinician_profile_res = supabase.table('clinician_profiles').select("user_id").eq('id', clinician_id).single().execute()
+        
+        clinician_profile = clinician_profile_res.data
+        user_id = clinician_profile.get("user_id")
+
+        # Step 2: Unassign all patients from this clinician.
+        supabase.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
+
+        # Step 3: Delete all notes made by this clinician.
+        supabase.table('clinician_notes').delete().eq('clinician_id', clinician_id).execute()
+
+        # Step 4: Delete the clinician's profile.
+        deleted_profile_response = supabase.table('clinician_profiles').delete().eq('id', clinician_id).execute()
+        
+        if not deleted_profile_response.data:
+            raise HTTPException(status_code=500, detail=f"Failed to delete clinician profile {clinician_id} after it was found.")
+        
+        # Step 5: If there's an associated auth user, delete them.
+        if not user_id:
+            return {"message": f"Clinician profile with id {clinician_id} deleted, but no associated auth user to delete."}
+
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception as auth_error:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Clinician profile {clinician_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
+            )
+
+        return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        if "Expected 1 row, got 0" in str(e):
+            raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
+        raise HTTPException(status_code=500, detail=f"Failed to delete clinician: {str(e)}")
+
+
 @router.put("/patients/{patient_id}/assign-clinician", summary="Assign/unassign a clinician to a patient")
 async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinician):
     """Assigns a clinician to a patient, or unassigns them if clinician_id is null."""
