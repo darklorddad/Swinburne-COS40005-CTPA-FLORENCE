@@ -145,7 +145,9 @@ This is the foundational structure of your data storage, designed for a Supabase
 | `PUT`     | `/clinicians/me/patients/{patientId}/thresholds`  | Set/Update thresholds for an assigned patient.                            | Clinician         |
 | **Admin (Global Management)**                                                                                                             |
 | `GET`     | `/admin/patients`                                 | Get a list of all patients.                                               | Admin             |
+| `POST`    | `/admin/patients`                                 | Add a new patient.                                                        | Admin             |
 | `GET`     | `/admin/clinicians`                               | Get a list of all clinicians and their assigned patients.                 | Admin             |
+| `POST`    | `/admin/clinicians`                               | Add a new clinician.                                                      | Admin             |
 | `GET`     | `/admin/organisations`                            | Get a list of all organisations.                                          | Admin             |
 | `GET`     | `/admin/daily-logs`                               | Get a list of all daily patient logs.                                     | Admin             |
 | `POST`    | `/admin/daily-logs`                               | Add a daily patient log for a specific patient.                           | Admin             |

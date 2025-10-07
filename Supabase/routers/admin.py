@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, EmailStr
 from typing import Optional
 from enum import Enum
 from datetime import date, datetime
+from supabase_auth.errors import AuthApiError
 
 from ..client import supabase
 from .authentication import get_current_admin_user
@@ -13,6 +14,20 @@ class RiskLevel(str, Enum):
     LOW = 'LOW'
     MEDIUM = 'MEDIUM'
     HIGH = 'HIGH'
+
+class PatientAdminCreate(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    risk_level: Optional[RiskLevel] = 'LOW'
+    organisation_id: Optional[int] = None
+    clinician_id: Optional[int] = None
 
 class PatientProfileAdminUpdate(BaseModel):
     """Fields an admin is allowed to update on a patient's profile."""
@@ -26,6 +41,14 @@ class PatientProfileAdminUpdate(BaseModel):
     risk_level: Optional[RiskLevel] = None
     organisation_id: Optional[int] = None
     clinician_id: Optional[int] = None
+
+class ClinicianAdminCreate(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    organisation_id: int
 
 class ClinicianProfileAdminUpdate(BaseModel):
     """Fields an admin is allowed to update on a clinician's profile."""
@@ -97,6 +120,16 @@ class ClinicianNoteAdminUpdate(BaseModel):
     note_content: Optional[str] = None
 
 
+DEFAULT_THRESHOLDS = [
+    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
+    {'data_type': 'CHOLESTEROL', 'min_value': 100.0, 'max_value': 199.0},
+    {'data_type': 'ECG', 'min_value': 60.0, 'max_value': 100},
+    {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120},
+    {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80}
+]
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -157,6 +190,57 @@ async def get_all_patients():
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 
 
+@router.post("/patients", summary="Add a new patient")
+async def add_patient_by_admin(patient_data: PatientAdminCreate):
+    """Creates a new patient, including their authentication user and profile."""
+    new_user = None
+    try:
+        # Step 1: Create the user in Supabase Auth
+        user_session = supabase.auth.admin.create_user({
+            "email": patient_data.email,
+            "password": patient_data.password,
+            "email_confirm": True,  # Auto-confirm user
+        })
+        new_user = user_session.user
+        if not new_user:
+            raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
+
+        # Step 2: Create the patient profile
+        profile_data = {
+            "user_id": new_user.id,
+            "name": patient_data.name,
+            "phone_number": patient_data.phone_number,
+            "gender": patient_data.gender,
+            "date_of_birth": patient_data.date_of_birth.isoformat() if patient_data.date_of_birth else None,
+            "emergency_contact_name": patient_data.emergency_contact_name,
+            "emergency_contact_relationship": patient_data.emergency_contact_relationship,
+            "emergency_contact_phone": patient_data.emergency_contact_phone,
+            "risk_level": patient_data.risk_level.value if patient_data.risk_level else 'LOW',
+            "organisation_id": patient_data.organisation_id,
+            "clinician_id": patient_data.clinician_id,
+        }
+        patient_profile_res = supabase.table('patient_profiles').insert(profile_data).execute()
+        if not patient_profile_res.data:
+            raise Exception("Failed to create patient profile in database.")
+        patient_profile = patient_profile_res.data[0]
+
+        # Step 3: Create default thresholds for the new patient
+        thresholds_to_insert = [
+            {**threshold, 'patient_id': patient_profile['id']} for threshold in DEFAULT_THRESHOLDS
+        ]
+        supabase.table('patient_thresholds').insert(thresholds_to_insert).execute()
+
+        return {"message": "Patient created successfully.", "profile": patient_profile}
+
+    except AuthApiError as e:
+        raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
+    except Exception as e:
+        # Rollback: delete the auth user if profile creation failed
+        if new_user:
+            supabase.auth.admin.delete_user(new_user.id)
+        raise HTTPException(status_code=500, detail=f"Failed to create patient: {str(e)}")
+
+
 @router.get("/clinicians", summary="Get a list of all clinicians and their assigned patients")
 async def get_all_clinicians():
     """Retrieves a list of all clinicians, their details, and the names of patients assigned to them."""
@@ -186,6 +270,46 @@ async def get_all_clinicians():
         return processed_clinicians
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
+
+
+@router.post("/clinicians", summary="Add a new clinician")
+async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
+    """Creates a new clinician, including their authentication user and profile."""
+    new_user = None
+    try:
+        # Step 1: Create the user in Supabase Auth
+        user_session = supabase.auth.admin.create_user({
+            "email": clinician_data.email,
+            "password": clinician_data.password,
+            "email_confirm": True,  # Auto-confirm user
+        })
+        new_user = user_session.user
+        if not new_user:
+            raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
+
+        # Step 2: Create the clinician profile
+        profile_data = {
+            "user_id": new_user.id,
+            "name": clinician_data.name,
+            "phone_number": clinician_data.phone_number,
+            "gender": clinician_data.gender,
+            "organisation_id": clinician_data.organisation_id,
+        }
+        clinician_profile_res = supabase.table('clinician_profiles').insert(profile_data).execute()
+        if not clinician_profile_res.data:
+            raise Exception("Failed to create clinician profile in database.")
+        
+        clinician_profile = clinician_profile_res.data[0]
+
+        return {"message": "Clinician created successfully.", "profile": clinician_profile}
+
+    except AuthApiError as e:
+        raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
+    except Exception as e:
+        # Rollback: delete the auth user if profile creation failed
+        if new_user:
+            supabase.auth.admin.delete_user(new_user.id)
+        raise HTTPException(status_code=500, detail=f"Failed to create clinician: {str(e)}")
 
 
 @router.get("/organisations", summary="Get a list of all organisations")
