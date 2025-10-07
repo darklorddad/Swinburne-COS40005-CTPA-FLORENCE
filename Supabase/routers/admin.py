@@ -133,25 +133,34 @@ async def delete_patient_by_admin(patient_id: int):
     corresponding user from Supabase Auth.
     """
     try:
-        # First, delete the profile and retrieve it to get the user_id
+        # Step 1: Retrieve the patient's profile to get user_id and check for clinician assignment.
+        # This also verifies the patient exists before proceeding.
+        patient_profile_res = supabase.table('patient_profiles').select("user_id, clinician_id").eq('id', patient_id).single().execute()
+        
+        patient_profile = patient_profile_res.data
+        user_id = patient_profile.get("user_id")
+
+        # Step 2: If patient is assigned to a clinician, remove related data (e.g., notes).
+        # This prevents foreign key violations if ON DELETE CASCADE is not set.
+        if patient_profile.get("clinician_id"):
+            supabase.table('clinician_notes').delete().eq('patient_id', patient_id).execute()
+
+        # Step 3: Delete the patient's profile from the database.
+        # Note: This assumes other dependencies (monitor data, logs) are handled by CASCADE.
         deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
         
         if not deleted_profile_response.data:
-            raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
+            # This is a safeguard; it shouldn't be reached if the initial fetch succeeded.
+            raise HTTPException(status_code=500, detail=f"Failed to delete patient profile {patient_id} after it was found.")
         
-        patient_profile = deleted_profile_response.data[0]
-        user_id = patient_profile.get("user_id")
-
+        # Step 4: If there's an associated auth user, delete them.
         if not user_id:
-            # This case should ideally not happen if data integrity is maintained.
             return {"message": f"Patient profile with id {patient_id} deleted, but no associated auth user to delete."}
 
-        # Now, delete the user from Supabase Auth
         try:
             supabase.auth.admin.delete_user(user_id)
         except Exception as auth_error:
-            # If auth deletion fails, the profile is already gone.
-            # We should inform the admin about this partial failure.
+            # The profile is already deleted, so we report a partial success with an error.
             raise HTTPException(
                 status_code=500, 
                 detail=f"Patient profile {patient_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
@@ -161,6 +170,9 @@ async def delete_patient_by_admin(patient_id: int):
     except HTTPException as e:
         raise e
     except Exception as e:
+        # Catch error from .single() if patient not found.
+        if "Expected 1 row, got 0" in str(e):
+            raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
         raise HTTPException(status_code=500, detail=f"Failed to delete patient: {str(e)}")
 
 @router.put("/patients/{patient_id}/assign-clinician", summary="Assign/unassign a clinician to a patient")
