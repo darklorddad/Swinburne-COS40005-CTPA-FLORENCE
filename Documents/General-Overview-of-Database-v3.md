@@ -373,37 +373,37 @@ DROP POLICY IF EXISTS "Clinicians can manage notes for their patients" ON public
 
 -- Policies for organisations
 CREATE POLICY "Enable read access for all authenticated users" ON public.organisations FOR SELECT TO authenticated USING (true);
-CREATE POLICY "Admins can manage all organisations" ON public.organisations FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all organisations" ON public.organisations FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 
 -- Policies for clinician_profiles
-CREATE POLICY "Admins can manage all clinician profiles" ON public.clinician_profiles FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all clinician profiles" ON public.clinician_profiles FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 CREATE POLICY "Clinicians can see their own profile" ON public.clinician_profiles FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Clinicians can update their own profile" ON public.clinician_profiles FOR UPDATE TO authenticated USING (user_id = auth.uid());
 
 -- Policies for patient_profiles
-CREATE POLICY "Admins can manage all patient profiles" ON public.patient_profiles FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all patient profiles" ON public.patient_profiles FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 CREATE POLICY "Patients can see their own profile" ON public.patient_profiles FOR SELECT TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Patients can update their own profile" ON public.patient_profiles FOR UPDATE TO authenticated USING (user_id = auth.uid());
 CREATE POLICY "Clinicians can see their assigned patients' profiles" ON public.patient_profiles FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.clinician_profiles WHERE user_id = auth.uid() AND id = public.patient_profiles.clinician_id));
 CREATE POLICY "Clinicians can update their assigned patients' profiles" ON public.patient_profiles FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.clinician_profiles WHERE user_id = auth.uid() AND id = public.patient_profiles.clinician_id));
 
 -- Policies for patient_monitor_data
-CREATE POLICY "Admins can manage all monitor data" ON public.patient_monitor_data FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all monitor data" ON public.patient_monitor_data FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 CREATE POLICY "Patients can manage their own monitor data" ON public.patient_monitor_data FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.patient_profiles WHERE user_id = auth.uid() AND id = public.patient_monitor_data.patient_id)) WITH CHECK (EXISTS (SELECT 1 FROM public.patient_profiles WHERE user_id = auth.uid() AND id = public.patient_monitor_data.patient_id));
 CREATE POLICY "Clinicians can view assigned patients monitor data" ON public.patient_monitor_data FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.patient_profiles pp JOIN public.clinician_profiles cp ON pp.clinician_id = cp.id WHERE cp.user_id = auth.uid() AND pp.id = public.patient_monitor_data.patient_id));
 
 -- Policies for daily_patient_logs
-CREATE POLICY "Admins can manage all daily logs" ON public.daily_patient_logs FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all daily logs" ON public.daily_patient_logs FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 CREATE POLICY "Patients can manage their own daily logs" ON public.daily_patient_logs FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.patient_profiles WHERE user_id = auth.uid() AND id = public.daily_patient_logs.patient_id)) WITH CHECK (EXISTS (SELECT 1 FROM public.patient_profiles WHERE user_id = auth.uid() AND id = public.daily_patient_logs.patient_id));
 CREATE POLICY "Clinicians can view assigned patients daily logs" ON public.daily_patient_logs FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.patient_profiles pp JOIN public.clinician_profiles cp ON pp.clinician_id = cp.id WHERE cp.user_id = auth.uid() AND pp.id = public.daily_patient_logs.patient_id));
 
 -- Policies for patient_thresholds
-CREATE POLICY "Admins can manage all patient thresholds" ON public.patient_thresholds FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all patient thresholds" ON public.patient_thresholds FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 CREATE POLICY "Patients can view their own thresholds" ON public.patient_thresholds FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM public.patient_profiles WHERE user_id = auth.uid() AND id = public.patient_thresholds.patient_id));
 CREATE POLICY "Clinicians can manage assigned patients thresholds" ON public.patient_thresholds FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.patient_profiles pp JOIN public.clinician_profiles cp ON pp.clinician_id = cp.id WHERE cp.user_id = auth.uid() AND pp.id = public.patient_thresholds.patient_id)) WITH CHECK (EXISTS (SELECT 1 FROM public.patient_profiles pp JOIN public.clinician_profiles cp ON pp.clinician_id = cp.id WHERE cp.user_id = auth.uid() AND pp.id = public.patient_thresholds.patient_id));
 
 -- Policies for clinician_notes
-CREATE POLICY "Admins can manage all clinician notes" ON public.clinician_notes FOR ALL TO authenticated USING (public.get_user_role() = 'admin') WITH CHECK (public.get_user_role() = 'admin');
+CREATE POLICY "Admins can manage all clinician notes" ON public.clinician_notes FOR ALL TO authenticated USING (public.get_user_role() = 'ADMIN') WITH CHECK (public.get_user_role() = 'ADMIN');
 CREATE POLICY "Clinicians can manage notes for their patients" ON public.clinician_notes FOR ALL TO authenticated USING (EXISTS (SELECT 1 FROM public.clinician_profiles WHERE user_id = auth.uid() AND id = public.clinician_notes.clinician_id)) WITH CHECK (EXISTS (SELECT 1 FROM public.patient_profiles pp JOIN public.clinician_profiles cp ON pp.clinician_id = cp.id WHERE cp.user_id = auth.uid() AND pp.id = public.clinician_notes.patient_id));
 
 -- =================================================================
