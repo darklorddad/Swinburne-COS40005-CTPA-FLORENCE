@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from typing import Optional
 from enum import Enum
 from datetime import date, datetime
@@ -45,6 +45,22 @@ class MealTime(str, Enum):
     LUNCH = 'LUNCH'
     DINNER = 'DINNER'
 
+class DailyLogAdminCreate(BaseModel):
+    patient_id: int
+    log_date: date
+    meal_time: MealTime
+    glucose_before_meal: Optional[float] = None
+    glucose_after_meal: Optional[float] = None
+    meal_desc: Optional[str] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def check_at_least_one_glucose_reading(cls, values):
+        before, after = values.get('glucose_before_meal'), values.get('glucose_after_meal')
+        if before is None and after is None:
+            raise ValueError('At least one of glucose_before_meal or glucose_after_meal must be provided.')
+        return values
+
 class DailyLogAdminUpdate(BaseModel):
     log_date: Optional[date] = None
     meal_time: Optional[MealTime] = None
@@ -60,6 +76,12 @@ class MonitorDataType(str, Enum):
     HBA1C = 'HBA1C'
     ECG = 'ECG'
     CHOLESTEROL = 'CHOLESTEROL'
+
+class MonitorDataAdminCreate(BaseModel):
+    patient_id: int
+    data_type: MonitorDataType
+    value: float
+    measured_at: datetime
 
 class MonitorDataAdminUpdate(BaseModel):
     data_type: Optional[MonitorDataType] = None
@@ -203,6 +225,45 @@ async def get_all_daily_logs():
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
 
+@router.post("/daily-logs", summary="Add a daily patient log")
+async def add_daily_log_by_admin(log_data: DailyLogAdminCreate):
+    """Adds a new daily log entry for a specified patient."""
+    try:
+        insert_dict = log_data.model_dump(mode='json')
+        
+        # Check if patient exists
+        patient_check = supabase.table('patient_profiles').select('id', count='exact').eq('id', log_data.patient_id).execute()
+        if patient_check.count == 0:
+            raise HTTPException(status_code=404, detail=f"Patient with id {log_data.patient_id} not found.")
+
+        new_log_response = supabase.table('daily_patient_logs').insert(insert_dict).execute()
+        if not new_log_response.data:
+            raise HTTPException(status_code=500, detail="Failed to create daily log.")
+        return new_log_response.data[0]
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        if "duplicate key value violates unique constraint" in str(e):
+            raise HTTPException(status_code=409, detail="A log for this patient, date and meal time already exists.")
+        raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
+
+
+@router.delete("/daily-logs/{log_id}", summary="Remove a daily patient log")
+async def delete_daily_log_by_admin(log_id: int):
+    """Deletes a daily patient log entry by its ID."""
+    try:
+        response = supabase.table('daily_patient_logs').delete().eq('id', log_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Daily log with id {log_id} not found.")
+        return {"message": f"Daily log with id {log_id} deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete daily log: {str(e)}")
+
+
 @router.get("/monitor-data", summary="Get a list of all patient monitor data")
 async def get_all_monitor_data():
     """Retrieves a list of all patient monitor data points with patient names."""
@@ -240,6 +301,40 @@ async def get_all_monitor_data():
         return processed_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
+
+
+@router.post("/monitor-data", summary="Add a patient monitor data point")
+async def add_monitor_data_by_admin(data: MonitorDataAdminCreate):
+    """Adds a new health monitor data point for a specified patient."""
+    insert_dict = data.model_dump(mode='json')
+    try:
+        # Check if patient exists
+        patient_check = supabase.table('patient_profiles').select('id', count='exact').eq('id', data.patient_id).execute()
+        if patient_check.count == 0:
+            raise HTTPException(status_code=404, detail=f"Patient with id {data.patient_id} not found.")
+
+        new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
+        if not new_data_response.data:
+            raise HTTPException(status_code=500, detail="Failed to create monitor data point.")
+        return new_data_response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add monitor data: {str(e)}")
+
+
+@router.delete("/monitor-data/{data_id}", summary="Remove a patient monitor data point")
+async def delete_monitor_data_by_admin(data_id: int):
+    """Deletes a patient monitor data point by its ID."""
+    try:
+        response = supabase.table('patient_monitor_data').delete().eq('id', data_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Monitor data with id {data_id} not found.")
+        return {"message": f"Monitor data with id {data_id} deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete monitor data: {str(e)}")
 
 
 @router.get("/thresholds", summary="Get a list of all patient thresholds")
