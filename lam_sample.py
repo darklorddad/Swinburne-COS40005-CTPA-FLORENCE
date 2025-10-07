@@ -1,5 +1,4 @@
 import re
-import random
 import os
 import requests
 import json
@@ -7,17 +6,21 @@ import sys
 
 # --- LAM Framework (The "Body") ---
 # This is a "tool" the LLM can decide to use.
-# In a real system, this would interact with your Supabase database.
-def get_patient_risk_level(patient_id: int) -> str:
-    """Retrieves the risk level for a given patient ID."""
-    print(f"--- EXECUTING TOOL: get_patient_risk_level(patient_id={patient_id}) ---")
-    # In a real app, you'd query your database. Here, we simulate it.
-    risk_levels = ["LOW", "MEDIUM", "HIGH"]
-    return random.choice(risk_levels)
+# It makes a real API call to a public time service.
+def get_current_time(timezone: str) -> str:
+    """Retrieves the current time for a given timezone."""
+    print(f"--- EXECUTING TOOL: get_current_time(timezone={timezone}) ---")
+    try:
+        response = requests.get(f"http://worldtimeapi.org/api/timezone/{timezone}")
+        response.raise_for_status()
+        time_data = response.json()
+        return time_data.get('datetime', 'Time not found')
+    except requests.exceptions.RequestException as e:
+        return f"API Error: {e}"
 
 # A registry of all available tools for the agent to use.
 AVAILABLE_TOOLS = {
-    "get_patient_risk_level": get_patient_risk_level,
+    "get_current_time": get_current_time,
 }
 
 
@@ -37,7 +40,7 @@ def run_llm_agent(user_prompt: str) -> dict | str:
         "Content-Type": "application/json",
     }
 
-    system_prompt = """You are an expert medical assistant AI. Your task is to help users by answering their questions or by using available tools to get information.
+    system_prompt = """You are an expert assistant AI. Your task is to help users by answering their questions or by using available tools to get information.
 
 When a user asks for information that requires a tool, you must respond ONLY with a JSON object in the following format:
 {
@@ -50,10 +53,10 @@ When a user asks for information that requires a tool, you must respond ONLY wit
 Do not add any other text, explanation, or markdown formatting around the JSON.
 
 Here are the available tools:
-- Tool: `get_patient_risk_level`
-  - Description: Retrieves the current risk level ('LOW', 'MEDIUM', or 'HIGH') for a specific patient.
+- Tool: `get_current_time`
+  - Description: Retrieves the current time for a specific timezone (e.g., 'Europe/London', 'America/New_York').
   - Arguments:
-    - `patient_id` (integer): The unique identifier for the patient.
+    - `timezone` (string): The timezone in 'Area/Location' format.
 
 If the user's request does not require a tool, answer their question directly as a helpful assistant."""
 
@@ -109,7 +112,7 @@ def execute_lam(user_prompt: str):
 
         if tool_function and tool_arguments is not None:
             result = tool_function(**tool_arguments)
-            print(f"\n--- FINAL RESULT: The risk level is {result}. ---")
+            print(f"\n--- FINAL RESULT: The current time is {result}. ---")
         else:
             print(f"--- ERROR: Tool '{tool_name}' not found or arguments missing. ---")
     else: # It's a text response
@@ -118,5 +121,5 @@ def execute_lam(user_prompt: str):
 
 # --- Example Usage ---
 if __name__ == "__main__":
-    execute_lam("What is the risk level for patient 452?")
-    execute_lam("Hello, how are you today?")
+    execute_lam("What time is it in Europe/London?")
+    execute_lam("Tell me a joke.")
