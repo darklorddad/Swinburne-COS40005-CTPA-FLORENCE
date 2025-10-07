@@ -128,9 +128,10 @@ This is the foundational structure of your data storage, designed for a Supabase
 | `GET`     | `/patients/me`                                    | Get my own full patient profile.                                          | Patient           |
 | `PUT`     | `/patients/me`                                    | Update my own patient profile.                                            | Patient           |
 | `DELETE`  | `/patients/me`                                    | Delete my own patient profile.                                            | Patient           |
-| `GET`     | `/patients/me/monitor-data`                       | Get all my monitor data.                                                  | Patient           |
+| `GET`     | `/patients/me/monitor-data`                       | Get paginated list of my monitor data (supports filtering).               | Patient           |
 | `POST`    | `/patients/me/monitor-data`                       | Add a new monitor data point for myself.                                  | Patient           |
-| `GET`     | `/patients/me/daily-logs`                         | Get all my daily logs.                                                    | Patient           |
+| `PUT`     | `/patients/me/monitor-data/{dataId}`              | Update one of my monitor data entries.                                    | Patient           |
+| `GET`     | `/patients/me/daily-logs`                         | Get paginated list of my daily logs (supports filtering).                 | Patient           |
 | `POST`    | `/patients/me/daily-logs`                         | Add a new daily log for myself.                                           | Patient           |
 | `GET`     | `/patients/me/thresholds`                         | Get my own defined health thresholds.                                     | Patient           |
 | **Clinician (Management)**                                                                                                                |
@@ -271,6 +272,20 @@ CREATE TABLE IF NOT EXISTS public.clinician_notes (
     note_content TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- =================================================================
+-- Part 1.5: Indexes for Performance
+-- =================================================================
+-- Note: Indexes are crucial for query performance, especially on large tables.
+
+-- Index for fetching a patient's monitor data, sorted by time.
+CREATE INDEX IF NOT EXISTS idx_patient_data_measured_at 
+ON public.patient_monitor_data (patient_id, measured_at DESC);
+
+-- Index for fetching a patient's daily logs, sorted by date.
+CREATE INDEX IF NOT EXISTS idx_patient_logs_date 
+ON public.daily_patient_logs (patient_id, log_date DESC);
+
 
 -- =================================================================
 -- Part 2: Custom Functions for RLS
