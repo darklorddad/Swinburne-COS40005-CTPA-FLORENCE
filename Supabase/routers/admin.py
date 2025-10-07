@@ -166,6 +166,16 @@ async def get_all_clinicians():
         raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
 
 
+@router.get("/organisations", summary="Get a list of all organisations")
+async def get_all_organisations():
+    """Retrieves a list of all organisations in the system."""
+    try:
+        organisations_response = supabase.table('organisations').select('*').execute()
+        return organisations_response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
+
+
 @router.put("/patients/{patient_id}", summary="Edit any patient (including risk level)")
 async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAdminUpdate):
     """Updates any patient's profile. Can be used to change risk level or other details."""
