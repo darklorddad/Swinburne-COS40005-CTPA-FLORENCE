@@ -61,6 +61,10 @@ class OrganisationAdminUpdate(BaseModel):
     """Fields an admin is allowed to update on an organisation."""
     name: Optional[str] = None
 
+class OrganisationAdminCreate(BaseModel):
+    """Fields for creating a new organisation."""
+    name: str
+
 # --- New Pydantic Models for Admin Updates ---
 
 class MealTime(str, Enum):
@@ -320,6 +324,18 @@ async def get_all_organisations():
         return organisations_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
+
+
+@router.post("/organisations", summary="Add a new organisation")
+async def add_organisation_by_admin(org_data: OrganisationAdminCreate):
+    """Creates a new organisation."""
+    try:
+        response = supabase.table('organisations').insert({"name": org_data.name}).execute()
+        if not response.data:
+            raise HTTPException(status_code=500, detail="Failed to create organisation.")
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create organisation: {str(e)}")
 
 
 @router.get("/daily-logs", summary="Get a list of all daily patient logs")

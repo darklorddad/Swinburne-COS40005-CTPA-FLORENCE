@@ -38,15 +38,34 @@ def test_patient_credentials():
     return {"email": PATIENT_EMAIL, "password": PASSWORD}
 
 @pytest.fixture(scope="module")
-def test_clinician_credentials():
+def admin_auth_header():
+    """Logs in as admin and provides the auth header, skipping tests if creds are missing."""
+    if not ADMIN_EMAIL or not ADMIN_PASSWORD:
+        pytest.skip("Admin test credentials (TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) not provided in .env file")
+    
+    response = client.post("/auth/login", json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD})
+    if response.status_code != 200:
+        pytest.fail(f"Admin login failed, cannot proceed with tests that depend on it. Status: {response.status_code}, Detail: {response.text}")
+
+    access_token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {access_token}"}
+
+
+@pytest.fixture(scope="module")
+def test_clinician_credentials(admin_auth_header):
     """
-    Provides credentials for a test clinician.
-    NOTE: This test assumes an organisation with id=1 exists in the test database.
+    Provides credentials for a test clinician after creating a new organisation for them.
     """
+    # Create a new organisation for this test run
+    org_name = f"Test-Org-{unique_id}"
+    response = client.post("/admin/organisations", json={"name": org_name}, headers=admin_auth_header)
+    assert response.status_code == 200, f"Failed to create test organisation: {response.text}"
+    org_id = response.json()["id"]
+
     return {
         "email": CLINICIAN_EMAIL,
         "password": PASSWORD,
-        "organisation_id": 1
+        "organisation_id": org_id
     }
 
 # --- Test Cases ---

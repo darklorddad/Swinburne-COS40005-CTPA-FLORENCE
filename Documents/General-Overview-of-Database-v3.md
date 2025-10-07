@@ -149,6 +149,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | `GET`     | `/admin/clinicians`                               | Get a list of all clinicians and their assigned patients.                 | Admin             |
 | `POST`    | `/admin/clinicians`                               | Add a new clinician.                                                      | Admin             |
 | `GET`     | `/admin/organisations`                            | Get a list of all organisations.                                          | Admin             |
+| `POST`    | `/admin/organisations`                            | Add a new organisation.                                                   | Admin             |
 | `GET`     | `/admin/daily-logs`                               | Get a list of all daily patient logs.                                     | Admin             |
 | `POST`    | `/admin/daily-logs`                               | Add a daily patient log for a specific patient.                           | Admin             |
 | `DELETE`  | `/admin/daily-logs/{logId}`                       | Remove a daily patient log.                                               | Admin             |
@@ -301,6 +302,10 @@ ON public.daily_patient_logs (patient_id, log_date DESC);
 CREATE OR REPLACE FUNCTION public.get_user_role()
 RETURNS TEXT
 LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+-- Set a secure search path for the function to prevent hijacking.
+SET search_path = public
 AS $$
 BEGIN
   RETURN (
