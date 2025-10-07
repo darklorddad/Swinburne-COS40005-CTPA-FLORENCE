@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
-from datetime import date
+from datetime import date, datetime
 
 from ..client import supabase
 from .authentication import get_current_admin_user
@@ -29,6 +29,43 @@ class PatientProfileAdminUpdate(BaseModel):
 
 class AssignClinician(BaseModel):
     clinician_id: Optional[int] = None # Use None to unassign
+
+# --- New Pydantic Models for Admin Updates ---
+
+class MealTime(str, Enum):
+    BREAKFAST = 'BREAKFAST'
+    LUNCH = 'LUNCH'
+    DINNER = 'DINNER'
+
+class DailyLogAdminUpdate(BaseModel):
+    log_date: Optional[date] = None
+    meal_time: Optional[MealTime] = None
+    glucose_before_meal: Optional[float] = None
+    glucose_after_meal: Optional[float] = None
+    meal_desc: Optional[str] = None
+
+class MonitorDataType(str, Enum):
+    BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
+    BLOOD_PRESSURE_DIASTOLIC = 'BLOOD_PRESSURE_DIASTOLIC'
+    GLUCOSE = 'GLUCOSE'
+    BMI = 'BMI'
+    HBA1C = 'HBA1C'
+    ECG = 'ECG'
+    CHOLESTEROL = 'CHOLESTEROL'
+
+class MonitorDataAdminUpdate(BaseModel):
+    data_type: Optional[MonitorDataType] = None
+    value: Optional[float] = None
+    measured_at: Optional[datetime] = None
+
+class PatientThresholdAdminUpdate(BaseModel):
+    data_type: Optional[MonitorDataType] = None
+    min_value: Optional[float] = None
+    max_value: Optional[float] = None
+
+class ClinicianNoteAdminUpdate(BaseModel):
+    note_content: Optional[str] = None
+
 
 # --- Router Definition ---
 
@@ -125,6 +162,79 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update patient profile: {str(e)}")
+
+
+@router.put("/daily-logs/{log_id}", summary="Edit any daily patient log")
+async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdate):
+    """Updates any daily patient log entry."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        response = supabase.table('daily_patient_logs').update(update_dict).eq('id', log_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Daily log with id {log_id} not found.")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update daily log: {str(e)}")
+
+
+@router.put("/monitor-data/{data_id}", summary="Edit any patient monitor data point")
+async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdminUpdate):
+    """Updates any patient monitor data point."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Monitor data with id {data_id} not found.")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
+
+
+@router.put("/thresholds/{threshold_id}", summary="Edit any patient threshold")
+async def update_patient_threshold_by_admin(threshold_id: int, update_data: PatientThresholdAdminUpdate):
+    """Updates any patient threshold entry."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        response = supabase.table('patient_thresholds').update(update_dict).eq('id', threshold_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Threshold with id {threshold_id} not found.")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update threshold: {str(e)}")
+
+
+@router.put("/notes/{note_id}", summary="Edit any clinician note")
+async def update_clinician_note_by_admin(note_id: int, update_data: ClinicianNoteAdminUpdate):
+    """Updates any clinician note."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        response = supabase.table('clinician_notes').update(update_dict).eq('id', note_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Note with id {note_id} not found.")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update note: {str(e)}")
+
 
 @router.delete("/patients/{patient_id}", summary="Remove any patient")
 async def delete_patient_by_admin(patient_id: int):
