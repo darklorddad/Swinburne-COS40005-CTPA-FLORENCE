@@ -27,6 +27,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | id (PK)              |                                | id (PK)                       |
 | user_id (FK -> users)|                                | user_id (FK -> users)         |
 | name, phone_number   |                                | name, phone_number            |
+|                      |                                | gender, date_of_birth         |
 | organisation_id (FK) |<-------------------------------| emergency_contact_*           |
 |   **(NOT NULL)**     |                                | risk_level (ENUM)             |
 +----------------------+                                | last_risk_assessment          |
