@@ -139,6 +139,7 @@ async def add_patient_note(patient_id: int, note_data: ClinicianNoteCreate, clin
         insert_payload = {
             "patient_id": patient_id,
             "clinician_id": clinician_profile['id'],
+            "clinician_name_snapshot": clinician_profile.get('name'),
             "note_content": note_data.note_content
         }
         new_note = supabase.table('clinician_notes').insert(insert_payload).execute()

@@ -183,17 +183,21 @@ async def delete_clinician_by_admin(clinician_id: int):
     and deletes the corresponding user from Supabase Auth.
     """
     try:
-        # Step 1: Retrieve the clinician's profile to get user_id.
-        clinician_profile_res = supabase.table('clinician_profiles').select("user_id").eq('id', clinician_id).single().execute()
+        # Step 1: Retrieve the clinician's profile to get user_id and name.
+        clinician_profile_res = supabase.table('clinician_profiles').select("user_id, name").eq('id', clinician_id).single().execute()
         
         clinician_profile = clinician_profile_res.data
         user_id = clinician_profile.get("user_id")
+        clinician_name = clinician_profile.get("name")
 
         # Step 2: Unassign all patients from this clinician.
         supabase.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
 
-        # Step 3: Delete all notes made by this clinician.
-        supabase.table('clinician_notes').delete().eq('clinician_id', clinician_id).execute()
+        # Step 3: Preserve notes by detaching them from the clinician and snapshotting their name.
+        supabase.table('clinician_notes').update({
+            "clinician_id": None,
+            "clinician_name_snapshot": clinician_name
+        }).eq('clinician_id', clinician_id).execute()
 
         # Step 4: Delete the clinician's profile.
         deleted_profile_response = supabase.table('clinician_profiles').delete().eq('id', clinician_id).execute()
