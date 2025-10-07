@@ -121,6 +121,7 @@ This is the foundational structure of your data storage, designed for a Supabase
 | **Patient (Self-Service)**                                                                                                                |
 | `GET`     | `/patients/me`                                    | Get my own full patient profile.                                          | Patient           |
 | `PUT`     | `/patients/me`                                    | Update my own patient profile.                                            | Patient           |
+| `DELETE`  | `/patients/me`                                    | Delete my own patient profile.                                            | Patient           |
 | `GET`     | `/patients/me/monitor-data`                       | Get all my monitor data.                                                  | Patient           |
 | `POST`    | `/patients/me/monitor-data`                       | Add a new monitor data point for myself.                                  | Patient           |
 | `GET`     | `/patients/me/daily-logs`                         | Get all my daily logs.                                                    | Patient           |

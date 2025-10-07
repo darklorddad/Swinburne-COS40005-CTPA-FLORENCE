@@ -161,6 +161,45 @@ async def update_own_patient_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
+
+@router.delete("/me", summary="Delete my own patient profile")
+async def delete_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
+    """
+    Deletes the currently authenticated patient's profile and the corresponding
+    user from Supabase Auth. All related data (monitor data, logs, etc.)
+    will be deleted via database cascade rules.
+    """
+    try:
+        patient_id = patient_profile.get("id")
+        user_id = patient_profile.get("user_id")
+
+        # Step 1: Delete the patient's profile.
+        # The database is configured with ON DELETE CASCADE, so this will trigger
+        # the deletion of all related data in other tables.
+        deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
+        
+        if not deleted_profile_response.data:
+            raise HTTPException(status_code=500, detail=f"Failed to delete own patient profile {patient_id} after it was found.")
+        
+        # Step 2: If there's an associated auth user, delete them.
+        if not user_id:
+            return {"message": f"Patient profile with id {patient_id} deleted, but no associated auth user to delete."}
+
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception as auth_error:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Patient profile {patient_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
+            )
+
+        return {"message": f"Patient profile with id {patient_id} and associated auth user deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete own patient profile: {str(e)}")
+
+
 @router.get("/me/monitor-data", summary="Get all my monitor data")
 async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patient_profile)):
     """
