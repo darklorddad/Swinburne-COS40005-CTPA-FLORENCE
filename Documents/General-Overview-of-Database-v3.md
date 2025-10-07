@@ -1,9 +1,3 @@
-Of course. The `meal_desc` field has been added to the `daily_patient_logs` table. This is a great addition for providing more context to the glucose readings.
-
-Here is the updated document with the changes clearly marked.
-
-***
-
 ### **Project Backend & Database: The Full Overview (Updated)**
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
@@ -116,8 +110,6 @@ This is the foundational structure of your data storage, designed for a Supabase
 
 ### 2. API Endpoint Design (The Interactions)
 
-The API endpoints remain the same. The `POST` and `PUT` requests to `/patients/me/daily-logs` (and corresponding admin endpoints) will now accept the optional `meal_desc` field in the request body. `GET` requests for daily logs will now include this field in the response.
-
 | Method    | Endpoint                                          | Description                                                               | Who Can Access?   |
 | :---      | :---                                              | :---                                                                      | :---              |
 | **Authentication**                                                                                                                        |
@@ -153,10 +145,8 @@ The API endpoints remain the same. The `POST` and `PUT` requests to `/patients/m
 
 ### 3. Roles & Permissions Matrix (The Rules)
 
-No changes are needed here. The new `meal_desc` column in `daily_patient_logs` is covered by the existing Row-Level Security policies for that table. Patients can add/edit their own, and assigned clinicians can view it.
-
-| Action | Patient | Clinician | Admin | Backend Logic Notes |
-| :-------------------------------------------: | :-: | :-: | :-: | :--- |
+| Action                                        | Patient   | Clinician | Admin | Backend Logic Notes |
+| :-------------------------------------------: | :-------: | :-------: | :---: | :-----------------: |
 | **User Onboarding**                                                                                   |
 | Create Patient/Clinician                      | ✅ | ✅ | ✅ | Backend API handles profile creation. |
 | Create Admin                                  | ❌ | ❌ | ✅ | Admin created via secure API or manually. |
