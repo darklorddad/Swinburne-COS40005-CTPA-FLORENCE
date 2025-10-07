@@ -230,6 +230,37 @@ async def update_organisation_by_admin(organisation_id: int, update_data: Organi
         raise HTTPException(status_code=500, detail=f"Failed to update organisation: {str(e)}")
 
 
+@router.delete("/organisations/{organisation_id}", summary="Remove any organisation")
+async def delete_organisation_by_admin(organisation_id: int):
+    """
+    Deletes an organisation. This is only possible if no clinicians are currently
+    assigned to it. Any patients assigned to this organisation will be unassigned.
+    """
+    try:
+        # Step 1: Check if any clinicians are assigned to this organisation.
+        clinician_check = supabase.table('clinician_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
+        if clinician_check.count > 0:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail=f"Cannot delete organisation {organisation_id} because it has {clinician_check.count} clinician(s) assigned. Please reassign or delete them first."
+            )
+
+        # Step 2: Unassign any patients from this organisation.
+        supabase.table('patient_profiles').update({"organisation_id": None}).eq('organisation_id', organisation_id).execute()
+
+        # Step 3: Delete the organisation.
+        response = supabase.table('organisations').delete().eq('id', organisation_id).execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail=f"Organisation with id {organisation_id} not found.")
+
+        return {"message": f"Organisation with id {organisation_id} deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete organisation: {str(e)}")
+
+
 @router.put("/daily-logs/{log_id}", summary="Edit any daily patient log")
 async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdate):
     """Updates any daily patient log entry."""
