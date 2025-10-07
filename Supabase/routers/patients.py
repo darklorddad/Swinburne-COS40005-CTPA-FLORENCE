@@ -11,8 +11,24 @@ from ..client import supabase
 
 async def get_current_patient_profile(authorization: str = Header(...)):
     """
-    Dependency to get the current user, verify they are a patient,
-    and return their full profile from the `patient_profiles` table.
+    A FastAPI dependency that authenticates the current user as a patient.
+
+    It validates the JWT from the 'Authorization' header, confirms the user
+    is a patient by checking for a corresponding entry in the `patient_profiles`
+    table, and returns the full patient profile.
+
+    Args:
+        authorization (str): The 'Authorization: Bearer <token>' header.
+
+    Returns:
+        dict: The full profile of the authenticated patient from the
+              `patient_profiles` table.
+
+    Raises:
+        HTTPException(401): If the authentication scheme is invalid or the token
+                             is expired or incorrect.
+        HTTPException(403): If the authenticated user is not a patient.
+        HTTPException(500): For any other server-side errors during the process.
     """
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
@@ -97,8 +113,17 @@ router = APIRouter(
 @router.get("/me", summary="Get my own full patient profile")
 async def get_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
     """
-    Retrieves the complete profile for the currently authenticated patient,
-    including details from the `patient_profiles` table.
+    Retrieves the complete profile for the currently authenticated patient.
+
+    This endpoint uses the `get_current_patient_profile` dependency to ensure
+    the user is an authenticated patient and then returns their profile data.
+
+    Args:
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        dict: The patient's complete profile from the `patient_profiles` table.
     """
     return patient_profile
 
@@ -108,8 +133,23 @@ async def update_own_patient_profile(
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Updates editable fields on the currently authenticated patient's profile.
-    Only fields provided in the request body will be updated.
+    Updates the profile of the currently authenticated patient.
+
+    Allows a patient to update their own contact information and emergency
+    contact details. Only fields provided in the request body are updated.
+
+    Args:
+        update_data (PatientProfileUpdate): A Pydantic model containing the
+                                            fields to update.
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        dict: The updated patient profile.
+
+    Raises:
+        HTTPException(400): If the request body is empty.
+        HTTPException(500): If the database update fails.
     """
     update_dict = update_data.model_dump(exclude_unset=True)
     if not update_dict:
@@ -124,8 +164,20 @@ async def update_own_patient_profile(
 @router.get("/me/monitor-data", summary="Get all my monitor data")
 async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patient_profile)):
     """
-    Retrieves all health monitor data (e.g., blood pressure, glucose)
-    recorded by the currently authenticated patient.
+    Retrieves all health monitor data for the currently authenticated patient.
+
+    Fetches all records from the `patient_monitor_data` table that are
+    associated with the authenticated patient's ID.
+
+    Args:
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        list[dict]: A list of all monitor data records for the patient.
+
+    Raises:
+        HTTPException(500): If the data retrieval fails.
     """
     try:
         monitor_data_response = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_profile['id']).execute()
@@ -139,8 +191,22 @@ async def add_own_monitor_data(
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Adds a new health monitor data point (e.g., a glucose reading) for the
-    currently authenticated patient.
+    Adds a new health monitor data point for the authenticated patient.
+
+    Inserts a new record into the `patient_monitor_data` table, linking it
+    to the currently authenticated patient.
+
+    Args:
+        data (MonitorDataCreate): A Pydantic model with the data type, value,
+                                  and measurement timestamp.
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        dict: The newly created monitor data record.
+
+    Raises:
+        HTTPException(500): If the database insertion fails.
     """
     insert_dict = data.model_dump(mode='json')
     insert_dict['patient_id'] = patient_profile['id']
@@ -157,8 +223,26 @@ async def update_own_monitor_data(
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Updates a specific health monitor data entry belonging to the
-    currently authenticated patient.
+    Updates a specific health monitor data entry for the authenticated patient.
+
+    This endpoint first verifies that the data entry specified by `data_id`
+    belongs to the authenticated patient before applying the update.
+
+    Args:
+        data_id (int): The ID of the monitor data record to update.
+        update_data (MonitorDataUpdate): A Pydantic model with the new value
+                                         and/or measurement timestamp.
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        dict: The updated monitor data record.
+
+    Raises:
+        HTTPException(400): If the request body is empty.
+        HTTPException(404): If the data entry is not found or does not belong
+                             to the patient.
+        HTTPException(500): If the database update fails.
     """
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
@@ -181,6 +265,19 @@ async def update_own_monitor_data(
 async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """
     Retrieves all daily logs for the currently authenticated patient.
+
+    Fetches all records from the `daily_patient_logs` table that are
+    associated with the authenticated patient's ID.
+
+    Args:
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        list[dict]: A list of all daily log records for the patient.
+
+    Raises:
+        HTTPException(500): If the data retrieval fails.
     """
     try:
         logs_response = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_profile['id']).execute()
@@ -196,6 +293,25 @@ async def add_own_daily_log(
 ):
     """
     Adds a new daily log entry for the currently authenticated patient.
+
+    Inserts a new record into the `daily_patient_logs` table. The combination
+    of `patient_id`, `log_date`, and `meal_time` must be unique.
+
+    Args:
+        log_data (DailyLogCreate): A Pydantic model with the log date, meal
+                                   time, and glucose readings.
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        dict: The newly created daily log record.
+
+    Raises:
+        HTTPException(400): If the input data is invalid (e.g., no glucose
+                             readings provided).
+        HTTPException(409): If a log for the given date and meal time already
+                             exists for this patient.
+        HTTPException(500): If the database insertion fails for other reasons.
     """
     try:
         insert_dict = log_data.model_dump(mode='json')
@@ -214,8 +330,21 @@ async def add_own_daily_log(
 @router.get("/me/thresholds", summary="Get my own defined health thresholds")
 async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient_profile)):
     """
-    Retrieves the set of health thresholds (min/max values for data types)
-    defined for the currently authenticated patient.
+    Retrieves the health thresholds for the currently authenticated patient.
+
+    Fetches all records from the `patient_thresholds` table that are
+    associated with the authenticated patient's ID. These define the min/max
+    values for various health data types.
+
+    Args:
+        patient_profile (dict): The authenticated patient's profile, injected
+                                by the `get_current_patient_profile` dependency.
+
+    Returns:
+        list[dict]: A list of all threshold records for the patient.
+
+    Raises:
+        HTTPException(500): If the data retrieval fails.
     """
     try:
         thresholds_response = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
