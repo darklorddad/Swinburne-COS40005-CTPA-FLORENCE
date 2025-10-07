@@ -62,6 +62,8 @@ class PatientProfileUpdate(BaseModel):
     """Fields a patient is allowed to update on their own profile."""
     name: Optional[str] = None
     phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
@@ -109,4 +111,51 @@ router = APIRouter(
     prefix="/patients",
     tags=["Patient (Self-Service)"]
 )
+
+
+@router.get("/me", summary="Get my own full patient profile")
+async def get_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
+    """
+    Retrieves the complete profile for the currently authenticated patient,
+    including their age, gender, and date of birth.
+    """
+    profile_with_age = patient_profile.copy()
+    dob_str = profile_with_age.get("date_of_birth")
+    
+    if dob_str:
+        try:
+            dob = date.fromisoformat(dob_str)
+            today = date.today()
+            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            profile_with_age['age'] = age
+        except (ValueError, TypeError):
+            profile_with_age['age'] = None
+    else:
+        profile_with_age['age'] = None
+            
+    return profile_with_age
+
+
+@router.put("/me", summary="Update my own patient profile")
+async def update_own_patient_profile(
+    update_data: PatientProfileUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Updates the profile of the currently authenticated patient.
+
+    Allows a patient to update their own profile information.
+    Only fields provided in the request body are updated.
+    """
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+        if not updated_profile_response.data:
+            raise HTTPException(status_code=404, detail="Patient profile not found.")
+        return updated_profile_response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 

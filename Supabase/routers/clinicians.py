@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from supabase_auth.errors import AuthApiError
 from enum import Enum
+from datetime import date
 
 from ..client import supabase
 
@@ -87,6 +88,18 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         patient_profile_res = supabase.table('patient_profiles').select('*', count='exact').eq('id', patient_id).eq('clinician_id', clinician_profile['id']).single().execute()
         
         patient_profile = patient_profile_res.data
+
+        # Calculate age
+        dob_str = patient_profile.get("date_of_birth")
+        if dob_str:
+            try:
+                dob = date.fromisoformat(dob_str)
+                today = date.today()
+                patient_profile['age'] = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            except (ValueError, TypeError):
+                patient_profile['age'] = None
+        else:
+            patient_profile['age'] = None
 
         # Fetch related data
         monitor_data = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_id).execute().data

@@ -103,11 +103,22 @@ async def get_all_patients():
             org_data = patient.get('organisations')
             clinician_data = patient.get('clinician_profiles')
             
+            age = None
+            dob_str = patient.get("date_of_birth")
+            if dob_str:
+                try:
+                    dob = date.fromisoformat(dob_str)
+                    today = date.today()
+                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                except (ValueError, TypeError):
+                    age = None
+
             processed_patient = {
                 "Name": patient.get("name"),
                 "Phone Number": patient.get("phone_number"),
                 "Gender": patient.get("gender"),
                 "Date of Birth": patient.get("date_of_birth"),
+                "Age": age,
                 "Organisation Name": org_data.get("name") if org_data else None,
                 "Emergency Contact Name": patient.get("emergency_contact_name"),
                 "Emergency Contact Relationship": patient.get("emergency_contact_relationship"),
