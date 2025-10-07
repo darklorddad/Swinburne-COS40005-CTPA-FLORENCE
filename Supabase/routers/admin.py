@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
+from datetime import date
 
 from ..client import supabase
 from .authentication import get_current_admin_user
@@ -17,6 +18,8 @@ class PatientProfileAdminUpdate(BaseModel):
     """Fields an admin is allowed to update on a patient's profile."""
     name: Optional[str] = None
     phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
@@ -41,8 +44,37 @@ router = APIRouter(
 async def get_all_patients():
     """Retrieves a list of all patient profiles in the system."""
     try:
-        patients_response = supabase.table('patient_profiles').select('*').execute()
-        return patients_response.data
+        # Select specific fields and related data from foreign tables
+        patients_response = supabase.table('patient_profiles').select(
+            "name, phone_number, gender, date_of_birth, "
+            "emergency_contact_name, emergency_contact_relationship, emergency_contact_phone, "
+            "risk_level, last_risk_assessment, "
+            "organisations(name), "
+            "clinician_profiles(name)"
+        ).execute()
+
+        # Process the data to create the desired flat structure
+        processed_patients = []
+        for patient in patients_response.data:
+            org_data = patient.get('organisations')
+            clinician_data = patient.get('clinician_profiles')
+            
+            processed_patient = {
+                "Name": patient.get("name"),
+                "Phone Number": patient.get("phone_number"),
+                "Gender": patient.get("gender"),
+                "Date of Birth": patient.get("date_of_birth"),
+                "Organisation Name": org_data.get("name") if org_data else None,
+                "Emergency Contact Name": patient.get("emergency_contact_name"),
+                "Emergency Contact Relationship": patient.get("emergency_contact_relationship"),
+                "Emergency Contact Phone Number": patient.get("emergency_contact_phone"),
+                "Clinician Name": clinician_data.get("name") if clinician_data else None,
+                "Risk Level": patient.get("risk_level"),
+                "Last Risk Assessment": patient.get("last_risk_assessment")
+            }
+            processed_patients.append(processed_patient)
+            
+        return processed_patients
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 

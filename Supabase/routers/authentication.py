@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
+from datetime import date
 from supabase_auth.errors import AuthApiError
 
 # Import the shared Supabase client
@@ -20,6 +21,8 @@ class UserRegistration(BaseModel):
     # Clinician specific
     organisation_id: Optional[int] = None
     # Patient specific
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
@@ -74,6 +77,8 @@ async def register_user(user_data: UserRegistration):
         if user_data.role == 'PATIENT':
             profile_data = {
                 "user_id": new_user.id, "name": user_data.name, "phone_number": user_data.phone_number,
+                "gender": user_data.gender,
+                "date_of_birth": user_data.date_of_birth.isoformat() if user_data.date_of_birth else None,
                 "emergency_contact_name": user_data.emergency_contact_name,
                 "emergency_contact_relationship": user_data.emergency_contact_relationship,
                 "emergency_contact_phone": user_data.emergency_contact_phone,
