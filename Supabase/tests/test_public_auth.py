@@ -6,16 +6,16 @@ from datetime import date
 import sys
 from pathlib import Path
 
-# Add the parent directory (Supabase) to the Python path to resolve imports
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Add the project root to the Python path to resolve imports
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 # The app is imported here.
-from main import app
+from Supabase.main import app
 
 # Load environment variables from .env file for tests
 from dotenv import load_dotenv
 
-project_root = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=project_root / '.env', override=True)
 
 client = TestClient(app)
