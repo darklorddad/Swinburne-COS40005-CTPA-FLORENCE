@@ -1,4 +1,4 @@
-### **Backend Platform Selection**
+### Backend Platform Selection
 
 Date: 18th of September, 2025
 
