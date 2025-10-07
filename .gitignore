@@ -10,6 +10,9 @@ Pro_Grocery-main/
 
 ---
 
+#SQL
+*.sql
+
 # Documents (contains sensitive information such as name, student ID, email and etc.)
 Group-List.xlsx 
 Group-to-Client-Email
