@@ -98,15 +98,35 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
 @router.delete("/patients/{patient_id}", summary="Remove any patient")
 async def delete_patient_by_admin(patient_id: int):
     """
-    Deletes a patient's profile. Note: This does not automatically delete the user from
-    Supabase Auth. That must be done separately if required.
+    Deletes a patient's profile from the database and also deletes the
+    corresponding user from Supabase Auth.
     """
     try:
+        # First, delete the profile and retrieve it to get the user_id
         deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
+        
         if not deleted_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
         
-        return {"message": f"Patient profile with id {patient_id} deleted successfully."}
+        patient_profile = deleted_profile_response.data[0]
+        user_id = patient_profile.get("user_id")
+
+        if not user_id:
+            # This case should ideally not happen if data integrity is maintained.
+            return {"message": f"Patient profile with id {patient_id} deleted, but no associated auth user to delete."}
+
+        # Now, delete the user from Supabase Auth
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception as auth_error:
+            # If auth deletion fails, the profile is already gone.
+            # We should inform the admin about this partial failure.
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Patient profile {patient_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
+            )
+
+        return {"message": f"Patient profile with id {patient_id} and associated auth user deleted successfully."}
     except HTTPException as e:
         raise e
     except Exception as e:
