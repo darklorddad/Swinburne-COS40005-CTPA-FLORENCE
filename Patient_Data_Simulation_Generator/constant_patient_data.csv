@@ -1,0 +1,801 @@
+patient_id,name,age,diabetes_type,hba1c_reading,hba1c_status,date,glucose_reading,diet_log,activity
+1,Sam Wilson,51,Type 1,5.9%,Stable,2025-09-25,Hypo Event (5.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+1,Sam Wilson,51,Type 1,6.300000000000001%,Increased,2025-09-26,Hyper Event (12.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+1,Sam Wilson,51,Type 1,5.7%,Stable,2025-09-27,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+1,Sam Wilson,51,Type 1,5.5%,Decreased,2025-09-28,Hypo Event (5.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+1,Sam Wilson,51,Type 1,6.2%,Increased,2025-09-29,Hyper Event (17.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+1,Sam Wilson,51,Type 1,5.7%,Stable,2025-09-30,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+1,Sam Wilson,51,Type 1,5.4%,Decreased,2025-10-01,Hypo Event (4.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+1,Sam Wilson,51,Type 1,5.800000000000001%,Stable,2025-10-02,Hypo Event (3.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+2,Sam Williams,55,Gestational,7.2%,Increased,2025-09-25,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+2,Sam Williams,55,Gestational,7.1000000000000005%,Increased,2025-09-26,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+2,Sam Williams,55,Gestational,6.8%,Stable,2025-09-27,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+2,Sam Williams,55,Gestational,7.0%,Increased,2025-09-28,Hyper Event (14.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+2,Sam Williams,55,Gestational,7.1000000000000005%,Increased,2025-09-29,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+2,Sam Williams,55,Gestational,6.8%,Stable,2025-09-30,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+2,Sam Williams,55,Gestational,6.3%,Decreased,2025-10-01,Hyper Event (15.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+2,Sam Williams,55,Gestational,7.1000000000000005%,Increased,2025-10-02,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+3,Jordan Smith,42,Type 1,10.3%,Stable,2025-09-25,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+3,Jordan Smith,42,Type 1,10.5%,Stable,2025-09-26,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+3,Jordan Smith,42,Type 1,10.6%,Stable,2025-09-27,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+3,Jordan Smith,42,Type 1,10.0%,Decreased,2025-09-28,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+3,Jordan Smith,42,Type 1,10.8%,Increased,2025-09-29,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+3,Jordan Smith,42,Type 1,10.0%,Decreased,2025-09-30,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+3,Jordan Smith,42,Type 1,10.200000000000001%,Stable,2025-10-01,Hyper Event (16.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+3,Jordan Smith,42,Type 1,10.8%,Increased,2025-10-02,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+4,Morgan Jones,26,Gestational,5.8999999999999995%,Increased,2025-09-25,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+4,Morgan Jones,26,Gestational,5.8%,Stable,2025-09-26,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+4,Morgan Jones,26,Gestational,5.5%,Stable,2025-09-27,Hyper Event (17.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+4,Morgan Jones,26,Gestational,5.1%,Decreased,2025-09-28,Hyper Event (14.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+4,Morgan Jones,26,Gestational,5.3%,Decreased,2025-09-29,Hyper Event (16.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+4,Morgan Jones,26,Gestational,5.6%,Stable,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+4,Morgan Jones,26,Gestational,5.5%,Stable,2025-10-01,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+4,Morgan Jones,26,Gestational,6.0%,Increased,2025-10-02,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+5,Taylor Jones,19,Type 1,6.4%,Stable,2025-09-25,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+5,Taylor Jones,19,Type 1,6.6000000000000005%,Increased,2025-09-26,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+5,Taylor Jones,19,Type 1,6.5%,Increased,2025-09-27,Hypo Event (3.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+5,Taylor Jones,19,Type 1,6.1000000000000005%,Stable,2025-09-28,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+5,Taylor Jones,19,Type 1,6.5%,Increased,2025-09-29,Hyper Event (11.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+5,Taylor Jones,19,Type 1,6.6000000000000005%,Increased,2025-09-30,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+5,Taylor Jones,19,Type 1,6.1000000000000005%,Stable,2025-10-01,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+5,Taylor Jones,19,Type 1,6.2%,Stable,2025-10-02,Hypo Event (5.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+6,Alex Miller,24,Gestational,10.700000000000001%,Increased,2025-09-25,Hyper Event (10.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+6,Alex Miller,24,Gestational,9.8%,Decreased,2025-09-26,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+6,Alex Miller,24,Gestational,10.8%,Increased,2025-09-27,Hyper Event (17.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+6,Alex Miller,24,Gestational,10.700000000000001%,Increased,2025-09-28,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+6,Alex Miller,24,Gestational,9.8%,Decreased,2025-09-29,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+6,Alex Miller,24,Gestational,9.9%,Decreased,2025-09-30,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+6,Alex Miller,24,Gestational,10.5%,Stable,2025-10-01,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+6,Alex Miller,24,Gestational,9.8%,Decreased,2025-10-02,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+7,Jordan Wilson,37,Gestational,6.699999999999999%,Decreased,2025-09-25,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+7,Jordan Wilson,37,Gestational,7.1%,Stable,2025-09-26,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+7,Jordan Wilson,37,Gestational,7.199999999999999%,Stable,2025-09-27,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+7,Jordan Wilson,37,Gestational,7.1%,Stable,2025-09-28,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+7,Jordan Wilson,37,Gestational,6.8%,Decreased,2025-09-29,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+7,Jordan Wilson,37,Gestational,7.0%,Stable,2025-09-30,Hyper Event (15.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+7,Jordan Wilson,37,Gestational,7.1%,Stable,2025-10-01,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+7,Jordan Wilson,37,Gestational,7.5%,Increased,2025-10-02,Hyper Event (12.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+8,Jamie Miller,17,Type 2,8.700000000000001%,Increased,2025-09-25,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+8,Jamie Miller,17,Type 2,8.700000000000001%,Increased,2025-09-26,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+8,Jamie Miller,17,Type 2,8.8%,Increased,2025-09-27,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+8,Jamie Miller,17,Type 2,8.700000000000001%,Increased,2025-09-28,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+8,Jamie Miller,17,Type 2,8.200000000000001%,Stable,2025-09-29,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+8,Jamie Miller,17,Type 2,8.3%,Stable,2025-09-30,Hyper Event (19.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+8,Jamie Miller,17,Type 2,8.6%,Stable,2025-10-01,Hyper Event (10.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+8,Jamie Miller,17,Type 2,8.4%,Stable,2025-10-02,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+9,Casey Williams,24,Gestational,5.6%,Stable,2025-09-25,Hyper Event (12.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+9,Casey Williams,24,Gestational,6.3%,Increased,2025-09-26,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+9,Casey Williams,24,Gestational,6.1%,Increased,2025-09-27,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+9,Casey Williams,24,Gestational,6.2%,Increased,2025-09-28,Hyper Event (18.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+9,Casey Williams,24,Gestational,5.8%,Stable,2025-09-29,Stable (6.0 mmol/L),Normal balanced diet,Moderate activity
+9,Casey Williams,24,Gestational,6.0%,Stable,2025-09-30,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+9,Casey Williams,24,Gestational,5.6%,Stable,2025-10-01,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+9,Casey Williams,24,Gestational,5.7%,Stable,2025-10-02,Hypo Event (3.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+10,Jordan Jones,62,Type 2,5.9%,Decreased,2025-09-25,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+10,Jordan Jones,62,Type 2,6.1000000000000005%,Stable,2025-09-26,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+10,Jordan Jones,62,Type 2,6.1000000000000005%,Stable,2025-09-27,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+10,Jordan Jones,62,Type 2,6.7%,Increased,2025-09-28,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+10,Jordan Jones,62,Type 2,6.3%,Stable,2025-09-29,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+10,Jordan Jones,62,Type 2,5.8%,Decreased,2025-09-30,Hyper Event (14.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+10,Jordan Jones,62,Type 2,6.6000000000000005%,Increased,2025-10-01,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+10,Jordan Jones,62,Type 2,6.3%,Stable,2025-10-02,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+11,Jordan Williams,37,Gestational,9.0%,Increased,2025-09-25,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+11,Jordan Williams,37,Gestational,8.399999999999999%,Decreased,2025-09-26,Hyper Event (17.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+11,Jordan Williams,37,Gestational,8.299999999999999%,Decreased,2025-09-27,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+11,Jordan Williams,37,Gestational,8.299999999999999%,Decreased,2025-09-28,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+11,Jordan Williams,37,Gestational,9.0%,Increased,2025-09-29,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+11,Jordan Williams,37,Gestational,8.5%,Stable,2025-09-30,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+11,Jordan Williams,37,Gestational,9.0%,Increased,2025-10-01,Hypo Event (4.6 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+11,Jordan Williams,37,Gestational,8.299999999999999%,Decreased,2025-10-02,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+12,Sam Davis,64,Type 2,7.3999999999999995%,Stable,2025-09-25,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+12,Sam Davis,64,Type 2,7.3%,Stable,2025-09-26,Hyper Event (12.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+12,Sam Davis,64,Type 2,7.2%,Stable,2025-09-27,Hyper Event (11.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+12,Sam Davis,64,Type 2,7.0%,Decreased,2025-09-28,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+12,Sam Davis,64,Type 2,7.3999999999999995%,Stable,2025-09-29,Hyper Event (19.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+12,Sam Davis,64,Type 2,7.3%,Stable,2025-09-30,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+12,Sam Davis,64,Type 2,7.5%,Stable,2025-10-01,Hyper Event (16.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+12,Sam Davis,64,Type 2,7.2%,Stable,2025-10-02,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+13,Jordan Brown,29,Gestational,5.3%,Stable,2025-09-25,Hyper Event (18.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+13,Jordan Brown,29,Gestational,5.6%,Stable,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+13,Jordan Brown,29,Gestational,5.3%,Stable,2025-09-27,Hypo Event (3.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+13,Jordan Brown,29,Gestational,5.3%,Stable,2025-09-28,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+13,Jordan Brown,29,Gestational,5.0%,Decreased,2025-09-29,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+13,Jordan Brown,29,Gestational,5.9%,Increased,2025-09-30,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+13,Jordan Brown,29,Gestational,5.9%,Increased,2025-10-01,Hyper Event (15.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+13,Jordan Brown,29,Gestational,5.2%,Decreased,2025-10-02,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+14,Taylor Wilson,69,Gestational,9.5%,Decreased,2025-09-25,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+14,Taylor Wilson,69,Gestational,9.4%,Decreased,2025-09-26,Hyper Event (16.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+14,Taylor Wilson,69,Gestational,9.8%,Stable,2025-09-27,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+14,Taylor Wilson,69,Gestational,9.8%,Stable,2025-09-28,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+14,Taylor Wilson,69,Gestational,9.4%,Decreased,2025-09-29,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+14,Taylor Wilson,69,Gestational,9.9%,Stable,2025-09-30,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+14,Taylor Wilson,69,Gestational,9.4%,Decreased,2025-10-01,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+14,Taylor Wilson,69,Gestational,9.4%,Decreased,2025-10-02,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+15,Sam Davis,27,Type 1,10.0%,Stable,2025-09-25,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+15,Sam Davis,27,Type 1,10.0%,Stable,2025-09-26,Hyper Event (14.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+15,Sam Davis,27,Type 1,10.0%,Stable,2025-09-27,Hyper Event (15.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+15,Sam Davis,27,Type 1,10.4%,Increased,2025-09-28,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+15,Sam Davis,27,Type 1,10.4%,Increased,2025-09-29,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+15,Sam Davis,27,Type 1,9.6%,Decreased,2025-09-30,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+15,Sam Davis,27,Type 1,9.6%,Decreased,2025-10-01,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+15,Sam Davis,27,Type 1,9.8%,Stable,2025-10-02,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+16,Alex Wilson,18,Type 1,11.600000000000001%,Increased,2025-09-25,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+16,Alex Wilson,18,Type 1,11.4%,Stable,2025-09-26,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+16,Alex Wilson,18,Type 1,10.9%,Decreased,2025-09-27,Hyper Event (11.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+16,Alex Wilson,18,Type 1,11.700000000000001%,Increased,2025-09-28,Hyper Event (11.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+16,Alex Wilson,18,Type 1,10.8%,Decreased,2025-09-29,Hyper Event (10.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+16,Alex Wilson,18,Type 1,11.0%,Decreased,2025-09-30,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+16,Alex Wilson,18,Type 1,11.5%,Stable,2025-10-01,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+16,Alex Wilson,18,Type 1,11.0%,Decreased,2025-10-02,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+17,Morgan Miller,56,Type 1,10.3%,Stable,2025-09-25,Hyper Event (13.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+17,Morgan Miller,56,Type 1,10.0%,Decreased,2025-09-26,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+17,Morgan Miller,56,Type 1,10.4%,Stable,2025-09-27,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+17,Morgan Miller,56,Type 1,10.6%,Stable,2025-09-28,Hyper Event (14.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+17,Morgan Miller,56,Type 1,10.200000000000001%,Stable,2025-09-29,Hyper Event (13.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+17,Morgan Miller,56,Type 1,10.200000000000001%,Stable,2025-09-30,Hypo Event (3.6 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+17,Morgan Miller,56,Type 1,10.1%,Decreased,2025-10-01,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+17,Morgan Miller,56,Type 1,10.8%,Increased,2025-10-02,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+18,Casey Williams,18,Type 2,9.6%,Stable,2025-09-25,Hyper Event (11.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+18,Casey Williams,18,Type 2,9.4%,Stable,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+18,Casey Williams,18,Type 2,9.6%,Stable,2025-09-27,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+18,Casey Williams,18,Type 2,9.9%,Increased,2025-09-28,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+18,Casey Williams,18,Type 2,9.9%,Increased,2025-09-29,Hyper Event (19.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+18,Casey Williams,18,Type 2,9.7%,Stable,2025-09-30,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+18,Casey Williams,18,Type 2,9.9%,Increased,2025-10-01,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+18,Casey Williams,18,Type 2,9.5%,Stable,2025-10-02,Hyper Event (17.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+19,Alex Jones,54,Gestational,8.9%,Stable,2025-09-25,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+19,Alex Jones,54,Gestational,9.2%,Stable,2025-09-26,Hyper Event (17.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+19,Alex Jones,54,Gestational,9.1%,Stable,2025-09-27,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+19,Alex Jones,54,Gestational,9.299999999999999%,Stable,2025-09-28,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+19,Alex Jones,54,Gestational,9.6%,Increased,2025-09-29,Hypo Event (4.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+19,Alex Jones,54,Gestational,9.299999999999999%,Stable,2025-09-30,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+19,Alex Jones,54,Gestational,9.5%,Increased,2025-10-01,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+19,Alex Jones,54,Gestational,9.1%,Stable,2025-10-02,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+20,Jamie Davis,64,Gestational,10.1%,Stable,2025-09-25,Hyper Event (17.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+20,Jamie Davis,64,Gestational,10.0%,Stable,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+20,Jamie Davis,64,Gestational,10.299999999999999%,Stable,2025-09-27,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+20,Jamie Davis,64,Gestational,10.5%,Increased,2025-09-28,Hyper Event (18.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+20,Jamie Davis,64,Gestational,9.7%,Decreased,2025-09-29,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+20,Jamie Davis,64,Gestational,10.5%,Increased,2025-09-30,Hypo Event (4.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+20,Jamie Davis,64,Gestational,10.1%,Stable,2025-10-01,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+20,Jamie Davis,64,Gestational,10.7%,Increased,2025-10-02,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+21,Taylor Williams,61,Type 2,6.8%,Stable,2025-09-25,Hyper Event (16.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+21,Taylor Williams,61,Type 2,6.9%,Stable,2025-09-26,Hyper Event (14.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+21,Taylor Williams,61,Type 2,7.4%,Increased,2025-09-27,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+21,Taylor Williams,61,Type 2,7.2%,Stable,2025-09-28,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+21,Taylor Williams,61,Type 2,6.9%,Stable,2025-09-29,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+21,Taylor Williams,61,Type 2,6.7%,Decreased,2025-09-30,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+21,Taylor Williams,61,Type 2,6.7%,Decreased,2025-10-01,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+21,Taylor Williams,61,Type 2,6.8%,Stable,2025-10-02,Hyper Event (17.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+22,Taylor Brown,48,Type 2,10.7%,Decreased,2025-09-25,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+22,Taylor Brown,48,Type 2,11.1%,Stable,2025-09-26,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+22,Taylor Brown,48,Type 2,11.6%,Increased,2025-09-27,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+22,Taylor Brown,48,Type 2,10.899999999999999%,Decreased,2025-09-28,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+22,Taylor Brown,48,Type 2,11.6%,Increased,2025-09-29,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+22,Taylor Brown,48,Type 2,10.899999999999999%,Decreased,2025-09-30,Hyper Event (10.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+22,Taylor Brown,48,Type 2,11.5%,Increased,2025-10-01,Hyper Event (15.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+22,Taylor Brown,48,Type 2,11.2%,Stable,2025-10-02,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+23,Sam Wilson,35,Type 2,7.3%,Stable,2025-09-25,Hyper Event (12.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+23,Sam Wilson,35,Type 2,7.5%,Stable,2025-09-26,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+23,Sam Wilson,35,Type 2,7.1%,Decreased,2025-09-27,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+23,Sam Wilson,35,Type 2,7.5%,Stable,2025-09-28,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+23,Sam Wilson,35,Type 2,8.0%,Increased,2025-09-29,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+23,Sam Wilson,35,Type 2,7.4%,Stable,2025-09-30,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+23,Sam Wilson,35,Type 2,7.6%,Stable,2025-10-01,Hyper Event (11.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+23,Sam Wilson,35,Type 2,7.9%,Increased,2025-10-02,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+24,Morgan Smith,50,Gestational,11.200000000000001%,Stable,2025-09-25,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+24,Morgan Smith,50,Gestational,11.100000000000001%,Stable,2025-09-26,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+24,Morgan Smith,50,Gestational,11.0%,Decreased,2025-09-27,Hyper Event (19.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+24,Morgan Smith,50,Gestational,11.200000000000001%,Stable,2025-09-28,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+24,Morgan Smith,50,Gestational,11.100000000000001%,Stable,2025-09-29,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+24,Morgan Smith,50,Gestational,11.700000000000001%,Increased,2025-09-30,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+24,Morgan Smith,50,Gestational,11.0%,Decreased,2025-10-01,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+24,Morgan Smith,50,Gestational,11.600000000000001%,Increased,2025-10-02,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+25,Alex Miller,52,Gestational,7.199999999999999%,Decreased,2025-09-25,Hyper Event (15.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+25,Alex Miller,52,Gestational,8.0%,Increased,2025-09-26,Hyper Event (19.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+25,Alex Miller,52,Gestational,7.5%,Stable,2025-09-27,Hyper Event (11.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+25,Alex Miller,52,Gestational,7.5%,Stable,2025-09-28,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+25,Alex Miller,52,Gestational,8.0%,Increased,2025-09-29,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+25,Alex Miller,52,Gestational,7.199999999999999%,Decreased,2025-09-30,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+25,Alex Miller,52,Gestational,7.699999999999999%,Stable,2025-10-01,Hyper Event (16.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+25,Alex Miller,52,Gestational,7.8999999999999995%,Increased,2025-10-02,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+26,Sam Jones,42,Gestational,7.1%,Increased,2025-09-25,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+26,Sam Jones,42,Gestational,6.699999999999999%,Stable,2025-09-26,Hyper Event (18.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+26,Sam Jones,42,Gestational,6.3999999999999995%,Stable,2025-09-27,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+26,Sam Jones,42,Gestational,7.0%,Increased,2025-09-28,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+26,Sam Jones,42,Gestational,7.0%,Increased,2025-09-29,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+26,Sam Jones,42,Gestational,6.3999999999999995%,Stable,2025-09-30,Stable (6.0 mmol/L),Normal balanced diet,Moderate activity
+26,Sam Jones,42,Gestational,6.8999999999999995%,Increased,2025-10-01,Hyper Event (17.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+26,Sam Jones,42,Gestational,6.8999999999999995%,Increased,2025-10-02,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+27,Sam Davis,54,Type 2,6.1%,Stable,2025-09-25,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+27,Sam Davis,54,Type 2,6.6%,Increased,2025-09-26,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+27,Sam Davis,54,Type 2,6.2%,Stable,2025-09-27,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+27,Sam Davis,54,Type 2,6.5%,Stable,2025-09-28,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+27,Sam Davis,54,Type 2,6.3999999999999995%,Stable,2025-09-29,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+27,Sam Davis,54,Type 2,6.6%,Increased,2025-09-30,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+27,Sam Davis,54,Type 2,6.7%,Increased,2025-10-01,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+27,Sam Davis,54,Type 2,6.6%,Increased,2025-10-02,Hyper Event (14.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+28,Casey Brown,48,Type 1,10.100000000000001%,Stable,2025-09-25,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,10.600000000000001%,Increased,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,10.200000000000001%,Stable,2025-09-27,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,10.200000000000001%,Stable,2025-09-28,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,10.200000000000001%,Stable,2025-09-29,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,10.600000000000001%,Increased,2025-09-30,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,9.9%,Decreased,2025-10-01,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+28,Casey Brown,48,Type 1,10.3%,Stable,2025-10-02,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+29,Jamie Davis,21,Type 2,8.6%,Increased,2025-09-25,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+29,Jamie Davis,21,Type 2,8.299999999999999%,Stable,2025-09-26,Hyper Event (16.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+29,Jamie Davis,21,Type 2,8.399999999999999%,Stable,2025-09-27,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+29,Jamie Davis,21,Type 2,8.399999999999999%,Stable,2025-09-28,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+29,Jamie Davis,21,Type 2,7.999999999999999%,Stable,2025-09-29,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+29,Jamie Davis,21,Type 2,8.7%,Increased,2025-09-30,Hyper Event (12.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+29,Jamie Davis,21,Type 2,7.799999999999999%,Decreased,2025-10-01,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+29,Jamie Davis,21,Type 2,8.6%,Increased,2025-10-02,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+30,Jordan Wilson,48,Type 1,7.2%,Stable,2025-09-25,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+30,Jordan Wilson,48,Type 1,7.2%,Stable,2025-09-26,Hyper Event (11.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+30,Jordan Wilson,48,Type 1,7.7%,Increased,2025-09-27,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+30,Jordan Wilson,48,Type 1,7.6%,Increased,2025-09-28,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+30,Jordan Wilson,48,Type 1,7.7%,Increased,2025-09-29,Hyper Event (17.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+30,Jordan Wilson,48,Type 1,6.8999999999999995%,Decreased,2025-09-30,Hypo Event (3.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+30,Jordan Wilson,48,Type 1,6.8999999999999995%,Decreased,2025-10-01,Hyper Event (19.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+30,Jordan Wilson,48,Type 1,7.6%,Increased,2025-10-02,Hyper Event (19.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+31,Morgan Davis,48,Gestational,11.100000000000001%,Increased,2025-09-25,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,11.100000000000001%,Increased,2025-09-26,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,10.3%,Decreased,2025-09-27,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,11.100000000000001%,Increased,2025-09-28,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,10.9%,Stable,2025-09-29,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,10.9%,Stable,2025-09-30,Stable (6.0 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,11.3%,Increased,2025-10-01,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+31,Morgan Davis,48,Gestational,11.200000000000001%,Increased,2025-10-02,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+32,Sam Jones,70,Type 2,6.7%,Increased,2025-09-25,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+32,Sam Jones,70,Type 2,6.5%,Increased,2025-09-26,Hyper Event (10.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+32,Sam Jones,70,Type 2,6.2%,Stable,2025-09-27,Hyper Event (13.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+32,Sam Jones,70,Type 2,5.7%,Decreased,2025-09-28,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+32,Sam Jones,70,Type 2,6.3%,Stable,2025-09-29,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+32,Sam Jones,70,Type 2,6.5%,Increased,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+32,Sam Jones,70,Type 2,6.4%,Stable,2025-10-01,Hypo Event (3.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+32,Sam Jones,70,Type 2,6.6000000000000005%,Increased,2025-10-02,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+33,Alex Davis,27,Gestational,11.3%,Stable,2025-09-25,Hyper Event (14.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+33,Alex Davis,27,Gestational,11.5%,Stable,2025-09-26,Hyper Event (19.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+33,Alex Davis,27,Gestational,11.700000000000001%,Increased,2025-09-27,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+33,Alex Davis,27,Gestational,11.0%,Decreased,2025-09-28,Hypo Event (4.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+33,Alex Davis,27,Gestational,11.700000000000001%,Increased,2025-09-29,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+33,Alex Davis,27,Gestational,10.9%,Decreased,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+33,Alex Davis,27,Gestational,11.3%,Stable,2025-10-01,Hyper Event (17.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+33,Alex Davis,27,Gestational,11.0%,Decreased,2025-10-02,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+34,Alex Miller,39,Type 1,10.899999999999999%,Decreased,2025-09-25,Hypo Event (3.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+34,Alex Miller,39,Type 1,10.799999999999999%,Decreased,2025-09-26,Hyper Event (15.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+34,Alex Miller,39,Type 1,10.899999999999999%,Decreased,2025-09-27,Hypo Event (3.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+34,Alex Miller,39,Type 1,11.0%,Stable,2025-09-28,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+34,Alex Miller,39,Type 1,11.0%,Stable,2025-09-29,Hyper Event (19.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+34,Alex Miller,39,Type 1,10.799999999999999%,Decreased,2025-09-30,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+34,Alex Miller,39,Type 1,11.2%,Stable,2025-10-01,Hyper Event (17.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+34,Alex Miller,39,Type 1,10.899999999999999%,Decreased,2025-10-02,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+35,Sam Wilson,42,Type 1,9.6%,Increased,2025-09-25,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+35,Sam Wilson,42,Type 1,9.6%,Increased,2025-09-26,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+35,Sam Wilson,42,Type 1,8.799999999999999%,Decreased,2025-09-27,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+35,Sam Wilson,42,Type 1,9.0%,Stable,2025-09-28,Hypo Event (4.6 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+35,Sam Wilson,42,Type 1,9.6%,Increased,2025-09-29,Hyper Event (15.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+35,Sam Wilson,42,Type 1,9.5%,Increased,2025-09-30,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+35,Sam Wilson,42,Type 1,9.1%,Stable,2025-10-01,Hyper Event (12.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+35,Sam Wilson,42,Type 1,9.2%,Stable,2025-10-02,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+36,Casey Davis,22,Type 2,7.6%,Increased,2025-09-25,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+36,Casey Davis,22,Type 2,7.2%,Stable,2025-09-26,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+36,Casey Davis,22,Type 2,7.8%,Increased,2025-09-27,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+36,Casey Davis,22,Type 2,7.0%,Decreased,2025-09-28,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+36,Casey Davis,22,Type 2,7.7%,Increased,2025-09-29,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+36,Casey Davis,22,Type 2,7.3%,Stable,2025-09-30,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+36,Casey Davis,22,Type 2,7.2%,Stable,2025-10-01,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+36,Casey Davis,22,Type 2,7.5%,Stable,2025-10-02,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+37,Jamie Davis,20,Type 2,8.8%,Increased,2025-09-25,Hypo Event (4.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+37,Jamie Davis,20,Type 2,8.9%,Increased,2025-09-26,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+37,Jamie Davis,20,Type 2,8.5%,Stable,2025-09-27,Hyper Event (18.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+37,Jamie Davis,20,Type 2,8.3%,Stable,2025-09-28,Hyper Event (13.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+37,Jamie Davis,20,Type 2,8.3%,Stable,2025-09-29,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+37,Jamie Davis,20,Type 2,8.8%,Increased,2025-09-30,Hyper Event (17.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+37,Jamie Davis,20,Type 2,8.700000000000001%,Increased,2025-10-01,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+37,Jamie Davis,20,Type 2,8.1%,Decreased,2025-10-02,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+38,Jordan Smith,66,Type 1,5.699999999999999%,Decreased,2025-09-25,Hyper Event (18.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+38,Jordan Smith,66,Type 1,6.6%,Increased,2025-09-26,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+38,Jordan Smith,66,Type 1,6.6%,Increased,2025-09-27,Hyper Event (10.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+38,Jordan Smith,66,Type 1,5.8%,Decreased,2025-09-28,Hyper Event (10.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+38,Jordan Smith,66,Type 1,5.8%,Decreased,2025-09-29,Hyper Event (12.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+38,Jordan Smith,66,Type 1,6.3%,Stable,2025-09-30,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+38,Jordan Smith,66,Type 1,6.199999999999999%,Stable,2025-10-01,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+38,Jordan Smith,66,Type 1,6.1%,Stable,2025-10-02,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+39,Morgan Williams,58,Gestational,9.9%,Stable,2025-09-25,Hyper Event (19.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+39,Morgan Williams,58,Gestational,9.9%,Stable,2025-09-26,Hyper Event (18.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+39,Morgan Williams,58,Gestational,9.9%,Stable,2025-09-27,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+39,Morgan Williams,58,Gestational,10.1%,Stable,2025-09-28,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+39,Morgan Williams,58,Gestational,9.8%,Stable,2025-09-29,Hyper Event (17.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+39,Morgan Williams,58,Gestational,9.6%,Decreased,2025-09-30,Hyper Event (14.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+39,Morgan Williams,58,Gestational,9.7%,Decreased,2025-10-01,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+39,Morgan Williams,58,Gestational,10.4%,Increased,2025-10-02,Hyper Event (16.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+40,Jordan Williams,68,Gestational,9.4%,Decreased,2025-09-25,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+40,Jordan Williams,68,Gestational,10.0%,Stable,2025-09-26,Hyper Event (12.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+40,Jordan Williams,68,Gestational,10.200000000000001%,Increased,2025-09-27,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+40,Jordan Williams,68,Gestational,9.5%,Decreased,2025-09-28,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+40,Jordan Williams,68,Gestational,10.100000000000001%,Increased,2025-09-29,Hyper Event (15.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+40,Jordan Williams,68,Gestational,9.9%,Stable,2025-09-30,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+40,Jordan Williams,68,Gestational,10.200000000000001%,Increased,2025-10-01,Hypo Event (3.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+40,Jordan Williams,68,Gestational,9.8%,Stable,2025-10-02,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+41,Jamie Williams,60,Type 2,10.9%,Increased,2025-09-25,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+41,Jamie Williams,60,Type 2,10.4%,Stable,2025-09-26,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+41,Jamie Williams,60,Type 2,10.5%,Stable,2025-09-27,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+41,Jamie Williams,60,Type 2,10.4%,Stable,2025-09-28,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+41,Jamie Williams,60,Type 2,10.1%,Decreased,2025-09-29,Hyper Event (15.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+41,Jamie Williams,60,Type 2,10.1%,Decreased,2025-09-30,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+41,Jamie Williams,60,Type 2,10.0%,Decreased,2025-10-01,Hypo Event (5.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+41,Jamie Williams,60,Type 2,10.3%,Stable,2025-10-02,Hyper Event (10.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+42,Casey Smith,50,Type 2,8.8%,Increased,2025-09-25,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+42,Casey Smith,50,Type 2,8.100000000000001%,Stable,2025-09-26,Hypo Event (4.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+42,Casey Smith,50,Type 2,8.200000000000001%,Stable,2025-09-27,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+42,Casey Smith,50,Type 2,8.4%,Stable,2025-09-28,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+42,Casey Smith,50,Type 2,8.600000000000001%,Increased,2025-09-29,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+42,Casey Smith,50,Type 2,8.5%,Stable,2025-09-30,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+42,Casey Smith,50,Type 2,8.5%,Stable,2025-10-01,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+42,Casey Smith,50,Type 2,8.0%,Decreased,2025-10-02,Hypo Event (5.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+43,Casey Brown,55,Type 2,7.6%,Decreased,2025-09-25,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+43,Casey Brown,55,Type 2,8.1%,Stable,2025-09-26,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+43,Casey Brown,55,Type 2,7.5%,Decreased,2025-09-27,Hyper Event (14.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+43,Casey Brown,55,Type 2,8.3%,Increased,2025-09-28,Hyper Event (18.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+43,Casey Brown,55,Type 2,8.3%,Increased,2025-09-29,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+43,Casey Brown,55,Type 2,7.5%,Decreased,2025-09-30,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+43,Casey Brown,55,Type 2,8.3%,Increased,2025-10-01,Hyper Event (18.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+43,Casey Brown,55,Type 2,8.1%,Stable,2025-10-02,Hyper Event (19.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+44,Morgan Smith,70,Type 2,5.9%,Stable,2025-09-25,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+44,Morgan Smith,70,Type 2,5.6000000000000005%,Decreased,2025-09-26,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+44,Morgan Smith,70,Type 2,5.7%,Stable,2025-09-27,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+44,Morgan Smith,70,Type 2,5.6000000000000005%,Decreased,2025-09-28,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+44,Morgan Smith,70,Type 2,6.0%,Stable,2025-09-29,Hypo Event (3.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+44,Morgan Smith,70,Type 2,5.800000000000001%,Stable,2025-09-30,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+44,Morgan Smith,70,Type 2,6.1000000000000005%,Stable,2025-10-01,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+44,Morgan Smith,70,Type 2,6.300000000000001%,Increased,2025-10-02,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+45,Jordan Brown,44,Gestational,7.2%,Increased,2025-09-25,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+45,Jordan Brown,44,Gestational,6.9%,Stable,2025-09-26,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+45,Jordan Brown,44,Gestational,7.1000000000000005%,Stable,2025-09-27,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+45,Jordan Brown,44,Gestational,6.6000000000000005%,Decreased,2025-09-28,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+45,Jordan Brown,44,Gestational,6.5%,Decreased,2025-09-29,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+45,Jordan Brown,44,Gestational,6.9%,Stable,2025-09-30,Hyper Event (11.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+45,Jordan Brown,44,Gestational,6.7%,Stable,2025-10-01,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+45,Jordan Brown,44,Gestational,6.4%,Decreased,2025-10-02,Hyper Event (16.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+46,Taylor Wilson,70,Type 1,11.6%,Increased,2025-09-25,Hyper Event (15.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+46,Taylor Wilson,70,Type 1,11.5%,Increased,2025-09-26,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+46,Taylor Wilson,70,Type 1,11.299999999999999%,Stable,2025-09-27,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+46,Taylor Wilson,70,Type 1,11.299999999999999%,Stable,2025-09-28,Hyper Event (14.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+46,Taylor Wilson,70,Type 1,10.7%,Decreased,2025-09-29,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+46,Taylor Wilson,70,Type 1,11.1%,Stable,2025-09-30,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+46,Taylor Wilson,70,Type 1,10.7%,Decreased,2025-10-01,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+46,Taylor Wilson,70,Type 1,10.899999999999999%,Decreased,2025-10-02,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.200000000000001%,Stable,2025-09-25,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.700000000000001%,Increased,2025-09-26,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.0%,Decreased,2025-09-27,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.3%,Stable,2025-09-28,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.4%,Stable,2025-09-29,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+47,Alex Wilson,47,Type 1,10.3%,Stable,2025-09-30,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.3%,Stable,2025-10-01,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+47,Alex Wilson,47,Type 1,10.5%,Stable,2025-10-02,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+48,Casey Williams,59,Type 1,11.100000000000001%,Stable,2025-09-25,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+48,Casey Williams,59,Type 1,11.3%,Stable,2025-09-26,Hyper Event (17.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+48,Casey Williams,59,Type 1,11.700000000000001%,Increased,2025-09-27,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+48,Casey Williams,59,Type 1,11.700000000000001%,Increased,2025-09-28,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+48,Casey Williams,59,Type 1,11.8%,Increased,2025-09-29,Hyper Event (15.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+48,Casey Williams,59,Type 1,11.4%,Stable,2025-09-30,Hypo Event (3.6 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+48,Casey Williams,59,Type 1,11.4%,Stable,2025-10-01,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+48,Casey Williams,59,Type 1,11.700000000000001%,Increased,2025-10-02,Hyper Event (15.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+49,Taylor Jones,53,Type 1,10.8%,Stable,2025-09-25,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+49,Taylor Jones,53,Type 1,11.3%,Increased,2025-09-26,Hyper Event (14.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+49,Taylor Jones,53,Type 1,11.1%,Stable,2025-09-27,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+49,Taylor Jones,53,Type 1,10.8%,Stable,2025-09-28,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+49,Taylor Jones,53,Type 1,11.5%,Increased,2025-09-29,Hyper Event (12.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+49,Taylor Jones,53,Type 1,10.7%,Decreased,2025-09-30,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+49,Taylor Jones,53,Type 1,10.7%,Decreased,2025-10-01,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+49,Taylor Jones,53,Type 1,11.4%,Increased,2025-10-02,Hyper Event (19.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+50,Jordan Brown,36,Type 1,8.0%,Increased,2025-09-25,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+50,Jordan Brown,36,Type 1,7.3999999999999995%,Stable,2025-09-26,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+50,Jordan Brown,36,Type 1,7.3999999999999995%,Stable,2025-09-27,Hypo Event (4.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+50,Jordan Brown,36,Type 1,7.3%,Decreased,2025-09-28,Hyper Event (17.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+50,Jordan Brown,36,Type 1,7.8999999999999995%,Increased,2025-09-29,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+50,Jordan Brown,36,Type 1,8.0%,Increased,2025-09-30,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+50,Jordan Brown,36,Type 1,7.199999999999999%,Decreased,2025-10-01,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+50,Jordan Brown,36,Type 1,7.8%,Stable,2025-10-02,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+51,Casey Wilson,66,Type 2,9.3%,Stable,2025-09-25,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+51,Casey Wilson,66,Type 2,9.4%,Stable,2025-09-26,Hypo Event (4.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+51,Casey Wilson,66,Type 2,9.6%,Stable,2025-09-27,Hypo Event (3.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+51,Casey Wilson,66,Type 2,9.1%,Decreased,2025-09-28,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+51,Casey Wilson,66,Type 2,9.0%,Decreased,2025-09-29,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+51,Casey Wilson,66,Type 2,9.1%,Decreased,2025-09-30,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+51,Casey Wilson,66,Type 2,9.9%,Increased,2025-10-01,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+51,Casey Wilson,66,Type 2,9.1%,Decreased,2025-10-02,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+52,Taylor Davis,38,Type 2,6.4%,Stable,2025-09-25,Hyper Event (16.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+52,Taylor Davis,38,Type 2,6.9%,Increased,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+52,Taylor Davis,38,Type 2,6.1%,Decreased,2025-09-27,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+52,Taylor Davis,38,Type 2,6.4%,Stable,2025-09-28,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+52,Taylor Davis,38,Type 2,6.4%,Stable,2025-09-29,Hyper Event (13.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+52,Taylor Davis,38,Type 2,7.0%,Increased,2025-09-30,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+52,Taylor Davis,38,Type 2,6.7%,Stable,2025-10-01,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+52,Taylor Davis,38,Type 2,7.0%,Increased,2025-10-02,Hyper Event (18.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+53,Sam Brown,43,Type 1,5.3999999999999995%,Stable,2025-09-25,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+53,Sam Brown,43,Type 1,5.8%,Stable,2025-09-26,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+53,Sam Brown,43,Type 1,5.3%,Decreased,2025-09-27,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+53,Sam Brown,43,Type 1,5.1%,Decreased,2025-09-28,Hyper Event (17.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+53,Sam Brown,43,Type 1,5.1%,Decreased,2025-09-29,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+53,Sam Brown,43,Type 1,6.0%,Increased,2025-09-30,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+53,Sam Brown,43,Type 1,5.3999999999999995%,Stable,2025-10-01,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+53,Sam Brown,43,Type 1,5.3%,Decreased,2025-10-02,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+54,Taylor Jones,17,Gestational,8.1%,Stable,2025-09-25,Hyper Event (18.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+54,Taylor Jones,17,Gestational,8.2%,Stable,2025-09-26,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+54,Taylor Jones,17,Gestational,8.4%,Increased,2025-09-27,Hyper Event (17.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+54,Taylor Jones,17,Gestational,7.8%,Stable,2025-09-28,Hyper Event (17.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+54,Taylor Jones,17,Gestational,8.1%,Stable,2025-09-29,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+54,Taylor Jones,17,Gestational,7.7%,Decreased,2025-09-30,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+54,Taylor Jones,17,Gestational,8.1%,Stable,2025-10-01,Hyper Event (18.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+54,Taylor Jones,17,Gestational,7.5%,Decreased,2025-10-02,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+55,Taylor Jones,60,Type 1,11.6%,Stable,2025-09-25,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+55,Taylor Jones,60,Type 1,11.1%,Decreased,2025-09-26,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+55,Taylor Jones,60,Type 1,11.9%,Increased,2025-09-27,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+55,Taylor Jones,60,Type 1,11.1%,Decreased,2025-09-28,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+55,Taylor Jones,60,Type 1,11.7%,Stable,2025-09-29,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+55,Taylor Jones,60,Type 1,11.1%,Decreased,2025-09-30,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+55,Taylor Jones,60,Type 1,11.4%,Stable,2025-10-01,Hyper Event (11.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+55,Taylor Jones,60,Type 1,11.7%,Stable,2025-10-02,Hyper Event (10.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+56,Alex Williams,44,Type 1,7.5%,Stable,2025-09-25,Hyper Event (13.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+56,Alex Williams,44,Type 1,7.7%,Stable,2025-09-26,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+56,Alex Williams,44,Type 1,7.8%,Stable,2025-09-27,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+56,Alex Williams,44,Type 1,7.8%,Stable,2025-09-28,Hyper Event (18.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+56,Alex Williams,44,Type 1,7.7%,Stable,2025-09-29,Hyper Event (16.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+56,Alex Williams,44,Type 1,8.0%,Increased,2025-09-30,Hyper Event (12.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+56,Alex Williams,44,Type 1,8.1%,Increased,2025-10-01,Hyper Event (13.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+56,Alex Williams,44,Type 1,7.2%,Decreased,2025-10-02,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,8.2%,Stable,2025-09-25,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,8.2%,Stable,2025-09-26,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,8.299999999999999%,Stable,2025-09-27,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,7.999999999999999%,Stable,2025-09-28,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,8.6%,Increased,2025-09-29,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,8.399999999999999%,Stable,2025-09-30,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+57,Casey Jones,68,Type 2,8.7%,Increased,2025-10-01,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+57,Casey Jones,68,Type 2,8.1%,Stable,2025-10-02,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+58,Jamie Jones,41,Type 2,11.0%,Decreased,2025-09-25,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+58,Jamie Jones,41,Type 2,11.9%,Increased,2025-09-26,Hyper Event (13.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+58,Jamie Jones,41,Type 2,11.5%,Stable,2025-09-27,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+58,Jamie Jones,41,Type 2,11.5%,Stable,2025-09-28,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+58,Jamie Jones,41,Type 2,11.7%,Stable,2025-09-29,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+58,Jamie Jones,41,Type 2,11.7%,Stable,2025-09-30,Hyper Event (19.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+58,Jamie Jones,41,Type 2,11.2%,Decreased,2025-10-01,Hyper Event (16.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+58,Jamie Jones,41,Type 2,11.8%,Increased,2025-10-02,Hyper Event (15.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+59,Jamie Miller,46,Type 2,7.6000000000000005%,Increased,2025-09-25,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+59,Jamie Miller,46,Type 2,7.2%,Stable,2025-09-26,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+59,Jamie Miller,46,Type 2,7.7%,Increased,2025-09-27,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+59,Jamie Miller,46,Type 2,7.5%,Increased,2025-09-28,Hyper Event (18.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+59,Jamie Miller,46,Type 2,6.8%,Decreased,2025-09-29,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+59,Jamie Miller,46,Type 2,7.5%,Increased,2025-09-30,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+59,Jamie Miller,46,Type 2,7.0%,Stable,2025-10-01,Hyper Event (19.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+59,Jamie Miller,46,Type 2,6.7%,Decreased,2025-10-02,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+60,Morgan Miller,24,Gestational,8.4%,Increased,2025-09-25,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+60,Morgan Miller,24,Gestational,8.4%,Increased,2025-09-26,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+60,Morgan Miller,24,Gestational,8.3%,Increased,2025-09-27,Hyper Event (12.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+60,Morgan Miller,24,Gestational,7.8%,Stable,2025-09-28,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+60,Morgan Miller,24,Gestational,8.0%,Stable,2025-09-29,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+60,Morgan Miller,24,Gestational,7.9%,Stable,2025-09-30,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+60,Morgan Miller,24,Gestational,8.3%,Increased,2025-10-01,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+60,Morgan Miller,24,Gestational,8.3%,Increased,2025-10-02,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+61,Morgan Williams,63,Type 2,5.5%,Decreased,2025-09-25,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+61,Morgan Williams,63,Type 2,6.1000000000000005%,Stable,2025-09-26,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+61,Morgan Williams,63,Type 2,5.800000000000001%,Stable,2025-09-27,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+61,Morgan Williams,63,Type 2,5.800000000000001%,Stable,2025-09-28,Hypo Event (4.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+61,Morgan Williams,63,Type 2,5.4%,Decreased,2025-09-29,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+61,Morgan Williams,63,Type 2,6.2%,Increased,2025-09-30,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+61,Morgan Williams,63,Type 2,6.0%,Stable,2025-10-01,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+61,Morgan Williams,63,Type 2,6.2%,Increased,2025-10-02,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+62,Jamie Miller,27,Type 2,9.0%,Increased,2025-09-25,Hypo Event (3.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+62,Jamie Miller,27,Type 2,8.299999999999999%,Decreased,2025-09-26,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+62,Jamie Miller,27,Type 2,8.799999999999999%,Stable,2025-09-27,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+62,Jamie Miller,27,Type 2,8.799999999999999%,Stable,2025-09-28,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+62,Jamie Miller,27,Type 2,8.899999999999999%,Stable,2025-09-29,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+62,Jamie Miller,27,Type 2,8.7%,Stable,2025-09-30,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+62,Jamie Miller,27,Type 2,9.0%,Increased,2025-10-01,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+62,Jamie Miller,27,Type 2,8.799999999999999%,Stable,2025-10-02,Hyper Event (11.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+63,Alex Williams,18,Type 1,8.9%,Increased,2025-09-25,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+63,Alex Williams,18,Type 1,8.7%,Stable,2025-09-26,Hypo Event (3.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+63,Alex Williams,18,Type 1,8.799999999999999%,Stable,2025-09-27,Hyper Event (14.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+63,Alex Williams,18,Type 1,9.0%,Increased,2025-09-28,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+63,Alex Williams,18,Type 1,9.1%,Increased,2025-09-29,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+63,Alex Williams,18,Type 1,8.299999999999999%,Decreased,2025-09-30,Hyper Event (15.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+63,Alex Williams,18,Type 1,8.299999999999999%,Decreased,2025-10-01,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+63,Alex Williams,18,Type 1,8.5%,Stable,2025-10-02,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+64,Morgan Smith,53,Gestational,9.8%,Increased,2025-09-25,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+64,Morgan Smith,53,Gestational,9.8%,Increased,2025-09-26,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+64,Morgan Smith,53,Gestational,9.700000000000001%,Increased,2025-09-27,Hyper Event (16.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+64,Morgan Smith,53,Gestational,9.0%,Decreased,2025-09-28,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+64,Morgan Smith,53,Gestational,9.6%,Stable,2025-09-29,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+64,Morgan Smith,53,Gestational,9.1%,Decreased,2025-09-30,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+64,Morgan Smith,53,Gestational,9.200000000000001%,Stable,2025-10-01,Hypo Event (5.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+64,Morgan Smith,53,Gestational,9.700000000000001%,Increased,2025-10-02,Hyper Event (12.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+65,Casey Davis,26,Type 1,7.5%,Decreased,2025-09-25,Hyper Event (14.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+65,Casey Davis,26,Type 1,7.8999999999999995%,Stable,2025-09-26,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+65,Casey Davis,26,Type 1,7.5%,Decreased,2025-09-27,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+65,Casey Davis,26,Type 1,7.5%,Decreased,2025-09-28,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+65,Casey Davis,26,Type 1,8.0%,Stable,2025-09-29,Hyper Event (12.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+65,Casey Davis,26,Type 1,7.8%,Stable,2025-09-30,Hyper Event (18.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+65,Casey Davis,26,Type 1,7.7%,Stable,2025-10-01,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+65,Casey Davis,26,Type 1,8.1%,Increased,2025-10-02,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+66,Taylor Brown,29,Gestational,5.3999999999999995%,Stable,2025-09-25,Hyper Event (11.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+66,Taylor Brown,29,Gestational,6.0%,Increased,2025-09-26,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+66,Taylor Brown,29,Gestational,6.1%,Increased,2025-09-27,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+66,Taylor Brown,29,Gestational,6.0%,Increased,2025-09-28,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+66,Taylor Brown,29,Gestational,5.3%,Decreased,2025-09-29,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+66,Taylor Brown,29,Gestational,5.8999999999999995%,Increased,2025-09-30,Hypo Event (3.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+66,Taylor Brown,29,Gestational,5.699999999999999%,Stable,2025-10-01,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+66,Taylor Brown,29,Gestational,5.6%,Stable,2025-10-02,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+67,Sam Williams,44,Gestational,8.2%,Increased,2025-09-25,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+67,Sam Williams,44,Gestational,7.7%,Stable,2025-09-26,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+67,Sam Williams,44,Gestational,7.6000000000000005%,Stable,2025-09-27,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+67,Sam Williams,44,Gestational,7.2%,Decreased,2025-09-28,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+67,Sam Williams,44,Gestational,8.2%,Increased,2025-09-29,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+67,Sam Williams,44,Gestational,7.7%,Stable,2025-09-30,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+67,Sam Williams,44,Gestational,7.9%,Stable,2025-10-01,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+67,Sam Williams,44,Gestational,8.2%,Increased,2025-10-02,Stable (6.0 mmol/L),Normal balanced diet,Moderate activity
+68,Jordan Williams,18,Type 2,9.2%,Decreased,2025-09-25,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+68,Jordan Williams,18,Type 2,9.9%,Increased,2025-09-26,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+68,Jordan Williams,18,Type 2,9.6%,Stable,2025-09-27,Hyper Event (12.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+68,Jordan Williams,18,Type 2,9.3%,Stable,2025-09-28,Hypo Event (3.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+68,Jordan Williams,18,Type 2,9.0%,Decreased,2025-09-29,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+68,Jordan Williams,18,Type 2,9.5%,Stable,2025-09-30,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+68,Jordan Williams,18,Type 2,9.0%,Decreased,2025-10-01,Hyper Event (10.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+68,Jordan Williams,18,Type 2,9.3%,Stable,2025-10-02,Hyper Event (14.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+69,Sam Brown,40,Gestational,8.9%,Stable,2025-09-25,Hyper Event (12.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+69,Sam Brown,40,Gestational,8.5%,Decreased,2025-09-26,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+69,Sam Brown,40,Gestational,8.5%,Decreased,2025-09-27,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+69,Sam Brown,40,Gestational,9.3%,Increased,2025-09-28,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+69,Sam Brown,40,Gestational,9.3%,Increased,2025-09-29,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+69,Sam Brown,40,Gestational,8.4%,Decreased,2025-09-30,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+69,Sam Brown,40,Gestational,8.8%,Stable,2025-10-01,Hyper Event (12.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+69,Sam Brown,40,Gestational,9.200000000000001%,Increased,2025-10-02,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,6.2%,Stable,2025-09-25,Hyper Event (13.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+70,Alex Davis,63,Type 1,6.6000000000000005%,Increased,2025-09-26,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,6.6000000000000005%,Increased,2025-09-27,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,6.6000000000000005%,Increased,2025-09-28,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,6.5%,Increased,2025-09-29,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,5.7%,Decreased,2025-09-30,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,5.8%,Decreased,2025-10-01,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+70,Alex Davis,63,Type 1,6.2%,Stable,2025-10-02,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+71,Jordan Wilson,53,Gestational,6.5%,Decreased,2025-09-25,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+71,Jordan Wilson,53,Gestational,6.8%,Stable,2025-09-26,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+71,Jordan Wilson,53,Gestational,7.3%,Increased,2025-09-27,Hypo Event (3.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+71,Jordan Wilson,53,Gestational,6.3999999999999995%,Decreased,2025-09-28,Hyper Event (11.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+71,Jordan Wilson,53,Gestational,6.8%,Stable,2025-09-29,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+71,Jordan Wilson,53,Gestational,6.8999999999999995%,Stable,2025-09-30,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+71,Jordan Wilson,53,Gestational,7.1%,Increased,2025-10-01,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+71,Jordan Wilson,53,Gestational,6.5%,Decreased,2025-10-02,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+72,Sam Williams,66,Type 1,9.5%,Decreased,2025-09-25,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+72,Sam Williams,66,Type 1,10.4%,Increased,2025-09-26,Hyper Event (16.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+72,Sam Williams,66,Type 1,9.6%,Decreased,2025-09-27,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+72,Sam Williams,66,Type 1,9.6%,Decreased,2025-09-28,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+72,Sam Williams,66,Type 1,9.5%,Decreased,2025-09-29,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+72,Sam Williams,66,Type 1,10.4%,Increased,2025-09-30,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+72,Sam Williams,66,Type 1,10.200000000000001%,Increased,2025-10-01,Hyper Event (17.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+72,Sam Williams,66,Type 1,9.9%,Stable,2025-10-02,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+73,Morgan Brown,68,Gestational,6.8999999999999995%,Stable,2025-09-25,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+73,Morgan Brown,68,Gestational,6.7%,Stable,2025-09-26,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+73,Morgan Brown,68,Gestational,7.2%,Increased,2025-09-27,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+73,Morgan Brown,68,Gestational,6.6%,Stable,2025-09-28,Hyper Event (16.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+73,Morgan Brown,68,Gestational,6.3%,Decreased,2025-09-29,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+73,Morgan Brown,68,Gestational,6.8999999999999995%,Stable,2025-09-30,Hyper Event (18.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+73,Morgan Brown,68,Gestational,6.6%,Stable,2025-10-01,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+73,Morgan Brown,68,Gestational,7.2%,Increased,2025-10-02,Hyper Event (13.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+74,Jamie Jones,35,Gestational,10.1%,Increased,2025-09-25,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+74,Jamie Jones,35,Gestational,9.7%,Stable,2025-09-26,Hyper Event (15.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+74,Jamie Jones,35,Gestational,9.299999999999999%,Decreased,2025-09-27,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+74,Jamie Jones,35,Gestational,9.5%,Stable,2025-09-28,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+74,Jamie Jones,35,Gestational,9.7%,Stable,2025-09-29,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+74,Jamie Jones,35,Gestational,9.9%,Increased,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+74,Jamie Jones,35,Gestational,9.6%,Stable,2025-10-01,Hyper Event (15.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+74,Jamie Jones,35,Gestational,9.1%,Decreased,2025-10-02,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+75,Casey Williams,47,Type 1,10.2%,Stable,2025-09-25,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+75,Casey Williams,47,Type 1,10.5%,Increased,2025-09-26,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+75,Casey Williams,47,Type 1,10.4%,Increased,2025-09-27,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+75,Casey Williams,47,Type 1,9.799999999999999%,Decreased,2025-09-28,Hyper Event (18.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+75,Casey Williams,47,Type 1,10.299999999999999%,Stable,2025-09-29,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+75,Casey Williams,47,Type 1,10.1%,Stable,2025-09-30,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+75,Casey Williams,47,Type 1,9.9%,Stable,2025-10-01,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+75,Casey Williams,47,Type 1,10.2%,Stable,2025-10-02,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+76,Taylor Wilson,17,Type 1,9.6%,Stable,2025-09-25,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+76,Taylor Wilson,17,Type 1,9.899999999999999%,Stable,2025-09-26,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+76,Taylor Wilson,17,Type 1,9.7%,Stable,2025-09-27,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+76,Taylor Wilson,17,Type 1,9.799999999999999%,Stable,2025-09-28,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+76,Taylor Wilson,17,Type 1,9.5%,Stable,2025-09-29,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+76,Taylor Wilson,17,Type 1,10.1%,Increased,2025-09-30,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+76,Taylor Wilson,17,Type 1,9.399999999999999%,Decreased,2025-10-01,Hyper Event (14.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+76,Taylor Wilson,17,Type 1,9.399999999999999%,Decreased,2025-10-02,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+77,Taylor Miller,36,Gestational,9.6%,Increased,2025-09-25,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+77,Taylor Miller,36,Gestational,9.1%,Stable,2025-09-26,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+77,Taylor Miller,36,Gestational,9.5%,Increased,2025-09-27,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+77,Taylor Miller,36,Gestational,9.5%,Increased,2025-09-28,Hypo Event (3.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+77,Taylor Miller,36,Gestational,9.0%,Stable,2025-09-29,Hyper Event (13.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+77,Taylor Miller,36,Gestational,9.5%,Increased,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+77,Taylor Miller,36,Gestational,9.5%,Increased,2025-10-01,Hyper Event (14.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+77,Taylor Miller,36,Gestational,9.5%,Increased,2025-10-02,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+78,Taylor Davis,54,Gestational,9.8%,Stable,2025-09-25,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+78,Taylor Davis,54,Gestational,9.8%,Stable,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+78,Taylor Davis,54,Gestational,10.200000000000001%,Increased,2025-09-27,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+78,Taylor Davis,54,Gestational,9.5%,Decreased,2025-09-28,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+78,Taylor Davis,54,Gestational,10.3%,Increased,2025-09-29,Hyper Event (16.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+78,Taylor Davis,54,Gestational,10.3%,Increased,2025-09-30,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+78,Taylor Davis,54,Gestational,9.8%,Stable,2025-10-01,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+78,Taylor Davis,54,Gestational,10.3%,Increased,2025-10-02,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+79,Casey Jones,65,Gestational,8.6%,Decreased,2025-09-25,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+79,Casey Jones,65,Gestational,9.0%,Stable,2025-09-26,Hyper Event (18.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+79,Casey Jones,65,Gestational,9.4%,Increased,2025-09-27,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+79,Casey Jones,65,Gestational,8.7%,Decreased,2025-09-28,Hyper Event (12.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+79,Casey Jones,65,Gestational,9.2%,Stable,2025-09-29,Hyper Event (12.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+79,Casey Jones,65,Gestational,9.4%,Increased,2025-09-30,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+79,Casey Jones,65,Gestational,9.2%,Stable,2025-10-01,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+79,Casey Jones,65,Gestational,9.1%,Stable,2025-10-02,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+80,Morgan Williams,47,Type 1,5.8%,Decreased,2025-09-25,Hyper Event (10.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+80,Morgan Williams,47,Type 1,6.6000000000000005%,Increased,2025-09-26,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+80,Morgan Williams,47,Type 1,6.2%,Stable,2025-09-27,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+80,Morgan Williams,47,Type 1,6.5%,Increased,2025-09-28,Hyper Event (20.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+80,Morgan Williams,47,Type 1,6.4%,Stable,2025-09-29,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+80,Morgan Williams,47,Type 1,5.7%,Decreased,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+80,Morgan Williams,47,Type 1,6.3%,Stable,2025-10-01,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+80,Morgan Williams,47,Type 1,6.3%,Stable,2025-10-02,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+81,Jamie Davis,49,Gestational,5.8%,Stable,2025-09-25,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+81,Jamie Davis,49,Gestational,6.1%,Increased,2025-09-26,Hyper Event (18.7 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+81,Jamie Davis,49,Gestational,5.7%,Stable,2025-09-27,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+81,Jamie Davis,49,Gestational,5.3999999999999995%,Decreased,2025-09-28,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+81,Jamie Davis,49,Gestational,5.3999999999999995%,Decreased,2025-09-29,Hyper Event (11.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+81,Jamie Davis,49,Gestational,6.3%,Increased,2025-09-30,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+81,Jamie Davis,49,Gestational,5.8%,Stable,2025-10-01,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+81,Jamie Davis,49,Gestational,5.6%,Stable,2025-10-02,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+82,Jordan Williams,43,Type 1,10.3%,Stable,2025-09-25,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+82,Jordan Williams,43,Type 1,10.8%,Increased,2025-09-26,Hyper Event (15.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+82,Jordan Williams,43,Type 1,10.6%,Stable,2025-09-27,Hyper Event (12.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+82,Jordan Williams,43,Type 1,10.0%,Decreased,2025-09-28,Hyper Event (13.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+82,Jordan Williams,43,Type 1,10.3%,Stable,2025-09-29,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+82,Jordan Williams,43,Type 1,9.9%,Decreased,2025-09-30,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+82,Jordan Williams,43,Type 1,10.9%,Increased,2025-10-01,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+82,Jordan Williams,43,Type 1,10.200000000000001%,Stable,2025-10-02,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+83,Jordan Jones,65,Type 2,7.199999999999999%,Decreased,2025-09-25,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+83,Jordan Jones,65,Type 2,7.3%,Decreased,2025-09-26,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+83,Jordan Jones,65,Type 2,7.3%,Decreased,2025-09-27,Hyper Event (16.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+83,Jordan Jones,65,Type 2,7.1%,Decreased,2025-09-28,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+83,Jordan Jones,65,Type 2,7.8999999999999995%,Increased,2025-09-29,Hyper Event (19.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+83,Jordan Jones,65,Type 2,7.8%,Stable,2025-09-30,Hypo Event (3.5 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+83,Jordan Jones,65,Type 2,7.3999999999999995%,Stable,2025-10-01,Hyper Event (17.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+83,Jordan Jones,65,Type 2,7.8999999999999995%,Increased,2025-10-02,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+84,Taylor Jones,36,Type 2,5.6%,Stable,2025-09-25,Hyper Event (14.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+84,Taylor Jones,36,Type 2,5.5%,Stable,2025-09-26,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+84,Taylor Jones,36,Type 2,5.8999999999999995%,Increased,2025-09-27,Hyper Event (16.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+84,Taylor Jones,36,Type 2,5.3%,Decreased,2025-09-28,Hyper Event (14.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+84,Taylor Jones,36,Type 2,5.6%,Stable,2025-09-29,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+84,Taylor Jones,36,Type 2,5.8%,Stable,2025-09-30,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+84,Taylor Jones,36,Type 2,5.699999999999999%,Stable,2025-10-01,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+84,Taylor Jones,36,Type 2,5.3%,Decreased,2025-10-02,Hyper Event (13.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+85,Jamie Davis,56,Type 2,8.0%,Stable,2025-09-25,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+85,Jamie Davis,56,Type 2,7.8%,Stable,2025-09-26,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+85,Jamie Davis,56,Type 2,7.9%,Stable,2025-09-27,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+85,Jamie Davis,56,Type 2,7.7%,Decreased,2025-09-28,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+85,Jamie Davis,56,Type 2,8.3%,Increased,2025-09-29,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+85,Jamie Davis,56,Type 2,7.8%,Stable,2025-09-30,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+85,Jamie Davis,56,Type 2,7.8%,Stable,2025-10-01,Hypo Event (4.2 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+85,Jamie Davis,56,Type 2,7.7%,Decreased,2025-10-02,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+86,Casey Wilson,24,Type 2,9.8%,Stable,2025-09-25,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+86,Casey Wilson,24,Type 2,9.600000000000001%,Stable,2025-09-26,Hyper Event (19.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+86,Casey Wilson,24,Type 2,9.3%,Decreased,2025-09-27,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+86,Casey Wilson,24,Type 2,9.3%,Decreased,2025-09-28,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+86,Casey Wilson,24,Type 2,10.0%,Stable,2025-09-29,Hyper Event (17.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+86,Casey Wilson,24,Type 2,9.9%,Stable,2025-09-30,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+86,Casey Wilson,24,Type 2,9.8%,Stable,2025-10-01,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+86,Casey Wilson,24,Type 2,10.0%,Stable,2025-10-02,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+87,Casey Wilson,42,Type 1,10.3%,Stable,2025-09-25,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+87,Casey Wilson,42,Type 1,10.6%,Stable,2025-09-26,Hypo Event (4.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+87,Casey Wilson,42,Type 1,10.7%,Stable,2025-09-27,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+87,Casey Wilson,42,Type 1,10.3%,Stable,2025-09-28,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+87,Casey Wilson,42,Type 1,10.0%,Decreased,2025-09-29,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+87,Casey Wilson,42,Type 1,10.1%,Decreased,2025-09-30,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+87,Casey Wilson,42,Type 1,10.1%,Decreased,2025-10-01,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+87,Casey Wilson,42,Type 1,10.7%,Stable,2025-10-02,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+88,Morgan Williams,18,Gestational,8.5%,Stable,2025-09-25,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+88,Morgan Williams,18,Gestational,8.200000000000001%,Stable,2025-09-26,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+88,Morgan Williams,18,Gestational,8.100000000000001%,Stable,2025-09-27,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+88,Morgan Williams,18,Gestational,8.4%,Stable,2025-09-28,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+88,Morgan Williams,18,Gestational,8.600000000000001%,Increased,2025-09-29,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+88,Morgan Williams,18,Gestational,8.5%,Stable,2025-09-30,Hyper Event (13.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+88,Morgan Williams,18,Gestational,8.200000000000001%,Stable,2025-10-01,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+88,Morgan Williams,18,Gestational,8.5%,Stable,2025-10-02,Hyper Event (16.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+89,Casey Jones,53,Type 1,6.9%,Stable,2025-09-25,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+89,Casey Jones,53,Type 1,6.5%,Decreased,2025-09-26,Hypo Event (3.6 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+89,Casey Jones,53,Type 1,7.4%,Increased,2025-09-27,Hypo Event (4.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+89,Casey Jones,53,Type 1,6.6000000000000005%,Decreased,2025-09-28,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+89,Casey Jones,53,Type 1,7.300000000000001%,Increased,2025-09-29,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+89,Casey Jones,53,Type 1,6.9%,Stable,2025-09-30,Hyper Event (15.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+89,Casey Jones,53,Type 1,6.7%,Stable,2025-10-01,Hypo Event (3.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+89,Casey Jones,53,Type 1,7.1000000000000005%,Stable,2025-10-02,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+90,Casey Wilson,35,Type 2,9.9%,Stable,2025-09-25,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+90,Casey Wilson,35,Type 2,9.799999999999999%,Decreased,2025-09-26,Hypo Event (4.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+90,Casey Wilson,35,Type 2,10.1%,Stable,2025-09-27,Hypo Event (3.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+90,Casey Wilson,35,Type 2,10.299999999999999%,Stable,2025-09-28,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+90,Casey Wilson,35,Type 2,9.9%,Stable,2025-09-29,Stable (6.0 mmol/L),Normal balanced diet,Moderate activity
+90,Casey Wilson,35,Type 2,10.5%,Increased,2025-09-30,Hypo Event (4.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+90,Casey Wilson,35,Type 2,10.1%,Stable,2025-10-01,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+90,Casey Wilson,35,Type 2,10.2%,Stable,2025-10-02,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+91,Jordan Davis,39,Type 2,10.200000000000001%,Increased,2025-09-25,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+91,Jordan Davis,39,Type 2,10.1%,Stable,2025-09-26,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+91,Jordan Davis,39,Type 2,10.1%,Stable,2025-09-27,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+91,Jordan Davis,39,Type 2,9.5%,Decreased,2025-09-28,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+91,Jordan Davis,39,Type 2,9.9%,Stable,2025-09-29,Hyper Event (17.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+91,Jordan Davis,39,Type 2,10.4%,Increased,2025-09-30,Hyper Event (12.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+91,Jordan Davis,39,Type 2,10.3%,Increased,2025-10-01,Hyper Event (12.2 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+91,Jordan Davis,39,Type 2,9.9%,Stable,2025-10-02,Hyper Event (19.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+92,Morgan Jones,58,Type 2,7.1%,Stable,2025-09-25,Hyper Event (17.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+92,Morgan Jones,58,Type 2,7.2%,Stable,2025-09-26,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+92,Morgan Jones,58,Type 2,6.9%,Stable,2025-09-27,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+92,Morgan Jones,58,Type 2,6.6%,Decreased,2025-09-28,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+92,Morgan Jones,58,Type 2,7.0%,Stable,2025-09-29,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+92,Morgan Jones,58,Type 2,6.8%,Stable,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+92,Morgan Jones,58,Type 2,6.8%,Stable,2025-10-01,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+92,Morgan Jones,58,Type 2,7.5%,Increased,2025-10-02,Hyper Event (12.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+93,Taylor Jones,21,Type 1,8.0%,Stable,2025-09-25,Stable (6.6 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,8.0%,Stable,2025-09-26,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,7.6%,Stable,2025-09-27,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,7.8999999999999995%,Stable,2025-09-28,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,7.7%,Stable,2025-09-29,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,7.5%,Decreased,2025-09-30,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,8.0%,Stable,2025-10-01,Stable (6.0 mmol/L),Normal balanced diet,Moderate activity
+93,Taylor Jones,21,Type 1,7.3%,Decreased,2025-10-02,Hyper Event (14.6 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+94,Morgan Wilson,69,Type 1,6.3%,Decreased,2025-09-25,Hypo Event (3.1 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+94,Morgan Wilson,69,Type 1,6.6%,Stable,2025-09-26,Hyper Event (13.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+94,Morgan Wilson,69,Type 1,6.3999999999999995%,Decreased,2025-09-27,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+94,Morgan Wilson,69,Type 1,6.7%,Stable,2025-09-28,Hyper Event (14.8 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+94,Morgan Wilson,69,Type 1,6.7%,Stable,2025-09-29,Hyper Event (11.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+94,Morgan Wilson,69,Type 1,6.6%,Stable,2025-09-30,Hypo Event (4.4 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+94,Morgan Wilson,69,Type 1,6.8999999999999995%,Stable,2025-10-01,Stable (7.9 mmol/L),Normal balanced diet,Moderate activity
+94,Morgan Wilson,69,Type 1,6.8%,Stable,2025-10-02,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+95,Sam Miller,29,Type 2,11.0%,Stable,2025-09-25,Stable (6.1 mmol/L),Normal balanced diet,Moderate activity
+95,Sam Miller,29,Type 2,10.6%,Decreased,2025-09-26,Stable (7.6 mmol/L),Normal balanced diet,Moderate activity
+95,Sam Miller,29,Type 2,11.0%,Stable,2025-09-27,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+95,Sam Miller,29,Type 2,11.2%,Stable,2025-09-28,Hyper Event (13.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+95,Sam Miller,29,Type 2,11.4%,Increased,2025-09-29,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+95,Sam Miller,29,Type 2,11.4%,Increased,2025-09-30,Hypo Event (3.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+95,Sam Miller,29,Type 2,11.0%,Stable,2025-10-01,Hyper Event (13.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+95,Sam Miller,29,Type 2,10.9%,Stable,2025-10-02,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,10.1%,Increased,2025-09-25,Hyper Event (17.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+96,Casey Smith,42,Gestational,9.7%,Stable,2025-09-26,Stable (7.4 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,9.6%,Stable,2025-09-27,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,9.5%,Stable,2025-09-28,Stable (7.5 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,10.0%,Increased,2025-09-29,Stable (8.0 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,9.4%,Stable,2025-09-30,Stable (6.2 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,9.6%,Stable,2025-10-01,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+96,Casey Smith,42,Gestational,9.6%,Stable,2025-10-02,Stable (6.7 mmol/L),Normal balanced diet,Moderate activity
+97,Jordan Davis,19,Gestational,9.0%,Stable,2025-09-25,Hyper Event (16.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+97,Jordan Davis,19,Gestational,9.299999999999999%,Stable,2025-09-26,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+97,Jordan Davis,19,Gestational,9.5%,Increased,2025-09-27,Hyper Event (19.0 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+97,Jordan Davis,19,Gestational,9.6%,Increased,2025-09-28,Stable (6.4 mmol/L),Normal balanced diet,Moderate activity
+97,Jordan Davis,19,Gestational,8.7%,Decreased,2025-09-29,Hyper Event (12.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+97,Jordan Davis,19,Gestational,8.6%,Decreased,2025-09-30,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+97,Jordan Davis,19,Gestational,9.299999999999999%,Stable,2025-10-01,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+97,Jordan Davis,19,Gestational,9.2%,Stable,2025-10-02,Stable (7.2 mmol/L),Normal balanced diet,Moderate activity
+98,Alex Brown,27,Type 2,7.1%,Stable,2025-09-25,Hypo Event (3.3 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+98,Alex Brown,27,Type 2,6.8%,Decreased,2025-09-26,Hypo Event (3.9 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+98,Alex Brown,27,Type 2,7.5%,Increased,2025-09-27,Stable (6.8 mmol/L),Normal balanced diet,Moderate activity
+98,Alex Brown,27,Type 2,7.6%,Increased,2025-09-28,Stable (7.7 mmol/L),Normal balanced diet,Moderate activity
+98,Alex Brown,27,Type 2,6.8999999999999995%,Stable,2025-09-29,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
+98,Alex Brown,27,Type 2,7.199999999999999%,Stable,2025-09-30,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+98,Alex Brown,27,Type 2,7.1%,Stable,2025-10-01,Stable (7.8 mmol/L),Normal balanced diet,Moderate activity
+98,Alex Brown,27,Type 2,7.3%,Stable,2025-10-02,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+99,Jamie Jones,32,Type 2,7.2%,Decreased,2025-09-25,Hypo Event (4.8 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+99,Jamie Jones,32,Type 2,7.0%,Decreased,2025-09-26,Hypo Event (4.0 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+99,Jamie Jones,32,Type 2,7.1%,Decreased,2025-09-27,Stable (7.3 mmol/L),Normal balanced diet,Moderate activity
+99,Jamie Jones,32,Type 2,7.8%,Increased,2025-09-28,Hyper Event (17.1 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+99,Jamie Jones,32,Type 2,7.5%,Stable,2025-09-29,Hyper Event (18.5 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+99,Jamie Jones,32,Type 2,7.9%,Increased,2025-09-30,Hypo Event (4.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+99,Jamie Jones,32,Type 2,7.5%,Stable,2025-10-01,Stable (6.3 mmol/L),Normal balanced diet,Moderate activity
+99,Jamie Jones,32,Type 2,7.8%,Increased,2025-10-02,Hyper Event (14.3 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+100,Jordan Wilson,65,Type 2,11.8%,Increased,2025-09-25,Stable (6.9 mmol/L),Normal balanced diet,Moderate activity
+100,Jordan Wilson,65,Type 2,11.1%,Decreased,2025-09-26,Stable (6.5 mmol/L),Normal balanced diet,Moderate activity
+100,Jordan Wilson,65,Type 2,12.0%,Increased,2025-09-27,Hypo Event (3.7 mmol/L before exercise),Tofu stir-fry with mixed vegetables,Swam for 40 minutes
+100,Jordan Wilson,65,Type 2,12.0%,Increased,2025-09-28,Stable (7.1 mmol/L),Normal balanced diet,Moderate activity
+100,Jordan Wilson,65,Type 2,11.6%,Stable,2025-09-29,Hyper Event (13.9 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+100,Jordan Wilson,65,Type 2,11.0%,Decreased,2025-09-30,Hyper Event (13.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+100,Jordan Wilson,65,Type 2,11.2%,Decreased,2025-10-01,Hyper Event (10.4 mmol/L after dinner),"Double cheeseburger, white bread, coffee",Exercised a total of 35 minutes
+100,Jordan Wilson,65,Type 2,11.3%,Stable,2025-10-02,Stable (7.0 mmol/L),Normal balanced diet,Moderate activity
