@@ -60,13 +60,13 @@ This section details the logging requirements for each identified health data ty
 
 #### 3.7. ECG (Electrocardiogram)
 
-##### 3.7.1. ECG (Classification)
+#### 3.7.1. ECG (Classification)
 - **Best Frequency (non-range):** Once daily (for a periodic self-check).
 - **Best Frequency (range):** From daily to weekly for periodic checks, or on-demand as needed.
 - **When:** When symptoms (e.g., palpitations) occur, as part of a routine self-check, or as advised by a clinician.
 - **Format/Metric:** A text string for the classification (e.g., "Normal Sinus Rhythm") and the Average `BPM` over a 30-second (non-range) or 30-60 second (range) measurement period.
 
-##### 3.7.2. ECG (Raw)
+#### 3.7.2. ECG (Raw)
 - **Frequency:** Continuous, typically for a prescribed 24-48 hour period.
 - **Note:** This data type is captured by clinical devices (e.g., Holter monitor) and is not intended for manual user entry in the prototype. It is included for contextual understanding.
 - **Format/Metric:** Time-series data stream (voltage vs. time).
