@@ -1,4 +1,4 @@
-### Project Backend & Database: The Full Overview (Updated)
+### Project Backend & Database: The Full Overview
 
 This document serves as the definitive guide for the backend and database implementation. It covers the data structure, the API contract for communication, and the critical business rules for access control.
 
