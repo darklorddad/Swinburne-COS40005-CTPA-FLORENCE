@@ -31,11 +31,15 @@ class ChutesLAM:
                         "The 'output' field of a 'tool' message will contain the result, often in JSON format. "
                         "Specifically, for the 'get_patient_glucose_level' tool, the output will be a JSON string "
                         "containing 'patient_id', 'glucose_level', 'unit', and 'source'. "
-                        "You MUST parse this JSON. If the JSON contains an 'error' field, you MUST report that error to the user "
-                        "and provide no other information or inferred results. Do NOT hallucinate a successful outcome if an error is present. "
-                        "If 'glucose_level' is present and there is NO 'error' field, then state the patient's glucose level "
-                        "clearly, including the unit. Always provide a clear, concise, and direct answer based on the tool's output, "
-                        "avoiding apologies or stating that you are 'experiencing technical issues' if the tool output provides a clear result or error."
+                        "You are a helpful AI assistant. You have access to a tool `get_patient_glucose_level`. "
+                        "When this tool is called, its output will be provided as a JSON string in a 'tool' message. "
+                        "You MUST parse this JSON string from the 'output' field. "
+                        "If the parsed JSON contains an 'error' field, respond ONLY with the error message from that field. "
+                        "If the parsed JSON contains 'glucose_level' and NO 'error' field, respond ONLY with the patient's glucose level and unit. "
+                        "For example, if the output is `{\"patient_id\": \"patient123\", \"glucose_level\": 87.0, \"unit\": \"mg/dL\", ...}` "
+                        "your response should be: 'Patient patient123's glucose level is 87.0 mg/dL.' "
+                        "Do NOT include any apologies, disclaimers, or additional conversational filler when responding to tool outputs. "
+                        "Be direct and factual based SOLELY on the parsed tool output."
                     )
                 }
             )
