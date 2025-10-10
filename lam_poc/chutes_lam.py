@@ -58,9 +58,14 @@ class ChutesLAM:
             payload["tool_choice"] = "auto" # Allow LLM to decide if it wants to use tools
 
         try:
+            print(f"\nDEBUG: Sending messages to LLM: {json.dumps(messages, indent=2)}")
+            if tools:
+                print(f"DEBUG: With tools: {json.dumps(tools, indent=2)}")
             response = requests.post(API_URL, headers=headers, json=payload)
             response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
-            return response.json()
+            llm_raw_response = response.json()
+            print(f"DEBUG: Raw LLM response: {json.dumps(llm_raw_response, indent=2)}")
+            return llm_raw_response
         except requests.exceptions.RequestException as e:
             print(f"Error calling LLM: {e}")
             return {"error": str(e)}
