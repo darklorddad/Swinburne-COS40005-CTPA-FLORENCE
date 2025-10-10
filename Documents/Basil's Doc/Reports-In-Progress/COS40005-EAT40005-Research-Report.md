@@ -1,12 +1,13 @@
 # COS40005 EAT40005 Research Report
 
-**Project Title:** BioTective Digital Health Platform - AI-Enabled Chronic Disease Monitoring  
-**Student Name:** Basil  
-**Student ID:** [Student ID]  
 **Course:** COS40005 Computing Technology Project A  
+**Project:** BioTective Digital Health Platform - AI-Enabled Chronic Disease Monitoring  
+**Submission Date:** 10 October 2025
 **Client:** BioTective Sdn Bhd  
-**Supervisor:** Dr. WanTze Vong  
-**Submission Date:** October 2025  
+**Supervisor:** Dr. WanTze Vong 
+**Student:** Basil Agas Anak Heatley Rogers
+**Student_ID:** 102778888
+**Team Members:** Daniel Tiong(darklorddad), Edison Ho(Crazyfier), Ashley Jong(ashleyjong), Basilagas21, Alif Harriz(Harriseu)  
 
 ---
 

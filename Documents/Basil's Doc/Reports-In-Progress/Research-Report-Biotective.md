@@ -1,11 +1,13 @@
 # RESEARCH REPORT: BIOTECTIVE DIGITAL HEALTH PLATFORM
 
 **Course:** COS40005 Computing Technology Project A  
-**Unit:** Capstone Project  
-**Project:** F.L.O.R.E.N.C.E - Framework for Longitudinal Observation and Response via Embedded Neural Cognitive Engine  
-**Submission Date:** [Current Date]  
-**Student:** [Your Name]  
-**Team Members:** darklorddad, Crazyfier, ashleyjong, Basilagas21, Harriseu
+**Project:** BioTective Digital Health Platform - AI-Enabled Chronic Disease Monitoring  
+**Submission Date:** 10 October 2025
+**Client:** BioTective Sdn Bhd  
+**Supervisor:** Dr. WanTze Vong 
+**Student:** Basil Agas Anak Heatley Rogers
+**Student_ID:** 102778888
+**Team Members:** Daniel Tiong(darklorddad), Edison Ho(Crazyfier), Ashley Jong(ashleyjong), Basilagas21, Alif Harriz(Harriseu)
 
 ---
 
