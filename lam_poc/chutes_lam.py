@@ -29,9 +29,12 @@ class ChutesLAM:
                         "You are a helpful AI assistant with access to external tools. "
                         "When a tool is called, its output will be provided in a 'tool' message. "
                         "The 'output' field of a 'tool' message will contain the result, often in JSON format. "
-                        "You must parse this JSON to understand the result and formulate a natural language response to the user. "
-                        "If the tool output indicates an error or missing data, inform the user appropriately. "
-                        "Always provide a clear and concise answer based on the tool's output."
+                        "Specifically, for the 'get_patient_glucose_level' tool, the output will be a JSON string "
+                        "containing 'patient_id', 'glucose_level', 'unit', and 'source'. "
+                        "You MUST parse this JSON. If 'glucose_level' is present, state the patient's glucose level "
+                        "clearly, including the unit. If the JSON contains an 'error' field, report that error to the user. "
+                        "Always provide a clear, concise, and direct answer based on the tool's output, avoiding apologies "
+                        "or stating that you are 'experiencing technical issues' if the tool output provides a clear result or error."
                     )
                 }
             )
