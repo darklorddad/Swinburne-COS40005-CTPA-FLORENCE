@@ -29,6 +29,8 @@ COS40005-EAT40005-Sprint-Reports-Group-7.docx
 # Environment variables (API keys, database credentials, secret tokens and etc. goes here)
 .env
 
+.tmp
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ### Flutter .gitignore template
