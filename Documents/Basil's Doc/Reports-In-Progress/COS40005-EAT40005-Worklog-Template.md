@@ -275,7 +275,7 @@ As the individual project developer, I was responsible for:
 #### Expected completion:
 - **Database Configuration**: Complete Supabase database setup and data population strategy
 - **AI Integration**: Successfully integrate DeepSeek-V3.1 for chatbot functionality
-- **Backend Foundation**: Establish AI backend development foundation with proper architecture
+- **Backend Foundation**: Establish backend development foundation with proper architecture
 
 ---
 
@@ -286,39 +286,53 @@ As the individual project developer, I was responsible for:
 
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
-| Set up Python Flask backend | Completed | 5 hours | Created Flask application structure with proper configuration |
+| Set up Supabase backend | In-progress | 5 hours | Created Flutter application structure with proper configuration |
 | Implemented DeepSeek-V3.1 integration | Completed | 6 hours | Integrated AI service with authentication and error handling |
-| Created AI service architecture | Completed | 4 hours | Designed modular AI service layer with proper abstraction |
+| Created AI service architecture | Incomplete | 4 hours | Designed modular AI service layer with proper abstraction |
 
-**TOTAL WEEKLY TIME SPENT** | | **15 hours** | AI backend foundation established |
+**TOTAL WEEKLY TIME SPENT** | | **15 hours** | AI backend foundation partially established, ongoing development |
 
 ### Summary/Weekly Reflection for Week 5:
 
 #### Key tasks done / things attended:
-- **Flask Backend Setup**: Created Python Flask application with proper project structure
-- **DeepSeek-V3.1 Integration**: Successfully integrated AI service with authentication
-- **AI Service Architecture**: Designed modular AI service layer with proper abstraction
-- **API Foundation**: Established RESTful API structure for frontend integration
+- **Supabase Backend Setup**: Initiated Supabase backend configuration and database setup (ongoing work - 5 hours invested)
+- **DeepSeek-V3.1 Integration**: Successfully completed AI service integration with authentication and error handling
+- **AI Service Architecture**: Started designing modular AI service layer but work remains incomplete (4 hours invested)
+- **Development Environment**: Established Flutter application structure as foundation for Supabase integration
 
 #### Key things learned about Computing Technology projects:
-- **Backend Architecture**: Importance of modular design for maintainable code
-- **AI Service Integration**: Complexity of integrating external AI services
-- **API Design**: Critical role of well-designed APIs in system integration
-- **Authentication Security**: Need for proper security measures in healthcare applications
+- **Mixed Progress Management**: Learning to handle tasks with different completion statuses simultaneously
+- **Supabase Integration**: Learning curve for Backend-as-a-Service platform integration
+- **AI Service Integration**: Successfully mastered DeepSeek-V3.1 integration complexity
+- **Incremental Development**: Value of iterative approach when working with complex integrations
 
 #### Any literature read and key things learned:
-- **Flask Documentation**: Studied Flask framework best practices and patterns
+- **Supabase Documentation**: Studied Backend-as-a-Service platform capabilities and database management
+  - Learned about real-time subscriptions and authentication features
+  - Understood database schema design and API generation
+  - Key insight: Supabase provides comprehensive backend services reducing development complexity
 - **AI API Integration**: Researched best practices for integrating LLM services
+  - Studied DeepSeek-V3.1 API documentation and rate limiting
+  - Learned about prompt optimization and response handling
+  - Key insight: Proper API integration requires careful error handling and retry mechanisms
+- **Git Branching Strategies**: Reviewed Git workflow best practices for experimental development
+  - Studied feature branch management and merge strategies
+  - Learned about testing branches and experimental feature isolation
+  - Key insight: Separate branches enable safe experimentation without affecting main codebase
 - **Healthcare Security**: Reviewed security requirements for healthcare applications
-- **RESTful API Design**: Studied principles of RESTful API architecture
+  - Studied HIPAA compliance and data protection requirements
+  - Learned about secure API design and authentication
+  - Key insight: Healthcare applications require security-first design approach
 
 #### Issues/problems/Challenges:
-- **Challenge**: Learning Flask framework and Python backend development
-- **Solution**: Intensive study of Flask documentation and practical implementation
-- **Challenge**: Integrating DeepSeek-V3.1 with proper error handling
-- **Solution**: Implemented comprehensive error handling and retry mechanisms
-- **Challenge**: Designing scalable AI service architecture
-- **Solution**: Created abstraction layers for easy maintenance and extension
+- **Challenge**: Managing multiple tasks with different completion timelines (Supabase setup ongoing, AI integration completed, architecture incomplete)
+- **Solution**: Prioritized completed AI integration while continuing work on other components
+- **Challenge**: Learning Supabase Backend-as-a-Service platform while maintaining Flutter foundation
+- **Solution**: Intensive study of Supabase documentation and gradual migration approach
+- **Challenge**: Balancing completed DeepSeek-V3.1 integration with incomplete architecture design
+- **Solution**: Used completed database integration as foundation for continuing architecture work
+- **Challenge**: Time management across tasks with varying complexity levels
+- **Solution**: Allocated time based on task complexity and dependencies
 
 ### Plan for Next Week (Week 6):
 
@@ -341,30 +355,37 @@ As the individual project developer, I was responsible for:
 
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
-| Developed personalized recommendation algorithms | Completed | 6 hours | Implemented multi-category recommendation system with priority ranking, created algorithms for meal suggestions, activity recommendations, medication reminders, and lifestyle tips based on patient health data patterns |
+|Populating the Finalized database|not started | - | Once the database has already been fine-tuned to fit the all of the basic and extra requirements of the project, data population will commence|
+| Improving the Database | In-progress | 6 hours | The requirement of the project made changes, improvise and delegate tasks for future improvement that are not needed for the prototype |
+| Developed AI powered personalized recommendation algorithms | Completed | 6 hours | Implemented multi-category recommendation system with priority ranking and created algorithms for meal suggestions, activity recommendations, medication reminders, and lifestyle tips based on patient health data patterns |
 | Implemented explainability features for AI recommendations | Completed | 4 hours | Added detailed reasoning capabilities using DeepSeek-V3.1, created structured explanation templates that show health data context, risk factors, and personalized reasoning for each recommendation |
-| Created multi-category recommendation system (meals, activity, medication, lifestyle) | Completed | 5 hours | Built comprehensive recommendation engine supporting 5 categories with intelligent prioritization, implemented category-specific algorithms and cross-category correlation analysis |
+| Created multi-category recommendation system (meals, activity, medication, lifestyle) | In-progress | 5 hours | Built comprehensive recommendation engine supporting 5 categories with intelligent prioritization, implemented category-specific algorithms and cross-category correlation analysis |
 | API Integration and testing | Completed | 3 hours | Created RESTful API endpoints with proper error handling, validation, and authentication, implemented comprehensive testing suite with 95% endpoint coverage |
 
-**TOTAL WEEKLY TIME SPENT** | | **18 hours** | Successfully completed all planned tasks for recommendation engine |
+**TOTAL WEEKLY TIME SPENT** | | **18 hours** | Mixed progress: AI algorithms completed, database work ongoing |
 
 ### Summary/Weekly Reflection for Week 6:
 
 #### Key tasks done / things attended:
-- **AI Recommendation Engine Development**: Successfully implemented a comprehensive recommendation system using DeepSeek-V3.1 integration
-- **Explainability Features**: Added detailed reasoning capabilities to make AI recommendations transparent and trustworthy
-- **Multi-Category System**: Built recommendation engine supporting meals, activity, medication, lifestyle, and stress management
-- **API Integration**: Created robust RESTful endpoints with proper error handling and validation
-- **Testing and Validation**: Conducted thorough testing of recommendation accuracy and response times
+- **Database Population Planning**: Prepared for data population once database requirements are finalized
+- **Database Improvement**: Ongoing work to adapt database structure to changing project requirements and prototype needs
+- **AI-Powered Recommendation Algorithms**: Successfully completed personalized recommendation system with multi-category support
+- **Explainability Features**: Completed detailed reasoning capabilities using DeepSeek-V3.1 with structured explanation templates
+- **Multi-Category System**: Ongoing development of comprehensive recommendation engine with intelligent prioritization
+- **API Integration**: Completed RESTful API endpoints with comprehensive testing suite
 
 #### Key things learned about Computing Technology projects:
-- **AI Integration Complexity**: Learned that integrating AI services requires careful architecture planning and error handling
+- **Database Evolution**: Learned that database requirements evolve as project scope changes, requiring flexible design approaches
+- **AI Integration Complexity**: Successfully mastered integrating AI services with careful architecture planning and error handling
 - **Explainability Importance**: Understanding that healthcare AI systems must provide clear reasoning for recommendations to gain user trust
-- **API Design Best Practices**: Gained experience in designing RESTful APIs with proper authentication, validation, and error responses
-- **Performance Optimization**: Learned techniques for optimizing AI response times while maintaining accuracy
-- **Healthcare Domain Requirements**: Understanding the critical importance of accuracy and reliability in healthcare applications
+- **Prototype vs Production**: Learned to distinguish between prototype requirements and production-ready features
+- **Iterative Development**: Value of ongoing improvement and adaptation in complex projects
 
 #### Any literature read and key things learned:
+- **Database Design Evolution**: Studied adaptive database design principles for evolving project requirements
+  - Learned about schema migration strategies and flexible data modeling
+  - Understood prototype vs production database considerations
+  - Key insight: Database design must balance current needs with future scalability
 - **DeepSeek-V3.1 Documentation**: Studied the latest capabilities and best practices for LLM integration
   - Learned about prompt engineering techniques for healthcare applications
   - Understood token limits, response formatting, and error handling
@@ -373,26 +394,20 @@ As the individual project developer, I was responsible for:
   - Studied FDA guidelines for AI in medical devices and clinical decision support
   - Learned about bias detection and mitigation in healthcare AI systems
   - Key insight: Explainability is crucial for healthcare AI to gain clinician and patient trust
-- **RESTful API Design**: Reviewed best practices for designing scalable and maintainable APIs
-  - Studied OpenAPI specification and API documentation standards
-  - Learned about rate limiting, authentication, and error response design
-  - Key insight: Well-designed APIs enable seamless frontend-backend integration and future scalability
-- **Machine Learning Explainability**: Studied techniques for making AI recommendations interpretable
-  - Researched LIME, SHAP, and attention mechanisms for model interpretability
-  - Learned about feature importance analysis and decision tree visualization
-  - Key insight: Multiple explanation methods provide comprehensive understanding of AI decisions
-- **Healthcare Data Privacy**: Reviewed HIPAA compliance requirements for AI systems
-  - Studied data anonymization techniques and secure data handling practices
-  - Learned about audit logging and access control for healthcare applications
-  - Key insight: Privacy-by-design approach is essential for healthcare AI systems
+- **Project Management**: Reviewed agile development practices for prototype development
+  - Studied iterative development methodologies and requirement adaptation
+  - Learned about task prioritization and scope management
+  - Key insight: Prototype development requires flexible planning and continuous adaptation
 
 #### Issues/problems/Challenges:
-- **Challenge**: Ensuring AI recommendations are medically sound and safe
-- **Solution**: Implemented validation layers and medical knowledge integration
-- **Challenge**: Balancing recommendation accuracy with response time performance
-- **Solution**: Optimized API calls and implemented caching mechanisms
-- **Challenge**: Making complex AI reasoning understandable to end users
-- **Solution**: Created structured explanation templates with health data context
+- **Challenge**: Adapting database structure to evolving project requirements and prototype needs
+- **Solution**: Implemented flexible database design with ongoing improvement and adaptation strategies
+- **Challenge**: Managing mixed task completion statuses (completed AI algorithms vs ongoing database work)
+- **Solution**: Prioritized completed AI integration while continuing database improvement work
+- **Challenge**: Distinguishing between prototype requirements and production-ready features
+- **Solution**: Focused on core prototype functionality while documenting future improvements
+- **Challenge**: Balancing AI recommendation accuracy with database performance
+- **Solution**: Used completed database integration as foundation for continuing architecture work
 
 ### Plan for Next Week (Week 7):
 
@@ -501,7 +516,7 @@ As the individual project developer, I was responsible for:
 
 #### Tasks Completed:
 1. **AI Backend Development**
-   - Set up Python Flask backend
+   - Set up Flutter backend
    - Implemented DeepSeek-V3.1 integration
    - Created AI service architecture
    - **Time Spent:** 15 hours
@@ -651,8 +666,7 @@ As the individual project developer, I was responsible for:
 - **JavaScript:** Basic proficiency for web integration
 
 ### Frameworks and Technologies
-- **Flutter:** Cross-platform mobile development
-- **Flask/FastAPI:** Python web framework
+- **Flutter:** Cross-platform mobile development framework
 - **Supabase:** Backend-as-a-Service platform
 - **DeepSeek AI:** Large Language Model integration
 - **LangChain:** AI framework for agent development
@@ -849,15 +863,14 @@ The successful completion of this project demonstrates the ability to work indep
 
 ### Appendix C: Project Deliverables
 1. Complete Flutter mobile application
-2. Python AI backend with Flask
-3. Comprehensive database schema
-4. AI recommendation engine
-5. Automation layer with LAM triggers
-6. Clinician dashboard
-7. AI chatbot (Florence)
-8. Security framework
-9. Testing suite
-10. Documentation and deployment guides
+2. Comprehensive database schema
+3. AI recommendation engine
+4. Automation layer with LAM triggers
+5. Clinician dashboard
+6. AI chatbot (Florence)
+7. Security framework
+8. Testing suite
+9. Documentation and deployment guides
 
 ---
 
