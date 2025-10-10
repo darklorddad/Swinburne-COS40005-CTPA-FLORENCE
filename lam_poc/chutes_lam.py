@@ -71,15 +71,13 @@ class ChutesLAM:
             if message.get("tool_calls"):
                 tool_calls.extend(message["tool_calls"])
 
-        # If the LLM provided a direct response, add it to history
-        if assistant_message_content:
-            self.conversation_history.append({"role": "assistant", "content": assistant_message_content})
-
         # If the LLM requested tool calls, execute them
         if tool_calls:
             print(f"DEBUG: LLM requested tool calls: {tool_calls}")
             
-            # Add the assistant's tool_calls message to history
+            # Add the assistant's tool_calls message to history.
+            # We intentionally do NOT add assistant_message_content here if tool_calls are present,
+            # as the final response should come after tool execution.
             self.conversation_history.append(
                 {
                     "role": "assistant",
@@ -145,6 +143,11 @@ class ChutesLAM:
                 return final_assistant_message_content
             else:
                 return "The AI did not provide a final response after tool execution."
-
-        # If no tool calls and no direct content, something went wrong or LLM was silent
-        return assistant_message_content if assistant_message_content else "No response from AI."
+        else: # No tool calls were made in the first LLM response
+            # If the LLM provided a direct response (without tool calls), add it to history
+            if assistant_message_content:
+                self.conversation_history.append({"role": "assistant", "content": assistant_message_content})
+                return assistant_message_content
+            else:
+                # If no tool calls and no direct content, something went wrong or LLM was silent
+                return "No response from AI."
