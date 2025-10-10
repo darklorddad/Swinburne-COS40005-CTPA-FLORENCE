@@ -141,6 +141,8 @@ class ChutesLAM:
                         }
                     )
             
+            print(f"DEBUG: Tool outputs: {json.dumps(tool_outputs, indent=2)}")
+
             # Add tool outputs to history
             self.conversation_history.append(
                 {
