@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Callable
 # --- Configuration from AI-Integration-branch\DeepSeek.py for reference ---
 # In a production application, these would be loaded from environment variables
 # or a secure configuration management system.
-API_TOKEN = "cpk_1c9adce1fd244f5e879cc45afa88c5c4.986b31f04b5056388f96ddf6cbf9f8fe.Osipc4tDlSGc01vC"
+API_TOKEN = "cpk_1c9adce1fd244f5e879cc45afa88c5c4.986b31f04b5056388f96ddf6cbf9f8fe.Osipc4tDlSGc01vCEy2KEuaTdpToFzqs"
 API_URL = "https://llm.chutes.ai/v1/chat/completions"
 MODEL_NAME = "deepseek-ai/DeepSeek-V3.1"
 # -------------------------------------------------------------------------
