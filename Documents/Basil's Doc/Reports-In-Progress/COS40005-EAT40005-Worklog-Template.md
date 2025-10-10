@@ -31,9 +31,7 @@ The BioTective Digital Health Platform is a comprehensive AI-enabled system for 
 As the individual project developer, I was responsible for:
 
 - **Complete system architecture design and implementation**
-- **AI backend development and integration**
-- **Flutter frontend development**
-- **Database design and implementation**
+- **Flutter frontend development for AI intergration**
 - **Security framework implementation**
 - **Testing and quality assurance**
 - **Documentation and deployment preparation**
@@ -77,7 +75,7 @@ As the individual project developer, I was responsible for:
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
 | Formed project group with 5 members | Completed | 0.5 hours | Established team communication channels via WhatsApp, assigned roles (Project Lead, Developer, Researcher, Designer, Tester), created team meeting schedule |
-| Created GitHub repository for final year project | Completed | 0.5 hours | Set up private repository 'Swinburne-COS40005-CTPA-FLORENCE', configured branch protection, established coding standards and commit message conventions |
+| Created GitHub repository for final year project | Completed | 0.5 hours | Set up private repository 'Swinburne-COS40005-CTPA-FLORENCE'. As for the AI intergration, I made a github branch for Ai testing purposes and configured branch protection, established coding standards and commit message conventions |
 
 **TOTAL WEEKLY TIME SPENT** | | **1 hour** | Project initialization completed successfully |
 
@@ -184,7 +182,7 @@ As the individual project developer, I was responsible for:
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
 | Contacted supervisor(Dr. WanTze Vong) for verification and project details | Completed | 1 hour | Conducted detailed meeting, clarified technical requirements, confirmed AI integration approach, obtained final project approval |
-| Created system architecture and technical flow diagram | Completed | 1 hour | Designed modular architecture with AI backend, Flutter frontend, Supabase database, documented API endpoints and data flow |
+| Created system architecture and technical flow of the prototype in a diagram | Completed | 1 hour | Designed modular architecture with AI backend, Flutter frontend, Supabase database, documented API endpoints and data flow |
 | Researched AI integration and model selection | Completed | 1 hour | Evaluated DeepSeek-V3.1, OpenAI GPT-4, and local models, selected DeepSeek-V3.1 for cost-effectiveness and performance |
 
 **TOTAL WEEKLY TIME SPENT** | | **3 hours** | Project verification completed |
@@ -286,9 +284,9 @@ As the individual project developer, I was responsible for:
 
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
-| Set up Supabase backend | In-progress | 5 hours | Created Flutter application structure with proper configuration |
+| Set up Supabase backend | In-progress | 5 hours | Created Eexplaining to the team the progress of the database in terms of how the AI wil be intergrated based on the database scheme|
 | Implemented DeepSeek-V3.1 integration | Completed | 6 hours | Integrated AI service with authentication and error handling |
-| Created AI service architecture | Incomplete | 4 hours | Designed modular AI service layer with proper abstraction |
+| Created AI service architecture | Incomplete | 4 hours | Designed modular AI service layer with proper abstraction. The AI intergration can only and properly start when the backend is complete. As for this week,I have to use the AI-intergration branch on Github to create my own data and temporarily store the data in my local storage |
 
 **TOTAL WEEKLY TIME SPENT** | | **15 hours** | AI backend foundation partially established, ongoing development |
 
