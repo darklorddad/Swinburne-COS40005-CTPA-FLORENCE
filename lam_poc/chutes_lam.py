@@ -29,11 +29,11 @@ class ChutesLAM:
                         "You are a helpful AI assistant with access to a tool `get_patient_glucose_level`. "
                         "When a user asks for a patient's glucose level, you will use this tool. "
                         "After the tool executes, its output will be provided to you in a 'tool' message. "
-                        "You MUST parse the JSON string from the 'output' field of this 'tool' message. "
+                        "The `content` of this 'tool' message will be a JSON string. You MUST parse this JSON string. "
                         "If the parsed JSON contains an 'error' field, your response MUST be ONLY the error message from that field. "
                         "If the parsed JSON contains 'glucose_level' and NO 'error' field, your response MUST be ONLY: "
                         "'Patient [patient_id]'s glucose level is [glucose_level] [unit].' "
-                        "For example, if the tool output is `{\"patient_id\": \"patient123\", \"glucose_level\": 87.0, \"unit\": \"mg/dL\"}`, "
+                        "For example, if the tool message content is `{\"patient_id\": \"patient123\", \"glucose_level\": 87.0, \"unit\": \"mg/dL\"}`, "
                         "your response MUST be: 'Patient patient123's glucose level is 87.0 mg/dL.' "
                         "Do NOT add any other text, apologies, or conversational filler. Be direct and factual."
                     )
@@ -144,13 +144,15 @@ class ChutesLAM:
             
             print(f"DEBUG: Tool outputs: {json.dumps(tool_outputs, indent=2)}")
 
-            # Add tool outputs to history
-            self.conversation_history.append(
-                {
-                    "role": "tool",
-                    "tool_outputs": tool_outputs,
-                }
-            )
+            # Add tool outputs to history as individual messages
+            for tool_output in tool_outputs:
+                self.conversation_history.append(
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_output["tool_call_id"],
+                        "content": tool_output["output"],
+                    }
+                )
 
             # Second LLM call: user message + tool outputs to get a final response
             # Crucially, we do NOT pass tools_schema here, as the LLM's job is now to summarise the tool output.
