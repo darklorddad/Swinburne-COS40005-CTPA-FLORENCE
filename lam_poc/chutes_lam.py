@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Callable
 # --- Configuration from AI-Integration-branch\DeepSeek.py for reference ---
 # In a production application, these would be loaded from environment variables
 # or a secure configuration management system.
-API_TOKEN = "cpk_1c9adce1fd244f5e879cc45afa88c5c4.986b31f04b5056388f96ddf6cbf9f8fe.Osipc4tDlSGc01vCEy2KEuaTdpToFzqs"
+API_TOKEN = "cpk_1c9adce1fd244f5e879cc45afa88c5c4.986b31f04b5056388f96ddf6cbf9f8fe.Osipc4tDlSGc01vCEy2KEuaTdpToFzqs" # Consider moving this to an environment variable for security.
 API_URL = "https://llm.chutes.ai/v1/chat/completions"
 MODEL_NAME = "deepseek-ai/DeepSeek-V3.1"
 # -------------------------------------------------------------------------
@@ -19,6 +19,22 @@ class ChutesLAM:
         self.conversation_history: List[Dict[str, Any]] = []
         self.tools_schema = tools_schema
         self.available_tools = available_tools
+
+        # Add an initial system message to guide the LLM on tool usage and output interpretation
+        if self.tools_schema:
+            self.conversation_history.append(
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful AI assistant with access to external tools. "
+                        "When a tool is called, its output will be provided in a 'tool' message. "
+                        "The 'output' field of a 'tool' message will contain the result, often in JSON format. "
+                        "You must parse this JSON to understand the result and formulate a natural language response to the user. "
+                        "If the tool output indicates an error or missing data, inform the user appropriately. "
+                        "Always provide a clear and concise answer based on the tool's output."
+                    )
+                }
+            )
 
     def _call_llm(self, messages: List[Dict[str, Any]], tools: List[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
