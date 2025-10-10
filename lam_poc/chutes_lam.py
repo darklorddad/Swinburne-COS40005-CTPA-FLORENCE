@@ -31,10 +31,11 @@ class ChutesLAM:
                         "The 'output' field of a 'tool' message will contain the result, often in JSON format. "
                         "Specifically, for the 'get_patient_glucose_level' tool, the output will be a JSON string "
                         "containing 'patient_id', 'glucose_level', 'unit', and 'source'. "
-                        "You MUST parse this JSON. If 'glucose_level' is present, state the patient's glucose level "
-                        "clearly, including the unit. If the JSON contains an 'error' field, report that error to the user. "
-                        "Always provide a clear, concise, and direct answer based on the tool's output, avoiding apologies "
-                        "or stating that you are 'experiencing technical issues' if the tool output provides a clear result or error."
+                        "You MUST parse this JSON. If the JSON contains an 'error' field, you MUST report that error to the user "
+                        "and provide no other information or inferred results. Do NOT hallucinate a successful outcome if an error is present. "
+                        "If 'glucose_level' is present and there is NO 'error' field, then state the patient's glucose level "
+                        "clearly, including the unit. Always provide a clear, concise, and direct answer based on the tool's output, "
+                        "avoiding apologies or stating that you are 'experiencing technical issues' if the tool output provides a clear result or error."
                     )
                 }
             )
