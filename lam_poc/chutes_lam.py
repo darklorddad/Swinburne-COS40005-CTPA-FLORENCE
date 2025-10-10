@@ -152,8 +152,9 @@ class ChutesLAM:
             )
 
             # Second LLM call: user message + tool outputs to get a final response
-            print(f"DEBUG: Calling LLM again with tool outputs for final response.")
-            second_llm_response = self._call_llm(self.conversation_history, self.tools_schema)
+            # Crucially, we do NOT pass tools_schema here, as the LLM's job is now to summarise the tool output.
+            print(f"DEBUG: Calling LLM again with tool outputs for final response (without tools).")
+            second_llm_response = self._call_llm(self.conversation_history) # Removed self.tools_schema
 
             if "error" in second_llm_response:
                 return f"An error occurred during tool output processing: {second_llm_response['error']}"
