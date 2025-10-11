@@ -1,5 +1,5 @@
-from lam_poc.chutes_lam import ChutesLAM
-from lam_poc.tools import TOOLS_SCHEMA, AVAILABLE_TOOLS
+from chutes_lam import ChutesLAM
+from tools import TOOLS_SCHEMA, AVAILABLE_TOOLS
 
 def main():
     print("Welcome to the Chutes LAM Proof of Concept!")

@@ -1,8 +1,8 @@
 ### darklorddad's
 .aider*
 dld*
-COS40005-EAT40005-Worklog-102777801
-COS40005-EAT40005-Research-Report-102777801.docx
+COS40005-EAT40005-Worklog-102777801*
+COS40005-EAT40005-Research-Report-102777801*
 
 # Temp
 Patient-Data-Simulation-Generator
@@ -19,12 +19,10 @@ Pro_Grocery-main/
 Group-List.xlsx 
 Group-to-Client-Email
 Team-availability
-COS40005-EAT40005-Team-and-Project-Plan-Group-7.pdf
-COS40005-EAT40005-Team-and-Project-Plan-Group-7.docx
-COS40005-EAT40005-Team-and-Project-Plan-V1.md
+COS40005-EAT40005-Team-and-Project-Plan-Group-7*
 Project-progress-discussion
 Project-selection.jpg
-COS40005-EAT40005-Sprint-Reports-Group-7.docx
+COS40005-EAT40005-Sprint-Reports-Group-7*
 
 # Environment variables (API keys, database credentials, secret tokens and etc. goes here)
 .env
