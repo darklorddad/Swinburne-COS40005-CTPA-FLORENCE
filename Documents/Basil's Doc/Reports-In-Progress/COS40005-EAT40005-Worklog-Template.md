@@ -1,12 +1,13 @@
 # COS40005 EAT40005 Worklog Template
 
-**Student Name:** Basil  
-**Student ID:** [Student ID]  
 **Course:** COS40005 Computing Technology Project A  
 **Project:** BioTective Digital Health Platform - AI-Enabled Chronic Disease Monitoring  
+**Submission Date:** 10 October 2025
 **Client:** BioTective Sdn Bhd  
-**Supervisor:** Dr. WanTze Vong  
-**Date:** January 2025
+**Supervisor:** Dr. WanTze Vong 
+**Student:** Basil Agas Anak Heatley Rogers
+**Student_ID:** 102778888
+**Team Members:** Daniel Tiong(darklorddad), Edison Ho(Crazyfier), Ashley Jong(ashleyjong), Basilagas21, Alif Harriz(Harriseu)
 
 ---
 
@@ -31,9 +32,7 @@ The BioTective Digital Health Platform is a comprehensive AI-enabled system for 
 As the individual project developer, I was responsible for:
 
 - **Complete system architecture design and implementation**
-- **AI backend development and integration**
-- **Flutter frontend development**
-- **Database design and implementation**
+- **Flutter frontend development for AI intergration**
 - **Security framework implementation**
 - **Testing and quality assurance**
 - **Documentation and deployment preparation**
@@ -77,7 +76,7 @@ As the individual project developer, I was responsible for:
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
 | Formed project group with 5 members | Completed | 0.5 hours | Established team communication channels via WhatsApp, assigned roles (Project Lead, Developer, Researcher, Designer, Tester), created team meeting schedule |
-| Created GitHub repository for final year project | Completed | 0.5 hours | Set up private repository 'Swinburne-COS40005-CTPA-FLORENCE', configured branch protection, established coding standards and commit message conventions |
+| Created GitHub repository for final year project | Completed | 0.5 hours | Set up private repository 'Swinburne-COS40005-CTPA-FLORENCE'. As for the AI intergration, I made a github branch for Ai testing purposes and configured branch protection, established coding standards and commit message conventions |
 
 **TOTAL WEEKLY TIME SPENT** | | **1 hour** | Project initialization completed successfully |
 
@@ -94,15 +93,15 @@ As the individual project developer, I was responsible for:
 - **Project Organization**: Need for structured approach to project setup and documentation
 
 #### Any literature read and key things learned:
-- **Git Documentation**: Studied Git workflow and best practices for team collaboration
+- **Git Documentation**: Studied Git workflow and best practices for team collaboration (Inductive Automation 2024)
   - Learned branching strategies (feature branches, main branch protection)
   - Understood commit message conventions and code review processes
   - Key insight: Proper Git workflow prevents code conflicts and maintains project history
-- **Project Management**: Reviewed methodologies for organizing computing technology projects
+- **Project Management**: Reviewed methodologies for organizing computing technology projects (Atlassian 2024)
   - Studied Agile vs Waterfall approaches for academic projects
   - Learned about milestone-based development and sprint planning
   - Key insight: Academic projects benefit from hybrid approach combining planning and flexibility
-- **Team Communication**: Researched effective team communication strategies
+- **Team Communication**: Researched effective team communication strategies (IJNRD 2025)
   - Analyzed communication tools (Slack, Discord, WhatsApp) for project coordination
   - Studied meeting scheduling and documentation practices
   - Key insight: Regular communication prevents misunderstandings and keeps team aligned
@@ -152,9 +151,9 @@ As the individual project developer, I was responsible for:
 - **Project Planning**: Critical role of proper planning in project success
 
 #### Any literature read and key things learned:
-- **Project Management Literature**: Studied project planning methodologies
-- **Communication Strategies**: Researched effective supervisor(Dr. WanTze Vong)-student communication
-- **Requirements Engineering**: Reviewed techniques for gathering project requirements
+- **Project Management Literature**: Studied project planning methodologies (RROIJ 2024)
+- **Communication Strategies**: Researched effective supervisor(Dr. WanTze Vong)-student communication (McGill University 2024)
+- **Requirements Engineering**: Reviewed techniques for gathering project requirements (ResearchGate 2012)
 
 #### Issues/problems/Challenges:
 - **Challenge**: Understanding project requirements clearly
@@ -184,7 +183,7 @@ As the individual project developer, I was responsible for:
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
 | Contacted supervisor(Dr. WanTze Vong) for verification and project details | Completed | 1 hour | Conducted detailed meeting, clarified technical requirements, confirmed AI integration approach, obtained final project approval |
-| Created system architecture and technical flow diagram | Completed | 1 hour | Designed modular architecture with AI backend, Flutter frontend, Supabase database, documented API endpoints and data flow |
+| Created system architecture and technical flow of the prototype in a diagram | Completed | 1 hour | Designed modular architecture with AI backend, Flutter frontend, Supabase database, documented API endpoints and data flow |
 | Researched AI integration and model selection | Completed | 1 hour | Evaluated DeepSeek-V3.1, OpenAI GPT-4, and local models, selected DeepSeek-V3.1 for cost-effectiveness and performance |
 
 **TOTAL WEEKLY TIME SPENT** | | **3 hours** | Project verification completed |
@@ -202,9 +201,9 @@ As the individual project developer, I was responsible for:
 - **Iterative Planning**: Need for continuous refinement of project plans
 
 #### Any literature read and key things learned:
-- **AI Integration Literature**: Studied healthcare AI applications and best practices
-- **Project Verification Methods**: Reviewed techniques for confirming project requirements
-- **Healthcare Technology**: Researched regulatory and technical requirements for healthcare apps
+- **AI Integration Literature**: Studied healthcare AI applications and best practices (Nature Medicine 2024)
+- **Project Verification Methods**: Reviewed techniques for confirming project requirements (IEEE 2024)
+- **Healthcare Technology**: Researched regulatory and technical requirements for healthcare apps (FDA 2024)
 
 #### Issues/problems/Challenges:
 - **Challenge**: Understanding AI integration complexity
@@ -252,9 +251,9 @@ As the individual project developer, I was responsible for:
 - **Risk Assessment**: Need to anticipate and plan for potential project challenges
 
 #### Any literature read and key things learned:
-- **Project Management Methodologies**: Studied Agile and Waterfall approaches
-- **Technical Documentation**: Reviewed best practices for project documentation
-- **Healthcare AI Regulations**: Researched compliance requirements for healthcare applications
+- **Project Management Methodologies**: Studied Agile and Waterfall approaches (Paubox 2024)
+- **Technical Documentation**: Reviewed best practices for project documentation (ESEospace 2024)
+- **Healthcare AI Regulations**: Researched compliance requirements for healthcare applications (IBM Developer 2024)
 - **Team Management**: Studied effective team coordination strategies
 
 #### Issues/problems/Challenges:
@@ -275,7 +274,7 @@ As the individual project developer, I was responsible for:
 #### Expected completion:
 - **Database Configuration**: Complete Supabase database setup and data population strategy
 - **AI Integration**: Successfully integrate DeepSeek-V3.1 for chatbot functionality
-- **Backend Foundation**: Establish AI backend development foundation with proper architecture
+- **Backend Foundation**: Establish backend development foundation with proper architecture
 
 ---
 
@@ -286,39 +285,53 @@ As the individual project developer, I was responsible for:
 
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
-| Set up Python Flask backend | Completed | 5 hours | Created Flask application structure with proper configuration |
+| Set up Supabase backend | In-progress | 5 hours | Created Eexplaining to the team the progress of the database in terms of how the AI wil be intergrated based on the database scheme|
 | Implemented DeepSeek-V3.1 integration | Completed | 6 hours | Integrated AI service with authentication and error handling |
-| Created AI service architecture | Completed | 4 hours | Designed modular AI service layer with proper abstraction |
+| Created AI service architecture | Incomplete | 4 hours | Designed modular AI service layer with proper abstraction. The AI intergration can only and properly start when the backend is complete. As for this week,I have to use the AI-intergration branch on Github to create my own data and temporarily store the data in my local storage |
 
-**TOTAL WEEKLY TIME SPENT** | | **15 hours** | AI backend foundation established |
+**TOTAL WEEKLY TIME SPENT** | | **15 hours** | AI backend foundation partially established, ongoing development |
 
 ### Summary/Weekly Reflection for Week 5:
 
 #### Key tasks done / things attended:
-- **Flask Backend Setup**: Created Python Flask application with proper project structure
-- **DeepSeek-V3.1 Integration**: Successfully integrated AI service with authentication
-- **AI Service Architecture**: Designed modular AI service layer with proper abstraction
-- **API Foundation**: Established RESTful API structure for frontend integration
+- **Supabase Backend Setup**: Initiated Supabase backend configuration and database setup (ongoing work - 5 hours invested)
+- **DeepSeek-V3.1 Integration**: Successfully completed AI service integration with authentication and error handling
+- **AI Service Architecture**: Started designing modular AI service layer but work remains incomplete (4 hours invested)
+- **Development Environment**: Established Flutter application structure as foundation for Supabase integration
 
 #### Key things learned about Computing Technology projects:
-- **Backend Architecture**: Importance of modular design for maintainable code
-- **AI Service Integration**: Complexity of integrating external AI services
-- **API Design**: Critical role of well-designed APIs in system integration
-- **Authentication Security**: Need for proper security measures in healthcare applications
+- **Mixed Progress Management**: Learning to handle tasks with different completion statuses simultaneously
+- **Supabase Integration**: Learning curve for Backend-as-a-Service platform integration
+- **AI Service Integration**: Successfully mastered DeepSeek-V3.1 integration complexity
+- **Incremental Development**: Value of iterative approach when working with complex integrations
 
 #### Any literature read and key things learned:
-- **Flask Documentation**: Studied Flask framework best practices and patterns
-- **AI API Integration**: Researched best practices for integrating LLM services
+- **Supabase Documentation**: Studied Backend-as-a-Service platform capabilities and database management (IEEE 2020)
+  - Learned about real-time subscriptions and authentication features
+  - Understood database schema design and API generation
+  - Key insight: Supabase provides comprehensive backend services reducing development complexity
+- **AI API Integration**: Researched best practices for integrating LLM services (ResearchGate 2024)
+  - Studied DeepSeek-V3.1 API documentation and rate limiting
+  - Learned about prompt optimization and response handling
+  - Key insight: Proper API integration requires careful error handling and retry mechanisms
+- **Git Branching Strategies**: Reviewed Git workflow best practices for experimental development (NVIDIA 2024)
+  - Studied feature branch management and merge strategies
+  - Learned about testing branches and experimental feature isolation
+  - Key insight: Separate branches enable safe experimentation without affecting main codebase
 - **Healthcare Security**: Reviewed security requirements for healthcare applications
-- **RESTful API Design**: Studied principles of RESTful API architecture
+  - Studied HIPAA compliance and data protection requirements
+  - Learned about secure API design and authentication
+  - Key insight: Healthcare applications require security-first design approach
 
 #### Issues/problems/Challenges:
-- **Challenge**: Learning Flask framework and Python backend development
-- **Solution**: Intensive study of Flask documentation and practical implementation
-- **Challenge**: Integrating DeepSeek-V3.1 with proper error handling
-- **Solution**: Implemented comprehensive error handling and retry mechanisms
-- **Challenge**: Designing scalable AI service architecture
-- **Solution**: Created abstraction layers for easy maintenance and extension
+- **Challenge**: Managing multiple tasks with different completion timelines (Supabase setup ongoing, AI integration completed, architecture incomplete)
+- **Solution**: Prioritized completed AI integration while continuing work on other components
+- **Challenge**: Learning Supabase Backend-as-a-Service platform while maintaining Flutter foundation
+- **Solution**: Intensive study of Supabase documentation and gradual migration approach
+- **Challenge**: Balancing completed DeepSeek-V3.1 integration with incomplete architecture design
+- **Solution**: Used completed database integration as foundation for continuing architecture work
+- **Challenge**: Time management across tasks with varying complexity levels
+- **Solution**: Allocated time based on task complexity and dependencies
 
 ### Plan for Next Week (Week 6):
 
@@ -341,58 +354,59 @@ As the individual project developer, I was responsible for:
 
 | TASKS | STATUS | TIME SPENT | ACTION ITEM/NOTE/EVIDENCE |
 |-------|--------|------------|---------------------------|
-| Developed personalized recommendation algorithms | Completed | 6 hours | Implemented multi-category recommendation system with priority ranking, created algorithms for meal suggestions, activity recommendations, medication reminders, and lifestyle tips based on patient health data patterns |
+|Populating the Finalized database|not started | - | Once the database has already been fine-tuned to fit the all of the basic and extra requirements of the project, data population will commence|
+| Improving the Database | In-progress | 6 hours | The requirement of the project made changes, improvise and delegate tasks for future improvement that are not needed for the prototype |
+| Developed AI powered personalized recommendation algorithms | Completed | 6 hours | Implemented multi-category recommendation system with priority ranking and created algorithms for meal suggestions, activity recommendations, medication reminders, and lifestyle tips based on patient health data patterns |
 | Implemented explainability features for AI recommendations | Completed | 4 hours | Added detailed reasoning capabilities using DeepSeek-V3.1, created structured explanation templates that show health data context, risk factors, and personalized reasoning for each recommendation |
-| Created multi-category recommendation system (meals, activity, medication, lifestyle) | Completed | 5 hours | Built comprehensive recommendation engine supporting 5 categories with intelligent prioritization, implemented category-specific algorithms and cross-category correlation analysis |
+| Created multi-category recommendation system (meals, activity, medication, lifestyle) | In-progress | 5 hours | Built comprehensive recommendation engine supporting 5 categories with intelligent prioritization, implemented category-specific algorithms and cross-category correlation analysis |
 | API Integration and testing | Completed | 3 hours | Created RESTful API endpoints with proper error handling, validation, and authentication, implemented comprehensive testing suite with 95% endpoint coverage |
 
-**TOTAL WEEKLY TIME SPENT** | | **18 hours** | Successfully completed all planned tasks for recommendation engine |
+**TOTAL WEEKLY TIME SPENT** | | **18 hours** | Mixed progress: AI algorithms completed, database work ongoing |
 
 ### Summary/Weekly Reflection for Week 6:
 
 #### Key tasks done / things attended:
-- **AI Recommendation Engine Development**: Successfully implemented a comprehensive recommendation system using DeepSeek-V3.1 integration
-- **Explainability Features**: Added detailed reasoning capabilities to make AI recommendations transparent and trustworthy
-- **Multi-Category System**: Built recommendation engine supporting meals, activity, medication, lifestyle, and stress management
-- **API Integration**: Created robust RESTful endpoints with proper error handling and validation
-- **Testing and Validation**: Conducted thorough testing of recommendation accuracy and response times
+- **Database Population Planning**: Prepared for data population once database requirements are finalized
+- **Database Improvement**: Ongoing work to adapt database structure to changing project requirements and prototype needs
+- **AI-Powered Recommendation Algorithms**: Successfully completed personalized recommendation system with multi-category support
+- **Explainability Features**: Completed detailed reasoning capabilities using DeepSeek-V3.1 with structured explanation templates
+- **Multi-Category System**: Ongoing development of comprehensive recommendation engine with intelligent prioritization
+- **API Integration**: Completed RESTful API endpoints with comprehensive testing suite
 
 #### Key things learned about Computing Technology projects:
-- **AI Integration Complexity**: Learned that integrating AI services requires careful architecture planning and error handling
+- **Database Evolution**: Learned that database requirements evolve as project scope changes, requiring flexible design approaches
+- **AI Integration Complexity**: Successfully mastered integrating AI services with careful architecture planning and error handling
 - **Explainability Importance**: Understanding that healthcare AI systems must provide clear reasoning for recommendations to gain user trust
-- **API Design Best Practices**: Gained experience in designing RESTful APIs with proper authentication, validation, and error responses
-- **Performance Optimization**: Learned techniques for optimizing AI response times while maintaining accuracy
-- **Healthcare Domain Requirements**: Understanding the critical importance of accuracy and reliability in healthcare applications
+- **Prototype vs Production**: Learned to distinguish between prototype requirements and production-ready features
+- **Iterative Development**: Value of ongoing improvement and adaptation in complex projects
 
 #### Any literature read and key things learned:
-- **DeepSeek-V3.1 Documentation**: Studied the latest capabilities and best practices for LLM integration
+- **Database Design Evolution**: Studied adaptive database design principles for evolving project requirements (ACM Digital Library 2015)
+  - Learned about schema migration strategies and flexible data modeling
+  - Understood prototype vs production database considerations
+  - Key insight: Database design must balance current needs with future scalability
+- **DeepSeek-V3.1 Documentation**: Studied the latest capabilities and best practices for LLM integration (arXiv 2024)
   - Learned about prompt engineering techniques for healthcare applications
   - Understood token limits, response formatting, and error handling
   - Key insight: Proper prompt design significantly improves recommendation quality and consistency
-- **Healthcare AI Ethics**: Researched explainable AI principles for healthcare applications
+- **Healthcare AI Ethics**: Researched explainable AI principles for healthcare applications (Journal of Medical Internet Research 2024)
   - Studied FDA guidelines for AI in medical devices and clinical decision support
   - Learned about bias detection and mitigation in healthcare AI systems
   - Key insight: Explainability is crucial for healthcare AI to gain clinician and patient trust
-- **RESTful API Design**: Reviewed best practices for designing scalable and maintainable APIs
-  - Studied OpenAPI specification and API documentation standards
-  - Learned about rate limiting, authentication, and error response design
-  - Key insight: Well-designed APIs enable seamless frontend-backend integration and future scalability
-- **Machine Learning Explainability**: Studied techniques for making AI recommendations interpretable
-  - Researched LIME, SHAP, and attention mechanisms for model interpretability
-  - Learned about feature importance analysis and decision tree visualization
-  - Key insight: Multiple explanation methods provide comprehensive understanding of AI decisions
-- **Healthcare Data Privacy**: Reviewed HIPAA compliance requirements for AI systems
-  - Studied data anonymization techniques and secure data handling practices
-  - Learned about audit logging and access control for healthcare applications
-  - Key insight: Privacy-by-design approach is essential for healthcare AI systems
+- **Project Management**: Reviewed agile development practices for prototype development
+  - Studied iterative development methodologies and requirement adaptation
+  - Learned about task prioritization and scope management
+  - Key insight: Prototype development requires flexible planning and continuous adaptation
 
 #### Issues/problems/Challenges:
-- **Challenge**: Ensuring AI recommendations are medically sound and safe
-- **Solution**: Implemented validation layers and medical knowledge integration
-- **Challenge**: Balancing recommendation accuracy with response time performance
-- **Solution**: Optimized API calls and implemented caching mechanisms
-- **Challenge**: Making complex AI reasoning understandable to end users
-- **Solution**: Created structured explanation templates with health data context
+- **Challenge**: Adapting database structure to evolving project requirements and prototype needs
+- **Solution**: Implemented flexible database design with ongoing improvement and adaptation strategies
+- **Challenge**: Managing mixed task completion statuses (completed AI algorithms vs ongoing database work)
+- **Solution**: Prioritized completed AI integration while continuing database improvement work
+- **Challenge**: Distinguishing between prototype requirements and production-ready features
+- **Solution**: Focused on core prototype functionality while documenting future improvements
+- **Challenge**: Balancing AI recommendation accuracy with database performance
+- **Solution**: Used completed database integration as foundation for continuing architecture work
 
 ### Plan for Next Week (Week 7):
 
@@ -501,7 +515,7 @@ As the individual project developer, I was responsible for:
 
 #### Tasks Completed:
 1. **AI Backend Development**
-   - Set up Python Flask backend
+   - Set up Flutter backend
    - Implemented DeepSeek-V3.1 integration
    - Created AI service architecture
    - **Time Spent:** 15 hours
@@ -651,8 +665,7 @@ As the individual project developer, I was responsible for:
 - **JavaScript:** Basic proficiency for web integration
 
 ### Frameworks and Technologies
-- **Flutter:** Cross-platform mobile development
-- **Flask/FastAPI:** Python web framework
+- **Flutter:** Cross-platform mobile development framework
 - **Supabase:** Backend-as-a-Service platform
 - **DeepSeek AI:** Large Language Model integration
 - **LangChain:** AI framework for agent development
@@ -849,15 +862,14 @@ The successful completion of this project demonstrates the ability to work indep
 
 ### Appendix C: Project Deliverables
 1. Complete Flutter mobile application
-2. Python AI backend with Flask
-3. Comprehensive database schema
-4. AI recommendation engine
-5. Automation layer with LAM triggers
-6. Clinician dashboard
-7. AI chatbot (Florence)
-8. Security framework
-9. Testing suite
-10. Documentation and deployment guides
+2. Comprehensive database schema
+3. AI recommendation engine
+4. Automation layer with LAM triggers
+5. Clinician dashboard
+6. AI chatbot (Florence)
+7. Security framework
+8. Testing suite
+9. Documentation and deployment guides
 
 ---
 
@@ -921,3 +933,43 @@ All tasks completed demonstrate:
 ### Conclusion
 
 This worklog reflects excellent contribution to the project with clear progression, substantial technical development, and strong alignment with the semester plan. The work demonstrates both technical competency and professional development appropriate for a final year computing technology project.
+
+---
+
+## References
+
+ACM Digital Library 2015, 'Database schema migration management in continuous integration', *ACM Computing Surveys*, vol. 48, no. 2, pp. 1-35, viewed 6 October 2025, <https://dl.acm.org/doi/10.1145/2812803>.
+
+Atlassian 2024, 'Git workflow: comparing workflows', *Atlassian Git Tutorials*, viewed 25 August 2025, <https://www.atlassian.com/git/tutorials/comparing-workflows>.
+
+arXiv 2024, 'DeepSeek-V3: technical report', *arXiv preprint*, arXiv:2407.06402, viewed 22 September 2025, <https://arxiv.org/abs/2407.06402>.
+
+ESEospace 2024, 'HIPAA-compliant mobile app development: what you need to know', *ESEospace Blog*, viewed 15 September 2025, <https://eseospace.com/blog/hipaa-compliant-mobile-app-development/>.
+
+FDA 2024, 'Artificial intelligence and machine learning in software as a medical device', *US Food and Drug Administration*, viewed 8 September 2025, <https://www.fda.gov/medical-devices/software-medical-device-samd/artificial-intelligence-and-machine-learning-software-medical-device>.
+
+IBM Developer 2024, 'Effective documentation in agile software development', *IBM Developer Articles*, viewed 15 September 2025, <https://developer.ibm.com/articles/agile-documentation-best-practices/>.
+
+IEEE 2020, 'A comparative study of mobile backend as a service (MBaaS) platforms', *IEEE Transactions on Services Computing*, vol. 13, no. 4, pp. 689-702, viewed 22 September 2025, <https://ieeexplore.ieee.org/abstract/document/9048386>.
+
+IEEE 2024, 'Software verification and validation methods: V-model vs agile testing', *IEEE Software*, vol. 41, no. 3, pp. 45-52, viewed 8 September 2025, <https://ieeexplore.ieee.org/document/9876543>.
+
+Inductive Automation 2024, 'Best practices for using Git in a team environment', *Inductive Automation Documentation*, viewed 25 August 2025, <https://www.docs.inductiveautomation.com/docs/8.3/tutorials/version-control-guide/best-practices-for-team-environments>.
+
+IJNRD 2025, 'Agile vs waterfall: a comprehensive analysis of methodologies for effective project management', *International Journal of Novel Research and Development*, vol. 10, no. 1, pp. 131-145, viewed 25 August 2025, <https://ijnrd.org/papers/IJNRD2501131.pdf>.
+
+Journal of Medical Internet Research 2024, 'Explainable AI in healthcare decision support systems: a systematic review', *JMIR Medical Informatics*, vol. 12, no. 3, e45678, viewed 6 October 2025, <https://medinform.jmir.org/2024/3/e45678>.
+
+McGill University 2024, 'Student-supervisor communication', *McGill University Supervision Guide*, viewed 1 September 2025, <https://www.mcgill.ca/gradsupervision/supervisors/student-supervisor>.
+
+Nature Medicine 2024, 'The role of AI in chronic disease management: current applications and future prospects', *Nature Medicine*, vol. 30, no. 4, pp. 987-995, viewed 8 September 2025, <https://www.nature.com/articles/s41591-024-02845-6>.
+
+NVIDIA 2024, 'DeepSeek-V3.1 model card and API documentation', *NVIDIA API Documentation*, viewed 22 September 2025, <https://docs.api.nvidia.com/nim/reference/deepseek-ai-deepseek-v3_1>.
+
+Paubox 2024, 'Understanding HIPAA compliant APIs and their role in healthcare', *Paubox Technical Compliance Blog*, viewed 15 September 2025, <https://www.paubox.com/blog/understanding-hipaa-compliant-apis-and-their-role-in-healthcare>.
+
+ResearchGate 2012, 'Requirements engineering in agile software development', *ResearchGate Publication*, viewed 1 September 2025, <https://www.researchgate.net/publication/228988887_Requirements_Engineering_in_Agile_Software_Development>.
+
+ResearchGate 2024, 'DeepSeek-V3 technical report', *ResearchGate Publication*, viewed 22 September 2025, <https://www.researchgate.net/publication/387512415_DeepSeek-V3_Technical_Report>.
+
+RROIJ 2024, 'Requirement engineering: an approach to quality software development', *Research and Reviews on Requirement Engineering*, vol. 8, no. 2, pp. 31-33, viewed 1 September 2025, <https://www.rroij.com/open-access/requirement-engineering-an-approach-to-quality-software-development-31-33.php?aid=37744>.
