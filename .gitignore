@@ -3,6 +3,13 @@
 dld*
 COS40005-EAT40005-Worklog-102777801*
 COS40005-EAT40005-Research-Report-102777801*
+20250918_215731.jpg
+20250918_215757.jpg
+20250918_215827.jpg
+20250918_220502.jpg
+20250918_220513.jpg
+20250918_220518.jpg
+20250918_221022.jpg
 
 # Temp
 Patient-Data-Simulation-Generator
@@ -16,12 +23,12 @@ Pro_Grocery-main/
 *.sql
 
 # Documents (contains sensitive information such as name, student ID, email and etc.)
-Group-List.xlsx 
-Group-to-Client-Email
-Team-availability
-COS40005-EAT40005-Team-and-Project-Plan-Group-7*
-Project-progress-discussion
+Group-List.xlsx
 Project-selection.jpg
+Team-availability
+Group-to-Client-Email
+COS40005-EAT40005-Team-and-Project-Plan-Group-7*
+Project-progress-discussions
 COS40005-EAT40005-Sprint-Reports-Group-7*
 
 # Environment variables (API keys, database credentials, secret tokens and etc. goes here)
