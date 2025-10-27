@@ -155,7 +155,7 @@ class AnomalyDetector {
           detectedAt: reading.timestamp,
           anomalyType: 'inactivity_pattern',
           severity: 'moderate',
-          description: 'Consecutive low activity days detected: ${consecutiveLowDays} days',
+          description: 'Consecutive low activity days detected: $consecutiveLowDays days',
           context: {
             'consecutiveDays': consecutiveLowDays,
             'avgSteps': activityData.map((d) => d.steps!).reduce((a, b) => a + b) / activityData.length,

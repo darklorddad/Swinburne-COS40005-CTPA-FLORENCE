@@ -238,7 +238,7 @@ class _BioTectiveHomePageState extends State<BioTectiveHomePage> {
         Expanded(
           child: _buildStatCard(
             'Latest Glucose',
-            '${latestGlucose.toStringAsFixed(0)}',
+            latestGlucose.toStringAsFixed(0),
             'mg/dL',
             Icons.bloodtype,
             Colors.red,
@@ -248,7 +248,7 @@ class _BioTectiveHomePageState extends State<BioTectiveHomePage> {
         Expanded(
           child: _buildStatCard(
             'Avg Steps',
-            '${avgSteps.toStringAsFixed(0)}',
+            avgSteps.toStringAsFixed(0),
             'per day',
             Icons.directions_walk,
             Colors.blue,
