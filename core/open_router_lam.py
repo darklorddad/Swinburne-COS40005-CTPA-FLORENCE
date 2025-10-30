@@ -1,53 +1,58 @@
 import os
 import json
 import requests
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Literal
+
+from langchain_community.chat_models.open_router import ChatOpenRouter
+from langchain_core.messages import HumanMessage, ToolMessage, AIMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain_core.tools import tool
+
 
 # API configuration for OpenRouter
 API_KEY = "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"
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODEL_NAME = "deepseek/deepseek-chat"
 
 class OpenRouterLAM:
     """
-    A Language Agent Model (LAM) using OpenRouter for the LLM.
+    A Language Agent Model (LAM) using LangChain with OpenRouter for the LLM.
     Supports multi-turn conversations and tool calling.
     """
 
     def __init__(self, api_key: str = API_KEY, model: str = MODEL_NAME):
         self.api_key = api_key
         self.model = model
-        self.api_url = API_URL
+        self.llm = ChatOpenRouter(
+            model_name=self.model,
+            open_router_api_key=self.api_key,
+            model_kwargs={
+                "headers": {
+                    "HTTP-Referer": "http://localhost:3000",
+                    "X-Title": "Biotective",
+                }
+            },
+        )
 
-    def call_llm(self, messages: List[Dict[str, Any]], tools: List[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def call_llm(self, messages: List[Any], tools: List[Any] = None) -> AIMessage:
         """
-        Calls the OpenRouter LLM API with the given messages and tools.
+        Calls the OpenRouter LLM API with the given messages and tools using LangChain.
         """
-        headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:3000",
-            "X-Title": "Biotective",
-        }
-        
-        payload = {
-            "model": self.model,
-            "messages": messages,
-        }
-
+        bound_model = self.llm
         if tools:
-            payload["tools"] = tools
-            payload["tool_choice"] = "auto"
+            bound_model = self.llm.bind_tools(tools)
 
-        response = requests.post(self.api_url, headers=headers, data=json.dumps(payload))
-        response.raise_for_status()  # Raise an exception for bad status codes
-        return response.json()
+        return bound_model.invoke(messages)
 
 
 if __name__ == "__main__":
-    # This is a self-contained test for the OpenRouterLAM tool-calling functionality.
+    # This is a self-contained test for the OpenRouterLAM tool-calling functionality using LangChain.
 
-    # 1. Define a simple tool and its schema
+    # 1. Define a simple tool using LangChain's @tool decorator
+    class WeatherArgs(BaseModel):
+        location: str = Field(description="The city and state, e.g. San Francisco, CA")
+        unit: Literal["celsius", "fahrenheit"] = "celsius"
+
+    @tool(args_schema=WeatherArgs)
     def get_current_weather(location: str, unit: str = "celsius") -> str:
         """Get the current weather in a given location."""
         # In a real scenario, this would call a weather API.
@@ -55,85 +60,50 @@ if __name__ == "__main__":
         weather_info = {"location": location, "temperature": "22", "unit": unit}
         return json.dumps(weather_info)
 
-    TOOLS_SCHEMA = [
-        {
-            "type": "function",
-            "function": {
-                "name": "get_current_weather",
-                "description": "Get the current weather in a given location",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "location": {
-                            "type": "string",
-                            "description": "The city and state, e.g. San Francisco, CA",
-                        },
-                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
-                    },
-                    "required": ["location"],
-                },
-            },
-        }
-    ]
-
-    AVAILABLE_TOOLS = {
-        "get_current_weather": get_current_weather,
-    }
+    tools = [get_current_weather]
+    available_tools = {t.name: t for t in tools}
 
     # 2. Instantiate the LAM
     lam = OpenRouterLAM()
 
     # 3. Define a user message to trigger the tool
     user_message = "What's the weather like in London?"
-    messages = [{"role": "user", "content": user_message}]
+    messages: list = [HumanMessage(content=user_message)]
 
     print(f"User: {user_message}\n")
 
-    # 4. Call the LLM with the tool schema
+    # 4. Call the LLM with the tools
     try:
         print("Calling LLM to see if it uses a tool...")
-        response = lam.call_llm(messages, tools=TOOLS_SCHEMA)
-        response_message = response['choices'][0]['message']
+        response_message = lam.call_llm(messages, tools=tools)
         messages.append(response_message)  # extend conversation with assistant's reply
 
         # 5. Check if the model wants to call a tool
-        if response_message.get("tool_calls"):
+        if response_message.tool_calls:
             print("LLM wants to call a tool.")
-            print(json.dumps(response_message["tool_calls"], indent=2))
+            print(json.dumps(response_message.tool_calls, indent=2))
 
             # 6. Execute the tool call(s)
-            tool_calls = response_message["tool_calls"]
-            for tool_call in tool_calls:
-                function_name = tool_call['function']['name']
-                function_to_call = AVAILABLE_TOOLS[function_name]
-                function_args = json.loads(tool_call['function']['arguments'])
-                
-                print(f"Calling function: {function_name} with args: {function_args}")
-                
-                function_response = function_to_call(**function_args)
-                
-                print(f"Function response: {function_response}\n")
+            for tool_call in response_message.tool_calls:
+                tool_to_call = available_tools[tool_call["name"]]
+                tool_output = tool_to_call.invoke(tool_call["args"])
+                print(f"Calling function: {tool_call['name']} with args: {tool_call['args']}")
+                print(f"Function response: {tool_output}\n")
 
                 # 7. Send the tool response back to the model
                 messages.append(
-                    {
-                        "tool_call_id": tool_call['id'],
-                        "role": "tool",
-                        "name": function_name,
-                        "content": function_response,
-                    }
+                    ToolMessage(content=tool_output, tool_call_id=tool_call["id"])
                 )
             
             # Get a new response from the model where it can see the function response
             print("Sending tool response back to LLM for final answer...")
             final_response = lam.call_llm(messages)
-            final_message = final_response['choices'][0]['message']['content']
-            print(f"\nLLM final response: {final_message}")
+            print(f"\nLLM final response: {final_response.content}")
 
         else:
             # The model did not call a tool, just print the response
             print("LLM did not call a tool.")
-            print(f"LLM response: {response_message['content']}")
+            print(f"LLM response: {response_message.content}")
 
     except requests.exceptions.HTTPError as e:
         print(f"An API error occurred: {e}")
