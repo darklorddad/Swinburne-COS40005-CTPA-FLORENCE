@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 # API configuration for OpenRouter
 API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL_NAME = "deepseek/deepseek-chat-v3.1:free"
+MODEL_NAME = "deepseek/deepseek-chat"
 
 class OpenRouterLAM:
     """
