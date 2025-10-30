@@ -51,8 +51,9 @@ if __name__ == "__main__":
     def get_current_weather(location: str, unit: str = "celsius") -> str:
         """Get the current weather in a given location."""
         # In a real scenario, this would call a weather API.
-        # For this test, we'll return a mock response.
-        return f"The weather in {location} is 22 degrees {unit}."
+        # For this test, we'll return a mock response as a JSON string.
+        weather_info = {"location": location, "temperature": "22", "unit": unit}
+        return json.dumps(weather_info)
 
     TOOLS_SCHEMA = [
         {
