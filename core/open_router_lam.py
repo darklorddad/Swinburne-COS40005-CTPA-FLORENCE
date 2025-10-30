@@ -1,11 +1,12 @@
 import os
+import json
 import requests
 from typing import List, Dict, Any
 
 # API configuration for OpenRouter
 API_KEY = "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"
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL_NAME = "deepseek/deepseek-chat"
+MODEL_NAME = "deepseek/deepseek-chat-v3.1:free"
 
 class OpenRouterLAM:
     """
@@ -38,14 +39,12 @@ class OpenRouterLAM:
             payload["tools"] = tools
             payload["tool_choice"] = "auto"
 
-        response = requests.post(self.api_url, headers=headers, json=payload)
+        response = requests.post(self.api_url, headers=headers, data=json.dumps(payload))
         response.raise_for_status()  # Raise an exception for bad status codes
         return response.json()
 
 
 if __name__ == "__main__":
-    import json
-
     # This is a self-contained test for the OpenRouterLAM tool-calling functionality.
 
     # 1. Define a simple tool and its schema
