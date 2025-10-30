@@ -25,8 +25,8 @@ class OpenRouterLAM:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
-            "HTTP-Referer": "http://localhost:3000", # Replace with your actual app URL
-            "X-Title": "Biotective", # Replace with your app name
+            "HTTP-Referer": "http://localhost:3000",
+            "X-Title": "Biotective",
         }
         
         payload = {
