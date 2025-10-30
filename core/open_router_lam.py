@@ -65,5 +65,8 @@ if __name__ == "__main__":
         print("LLM response:")
         print(response_message['content'])
 
+    except requests.exceptions.HTTPError as e:
+        print(f"An API error occurred: {e}")
+        print(f"Response body: {e.response.text}")
     except requests.exceptions.RequestException as e:
         print(f"An API error occurred: {e}")
