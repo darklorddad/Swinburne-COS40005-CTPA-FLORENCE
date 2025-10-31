@@ -42,11 +42,16 @@ class OpenRouterLAM:
         """
         Calls the OpenRouter LLM API with the given messages and tools using LangChain.
         """
+        print(f"\n--- Sending to LLM ---\n{messages}\n")
         bound_model = self.llm
         if tools:
             bound_model = self.llm.bind_tools(tools)
 
-        return bound_model.invoke(messages)
+        response = bound_model.invoke(messages)
+
+        print(f"\n--- Received from LLM ---\n{response}\n")
+
+        return response
 
 
 if __name__ == "__main__":
