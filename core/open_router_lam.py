@@ -10,6 +10,7 @@ from langchain_core.tools import tool
 
 import langchain
 langchain.verbose = False # type: ignore
+langchain.debug = False # type: ignore
 
 
 # API configuration for OpenRouter
