@@ -35,6 +35,7 @@ class OpenRouterLAM:
                 "HTTP-Referer": "http://localhost:3000",
                 "X-Title": "Biotective",
             },
+            verbose=True,
         )
 
     def call_llm(self, messages: List[Any], tools: List[Any] = None) -> AIMessage:
@@ -67,9 +68,7 @@ if __name__ == "__main__":
         return json.dumps(weather_info)
 
     tools = [get_current_weather]
-    print(f"Defined tool: {tools[0].name}")
-    # The tool schema is what's sent to the LLM.
-    print(f"Tool schema: {json.dumps(tools[0].get_input_schema().schema(), indent=2)}\n")
+    print(f"Defined tool: {tools[0].name}\n")
     available_tools = {t.name: t for t in tools}
 
     # 2. Instantiate the LAM
@@ -81,23 +80,21 @@ if __name__ == "__main__":
     user_message = "What's the weather like in London?"
     messages: list = [HumanMessage(content=user_message)]
     print("--- STEP 3: Initial User Message ---")
-    print(f"User: {user_message}")
-    print(f"Initial messages list: {messages}\n")
+    print(f"User: {user_message}\n")
 
     # 4. Call the LLM with the tools
     try:
         print("--- STEP 4: First LLM Call (with tools) ---")
         print("Calling LLM to see if it uses a tool...")
         response_message = lam.call_llm(messages, tools=tools)
-        print(f"LLM raw response object: {response_message}\n")
 
         messages.append(response_message)  # extend conversation with assistant's reply
 
         # 5. Check if the model wants to call a tool
-        print("--- STEP 5: Check for Tool Call ---")
+        print("\n--- STEP 5: Check for Tool Call ---")
         if response_message.tool_calls:
             print("LLM decided to call a tool.")
-            print(f"Tool calls: {json.dumps(response_message.tool_calls, indent=2)}\n")
+            print(f"Parsed tool calls: {json.dumps(response_message.tool_calls, indent=2)}\n")
 
             # 6. Execute the tool call(s)
             print("--- STEP 6: Execute Tool Call(s) ---")
@@ -111,14 +108,13 @@ if __name__ == "__main__":
                 print("--- STEP 7: Append Tool Result to Messages ---")
                 tool_message = ToolMessage(content=tool_output, tool_call_id=tool_call["id"])
                 messages.append(tool_message)
-                print(f"Updated messages list: {messages}\n")
+                print("Appended tool result.\n")
             
             # Get a new response from the model where it can see the function response
             print("--- STEP 8: Second LLM Call (with tool results) ---")
             print("Sending tool response back to LLM for final answer...")
             final_response = lam.call_llm(messages)
-            print(f"LLM raw final response object: {final_response}\n")
-            print(f"LLM final answer: {final_response.content}")
+            print(f"\nLLM final answer: {final_response.content}")
 
         else:
             # The model did not call a tool, just print the response
