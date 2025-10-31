@@ -3,7 +3,7 @@ import json
 import requests
 from typing import List, Dict, Any, Literal
 
-from langchain_community.chat_models.open_router import ChatOpenRouter
+from langchain_community.chat_models import ChatOpenRouter
 from langchain_core.messages import HumanMessage, ToolMessage, AIMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
