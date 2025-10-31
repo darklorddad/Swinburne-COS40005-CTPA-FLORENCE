@@ -3,7 +3,7 @@ import json
 import requests
 from typing import List, Dict, Any, Literal
 
-from langchain_community.chat_models.openrouter import ChatOpenRouter
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, ToolMessage, AIMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.tools import tool
@@ -22,14 +22,13 @@ class OpenRouterLAM:
     def __init__(self, api_key: str = API_KEY, model: str = MODEL_NAME):
         self.api_key = api_key
         self.model = model
-        self.llm = ChatOpenRouter(
-            model_name=self.model,
-            open_router_api_key=self.api_key,
-            model_kwargs={
-                "headers": {
-                    "HTTP-Referer": "http://localhost:3000",
-                    "X-Title": "Biotective",
-                }
+        self.llm = ChatOpenAI(
+            model=self.model,
+            api_key=self.api_key,
+            base_url="https://openrouter.ai/api/v1",
+            default_headers={
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "Biotective",
             },
         )
 
