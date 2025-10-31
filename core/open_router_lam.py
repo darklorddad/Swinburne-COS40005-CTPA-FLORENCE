@@ -11,6 +11,7 @@ from langchain_core.tools import tool
 import langchain
 langchain.verbose = False # type: ignore
 langchain.debug = False # type: ignore
+langchain.llm_cache = None # type: ignore
 
 
 # API configuration for OpenRouter
