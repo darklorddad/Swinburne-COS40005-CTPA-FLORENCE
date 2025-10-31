@@ -5,8 +5,11 @@ from typing import List, Dict, Any, Literal
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, ToolMessage, AIMessage
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic.v1 import BaseModel, Field
 from langchain_core.tools import tool
+
+import langchain
+langchain.verbose = False # type: ignore
 
 
 # API configuration for OpenRouter
