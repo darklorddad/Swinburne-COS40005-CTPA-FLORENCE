@@ -35,6 +35,10 @@ def fetch_github_data(endpoint: str, params: dict = None, custom_headers: dict =
     while url:
         try:
             response = requests.get(url, headers=request_headers, params=current_params)
+            # Gracefully handle 404 for projects, as it may be disabled.
+            if response.status_code == 404 and "projects" in endpoint:
+                print("\nClassic Projects not found. This feature might be disabled for the repository.")
+                return None
             response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
             all_items.extend(response.json())
 
@@ -152,9 +156,11 @@ def get_projects():
     
     projects = fetch_github_data('projects', params=params, custom_headers=project_headers)
     if projects is not None:
-        print(f"Found {len(projects)} projects. Now fetching columns and cards for each project...")
-        for project in projects:
-            columns_endpoint = f"projects/{project['id']}/columns"
+        print(f"Found {len(projects)} projects.")
+        if projects:
+            print("Now fetching columns and cards for each project...")
+            for project in projects:
+                columns_endpoint = f"projects/{project['id']}/columns"
             columns = fetch_github_data(columns_endpoint, custom_headers=project_headers, is_repo_endpoint=False)
             
             if columns:
@@ -266,11 +272,13 @@ def generate_markdown_summary(issues, pull_requests, projects, branches):
     return "\n".join(lines)
 
 def save_markdown_summary(markdown_content, filename="github_summary.md"):
-    """Saves the markdown content to a file."""
+    """Saves the markdown content to a file in the same directory as the script."""
     try:
-        with open(filename, 'w', encoding='utf-8') as f:
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(script_dir, filename)
+        with open(file_path, 'w', encoding='utf-8') as f:
             f.write(markdown_content)
-        print(f"\nSummary saved to {filename}")
+        print(f"\nSummary saved to {file_path}")
     except IOError as e:
         print(f"Error saving file: {e}")
 
