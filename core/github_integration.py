@@ -16,7 +16,7 @@ headers = {
     'Accept': 'application/vnd.github.v3+json',
 }
 
-def fetch_github_data(endpoint: str, custom_headers: dict = None):
+def fetch_github_data(endpoint: str, params: dict = None, custom_headers: dict = None):
     """
     Generic function to fetch paginated data from a GitHub API endpoint.
     """
@@ -26,11 +26,17 @@ def fetch_github_data(endpoint: str, custom_headers: dict = None):
     if custom_headers:
         request_headers.update(custom_headers)
 
+    # Use the passed-in params for the first request
+    current_params = params
+
     while url:
         try:
-            response = requests.get(url, headers=request_headers)
+            response = requests.get(url, headers=request_headers, params=current_params)
             response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
             all_items.extend(response.json())
+
+            # Subsequent requests should not use the initial params, as they are in the 'next' URL
+            current_params = None
 
             # Handle pagination
             if 'Link' in response.headers:
@@ -50,37 +56,50 @@ def fetch_github_data(endpoint: str, custom_headers: dict = None):
 
 def get_issues():
     """
-    Fetches all issues from the repository.
+    Fetches all issues (open and closed) from the repository.
     """
-    print("Fetching issues...")
-    issues = fetch_github_data('issues')
+    print("Fetching all issues (open and closed)...")
+    params = {'state': 'all'}
+    issues = fetch_github_data('issues', params=params)
     if issues is not None:
         print(f"Found {len(issues)} issues.")
     return issues
 
 def get_pull_requests():
     """
-    Fetches all pull requests from the repository.
+    Fetches all pull requests (open and closed) from the repository.
     """
-    print("\nFetching pull requests...")
-    pulls = fetch_github_data('pulls')
+    print("\nFetching all pull requests (open and closed)...")
+    params = {'state': 'all'}
+    pulls = fetch_github_data('pulls', params=params)
     if pulls is not None:
         print(f"Found {len(pulls)} pull requests.")
     return pulls
 
 def get_projects():
     """
-    Fetches all projects from the repository.
+    Fetches all projects (open and closed) from the repository.
     Note: Requires the 'project' scope on your PAT.
     """
-    print("\nFetching projects...")
+    print("\nFetching all projects (open and closed)...")
     # The 'Accept' header for the projects API is specific
     project_headers = {'Accept': 'application/vnd.github.inertia-preview+json'}
+    params = {'state': 'all'}
     
-    projects = fetch_github_data('projects', custom_headers=project_headers)
+    projects = fetch_github_data('projects', params=params, custom_headers=project_headers)
     if projects is not None:
         print(f"Found {len(projects)} projects.")
     return projects
+
+def get_branches():
+    """
+    Fetches all branches from the repository.
+    """
+    print("\nFetching branches...")
+    branches = fetch_github_data('branches')
+    if branches is not None:
+        print(f"Found {len(branches)} branches.")
+    return branches
 
 if __name__ == "__main__":
     if GITHUB_TOKEN == 'your_personal_access_token' or REPO_OWNER == 'your_username' or REPO_NAME == 'your_repository_name':
@@ -106,3 +125,10 @@ if __name__ == "__main__":
             print("\n--- Example Projects ---")
             for project in repo_projects:
                 print(f"- ID {project['id']}: {project['name']}")
+
+        # Fetch and display branches
+        repo_branches = get_branches()
+        if repo_branches:
+            print("\n--- Example Branches ---")
+            for branch in repo_branches:
+                print(f"- {branch['name']}")
