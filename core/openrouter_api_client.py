@@ -31,23 +31,19 @@ class OpenRouterAPIClient:
 
 if __name__ == '__main__':
     # This is an example of how to use the client.
-    # It will attempt to fetch the list of available models from OpenRouter.
+    # It will attempt to check the validity of an API key with OpenRouter.
     if len(sys.argv) < 2:
         print("Usage: python core\\openrouter_api_client.py <YOUR_API_KEY>")
         sys.exit(1)
 
     api_key = sys.argv[1]
 
-    print("Attempting to fetch models from OpenRouter...")
+    print("Attempting to check API key with OpenRouter...")
     client = OpenRouterAPIClient(api_key=api_key)
-    models_response = client.make_request('models')
-    if models_response:
-        print("Successfully fetched models.")
-        model_count = len(models_response.get('data', []))
-        print(f"Found {model_count} models.")
-        if model_count > 0:
-            print("First 5 models:")
-            for model in models_response['data'][:5]:
-                print(f"  - {model.get('id')}")
+    key_response = client.make_request('key')
+    if key_response:
+        print("API key is valid.")
+        # The response contains details about the key, let's print them.
+        print("Key details:", key_response)
     else:
-        print("Failed to fetch models. Check API key and network connection.")
+        print("Failed to validate API key. It might be invalid or there could be a network issue.")
