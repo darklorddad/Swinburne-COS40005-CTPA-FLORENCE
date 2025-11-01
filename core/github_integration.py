@@ -176,40 +176,112 @@ def get_branches():
         print(f"Found {len(branches)} branches.")
     return branches
 
+def generate_markdown_summary(issues, pull_requests, projects, branches):
+    """Generates a markdown string from the fetched GitHub data."""
+    lines = [f"# GitHub Repository Summary for {REPO_OWNER}/{REPO_NAME}\n"]
+
+    # Branches
+    lines.append("## Branches\n")
+    if branches:
+        for branch in branches:
+            lines.append(f"- `{branch['name']}`")
+    else:
+        lines.append("No branches found.")
+    lines.append("\n")
+
+    # Issues
+    lines.append("## Issues\n")
+    if issues:
+        for issue in issues:
+            lines.append(f"### Issue #{issue['number']}: {issue['title']}")
+            lines.append(f"- **State**: {issue['state']}")
+            lines.append(f"- **URL**: {issue['html_url']}")
+            reaction_count = len(issue.get('reactions', []))
+            lines.append(f"- **Reactions**: {reaction_count}")
+            if issue['body']:
+                lines.append(f"\n**Body:**\n\n```text\n{issue['body']}\n```\n")
+            
+            if issue.get('comments'):
+                lines.append("**Comments:**")
+                for comment in issue['comments']:
+                    lines.append(f"- **Comment by @{comment['user']['login']}**:")
+                    if comment['body']:
+                        # Indent body for blockquote feel in markdown
+                        body = '\n'.join([f'  > {line}' for line in comment['body'].splitlines()])
+                        lines.append(body)
+                    comment_reaction_count = len(comment.get('reactions', []))
+                    if comment_reaction_count > 0:
+                         lines.append(f"  - **Reactions**: {comment_reaction_count}")
+                lines.append("")
+    else:
+        lines.append("No issues found.")
+    lines.append("\n")
+
+    # Pull Requests
+    lines.append("## Pull Requests\n")
+    if pull_requests:
+        for pr in pull_requests:
+            lines.append(f"### PR #{pr['number']}: {pr['title']}")
+            lines.append(f"- **State**: {pr['state']}")
+            lines.append(f"- **URL**: {pr['html_url']}")
+            reaction_count = len(pr.get('reactions', []))
+            lines.append(f"- **Reactions**: {reaction_count}")
+            if pr['body']:
+                lines.append(f"\n**Body:**\n\n```text\n{pr['body']}\n```\n")
+
+            if pr.get('comments'):
+                lines.append("**Comments:**")
+                for comment in pr['comments']:
+                    lines.append(f"- **Comment by @{comment['user']['login']}**:")
+                    if comment['body']:
+                        body = '\n'.join([f'  > {line}' for line in comment['body'].splitlines()])
+                        lines.append(body)
+                    comment_reaction_count = len(comment.get('reactions', []))
+                    if comment_reaction_count > 0:
+                        lines.append(f"  - **Reactions**: {comment_reaction_count}")
+                lines.append("")
+    else:
+        lines.append("No pull requests found.")
+    lines.append("\n")
+
+    # Projects
+    lines.append("## Projects\n")
+    if projects:
+        for project in projects:
+            lines.append(f"### Project: {project['name']}")
+            lines.append(f"- **State**: {project['state']}")
+            if project.get('columns'):
+                for column in project['columns']:
+                    lines.append(f"  - **Column**: {column['name']}")
+                    if column.get('cards'):
+                        for card in column['cards']:
+                            note = card.get('note', 'Card without a note')
+                            if note:
+                                lines.append(f"    - Card: {note}")
+            lines.append("")
+    else:
+        lines.append("No projects found. This can happen if projects are disabled or if you are using the new 'Projects (beta)' which requires a different API.")
+    lines.append("\n")
+
+    return "\n".join(lines)
+
+def save_markdown_summary(markdown_content, filename="github_summary.md"):
+    """Saves the markdown content to a file."""
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(markdown_content)
+        print(f"\nSummary saved to {filename}")
+    except IOError as e:
+        print(f"Error saving file: {e}")
+
 if __name__ == "__main__":
     if GITHUB_TOKEN == 'your_personal_access_token' or REPO_OWNER == 'your_username' or REPO_NAME == 'your_repository_name':
         print("Please update GITHUB_TOKEN, REPO_OWNER, and REPO_NAME in the script before running.")
     else:
-        # Fetch and display issues
         repo_issues = get_issues()
-        if repo_issues:
-            print("\n--- Example Issues (first 5) ---")
-            for issue in repo_issues[:5]:
-                comment_count = len(issue.get('comments', []))
-                reaction_count = len(issue.get('reactions', []))
-                print(f"- #{issue['number']}: {issue['title']} ({comment_count} comments, {reaction_count} reactions)")
-
-        # Fetch and display pull requests
         repo_pulls = get_pull_requests()
-        if repo_pulls:
-            print("\n--- Example Pull Requests (first 5) ---")
-            for pr in repo_pulls[:5]:
-                comment_count = len(pr.get('comments', []))
-                reaction_count = len(pr.get('reactions', []))
-                print(f"- #{pr['number']}: {pr['title']} ({comment_count} comments, {reaction_count} reactions)")
-
-        # Fetch and display projects
         repo_projects = get_projects()
-        if repo_projects:
-            print("\n--- Example Projects ---")
-            for project in repo_projects:
-                column_count = len(project.get('columns', []))
-                card_count = sum(len(col.get('cards', [])) for col in project.get('columns', []))
-                print(f"- ID {project['id']}: {project['name']} ({column_count} columns, {card_count} cards)")
-
-        # Fetch and display branches
         repo_branches = get_branches()
-        if repo_branches:
-            print("\n--- Example Branches ---")
-            for branch in repo_branches:
-                print(f"- {branch['name']}")
+
+        markdown_output = generate_markdown_summary(repo_issues, repo_pulls, repo_projects, repo_branches)
+        save_markdown_summary(markdown_output)
