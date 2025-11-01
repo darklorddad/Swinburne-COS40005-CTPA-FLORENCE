@@ -1,8 +1,9 @@
 import requests
+import sys
 
 class OpenRouterAPIClient:
     def __init__(self, api_key):
-        self.api_key = "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"
+        self.api_key = api_key
         self.base_url = "https://openrouter.ai/api/v1"
         
     def make_request(self, endpoint, method="GET", data=None):
@@ -31,8 +32,14 @@ class OpenRouterAPIClient:
 if __name__ == '__main__':
     # This is an example of how to use the client.
     # It will attempt to fetch the list of available models from OpenRouter.
+    if len(sys.argv) < 2:
+        print("Usage: python core\\openrouter_api_client.py <YOUR_API_KEY>")
+        sys.exit(1)
+
+    api_key = sys.argv[1]
+
     print("Attempting to fetch models from OpenRouter...")
-    client = OpenRouterAPIClient(api_key="test") # The key is hardcoded in __init__
+    client = OpenRouterAPIClient(api_key=api_key)
     models_response = client.make_request('models')
     if models_response:
         print("Successfully fetched models.")
