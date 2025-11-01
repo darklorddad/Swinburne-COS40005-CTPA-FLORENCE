@@ -6,8 +6,8 @@ import os
 # It is recommended to use environment variables for sensitive data like tokens.
 # You can set an environment variable named GITHUB_TOKEN.
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN', 'your_personal_access_token')
-REPO_OWNER = 'your_username'
-REPO_NAME = 'your_repository_name'
+REPO_OWNER = 'darklorddad'
+REPO_NAME = 'Swinburne-COS40005-CTPA-FLORENCE'
 BASE_URL = 'https://api.github.com'
 
 # --- API Request Headers ---
