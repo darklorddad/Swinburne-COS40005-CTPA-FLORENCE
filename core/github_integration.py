@@ -146,10 +146,10 @@ def get_pull_requests():
 
 def get_projects():
     """
-    Fetches all projects (open and closed) from the repository, including their columns and cards.
+    Fetches all Classic Projects (open and closed) from the repository, including their columns and cards.
     Note: Requires the 'project' scope on your PAT.
     """
-    print("\nFetching all projects (open and closed)...")
+    print("\nFetching all Classic Projects (open and closed)...")
     # The 'Accept' header for the projects API is specific
     project_headers = {'Accept': 'application/vnd.github.inertia-preview+json'}
     params = {'state': 'all'}
@@ -172,6 +172,54 @@ def get_projects():
                         column['cards'] = cards
     return projects
 
+def get_projects_v2():
+    """
+    Fetches all new Projects (V2) from the repository using the GraphQL API.
+    """
+    print("\nFetching new Projects (V2)...")
+    graphql_query = {
+        "query": """
+            query($owner: String!, $name: String!) {
+              repository(owner: $owner, name: $name) {
+                projectsV2(first: 20) {
+                  nodes {
+                    title
+                    url
+                    items(first: 100) {
+                      nodes {
+                        content {
+                          ... on DraftIssue { title }
+                          ... on Issue { title url }
+                          ... on PullRequest { title url }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        """,
+        "variables": {
+            "owner": REPO_OWNER,
+            "name": REPO_NAME
+        }
+    }
+    
+    graphql_url = f"{BASE_URL}/graphql"
+    try:
+        response = requests.post(graphql_url, headers=headers, json=graphql_query)
+        response.raise_for_status()
+        data = response.json()
+        if "errors" in data:
+            print(f"GraphQL query for Projects V2 failed: {data['errors']}")
+            return None
+        projects = data.get("data", {}).get("repository", {}).get("projectsV2", {}).get("nodes", [])
+        print(f"Found {len(projects)} new projects (V2).")
+        return projects
+    except requests.exceptions.RequestException as e:
+        print(f"An error occurred while fetching Projects V2 data from {graphql_url}: {e}")
+        return None
+
 def get_branches():
     """
     Fetches all branches from the repository.
@@ -182,7 +230,7 @@ def get_branches():
         print(f"Found {len(branches)} branches.")
     return branches
 
-def generate_markdown_summary(issues, pull_requests, projects, branches):
+def generate_markdown_summary(issues, pull_requests, projects, projects_v2, branches):
     """Generates a markdown string from the fetched GitHub data."""
     lines = [f"# GitHub Repository Summary for {REPO_OWNER}/{REPO_NAME}\n"]
 
@@ -251,7 +299,7 @@ def generate_markdown_summary(issues, pull_requests, projects, branches):
     lines.append("\n")
 
     # Projects
-    lines.append("## Projects\n")
+    lines.append("## Classic Projects\n")
     if projects:
         for project in projects:
             lines.append(f"### Project: {project['name']}")
@@ -266,7 +314,31 @@ def generate_markdown_summary(issues, pull_requests, projects, branches):
                                 lines.append(f"    - Card: {note}")
             lines.append("")
     else:
-        lines.append("No projects found. This can happen if projects are disabled or if you are using the new 'Projects (beta)' which requires a different API.")
+        lines.append("No Classic Projects found.")
+    lines.append("\n")
+
+    # Projects V2
+    lines.append("## New Projects (V2)\n")
+    if projects_v2:
+        for project in projects_v2:
+            lines.append(f"### Project: {project['title']}")
+            lines.append(f"- **URL**: {project['url']}")
+            if project.get('items', {}).get('nodes'):
+                lines.append("  - **Items**:")
+                for item in project['items']['nodes']:
+                    content = item.get('content')
+                    if not content:
+                        continue
+                    
+                    title = content.get('title', 'Item without title')
+                    url = content.get('url')
+                    if url:
+                        lines.append(f"    - [{title}]({url})")
+                    else:
+                        lines.append(f"    - {title} (Draft Issue)")
+            lines.append("")
+    else:
+        lines.append("No new Projects (V2) found.")
     lines.append("\n")
 
     return "\n".join(lines)
@@ -289,7 +361,8 @@ if __name__ == "__main__":
         repo_issues = get_issues()
         repo_pulls = get_pull_requests()
         repo_projects = get_projects()
+        repo_projects_v2 = get_projects_v2()
         repo_branches = get_branches()
 
-        markdown_output = generate_markdown_summary(repo_issues, repo_pulls, repo_projects, repo_branches)
+        markdown_output = generate_markdown_summary(repo_issues, repo_pulls, repo_projects, repo_projects_v2, repo_branches)
         save_markdown_summary(markdown_output)
