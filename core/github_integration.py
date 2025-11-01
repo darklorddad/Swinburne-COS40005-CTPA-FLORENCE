@@ -59,7 +59,7 @@ def fetch_github_data(endpoint: str, params: dict = None, custom_headers: dict =
 
 def get_issues():
     """
-    Fetches all issues (open and closed) from the repository, including their comments.
+    Fetches all issues (open and closed) from the repository, including their comments and reactions.
     This excludes pull requests.
     """
     print("Fetching all issues (open and closed)...")
@@ -72,32 +72,66 @@ def get_issues():
 
     # Filter out pull requests, which are returned by the issues endpoint
     issues = [item for item in all_issue_items if 'pull_request' not in item]
+    reaction_headers = {'Accept': 'application/vnd.github.squirrel-girl-preview+json'}
 
-    print(f"Found {len(issues)} issues. Now fetching comments for each issue...")
+    print(f"Found {len(issues)} issues. Now fetching comments and reactions for each issue...")
     for issue in issues:
+        # Fetch reactions for the issue body
+        reactions_endpoint = f"issues/{issue['number']}/reactions"
+        reactions = fetch_github_data(reactions_endpoint, custom_headers=reaction_headers)
+        if reactions is not None:
+            issue['reactions'] = reactions
+
+        # Fetch comments and their reactions
         comments_endpoint = f"issues/{issue['number']}/comments"
         comments = fetch_github_data(comments_endpoint)
         if comments is not None:
+            for comment in comments:
+                comment_reactions_endpoint = f"issues/comments/{comment['id']}/reactions"
+                comment_reactions = fetch_github_data(comment_reactions_endpoint, custom_headers=reaction_headers)
+                if comment_reactions:
+                    comment['reactions'] = comment_reactions
             issue['comments'] = comments
             
     return issues
 
 def get_pull_requests():
     """
-    Fetches all pull requests (open and closed) from the repository, including their comments.
+    Fetches all pull requests (open and closed) from the repository, including their comments and reactions.
     """
     print("\nFetching all pull requests (open and closed)...")
     params = {'state': 'all'}
     pulls = fetch_github_data('pulls', params=params)
+    reaction_headers = {'Accept': 'application/vnd.github.squirrel-girl-preview+json'}
+
     if pulls is not None:
-        print(f"Found {len(pulls)} pull requests. Now fetching comments for each PR...")
+        print(f"Found {len(pulls)} pull requests. Now fetching comments and reactions for each PR...")
         for pr in pulls:
-            # Fetch both issue-level comments and review comments on the diff
+            # Fetch reactions for the PR body
+            pr_reactions_endpoint = f"issues/{pr['number']}/reactions"
+            pr_reactions = fetch_github_data(pr_reactions_endpoint, custom_headers=reaction_headers)
+            if pr_reactions is not None:
+                pr['reactions'] = pr_reactions
+
+            # Fetch issue-level comments and their reactions
             issue_comments_endpoint = f"issues/{pr['number']}/comments"
             issue_comments = fetch_github_data(issue_comments_endpoint)
+            if issue_comments:
+                for comment in issue_comments:
+                    comment_reactions_endpoint = f"issues/comments/{comment['id']}/reactions"
+                    reactions = fetch_github_data(comment_reactions_endpoint, custom_headers=reaction_headers)
+                    if reactions:
+                        comment['reactions'] = reactions
             
+            # Fetch review comments and their reactions
             review_comments_endpoint = f"pulls/{pr['number']}/comments"
             review_comments = fetch_github_data(review_comments_endpoint)
+            if review_comments:
+                for comment in review_comments:
+                    comment_reactions_endpoint = f"pulls/comments/{comment['id']}/reactions"
+                    reactions = fetch_github_data(comment_reactions_endpoint, custom_headers=reaction_headers)
+                    if reactions:
+                        comment['reactions'] = reactions
 
             pr['comments'] = []
             if issue_comments:
@@ -152,7 +186,8 @@ if __name__ == "__main__":
             print("\n--- Example Issues (first 5) ---")
             for issue in repo_issues[:5]:
                 comment_count = len(issue.get('comments', []))
-                print(f"- #{issue['number']}: {issue['title']} ({comment_count} comments)")
+                reaction_count = len(issue.get('reactions', []))
+                print(f"- #{issue['number']}: {issue['title']} ({comment_count} comments, {reaction_count} reactions)")
 
         # Fetch and display pull requests
         repo_pulls = get_pull_requests()
@@ -160,7 +195,8 @@ if __name__ == "__main__":
             print("\n--- Example Pull Requests (first 5) ---")
             for pr in repo_pulls[:5]:
                 comment_count = len(pr.get('comments', []))
-                print(f"- #{pr['number']}: {pr['title']} ({comment_count} comments)")
+                reaction_count = len(pr.get('reactions', []))
+                print(f"- #{pr['number']}: {pr['title']} ({comment_count} comments, {reaction_count} reactions)")
 
         # Fetch and display projects
         repo_projects = get_projects()
