@@ -16,18 +16,37 @@ headers = {
     'Accept': 'application/vnd.github.v3+json',
 }
 
-def fetch_github_data(endpoint: str):
+def fetch_github_data(endpoint: str, custom_headers: dict = None):
     """
-    Generic function to fetch data from a GitHub API endpoint.
+    Generic function to fetch paginated data from a GitHub API endpoint.
     """
+    all_items = []
     url = f"{BASE_URL}/repos/{REPO_OWNER}/{REPO_NAME}/{endpoint}"
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred while fetching data from {url}: {e}")
-        return None
+    request_headers = headers.copy()
+    if custom_headers:
+        request_headers.update(custom_headers)
+
+    while url:
+        try:
+            response = requests.get(url, headers=request_headers)
+            response.raise_for_status()  # Raises an HTTPError for bad responses (4xx or 5xx)
+            all_items.extend(response.json())
+
+            # Handle pagination
+            if 'Link' in response.headers:
+                links = response.headers['Link']
+                next_link = None
+                for link in links.split(','):
+                    parts = link.split(';')
+                    if 'rel="next"' in parts[1]:
+                        next_link = parts[0].strip()[1:-1]
+                url = next_link
+            else:
+                url = None
+        except requests.exceptions.RequestException as e:
+            print(f"An error occurred while fetching data from {url}: {e}")
+            return None
+    return all_items
 
 def get_issues():
     """
@@ -56,19 +75,12 @@ def get_projects():
     """
     print("\nFetching projects...")
     # The 'Accept' header for the projects API is specific
-    project_headers = headers.copy()
-    project_headers['Accept'] = 'application/vnd.github.inertia-preview+json'
+    project_headers = {'Accept': 'application/vnd.github.inertia-preview+json'}
     
-    url = f"{BASE_URL}/repos/{REPO_OWNER}/{REPO_NAME}/projects"
-    try:
-        response = requests.get(url, headers=project_headers)
-        response.raise_for_status()
-        projects = response.json()
+    projects = fetch_github_data('projects', custom_headers=project_headers)
+    if projects is not None:
         print(f"Found {len(projects)} projects.")
-        return projects
-    except requests.exceptions.RequestException as e:
-        print(f"An error occurred while fetching projects from {url}: {e}")
-        return None
+    return projects
 
 if __name__ == "__main__":
     if GITHUB_TOKEN == 'your_personal_access_token' or REPO_OWNER == 'your_username' or REPO_NAME == 'your_repository_name':
