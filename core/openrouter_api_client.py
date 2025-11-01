@@ -2,8 +2,8 @@ import requests
 
 class OpenRouterAPIClient:
     def __init__(self, api_key):
-        self.api_key = api_key
-        self.base_url = "https://openator.ai/api/v1"
+        self.api_key = "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"
+        self.base_url = "https://openrouterr.ai/api/v1"
         
     def make_request(self, endpoint, method="GET", data=None):
         headers = {
