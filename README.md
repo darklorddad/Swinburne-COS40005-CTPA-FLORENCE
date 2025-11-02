@@ -1,21 +1,3 @@
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
-
-  .markdown-preview {
-    font-family: 'Funnel Display', sans-serif;
-    text-align: justify;
-  }
-
-  .markdown-preview h1,
-  .markdown-preview h2,
-  .markdown-preview h3,
-  .markdown-preview h4,
-  .markdown-preview h5,
-  .markdown-preview h6 {
-    text-align: left; 
-  }
-</style>
-
 # F.L.O.R.E.N.C.E.
 
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
