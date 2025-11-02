@@ -81,7 +81,7 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
-def add_test_patient_data(log_widget, buttons, supabase_client: Client):
+def add_test_patient_data(log_widget, buttons):
     """Creates a test patient and seeds one month of data."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
@@ -91,7 +91,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
-    if not supabase_client:
+    if not global_supabase_proxy._client:
         messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
@@ -101,7 +101,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
     try:
         # Step 1: Create the user in Supabase Auth using the service key
         log_to_window(log_widget, f"Creating auth user: {TEST_PATIENT_EMAIL}")
-        user_session = supabase_client.auth.admin.create_user({
+        user_session = global_supabase_proxy.auth.admin.create_user({
             "email": TEST_PATIENT_EMAIL,
             "password": TEST_PATIENT_PASSWORD,
             "email_confirm": True,
@@ -122,7 +122,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
             "date_of_birth": "1985-05-15",
             "gender": "Male"
         }
-        patient_profile_res = supabase_client.table('patient_profiles').insert(profile_data).execute()
+        patient_profile_res = global_supabase_proxy.table('patient_profiles').insert(profile_data).execute()
         patient_profile = patient_profile_res.data[0]
         patient_id = patient_profile["id"]
         log_to_window(log_widget, f"Patient profile created with ID: {patient_id}")
@@ -141,7 +141,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
         thresholds_to_insert = [
             {**threshold, 'patient_id': patient_id} for threshold in DEFAULT_THRESHOLDS
         ]
-        supabase_client.table('patient_thresholds').insert(thresholds_to_insert).execute()
+        global_supabase_proxy.table('patient_thresholds').insert(thresholds_to_insert).execute()
         log_to_window(log_widget, "Default thresholds created for patient.")
 
         # Step 4: Seed Daily Logs (batched for performance)
@@ -157,7 +157,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
                     "glucose_after_meal": round(random.uniform(120, 180), 1),
                     "meal_desc": f"A typical {meal_time.lower()}."
                 })
-        supabase_client.table('daily_patient_logs').insert(logs_to_insert).execute()
+        global_supabase_proxy.table('daily_patient_logs').insert(logs_to_insert).execute()
         log_to_window(log_widget, "-> Seeded all daily logs in one batch.")
 
         # Step 5: Seed Monitor Data (batched for performance)
@@ -179,7 +179,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
         monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()})
         monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()})
         
-        supabase_client.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
+        global_supabase_proxy.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
         log_to_window(log_widget, "-> Seeded all monitor data in one batch.")
 
         log_to_window(log_widget, "SUCCESS: Test data seeding complete.")
@@ -199,7 +199,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
         if new_user:
             log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
             try:
-                supabase_client.auth.admin.delete_user(new_user.id)
+                global_supabase_proxy.auth.admin.delete_user(new_user.id)
                 log_to_window(log_widget, "Rollback successful.")
                 if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
             except Exception as rollback_e:
@@ -207,7 +207,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
+def remove_test_patient_data(log_widget, buttons):
     """Finds and removes the test patient and their data by deleting the auth user."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
@@ -221,7 +221,7 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
     
-    if not supabase_client:
+    if not global_supabase_proxy._client:
         messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
@@ -231,18 +231,18 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
         log_to_window(log_widget, f"Found patient profile ID {patient_id}. Looking up auth user ID...")
 
         # Step 1: Get the user_id from the patient profile
-        profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+        profile_res = global_supabase_proxy.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
         user_id = profile_res.data.get("user_id")
 
         if not user_id:
             log_to_window(log_widget, f"WARNING: No auth user linked to patient profile {patient_id}. Deleting profile directly.")
             # Fallback for orphaned profiles
-            supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
+            global_supabase_proxy.table('patient_profiles').delete().eq('id', patient_id).execute()
             log_to_window(log_widget, f"Deleted patient profile {patient_id} from database.")
         else:
             # Step 2: Delete the auth user. The database's ON DELETE CASCADE will handle the rest.
             log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
-            supabase_client.auth.admin.delete_user(user_id)
+            global_supabase_proxy.auth.admin.delete_user(user_id)
             log_to_window(log_widget, f"SUCCESS: Auth user {user_id} deleted, and database records removed via cascade.")
         
         ID_STORAGE_FILE.unlink()
@@ -265,7 +265,7 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase_client: Client):
+def create_admin_user(log_widget, buttons, email_entry, password_entry):
     """Creates a new admin user directly using the service key."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     
@@ -277,7 +277,7 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
     
-    if not supabase_client:
+    if not global_supabase_proxy._client:
         messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
@@ -285,7 +285,7 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase
     log_to_window(log_widget, f"Attempting to create new admin user: {email}")
     try:
         # Use the Supabase client with service key to create an admin
-        user_session = supabase_client.auth.admin.create_user({
+        user_session = global_supabase_proxy.auth.admin.create_user({
             "email": email,
             "password": password,
             "email_confirm": True,
@@ -476,9 +476,9 @@ def main_gui():
     login_button.config(command=lambda: threading.Thread(target=attempt_login, daemon=True).start())
     logout_button.config(command=do_logout)
     
-    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, supabase_client_store['client']), daemon=True).start())
-    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, supabase_client_store['client']), daemon=True).start())
-    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_client_store['client']), daemon=True).start())
+    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons), daemon=True).start())
+    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons), daemon=True).start())
+    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry), daemon=True).start())
 
     # Load credentials and set initial view
     creds = load_credentials()
