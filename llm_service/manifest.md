@@ -77,6 +77,3 @@ This creates a `database_data.sql` file containing all the `INSERT` statements f
 
 By running these two commands, you will have a complete backup of your database. When you need to restore it, you would first apply the `database_schema.sql` file to create the database structure and then run the `database_data.sql` file to populate it with your data.
 
-
-
-

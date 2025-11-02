@@ -408,13 +408,16 @@ def main_gui():
         # --- Simplified Login Logic (No Background Server) ---
         try:
             log_to_window(log_widget, "Initializing Supabase client with service key...")
-            # 1. Create a client that will use the service_role key for all operations.
-            admin_client = create_client(url, key)
+            # 1. Create the main client that will use the service_role key for all admin operations.
+            #    This client's auth state will NOT be modified by user login.
+            service_client = create_client(url, key)
 
             log_to_window(log_widget, f"Verifying admin credentials for {email}...")
-            # 2. Verify the user's credentials by trying to log them in.
-            #    This does not use the service key, but the user's password.
-            auth_response = admin_client.auth.sign_in_with_password({
+            # 2. Create a *temporary, separate* client to verify the user's credentials.
+            #    Signing in modifies the client's auth state, so we use a disposable one
+            #    to avoid overwriting the service_role key on our main client.
+            temp_auth_client = create_client(url, key)
+            auth_response = temp_auth_client.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
@@ -423,8 +426,8 @@ def main_gui():
             if auth_response.user.app_metadata.get('role') != 'ADMIN':
                 raise Exception("Login successful, but user is not an admin.")
 
-            # 4. If all checks pass, store the service-role client for the toolkit to use.
-            client_store['client'] = admin_client
+            # 4. If all checks pass, store the *unmodified service-role client* for the toolkit to use.
+            client_store['client'] = service_client
             log_to_window(log_widget, "Login successful. Unlocking toolkit.")
 
             if remember_me_var.get():
