@@ -10,6 +10,7 @@ import threading
 import time
 import random
 from datetime import date, timedelta, datetime
+import json
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent
@@ -21,12 +22,39 @@ from Supabase.client import supabase # For admin creation
 # --- Configuration ---
 load_dotenv(dotenv_path=project_root / '.env', override=True)
 API_BASE_URL = "http://127.0.0.1:8000"
-ADMIN_EMAIL = os.environ.get("TEST_ADMIN_EMAIL")
-ADMIN_PASSWORD = os.environ.get("TEST_ADMIN_PASSWORD")
+CREDENTIALS_FILE = Path(__file__).resolve().parent / ".admin_creds.json"
 
 TEST_PATIENT_EMAIL = "test.patient.monthly@example.com"
 TEST_PATIENT_PASSWORD = "a-secure-password-monthly"
 ID_STORAGE_FILE = Path(__file__).resolve().parent / ".monthly_patient_id"
+
+# --- Credential Management ---
+def save_credentials(email, password):
+    """Saves admin credentials to a local file."""
+    try:
+        with open(CREDENTIALS_FILE, 'w') as f:
+            json.dump({'email': email, 'password': password}, f)
+    except Exception as e:
+        print(f"Error saving credentials: {e}")
+
+def load_credentials():
+    """Loads admin credentials from a local file if it exists."""
+    if CREDENTIALS_FILE.exists():
+        try:
+            with open(CREDENTIALS_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading credentials: {e}")
+    return {}
+
+def delete_credentials():
+    """Deletes the local credentials file."""
+    try:
+        if CREDENTIALS_FILE.exists():
+            CREDENTIALS_FILE.unlink()
+    except Exception as e:
+        print(f"Error deleting credentials file: {e}")
+
 
 # --- GUI Helper ---
 def log_to_window(log_widget, message):
@@ -236,50 +264,128 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry):
 def main_gui():
     root = tk.Tk()
     root.title("Data Seeder & Admin Tool")
-    
-    all_buttons = []
+    root.geometry("600x550")
 
-    # --- Patient Seeder Frame ---
-    seeder_frame = ttk.LabelFrame(root, text="Monthly Patient Seeder", padding=(10, 5))
-    seeder_frame.pack(padx=10, pady=10, fill=tk.X)
+    # --- Main Frames ---
+    login_frame = ttk.Frame(root, padding=10)
+    tools_frame = ttk.Frame(root, padding=10)
+
+    # --- Login Frame Content ---
+    login_content_frame = ttk.LabelFrame(login_frame, text="Admin Login", padding=(10, 5))
+    login_content_frame.pack(padx=10, pady=10, fill=tk.X)
+
+    ttk.Label(login_content_frame, text="Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    admin_email_entry = ttk.Entry(login_content_frame, width=40)
+    admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
+
+    ttk.Label(login_content_frame, text="Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    admin_password_entry = ttk.Entry(login_content_frame, show="*", width=40)
+    admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
+
+    remember_me_var = tk.BooleanVar()
+    remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember Me", variable=remember_me_var)
+    remember_me_check.grid(row=2, column=1, sticky=tk.W, pady=5)
+
+    login_button = ttk.Button(login_content_frame, text="Login")
+    login_button.grid(row=3, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    login_content_frame.columnconfigure(1, weight=1)
+
+    # --- Tools Frame Content ---
+    all_buttons = []
     
+    # Logged in status
+    status_bar = ttk.Frame(tools_frame)
+    status_bar.pack(fill=tk.X, pady=(0, 10))
+    logged_in_label = ttk.Label(status_bar, text="")
+    logged_in_label.pack(side=tk.LEFT)
+    logout_button = ttk.Button(status_bar, text="Logout")
+    logout_button.pack(side=tk.RIGHT)
+
+    # Patient Seeder Frame
+    seeder_frame = ttk.LabelFrame(tools_frame, text="Monthly Patient Seeder", padding=(10, 5))
+    seeder_frame.pack(padx=10, pady=5, fill=tk.X)
     add_patient_btn = ttk.Button(seeder_frame, text="Add Monthly Data Patient")
     add_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(add_patient_btn)
-
     remove_patient_btn = ttk.Button(seeder_frame, text="Remove Monthly Data Patient")
     remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(remove_patient_btn)
 
-    # --- Admin Creator Frame ---
-    admin_frame = ttk.LabelFrame(root, text="Admin User Creator", padding=(10, 5))
-    admin_frame.pack(padx=10, pady=(0, 10), fill=tk.X)
-
-    ttk.Label(admin_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
-    new_admin_email_entry = ttk.Entry(admin_frame, width=40)
+    # Admin Creator Frame
+    admin_creator_frame = ttk.LabelFrame(tools_frame, text="Admin User Creator (Direct DB Access)", padding=(10, 5))
+    admin_creator_frame.pack(padx=10, pady=5, fill=tk.X)
+    ttk.Label(admin_creator_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
     new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-
-    ttk.Label(admin_frame, text="New Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
-    new_admin_password_entry = ttk.Entry(admin_frame, show="*", width=40)
+    ttk.Label(admin_creator_frame, text="New Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
     new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
-    
-    admin_frame.columnconfigure(1, weight=1)
-
-    create_admin_btn = ttk.Button(admin_frame, text="Create Admin User")
+    admin_creator_frame.columnconfigure(1, weight=1)
+    create_admin_btn = ttk.Button(admin_creator_frame, text="Create Admin User")
     create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
     all_buttons.append(create_admin_btn)
 
-    # --- Log Output ---
+    # --- Log Output (Common to both frames) ---
     log_frame = ttk.LabelFrame(root, text="Log Output", padding=(10, 5))
-    log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
-    
     log_widget = scrolledtext.ScrolledText(log_frame, height=15, wrap=tk.WORD, state=tk.DISABLED)
     log_widget.pack(fill=tk.BOTH, expand=True)
 
-    # --- Button Commands ---
+    # --- Login/Logout Logic ---
+    def attempt_login():
+        email = admin_email_entry.get()
+        password = admin_password_entry.get()
+        if not email or not password:
+            messagebox.showerror("Error", "Please enter both email and password.")
+            return
+        
+        log_to_window(log_widget, f"Attempting login for {email}...")
+        try:
+            with httpx.Client() as client:
+                response = client.post(f"{API_BASE_URL}/auth/login", json={"email": email, "password": password}, timeout=10.0)
+                response.raise_for_status()
+            
+            log_to_window(log_widget, "Login successful. Unlocking tools.")
+            if remember_me_var.get():
+                save_credentials(email, password)
+            else:
+                delete_credentials()
+            
+            logged_in_label.config(text=f"Logged in as: {email}")
+            login_frame.pack_forget()
+            log_frame.pack_forget() # Unpack to re-pack in order
+            tools_frame.pack(fill=tk.BOTH, expand=True)
+            log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
+
+        except (httpx.HTTPStatusError, httpx.RequestError) as e:
+            log_to_window(log_widget, f"ERROR: Login failed: {e}")
+            messagebox.showerror("Login Failed", f"Login failed: {e}")
+
+    def do_logout():
+        logged_in_label.config(text="")
+        admin_password_entry.delete(0, tk.END) # Clear password on logout
+        tools_frame.pack_forget()
+        log_frame.pack_forget()
+        login_frame.pack(fill=tk.BOTH, expand=True)
+        log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
+        log_to_window(log_widget, "Logged out.")
+
+    # --- Initial State & Button Commands ---
+    login_button.config(command=lambda: threading.Thread(target=attempt_login, daemon=True).start())
+    logout_button.config(command=do_logout)
+    
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons), daemon=True).start())
     create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry), daemon=True).start())
+
+    # Load credentials and set initial view
+    creds = load_credentials()
+    if creds:
+        admin_email_entry.insert(0, creds.get('email', ''))
+        admin_password_entry.insert(0, creds.get('password', ''))
+        remember_me_var.set(True)
+
+    login_frame.pack(fill=tk.BOTH, expand=True)
+    log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
 
     root.mainloop()
 
