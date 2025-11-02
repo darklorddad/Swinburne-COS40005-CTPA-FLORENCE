@@ -228,8 +228,8 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
 
     except Exception as e:
         error_detail = str(e)
-        # Catch specific error if patient not found
-        if "Expected 1 row, got 0" in error_detail:
+        # Catch specific error if patient not found (handles old and new Supabase client errors)
+        if "Expected 1 row, got 0" in error_detail or "PGRST116" in error_detail:
             log_to_window(log_widget, f"INFO: Patient profile with ID {patient_id} not found in database. Removing stale ID file.")
             ID_STORAGE_FILE.unlink()
             messagebox.showwarning("Not Found", f"Patient with profile ID {patient_id} was not found. The ID file has been removed.")
