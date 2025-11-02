@@ -276,11 +276,12 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase
 # --- GUI Setup ---
 def main_gui():
     root = tk.Tk()
-    root.title("Data Seeder & Admin Tool")
+    root.title("Supabase Admin Toolkit")
     root.geometry("600x650")
 
-    # This will hold the dynamic Supabase client
+    # This will hold the dynamic Supabase client and server thread
     supabase_client_store = {'client': None}
+    server_thread_store = {'thread': None}
 
     # --- Main Frames ---
     login_frame = ttk.Frame(root, padding=10)
@@ -362,13 +363,26 @@ def main_gui():
             messagebox.showerror("Error", "Please fill in all login fields.")
             return
         
+        # Set environment variables for the FastAPI server before it starts
+        os.environ['SUPABASE_URL'] = url
+        os.environ['SUPABASE_SERVICE_KEY'] = key
+
+        # Start the server if it's not already running
+        if server_thread_store['thread'] is None:
+            log_to_window(log_widget, "Starting FastAPI server in background...")
+            server_thread = threading.Thread(target=run_fastapi_server, daemon=True)
+            server_thread.start()
+            server_thread_store['thread'] = server_thread
+            time.sleep(3) # Give server time to start
+            log_to_window(log_widget, "Server should be running.")
+        
         log_to_window(log_widget, f"Attempting login for {email}...")
         try:
             with httpx.Client() as client:
                 response = client.post(f"{API_BASE_URL}/auth/login", json={"email": email, "password": password}, timeout=10.0)
                 response.raise_for_status()
             
-            log_to_window(log_widget, "Login successful. Initializing Supabase client.")
+            log_to_window(log_widget, "Login successful. Initializing Supabase client for toolkit.")
             supabase_client_store['client'] = create_client(url, key)
             
             if remember_me_var.get():
@@ -430,11 +444,4 @@ def run_fastapi_server():
     server.run()
 
 if __name__ == "__main__":
-    # Start the FastAPI server in a daemon thread so it shuts down with the GUI
-    fastapi_thread = threading.Thread(target=run_fastapi_server, daemon=True)
-    fastapi_thread.start()
-    print("Starting FastAPI server in background...")
-    time.sleep(3) # Give server time to start
-    print("Server should be running. Launching GUI.")
-
     main_gui()
