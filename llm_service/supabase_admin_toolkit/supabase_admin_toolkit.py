@@ -10,6 +10,7 @@ import time
 import random
 from datetime import date, timedelta, datetime
 import json
+import base64
 from supabase import create_client, Client
 
 # Add project root to Python path to resolve imports
@@ -53,6 +54,20 @@ def delete_credentials():
             CREDENTIALS_FILE.unlink()
     except Exception as e:
         print(f"Error deleting credentials file: {e}")
+
+
+def get_jwt_payload(token: str) -> dict:
+    """Decodes the payload from a JWT without verification."""
+    try:
+        # A JWT is composed of three parts separated by dots. The payload is the second part.
+        payload_part = token.split('.')[1]
+        # The payload is Base64Url encoded. We need to add padding if it's missing.
+        payload_part += '=' * (-len(payload_part) % 4)
+        decoded_payload = base64.urlsafe_b64decode(payload_part)
+        return json.loads(decoded_payload)
+    except Exception:
+        # If decoding fails, it's not a valid JWT or is malformed.
+        return {}
 
 
 # --- GUI Helper ---
@@ -384,6 +399,17 @@ def main_gui():
         if not all([email, password, url, key]):
             messagebox.showerror("Error", "Please fill in all login fields.")
             return
+
+        # --- Sanity check the key to ensure it's a service_role key ---
+        jwt_payload = get_jwt_payload(key)
+        if jwt_payload.get("role") != "service_role":
+            warning_msg = (
+                "The provided Supabase key does not appear to be a 'service_role' key. "
+                "This is required for all admin operations in this toolkit.\n\n"
+                "Please go to Project Settings > API in your Supabase dashboard and copy the key from the 'service_role' secret."
+            )
+            messagebox.showwarning("Incorrect Key Type", warning_msg)
+            return  # Stop the login attempt
 
         # --- Self-contained server and client logic ---
         try:
