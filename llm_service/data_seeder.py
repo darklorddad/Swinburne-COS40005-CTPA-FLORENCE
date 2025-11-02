@@ -17,6 +17,7 @@ project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from Supabase.main import app
+from Supabase.client import supabase as global_supabase_proxy
 
 # --- Configuration ---
 API_BASE_URL = "http://127.0.0.1:8000"
@@ -362,12 +363,23 @@ def main_gui():
         if not all([email, password, url, key]):
             messagebox.showerror("Error", "Please fill in all login fields.")
             return
-        
-        # Set environment variables for the FastAPI server before it starts
-        os.environ['SUPABASE_URL'] = url
-        os.environ['SUPABASE_SERVICE_KEY'] = key
 
-        # Start the server if it's not already running
+        # --- Self-contained server and client logic ---
+        try:
+            # 1. Create a client instance with credentials from the GUI.
+            log_to_window(log_widget, "Initializing Supabase client...")
+            server_client = create_client(url, key)
+            
+            # 2. Monkey-patch the global proxy object that the FastAPI app will use.
+            #    This bypasses the .env loading mechanism in Supabase/client.py.
+            global_supabase_proxy._client = server_client
+            log_to_window(log_widget, "Client injected into global proxy for background server.")
+        except Exception as e:
+            log_to_window(log_widget, f"ERROR: Supabase client initialization failed: {e}")
+            messagebox.showerror("Initialization Failed", f"Could not initialize Supabase client. Check URL and Key. Error: {e}")
+            return
+
+        # 3. Start the server if it's not already running. It will now use the injected client.
         if server_thread_store['thread'] is None:
             log_to_window(log_widget, "Starting FastAPI server in background...")
             server_thread = threading.Thread(target=run_fastapi_server, daemon=True)
@@ -378,12 +390,14 @@ def main_gui():
         
         log_to_window(log_widget, f"Attempting login for {email}...")
         try:
+            # 4. Verify admin credentials against the running server.
             with httpx.Client() as client:
                 response = client.post(f"{API_BASE_URL}/auth/login", json={"email": email, "password": password}, timeout=10.0)
                 response.raise_for_status()
             
-            log_to_window(log_widget, "Login successful. Initializing Supabase client for toolkit.")
-            supabase_client_store['client'] = create_client(url, key)
+            log_to_window(log_widget, "Login successful. Unlocking toolkit.")
+            # 5. Store the client for the toolkit's direct use.
+            supabase_client_store['client'] = server_client
             
             if remember_me_var.get():
                 save_credentials(email, password, url, key)
@@ -399,9 +413,6 @@ def main_gui():
         except (httpx.HTTPStatusError, httpx.RequestError) as e:
             log_to_window(log_widget, f"ERROR: Login failed: {e}")
             messagebox.showerror("Login Failed", f"Login failed: {e}")
-        except Exception as e:
-            log_to_window(log_widget, f"ERROR: Supabase client initialization failed: {e}")
-            messagebox.showerror("Initialization Failed", f"Could not initialize Supabase client. Check URL and Key. Error: {e}")
 
     def do_logout():
         supabase_client_store['client'] = None
