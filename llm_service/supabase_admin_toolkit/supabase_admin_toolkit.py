@@ -367,6 +367,9 @@ def main_gui():
     login_button.grid(row=5, column=0, columnspan=2, pady=10, sticky=tk.EW)
     login_content_frame.columnconfigure(1, weight=1)
 
+    # This list will hold all buttons that should be disabled during operations.
+    all_buttons = []
+
     admin_creator_frame = ttk.LabelFrame(login_frame, text="Admin User Creator (For First-Time Setup)", padding=(10, 5))
     admin_creator_frame.pack(padx=10, pady=20, fill=tk.X)
     ttk.Label(admin_creator_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -381,7 +384,6 @@ def main_gui():
     all_buttons.append(create_admin_btn)
 
     # --- Tools Frame Content ---
-    all_buttons = []
     
     status_bar = ttk.Frame(tools_frame)
     status_bar.pack(fill=tk.X, pady=(0, 10))
