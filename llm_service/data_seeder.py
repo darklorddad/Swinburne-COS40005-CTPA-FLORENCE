@@ -4,23 +4,21 @@ import httpx
 import os
 import sys
 from pathlib import Path
-from dotenv import load_dotenv
 import uvicorn
 import threading
 import time
 import random
 from datetime import date, timedelta, datetime
 import json
+from supabase import create_client, Client
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(project_root))
 
 from Supabase.main import app
-from Supabase.client import supabase # For admin creation
 
 # --- Configuration ---
-load_dotenv(dotenv_path=project_root / '.env', override=True)
 API_BASE_URL = "http://127.0.0.1:8000"
 CREDENTIALS_FILE = Path(__file__).resolve().parent / ".admin_creds.json"
 
@@ -29,16 +27,16 @@ TEST_PATIENT_PASSWORD = "a-secure-password-monthly"
 ID_STORAGE_FILE = Path(__file__).resolve().parent / ".monthly_patient_id"
 
 # --- Credential Management ---
-def save_credentials(email, password):
-    """Saves admin credentials to a local file."""
+def save_credentials(email, password, url, key):
+    """Saves admin and Supabase credentials to a local file."""
     try:
         with open(CREDENTIALS_FILE, 'w') as f:
-            json.dump({'email': email, 'password': password}, f)
+            json.dump({'email': email, 'password': password, 'supabase_url': url, 'supabase_key': key}, f)
     except Exception as e:
         print(f"Error saving credentials: {e}")
 
 def load_credentials():
-    """Loads admin credentials from a local file if it exists."""
+    """Loads credentials from a local file if it exists."""
     if CREDENTIALS_FILE.exists():
         try:
             with open(CREDENTIALS_FILE, 'r') as f:
@@ -67,7 +65,7 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
-def add_test_patient_data(log_widget, buttons):
+def add_test_patient_data(log_widget, buttons, supabase_client: Client):
     """Creates a test patient and seeds one month of data."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
@@ -77,12 +75,17 @@ def add_test_patient_data(log_widget, buttons):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
+    if not supabase_client:
+        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+        for btn in buttons: btn.config(state=tk.NORMAL)
+        return
+
     patient_id = None
     new_user = None
     try:
         # Step 1: Create the user in Supabase Auth using the service key
         log_to_window(log_widget, f"Creating auth user: {TEST_PATIENT_EMAIL}")
-        user_session = supabase.auth.admin.create_user({
+        user_session = supabase_client.auth.admin.create_user({
             "email": TEST_PATIENT_EMAIL,
             "password": TEST_PATIENT_PASSWORD,
             "email_confirm": True,
@@ -103,7 +106,7 @@ def add_test_patient_data(log_widget, buttons):
             "date_of_birth": "1985-05-15",
             "gender": "Male"
         }
-        patient_profile_res = supabase.table('patient_profiles').insert(profile_data).execute()
+        patient_profile_res = supabase_client.table('patient_profiles').insert(profile_data).execute()
         patient_profile = patient_profile_res.data[0]
         patient_id = patient_profile["id"]
         log_to_window(log_widget, f"Patient profile created with ID: {patient_id}")
@@ -122,7 +125,7 @@ def add_test_patient_data(log_widget, buttons):
         thresholds_to_insert = [
             {**threshold, 'patient_id': patient_id} for threshold in DEFAULT_THRESHOLDS
         ]
-        supabase.table('patient_thresholds').insert(thresholds_to_insert).execute()
+        supabase_client.table('patient_thresholds').insert(thresholds_to_insert).execute()
         log_to_window(log_widget, "Default thresholds created for patient.")
 
         # Step 4: Seed Daily Logs (batched for performance)
@@ -138,7 +141,7 @@ def add_test_patient_data(log_widget, buttons):
                     "glucose_after_meal": round(random.uniform(120, 180), 1),
                     "meal_desc": f"A typical {meal_time.lower()}."
                 })
-        supabase.table('daily_patient_logs').insert(logs_to_insert).execute()
+        supabase_client.table('daily_patient_logs').insert(logs_to_insert).execute()
         log_to_window(log_widget, "-> Seeded all daily logs in one batch.")
 
         # Step 5: Seed Monitor Data (batched for performance)
@@ -160,7 +163,7 @@ def add_test_patient_data(log_widget, buttons):
         monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()})
         monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()})
         
-        supabase.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
+        supabase_client.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
         log_to_window(log_widget, "-> Seeded all monitor data in one batch.")
 
         log_to_window(log_widget, "SUCCESS: Test data seeding complete.")
@@ -173,7 +176,7 @@ def add_test_patient_data(log_widget, buttons):
         if new_user:
             log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
             try:
-                supabase.auth.admin.delete_user(new_user.id)
+                supabase_client.auth.admin.delete_user(new_user.id)
                 log_to_window(log_widget, "Rollback successful.")
                 if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
             except Exception as rollback_e:
@@ -181,7 +184,7 @@ def add_test_patient_data(log_widget, buttons):
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def remove_test_patient_data(log_widget, buttons):
+def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
     """Finds and removes the test patient and their data."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
@@ -194,24 +197,29 @@ def remove_test_patient_data(log_widget, buttons):
     if not messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the monthly test patient and all their data?"):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
+    
+    if not supabase_client:
+        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+        for btn in buttons: btn.config(state=tk.NORMAL)
+        return
 
     try:
         patient_id = int(ID_STORAGE_FILE.read_text().strip())
         log_to_window(log_widget, f"Found patient profile ID {patient_id}. Attempting deletion...")
 
         # Step 1: Get the user_id from the patient profile
-        profile_res = supabase.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+        profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
         user_id = profile_res.data.get("user_id")
 
         # Step 2: Delete the patient profile from the database.
         # ON DELETE CASCADE will handle related data like logs, monitor data, etc.
-        supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
+        supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
         log_to_window(log_widget, f"Deleted patient profile {patient_id} and related data from database.")
 
         # Step 3: Delete the auth user
         if user_id:
             log_to_window(log_widget, f"Deleting auth user {user_id}...")
-            supabase.auth.admin.delete_user(user_id)
+            supabase_client.auth.admin.delete_user(user_id)
             log_to_window(log_widget, f"SUCCESS: Auth user {user_id} deleted.")
         else:
             log_to_window(log_widget, "No associated auth user found to delete.")
@@ -226,7 +234,7 @@ def remove_test_patient_data(log_widget, buttons):
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def create_admin_user(log_widget, buttons, email_entry, password_entry):
+def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase_client: Client):
     """Creates a new admin user directly using the service key."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     
@@ -237,11 +245,16 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry):
         messagebox.showerror("Error", "Please enter both email and password for the new admin.")
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
+    
+    if not supabase_client:
+        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+        for btn in buttons: btn.config(state=tk.NORMAL)
+        return
 
     log_to_window(log_widget, f"Attempting to create new admin user: {email}")
     try:
         # Use the Supabase client with service key to create an admin
-        user_session = supabase.auth.admin.create_user({
+        user_session = supabase_client.auth.admin.create_user({
             "email": email,
             "password": password,
             "email_confirm": True,
@@ -264,14 +277,17 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry):
 def main_gui():
     root = tk.Tk()
     root.title("Data Seeder & Admin Tool")
-    root.geometry("600x550")
+    root.geometry("600x650")
+
+    # This will hold the dynamic Supabase client
+    supabase_client_store = {'client': None}
 
     # --- Main Frames ---
     login_frame = ttk.Frame(root, padding=10)
     tools_frame = ttk.Frame(root, padding=10)
 
     # --- Login Frame Content ---
-    login_content_frame = ttk.LabelFrame(login_frame, text="Admin Login", padding=(10, 5))
+    login_content_frame = ttk.LabelFrame(login_frame, text="Admin & Supabase Login", padding=(10, 5))
     login_content_frame.pack(padx=10, pady=10, fill=tk.X)
 
     ttk.Label(login_content_frame, text="Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -282,18 +298,25 @@ def main_gui():
     admin_password_entry = ttk.Entry(login_content_frame, show="*", width=40)
     admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
 
+    ttk.Label(login_content_frame, text="Supabase URL:").grid(row=2, column=0, sticky=tk.W, pady=2)
+    supabase_url_entry = ttk.Entry(login_content_frame, width=40)
+    supabase_url_entry.grid(row=2, column=1, sticky=tk.EW, pady=2)
+
+    ttk.Label(login_content_frame, text="Supabase Service Key:").grid(row=3, column=0, sticky=tk.W, pady=2)
+    supabase_key_entry = ttk.Entry(login_content_frame, show="*", width=40)
+    supabase_key_entry.grid(row=3, column=1, sticky=tk.EW, pady=2)
+
     remember_me_var = tk.BooleanVar()
     remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember Me", variable=remember_me_var)
-    remember_me_check.grid(row=2, column=1, sticky=tk.W, pady=5)
+    remember_me_check.grid(row=4, column=1, sticky=tk.W, pady=5)
 
     login_button = ttk.Button(login_content_frame, text="Login")
-    login_button.grid(row=3, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    login_button.grid(row=5, column=0, columnspan=2, pady=10, sticky=tk.EW)
     login_content_frame.columnconfigure(1, weight=1)
 
     # --- Tools Frame Content ---
     all_buttons = []
     
-    # Logged in status
     status_bar = ttk.Frame(tools_frame)
     status_bar.pack(fill=tk.X, pady=(0, 10))
     logged_in_label = ttk.Label(status_bar, text="")
@@ -301,7 +324,6 @@ def main_gui():
     logout_button = ttk.Button(status_bar, text="Logout")
     logout_button.pack(side=tk.RIGHT)
 
-    # Patient Seeder Frame
     seeder_frame = ttk.LabelFrame(tools_frame, text="Monthly Patient Seeder", padding=(10, 5))
     seeder_frame.pack(padx=10, pady=5, fill=tk.X)
     add_patient_btn = ttk.Button(seeder_frame, text="Add Monthly Data Patient")
@@ -311,7 +333,6 @@ def main_gui():
     remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(remove_patient_btn)
 
-    # Admin Creator Frame
     admin_creator_frame = ttk.LabelFrame(tools_frame, text="Admin User Creator (Direct DB Access)", padding=(10, 5))
     admin_creator_frame.pack(padx=10, pady=5, fill=tk.X)
     ttk.Label(admin_creator_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -334,8 +355,11 @@ def main_gui():
     def attempt_login():
         email = admin_email_entry.get()
         password = admin_password_entry.get()
-        if not email or not password:
-            messagebox.showerror("Error", "Please enter both email and password.")
+        url = supabase_url_entry.get()
+        key = supabase_key_entry.get()
+
+        if not all([email, password, url, key]):
+            messagebox.showerror("Error", "Please fill in all login fields.")
             return
         
         log_to_window(log_widget, f"Attempting login for {email}...")
@@ -344,25 +368,32 @@ def main_gui():
                 response = client.post(f"{API_BASE_URL}/auth/login", json={"email": email, "password": password}, timeout=10.0)
                 response.raise_for_status()
             
-            log_to_window(log_widget, "Login successful. Unlocking tools.")
+            log_to_window(log_widget, "Login successful. Initializing Supabase client.")
+            supabase_client_store['client'] = create_client(url, key)
+            
             if remember_me_var.get():
-                save_credentials(email, password)
+                save_credentials(email, password, url, key)
             else:
                 delete_credentials()
             
             logged_in_label.config(text=f"Logged in as: {email}")
             login_frame.pack_forget()
-            log_frame.pack_forget() # Unpack to re-pack in order
+            log_frame.pack_forget()
             tools_frame.pack(fill=tk.BOTH, expand=True)
             log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
 
         except (httpx.HTTPStatusError, httpx.RequestError) as e:
             log_to_window(log_widget, f"ERROR: Login failed: {e}")
             messagebox.showerror("Login Failed", f"Login failed: {e}")
+        except Exception as e:
+            log_to_window(log_widget, f"ERROR: Supabase client initialization failed: {e}")
+            messagebox.showerror("Initialization Failed", f"Could not initialize Supabase client. Check URL and Key. Error: {e}")
 
     def do_logout():
+        supabase_client_store['client'] = None
         logged_in_label.config(text="")
-        admin_password_entry.delete(0, tk.END) # Clear password on logout
+        admin_password_entry.delete(0, tk.END)
+        supabase_key_entry.delete(0, tk.END)
         tools_frame.pack_forget()
         log_frame.pack_forget()
         login_frame.pack(fill=tk.BOTH, expand=True)
@@ -373,15 +404,17 @@ def main_gui():
     login_button.config(command=lambda: threading.Thread(target=attempt_login, daemon=True).start())
     logout_button.config(command=do_logout)
     
-    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons), daemon=True).start())
-    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons), daemon=True).start())
-    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry), daemon=True).start())
+    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, supabase_client_store['client']), daemon=True).start())
+    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, supabase_client_store['client']), daemon=True).start())
+    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_client_store['client']), daemon=True).start())
 
     # Load credentials and set initial view
     creds = load_credentials()
     if creds:
         admin_email_entry.insert(0, creds.get('email', ''))
         admin_password_entry.insert(0, creds.get('password', ''))
+        supabase_url_entry.insert(0, creds.get('supabase_url', ''))
+        supabase_key_entry.insert(0, creds.get('supabase_key', ''))
         remember_me_var.set(True)
 
     login_frame.pack(fill=tk.BOTH, expand=True)
