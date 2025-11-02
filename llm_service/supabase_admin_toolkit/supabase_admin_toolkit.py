@@ -187,7 +187,7 @@ class LoginScreen(Screen):
         self.query_one("#login_button", Button).disabled = disabled
         self.query_one("#create_admin_button", Button).disabled = disabled
 
-    @work(exclusive=True)
+    @work(exclusive=True, thread=True)
     def attempt_login(self) -> None:
         self.set_buttons_disabled(True)
         
@@ -238,7 +238,7 @@ class LoginScreen(Screen):
         finally:
             self.set_buttons_disabled(False)
 
-    @work(exclusive=True)
+    @work(exclusive=True, thread=True)
     def create_admin_user(self) -> None:
         self.set_buttons_disabled(True)
         
@@ -304,7 +304,7 @@ class ToolsScreen(Screen):
         self.query_one("#add_patient_button", Button).disabled = disabled
         self.query_one("#remove_patient_button", Button).disabled = disabled
 
-    @work(exclusive=True)
+    @work(exclusive=True, thread=True)
     def add_test_patient_data(self) -> None:
         self.set_buttons_disabled(True)
         supabase_client = self.app.supabase_client
@@ -400,7 +400,7 @@ class ToolsScreen(Screen):
         finally:
             self.set_buttons_disabled(False)
 
-    @work(exclusive=True)
+    @work(exclusive=True, thread=True)
     def remove_test_patient_data(self) -> None:
         self.set_buttons_disabled(True)
 
@@ -418,7 +418,7 @@ class ToolsScreen(Screen):
 
         self.app.push_screen(ModalQuestion("Are you sure you want to delete the monthly test patient and all their data?"), check_confirm)
 
-    @work(exclusive=True)
+    @work(exclusive=True, thread=True)
     def run_deletion(self) -> None:
         supabase_client = self.app.supabase_client
         if not supabase_client:
