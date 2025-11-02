@@ -238,10 +238,21 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
             # Step 2: Delete the auth user. The database's ON DELETE CASCADE will handle the rest.
             log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
             supabase_client.auth.admin.delete_user(user_id)
-            log_to_window(log_widget, f"SUCCESS: Auth user {user_id} deleted, and database records removed via cascade.")
-        
+            log_to_window(log_widget, f"Auth user {user_id} deleted.")
+
+            # Step 3: Verify cascade deletion by checking if the patient profile is gone.
+            log_to_window(log_widget, "Verifying cascade deletion...")
+            profile_check = supabase_client.table('patient_profiles').select('id', count='exact').eq('id', patient_id).execute()
+            
+            if profile_check.count == 0:
+                log_to_window(log_widget, " -> OK: Patient profile correctly removed via cascade.")
+                log_to_window(log_widget, "SUCCESS: Deletion complete and verified.")
+                messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted and verified.")
+            else:
+                log_to_window(log_widget, f" -> FAILED: Patient profile with ID {patient_id} was NOT deleted.")
+                messagebox.showwarning("Verification Failed", "Deletion command was sent, but the patient profile still exists. Please check database permissions and cascade settings.")
+
         ID_STORAGE_FILE.unlink()
-        messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted.")
 
     except Exception as e:
         error_detail = str(e)
