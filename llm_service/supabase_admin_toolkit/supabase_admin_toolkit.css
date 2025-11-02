@@ -1,0 +1,109 @@
+Screen {
+    align: center middle;
+}
+
+#log_container {
+    height: 70%;
+    width: 100%;
+    border: round white;
+    margin: 1;
+}
+
+#log_output {
+    width: 100%;
+    height: 100%;
+}
+
+/* Login Screen */
+#login_grid {
+    grid-size: 2;
+    grid-gutter: 1 2;
+    width: 80%;
+    max-width: 80;
+    margin: 2;
+    border: round $primary;
+    padding: 1 2;
+}
+
+#login_grid .title {
+    column-span: 2;
+    width: 100%;
+    text-align: center;
+    text-style: bold;
+    color: $accent;
+}
+
+#login_grid Input {
+    width: 100%;
+}
+
+#login_grid Button {
+    width: 100%;
+}
+
+#login_grid #login_button {
+    margin-top: 1;
+}
+
+#login_grid #create_admin_button {
+    margin-top: 1;
+}
+
+/* Tools Screen */
+ToolsScreen {
+    align: center top;
+}
+
+#logged_in_label {
+    width: 100%;
+    text-align: center;
+    margin: 1 0;
+}
+
+.button_row {
+    width: 100%;
+    align: center middle;
+    height: auto;
+    margin-top: 1;
+}
+
+.button_row Button {
+    width: 48%;
+    margin: 0 1;
+}
+
+#logout_button {
+    width: 100%;
+    margin-top: 1;
+}
+
+/* Modal Dialogs */
+#dialog {
+    grid-size: 2;
+    grid-gutter: 1;
+    grid-rows: auto auto 3;
+    padding: 0 1;
+    width: 60;
+    height: auto;
+    border: thick $background 80%;
+    background: $surface;
+}
+
+#dialog > #title {
+    column-span: 2;
+    width: 100%;
+    text-align: center;
+    padding-bottom: 1;
+    text-style: bold;
+}
+
+#dialog > #question, #dialog > #message {
+    column-span: 2;
+    width: 100%;
+    height: auto;
+    margin-bottom: 1;
+}
+
+#dialog > Button {
+    width: 100%;
+}
