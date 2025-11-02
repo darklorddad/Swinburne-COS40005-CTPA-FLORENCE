@@ -55,7 +55,17 @@ def get_admin_token(log_widget):
                 timeout=20.0
             )
             response.raise_for_status()
-            access_token = response.json()["access_token"]
+            response_data = response.json()
+
+            # Handle different possible response structures from the login endpoint
+            if 'session' in response_data and response_data['session'] and 'access_token' in response_data['session']:
+                access_token = response_data['session']['access_token']
+            elif 'access_token' in response_data:
+                access_token = response_data['access_token']
+            else:
+                log_to_window(log_widget, f"ERROR: 'access_token' not found in login response: {response_data}")
+                raise KeyError("'access_token' not found in login response")
+
             log_to_window(log_widget, "Admin login successful.")
             return {"Authorization": f"Bearer {access_token}"}
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
