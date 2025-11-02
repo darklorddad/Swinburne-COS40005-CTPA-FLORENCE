@@ -1,4 +1,3 @@
-nicegui
 httpx
 python-dotenv
 uvicorn[standard]
