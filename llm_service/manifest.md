@@ -50,3 +50,37 @@ This section outlines the development plan for the AI-driven recommendation engi
 *   **Data Privacy:** Health data is sensitive. All data sent to third-party LLMs must be anonymised. Review the provider's data handling policies.
 *   **Safety and Reliability:** LLMs can "hallucinate" incorrect medical advice. Implement "guardrails" (e.g., validation rules, keyword checks) to verify the LLM's output. The application must display clear disclaimers that the advice is AI-generated and not a substitute for professional medical consultation.
 *   **System Architecture:** The Flutter client must **never** call the LLM provider directly. All LLM interactions must be proxied through the secure backend to protect API keys and manage data flow.
+
+Analysis-and-Ranking-of-Agentic-AI-Frameworks-for-a-Tool-Oriented-Application.md
+A-Strategic-Analysis-of-Models-for-Task-Triggering-and-Execution.md
+A-Comprehensive-Analysis-of-the-Large-Language-Model-(LLM)-Tool-and-Framework-Ecosystem.md
+
+---
+
+### Export Entire Database (Structure and Data)
+
+**Step-by-step instructions:**
+
+1.  **Link your project:** If you haven't already, open a terminal in your project's directory and link the Supabase CLI to your remote project. You'll only need to do this once per project.
+```bash
+supabase link --project-ref opltjtmmiuwbaikvlive
+```
+You can find `YOUR_PROJECT_REF` in your Supabase project's URL (`https://app.supabase.com/project/YOUR_PROJECT_REF`).
+
+2.  **Dump the database schema:** This command exports only the structure of your database, including tables, functions, and policies.
+```bash
+supabase db dump -f "C:\Users\darklorddad\Downloads\Year 3 Semester 1\COS40005 Computing Technology Project A\Project\Swinburne-COS40005-CTPA-FLORENCE\llm_service\database_schema.sql"
+```
+This command will create a file named `database_schema.sql` at the specified path. This file contains all the SQL statements needed to replicate your database's structure.
+
+3.  **Dump the database data:** This command exports only the data from your tables.
+```bash
+supabase db dump --data-only -f "C:\Users\darklorddad\Downloads\Year 3 Semester 1\COS40005 Computing Technology Project A\Project\Swinburne-COS40005-CTPA-FLORENCE\llm_service\database_data.sql"
+```
+This creates a `database_data.sql` file containing all the `INSERT` statements for your data.
+
+By running these two commands, you will have a complete backup of your database. When you need to restore it, you would first apply the `database_schema.sql` file to create the database structure and then run the `database_data.sql` file to populate it with your data.
+
+
+
+
