@@ -1,10 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, ttk
-import httpx
 import os
 import sys
 from pathlib import Path
-import uvicorn
 import threading
 import time
 import random
@@ -17,11 +15,9 @@ from supabase import create_client, Client
 project_root = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from Supabase.main import app
 from Supabase.client import supabase as global_supabase_proxy
 
 # --- Configuration ---
-API_BASE_URL = "http://127.0.0.1:8000"
 CREDENTIALS_FILE = Path(__file__).resolve().parent / ".admin_creds.json"
 
 TEST_PATIENT_EMAIL = "test.patient.monthly@example.com"
@@ -316,10 +312,6 @@ def main_gui():
     root.title("Supabase Admin Toolkit")
     root.geometry("600x650")
 
-    # This will hold the dynamic Supabase client and server thread
-    supabase_client_store = {'client': None}
-    server_thread_store = {'thread': None}
-
     # --- Main Frames ---
     login_frame = ttk.Frame(root, padding=10)
     tools_frame = ttk.Frame(root, padding=10)
@@ -409,43 +401,31 @@ def main_gui():
                 "Please go to Project Settings > API in your Supabase dashboard and copy the key from the 'service_role' secret."
             )
             messagebox.showwarning("Incorrect Key Type", warning_msg)
-            return  # Stop the login attempt
-
-        # --- Self-contained server and client logic ---
-        try:
-            # 1. Create a client instance with credentials from the GUI.
-            log_to_window(log_widget, "Initializing Supabase client...")
-            server_client = create_client(url, key)
-            
-            # 2. Monkey-patch the global proxy object that the FastAPI app will use.
-            #    This bypasses the .env loading mechanism in Supabase/client.py.
-            global_supabase_proxy._client = server_client
-            log_to_window(log_widget, "Client injected into global proxy for background server.")
-        except Exception as e:
-            log_to_window(log_widget, f"ERROR: Supabase client initialization failed: {e}")
-            messagebox.showerror("Initialization Failed", f"Could not initialize Supabase client. Check URL and Key. Error: {e}")
             return
 
-        # 3. Start the server if it's not already running. It will now use the injected client.
-        if server_thread_store['thread'] is None:
-            log_to_window(log_widget, "Starting FastAPI server in background...")
-            server_thread = threading.Thread(target=run_fastapi_server, daemon=True)
-            server_thread.start()
-            server_thread_store['thread'] = server_thread
-            time.sleep(3) # Give server time to start
-            log_to_window(log_widget, "Server should be running.")
-        
-        log_to_window(log_widget, f"Attempting login for {email}...")
+        # --- Simplified Login Logic (No Background Server) ---
         try:
-            # 4. Verify admin credentials against the running server.
-            with httpx.Client() as client:
-                response = client.post(f"{API_BASE_URL}/auth/login", json={"email": email, "password": password}, timeout=10.0)
-                response.raise_for_status()
-            
+            log_to_window(log_widget, "Initializing Supabase client with service key...")
+            # 1. Create a client that will use the service_role key for all operations.
+            admin_client = create_client(url, key)
+
+            log_to_window(log_widget, f"Verifying admin credentials for {email}...")
+            # 2. Verify the user's credentials by trying to log them in.
+            #    This does not use the service key, but the user's password.
+            auth_response = admin_client.auth.sign_in_with_password({
+                "email": email,
+                "password": password
+            })
+
+            # 3. Check if the now-authenticated user has the 'ADMIN' role.
+            if auth_response.user.app_metadata.get('role') != 'ADMIN':
+                raise Exception("Login successful, but user is not an admin.")
+
+            # 4. If all checks pass, inject the service-role client into the global proxy.
+            #    All subsequent operations in other threads will use this client.
+            global_supabase_proxy._client = admin_client
             log_to_window(log_widget, "Login successful. Unlocking toolkit.")
-            # 5. Store the client for the toolkit's direct use.
-            supabase_client_store['client'] = server_client
-            
+
             if remember_me_var.get():
                 save_credentials(email, password, url, key)
             else:
@@ -457,15 +437,21 @@ def main_gui():
             tools_frame.pack(fill=tk.BOTH, expand=True)
             log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
 
-        except (httpx.HTTPStatusError, httpx.RequestError) as e:
+        except Exception as e:
+            # Clear the proxy on failure to prevent using a partially-logged-in state.
+            global_supabase_proxy._client = None
             log_to_window(log_widget, f"ERROR: Login failed: {e}")
             messagebox.showerror("Login Failed", f"Login failed: {e}")
 
     def do_logout():
-        supabase_client_store['client'] = None
+        # Clear the globally injected client
+        global_supabase_proxy._client = None
+        
         logged_in_label.config(text="")
         admin_password_entry.delete(0, tk.END)
-        supabase_key_entry.delete(0, tk.END)
+        # Don't clear the service key, as it's annoying to re-paste.
+        # supabase_key_entry.delete(0, tk.END) 
+        
         tools_frame.pack_forget()
         log_frame.pack_forget()
         login_frame.pack(fill=tk.BOTH, expand=True)
@@ -495,11 +481,5 @@ def main_gui():
     root.mainloop()
 
 # --- Main Execution ---
-def run_fastapi_server():
-    """Runs the FastAPI server using uvicorn in a separate thread."""
-    config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="warning")
-    server = uvicorn.Server(config)
-    server.run()
-
 if __name__ == "__main__":
     main_gui()
