@@ -69,13 +69,13 @@ You can find `YOUR_PROJECT_REF` in your Supabase project's URL (`https://app.sup
 
 2.  **Dump the database schema:** This command exports only the structure of your database, including tables, functions, and policies.
 ```bash
-supabase db dump -f "llm_service\database_schema.sql"
+supabase db dump -f "C:\Users\darklorddad\Downloads\Year 3 Semester 1\COS40005 Computing Technology Project A\Project\Swinburne-COS40005-CTPA-FLORENCE\llm_service\database_schema.sql"
 ```
 This command will create a file named `database_schema.sql` at the specified path. This file contains all the SQL statements needed to replicate your database's structure.
 
 3.  **Dump the database data:** This command exports only the data from your tables.
 ```bash
-supabase db dump --data-only -f "llm_service\database_data.sql"
+supabase db dump --data-only -f "C:\Users\darklorddad\Downloads\Year 3 Semester 1\COS40005 Computing Technology Project A\Project\Swinburne-COS40005-CTPA-FLORENCE\llm_service\database_data.sql"
 ```
 This creates a `database_data.sql` file containing all the `INSERT` statements for your data.
 
