@@ -146,7 +146,7 @@ class LoginScreen(Screen):
     def compose(self) -> ComposeResult:
         with Vertical(id="login_container"):
             with TabbedContent():
-                with TabPane("Admin and supabase login"):
+                with TabPane("Admin and Supabase Login"):
                     yield Vertical(
                         Label("Admin email:"),
                         Input(id="admin_email", placeholder="admin@example.com"),
@@ -160,7 +160,7 @@ class LoginScreen(Screen):
                         Button("Login", id="login_button"),
                         id="login_form"
                     )
-                with TabPane("Admin user creator (for first-time setup)"):
+                with TabPane("Admin User Creator"):
                     yield Vertical(
                         Label("New admin email:"),
                         Input(id="new_admin_email", placeholder="new.admin@example.com"),

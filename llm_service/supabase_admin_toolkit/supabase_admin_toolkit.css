@@ -29,12 +29,13 @@ LoginScreen {
     align: center middle;
 }
 
-#login_form, #create_admin_form {
-    padding: 1 0 0 0;
-    width: 100%;
-    height: auto;
-    border: none;
-}
+ #login_form, #create_admin_form {
+     padding: 1;
+     width: 100%;
+     height: auto;
+     border: round $panel;
+     margin-top: 1;
+ }
 
 Input {
     margin-bottom: 1;
