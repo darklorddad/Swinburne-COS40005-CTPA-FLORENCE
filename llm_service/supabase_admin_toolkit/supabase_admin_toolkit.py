@@ -93,9 +93,9 @@ class ModalQuestion(ModalScreen[bool]):
 class ModalMessage(ModalScreen):
     """A modal screen to display a message."""
     def __init__(self, message: str, title: str) -> None:
+        super().__init__()
         self.message = message
         self.title = title
-        super().__init__()
 
     def compose(self) -> ComposeResult:
         yield Grid(
@@ -197,14 +197,14 @@ class LoginScreen(Screen):
         key = self.query_one("#supabase_key", Input).value
 
         if not all([email, password, url, key]):
-            self.app.push_screen(ModalMessage("Please fill in all login fields.", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("Please fill in all login fields.", "Error"))
             self.set_buttons_disabled(False)
             return
 
         jwt_payload = get_jwt_payload(key)
         if jwt_payload.get("role") != "service_role":
             msg = "The provided Supabase key must be a 'service_role' key. Please check your Supabase dashboard."
-            self.app.push_screen(ModalMessage(msg, "Incorrect Key Type"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(msg, "Incorrect Key Type"))
             self.set_buttons_disabled(False)
             return
 
@@ -228,13 +228,13 @@ class LoginScreen(Screen):
             else:
                 delete_credentials()
             
-            self.app.push_screen(ToolsScreen())
+            self.app.call_from_thread(self.app.push_screen, ToolsScreen())
 
         except Exception as e:
             self.app.supabase_client = None
             self.app.logged_in_email = None
             self.app.log_message(f"ERROR: Login failed: {e}")
-            self.app.push_screen(ModalMessage(f"Login failed: {e}", "Login Failed"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Login failed: {e}", "Login Failed"))
         finally:
             self.set_buttons_disabled(False)
 
@@ -248,13 +248,13 @@ class LoginScreen(Screen):
         key = self.query_one("#supabase_key", Input).value
 
         if not all([email, password, url, key]):
-            self.app.push_screen(ModalMessage("To create an admin, please provide the new admin's credentials and the Supabase URL/Service Key.", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("To create an admin, please provide the new admin's credentials and the Supabase URL/Service Key.", "Error"))
             self.set_buttons_disabled(False)
             return
 
         jwt_payload = get_jwt_payload(key)
         if jwt_payload.get("role") != "service_role":
-            self.app.push_screen(ModalMessage("The provided Supabase key must be a 'service_role' key.", "Incorrect Key Type"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("The provided Supabase key must be a 'service_role' key.", "Incorrect Key Type"))
             self.set_buttons_disabled(False)
             return
 
@@ -268,12 +268,12 @@ class LoginScreen(Screen):
                  raise Exception("User creation returned no user object.")
 
             self.app.log_message(f"SUCCESS: Admin user {email} created.")
-            self.app.push_screen(ModalMessage(f"Admin user '{email}' created successfully.", "Success"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Admin user '{email}' created successfully.", "Success"))
 
         except Exception as e:
             error_detail = str(e)
             self.app.log_message(f"ERROR: Failed to create admin user: {e}")
-            self.app.push_screen(ModalMessage(f"Failed to create admin user: {error_detail}", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Failed to create admin user: {error_detail}", "Error"))
         finally:
             self.set_buttons_disabled(False)
 
@@ -311,12 +311,12 @@ class ToolsScreen(Screen):
 
         if ID_STORAGE_FILE.exists():
             self.app.log_message("ERROR: Test patient already exists. Please remove the patient first.")
-            self.app.push_screen(ModalMessage("Test patient already exists (found .monthly_patient_id file). Please remove the patient first.", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("Test patient already exists (found .monthly_patient_id file). Please remove the patient first.", "Error"))
             self.set_buttons_disabled(False)
             return
 
         if not supabase_client:
-            self.app.push_screen(ModalMessage("Supabase client not initialized. Please log in again.", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("Supabase client not initialized. Please log in again.", "Error"))
             self.set_buttons_disabled(False)
             return
 
@@ -383,12 +383,12 @@ class ToolsScreen(Screen):
             self.app.log_message("-> Seeded all monitor data in one batch.")
 
             self.app.log_message("SUCCESS: Test data seeding complete.")
-            self.app.push_screen(ModalMessage("Test data seeding complete.", "Success"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("Test data seeding complete.", "Success"))
 
         except Exception as e:
             error_detail = str(e)
             self.app.log_message(f"ERROR: Failed during data seeding: {error_detail}")
-            self.app.push_screen(ModalMessage(f"An error occurred: {error_detail}", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(f"An error occurred: {error_detail}", "Error"))
             if new_user:
                 self.app.log_message(f"Attempting to roll back and delete auth user {new_user.id}...")
                 try:
@@ -406,7 +406,7 @@ class ToolsScreen(Screen):
 
         if not ID_STORAGE_FILE.exists():
             self.app.log_message("INFO: No test patient ID found. Nothing to remove.")
-            self.app.push_screen(ModalMessage("No test patient ID file found (.monthly_patient_id). Nothing to remove.", "Information"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("No test patient ID file found (.monthly_patient_id). Nothing to remove.", "Information"))
             self.set_buttons_disabled(False)
             return
 
@@ -416,13 +416,13 @@ class ToolsScreen(Screen):
                 return
             self.run_deletion()
 
-        self.app.push_screen(ModalQuestion("Are you sure you want to delete the monthly test patient and all their data?"), check_confirm)
+        self.app.call_from_thread(self.app.push_screen, ModalQuestion("Are you sure you want to delete the monthly test patient and all their data?"), check_confirm)
 
     @work(exclusive=True, thread=True)
     def run_deletion(self) -> None:
         supabase_client = self.app.supabase_client
         if not supabase_client:
-            self.app.push_screen(ModalMessage("Supabase client not initialized. Please log in again.", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("Supabase client not initialized. Please log in again.", "Error"))
             self.set_buttons_disabled(False)
             return
 
@@ -448,10 +448,10 @@ class ToolsScreen(Screen):
             if profile_check.count == 0:
                 self.app.log_message(" -> OK: Patient profile correctly removed via cascade.")
                 self.app.log_message("SUCCESS: Deletion complete and verified.")
-                self.app.push_screen(ModalMessage(f"Patient with profile ID {patient_id} and all associated data have been deleted.", "Success"))
+                self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Patient with profile ID {patient_id} and all associated data have been deleted.", "Success"))
             else:
                 self.app.log_message(f" -> FAILED: Patient profile with ID {patient_id} was NOT deleted.")
-                self.app.push_screen(ModalMessage("Deletion command was sent, but the patient profile still exists.", "Verification Failed"))
+                self.app.call_from_thread(self.app.push_screen, ModalMessage("Deletion command was sent, but the patient profile still exists.", "Verification Failed"))
 
             ID_STORAGE_FILE.unlink()
 
@@ -460,10 +460,10 @@ class ToolsScreen(Screen):
             if "Expected 1 row, got 0" in error_detail or "PGRST116" in error_detail:
                 self.app.log_message(f"INFO: Patient profile not found in database. Removing stale ID file.")
                 if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
-                self.app.push_screen(ModalMessage("Patient profile was not found. The ID file has been removed.", "Not Found"))
+                self.app.call_from_thread(self.app.push_screen, ModalMessage("Patient profile was not found. The ID file has been removed.", "Not Found"))
             else:
                 self.app.log_message(f"ERROR: Failed to delete patient: {error_detail}")
-                self.app.push_screen(ModalMessage(f"Failed to delete patient: {error_detail}", "Error"))
+                self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Failed to delete patient: {error_detail}", "Error"))
         finally:
             self.set_buttons_disabled(False)
 
