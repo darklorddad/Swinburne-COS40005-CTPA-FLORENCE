@@ -46,63 +46,9 @@ This endpoint will act as a listener for events from Supabase and delegate the t
 
 In `supabase_service/main.py`, a new endpoint will receive the webhook payload and make an asynchronous call to the `llm_service`.
 
-*Example implementation:*
-```python
-# In supabase_service/main.py
-import httpx
-
-# ... existing code
-
-@app.post("/hooks/new-data")
-async def new_data_hook(request: Request):
-    """
-    Receives database webhooks from Supabase and forwards the event
-    to the LLM service for processing.
-    """
-    event_data = await request.json()
-
-    # Asynchronously call the LLM service without waiting for a response
-    llm_service_url = "http://localhost:8001/trigger-llm"
-    async with httpx.AsyncClient() as client:
-        try:
-            # Fire-and-forget: send the request and move on
-            await client.post(llm_service_url, json=event_data, timeout=10.0)
-        except httpx.RequestError as exc:
-            # Log the error, but don't let it fail the webhook response
-            print(f"Failed to trigger LLM service: {exc}")
-
-    return {"message": "Webhook received and forwarded."}
-```
-
 ### 3. Expose an Endpoint in `llm_service`
 
 The `llm_service` needs to be a running web server (e.g., using FastAPI) to receive the call from `supabase_service`. This new endpoint will use the existing `event_handler.py` logic.
-
-*Example `llm_service/main.py`:*
-```python
-# In a new file, e.g., llm_service/main.py
-from fastapi import FastAPI, Request, BackgroundTasks
-from .event_handler import trigger_new_data_event
-
-app = FastAPI()
-
-@app.post("/trigger-llm")
-async def trigger_llm_from_event(request: Request, background_tasks: BackgroundTasks):
-    """
-    Receives a forwarded database event and uses the event_handler
-    to process it in the background.
-    """
-    payload = await request.json()
-    
-    table = payload.get("table")
-    record = payload.get("record")
-
-    if table and record:
-        # Run the potentially long-running LLM task in the background
-        background_tasks.add_task(trigger_new_data_event, table, record)
-    
-    return {"status": "LLM trigger initiated."}
-```
 
 This architecture effectively decouples the main application from the LLM, allowing complex AI processes to be triggered asynchronously whenever new patient data is recorded.
 
