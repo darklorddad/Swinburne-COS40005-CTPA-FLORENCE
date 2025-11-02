@@ -186,7 +186,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
         for btn in buttons: btn.config(state=tk.NORMAL)
 
 def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
-    """Finds and removes the test patient and their data."""
+    """Finds and removes the test patient and their data by deleting the auth user."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
     if not ID_STORAGE_FILE.exists():
@@ -195,7 +195,7 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
-    if not messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the monthly test patient and all their data?"):
+    if not messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the monthly test patient and all their data? This will delete the auth user and all linked database records via cascade."):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
     
@@ -206,32 +206,36 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
 
     try:
         patient_id = int(ID_STORAGE_FILE.read_text().strip())
-        log_to_window(log_widget, f"Found patient profile ID {patient_id}. Attempting deletion...")
+        log_to_window(log_widget, f"Found patient profile ID {patient_id}. Looking up auth user ID...")
 
         # Step 1: Get the user_id from the patient profile
         profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
         user_id = profile_res.data.get("user_id")
 
-        # Step 2: Delete the patient profile from the database.
-        # ON DELETE CASCADE will handle related data like logs, monitor data, etc.
-        supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
-        log_to_window(log_widget, f"Deleted patient profile {patient_id} and related data from database.")
-
-        # Step 3: Delete the auth user
-        if user_id:
-            log_to_window(log_widget, f"Deleting auth user {user_id}...")
-            supabase_client.auth.admin.delete_user(user_id)
-            log_to_window(log_widget, f"SUCCESS: Auth user {user_id} deleted.")
+        if not user_id:
+            log_to_window(log_widget, f"WARNING: No auth user linked to patient profile {patient_id}. Deleting profile directly.")
+            # Fallback for orphaned profiles
+            supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
+            log_to_window(log_widget, f"Deleted patient profile {patient_id} from database.")
         else:
-            log_to_window(log_widget, "No associated auth user found to delete.")
+            # Step 2: Delete the auth user. The database's ON DELETE CASCADE will handle the rest.
+            log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
+            supabase_client.auth.admin.delete_user(user_id)
+            log_to_window(log_widget, f"SUCCESS: Auth user {user_id} deleted, and database records removed via cascade.")
         
         ID_STORAGE_FILE.unlink()
-        messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and associated auth user have been deleted.")
+        messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted.")
 
     except Exception as e:
         error_detail = str(e)
-        log_to_window(log_widget, f"ERROR: Failed to delete patient: {error_detail}")
-        messagebox.showerror("Error", f"Failed to delete patient: {error_detail}")
+        # Catch specific error if patient not found
+        if "Expected 1 row, got 0" in error_detail:
+            log_to_window(log_widget, f"INFO: Patient profile with ID {patient_id} not found in database. Removing stale ID file.")
+            ID_STORAGE_FILE.unlink()
+            messagebox.showwarning("Not Found", f"Patient with profile ID {patient_id} was not found. The ID file has been removed.")
+        else:
+            log_to_window(log_widget, f"ERROR: Failed to delete patient: {error_detail}")
+            messagebox.showerror("Error", f"Failed to delete patient: {error_detail}")
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
