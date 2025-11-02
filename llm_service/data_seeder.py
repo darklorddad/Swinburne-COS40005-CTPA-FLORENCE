@@ -39,40 +39,6 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
-def get_admin_token(log_widget):
-    """Logs in as admin and returns the auth token."""
-    if not ADMIN_EMAIL or not ADMIN_PASSWORD:
-        log_to_window(log_widget, "ERROR: Admin credentials not found in .env file.")
-        messagebox.showerror("Error", "Admin credentials (TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) not found in .env file.")
-        return None
-
-    log_to_window(log_widget, f"Attempting admin login for {ADMIN_EMAIL}...")
-    try:
-        with httpx.Client() as client:
-            response = client.post(
-                f"{API_BASE_URL}/auth/login",
-                json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
-                timeout=20.0
-            )
-            response.raise_for_status()
-            response_data = response.json()
-
-            # Handle different possible response structures from the login endpoint
-            if 'session' in response_data and response_data['session'] and 'access_token' in response_data['session']:
-                access_token = response_data['session']['access_token']
-            elif 'access_token' in response_data:
-                access_token = response_data['access_token']
-            else:
-                log_to_window(log_widget, f"ERROR: 'access_token' not found in login response: {response_data}")
-                raise KeyError("'access_token' not found in login response")
-
-            log_to_window(log_widget, "Admin login successful.")
-            return {"Authorization": f"Bearer {access_token}"}
-    except (httpx.HTTPStatusError, httpx.RequestError) as e:
-        log_to_window(log_widget, f"ERROR: Admin login failed: {e}")
-        messagebox.showerror("Login Failed", f"Admin login failed: {e}")
-        return None
-
 def add_test_patient_data(log_widget, buttons):
     """Creates a test patient and seeds one month of data."""
     for btn in buttons: btn.config(state=tk.DISABLED)
@@ -83,80 +49,103 @@ def add_test_patient_data(log_widget, buttons):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
-    headers = get_admin_token(log_widget)
-    if not headers:
-        for btn in buttons: btn.config(state=tk.NORMAL)
-        return
-
     patient_id = None
+    new_user = None
     try:
-        # Step 1: Create the patient
-        log_to_window(log_widget, f"Creating patient: {TEST_PATIENT_EMAIL}")
-        patient_payload = {
-            "email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD, "name": "Monthly Data Patient",
-            "phone_number": "555-0123", "date_of_birth": "1985-05-15", "gender": "Male"
-        }
-        with httpx.Client() as client:
-            response = client.post(f"{API_BASE_URL}/admin/patients", json=patient_payload, headers=headers, timeout=20.0)
-            response.raise_for_status()
-            patient_profile = response.json()["profile"]
-            patient_id = patient_profile["id"]
-            log_to_window(log_widget, f"Patient created with ID: {patient_id}")
-            ID_STORAGE_FILE.write_text(str(patient_id))
+        # Step 1: Create the user in Supabase Auth using the service key
+        log_to_window(log_widget, f"Creating auth user: {TEST_PATIENT_EMAIL}")
+        user_session = supabase.auth.admin.create_user({
+            "email": TEST_PATIENT_EMAIL,
+            "password": TEST_PATIENT_PASSWORD,
+            "email_confirm": True,
+            "app_metadata": {"role": "PATIENT"}
+        })
+        new_user = user_session.user
+        if not new_user:
+            raise Exception("Failed to create user in authentication system.")
+        
+        log_to_window(log_widget, f"Auth user created with ID: {new_user.id}")
 
-        # Step 2: Seed Daily Logs
+        # Step 2: Create the patient profile
+        log_to_window(log_widget, "Creating patient profile...")
+        profile_data = {
+            "user_id": new_user.id,
+            "name": "Monthly Data Patient",
+            "phone_number": "555-0123",
+            "date_of_birth": "1985-05-15",
+            "gender": "Male"
+        }
+        patient_profile_res = supabase.table('patient_profiles').insert(profile_data).execute()
+        patient_profile = patient_profile_res.data[0]
+        patient_id = patient_profile["id"]
+        log_to_window(log_widget, f"Patient profile created with ID: {patient_id}")
+        ID_STORAGE_FILE.write_text(str(patient_id))
+
+        # Step 3: Create default thresholds
+        DEFAULT_THRESHOLDS = [
+            {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
+            {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+            {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
+            {'data_type': 'CHOLESTEROL', 'min_value': 100.0, 'max_value': 199.0},
+            {'data_type': 'ECG', 'min_value': 60.0, 'max_value': 100},
+            {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120},
+            {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80}
+        ]
+        thresholds_to_insert = [
+            {**threshold, 'patient_id': patient_id} for threshold in DEFAULT_THRESHOLDS
+        ]
+        supabase.table('patient_thresholds').insert(thresholds_to_insert).execute()
+        log_to_window(log_widget, "Default thresholds created for patient.")
+
+        # Step 4: Seed Daily Logs (batched for performance)
         log_to_window(log_widget, "Seeding one month of daily logs...")
         today = date.today()
-        with httpx.Client() as client:
-            for i in range(30):
-                log_date = today - timedelta(days=i)
-                for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
-                    log_payload = {
-                        "patient_id": patient_id, "log_date": log_date.isoformat(), "meal_time": meal_time,
-                        "glucose_before_meal": round(random.uniform(80, 110), 1),
-                        "glucose_after_meal": round(random.uniform(120, 180), 1),
-                        "meal_desc": f"A typical {meal_time.lower()}."
-                    }
-                    client.post(f"{API_BASE_URL}/admin/daily-logs", json=log_payload, headers=headers, timeout=20.0)
-                log_to_window(log_widget, f"  -> Seeded logs for {log_date.isoformat()}")
+        logs_to_insert = []
+        for i in range(30):
+            log_date = today - timedelta(days=i)
+            for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
+                logs_to_insert.append({
+                    "patient_id": patient_id, "log_date": log_date.isoformat(), "meal_time": meal_time,
+                    "glucose_before_meal": round(random.uniform(80, 110), 1),
+                    "glucose_after_meal": round(random.uniform(120, 180), 1),
+                    "meal_desc": f"A typical {meal_time.lower()}."
+                })
+        supabase.table('daily_patient_logs').insert(logs_to_insert).execute()
+        log_to_window(log_widget, "-> Seeded all daily logs in one batch.")
 
-        # Step 3: Seed Monitor Data
+        # Step 5: Seed Monitor Data (batched for performance)
         log_to_window(log_widget, "Seeding one month of monitor data...")
-        with httpx.Client() as client:
-            for i in range(30):
-                log_date = today - timedelta(days=i)
-                for hour in [8, 13, 19]:
-                    data_payload = {
-                        "patient_id": patient_id, "data_type": "GLUCOSE", "value": round(random.uniform(90, 160), 1),
-                        "measured_at": datetime(log_date.year, log_date.month, log_date.day, hour, random.randint(0, 59)).isoformat()
-                    }
-                    client.post(f"{API_BASE_URL}/admin/monitor-data", json=data_payload, headers=headers, timeout=20.0)
-                
-                bp_systolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": round(random.uniform(110, 130), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
-                bp_diastolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": round(random.uniform(70, 85), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
-                client.post(f"{API_BASE_URL}/admin/monitor-data", json=bp_systolic, headers=headers, timeout=20.0)
-                client.post(f"{API_BASE_URL}/admin/monitor-data", json=bp_diastolic, headers=headers, timeout=20.0)
-                log_to_window(log_widget, f"  -> Seeded monitor data for {log_date.isoformat()}")
-
-        # Add one-off data points
-        with httpx.Client() as client:
-            client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "HBA1C", "value": round(random.uniform(5.7, 7.5), 1), "measured_at": (today - timedelta(days=28)).isoformat()}, headers=headers)
-            client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()}, headers=headers)
-            client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()}, headers=headers)
-        log_to_window(log_widget, "Seeded one-off data points (HBA1C, CHOLESTEROL, BMI).")
+        monitor_data_to_insert = []
+        for i in range(30):
+            log_date = today - timedelta(days=i)
+            for hour in [8, 13, 19]:
+                monitor_data_to_insert.append({
+                    "patient_id": patient_id, "data_type": "GLUCOSE", "value": round(random.uniform(90, 160), 1),
+                    "measured_at": datetime(log_date.year, log_date.month, log_date.day, hour, random.randint(0, 59)).isoformat()
+                })
+            
+            bp_systolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": round(random.uniform(110, 130), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
+            bp_diastolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": round(random.uniform(70, 85), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
+            monitor_data_to_insert.extend([bp_systolic, bp_diastolic])
+        
+        monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "HBA1C", "value": round(random.uniform(5.7, 7.5), 1), "measured_at": (today - timedelta(days=28)).isoformat()})
+        monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()})
+        monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()})
+        
+        supabase.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
+        log_to_window(log_widget, "-> Seeded all monitor data in one batch.")
 
         log_to_window(log_widget, "SUCCESS: Test data seeding complete.")
         messagebox.showinfo("Success", "Test data seeding complete.")
 
-    except (httpx.HTTPStatusError, httpx.RequestError) as e:
-        error_detail = e.response.text if hasattr(e, 'response') else str(e)
+    except Exception as e:
+        error_detail = str(e)
         log_to_window(log_widget, f"ERROR: Failed during data seeding: {error_detail}")
         messagebox.showerror("Error", f"An error occurred: {error_detail}")
-        if patient_id:
-            log_to_window(log_widget, f"Attempting to roll back and delete patient {patient_id}...")
+        if new_user:
+            log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
             try:
-                with httpx.Client() as client:
-                    client.delete(f"{API_BASE_URL}/admin/patients/{patient_id}", headers=headers, timeout=20.0)
+                supabase.auth.admin.delete_user(new_user.id)
                 log_to_window(log_widget, "Rollback successful.")
                 if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
             except Exception as rollback_e:
@@ -178,29 +167,34 @@ def remove_test_patient_data(log_widget, buttons):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
-    headers = get_admin_token(log_widget)
-    if not headers:
-        for btn in buttons: btn.config(state=tk.NORMAL)
-        return
-
     try:
-        patient_id = ID_STORAGE_FILE.read_text().strip()
-        log_to_window(log_widget, f"Found patient ID {patient_id}. Attempting deletion...")
+        patient_id = int(ID_STORAGE_FILE.read_text().strip())
+        log_to_window(log_widget, f"Found patient profile ID {patient_id}. Attempting deletion...")
 
-        with httpx.Client() as client:
-            response = client.delete(f"{API_BASE_URL}/admin/patients/{patient_id}", headers=headers, timeout=30.0)
-            response.raise_for_status()
+        # Step 1: Get the user_id from the patient profile
+        profile_res = supabase.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+        user_id = profile_res.data.get("user_id")
+
+        # Step 2: Delete the patient profile from the database.
+        # ON DELETE CASCADE will handle related data like logs, monitor data, etc.
+        supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
+        log_to_window(log_widget, f"Deleted patient profile {patient_id} and related data from database.")
+
+        # Step 3: Delete the auth user
+        if user_id:
+            log_to_window(log_widget, f"Deleting auth user {user_id}...")
+            supabase.auth.admin.delete_user(user_id)
+            log_to_window(log_widget, f"SUCCESS: Auth user {user_id} deleted.")
+        else:
+            log_to_window(log_widget, "No associated auth user found to delete.")
         
-        log_to_window(log_widget, f"SUCCESS: Patient {patient_id} and all associated data deleted.")
         ID_STORAGE_FILE.unlink()
-        messagebox.showinfo("Success", f"Patient {patient_id} and all associated data have been deleted.")
+        messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and associated auth user have been deleted.")
 
-    except (httpx.HTTPStatusError, httpx.RequestError) as e:
-        error_detail = e.response.text if hasattr(e, 'response') else str(e)
+    except Exception as e:
+        error_detail = str(e)
         log_to_window(log_widget, f"ERROR: Failed to delete patient: {error_detail}")
         messagebox.showerror("Error", f"Failed to delete patient: {error_detail}")
-    except FileNotFoundError:
-        log_to_window(log_widget, "ERROR: ID storage file not found during deletion.")
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
