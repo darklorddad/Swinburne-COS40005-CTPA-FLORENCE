@@ -172,8 +172,15 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
 
     except Exception as e:
         error_detail = str(e)
-        log_to_window(log_widget, f"ERROR: Failed during data seeding: {error_detail}")
-        messagebox.showerror("Error", f"An error occurred: {error_detail}")
+        # Provide a more helpful message for the most common error.
+        if "User not allowed" in error_detail:
+            helpful_message = "This operation requires the Supabase 'service_role' key. Please ensure you have entered the correct key and not the 'anon' key."
+            log_to_window(log_widget, f"ERROR: {error_detail}. HINT: Check if you are using the service_role key.")
+            messagebox.showerror("Permission Denied", f"Failed during data seeding: {error_detail}\n\n{helpful_message}")
+        else:
+            log_to_window(log_widget, f"ERROR: Failed during data seeding: {error_detail}")
+            messagebox.showerror("Error", f"An error occurred: {error_detail}")
+        
         if new_user:
             log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
             try:
@@ -233,6 +240,10 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
             log_to_window(log_widget, f"INFO: Patient profile with ID {patient_id} not found in database. Removing stale ID file.")
             ID_STORAGE_FILE.unlink()
             messagebox.showwarning("Not Found", f"Patient with profile ID {patient_id} was not found. The ID file has been removed.")
+        elif "User not allowed" in error_detail:
+            helpful_message = "This operation requires the Supabase 'service_role' key. Please ensure you have entered the correct key and not the 'anon' key."
+            log_to_window(log_widget, f"ERROR: {error_detail}. HINT: Check if you are using the service_role key.")
+            messagebox.showerror("Permission Denied", f"Failed to delete patient: {error_detail}\n\n{helpful_message}")
         else:
             log_to_window(log_widget, f"ERROR: Failed to delete patient: {error_detail}")
             messagebox.showerror("Error", f"Failed to delete patient: {error_detail}")
@@ -273,8 +284,14 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase
         messagebox.showinfo("Success", f"Admin user '{email}' created successfully.")
 
     except Exception as e:
-        log_to_window(log_widget, f"ERROR: Failed to create admin user: {e}")
-        messagebox.showerror("Error", f"Failed to create admin user: {e}")
+        error_detail = str(e)
+        if "User not allowed" in error_detail:
+            helpful_message = "This operation requires the Supabase 'service_role' key. Please ensure you have entered the correct key and not the 'anon' key."
+            log_to_window(log_widget, f"ERROR: {error_detail}. HINT: Check if you are using the service_role key.")
+            messagebox.showerror("Permission Denied", f"Failed to create admin user: {error_detail}\n\n{helpful_message}")
+        else:
+            log_to_window(log_widget, f"ERROR: Failed to create admin user: {e}")
+            messagebox.showerror("Error", f"Failed to create admin user: {e}")
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
