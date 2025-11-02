@@ -8,7 +8,7 @@ import json
 import base64
 from supabase import create_client, Client
 from textual.app import App, ComposeResult
-from textual.containers import Grid, Vertical, Horizontal, Container
+from textual.containers import Grid, Vertical, Horizontal, Container, VerticalScroll
 from textual.screen import Screen, ModalScreen
 from textual.widgets import Button, Header, Footer, Input, RichLog, Label, Static, Checkbox
 from textual.reactive import reactive
@@ -79,8 +79,8 @@ class ModalQuestion(ModalScreen[bool]):
     def compose(self) -> ComposeResult:
         yield Grid(
             Label(self.question, id="question"),
-            Button("Yes", variant="primary", id="yes"),
-            Button("No", variant="error", id="no"),
+            Button("Yes", id="yes"),
+            Button("No", id="no"),
             id="dialog",
         )
 
@@ -101,7 +101,7 @@ class ModalMessage(ModalScreen):
         yield Grid(
             Label(self.title, id="title"),
             Label(self.message, id="message"),
-            Button("OK", variant="primary", id="ok"),
+            Button("OK", id="ok"),
             id="dialog",
         )
 
@@ -144,28 +144,31 @@ class LoginScreen(Screen):
     """Screen for user login and admin creation."""
 
     def compose(self) -> ComposeResult:
-        yield Grid(
-            Label("Admin & Supabase Login", classes="title"),
-            Label("Admin Email:"),
-            Input(id="admin_email", placeholder="admin@example.com"),
-            Label("Admin Password:"),
-            Input(id="admin_password", password=True),
-            Label("Supabase URL:"),
-            Input(id="supabase_url", placeholder="https://<project>.supabase.co"),
-            Label("Supabase Service Key:"),
-            Input(id="supabase_key", password=True),
-            Checkbox("Remember Me", id="remember_me"),
-            Button("Login", id="login_button", variant="primary"),
-            
-            Static(), # Spacer
-            
-            Label("Admin User Creator (For First-Time Setup)", classes="title"),
-            Label("New Admin Email:"),
-            Input(id="new_admin_email", placeholder="new.admin@example.com"),
-            Label("New Admin Password:"),
-            Input(id="new_admin_password", password=True),
-            Button("Create Admin User", id="create_admin_button"),
-            id="login_grid"
+        yield VerticalScroll(
+            Vertical(
+                Label("Admin & Supabase Login", classes="title"),
+                Label("Admin Email:"),
+                Input(id="admin_email", placeholder="admin@example.com"),
+                Label("Admin Password:"),
+                Input(id="admin_password", password=True),
+                Label("Supabase URL:"),
+                Input(id="supabase_url", placeholder="https://<project>.supabase.co"),
+                Label("Supabase Service Key:"),
+                Input(id="supabase_key", password=True),
+                Checkbox("Remember Me", id="remember_me"),
+                Button("Login", id="login_button"),
+                id="login_form"
+            ),
+            Vertical(
+                Label("Admin User Creator (For First-Time Setup)", classes="title"),
+                Label("New Admin Email:"),
+                Input(id="new_admin_email", placeholder="new.admin@example.com"),
+                Label("New Admin Password:"),
+                Input(id="new_admin_password", password=True),
+                Button("Create Admin User", id="create_admin_button"),
+                id="create_admin_form"
+            ),
+            id="login_container"
         )
 
     def on_mount(self) -> None:
@@ -281,13 +284,16 @@ class ToolsScreen(Screen):
     """Screen for the main admin tools."""
 
     def compose(self) -> ComposeResult:
-        yield Label(f"Logged in as: {self.app.logged_in_email}", id="logged_in_label")
-        yield Horizontal(
-            Button("Add Monthly Data Patient", id="add_patient_button", variant="success"),
-            Button("Remove Monthly Data Patient", id="remove_patient_button", variant="warning"),
-            classes="button_row"
+        yield Vertical(
+            Label(f"Logged in as: {self.app.logged_in_email}", id="logged_in_label"),
+            Horizontal(
+                Button("Add Monthly Data Patient", id="add_patient_button"),
+                Button("Remove Monthly Data Patient", id="remove_patient_button"),
+                classes="button_row"
+            ),
+            Button("Logout", id="logout_button"),
+            id="tools_container"
         )
-        yield Button("Logout", id="logout_button", variant="error")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "add_patient_button":

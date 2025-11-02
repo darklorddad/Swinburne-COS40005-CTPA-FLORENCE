@@ -1,12 +1,15 @@
+/* General App Layout */
 Screen {
-    align: center middle;
+    layout: vertical;
+    align: center top;
 }
 
 #log_container {
-    height: 70%;
+    dock: bottom;
+    height: 12;
     width: 100%;
-    border: round white;
-    margin: 1;
+    border: round $panel;
+    margin: 1 0 0 0;
 }
 
 #log_output {
@@ -15,49 +18,63 @@ Screen {
 }
 
 /* Login Screen */
-#login_grid {
-    grid-size: 2;
-    grid-gutter: 1 2;
-    width: 80%;
-    max-width: 80;
-    margin: 2;
-    border: round rgb(0, 116, 217);
-    padding: 1 2;
+LoginScreen {
+    align: center middle;
 }
 
-#login_grid .title {
-    column-span: 2;
+#login_container {
+    width: 80%;
+    max-width: 60;
+    height: auto;
+    align: center middle;
+}
+
+#login_form, #create_admin_form {
+    border: round $panel;
+    padding: 1 2;
+    margin-top: 1;
+    width: 100%;
+}
+
+.title {
     width: 100%;
     text-align: center;
     text-style: bold;
-    color: rgb(255, 220, 0);
+    margin-bottom: 1;
 }
 
-#login_grid Input {
+Input {
+    margin-bottom: 1;
+}
+
+Button {
     width: 100%;
 }
 
-#login_grid Button {
+Checkbox {
     width: 100%;
-}
-
-#login_grid #login_button {
-    margin-top: 1;
-}
-
-#login_grid #create_admin_button {
-    margin-top: 1;
+    margin-bottom: 1;
 }
 
 /* Tools Screen */
 ToolsScreen {
     align: center top;
+    padding: 1;
+}
+
+#tools_container {
+    width: 80%;
+    max-width: 80;
+    height: auto;
+    align: center middle;
+    border: round $panel;
+    padding: 1 2;
 }
 
 #logged_in_label {
     width: 100%;
     text-align: center;
-    margin: 1 0;
+    margin-bottom: 1;
 }
 
 .button_row {
@@ -85,8 +102,8 @@ ToolsScreen {
     padding: 0 1;
     width: 60;
     height: auto;
-    border: thick rgba(24, 24, 24, 0.8);
-    background: rgb(40, 40, 40);
+    border: thick $panel-darken-2;
+    background: $panel-darken-1;
 }
 
 #dialog > #title {
