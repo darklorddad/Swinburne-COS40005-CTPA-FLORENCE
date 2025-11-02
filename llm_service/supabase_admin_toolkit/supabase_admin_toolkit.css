@@ -21,7 +21,7 @@ Screen {
     width: 80%;
     max-width: 80;
     margin: 2;
-    border: round $primary;
+    border: round rgb(0, 116, 217);
     padding: 1 2;
 }
 
@@ -30,7 +30,7 @@ Screen {
     width: 100%;
     text-align: center;
     text-style: bold;
-    color: $accent;
+    color: rgb(255, 220, 0);
 }
 
 #login_grid Input {
@@ -85,8 +85,8 @@ ToolsScreen {
     padding: 0 1;
     width: 60;
     height: auto;
-    border: thick $background 80%;
-    background: $surface;
+    border: thick rgba(24, 24, 24, 0.8);
+    background: rgb(40, 40, 40);
 }
 
 #dialog > #title {
