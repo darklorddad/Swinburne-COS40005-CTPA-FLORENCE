@@ -271,26 +271,36 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def create_admin_user(log_widget, buttons, email_entry, password_entry, supabase_client: Client):
-    """Creates a new admin user directly using the service key."""
+def create_admin_user(log_widget, buttons, email_entry, password_entry, url_entry, key_entry):
+    """Creates a new admin user directly using the service key, without needing to be logged in."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     
     email = email_entry.get()
     password = password_entry.get()
+    url = url_entry.get()
+    key = key_entry.get()
 
-    if not email or not password:
-        messagebox.showerror("Error", "Please enter both email and password for the new admin.")
+    if not all([email, password, url, key]):
+        messagebox.showerror("Error", "To create an admin, please provide the new admin's credentials and the Supabase URL/Service Key in the login form.")
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
-    
-    if not supabase_client:
-        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+
+    # --- Sanity check the key to ensure it's a service_role key ---
+    jwt_payload = get_jwt_payload(key)
+    if jwt_payload.get("role") != "service_role":
+        warning_msg = (
+            "The provided Supabase key must be a 'service_role' key. "
+            "Please go to Project Settings > API in your Supabase dashboard and copy the key from the 'service_role' secret."
+        )
+        messagebox.showwarning("Incorrect Key Type", warning_msg)
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
     log_to_window(log_widget, f"Attempting to create new admin user: {email}")
     try:
-        # Use the Supabase client with service key to create an admin
+        # Create a temporary client with the service key to perform the operation
+        supabase_client = create_client(url, key)
+
         user_session = supabase_client.auth.admin.create_user({
             "email": email,
             "password": password,
@@ -357,6 +367,19 @@ def main_gui():
     login_button.grid(row=5, column=0, columnspan=2, pady=10, sticky=tk.EW)
     login_content_frame.columnconfigure(1, weight=1)
 
+    admin_creator_frame = ttk.LabelFrame(login_frame, text="Admin User Creator (For First-Time Setup)", padding=(10, 5))
+    admin_creator_frame.pack(padx=10, pady=20, fill=tk.X)
+    ttk.Label(admin_creator_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
+    new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
+    ttk.Label(admin_creator_frame, text="New Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
+    new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
+    admin_creator_frame.columnconfigure(1, weight=1)
+    create_admin_btn = ttk.Button(admin_creator_frame, text="Create Admin User")
+    create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    all_buttons.append(create_admin_btn)
+
     # --- Tools Frame Content ---
     all_buttons = []
     
@@ -376,18 +399,6 @@ def main_gui():
     remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(remove_patient_btn)
 
-    admin_creator_frame = ttk.LabelFrame(tools_frame, text="Admin User Creator (Direct DB Access)", padding=(10, 5))
-    admin_creator_frame.pack(padx=10, pady=5, fill=tk.X)
-    ttk.Label(admin_creator_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
-    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
-    new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-    ttk.Label(admin_creator_frame, text="New Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
-    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
-    new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
-    admin_creator_frame.columnconfigure(1, weight=1)
-    create_admin_btn = ttk.Button(admin_creator_frame, text="Create Admin User")
-    create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
-    all_buttons.append(create_admin_btn)
 
     # --- Log Output (Common to both frames) ---
     log_frame = ttk.LabelFrame(root, text="Log Output", padding=(10, 5))
@@ -479,7 +490,7 @@ def main_gui():
     
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
-    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, client_store['client']), daemon=True).start())
+    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_url_entry, supabase_key_entry), daemon=True).start())
 
     # Load credentials and set initial view
     creds = load_credentials()
