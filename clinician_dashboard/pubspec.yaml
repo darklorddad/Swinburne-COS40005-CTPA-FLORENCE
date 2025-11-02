@@ -1,0 +1,28 @@
+name: clinician_dashboard
+description: AI-Enabled Digital Health Platform for Chronic Disease Monitoring - Clinician Dashboard
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  fl_chart: 
+  intl: 
+  provider:
+  shared_preferences:
+  http:
+  flutter_svg:
+  google_fonts:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints:
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
