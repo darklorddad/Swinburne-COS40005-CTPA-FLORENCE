@@ -10,7 +10,7 @@ from supabase import create_client, Client
 from textual.app import App, ComposeResult
 from textual.containers import Grid, Vertical, Horizontal, Container, VerticalScroll
 from textual.screen import Screen, ModalScreen
-from textual.widgets import Button, Header, Footer, Input, RichLog, Label, Static, Checkbox
+from textual.widgets import Button, Header, Footer, Input, RichLog, Label, Static, Checkbox, TabbedContent, TabPane
 from textual.reactive import reactive
 from textual import work
 
@@ -144,32 +144,31 @@ class LoginScreen(Screen):
     """Screen for user login and admin creation."""
 
     def compose(self) -> ComposeResult:
-        yield VerticalScroll(
-            Vertical(
-                Label("Admin & Supabase Login", classes="title"),
-                Label("Admin Email:"),
-                Input(id="admin_email", placeholder="admin@example.com"),
-                Label("Admin Password:"),
-                Input(id="admin_password", password=True),
-                Label("Supabase URL:"),
-                Input(id="supabase_url", placeholder="https://<project>.supabase.co"),
-                Label("Supabase Service Key:"),
-                Input(id="supabase_key", password=True),
-                Checkbox("Remember Me", id="remember_me"),
-                Button("Login", id="login_button"),
-                id="login_form"
-            ),
-            Vertical(
-                Label("Admin User Creator (For First-Time Setup)", classes="title"),
-                Label("New Admin Email:"),
-                Input(id="new_admin_email", placeholder="new.admin@example.com"),
-                Label("New Admin Password:"),
-                Input(id="new_admin_password", password=True),
-                Button("Create Admin User", id="create_admin_button"),
-                id="create_admin_form"
-            ),
-            id="login_container"
-        )
+        with Vertical(id="login_container"):
+            with TabbedContent():
+                with TabPane("Admin and supabase login"):
+                    yield Vertical(
+                        Label("Admin email:"),
+                        Input(id="admin_email", placeholder="admin@example.com"),
+                        Label("Admin password:"),
+                        Input(id="admin_password", password=True),
+                        Label("Supabase URL:"),
+                        Input(id="supabase_url", placeholder="https://<project>.supabase.co"),
+                        Label("Supabase service key:"),
+                        Input(id="supabase_key", password=True),
+                        Checkbox("Remember me", id="remember_me"),
+                        Button("Login", id="login_button"),
+                        id="login_form"
+                    )
+                with TabPane("Admin user creator (for first-time setup)"):
+                    yield Vertical(
+                        Label("New admin email:"),
+                        Input(id="new_admin_email", placeholder="new.admin@example.com"),
+                        Label("New admin password:"),
+                        Input(id="new_admin_password", password=True),
+                        Button("Create admin user", id="create_admin_button"),
+                        id="create_admin_form"
+                    )
 
     def on_mount(self) -> None:
         creds = load_credentials()
@@ -207,7 +206,7 @@ class LoginScreen(Screen):
         jwt_payload = get_jwt_payload(key)
         if jwt_payload.get("role") != "service_role":
             msg = "The provided Supabase key must be a 'service_role' key. Please check your Supabase dashboard."
-            self.app.call_from_thread(self.app.push_screen, ModalMessage(msg, "Incorrect Key Type"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(msg, "Incorrect key type"))
             self.set_buttons_disabled(False)
             return
 
@@ -237,7 +236,7 @@ class LoginScreen(Screen):
             self.app.supabase_client = None
             self.app.logged_in_email = None
             self.app.log_message(f"ERROR: Login failed: {e}")
-            self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Login failed: {e}", "Login Failed"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Login failed: {e}", "Login failed"))
         finally:
             self.set_buttons_disabled(False)
 
@@ -251,13 +250,13 @@ class LoginScreen(Screen):
         key = self.query_one("#supabase_key", Input).value
 
         if not all([email, password, url, key]):
-            self.app.call_from_thread(self.app.push_screen, ModalMessage("To create an admin, please provide the new admin's credentials and the Supabase URL/Service Key.", "Error"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("To create an admin, please provide the new admin's credentials and the Supabase URL/service key.", "Error"))
             self.set_buttons_disabled(False)
             return
 
         jwt_payload = get_jwt_payload(key)
         if jwt_payload.get("role") != "service_role":
-            self.app.call_from_thread(self.app.push_screen, ModalMessage("The provided Supabase key must be a 'service_role' key.", "Incorrect Key Type"))
+            self.app.call_from_thread(self.app.push_screen, ModalMessage("The provided Supabase key must be a 'service_role' key.", "Incorrect key type"))
             self.set_buttons_disabled(False)
             return
 
@@ -287,8 +286,8 @@ class ToolsScreen(Screen):
         yield Vertical(
             Label(f"Logged in as: {self.app.logged_in_email}", id="logged_in_label"),
             Horizontal(
-                Button("Add Monthly Data Patient", id="add_patient_button"),
-                Button("Remove Monthly Data Patient", id="remove_patient_button"),
+                Button("Add monthly data patient", id="add_patient_button"),
+                Button("Remove monthly data patient", id="remove_patient_button"),
                 classes="button_row"
             ),
             Button("Logout", id="logout_button"),
@@ -457,7 +456,7 @@ class ToolsScreen(Screen):
                 self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Patient with profile ID {patient_id} and all associated data have been deleted.", "Success"))
             else:
                 self.app.log_message(f" -> FAILED: Patient profile with ID {patient_id} was NOT deleted.")
-                self.app.call_from_thread(self.app.push_screen, ModalMessage("Deletion command was sent, but the patient profile still exists.", "Verification Failed"))
+                self.app.call_from_thread(self.app.push_screen, ModalMessage("Deletion command was sent, but the patient profile still exists.", "Verification failed"))
 
             ID_STORAGE_FILE.unlink()
 
@@ -466,7 +465,7 @@ class ToolsScreen(Screen):
             if "Expected 1 row, got 0" in error_detail or "PGRST116" in error_detail:
                 self.app.log_message(f"INFO: Patient profile not found in database. Removing stale ID file.")
                 if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
-                self.app.call_from_thread(self.app.push_screen, ModalMessage("Patient profile was not found. The ID file has been removed.", "Not Found"))
+                self.app.call_from_thread(self.app.push_screen, ModalMessage("Patient profile was not found. The ID file has been removed.", "Not found"))
             else:
                 self.app.log_message(f"ERROR: Failed to delete patient: {error_detail}")
                 self.app.call_from_thread(self.app.push_screen, ModalMessage(f"Failed to delete patient: {error_detail}", "Error"))

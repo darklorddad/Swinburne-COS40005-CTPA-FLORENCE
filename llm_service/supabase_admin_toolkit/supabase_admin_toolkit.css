@@ -30,17 +30,10 @@ LoginScreen {
 }
 
 #login_form, #create_admin_form {
-    border: round $panel;
-    padding: 1 2;
-    margin-top: 1;
+    padding: 1 0 0 0;
     width: 100%;
-}
-
-.title {
-    width: 100%;
-    text-align: center;
-    text-style: bold;
-    margin-bottom: 1;
+    height: auto;
+    border: none;
 }
 
 Input {
