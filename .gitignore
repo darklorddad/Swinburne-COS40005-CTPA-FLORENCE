@@ -5,18 +5,12 @@ COS40005-EAT40005-Worklog-102777801*
 COS40005-EAT40005-Research-Report-102777801*
 Git-history/
 
-# Temp
-Patient-Data-Simulation-Generator
-flutteriment/
-flutteriment-three/
-Pro_Grocery-main/
-
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 #SQL
 *.sql
 
-# Contains sensitive information such as name, student ID, email and etc.)
+# Contains sensitive information such as name, student ID, email and etc.
 Group-List.xlsx
 Project-selection.jpg
 Team-availability/
@@ -36,6 +30,8 @@ COS40005-EAT40005-Sprint-Reports-Group-7*
 .env
 
 *.tmp
+.admin_creds.json
+.monthly_patient_id
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
