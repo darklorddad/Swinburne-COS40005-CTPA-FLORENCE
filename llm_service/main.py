@@ -1,4 +1,4 @@
-import PySimpleGUI as sg
+from nicegui import ui
 import httpx
 import os
 import sys
@@ -28,58 +28,52 @@ ID_STORAGE_FILE = Path(__file__).resolve().parent / ".monthly_patient_id"
 
 # --- API Client & Helpers ---
 
-def log_to_window(window, message):
-    """Helper to print messages to the GUI window's output element."""
-    window['-OUTPUT-'].print(f"[{time.strftime('%H:%M:%S')}] {message}")
-    window.refresh()
-
-def get_admin_token(window):
+async def get_admin_token(log):
     """Logs in as admin and returns the auth token."""
     if not ADMIN_EMAIL or not ADMIN_PASSWORD:
-        log_to_window(window, "ERROR: Admin credentials not found in .env file.")
-        sg.popup_error("Admin credentials (TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) not found in .env file.")
+        log.push("ERROR: Admin credentials not found in .env file.")
+        ui.notify("Admin credentials (TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) not found in .env file.", color='negative')
         return None
 
-    log_to_window(window, f"Attempting admin login for {ADMIN_EMAIL}...")
+    log.push(f"Attempting admin login for {ADMIN_EMAIL}...")
     try:
-        with httpx.Client() as client:
-            response = client.post(
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
                 f"{API_BASE_URL}/auth/login",
                 json={"email": ADMIN_EMAIL, "password": ADMIN_PASSWORD},
                 timeout=20.0
             )
             response.raise_for_status()
             access_token = response.json()["access_token"]
-            log_to_window(window, "Admin login successful.")
+            log.push("Admin login successful.")
             return {"Authorization": f"Bearer {access_token}"}
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
-        log_to_window(window, f"ERROR: Admin login failed: {e}")
-        sg.popup_error(f"Admin login failed: {e}")
+        log.push(f"ERROR: Admin login failed: {e}")
+        ui.notify(f"Admin login failed: {e}", color='negative')
         return None
 
-def add_test_patient_data(window):
+async def add_test_patient_data(log, add_button, remove_button):
     """Creates a test patient and seeds one month of data."""
-    window['-ADD-'].disabled = True
-    window['-REMOVE-'].disabled = True
-    window.refresh()
+    add_button.disable()
+    remove_button.disable()
 
     if ID_STORAGE_FILE.exists():
-        log_to_window(window, "ERROR: Test patient already exists. Please remove the patient first.")
-        sg.popup_error("Test patient already exists (found .monthly_patient_id file). Please remove the patient first.")
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+        log.push("ERROR: Test patient already exists. Please remove the patient first.")
+        ui.notify("Test patient already exists. Please remove the patient first.", color='negative')
+        add_button.enable()
+        remove_button.enable()
         return
 
-    headers = get_admin_token(window)
+    headers = await get_admin_token(log)
     if not headers:
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+        add_button.enable()
+        remove_button.enable()
         return
 
     patient_id = None
     try:
         # Step 1: Create the patient
-        log_to_window(window, f"Creating patient: {TEST_PATIENT_EMAIL}")
+        log.push(f"Creating patient: {TEST_PATIENT_EMAIL}")
         patient_payload = {
             "email": TEST_PATIENT_EMAIL,
             "password": TEST_PATIENT_PASSWORD,
@@ -88,171 +82,159 @@ def add_test_patient_data(window):
             "date_of_birth": "1985-05-15",
             "gender": "Male"
         }
-        with httpx.Client() as client:
-            response = client.post(f"{API_BASE_URL}/admin/patients", json=patient_payload, headers=headers, timeout=20.0)
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{API_BASE_URL}/admin/patients", json=patient_payload, headers=headers, timeout=20.0)
             response.raise_for_status()
             patient_profile = response.json()["profile"]
             patient_id = patient_profile["id"]
-            log_to_window(window, f"Patient created with ID: {patient_id}")
+            log.push(f"Patient created with ID: {patient_id}")
             ID_STORAGE_FILE.write_text(str(patient_id))
 
         # Step 2: Seed Daily Logs for one month
-        log_to_window(window, "Seeding one month of daily logs...")
+        log.push("Seeding one month of daily logs...")
         today = date.today()
-        for i in range(30):
-            log_date = today - timedelta(days=i)
-            for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
-                log_payload = {
-                    "patient_id": patient_id,
-                    "log_date": log_date.isoformat(),
-                    "meal_time": meal_time,
-                    "glucose_before_meal": round(random.uniform(80, 110), 1),
-                    "glucose_after_meal": round(random.uniform(120, 180), 1),
-                    "meal_desc": f"A typical {meal_time.lower()} on {log_date.strftime('%A')}."
-                }
-                with httpx.Client() as client:
-                    client.post(f"{API_BASE_URL}/admin/daily-logs", json=log_payload, headers=headers, timeout=20.0)
-            log_to_window(window, f"  -> Seeded logs for {log_date.isoformat()}")
+        async with httpx.AsyncClient() as client:
+            for i in range(30):
+                log_date = today - timedelta(days=i)
+                for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
+                    log_payload = {
+                        "patient_id": patient_id,
+                        "log_date": log_date.isoformat(),
+                        "meal_time": meal_time,
+                        "glucose_before_meal": round(random.uniform(80, 110), 1),
+                        "glucose_after_meal": round(random.uniform(120, 180), 1),
+                        "meal_desc": f"A typical {meal_time.lower()} on {log_date.strftime('%A')}."
+                    }
+                    await client.post(f"{API_BASE_URL}/admin/daily-logs", json=log_payload, headers=headers, timeout=20.0)
+                log.push(f"  -> Seeded logs for {log_date.isoformat()}")
 
         # Step 3: Seed Monitor Data for one month
-        log_to_window(window, "Seeding one month of monitor data...")
-        for i in range(30):
-            log_date = today - timedelta(days=i)
-            # Glucose (3 times a day)
-            for hour in [8, 13, 19]:
-                data_payload = {
-                    "patient_id": patient_id, "data_type": "GLUCOSE", "value": round(random.uniform(90, 160), 1),
-                    "measured_at": datetime(log_date.year, log_date.month, log_date.day, hour, random.randint(0, 59)).isoformat()
-                }
-                with httpx.Client() as client:
-                    client.post(f"{API_BASE_URL}/admin/monitor-data", json=data_payload, headers=headers, timeout=20.0)
-            
-            # Blood Pressure (once a day)
-            bp_systolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": round(random.uniform(110, 130), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
-            bp_diastolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": round(random.uniform(70, 85), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
-            with httpx.Client() as client:
-                client.post(f"{API_BASE_URL}/admin/monitor-data", json=bp_systolic, headers=headers, timeout=20.0)
-                client.post(f"{API_BASE_URL}/admin/monitor-data", json=bp_diastolic, headers=headers, timeout=20.0)
-            log_to_window(window, f"  -> Seeded monitor data for {log_date.isoformat()}")
+        log.push("Seeding one month of monitor data...")
+        async with httpx.AsyncClient() as client:
+            for i in range(30):
+                log_date = today - timedelta(days=i)
+                # Glucose (3 times a day)
+                for hour in [8, 13, 19]:
+                    data_payload = {
+                        "patient_id": patient_id, "data_type": "GLUCOSE", "value": round(random.uniform(90, 160), 1),
+                        "measured_at": datetime(log_date.year, log_date.month, log_date.day, hour, random.randint(0, 59)).isoformat()
+                    }
+                    await client.post(f"{API_BASE_URL}/admin/monitor-data", json=data_payload, headers=headers, timeout=20.0)
+                
+                # Blood Pressure (once a day)
+                bp_systolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": round(random.uniform(110, 130), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
+                bp_diastolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": round(random.uniform(70, 85), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
+                await client.post(f"{API_BASE_URL}/admin/monitor-data", json=bp_systolic, headers=headers, timeout=20.0)
+                await client.post(f"{API_BASE_URL}/admin/monitor-data", json=bp_diastolic, headers=headers, timeout=20.0)
+                log.push(f"  -> Seeded monitor data for {log_date.isoformat()}")
 
         # Add one-off data points
-        with httpx.Client() as client:
-            client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "HBA1C", "value": round(random.uniform(5.7, 7.5), 1), "measured_at": (today - timedelta(days=28)).isoformat()}, headers=headers)
-            client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()}, headers=headers)
-            client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()}, headers=headers)
-        log_to_window(window, "Seeded one-off data points (HBA1C, CHOLESTEROL, BMI).")
+        async with httpx.AsyncClient() as client:
+            await client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "HBA1C", "value": round(random.uniform(5.7, 7.5), 1), "measured_at": (today - timedelta(days=28)).isoformat()}, headers=headers)
+            await client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()}, headers=headers)
+            await client.post(f"{API_BASE_URL}/admin/monitor-data", json={"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()}, headers=headers)
+        log.push("Seeded one-off data points (HBA1C, CHOLESTEROL, BMI).")
 
-        log_to_window(window, "SUCCESS: Test data seeding complete.")
-        sg.popup("Success", "Test data seeding complete.")
+        log.push("SUCCESS: Test data seeding complete.")
+        ui.notify("Test data seeding complete.", color='positive')
 
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
         error_detail = e.response.text if hasattr(e, 'response') else str(e)
-        log_to_window(window, f"ERROR: Failed during data seeding: {error_detail}")
-        sg.popup_error(f"An error occurred: {error_detail}")
+        log.push(f"ERROR: Failed during data seeding: {error_detail}")
+        ui.notify(f"An error occurred: {error_detail}", color='negative')
         # Rollback if patient was created
         if patient_id:
-            log_to_window(window, f"Attempting to roll back and delete patient {patient_id}...")
+            log.push(f"Attempting to roll back and delete patient {patient_id}...")
             try:
-                with httpx.Client() as client:
-                    client.delete(f"{API_BASE_URL}/admin/patients/{patient_id}", headers=headers, timeout=20.0)
-                log_to_window(window, "Rollback successful.")
+                async with httpx.AsyncClient() as client:
+                    await client.delete(f"{API_BASE_URL}/admin/patients/{patient_id}", headers=headers, timeout=20.0)
+                log.push("Rollback successful.")
                 if ID_STORAGE_FILE.exists():
                     ID_STORAGE_FILE.unlink()
             except Exception as rollback_e:
-                log_to_window(window, f"ERROR: Rollback failed: {rollback_e}")
+                log.push(f"ERROR: Rollback failed: {rollback_e}")
     finally:
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+        add_button.enable()
+        remove_button.enable()
 
-def remove_test_patient_data(window):
+async def remove_test_patient_data(log, add_button, remove_button):
     """Finds and removes the test patient and their data."""
-    window['-ADD-'].disabled = True
-    window['-REMOVE-'].disabled = True
-    window.refresh()
+    add_button.disable()
+    remove_button.disable()
 
     if not ID_STORAGE_FILE.exists():
-        log_to_window(window, "INFO: No test patient ID found. Nothing to remove.")
-        sg.popup("Information", "No test patient ID file found (.monthly_patient_id). Nothing to remove.")
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+        log.push("INFO: No test patient ID found. Nothing to remove.")
+        ui.notify("No test patient ID file found. Nothing to remove.", color='info')
+        add_button.enable()
+        remove_button.enable()
         return
 
-    if not sg.popup_yes_no("Are you sure you want to delete the monthly test patient and all their data?", title="Confirm Deletion"):
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+    with ui.dialog() as dialog, ui.card():
+        ui.label('Are you sure you want to delete the monthly test patient and all their data?')
+        with ui.row():
+            ui.button('Yes', on_click=lambda: dialog.submit('yes'))
+            ui.button('No', on_click=lambda: dialog.submit('no'))
+    
+    result = await dialog
+    if result != 'yes':
+        add_button.enable()
+        remove_button.enable()
         return
 
-    headers = get_admin_token(window)
+    headers = await get_admin_token(log)
     if not headers:
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+        add_button.enable()
+        remove_button.enable()
         return
 
     try:
         patient_id = ID_STORAGE_FILE.read_text().strip()
-        log_to_window(window, f"Found patient ID {patient_id}. Attempting deletion...")
+        log.push(f"Found patient ID {patient_id}. Attempting deletion...")
 
-        with httpx.Client() as client:
-            response = client.delete(f"{API_BASE_URL}/admin/patients/{patient_id}", headers=headers, timeout=30.0)
+        async with httpx.AsyncClient() as client:
+            response = await client.delete(f"{API_BASE_URL}/admin/patients/{patient_id}", headers=headers, timeout=30.0)
             response.raise_for_status()
         
-        log_to_window(window, f"SUCCESS: Patient {patient_id} and all associated data deleted.")
+        log.push(f"SUCCESS: Patient {patient_id} and all associated data deleted.")
         ID_STORAGE_FILE.unlink() # Clean up the ID file
-        sg.popup("Success", f"Patient {patient_id} and all associated data have been deleted.")
+        ui.notify(f"Patient {patient_id} and all associated data have been deleted.", color='positive')
 
     except (httpx.HTTPStatusError, httpx.RequestError) as e:
         error_detail = e.response.text if hasattr(e, 'response') else str(e)
-        log_to_window(window, f"ERROR: Failed to delete patient: {error_detail}")
-        sg.popup_error(f"Failed to delete patient: {error_detail}")
+        log.push(f"ERROR: Failed to delete patient: {error_detail}")
+        ui.notify(f"Failed to delete patient: {error_detail}", color='negative')
     except FileNotFoundError:
-        log_to_window(window, "ERROR: ID storage file not found during deletion.")
+        log.push("ERROR: ID storage file not found during deletion.")
     finally:
-        window['-ADD-'].disabled = False
-        window['-REMOVE-'].disabled = False
+        add_button.enable()
+        remove_button.enable()
 
 # --- GUI Layout ---
-def main():
-    sg.theme('SystemDefault')
+@ui.page('/')
+def main_page():
+    ui.label('Test Data Seeder').classes('text-h4')
+    ui.label('Use this tool to add or remove a test patient with one month of sample data.')
+    
+    with ui.row().classes('w-full justify-center q-my-md'):
+        add_button = ui.button('Add Monthly Data Patient', on_click=lambda: add_test_patient_data(log, add_button, remove_button))
+        remove_button = ui.button('Remove Monthly Data Patient', on_click=lambda: remove_test_patient_data(log, add_button, remove_button), color='red')
 
-    layout = [
-        [sg.Text("Test Data Seeder", font=("Helvetica", 16))],
-        [sg.Text("Use this tool to add or remove a test patient with one month of sample data.")],
-        [sg.HorizontalSeparator()],
-        [
-            sg.Button("Add Monthly Data Patient", key='-ADD-', size=(25, 2)),
-            sg.Button("Remove Monthly Data Patient", key='-REMOVE-', size=(25, 2), button_color=('white', 'firebrick3'))
-        ],
-        [sg.HorizontalSeparator()],
-        [sg.Text("Log Output:")],
-        [sg.Output(size=(80, 20), key='-OUTPUT-')]
-    ]
-
-    window = sg.Window("Data Seeder", layout, finalize=True)
-
-    # --- Event Loop ---
-    while True:
-        event, values = window.read()
-        if event == sg.WIN_CLOSED:
-            break
-        if event == '-ADD-':
-            # Run in a thread to keep the GUI responsive
-            threading.Thread(target=add_test_patient_data, args=(window,), daemon=True).start()
-        if event == '-REMOVE-':
-            threading.Thread(target=remove_test_patient_data, args=(window,), daemon=True).start()
-
-    window.close()
+    ui.label('Log Output').classes('text-h6')
+    log = ui.log(max_lines=50).classes('w-full h-96')
 
 # --- Main Execution ---
-if __name__ == "__main__":
-    def run_server():
-        """Runs the FastAPI server using uvicorn."""
-        uvicorn.run(app, host="127.0.0.1", port=8000, log_level="warning")
+def run_fastapi_server():
+    """Runs the FastAPI server using uvicorn in a separate thread."""
+    config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="warning")
+    server = uvicorn.Server(config)
+    server.run()
 
-    # Start the server in a daemon thread
-    server_thread = threading.Thread(target=run_server, daemon=True)
-    server_thread.start()
+if __name__ in {"__main__", "__mp_main__"}:
+    # Start the FastAPI server in a daemon thread so it shuts down with the GUI
+    fastapi_thread = threading.Thread(target=run_fastapi_server, daemon=True)
+    fastapi_thread.start()
     print("Starting FastAPI server in background...")
     time.sleep(3) # Give server time to start
     print("Server should be running. Launching GUI.")
 
-    main()
+    ui.run(title="Data Seeder", reload=False)
