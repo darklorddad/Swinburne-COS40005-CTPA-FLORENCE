@@ -51,10 +51,6 @@ This section outlines the development plan for the AI-driven recommendation engi
 *   **Safety and Reliability:** LLMs can "hallucinate" incorrect medical advice. Implement "guardrails" (e.g., validation rules, keyword checks) to verify the LLM's output. The application must display clear disclaimers that the advice is AI-generated and not a substitute for professional medical consultation.
 *   **System Architecture:** The Flutter client must **never** call the LLM provider directly. All LLM interactions must be proxied through the secure backend to protect API keys and manage data flow.
 
-Analysis-and-Ranking-of-Agentic-AI-Frameworks-for-a-Tool-Oriented-Application.md
-A-Strategic-Analysis-of-Models-for-Task-Triggering-and-Execution.md
-A-Comprehensive-Analysis-of-the-Large-Language-Model-(LLM)-Tool-and-Framework-Ecosystem.md
-
 ---
 
 ### Export Entire Database (Structure and Data)
