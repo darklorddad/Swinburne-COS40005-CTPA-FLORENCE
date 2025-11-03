@@ -323,75 +323,76 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_a
     """Finds and removes the test patient and their data, either via API or direct DB connection."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
-    if not ID_STORAGE_FILE.exists():
-        log_to_window(log_widget, "INFO: No test patient ID found. Nothing to remove.")
-        messagebox.showinfo("Information", "No test patient ID file found (.monthly_patient_id). Nothing to remove.")
+    if not messagebox.askyesno("Confirm Action", "This will attempt to remove the monthly test patient, their data, and any orphaned auth user associated with them. Continue?"):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
-    if not messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete the monthly test patient and all their data? This will delete the auth user and all linked database records via cascade."):
-        for btn in buttons: btn.config(state=tk.NORMAL)
-        return
-    
-    patient_id_str = ID_STORAGE_FILE.read_text().strip()
     try:
-        patient_id = int(patient_id_str)
+        # If the ID file exists, we can use either API or Direct mode.
+        if ID_STORAGE_FILE.exists():
+            patient_id_str = ID_STORAGE_FILE.read_text().strip()
+            patient_id = int(patient_id_str)
 
-        if use_api:
-            log_to_window(log_widget, f"Attempting to remove patient {patient_id} via API endpoint...")
-            if not all([base_url, admin_token, supabase_client]):
-                messagebox.showerror("Error", "API Base URL, Admin Token, and Supabase client are required to use the API endpoint.")
-                raise Exception("Missing arguments for API call.")
+            if use_api:
+                log_to_window(log_widget, f"Attempting to remove patient {patient_id} via API endpoint...")
+                if not all([base_url, admin_token, supabase_client]):
+                    raise Exception("API Base URL, Admin Token, and Supabase client are required.")
 
-            headers = {
-                "apikey": supabase_client.supabase_key,
-                "Authorization": f"Bearer {admin_token}"
-            }
-            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
-                response = http_client.delete(f"/admin/patients/{patient_id}", headers=headers)
-                response.raise_for_status()
-            
-            log_to_window(log_widget, f"SUCCESS: Patient {patient_id} removed via API.")
-            messagebox.showinfo("Success", f"Patient with profile ID {patient_id} has been deleted via the API.")
-            ID_STORAGE_FILE.unlink()
-        else:
-            log_to_window(log_widget, f"Attempting to remove patient {patient_id} via direct DB connection...")
-            if not supabase_client:
-                messagebox.showerror("Error", "Supabase client not initialized. Please connect again.")
-                raise Exception("Supabase client not initialized.")
+                headers = {"apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}"}
+                with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
+                    response = http_client.delete(f"/admin/patients/{patient_id}", headers=headers)
+                    response.raise_for_status()
+                
+                log_to_window(log_widget, f"SUCCESS: Patient {patient_id} removed via API.")
+                messagebox.showinfo("Success", f"Patient with profile ID {patient_id} has been deleted via the API.")
+            else: # Direct DB mode
+                log_to_window(log_widget, f"Attempting to remove patient {patient_id} via direct DB connection...")
+                if not supabase_client: raise Exception("Supabase client not initialized.")
 
-            # --- Direct DB Deletion Logic ---
-            log_to_window(log_widget, f"Found patient profile ID {patient_id}. Looking up auth user ID...")
-            profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
-            user_id = profile_res.data.get("user_id")
+                log_to_window(log_widget, f"Found patient profile ID {patient_id}. Looking up auth user ID...")
+                profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+                user_id = profile_res.data.get("user_id")
 
-            if not user_id:
-                log_to_window(log_widget, f"WARNING: No auth user linked to patient profile {patient_id}. Deleting profile directly.")
-                supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
-                log_to_window(log_widget, f"Deleted patient profile {patient_id} from database.")
-            else:
-                log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
-                supabase_client.auth.admin.delete_user(user_id)
-                log_to_window(log_widget, f"Auth user {user_id} deleted.")
-
-                log_to_window(log_widget, "Verifying cascade deletion...")
-                profile_check = supabase_client.table('patient_profiles').select('id', count='exact').eq('id', patient_id).execute()
-                if profile_check.count == 0:
-                    log_to_window(log_widget, " -> OK: Patient profile correctly removed via cascade.")
-                    log_to_window(log_widget, "SUCCESS: Deletion complete and verified.")
-                    messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted and verified.")
+                if not user_id:
+                    log_to_window(log_widget, f"WARNING: No auth user linked to patient profile {patient_id}. Deleting profile directly.")
+                    supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
                 else:
-                    log_to_window(log_widget, f" -> FAILED: Patient profile with ID {patient_id} was NOT deleted.")
-                    messagebox.showwarning("Verification Failed", "Deletion command was sent, but the patient profile still exists. Please check database permissions and cascade settings.")
+                    log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
+                    supabase_client.auth.admin.delete_user(user_id)
+                
+                log_to_window(log_widget, "SUCCESS: Deletion complete.")
+                messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted.")
             
             ID_STORAGE_FILE.unlink()
+
+        # If the ID file does NOT exist, we can only clean up in Direct mode.
+        else:
+            log_to_window(log_widget, "INFO: No patient ID file found. Checking for orphaned auth user by email...")
+            if use_api:
+                raise Exception("Cannot clean up an orphaned user in API mode as it requires a patient ID. Please switch to 'Direct DB' mode and try again.")
+            
+            if not supabase_client: raise Exception("Supabase client not initialized.")
+
+            log_to_window(log_widget, f"Searching for user with email: {TEST_PATIENT_EMAIL}")
+            users_res = supabase_client.auth.admin.list_users()
+            
+            user_to_delete = next((user for user in users_res.users if user.email == TEST_PATIENT_EMAIL), None)
+            
+            if user_to_delete:
+                log_to_window(log_widget, f"Found orphaned auth user with ID {user_to_delete.id}. Deleting...")
+                supabase_client.auth.admin.delete_user(user_to_delete.id)
+                log_to_window(log_widget, "SUCCESS: Orphaned auth user deleted.")
+                messagebox.showinfo("Success", "An orphaned test patient auth user was found and deleted. You can now try seeding the data again.")
+            else:
+                log_to_window(log_widget, "INFO: No orphaned auth user found with that email. Nothing to remove.")
+                messagebox.showinfo("Information", "No test patient ID file or orphaned auth user was found. Nothing to remove.")
 
     except Exception as e:
         error_detail = str(e)
         if "Expected 1 row, got 0" in error_detail or "PGRST116" in error_detail:
-            log_to_window(log_widget, f"INFO: Patient profile with ID {patient_id_str} not found in database. Removing stale ID file.")
-            ID_STORAGE_FILE.unlink()
-            messagebox.showwarning("Not Found", f"Patient with profile ID {patient_id_str} was not found. The ID file has been removed.")
+            log_to_window(log_widget, f"INFO: Patient profile not found in database. Removing stale ID file.")
+            if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
+            messagebox.showwarning("Not Found", "Patient profile was not found. The ID file has been removed.")
         elif "User not allowed" in error_detail:
             helpful_message = "This operation requires the Supabase 'service_role' key. Please ensure you have entered the correct key and not the 'anon' key."
             log_to_window(log_widget, f"ERROR: {error_detail}. HINT: Check if you are using the service_role key.")
