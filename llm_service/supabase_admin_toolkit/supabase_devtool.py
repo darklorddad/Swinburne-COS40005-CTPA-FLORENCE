@@ -25,12 +25,13 @@ TEST_PATIENT_PASSWORD = "a-secure-password-monthly"
 ID_STORAGE_FILE = Path(__file__).resolve().parent / ".monthly_patient_id"
 
 # --- Credential Management ---
-def save_credentials(email, url, key, api_base_url, mode):
+def save_credentials(email, password, url, key, api_base_url, mode):
     """Saves configuration to a local file."""
     try:
         with open(CREDENTIALS_FILE, 'w') as f:
             json.dump({
-                'email': email, # Save last used email for convenience
+                'email': email,
+                'password': password,
                 'supabase_url': url, 'supabase_key': key,
                 'api_base_url': api_base_url,
                 'mode': mode
@@ -484,6 +485,10 @@ def main_gui():
     notebook = ttk.Notebook(right_pane)
     notebook.pack(fill=tk.BOTH, expand=True)
 
+    # --- UI Variables ---
+    mode_var = tk.StringVar(value="API")
+    remember_me_var = tk.BooleanVar()
+
     # --- Tab Definitions ---
     login_tab = ttk.Frame(notebook, padding=10)
     config_tab = ttk.Frame(notebook, padding=10)
@@ -505,8 +510,11 @@ def main_gui():
     admin_password_entry = ttk.Entry(login_content_frame, show="*", width=40)
     admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
     
+    remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember me", variable=remember_me_var)
+    remember_me_check.grid(row=2, column=1, sticky=tk.W, pady=5)
+
     login_button = ttk.Button(login_content_frame, text="Login")
-    login_button.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    login_button.grid(row=3, column=0, columnspan=2, pady=10, sticky=tk.EW)
     login_content_frame.columnconfigure(1, weight=1)
 
     # --- Configuration Tab Content ---
@@ -526,7 +534,6 @@ def main_gui():
     api_base_url_entry.grid(row=2, column=1, sticky=tk.EW, pady=2)
 
     # Mode selection
-    mode_var = tk.StringVar(value="API") # Default to API mode
     ttk.Label(config_content_frame, text="Operation mode:").grid(row=3, column=0, sticky=tk.W, pady=5)
     mode_frame = ttk.Frame(config_content_frame)
     mode_frame.grid(row=3, column=1, sticky=tk.EW)
@@ -595,12 +602,15 @@ def main_gui():
         key = supabase_key_entry.get()
         api_url = api_base_url_entry.get()
         mode = mode_var.get()
-        email = admin_email_entry.get() # Save email for convenience
+        email = admin_email_entry.get()
+        
+        # Only save the password if "Remember me" is checked.
+        password = admin_password_entry.get() if remember_me_var.get() else ""
 
         if not all([url, key, api_url]):
             messagebox.showwarning("Warning", "Some configuration fields are empty, but saving anyway.")
         
-        save_credentials(email, url, key, api_url, mode)
+        save_credentials(email, password, url, key, api_url, mode)
         log_to_window(log_widget, "Configuration saved.")
         messagebox.showinfo("Success", "Configuration has been saved.")
 
@@ -643,6 +653,13 @@ def main_gui():
             client_store['client'] = service_client
             client_store['admin_token'] = auth_response.session.access_token
             log_to_window(log_widget, "Login successful. Unlocking DevTool.")
+
+            # Save credentials if "Remember me" is checked
+            if remember_me_var.get():
+                save_credentials(email, password, url, key, api_base_url_entry.get(), mode_var.get())
+            else:
+                # Otherwise, save config but clear the password
+                save_credentials(email, "", url, key, api_base_url_entry.get(), mode_var.get())
             
             connection_status_label.config(text=f"Connected as: {email} (Mode: {mode_var.get()})")
             notebook.add(tools_frame, text='DevTool')
@@ -684,6 +701,9 @@ def main_gui():
     creds = load_credentials()
     if creds:
         admin_email_entry.insert(0, creds.get('email', ''))
+        if creds.get('password'):
+            admin_password_entry.insert(0, creds.get('password'))
+            remember_me_var.set(True)
         supabase_url_entry.insert(0, creds.get('supabase_url', ''))
         supabase_key_entry.insert(0, creds.get('supabase_key', ''))
         api_base_url_entry.insert(0, creds.get('api_base_url', 'http://127.0.0.1:8000'))
