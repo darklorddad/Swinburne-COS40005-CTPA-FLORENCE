@@ -77,7 +77,7 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
-def run_all_tests(log_widget, buttons, supabase_client: Client, base_url: str):
+def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str, base_url: str):
     """Runs a suite of GET requests against parameter-less endpoints to check their status."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     log_to_window(log_widget, "Starting bulk API smoke test...")
@@ -115,10 +115,9 @@ def run_all_tests(log_widget, buttons, supabase_client: Client, base_url: str):
         tokens = {"ADMIN": None, "PATIENT": None, "CLINICIAN": None}
 
         # 2. Get Admin token from the logged-in client
-        admin_session = supabase_client.auth.get_session()
-        if not admin_session or not admin_session.access_token:
+        if not admin_token:
             raise Exception("Could not get admin session. Please log in again.")
-        tokens["ADMIN"] = admin_session.access_token
+        tokens["ADMIN"] = admin_token
         log_to_window(log_widget, "-> Fetched admin token.")
 
         # 3. Get Patient token
@@ -427,8 +426,8 @@ def main_gui():
     root.title("Supabase DevTool")
     root.geometry("800x600")
 
-    # This will hold the active Supabase client for the toolkit.
-    client_store = {'client': None}
+    # This will hold the active Supabase client and tokens for the toolkit.
+    client_store = {'client': None, 'admin_token': None}
 
     # --- Main Layout ---
     main_pane = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
@@ -580,8 +579,9 @@ def main_gui():
             if auth_response.user.app_metadata.get('role') != 'ADMIN':
                 raise Exception("Login successful, but user is not an admin.")
 
-            # 4. If all checks pass, store the *unmodified service-role client* for the toolkit to use.
+            # 4. If all checks pass, store the *unmodified service-role client* and admin token for the toolkit to use.
             client_store['client'] = service_client
+            client_store['admin_token'] = auth_response.session.access_token
             log_to_window(log_widget, "Login successful. Unlocking toolkit.")
 
             if remember_me_var.get():
@@ -598,12 +598,14 @@ def main_gui():
         except Exception as e:
             # Clear the client on failure to prevent using a partially-logged-in state.
             client_store['client'] = None
+            client_store['admin_token'] = None
             log_to_window(log_widget, f"ERROR: Login failed: {e}")
             messagebox.showerror("Login Failed", f"Login failed: {e}")
 
     def do_logout():
-        # Clear the stored client
+        # Clear the stored client and token
         client_store['client'] = None
+        client_store['admin_token'] = None
         
         logged_in_label.config(text="")
         admin_password_entry.delete(0, tk.END)
@@ -622,7 +624,7 @@ def main_gui():
     
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
-    run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], api_base_url_entry.get()), daemon=True).start())
+    run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], client_store.get('admin_token'), api_base_url_entry.get()), daemon=True).start())
     create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_url_entry, supabase_key_entry), daemon=True).start())
 
     # Load credentials and set initial view
