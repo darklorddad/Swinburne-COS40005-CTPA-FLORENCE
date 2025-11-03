@@ -239,6 +239,8 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         return {"message": "Patient created successfully.", "profile": patient_profile}
 
     except AuthApiError as e:
+        print(traceback.format_exc())
+        print(f"AuthApiError during patient creation: {e.message}")
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
         # Print the full traceback to the logs for debugging on Vercel
@@ -313,6 +315,8 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
         return {"message": "Clinician created successfully.", "profile": clinician_profile}
 
     except AuthApiError as e:
+        print(traceback.format_exc())
+        print(f"AuthApiError during clinician creation: {e.message}")
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
         # Rollback: delete the auth user if profile creation failed
