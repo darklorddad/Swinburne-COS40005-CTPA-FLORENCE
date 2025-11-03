@@ -469,8 +469,14 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, client_s
                 "password": password
             }
             
+            log_to_window(log_widget, f"DEBUG: Making API request to {base_url}/auth/register_admin")
+            log_to_window(log_widget, f"DEBUG: Headers: { {k: v[:50] + '...' if k == 'Authorization' else v for k, v in headers.items()} }")
+            log_to_window(log_widget, f"DEBUG: Payload: {payload}")
+            
             with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                 response = http_client.post("/auth/register_admin", headers=headers, json=payload)
+                log_to_window(log_widget, f"DEBUG: Response status: {response.status_code}")
+                log_to_window(log_widget, f"DEBUG: Response body: {response.text}")
                 response.raise_for_status()
         # If not logged in, use a direct DB connection with the provided service key.
         else:
