@@ -78,13 +78,13 @@ class AppTheme {
     ),
     
     // Card Theme
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: surfaceColor,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      shadowColor: Colors.black.withValues(alpha: 0.05),
+      shadowColor: Colors.black.withOpacity(0.05),
     ),
     
     // Button Themes
@@ -188,7 +188,7 @@ class AppTheme {
     ),
     
     // Dialog Theme
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: surfaceColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
