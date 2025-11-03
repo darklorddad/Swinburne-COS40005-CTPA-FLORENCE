@@ -11,7 +11,6 @@ import json
 import base64
 import httpx
 from supabase import create_client, Client
-import sv_ttk
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent.parent
