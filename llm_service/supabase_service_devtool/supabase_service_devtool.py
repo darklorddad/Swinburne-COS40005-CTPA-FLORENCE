@@ -190,8 +190,8 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api:
         return
 
     new_user = None
+    patient_id = None
     try:
-        patient_id = None
         new_user = None # For rollback on direct DB creation
 
         if use_api:
@@ -308,7 +308,21 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api:
             log_to_window(log_widget, f"ERROR: Failed during data seeding: {error_detail}")
             messagebox.showerror("Error", f"An error occurred: {error_detail}")
         
-        if not use_api and new_user: # Only attempt rollback for direct DB method
+        # --- Rollback Logic ---
+        if use_api and patient_id:
+            log_to_window(log_widget, f"Attempting to roll back and delete patient {patient_id} via API...")
+            try:
+                headers = {"apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}"}
+                with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
+                    response = http_client.delete(f"/admin/patients/{patient_id}", headers=headers)
+                    if response.status_code not in [200, 404]: # Success if deleted or already gone
+                        response.raise_for_status()
+                log_to_window(log_widget, "Rollback of API-created patient successful.")
+                if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
+            except Exception as rollback_e:
+                log_to_window(log_widget, f"ERROR: API Rollback failed: {rollback_e}")
+
+        elif not use_api and new_user: # Only attempt rollback for direct DB method
             log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
             try:
                 supabase_client.auth.admin.delete_user(new_user.id)
