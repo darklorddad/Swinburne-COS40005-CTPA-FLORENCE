@@ -83,10 +83,13 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
-def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str, base_url: str):
+def run_all_tests(log_widget, buttons, client_store: dict, base_url: str):
     """Runs a suite of GET requests against parameter-less endpoints to check their status."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     log_to_window(log_widget, "Starting bulk API smoke test...")
+
+    supabase_client = client_store.get('client')
+    admin_token = client_store.get('admin_token')
 
     if not base_url:
         messagebox.showerror("Error", "Please provide the API Base URL.")
@@ -179,9 +182,12 @@ def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str
         for btn in buttons: btn.config(state=tk.NORMAL)
 
 
-def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api: bool, base_url: str, admin_token: str):
+def add_test_patient_data(log_widget, buttons, client_store: dict, use_api: bool, base_url: str):
     """Creates a test patient and seeds one month of data, either via API or direct DB connection."""
     for btn in buttons: btn.config(state=tk.DISABLED)
+
+    supabase_client = client_store.get('client')
+    admin_token = client_store.get('admin_token')
 
     if ID_STORAGE_FILE.exists():
         log_to_window(log_widget, "ERROR: Test patient already exists. Please remove the patient first.")
@@ -333,9 +339,12 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api:
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_api: bool, base_url: str, admin_token: str):
+def remove_test_patient_data(log_widget, buttons, client_store: dict, use_api: bool, base_url: str):
     """Finds and removes the test patient and their data, either via API or direct DB connection."""
     for btn in buttons: btn.config(state=tk.DISABLED)
+
+    supabase_client = client_store.get('client')
+    admin_token = client_store.get('admin_token')
 
     if not messagebox.askyesno("Confirm Action", "This will attempt to remove the monthly test patient, their data, and any orphaned auth user associated with them. Continue?"):
         for btn in buttons: btn.config(state=tk.NORMAL)
@@ -383,8 +392,10 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_a
         else:
             log_to_window(log_widget, "INFO: No patient ID file found. Checking for orphaned auth user by email...")
             if use_api:
-                raise Exception("Cannot clean up an orphaned user in API mode as it requires a patient ID. Please switch to 'Direct DB' mode and try again.")
-            
+                log_to_window(log_widget, "INFO: Cannot check for orphaned users in API mode without a patient ID. Nothing to do.")
+                messagebox.showinfo("Information", "Cannot check for orphaned users in API mode without a patient ID. Nothing to do.")
+                return
+
             if not supabase_client: raise Exception("Supabase client not initialized.")
 
             log_to_window(log_widget, f"Searching for user with email: {TEST_PATIENT_EMAIL}")
@@ -417,12 +428,15 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_a
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def create_admin_user(log_widget, buttons, email_entry, password_entry, base_url: str, admin_token: str, supabase_client: Client, supabase_url: str, supabase_key: str):
+def create_admin_user(log_widget, buttons, email_entry, password_entry, client_store: dict, base_url: str, supabase_url: str, supabase_key: str):
     """Creates a new admin user. Uses API if logged in, otherwise uses Direct DB."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     
     email = email_entry.get()
     password = password_entry.get()
+
+    supabase_client = client_store.get('client')
+    admin_token = client_store.get('admin_token')
 
     if not all([email, password]):
         messagebox.showerror("Error", "Please provide an email and password for the new admin.")
@@ -657,7 +671,7 @@ def main_gui():
 
         # --- Simplified Login Logic ---
         try:
-            log_to_window(log_widget, "Initializing Supabase client with service key...")
+            log_to_window(log_widget, "Initialising Supabase client with service key...")
             service_client = create_client(url, key)
 
             user_role = None
@@ -708,6 +722,19 @@ def main_gui():
             notebook.select(tools_frame)
             notebook.forget(login_tab)
 
+        except httpx.HTTPStatusError as e:
+            client_store['client'] = None
+            client_store['admin_token'] = None
+            error_message = f"Login failed: {e}"
+            if e.response.status_code == 422:
+                try:
+                    detail = e.response.json().get('detail', [])
+                    if isinstance(detail, list) and any("valid email address" in item.get('msg', '').lower() for item in detail):
+                        error_message = "Login failed: Invalid email format. Please provide a valid email address."
+                except Exception:
+                    pass # Stick with the default message
+            log_to_window(log_widget, f"ERROR: {error_message}")
+            messagebox.showerror("Login Failed", error_message)
         except Exception as e:
             client_store['client'] = None
             client_store['admin_token'] = None
@@ -732,10 +759,10 @@ def main_gui():
     save_config_button.config(command=do_save_config)
     logout_button.config(command=do_logout)
     
-    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
-    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
-    run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], client_store.get('admin_token'), api_base_url_entry.get()), daemon=True).start())
-    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, api_base_url_entry.get(), client_store.get('admin_token'), client_store.get('client'), supabase_url_entry.get(), supabase_key_entry.get()), daemon=True).start())
+    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store, mode_var.get() == "API", api_base_url_entry.get()), daemon=True).start())
+    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store, mode_var.get() == "API", api_base_url_entry.get()), daemon=True).start())
+    run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store, api_base_url_entry.get()), daemon=True).start())
+    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, client_store, api_base_url_entry.get(), supabase_url_entry.get(), supabase_key_entry.get()), daemon=True).start())
 
     # Load credentials and set initial view
     creds = load_credentials()
