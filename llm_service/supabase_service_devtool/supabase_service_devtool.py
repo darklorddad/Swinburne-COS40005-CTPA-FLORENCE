@@ -126,6 +126,9 @@ def run_all_tests(log_widget, buttons, client_store: dict, base_url_entry: ttk.E
 
         # 2. Get Admin token from the connected client
         if not admin_token:
+            # Debug: log the client_store state
+            log_to_window(log_widget, f"DEBUG: client_store keys: {list(client_store.keys())}")
+            log_to_window(log_widget, f"DEBUG: admin_token value: {admin_token}")
             raise Exception("Could not get admin session. Please connect again.")
         tokens["ADMIN"] = admin_token
         log_to_window(log_widget, "-> Fetched admin token.")
@@ -718,6 +721,7 @@ def main_gui():
             client_store['client'] = service_client
             client_store['admin_token'] = access_token
             log_to_window(log_widget, "Login successful. Unlocking DevTool.")
+            log_to_window(log_widget, f"DEBUG: Set admin_token: {access_token is not None}")
 
             # Save credentials if "Remember me" is checked
             if remember_me_var.get():
