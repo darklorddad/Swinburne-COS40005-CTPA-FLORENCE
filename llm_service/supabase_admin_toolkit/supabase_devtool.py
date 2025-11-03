@@ -140,7 +140,7 @@ def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str
         log_to_window(log_widget, "WARNING: Clinician testing is not yet implemented. Skipping CLINICIAN endpoints.")
 
         # 5. Run tests
-        with httpx.Client(base_url=base_url.strip('/')) as http_client:
+        with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
             log_to_window(log_widget, "\n--- Testing /auth/me ---")
             for role, token in tokens.items():
                 if token:
@@ -205,7 +205,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api:
                 "email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD, "name": "Monthly Data Patient (API)",
                 "phone_number": "555-0123", "date_of_birth": "1985-05-15", "gender": "Male"
             }
-            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                 response = http_client.post("/admin/patients", headers=headers, json=payload)
                 response.raise_for_status()
                 patient_profile = response.json().get("profile", {})
@@ -265,7 +265,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api:
         if use_api:
             log_to_window(log_widget, "Seeding data via API. This may take a moment...")
             headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
-            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                 for i, log_payload in enumerate(logs_to_insert):
                     response = http_client.post("/admin/daily-logs", headers=headers, json=log_payload)
                     response.raise_for_status()
@@ -347,7 +347,7 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_a
                 "apikey": supabase_client.supabase_key,
                 "Authorization": f"Bearer {admin_token}"
             }
-            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                 response = http_client.delete(f"/admin/patients/{patient_id}", headers=headers)
                 response.raise_for_status()
             
@@ -424,7 +424,7 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, use_api:
             headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
             payload = { "email": email, "password": password }
             
-            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                 # The endpoint is in the `authentication` router, not the `admin` router
                 response = http_client.post("/auth/register_admin", headers=headers, json=payload)
                 response.raise_for_status()
