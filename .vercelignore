@@ -1,9 +1,13 @@
 # Ignore other projects in the monorepo
 AI-Integration-branch/
 biotective/
+biotective_patient_dashboard/
 clinician_dashboard/
+Documents/
 florence_platform/
-llm_service/
+Images/
+Patient_Data_Simulation_Generator/
+Rightest-Care/
 
 # Ignore test files for production deployment
 supabase_service/tests/

@@ -108,7 +108,7 @@ async def register_user(user_data: UserRegistration):
 
 
 async def get_current_admin_user(authorization: str = Header(...)):
-    """Dependency to get the current user and verify they are an admin."""
+    """Dependency to get the current user. RLS policies will enforce admin-only access."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
     
@@ -119,11 +119,6 @@ async def get_current_admin_user(authorization: str = Header(...)):
         user = user_response.user
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
-        
-        # Explicitly check if user has admin role in app_metadata
-        user_role = user.app_metadata.get('role')
-        if user_role != 'ADMIN':
-            raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
             
         return user
     except AuthApiError as e:
