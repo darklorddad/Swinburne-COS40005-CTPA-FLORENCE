@@ -3,6 +3,8 @@ from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
+import os
+from supabase import create_client
 
 # Import the shared Supabase client
 from ..client import supabase
@@ -108,7 +110,7 @@ async def register_user(user_data: UserRegistration):
 
 
 async def get_current_admin_user(authorization: str = Header(...)):
-    """Dependency to get the current user. RLS policies will enforce admin-only access."""
+    """Dependency to get the current user and verify they are an admin."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
     
@@ -119,6 +121,10 @@ async def get_current_admin_user(authorization: str = Header(...)):
         user = user_response.user
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
+        
+        # Explicitly check for the ADMIN role in app_metadata
+        if user.app_metadata.get('role') != 'ADMIN':
+            raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
             
         return user
     except AuthApiError as e:
@@ -133,7 +139,19 @@ async def get_current_admin_user(authorization: str = Header(...)):
 async def register_admin(user_data: AdminRegistration):
     """Registers a new admin user. This endpoint is protected and only accessible by other admins."""
     try:
-        supabase.auth.admin.create_user({
+        # Explicitly create a client with the service role key for this admin action
+        # to ensure it has the correct permissions.
+        url: str = os.environ.get("SUPABASE_URL")
+        key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+
+        if not url or not key:
+            raise HTTPException(
+                status_code=500,
+                detail="Server configuration error: SUPABASE_URL or SUPABASE_SERVICE_KEY is not set."
+            )
+
+        temp_supabase_client = create_client(url, key)
+        temp_supabase_client.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
