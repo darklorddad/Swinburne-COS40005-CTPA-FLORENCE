@@ -1,0 +1,19 @@
+# Ignore other projects in the monorepo
+AI-Integration-branch/
+biotective/
+clinician_dashboard/
+florence_platform/
+llm_service/
+
+# Ignore test files for production deployment
+supabase_service/tests/
+
+# Ignore common development/local files
+.git/
+.gitignore
+.env
+.env.*
+*.pyc
+__pycache__/
+*.DS_Store
+node_modules/
