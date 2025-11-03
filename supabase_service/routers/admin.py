@@ -4,6 +4,7 @@ from typing import Optional
 from enum import Enum
 from datetime import date, datetime
 from supabase_auth.errors import AuthApiError
+import traceback
 
 from ..client import supabase
 from .authentication import get_current_admin_user
@@ -240,6 +241,8 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
     except AuthApiError as e:
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
+        # Print the full traceback to the logs for debugging on Vercel
+        print(traceback.format_exc())
         # Rollback: delete the auth user if profile creation failed
         if new_user:
             supabase.auth.admin.delete_user(new_user.id)
