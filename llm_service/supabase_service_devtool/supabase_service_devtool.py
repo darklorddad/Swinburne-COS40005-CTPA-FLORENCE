@@ -704,10 +704,10 @@ def main_gui():
                 log_to_window(log_widget, f"Verifying admin credentials for {email} via API...")
                 if not base_url:
                     raise Exception("API Base URL is required for API mode.")
-                
+                    
                 headers = {"apikey": key}
                 payload = {"email": email, "password": password}
-                
+                    
                 with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                     response = http_client.post("/auth/login", headers=headers, json=payload)
                     response.raise_for_status()
@@ -720,6 +720,17 @@ def main_gui():
                     user_role = auth_response_data.get("user", {}).get("app_metadata", {}).get("role")
                     if not user_role:
                         user_role = auth_response_data.get("data", {}).get("user", {}).get("app_metadata", {}).get("role")
+                        
+                # Additional debug: Check if we can verify the admin role via /auth/me
+                log_to_window(log_widget, f"DEBUG: User role from login: {user_role}")
+                if access_token:
+                    headers = {"apikey": key, "Authorization": f"Bearer {access_token}"}
+                    with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
+                        me_response = http_client.get("/auth/me", headers=headers)
+                        log_to_window(log_widget, f"DEBUG: /auth/me status: {me_response.status_code}")
+                        if me_response.status_code == 200:
+                            me_data = me_response.json()
+                            log_to_window(log_widget, f"DEBUG: /auth/me data: {me_data}")
             else: # Direct mode
                 log_to_window(log_widget, f"Verifying admin credentials for {email} via direct connection...")
                 temp_auth_client = create_client(url, key)
