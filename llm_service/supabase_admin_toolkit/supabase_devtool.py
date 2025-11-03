@@ -11,6 +11,7 @@ import json
 import base64
 import httpx
 from supabase import create_client, Client
+import azure_dark_theme
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -25,11 +26,15 @@ TEST_PATIENT_PASSWORD = "a-secure-password-monthly"
 ID_STORAGE_FILE = Path(__file__).resolve().parent / ".monthly_patient_id"
 
 # --- Credential Management ---
-def save_credentials(email, password, url, key):
-    """Saves admin and Supabase credentials to a local file."""
+def save_credentials(email, password, url, key, api_base_url):
+    """Saves admin, Supabase, and API URL credentials to a local file."""
     try:
         with open(CREDENTIALS_FILE, 'w') as f:
-            json.dump({'email': email, 'password': password, 'supabase_url': url, 'supabase_key': key}, f)
+            json.dump({
+                'email': email, 'password': password, 
+                'supabase_url': url, 'supabase_key': key,
+                'api_base_url': api_base_url
+            }, f)
     except Exception as e:
         print(f"Error saving credentials: {e}")
 
@@ -428,6 +433,7 @@ def main_gui():
     root = tk.Tk()
     root.title("Supabase DevTool")
     root.geometry("800x600")
+    azure_dark_theme.set_theme("dark")
 
     # This will hold the active Supabase client and tokens for the toolkit.
     client_store = {'client': None, 'admin_token': None}
@@ -480,12 +486,16 @@ def main_gui():
     supabase_key_entry = ttk.Entry(login_content_frame, show="*", width=40)
     supabase_key_entry.grid(row=3, column=1, sticky=tk.EW, pady=2)
 
+    ttk.Label(login_content_frame, text="API base URL:").grid(row=4, column=0, sticky=tk.W, pady=2)
+    api_base_url_entry = ttk.Entry(login_content_frame, width=40)
+    api_base_url_entry.grid(row=4, column=1, sticky=tk.EW, pady=2)
+
     remember_me_var = tk.BooleanVar()
     remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember me", variable=remember_me_var)
-    remember_me_check.grid(row=4, column=1, sticky=tk.W, pady=5)
+    remember_me_check.grid(row=5, column=1, sticky=tk.W, pady=5)
 
     login_button = ttk.Button(login_content_frame, text="Login")
-    login_button.grid(row=5, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    login_button.grid(row=6, column=0, columnspan=2, pady=10, sticky=tk.EW)
     login_content_frame.columnconfigure(1, weight=1)
 
     # This list will hold all buttons that should be disabled during operations.
@@ -524,18 +534,11 @@ def main_gui():
 
     # --- Bulk API Tester Frame ---
     bulk_api_tester_frame = ttk.LabelFrame(tools_frame, text="Bulk API Smoke Tester", padding=(10, 5))
-    bulk_api_tester_frame.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+    bulk_api_tester_frame.pack(padx=10, pady=5, fill=tk.X)
 
-    ttk.Label(bulk_api_tester_frame, text="API Base URL:").grid(row=0, column=0, sticky=tk.W, pady=2)
-    api_base_url_entry = ttk.Entry(bulk_api_tester_frame)
-    api_base_url_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-    api_base_url_entry.insert(0, "http://127.0.0.1:8000") # Default to local
-
-    run_tests_btn = ttk.Button(bulk_api_tester_frame, text="Run All Endpoint Smoke Tests")
-    run_tests_btn.grid(row=1, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    run_tests_btn = ttk.Button(bulk_api_tester_frame, text="Run all endpoint smoke tests")
+    run_tests_btn.pack(pady=5, fill=tk.X)
     all_buttons.append(run_tests_btn)
-
-    bulk_api_tester_frame.columnconfigure(1, weight=1)
 
 
 
@@ -585,10 +588,10 @@ def main_gui():
             # 4. If all checks pass, store the *unmodified service-role client* and admin token for the toolkit to use.
             client_store['client'] = service_client
             client_store['admin_token'] = auth_response.session.access_token
-            log_to_window(log_widget, "Login successful. Unlocking toolkit.")
+            log_to_window(log_widget, "Login successful. Unlocking DevTool.")
 
             if remember_me_var.get():
-                save_credentials(email, password, url, key)
+                save_credentials(email, password, url, key, api_base_url_entry.get())
             else:
                 delete_credentials()
             
@@ -637,6 +640,8 @@ def main_gui():
         admin_password_entry.insert(0, creds.get('password', ''))
         supabase_url_entry.insert(0, creds.get('supabase_url', ''))
         supabase_key_entry.insert(0, creds.get('supabase_key', ''))
+        api_base_url_entry.delete(0, tk.END)
+        api_base_url_entry.insert(0, creds.get('api_base_url', 'http://127.0.0.1:8000'))
         remember_me_var.set(True)
 
     root.mainloop()
