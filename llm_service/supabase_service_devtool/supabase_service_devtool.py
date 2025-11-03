@@ -464,7 +464,12 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, client_s
                 raise Exception("API Base URL is required to create admin via API.")
             
             headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
-            payload = { "email": email, "password": password }
+            payload = {
+                "email": email,
+                "password": password,
+                "email_confirm": True,
+                "app_metadata": {"role": "ADMIN"}
+            }
             
             with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                 response = http_client.post("/auth/register_admin", headers=headers, json=payload)
