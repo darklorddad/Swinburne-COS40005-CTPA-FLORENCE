@@ -9,6 +9,7 @@ import random
 from datetime import date, timedelta, datetime
 import json
 import base64
+import httpx
 from supabase import create_client, Client
 
 # Add project root to Python path to resolve imports
@@ -76,10 +77,15 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
-def test_api_endpoint(log_widget, buttons, supabase_client: Client, method: str, endpoint: str, body: str):
-    """Invokes a Supabase Edge Function and logs the response."""
+def run_all_tests(log_widget, buttons, supabase_client: Client, base_url: str):
+    """Runs a suite of GET requests against parameter-less endpoints to check their status."""
     for btn in buttons: btn.config(state=tk.DISABLED)
-    log_to_window(log_widget, f"Sending {method} request to endpoint: {endpoint}")
+    log_to_window(log_widget, "Starting bulk API smoke test...")
+
+    if not base_url:
+        messagebox.showerror("Error", "Please provide the API Base URL.")
+        for btn in buttons: btn.config(state=tk.NORMAL)
+        return
 
     if not supabase_client:
         messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
@@ -87,42 +93,80 @@ def test_api_endpoint(log_widget, buttons, supabase_client: Client, method: str,
         return
 
     try:
-        invoke_options = {
-            'method': method
+        # 1. Define endpoints
+        endpoints = {
+            "NO_AUTH": [
+                "/all-data", "/organisations", "/patient_profiles", "/clinician_profiles",
+                "/daily_patient_logs", "/patient_monitor_data", "/clinician_notes"
+            ],
+            "ADMIN": [
+                "/admin/patients", "/admin/clinicians", "/admin/organisations",
+                "/admin/daily-logs", "/admin/monitor-data", "/admin/thresholds"
+            ],
+            "PATIENT": [
+                "/patients/me", "/patients/me/monitor-data", "/patients/me/daily-logs",
+                "/patients/me/thresholds"
+            ],
+            "CLINICIAN": [
+                "/clinicians/me", "/clinicians/me/patients"
+            ]
         }
         
-        if method in ["POST", "PUT"] and body.strip():
-            try:
-                # Ensure body is valid JSON
-                parsed_body = json.loads(body)
-                invoke_options['body'] = parsed_body
-                log_to_window(log_widget, f"Request body: {json.dumps(parsed_body, indent=2)}")
-            except json.JSONDecodeError:
-                log_to_window(log_widget, "ERROR: Invalid JSON in request body.")
-                messagebox.showerror("Invalid JSON", "The provided request body is not valid JSON.")
-                for btn in buttons: btn.config(state=tk.NORMAL)
-                return
-        
-        # The function name is the slug of the Edge Function, which is the last part of the path.
-        # e.g., for /functions/v1/hello-world, the name is 'hello-world'.
-        function_name = endpoint.strip().strip('/').split('/')[-1]
-        
-        response = supabase_client.functions.invoke(function_name, invoke_options=invoke_options)
-        
-        log_to_window(log_widget, f"Response Status: {response.status_code}")
-        
-        try:
-            # Try to parse and pretty-print JSON response
-            response_json = response.json()
-            log_to_window(log_widget, f"Response Body (JSON):\n{json.dumps(response_json, indent=2)}")
-        except json.JSONDecodeError:
-            # If not JSON, print as text
-            log_to_window(log_widget, f"Response Body (Text):\n{response.text}")
+        tokens = {"ADMIN": None, "PATIENT": None, "CLINICIAN": None}
+
+        # 2. Get Admin token from the logged-in client
+        admin_session = supabase_client.auth.get_session()
+        if not admin_session or not admin_session.access_token:
+            raise Exception("Could not get admin session. Please log in again.")
+        tokens["ADMIN"] = admin_session.access_token
+        log_to_window(log_widget, "-> Fetched admin token.")
+
+        # 3. Get Patient token
+        if not ID_STORAGE_FILE.exists():
+            log_to_window(log_widget, "WARNING: Monthly test patient does not exist. Skipping PATIENT endpoints. Use the seeder to create one.")
+        else:
+            log_to_window(log_widget, f"Logging in as test patient: {TEST_PATIENT_EMAIL}")
+            temp_client = create_client(supabase_client.supabase_url, supabase_client.supabase_key)
+            patient_session = temp_client.auth.sign_in_with_password({"email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD})
+            tokens["PATIENT"] = patient_session.session.access_token
+            log_to_window(log_widget, "-> Fetched patient token.")
+
+        # 4. Get Clinician token (not implemented yet)
+        log_to_window(log_widget, "WARNING: Clinician testing is not yet implemented. Skipping CLINICIAN endpoints.")
+
+        # 5. Run tests
+        with httpx.Client(base_url=base_url.strip('/')) as http_client:
+            log_to_window(log_widget, "\n--- Testing /auth/me ---")
+            for role, token in tokens.items():
+                if token:
+                    headers = {"Authorization": f"Bearer {token}"}
+                    response = http_client.get("/auth/me", headers=headers)
+                    log_to_window(log_widget, f"GET /auth/me with {role} token: {response.status_code}")
+
+            for auth_type, path_list in endpoints.items():
+                log_to_window(log_widget, f"\n--- Testing {auth_type} Endpoints ---")
+                token = tokens.get(auth_type)
+                
+                if auth_type not in ["NO_AUTH"] and not token:
+                    log_to_window(log_widget, f"Skipping because no {auth_type} token is available.")
+                    continue
+
+                headers = {}
+                if token:
+                    headers["Authorization"] = f"Bearer {token}"
+
+                for path in path_list:
+                    response = http_client.get(path, headers=headers)
+                    log_to_window(log_widget, f"GET {path}: {response.status_code}")
+                    time.sleep(0.1)
+
+        log_to_window(log_widget, "\nSUCCESS: Bulk API smoke test complete.")
+        messagebox.showinfo("Success", "Bulk API smoke test complete. Check the log for details.")
 
     except Exception as e:
         error_detail = str(e)
-        log_to_window(log_widget, f"ERROR: API request failed: {error_detail}")
-        messagebox.showerror("API Error", f"An error occurred during the API request: {error_detail}")
+        log_to_window(log_widget, f"ERROR: Test run failed: {error_detail}")
+        messagebox.showerror("Error", f"An error occurred during the test run: {error_detail}")
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
@@ -476,31 +520,20 @@ def main_gui():
     remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(remove_patient_btn)
 
-    # --- API Tester Frame ---
-    api_tester_frame = ttk.LabelFrame(tools_frame, text="API Endpoint Tester", padding=(10, 5))
-    api_tester_frame.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+    # --- Bulk API Tester Frame ---
+    bulk_api_tester_frame = ttk.LabelFrame(tools_frame, text="Bulk API Smoke Tester", padding=(10, 5))
+    bulk_api_tester_frame.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
 
-    ttk.Label(api_tester_frame, text="Method:").grid(row=0, column=0, sticky=tk.W, pady=2)
-    api_method_var = tk.StringVar(value="POST")
-    api_method_combo = ttk.Combobox(api_tester_frame, textvariable=api_method_var, values=["POST", "GET", "PUT", "DELETE"], state="readonly", width=10)
-    api_method_combo.grid(row=0, column=1, sticky=tk.W, pady=2)
+    ttk.Label(bulk_api_tester_frame, text="API Base URL:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    api_base_url_entry = ttk.Entry(bulk_api_tester_frame)
+    api_base_url_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
+    api_base_url_entry.insert(0, "http://127.0.0.1:8000") # Default to local
 
-    ttk.Label(api_tester_frame, text="Endpoint:").grid(row=1, column=0, sticky=tk.W, pady=2)
-    api_endpoint_entry = ttk.Entry(api_tester_frame)
-    api_endpoint_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
-    api_endpoint_entry.insert(0, "hello-world") # Enter function slug or path
+    run_tests_btn = ttk.Button(bulk_api_tester_frame, text="Run All Endpoint Smoke Tests")
+    run_tests_btn.grid(row=1, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    all_buttons.append(run_tests_btn)
 
-    ttk.Label(api_tester_frame, text="JSON Body:").grid(row=2, column=0, sticky=tk.NW, pady=2)
-    api_body_text = scrolledtext.ScrolledText(api_tester_frame, height=6, wrap=tk.WORD)
-    api_body_text.grid(row=2, column=1, sticky=tk.NSEW, pady=2)
-    api_body_text.insert(tk.END, '{\n  "name": "World"\n}')
-
-    send_api_btn = ttk.Button(api_tester_frame, text="Send API Request")
-    send_api_btn.grid(row=3, column=0, columnspan=2, pady=10, sticky=tk.EW)
-    all_buttons.append(send_api_btn)
-
-    api_tester_frame.columnconfigure(1, weight=1)
-    api_tester_frame.rowconfigure(2, weight=1)
+    bulk_api_tester_frame.columnconfigure(1, weight=1)
 
 
 
@@ -589,7 +622,7 @@ def main_gui():
     
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
-    send_api_btn.config(command=lambda: threading.Thread(target=test_api_endpoint, args=(log_widget, all_buttons, client_store['client'], api_method_var.get(), api_endpoint_entry.get(), api_body_text.get("1.0", tk.END)), daemon=True).start())
+    run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], api_base_url_entry.get()), daemon=True).start())
     create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_url_entry, supabase_key_entry), daemon=True).start())
 
     # Load credentials and set initial view
