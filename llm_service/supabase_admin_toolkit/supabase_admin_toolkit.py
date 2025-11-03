@@ -329,25 +329,49 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, url_entr
 # --- GUI Setup ---
 def main_gui():
     root = tk.Tk()
-    root.title("Supabase Admin Toolkit")
-    root.geometry("600x650")
+    root.title("Supabase admin toolkit")
+    root.geometry("800x600")
 
     # This will hold the active Supabase client for the toolkit.
     client_store = {'client': None}
 
-    # --- Main Frames ---
-    login_frame = ttk.Frame(root, padding=10)
-    tools_frame = ttk.Frame(root, padding=10)
+    # --- Main Layout ---
+    main_pane = ttk.PanedWindow(root, orient=tk.HORIZONTAL)
+    main_pane.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+    # --- Left Pane (Log Output) ---
+    log_frame = ttk.LabelFrame(main_pane, text="Log output", padding=(10, 5))
+    main_pane.add(log_frame, weight=1)
+    log_widget = scrolledtext.ScrolledText(log_frame, height=15, wrap=tk.WORD, state=tk.DISABLED)
+    log_widget.pack(fill=tk.BOTH, expand=True)
+
+    # --- Right Pane (Interaction) ---
+    right_pane = ttk.Frame(main_pane)
+    main_pane.add(right_pane, weight=1)
+
+    notebook = ttk.Notebook(right_pane)
+    notebook.pack(fill=tk.BOTH, expand=True)
+
+    # --- Login Tab ---
+    login_tab = ttk.Frame(notebook, padding=10)
+    notebook.add(login_tab, text='Login')
+
+    # --- Admin Creator Tab ---
+    admin_creator_tab = ttk.Frame(notebook, padding=10)
+    notebook.add(admin_creator_tab, text='Create admin')
+
+    # --- Tools Tab (created on login) ---
+    tools_frame = ttk.Frame(notebook, padding=10) # Re-purposing tools_frame as a tab
 
     # --- Login Frame Content ---
-    login_content_frame = ttk.LabelFrame(login_frame, text="Admin & Supabase Login", padding=(10, 5))
+    login_content_frame = ttk.LabelFrame(login_tab, text="Admin and Supabase login", padding=(10, 5))
     login_content_frame.pack(padx=10, pady=10, fill=tk.X)
 
-    ttk.Label(login_content_frame, text="Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    ttk.Label(login_content_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
     admin_email_entry = ttk.Entry(login_content_frame, width=40)
     admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
 
-    ttk.Label(login_content_frame, text="Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(login_content_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
     admin_password_entry = ttk.Entry(login_content_frame, show="*", width=40)
     admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
 
@@ -355,12 +379,12 @@ def main_gui():
     supabase_url_entry = ttk.Entry(login_content_frame, width=40)
     supabase_url_entry.grid(row=2, column=1, sticky=tk.EW, pady=2)
 
-    ttk.Label(login_content_frame, text="Supabase Service Key:").grid(row=3, column=0, sticky=tk.W, pady=2)
+    ttk.Label(login_content_frame, text="Supabase service key:").grid(row=3, column=0, sticky=tk.W, pady=2)
     supabase_key_entry = ttk.Entry(login_content_frame, show="*", width=40)
     supabase_key_entry.grid(row=3, column=1, sticky=tk.EW, pady=2)
 
     remember_me_var = tk.BooleanVar()
-    remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember Me", variable=remember_me_var)
+    remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember me", variable=remember_me_var)
     remember_me_check.grid(row=4, column=1, sticky=tk.W, pady=5)
 
     login_button = ttk.Button(login_content_frame, text="Login")
@@ -370,16 +394,16 @@ def main_gui():
     # This list will hold all buttons that should be disabled during operations.
     all_buttons = []
 
-    admin_creator_frame = ttk.LabelFrame(login_frame, text="Admin User Creator (For First-Time Setup)", padding=(10, 5))
-    admin_creator_frame.pack(padx=10, pady=20, fill=tk.X)
-    ttk.Label(admin_creator_frame, text="New Admin Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    admin_creator_frame = ttk.LabelFrame(admin_creator_tab, text="Admin user creator (for first-time setup)", padding=(10, 5))
+    admin_creator_frame.pack(padx=10, pady=10, fill=tk.X)
+    ttk.Label(admin_creator_frame, text="New admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
     new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
     new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-    ttk.Label(admin_creator_frame, text="New Admin Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(admin_creator_frame, text="New admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
     new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
     new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
     admin_creator_frame.columnconfigure(1, weight=1)
-    create_admin_btn = ttk.Button(admin_creator_frame, text="Create Admin User")
+    create_admin_btn = ttk.Button(admin_creator_frame, text="Create admin user")
     create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
     all_buttons.append(create_admin_btn)
 
@@ -392,20 +416,16 @@ def main_gui():
     logout_button = ttk.Button(status_bar, text="Logout")
     logout_button.pack(side=tk.RIGHT)
 
-    seeder_frame = ttk.LabelFrame(tools_frame, text="Monthly Patient Seeder", padding=(10, 5))
+    seeder_frame = ttk.LabelFrame(tools_frame, text="Monthly patient seeder", padding=(10, 5))
     seeder_frame.pack(padx=10, pady=5, fill=tk.X)
-    add_patient_btn = ttk.Button(seeder_frame, text="Add Monthly Data Patient")
+    add_patient_btn = ttk.Button(seeder_frame, text="Add monthly data patient")
     add_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(add_patient_btn)
-    remove_patient_btn = ttk.Button(seeder_frame, text="Remove Monthly Data Patient")
+    remove_patient_btn = ttk.Button(seeder_frame, text="Remove monthly data patient")
     remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(remove_patient_btn)
 
 
-    # --- Log Output (Common to both frames) ---
-    log_frame = ttk.LabelFrame(root, text="Log Output", padding=(10, 5))
-    log_widget = scrolledtext.ScrolledText(log_frame, height=15, wrap=tk.WORD, state=tk.DISABLED)
-    log_widget.pack(fill=tk.BOTH, expand=True)
 
     # --- Login/Logout Logic ---
     def attempt_login():
@@ -460,10 +480,10 @@ def main_gui():
                 delete_credentials()
             
             logged_in_label.config(text=f"Logged in as: {email}")
-            login_frame.pack_forget()
-            log_frame.pack_forget()
-            tools_frame.pack(fill=tk.BOTH, expand=True)
-            log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
+            notebook.add(tools_frame, text='Toolkit')
+            notebook.select(tools_frame)
+            notebook.hide(login_tab)
+            notebook.hide(admin_creator_tab)
 
         except Exception as e:
             # Clear the client on failure to prevent using a partially-logged-in state.
@@ -480,10 +500,10 @@ def main_gui():
         # Don't clear the service key, as it's annoying to re-paste.
         # supabase_key_entry.delete(0, tk.END) 
         
-        tools_frame.pack_forget()
-        log_frame.pack_forget()
-        login_frame.pack(fill=tk.BOTH, expand=True)
-        log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
+        notebook.forget(tools_frame)
+        notebook.add(login_tab)
+        notebook.add(admin_creator_tab)
+        notebook.select(login_tab)
         log_to_window(log_widget, "Logged out.")
 
     # --- Initial State & Button Commands ---
@@ -502,9 +522,6 @@ def main_gui():
         supabase_url_entry.insert(0, creds.get('supabase_url', ''))
         supabase_key_entry.insert(0, creds.get('supabase_key', ''))
         remember_me_var.set(True)
-
-    login_frame.pack(fill=tk.BOTH, expand=True)
-    log_frame.pack(padx=10, pady=(0, 10), fill=tk.BOTH, expand=True)
 
     root.mainloop()
 
