@@ -433,7 +433,6 @@ def main_gui():
     root = tk.Tk()
     root.title("Supabase DevTool")
     root.geometry("800x600")
-    sv_ttk.set_theme("dark")
 
     # This will hold the active Supabase client and tokens for the toolkit.
     client_store = {'client': None, 'admin_token': None}
