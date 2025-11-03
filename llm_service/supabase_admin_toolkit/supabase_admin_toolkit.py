@@ -329,7 +329,7 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, url_entr
 # --- GUI Setup ---
 def main_gui():
     root = tk.Tk()
-    root.title("Supabase Admin Toolkit")
+    root.title("Supabase DevTool")
     root.geometry("800x600")
 
     # This will hold the active Supabase client for the toolkit.
@@ -394,12 +394,12 @@ def main_gui():
     # This list will hold all buttons that should be disabled during operations.
     all_buttons = []
 
-    admin_creator_frame = ttk.LabelFrame(admin_creator_tab, text="Admin User Creator (For First-Time Setup)", padding=(10, 5))
+    admin_creator_frame = ttk.LabelFrame(admin_creator_tab, text="Admin User Creator", padding=(10, 5))
     admin_creator_frame.pack(padx=10, pady=10, fill=tk.X)
-    ttk.Label(admin_creator_frame, text="New admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    ttk.Label(admin_creator_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
     new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
     new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-    ttk.Label(admin_creator_frame, text="New admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(admin_creator_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
     new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
     new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
     admin_creator_frame.columnconfigure(1, weight=1)
@@ -480,7 +480,7 @@ def main_gui():
                 delete_credentials()
             
             logged_in_label.config(text=f"Logged in as: {email}")
-            notebook.add(tools_frame, text='Toolkit')
+            notebook.add(tools_frame, text='DevTool')
             notebook.select(tools_frame)
             notebook.hide(login_tab)
             notebook.hide(admin_creator_tab)
