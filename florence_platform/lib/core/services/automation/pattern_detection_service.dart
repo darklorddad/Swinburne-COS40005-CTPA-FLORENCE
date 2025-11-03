@@ -260,7 +260,7 @@ class PatternDetectionService {
         id: 'pattern_low_activity_${DateTime.now().millisecondsSinceEpoch}',
         type: PatternType.lowActivity,
         severity: PatternSeverity.medium,
-        description: 'Low activity detected: ${totalMinutes} minutes in last $hours hours',
+        description: 'Low activity detected: $totalMinutes minutes in last $hours hours',
         detectedAt: DateTime.now(),
         dataPointIds: activities.map((a) => a.id).toList(),
         metadata: {

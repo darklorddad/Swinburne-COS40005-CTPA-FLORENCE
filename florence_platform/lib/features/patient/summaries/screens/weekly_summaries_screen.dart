@@ -286,7 +286,7 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
             const Divider(height: 24),
             _buildMetricRow(
               'Readings/Day',
-              '${(summary.totalReadings / 7).toStringAsFixed(1)}',
+              (summary.totalReadings / 7).toStringAsFixed(1),
               Icons.calendar_today,
               AppTheme.primaryBlue,
             ),
@@ -312,7 +312,7 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
             const Divider(height: 24),
             _buildMetricRow(
               'Minutes/Day',
-              '${(summary.totalActivityMinutes / 7).toStringAsFixed(1)}',
+              (summary.totalActivityMinutes / 7).toStringAsFixed(1),
               Icons.timer,
               AppTheme.activityColor,
             ),
