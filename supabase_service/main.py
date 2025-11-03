@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any
 from .routers import authentication, patients, clinicians, admin
 # Import the Supabase client from its dedicated file
 from .client import supabase
+from .routers.authentication import get_current_admin_user
 
 app = FastAPI()
 
@@ -16,7 +17,7 @@ app.include_router(patients.router)
 app.include_router(clinicians.router)
 app.include_router(admin.router)
 
-@app.get("/all-data")
+@app.get("/all-data", dependencies=[Depends(get_current_admin_user)])
 def get_all_database_info():
     """
     An endpoint to automatically discover and fetch all records from all tables
@@ -49,7 +50,7 @@ def get_all_database_info():
         raise HTTPException(status_code=500, detail=f"An error occurred: {error_message}")
 
 
-@app.delete("/delete/{table_name}/{record_id}")
+@app.delete("/delete/{table_name}/{record_id}", dependencies=[Depends(get_current_admin_user)])
 async def delete_record(table_name: str, record_id: int):
     """
     An endpoint to delete a single record from a specified table by its ID.
@@ -74,7 +75,7 @@ async def delete_record(table_name: str, record_id: int):
 
 # --- Functions to retrieve all data from specific tables ---
 
-@app.get("/organisations")
+@app.get("/organisations", dependencies=[Depends(get_current_admin_user)])
 def get_organisations():
     """Fetches all records from the 'organisations' table."""
     try:
@@ -84,7 +85,7 @@ def get_organisations():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/patient_profiles")
+@app.get("/patient_profiles", dependencies=[Depends(get_current_admin_user)])
 def get_patient_profiles():
     """Fetches all records from the 'patient_profiles' table."""
     try:
@@ -93,7 +94,7 @@ def get_patient_profiles():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/clinician_profiles")
+@app.get("/clinician_profiles", dependencies=[Depends(get_current_admin_user)])
 def get_clinician_profiles():
     """Fetches all records from the 'clinician_profiles' table."""
     try:
@@ -102,7 +103,7 @@ def get_clinician_profiles():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/daily_patient_logs")
+@app.get("/daily_patient_logs", dependencies=[Depends(get_current_admin_user)])
 def get_daily_patient_logs():
     """Fetches all records from the 'daily_patient_logs' table."""
     try:
@@ -111,7 +112,7 @@ def get_daily_patient_logs():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/patient_monitor_data")
+@app.get("/patient_monitor_data", dependencies=[Depends(get_current_admin_user)])
 def get_patient_monitor_data():
     """Fetches all records from the 'patient_monitor_data' table."""
     try:
@@ -120,7 +121,7 @@ def get_patient_monitor_data():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/clinician_notes")
+@app.get("/clinician_notes", dependencies=[Depends(get_current_admin_user)])
 def get_clinician_notes():
     """Fetches all records from the 'clinician_notes' table."""
     try:
@@ -130,7 +131,7 @@ def get_clinician_notes():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.put("/update/{table_name}/{record_id}")
+@app.put("/update/{table_name}/{record_id}", dependencies=[Depends(get_current_admin_user)])
 async def update_table(table_name: str, record_id: int, request: Request):
     """
     An endpoint to update a single record in a specified table by its ID.
@@ -157,7 +158,7 @@ async def update_table(table_name: str, record_id: int, request: Request):
         raise HTTPException(status_code=500, detail=f"An error occurred: {error_message}")
 
 
-@app.post("/insert/{table_name}")
+@app.post("/insert/{table_name}", dependencies=[Depends(get_current_admin_user)])
 async def insert_table(table_name: str, request: Request):
     """
     An endpoint to insert a single record into a specified table.
