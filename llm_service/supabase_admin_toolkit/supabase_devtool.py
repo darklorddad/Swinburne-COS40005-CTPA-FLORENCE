@@ -671,8 +671,9 @@ def main_gui():
         log_to_window(log_widget, "Logged out.")
 
     # --- Initial State & Button Commands ---
-    connect_button.config(command=lambda: threading.Thread(target=attempt_connection, daemon=True).start())
-    disconnect_button.config(command=do_disconnect)
+    login_button.config(command=lambda: threading.Thread(target=attempt_login, daemon=True).start())
+    save_config_button.config(command=do_save_config)
+    logout_button.config(command=do_logout)
     
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
