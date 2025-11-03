@@ -703,8 +703,14 @@ def main_gui():
                     response = http_client.post("/auth/login", headers=headers, json=payload)
                     response.raise_for_status()
                     auth_response_data = response.json()
-                    user_role = auth_response_data.get("user", {}).get("app_metadata", {}).get("role")
+                    # Try multiple possible locations for the access token
                     access_token = auth_response_data.get("access_token")
+                    if not access_token:
+                        access_token = auth_response_data.get("session", {}).get("access_token")
+                    # Try multiple possible locations for the user role
+                    user_role = auth_response_data.get("user", {}).get("app_metadata", {}).get("role")
+                    if not user_role:
+                        user_role = auth_response_data.get("data", {}).get("user", {}).get("app_metadata", {}).get("role")
             else: # Direct mode
                 log_to_window(log_widget, f"Verifying admin credentials for {email} via direct connection...")
                 temp_auth_client = create_client(url, key)
