@@ -24,6 +24,15 @@ class _SupabaseClientProxy:
             url: str = os.environ.get("SUPABASE_URL")
             key: str = os.environ.get("SUPABASE_SERVICE_KEY")
 
+            # --- Temporary debugging log ---
+            import logging
+            logging.basicConfig(level=logging.INFO)
+            if key:
+                logging.info(f"Supabase client using key starting with: {key[:5]}... and ending with: ...{key[-5:]}")
+            else:
+                logging.info("SUPABASE_SERVICE_KEY not found in environment.")
+            # -----------------------------
+
             if not url or not key:
                 raise RuntimeError(
                     "Supabase URL and Service Key could not be loaded. "
