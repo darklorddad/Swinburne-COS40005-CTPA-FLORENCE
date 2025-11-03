@@ -463,8 +463,8 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, use_api:
 # --- GUI Setup ---
 def main_gui():
     root = tk.Tk()
-    root.title("Supabase DevTool")
-    root.geometry("800x600")
+    root.title("Supabase Service DevTool")
+    root.geometry("1280x1024")
 
     # This will hold the active Supabase client and tokens for the toolkit.
     client_store = {'client': None, 'admin_token': None}
