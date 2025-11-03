@@ -1,0 +1,14 @@
+{
+  "builds": [
+    {
+      "src": "supabase_service/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "supabase_service/main.py"
+    }
+  ]
+}
