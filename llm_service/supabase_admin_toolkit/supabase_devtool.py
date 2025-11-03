@@ -76,6 +76,57 @@ def log_to_window(log_widget, message):
 
 # --- API Logic ---
 
+def test_api_endpoint(log_widget, buttons, supabase_client: Client, method: str, endpoint: str, body: str):
+    """Invokes a Supabase Edge Function and logs the response."""
+    for btn in buttons: btn.config(state=tk.DISABLED)
+    log_to_window(log_widget, f"Sending {method} request to endpoint: {endpoint}")
+
+    if not supabase_client:
+        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+        for btn in buttons: btn.config(state=tk.NORMAL)
+        return
+
+    try:
+        invoke_options = {
+            'method': method
+        }
+        
+        if method in ["POST", "PUT"] and body.strip():
+            try:
+                # Ensure body is valid JSON
+                parsed_body = json.loads(body)
+                invoke_options['body'] = parsed_body
+                log_to_window(log_widget, f"Request body: {json.dumps(parsed_body, indent=2)}")
+            except json.JSONDecodeError:
+                log_to_window(log_widget, "ERROR: Invalid JSON in request body.")
+                messagebox.showerror("Invalid JSON", "The provided request body is not valid JSON.")
+                for btn in buttons: btn.config(state=tk.NORMAL)
+                return
+        
+        # The function name is the slug of the Edge Function, which is the last part of the path.
+        # e.g., for /functions/v1/hello-world, the name is 'hello-world'.
+        function_name = endpoint.strip().strip('/').split('/')[-1]
+        
+        response = supabase_client.functions.invoke(function_name, invoke_options=invoke_options)
+        
+        log_to_window(log_widget, f"Response Status: {response.status_code}")
+        
+        try:
+            # Try to parse and pretty-print JSON response
+            response_json = response.json()
+            log_to_window(log_widget, f"Response Body (JSON):\n{json.dumps(response_json, indent=2)}")
+        except json.JSONDecodeError:
+            # If not JSON, print as text
+            log_to_window(log_widget, f"Response Body (Text):\n{response.text}")
+
+    except Exception as e:
+        error_detail = str(e)
+        log_to_window(log_widget, f"ERROR: API request failed: {error_detail}")
+        messagebox.showerror("API Error", f"An error occurred during the API request: {error_detail}")
+    finally:
+        for btn in buttons: btn.config(state=tk.NORMAL)
+
+
 def add_test_patient_data(log_widget, buttons, supabase_client: Client):
     """Creates a test patient and seeds one month of data."""
     for btn in buttons: btn.config(state=tk.DISABLED)
@@ -425,6 +476,32 @@ def main_gui():
     remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
     all_buttons.append(remove_patient_btn)
 
+    # --- API Tester Frame ---
+    api_tester_frame = ttk.LabelFrame(tools_frame, text="API Endpoint Tester", padding=(10, 5))
+    api_tester_frame.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
+
+    ttk.Label(api_tester_frame, text="Method:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    api_method_var = tk.StringVar(value="POST")
+    api_method_combo = ttk.Combobox(api_tester_frame, textvariable=api_method_var, values=["POST", "GET", "PUT", "DELETE"], state="readonly", width=10)
+    api_method_combo.grid(row=0, column=1, sticky=tk.W, pady=2)
+
+    ttk.Label(api_tester_frame, text="Endpoint:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    api_endpoint_entry = ttk.Entry(api_tester_frame)
+    api_endpoint_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
+    api_endpoint_entry.insert(0, "hello-world") # Enter function slug or path
+
+    ttk.Label(api_tester_frame, text="JSON Body:").grid(row=2, column=0, sticky=tk.NW, pady=2)
+    api_body_text = scrolledtext.ScrolledText(api_tester_frame, height=6, wrap=tk.WORD)
+    api_body_text.grid(row=2, column=1, sticky=tk.NSEW, pady=2)
+    api_body_text.insert(tk.END, '{\n  "name": "World"\n}')
+
+    send_api_btn = ttk.Button(api_tester_frame, text="Send API Request")
+    send_api_btn.grid(row=3, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    all_buttons.append(send_api_btn)
+
+    api_tester_frame.columnconfigure(1, weight=1)
+    api_tester_frame.rowconfigure(2, weight=1)
+
 
 
     # --- Login/Logout Logic ---
@@ -512,6 +589,7 @@ def main_gui():
     
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
+    send_api_btn.config(command=lambda: threading.Thread(target=test_api_endpoint, args=(log_widget, all_buttons, client_store['client'], api_method_var.get(), api_endpoint_entry.get(), api_body_text.get("1.0", tk.END)), daemon=True).start())
     create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_url_entry, supabase_key_entry), daemon=True).start())
 
     # Load credentials and set initial view
