@@ -641,18 +641,40 @@ def main_gui():
             log_to_window(log_widget, "Initializing Supabase client with service key...")
             service_client = create_client(url, key)
 
-            log_to_window(log_widget, f"Verifying admin credentials for {email}...")
-            temp_auth_client = create_client(url, key)
-            auth_response = temp_auth_client.auth.sign_in_with_password({
-                "email": email,
-                "password": password
-            })
+            user_role = None
+            access_token = None
+            mode = mode_var.get()
+            base_url = api_base_url_entry.get()
 
-            if auth_response.user.app_metadata.get('role') != 'ADMIN':
+            if mode == "API":
+                log_to_window(log_widget, f"Verifying admin credentials for {email} via API...")
+                if not base_url:
+                    raise Exception("API Base URL is required for API mode.")
+                
+                headers = {"apikey": key}
+                payload = {"email": email, "password": password}
+                
+                with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
+                    response = http_client.post("/auth/login", headers=headers, json=payload)
+                    response.raise_for_status()
+                    auth_response_data = response.json()
+                    user_role = auth_response_data.get("user", {}).get("app_metadata", {}).get("role")
+                    access_token = auth_response_data.get("access_token")
+            else: # Direct mode
+                log_to_window(log_widget, f"Verifying admin credentials for {email} via direct connection...")
+                temp_auth_client = create_client(url, key)
+                auth_response = temp_auth_client.auth.sign_in_with_password({
+                    "email": email,
+                    "password": password
+                })
+                user_role = auth_response.user.app_metadata.get('role')
+                access_token = auth_response.session.access_token
+
+            if user_role != 'ADMIN':
                 raise Exception("Login successful, but user is not an admin.")
 
             client_store['client'] = service_client
-            client_store['admin_token'] = auth_response.session.access_token
+            client_store['admin_token'] = access_token
             log_to_window(log_widget, "Login successful. Unlocking DevTool.")
 
             # Save credentials if "Remember me" is checked
