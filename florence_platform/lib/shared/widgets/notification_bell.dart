@@ -1,6 +1,5 @@
 /// Notification Bell Widget for FLORENCE Digital Health Platform
 /// Displays notification icon with unread count badge
-library;
 
 import 'package:flutter/material.dart';
 import '../../core/services/notifications/notification_service.dart';

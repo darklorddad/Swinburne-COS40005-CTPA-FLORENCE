@@ -1,6 +1,5 @@
 /// Pattern Detail Screen for FLORENCE Digital Health Platform
 /// Shows detailed information about a detected health pattern
-library;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';

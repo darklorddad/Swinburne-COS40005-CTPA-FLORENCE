@@ -1,6 +1,5 @@
 /// AI Chatbot Service for FLORENCE Digital Health Platform
 /// Context-aware health chatbot using DeepSeek AI
-library;
 
 import '../../../../core/services/ai/deepseek_service.dart';
 import '../../../../core/config/environment.dart';

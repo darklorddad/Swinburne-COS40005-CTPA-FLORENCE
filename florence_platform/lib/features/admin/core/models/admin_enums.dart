@@ -1,6 +1,5 @@
 /// Admin-specific enumerations
 /// Defines roles, permissions, and status types for the admin system
-library;
 
 // ============================================
 // ADMIN ROLES

@@ -1,5 +1,4 @@
 /// Environment Configuration for FLORENCE Digital Health Platform
-library;
 
 /// Feature flags and environment configuration
 class Environment {

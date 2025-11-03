@@ -1,6 +1,5 @@
 /// Data Ingestion Service for FLORENCE Digital Health Platform
 /// Handles in-memory data management for health records
-library;
 
 import 'dart:math';
 import '../models/health_data_models.dart';

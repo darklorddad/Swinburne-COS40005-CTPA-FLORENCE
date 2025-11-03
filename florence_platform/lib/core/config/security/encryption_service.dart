@@ -1,6 +1,5 @@
 /// Encryption Service for FLORENCE Digital Health Platform
 /// Provides data encryption utilities for sensitive health information
-library;
 
 import 'dart:convert';
 import 'package:crypto/crypto.dart';

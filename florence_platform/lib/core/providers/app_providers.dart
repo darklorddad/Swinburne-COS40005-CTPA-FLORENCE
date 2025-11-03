@@ -1,6 +1,5 @@
 /// Application Providers Setup for FLORENCE Digital Health Platform
 /// Wires all state management providers
-library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
