@@ -25,14 +25,15 @@ TEST_PATIENT_PASSWORD = "a-secure-password-monthly"
 ID_STORAGE_FILE = Path(__file__).resolve().parent / ".monthly_patient_id"
 
 # --- Credential Management ---
-def save_credentials(email, password, url, key, api_base_url):
-    """Saves admin, Supabase, and API URL credentials to a local file."""
+def save_credentials(email, url, key, api_base_url, mode):
+    """Saves configuration to a local file."""
     try:
         with open(CREDENTIALS_FILE, 'w') as f:
             json.dump({
-                'email': email, 'password': password, 
+                'email': email, # Save last used email for convenience
                 'supabase_url': url, 'supabase_key': key,
-                'api_base_url': api_base_url
+                'api_base_url': api_base_url,
+                'mode': mode
             }, f)
     except Exception as e:
         print(f"Error saving credentials: {e}")
@@ -400,48 +401,50 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_a
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def create_admin_user(log_widget, buttons, email_entry, password_entry, url_entry, key_entry):
-    """Creates a new admin user directly using the service key, without needing to be logged in."""
+def create_admin_user(log_widget, buttons, email_entry, password_entry, use_api: bool, base_url: str, admin_token: str, supabase_client: Client):
+    """Creates a new admin user, either via API or direct DB connection."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     
     email = email_entry.get()
     password = password_entry.get()
-    url = url_entry.get()
-    key = key_entry.get()
 
-    if not all([email, password, url, key]):
-        messagebox.showerror("Error", "To create an admin, please provide the new admin's credentials and the Supabase URL/Service Key in the login form.")
-        for btn in buttons: btn.config(state=tk.NORMAL)
-        return
-
-    # --- Sanity check the key to ensure it's a service_role key ---
-    jwt_payload = get_jwt_payload(key)
-    if jwt_payload.get("role") != "service_role":
-        warning_msg = (
-            "The provided Supabase key must be a 'service_role' key. "
-            "Please go to Project Settings > API in your Supabase dashboard and copy the key from the 'service_role' secret."
-        )
-        messagebox.showwarning("Incorrect Key Type", warning_msg)
+    if not all([email, password]):
+        messagebox.showerror("Error", "Please provide an email and password for the new admin.")
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
     log_to_window(log_widget, f"Attempting to create new admin user: {email}")
     try:
-        # Create a temporary client with the service key to perform the operation
-        supabase_client = create_client(url, key)
-
-        user_session = supabase_client.auth.admin.create_user({
-            "email": email,
-            "password": password,
-            "email_confirm": True,
-            "app_metadata": {"role": "ADMIN"},
-        })
-        
-        if not user_session.user:
-             raise Exception("User creation returned no user object.")
+        if use_api:
+            log_to_window(log_widget, "-> Using API endpoint.")
+            if not all([base_url, admin_token, supabase_client]):
+                raise Exception("API Base URL, Admin Token, and Supabase client are required.")
+            
+            headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
+            payload = { "email": email, "password": password }
+            
+            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+                # The endpoint is in the `authentication` router, not the `admin` router
+                response = http_client.post("/auth/register_admin", headers=headers, json=payload)
+                response.raise_for_status()
+        else:
+            log_to_window(log_widget, "-> Using direct database connection.")
+            if not supabase_client:
+                raise Exception("Supabase client not initialized.")
+            
+            user_session = supabase_client.auth.admin.create_user({
+                "email": email,
+                "password": password,
+                "email_confirm": True,
+                "app_metadata": {"role": "ADMIN"},
+            })
+            if not user_session.user:
+                raise Exception("User creation returned no user object.")
 
         log_to_window(log_widget, f"SUCCESS: Admin user {email} created.")
         messagebox.showinfo("Success", f"Admin user '{email}' created successfully.")
+        email_entry.delete(0, tk.END)
+        password_entry.delete(0, tk.END)
 
     except Exception as e:
         error_detail = str(e)
@@ -481,19 +484,17 @@ def main_gui():
     notebook = ttk.Notebook(right_pane)
     notebook.pack(fill=tk.BOTH, expand=True)
 
-    # --- Configuration Tab ---
+    # --- Tab Definitions ---
+    login_tab = ttk.Frame(notebook, padding=10)
     config_tab = ttk.Frame(notebook, padding=10)
+    tools_frame = ttk.Frame(notebook, padding=10) # This will be the DevTool tab
+
+    notebook.add(login_tab, text='Login')
     notebook.add(config_tab, text='Configuration')
+    # The DevTool tab is added after login
 
-    # --- Admin Creator Tab ---
-    admin_creator_tab = ttk.Frame(notebook, padding=10)
-    notebook.add(admin_creator_tab, text='Create Admin')
-
-    # --- Tools Tab (created on connection) ---
-    tools_frame = ttk.Frame(notebook, padding=10) # Re-purposing tools_frame as a tab
-
-    # --- Configuration Frame Content ---
-    login_content_frame = ttk.LabelFrame(config_tab, text="Connection Configuration", padding=(10, 5))
+    # --- Login Tab Content ---
+    login_content_frame = ttk.LabelFrame(login_tab, text="Admin Login", padding=(10, 5))
     login_content_frame.pack(padx=10, pady=10, fill=tk.X)
 
     ttk.Label(login_content_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -503,42 +504,43 @@ def main_gui():
     ttk.Label(login_content_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
     admin_password_entry = ttk.Entry(login_content_frame, show="*", width=40)
     admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
-
-    ttk.Label(login_content_frame, text="Supabase URL:").grid(row=2, column=0, sticky=tk.W, pady=2)
-    supabase_url_entry = ttk.Entry(login_content_frame, width=40)
-    supabase_url_entry.grid(row=2, column=1, sticky=tk.EW, pady=2)
-
-    ttk.Label(login_content_frame, text="Supabase service key:").grid(row=3, column=0, sticky=tk.W, pady=2)
-    supabase_key_entry = ttk.Entry(login_content_frame, show="*", width=40)
-    supabase_key_entry.grid(row=3, column=1, sticky=tk.EW, pady=2)
-
-    ttk.Label(login_content_frame, text="API base URL:").grid(row=4, column=0, sticky=tk.W, pady=2)
-    api_base_url_entry = ttk.Entry(login_content_frame, width=40)
-    api_base_url_entry.grid(row=4, column=1, sticky=tk.EW, pady=2)
-
-    remember_me_var = tk.BooleanVar()
-    remember_me_check = ttk.Checkbutton(login_content_frame, text="Remember me", variable=remember_me_var)
-    remember_me_check.grid(row=5, column=1, sticky=tk.W, pady=5)
-
-    connect_button = ttk.Button(login_content_frame, text="Save and Connect")
-    connect_button.grid(row=6, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    
+    login_button = ttk.Button(login_content_frame, text="Login")
+    login_button.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
     login_content_frame.columnconfigure(1, weight=1)
+
+    # --- Configuration Tab Content ---
+    config_content_frame = ttk.LabelFrame(config_tab, text="Connection and Mode Configuration", padding=(10, 5))
+    config_content_frame.pack(padx=10, pady=10, fill=tk.X)
+
+    ttk.Label(config_content_frame, text="Supabase URL:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    supabase_url_entry = ttk.Entry(config_content_frame, width=40)
+    supabase_url_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
+
+    ttk.Label(config_content_frame, text="Supabase service key:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    supabase_key_entry = ttk.Entry(config_content_frame, show="*", width=40)
+    supabase_key_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
+
+    ttk.Label(config_content_frame, text="API base URL:").grid(row=2, column=0, sticky=tk.W, pady=2)
+    api_base_url_entry = ttk.Entry(config_content_frame, width=40)
+    api_base_url_entry.grid(row=2, column=1, sticky=tk.EW, pady=2)
+
+    # Mode selection
+    mode_var = tk.StringVar(value="API") # Default to API mode
+    ttk.Label(config_content_frame, text="Operation mode:").grid(row=3, column=0, sticky=tk.W, pady=5)
+    mode_frame = ttk.Frame(config_content_frame)
+    mode_frame.grid(row=3, column=1, sticky=tk.EW)
+    api_mode_radio = ttk.Radiobutton(mode_frame, text="API", variable=mode_var, value="API")
+    api_mode_radio.pack(side=tk.LEFT, padx=5)
+    direct_mode_radio = ttk.Radiobutton(mode_frame, text="Direct DB", variable=mode_var, value="Direct")
+    direct_mode_radio.pack(side=tk.LEFT, padx=5)
+
+    save_config_button = ttk.Button(config_content_frame, text="Save Configuration")
+    save_config_button.grid(row=4, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    config_content_frame.columnconfigure(1, weight=1)
 
     # This list will hold all buttons that should be disabled during operations.
     all_buttons = []
-
-    admin_creator_frame = ttk.LabelFrame(admin_creator_tab, text="Admin User Creator", padding=(10, 5))
-    admin_creator_frame.pack(padx=10, pady=10, fill=tk.X)
-    ttk.Label(admin_creator_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
-    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
-    new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-    ttk.Label(admin_creator_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
-    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
-    new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
-    admin_creator_frame.columnconfigure(1, weight=1)
-    create_admin_btn = ttk.Button(admin_creator_frame, text="Create admin user")
-    create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
-    all_buttons.append(create_admin_btn)
 
     # --- Tools Frame Content ---
     
@@ -546,8 +548,8 @@ def main_gui():
     status_bar.pack(fill=tk.X, pady=(0, 10))
     connection_status_label = ttk.Label(status_bar, text="")
     connection_status_label.pack(side=tk.LEFT)
-    disconnect_button = ttk.Button(status_bar, text="Disconnect")
-    disconnect_button.pack(side=tk.RIGHT)
+    logout_button = ttk.Button(status_bar, text="Logout")
+    logout_button.pack(side=tk.RIGHT)
 
     seeder_frame = ttk.LabelFrame(tools_frame, text="Monthly Patient Seeder", padding=(10, 5))
     seeder_frame.pack(padx=10, pady=5, fill=tk.X)
@@ -560,10 +562,6 @@ def main_gui():
     remove_patient_btn.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
     all_buttons.append(remove_patient_btn)
 
-    use_api_var = tk.BooleanVar(value=True)
-    use_api_check = ttk.Checkbutton(seeder_frame, text="Use API endpoint", variable=use_api_var)
-    use_api_check.grid(row=1, column=0, columnspan=2, pady=5)
-
     seeder_frame.columnconfigure((0, 1), weight=1)
 
     # --- Bulk API Tester Frame ---
@@ -574,9 +572,23 @@ def main_gui():
     run_tests_btn.pack(pady=5, fill=tk.X)
     all_buttons.append(run_tests_btn)
 
+    # --- Admin Creator Frame (now inside DevTool tab) ---
+    admin_creator_frame = ttk.LabelFrame(tools_frame, text="Admin User Creator", padding=(10, 5))
+    admin_creator_frame.pack(padx=10, pady=10, fill=tk.X)
+    ttk.Label(admin_creator_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
+    new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
+    ttk.Label(admin_creator_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
+    new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
+    admin_creator_frame.columnconfigure(1, weight=1)
+    create_admin_btn = ttk.Button(admin_creator_frame, text="Create admin user")
+    create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
+    all_buttons.append(create_admin_btn)
 
 
-    # --- Connection Logic ---
+
+    # --- Logic for UI interaction ---
     def attempt_connection():
         email = admin_email_entry.get()
         password = admin_password_entry.get()
@@ -662,21 +674,19 @@ def main_gui():
     connect_button.config(command=lambda: threading.Thread(target=attempt_connection, daemon=True).start())
     disconnect_button.config(command=do_disconnect)
     
-    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client'], use_api_var.get(), api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
-    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client'], use_api_var.get(), api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
+    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
+    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
     run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], client_store.get('admin_token'), api_base_url_entry.get()), daemon=True).start())
-    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_url_entry, supabase_key_entry), daemon=True).start())
+    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token'), client_store.get('client')), daemon=True).start())
 
     # Load credentials and set initial view
     creds = load_credentials()
     if creds:
         admin_email_entry.insert(0, creds.get('email', ''))
-        admin_password_entry.insert(0, creds.get('password', ''))
         supabase_url_entry.insert(0, creds.get('supabase_url', ''))
         supabase_key_entry.insert(0, creds.get('supabase_key', ''))
-        api_base_url_entry.delete(0, tk.END)
         api_base_url_entry.insert(0, creds.get('api_base_url', 'http://127.0.0.1:8000'))
-        remember_me_var.set(True)
+        mode_var.set(creds.get('mode', 'API'))
 
     root.mainloop()
 
