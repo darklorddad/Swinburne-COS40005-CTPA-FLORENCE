@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
