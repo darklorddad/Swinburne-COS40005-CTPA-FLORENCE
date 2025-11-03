@@ -589,14 +589,29 @@ def main_gui():
 
 
     # --- Logic for UI interaction ---
-    def attempt_connection():
+    def do_save_config():
+        """Saves the current configuration fields to the credentials file."""
+        url = supabase_url_entry.get()
+        key = supabase_key_entry.get()
+        api_url = api_base_url_entry.get()
+        mode = mode_var.get()
+        email = admin_email_entry.get() # Save email for convenience
+
+        if not all([url, key, api_url]):
+            messagebox.showwarning("Warning", "Some configuration fields are empty, but saving anyway.")
+        
+        save_credentials(email, url, key, api_url, mode)
+        log_to_window(log_widget, "Configuration saved.")
+        messagebox.showinfo("Success", "Configuration has been saved.")
+
+    def attempt_login():
         email = admin_email_entry.get()
         password = admin_password_entry.get()
         url = supabase_url_entry.get()
         key = supabase_key_entry.get()
 
         if not all([email, password, url, key]):
-            messagebox.showerror("Error", "Please fill in all connection fields.")
+            messagebox.showerror("Error", "Please fill in all login and configuration fields.")
             return
 
         # --- Sanity check the key to ensure it's a service_role key ---
@@ -610,65 +625,50 @@ def main_gui():
             messagebox.showwarning("Incorrect Key Type", warning_msg)
             return
 
-        # --- Simplified Connection Logic ---
+        # --- Simplified Login Logic ---
         try:
             log_to_window(log_widget, "Initializing Supabase client with service key...")
-            # 1. Create the main client that will use the service_role key for all admin operations.
-            #    This client's auth state will NOT be modified by user login.
             service_client = create_client(url, key)
 
             log_to_window(log_widget, f"Verifying admin credentials for {email}...")
-            # 2. Create a *temporary, separate* client to verify the user's credentials.
-            #    Signing in modifies the client's auth state, so we use a disposable one
-            #    to avoid overwriting the service_role key on our main client.
             temp_auth_client = create_client(url, key)
             auth_response = temp_auth_client.auth.sign_in_with_password({
                 "email": email,
                 "password": password
             })
 
-            # 3. Check if the now-authenticated user has the 'ADMIN' role.
             if auth_response.user.app_metadata.get('role') != 'ADMIN':
-                raise Exception("Connection successful, but user is not an admin.")
+                raise Exception("Login successful, but user is not an admin.")
 
-            # 4. If all checks pass, store the *unmodified service-role client* and admin token for the toolkit to use.
             client_store['client'] = service_client
             client_store['admin_token'] = auth_response.session.access_token
-            log_to_window(log_widget, "Connection successful. Unlocking DevTool.")
-
-            if remember_me_var.get():
-                save_credentials(email, password, url, key, api_base_url_entry.get())
-            else:
-                delete_credentials()
+            log_to_window(log_widget, "Login successful. Unlocking DevTool.")
             
-            connection_status_label.config(text=f"Connected as: {email}")
+            connection_status_label.config(text=f"Connected as: {email} (Mode: {mode_var.get()})")
             notebook.add(tools_frame, text='DevTool')
             notebook.select(tools_frame)
+            notebook.hide(login_tab)
             notebook.hide(config_tab)
-            notebook.hide(admin_creator_tab)
 
         except Exception as e:
-            # Clear the client on failure to prevent using a partially-logged-in state.
             client_store['client'] = None
             client_store['admin_token'] = None
-            log_to_window(log_widget, f"ERROR: Connection failed: {e}")
-            messagebox.showerror("Connection Failed", f"Connection failed: {e}")
+            log_to_window(log_widget, f"ERROR: Login failed: {e}")
+            messagebox.showerror("Login Failed", f"Login failed: {e}")
 
-    def do_disconnect():
-        # Clear the stored client and token
+    def do_logout():
         client_store['client'] = None
         client_store['admin_token'] = None
         
         connection_status_label.config(text="")
         admin_password_entry.delete(0, tk.END)
-        # Don't clear the service key, as it's annoying to re-paste.
-        # supabase_key_entry.delete(0, tk.END) 
         
         notebook.forget(tools_frame)
+        # Re-show the initial tabs by adding them back
+        notebook.add(login_tab)
         notebook.add(config_tab)
-        notebook.add(admin_creator_tab)
-        notebook.select(config_tab)
-        log_to_window(log_widget, "Disconnected.")
+        notebook.select(login_tab)
+        log_to_window(log_widget, "Logged out.")
 
     # --- Initial State & Button Commands ---
     connect_button.config(command=lambda: threading.Thread(target=attempt_connection, daemon=True).start())
