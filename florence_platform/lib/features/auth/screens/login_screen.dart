@@ -48,44 +48,25 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Try real Supabase authentication first
-      try {
-        final response = await supabase.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+      final response = await supabase.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      
+      if (response.user != null && mounted) {
+        Helpers.showSuccess(context, 'Welcome back!');
+        AppRoutes.pushAndRemoveUntil(
+          context,
+          AppRoutes.dashboard,
         );
-        
-        if (response.user != null) {
-          // Success with real auth!
-          if (mounted) {
-            Helpers.showSuccess(context, 'Welcome back!');
-            
-            // Navigate to dashboard
-            AppRoutes.pushAndRemoveUntil(
-              context,
-              AppRoutes.dashboard,
-            );
-          }
-        }
-      } catch (authError) {
-        // Supabase auth failed - check if we're in demo mode
-        debugPrint('Supabase auth error (trying demo mode): $authError');
-        
-        // Demo mode: Accept any credentials for preview
-        if (mounted) {
-          Helpers.showSuccess(context, 'Welcome to Demo Mode!');
-          
-          // Navigate to dashboard
-          AppRoutes.pushAndRemoveUntil(
-            context,
-            AppRoutes.dashboard,
-          );
-        }
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        Helpers.showError(context, error.message);
       }
     } catch (error) {
-      // Unexpected error
       if (mounted) {
-        Helpers.showError(context, 'An unexpected error occurred');
+        Helpers.showError(context, 'An unexpected error occurred. Please try again.');
       }
     } finally {
       if (mounted) {

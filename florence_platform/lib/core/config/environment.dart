@@ -7,7 +7,7 @@ class Environment {
 
   /// Enable Supabase backend integration
   /// Set to true when ready to connect to Supabase
-  static const bool enableSupabase = false;
+  static const bool enableSupabase = true;
 
   /// Enable AI features (DeepSeek API)
   /// Set to true to use AI-powered recommendations and chatbot
@@ -28,12 +28,17 @@ class Environment {
   static const String deepSeekApiKey = 'sk-97bfbb146ad345d9acefbc5d6153fc2a';
   static const String deepSeekBaseUrl = 'https://api.deepseek.com/v1';
 
+  // ==================== API CONFIGURATION ====================
+
+  /// Backend API URL
+  static const String apiUrl = 'http://127.0.0.1:8000';
+
   // ==================== SUPABASE CONFIGURATION ====================
 
-  /// Supabase URL (to be configured when ready)
+  /// Supabase URL (IMPORTANT: CONFIGURE THIS)
   static const String supabaseUrl = 'https://your-project.supabase.co';
 
-  /// Supabase Anon Key (to be configured when ready)
+  /// Supabase Anon Key (IMPORTANT: CONFIGURE THIS)
   static const String supabaseAnonKey = 'your-anon-key-here';
 
   // ==================== APP CONFIGURATION ====================

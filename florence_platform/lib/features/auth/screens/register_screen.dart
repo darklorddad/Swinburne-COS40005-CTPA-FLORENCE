@@ -1,12 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:http/http.dart' as http;
+import '../../../core/config/environment.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
 import '../../../shared/widgets/input_widgets.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
-import '../../../main.dart';
 
 /// Registration Screen
 /// Allows new users to create an account
@@ -62,44 +63,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Sign up with Supabase
-      final response = await supabase.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        data: {
-          'full_name': _fullNameController.text.trim(),
-        },
+      final response = await http.post(
+        Uri.parse('${Environment.apiUrl}/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'name': _fullNameController.text.trim(),
+          'role': 'PATIENT',
+        }),
       );
-      
-      if (response.user != null) {
-        if (mounted) {
-          // Check if email confirmation is required
-          if (response.user!.emailConfirmedAt == null) {
-            Helpers.showSuccess(
-              context,
-              'Registration successful! Please check your email to verify your account.',
-            );
-            
-            // Go back to login
-            AppRoutes.pop(context);
-          } else {
-            // Email confirmed, navigate to dashboard
-            Helpers.showSuccess(context, 'Welcome to BioTective Health!');
-            
-            AppRoutes.pushAndRemoveUntil(
-              context,
-              AppRoutes.dashboard,
-            );
-          }
-        }
-      }
-    } on AuthException catch (error) {
+
       if (mounted) {
-        Helpers.showError(context, error.message);
+        if (response.statusCode == 200) {
+          Helpers.showSuccess(
+            context,
+            'Registration successful! Please check your email to verify your account.',
+          );
+          AppRoutes.pop(context);
+        } else {
+          final errorData = jsonDecode(response.body);
+          Helpers.showError(context, errorData['detail'] ?? 'Registration failed.');
+        }
       }
     } catch (error) {
       if (mounted) {
-        Helpers.showError(context, 'An unexpected error occurred');
+        Helpers.showError(context, 'Could not connect to the server. Please try again later.');
       }
     } finally {
       if (mounted) {

@@ -47,7 +47,7 @@ class App extends StatelessWidget {
               themeMode: themeProvider.themeMode,
 
               // Routing
-              initialRoute: AppRoutes.dashboard,
+              initialRoute: AppRoutes.splash,
               onGenerateRoute: AppRoutes.generateRoute,
 
               // Localization (for future use)
