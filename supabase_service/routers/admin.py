@@ -26,7 +26,7 @@ class PatientAdminCreate(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
-    risk_level: Optional[RiskLevel] = 'LOW'
+    risk_level: Optional[RiskLevel] = RiskLevel.LOW
     organisation_id: Optional[int] = None
     clinician_id: Optional[int] = None
 
