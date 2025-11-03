@@ -17,7 +17,7 @@ dependencies:
 
   # Backend & API
   supabase_flutter: ^2.3.4
-  http: ^1.2.0
+  http: ^1.5.0
 
   # Data Visualization
   fl_chart: ^0.66.0

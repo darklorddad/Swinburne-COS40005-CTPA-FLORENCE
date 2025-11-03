@@ -298,7 +298,6 @@ class AppTheme {
     colorScheme: const ColorScheme.dark(
       primary: primaryBlue,
       secondary: primaryGreen,
-      background: Color(0xFF111827),
       surface: Color(0xFF1F2937),
     ),
     // Add dark theme customization here

@@ -3,7 +3,6 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
 import 'recommendation_detail_screen.dart';
 
 /// Recommendations Feed Screen

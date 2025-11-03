@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 
 /// Chat Screen - AI Health Assistant

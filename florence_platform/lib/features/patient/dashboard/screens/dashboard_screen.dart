@@ -359,7 +359,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               icon: Icons.show_chart,
               iconColor: AppTheme.primaryBlue,
               label: 'Avg Glucose',
-              value: '${averageGlucose.toStringAsFixed(0)}',
+              value: averageGlucose.toStringAsFixed(0),
               unit: 'mg/dL',
             ),
             _buildStatCard(

@@ -98,7 +98,7 @@ class UpcomingRemindersCard extends StatelessWidget {
                 time: reminder['time'] as String,
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

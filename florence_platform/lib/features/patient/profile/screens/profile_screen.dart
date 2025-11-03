@@ -24,15 +24,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Mock user data (will be replaced with real data)
   String _userName = 'John Doe';
   String _userEmail = 'john.doe@example.com';
-  String _dateOfBirth = 'January 15, 1985';
-  String _gender = 'Male';
-  String _phoneNumber = '+60 12-345 6789';
-  String _diabetesType = 'Type 2';
-  double _targetMin = 70.0;
-  double _targetMax = 180.0;
+  final String _dateOfBirth = 'January 15, 1985';
+  final String _gender = 'Male';
+  final String _phoneNumber = '+60 12-345 6789';
+  final String _diabetesType = 'Type 2';
+  final double _targetMin = 70.0;
+  final double _targetMax = 180.0;
   
   // Medications list (mock)
-  List<Map<String, String>> _medications = [
+  final List<Map<String, String>> _medications = [
     {'name': 'Metformin', 'dosage': '500mg', 'frequency': 'Twice daily'},
     {'name': 'Insulin', 'dosage': '10 units', 'frequency': 'Before meals'},
   ];
@@ -386,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               );
-            }).toList(),
+            }),
         ],
       ),
     );
@@ -666,7 +666,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: AppTheme.primaryBlue,
+          activeThumbColor: AppTheme.primaryBlue,
         ),
       ],
     );

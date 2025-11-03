@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';

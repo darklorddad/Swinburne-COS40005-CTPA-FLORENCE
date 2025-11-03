@@ -351,7 +351,7 @@ class _CreateOrganizationScreenState extends State<CreateOrganizationScreen> {
 
   Widget _buildStatusDropdown() {
     return DropdownButtonFormField<OrganizationStatus>(
-      value: _status,
+      initialValue: _status,
       decoration: const InputDecoration(
         labelText: 'Status',
         prefixIcon: Icon(Icons.info),

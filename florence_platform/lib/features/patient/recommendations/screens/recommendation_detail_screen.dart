@@ -370,7 +370,7 @@ class _RecommendationDetailScreenState
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -475,7 +475,7 @@ class _RecommendationDetailScreenState
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

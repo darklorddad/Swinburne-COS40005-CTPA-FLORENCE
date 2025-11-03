@@ -17,7 +17,7 @@ class SuperAdminDashboardScreen extends StatefulWidget {
 
 class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
   final _authService = AdminAuthService();
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   // Mock data - will be replaced with real data from backend
   final Map<String, dynamic> _systemMetrics = {

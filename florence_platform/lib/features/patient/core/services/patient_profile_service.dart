@@ -159,8 +159,9 @@ class PatientProfileService with ChangeNotifier {
         double value = profile.baselineGlucose;
 
         // Time-based variations
-        if (hour >= 6 && hour <= 9) value += 15; // Morning
-        else if (hour >= 12 && hour <= 14) value += 20; // Lunch
+        if (hour >= 6 && hour <= 9) {
+          value += 15; // Morning
+        } else if (hour >= 12 && hour <= 14) value += 20; // Lunch
         else if (hour >= 18 && hour <= 20) value += 18; // Dinner
 
         // Profile-specific variability
