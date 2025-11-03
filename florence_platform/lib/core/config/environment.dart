@@ -30,15 +30,15 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL
-  static const String apiUrl = 'http://127.0.0.1:8000';
+  static const String apiUrl = 'https://ss-florence-dhp.vercel.app/';
 
   // ==================== SUPABASE CONFIGURATION ====================
 
   /// Supabase URL (IMPORTANT: CONFIGURE THIS)
-  static const String supabaseUrl = 'https://your-project.supabase.co';
+  static const String supabaseUrl = 'https://opltjtmmiuwbaikvlive.supabase.co';
 
   /// Supabase Anon Key (IMPORTANT: CONFIGURE THIS)
-  static const String supabaseAnonKey = 'your-anon-key-here';
+  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wbHRqdG1taXV3YmFpa3ZsaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2OTc0NDYsImV4cCI6MjA3NTI3MzQ0Nn0.iRpi8CpnGA6fVMxEpsKw0GeIabxyCPFMBtCssmMNsLs';
 
   // ==================== APP CONFIGURATION ====================
 
