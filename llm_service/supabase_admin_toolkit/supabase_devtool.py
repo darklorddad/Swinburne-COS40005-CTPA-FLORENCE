@@ -177,8 +177,8 @@ def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str
         for btn in buttons: btn.config(state=tk.NORMAL)
 
 
-def add_test_patient_data(log_widget, buttons, supabase_client: Client):
-    """Creates a test patient and seeds one month of data."""
+def add_test_patient_data(log_widget, buttons, supabase_client: Client, use_api: bool, base_url: str, admin_token: str):
+    """Creates a test patient and seeds one month of data, either via API or direct DB connection."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
     if ID_STORAGE_FILE.exists():
@@ -187,103 +187,109 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
 
-    if not supabase_client:
-        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
-        for btn in buttons: btn.config(state=tk.NORMAL)
-        return
-
-    patient_id = None
     new_user = None
     try:
-        # Step 1: Create the user in Supabase Auth using the service key
-        log_to_window(log_widget, f"Creating auth user: {TEST_PATIENT_EMAIL}")
-        user_session = supabase_client.auth.admin.create_user({
-            "email": TEST_PATIENT_EMAIL,
-            "password": TEST_PATIENT_PASSWORD,
-            "email_confirm": True,
-            "app_metadata": {"role": "PATIENT"}
-        })
-        new_user = user_session.user
-        if not new_user:
-            raise Exception("Failed to create user in authentication system.")
-        
-        log_to_window(log_widget, f"Auth user created with ID: {new_user.id}")
+        if use_api:
+            log_to_window(log_widget, "Attempting to create patient via API endpoint...")
+            if not all([base_url, admin_token, supabase_client]):
+                messagebox.showerror("Error", "API Base URL, Admin Token, and Supabase client are required to use the API endpoint.")
+                raise Exception("Missing arguments for API call.")
 
-        # Step 2: Create the patient profile
-        log_to_window(log_widget, "Creating patient profile...")
-        profile_data = {
-            "user_id": new_user.id,
-            "name": "Monthly Data Patient",
-            "phone_number": "555-0123",
-            "date_of_birth": "1985-05-15",
-            "gender": "Male"
-        }
-        patient_profile_res = supabase_client.table('patient_profiles').insert(profile_data).execute()
-        patient_profile = patient_profile_res.data[0]
-        patient_id = patient_profile["id"]
-        log_to_window(log_widget, f"Patient profile created with ID: {patient_id}")
-        ID_STORAGE_FILE.write_text(str(patient_id))
+            headers = {
+                "apikey": supabase_client.supabase_key,
+                "Authorization": f"Bearer {admin_token}"
+            }
+            payload = {
+                "email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD, "name": "Monthly Data Patient (API)",
+                "phone_number": "555-0123", "date_of_birth": "1985-05-15", "gender": "Male"
+            }
+            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+                response = http_client.post("/admin/patients", headers=headers, json=payload)
+                response.raise_for_status()
+                
+                patient_profile = response.json().get("profile", {})
+                patient_id = patient_profile.get("id")
+                if not patient_id:
+                    raise Exception("API response did not contain a patient profile ID.")
+                
+                ID_STORAGE_FILE.write_text(str(patient_id))
+                log_to_window(log_widget, f"SUCCESS: Patient created via API with ID: {patient_id}")
+                log_to_window(log_widget, "NOTE: Monthly data seeding is only available via direct database connection (uncheck 'Use API Endpoint').")
+                messagebox.showinfo("Success", f"Patient created via API with ID: {patient_id}.\n\nNote: Full monthly data seeding is only performed when using the direct database connection.")
+        else:
+            log_to_window(log_widget, "Attempting to create patient and seed data via direct DB connection...")
+            if not supabase_client:
+                messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+                raise Exception("Supabase client not initialized.")
 
-        # Step 3: Create default thresholds
-        DEFAULT_THRESHOLDS = [
-            {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-            {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
-            {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-            {'data_type': 'CHOLESTEROL', 'min_value': 100.0, 'max_value': 199.0},
-            {'data_type': 'ECG', 'min_value': 60.0, 'max_value': 100},
-            {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120},
-            {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80}
-        ]
-        thresholds_to_insert = [
-            {**threshold, 'patient_id': patient_id} for threshold in DEFAULT_THRESHOLDS
-        ]
-        supabase_client.table('patient_thresholds').insert(thresholds_to_insert).execute()
-        log_to_window(log_widget, "Default thresholds created for patient.")
-
-        # Step 4: Seed Daily Logs (batched for performance)
-        log_to_window(log_widget, "Seeding one month of daily logs...")
-        today = date.today()
-        logs_to_insert = []
-        for i in range(30):
-            log_date = today - timedelta(days=i)
-            for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
-                logs_to_insert.append({
-                    "patient_id": patient_id, "log_date": log_date.isoformat(), "meal_time": meal_time,
-                    "glucose_before_meal": round(random.uniform(80, 110), 1),
-                    "glucose_after_meal": round(random.uniform(120, 180), 1),
-                    "meal_desc": f"A typical {meal_time.lower()}."
-                })
-        supabase_client.table('daily_patient_logs').insert(logs_to_insert).execute()
-        log_to_window(log_widget, "-> Seeded all daily logs in one batch.")
-
-        # Step 5: Seed Monitor Data (batched for performance)
-        log_to_window(log_widget, "Seeding one month of monitor data...")
-        monitor_data_to_insert = []
-        for i in range(30):
-            log_date = today - timedelta(days=i)
-            for hour in [8, 13, 19]:
-                monitor_data_to_insert.append({
-                    "patient_id": patient_id, "data_type": "GLUCOSE", "value": round(random.uniform(90, 160), 1),
-                    "measured_at": datetime(log_date.year, log_date.month, log_date.day, hour, random.randint(0, 59)).isoformat()
-                })
+            # --- Direct DB Seeding Logic ---
+            patient_id = None
             
-            bp_systolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": round(random.uniform(110, 130), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
-            bp_diastolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": round(random.uniform(70, 85), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
-            monitor_data_to_insert.extend([bp_systolic, bp_diastolic])
-        
-        monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "HBA1C", "value": round(random.uniform(5.7, 7.5), 1), "measured_at": (today - timedelta(days=28)).isoformat()})
-        monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()})
-        monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()})
-        
-        supabase_client.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
-        log_to_window(log_widget, "-> Seeded all monitor data in one batch.")
+            # Step 1: Create the user in Supabase Auth
+            log_to_window(log_widget, f"Creating auth user: {TEST_PATIENT_EMAIL}")
+            user_session = supabase_client.auth.admin.create_user({
+                "email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD, "email_confirm": True, "app_metadata": {"role": "PATIENT"}
+            })
+            new_user = user_session.user
+            if not new_user: raise Exception("Failed to create user in authentication system.")
+            log_to_window(log_widget, f"Auth user created with ID: {new_user.id}")
 
-        log_to_window(log_widget, "SUCCESS: Test data seeding complete.")
-        messagebox.showinfo("Success", "Test data seeding complete.")
+            # Step 2: Create the patient profile
+            log_to_window(log_widget, "Creating patient profile...")
+            profile_data = {"user_id": new_user.id, "name": "Monthly Data Patient", "phone_number": "555-0123", "date_of_birth": "1985-05-15", "gender": "Male"}
+            patient_profile_res = supabase_client.table('patient_profiles').insert(profile_data).execute()
+            patient_profile = patient_profile_res.data[0]
+            patient_id = patient_profile["id"]
+            log_to_window(log_widget, f"Patient profile created with ID: {patient_id}")
+            ID_STORAGE_FILE.write_text(str(patient_id))
+
+            # Step 3: Create default thresholds
+            DEFAULT_THRESHOLDS = [
+                {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0}, {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+                {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9}, {'data_type': 'CHOLESTEROL', 'min_value': 100.0, 'max_value': 199.0},
+                {'data_type': 'ECG', 'min_value': 60.0, 'max_value': 100}, {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120},
+                {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80}
+            ]
+            thresholds_to_insert = [{**threshold, 'patient_id': patient_id} for threshold in DEFAULT_THRESHOLDS]
+            supabase_client.table('patient_thresholds').insert(thresholds_to_insert).execute()
+            log_to_window(log_widget, "Default thresholds created for patient.")
+
+            # Step 4: Seed Daily Logs
+            log_to_window(log_widget, "Seeding one month of daily logs...")
+            today = date.today()
+            logs_to_insert = []
+            for i in range(30):
+                log_date = today - timedelta(days=i)
+                for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
+                    logs_to_insert.append({
+                        "patient_id": patient_id, "log_date": log_date.isoformat(), "meal_time": meal_time,
+                        "glucose_before_meal": round(random.uniform(80, 110), 1), "glucose_after_meal": round(random.uniform(120, 180), 1),
+                        "meal_desc": f"A typical {meal_time.lower()}."
+                    })
+            supabase_client.table('daily_patient_logs').insert(logs_to_insert).execute()
+            log_to_window(log_widget, "-> Seeded all daily logs in one batch.")
+
+            # Step 5: Seed Monitor Data
+            log_to_window(log_widget, "Seeding one month of monitor data...")
+            monitor_data_to_insert = []
+            for i in range(30):
+                log_date = today - timedelta(days=i)
+                for hour in [8, 13, 19]:
+                    monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "GLUCOSE", "value": round(random.uniform(90, 160), 1), "measured_at": datetime(log_date.year, log_date.month, log_date.day, hour, random.randint(0, 59)).isoformat()})
+                bp_systolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": round(random.uniform(110, 130), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
+                bp_diastolic = {"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": round(random.uniform(70, 85), 0), "measured_at": datetime(log_date.year, log_date.month, log_date.day, 9).isoformat()}
+                monitor_data_to_insert.extend([bp_systolic, bp_diastolic])
+            monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "HBA1C", "value": round(random.uniform(5.7, 7.5), 1), "measured_at": (today - timedelta(days=28)).isoformat()})
+            monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "CHOLESTEROL", "value": round(random.uniform(180, 220), 0), "measured_at": (today - timedelta(days=20)).isoformat()})
+            monitor_data_to_insert.append({"patient_id": patient_id, "data_type": "BMI", "value": round(random.uniform(24, 29), 1), "measured_at": (today - timedelta(days=15)).isoformat()})
+            supabase_client.table('patient_monitor_data').insert(monitor_data_to_insert).execute()
+            log_to_window(log_widget, "-> Seeded all monitor data in one batch.")
+
+            log_to_window(log_widget, "SUCCESS: Test data seeding complete.")
+            messagebox.showinfo("Success", "Test data seeding complete.")
 
     except Exception as e:
         error_detail = str(e)
-        # Provide a more helpful message for the most common error.
         if "User not allowed" in error_detail:
             helpful_message = "This operation requires the Supabase 'service_role' key. Please ensure you have entered the correct key and not the 'anon' key."
             log_to_window(log_widget, f"ERROR: {error_detail}. HINT: Check if you are using the service_role key.")
@@ -292,7 +298,7 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
             log_to_window(log_widget, f"ERROR: Failed during data seeding: {error_detail}")
             messagebox.showerror("Error", f"An error occurred: {error_detail}")
         
-        if new_user:
+        if not use_api and new_user: # Only attempt rollback for direct DB method
             log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
             try:
                 supabase_client.auth.admin.delete_user(new_user.id)
@@ -303,8 +309,8 @@ def add_test_patient_data(log_widget, buttons, supabase_client: Client):
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
-    """Finds and removes the test patient and their data by deleting the auth user."""
+def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_api: bool, base_url: str, admin_token: str):
+    """Finds and removes the test patient and their data, either via API or direct DB connection."""
     for btn in buttons: btn.config(state=tk.DISABLED)
 
     if not ID_STORAGE_FILE.exists():
@@ -317,51 +323,65 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client):
         for btn in buttons: btn.config(state=tk.NORMAL)
         return
     
-    if not supabase_client:
-        messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
-        for btn in buttons: btn.config(state=tk.NORMAL)
-        return
-
+    patient_id_str = ID_STORAGE_FILE.read_text().strip()
     try:
-        patient_id = int(ID_STORAGE_FILE.read_text().strip())
-        log_to_window(log_widget, f"Found patient profile ID {patient_id}. Looking up auth user ID...")
+        patient_id = int(patient_id_str)
 
-        # Step 1: Get the user_id from the patient profile
-        profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
-        user_id = profile_res.data.get("user_id")
+        if use_api:
+            log_to_window(log_widget, f"Attempting to remove patient {patient_id} via API endpoint...")
+            if not all([base_url, admin_token, supabase_client]):
+                messagebox.showerror("Error", "API Base URL, Admin Token, and Supabase client are required to use the API endpoint.")
+                raise Exception("Missing arguments for API call.")
 
-        if not user_id:
-            log_to_window(log_widget, f"WARNING: No auth user linked to patient profile {patient_id}. Deleting profile directly.")
-            # Fallback for orphaned profiles
-            supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
-            log_to_window(log_widget, f"Deleted patient profile {patient_id} from database.")
-        else:
-            # Step 2: Delete the auth user. The database's ON DELETE CASCADE will handle the rest.
-            log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
-            supabase_client.auth.admin.delete_user(user_id)
-            log_to_window(log_widget, f"Auth user {user_id} deleted.")
-
-            # Step 3: Verify cascade deletion by checking if the patient profile is gone.
-            log_to_window(log_widget, "Verifying cascade deletion...")
-            profile_check = supabase_client.table('patient_profiles').select('id', count='exact').eq('id', patient_id).execute()
+            headers = {
+                "apikey": supabase_client.supabase_key,
+                "Authorization": f"Bearer {admin_token}"
+            }
+            with httpx.Client(base_url=base_url.strip('/')) as http_client:
+                response = http_client.delete(f"/admin/patients/{patient_id}", headers=headers)
+                response.raise_for_status()
             
-            if profile_check.count == 0:
-                log_to_window(log_widget, " -> OK: Patient profile correctly removed via cascade.")
-                log_to_window(log_widget, "SUCCESS: Deletion complete and verified.")
-                messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted and verified.")
-            else:
-                log_to_window(log_widget, f" -> FAILED: Patient profile with ID {patient_id} was NOT deleted.")
-                messagebox.showwarning("Verification Failed", "Deletion command was sent, but the patient profile still exists. Please check database permissions and cascade settings.")
+            log_to_window(log_widget, f"SUCCESS: Patient {patient_id} removed via API.")
+            messagebox.showinfo("Success", f"Patient with profile ID {patient_id} has been deleted via the API.")
+            ID_STORAGE_FILE.unlink()
+        else:
+            log_to_window(log_widget, f"Attempting to remove patient {patient_id} via direct DB connection...")
+            if not supabase_client:
+                messagebox.showerror("Error", "Supabase client not initialized. Please log in again.")
+                raise Exception("Supabase client not initialized.")
 
-        ID_STORAGE_FILE.unlink()
+            # --- Direct DB Deletion Logic ---
+            log_to_window(log_widget, f"Found patient profile ID {patient_id}. Looking up auth user ID...")
+            profile_res = supabase_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+            user_id = profile_res.data.get("user_id")
+
+            if not user_id:
+                log_to_window(log_widget, f"WARNING: No auth user linked to patient profile {patient_id}. Deleting profile directly.")
+                supabase_client.table('patient_profiles').delete().eq('id', patient_id).execute()
+                log_to_window(log_widget, f"Deleted patient profile {patient_id} from database.")
+            else:
+                log_to_window(log_widget, f"Deleting auth user {user_id}... This will cascade delete the profile and all related data.")
+                supabase_client.auth.admin.delete_user(user_id)
+                log_to_window(log_widget, f"Auth user {user_id} deleted.")
+
+                log_to_window(log_widget, "Verifying cascade deletion...")
+                profile_check = supabase_client.table('patient_profiles').select('id', count='exact').eq('id', patient_id).execute()
+                if profile_check.count == 0:
+                    log_to_window(log_widget, " -> OK: Patient profile correctly removed via cascade.")
+                    log_to_window(log_widget, "SUCCESS: Deletion complete and verified.")
+                    messagebox.showinfo("Success", f"Patient with profile ID {patient_id} and all associated data have been deleted and verified.")
+                else:
+                    log_to_window(log_widget, f" -> FAILED: Patient profile with ID {patient_id} was NOT deleted.")
+                    messagebox.showwarning("Verification Failed", "Deletion command was sent, but the patient profile still exists. Please check database permissions and cascade settings.")
+            
+            ID_STORAGE_FILE.unlink()
 
     except Exception as e:
         error_detail = str(e)
-        # Catch specific error if patient not found (handles old and new Supabase client errors)
         if "Expected 1 row, got 0" in error_detail or "PGRST116" in error_detail:
-            log_to_window(log_widget, f"INFO: Patient profile with ID {patient_id} not found in database. Removing stale ID file.")
+            log_to_window(log_widget, f"INFO: Patient profile with ID {patient_id_str} not found in database. Removing stale ID file.")
             ID_STORAGE_FILE.unlink()
-            messagebox.showwarning("Not Found", f"Patient with profile ID {patient_id} was not found. The ID file has been removed.")
+            messagebox.showwarning("Not Found", f"Patient with profile ID {patient_id_str} was not found. The ID file has been removed.")
         elif "User not allowed" in error_detail:
             helpful_message = "This operation requires the Supabase 'service_role' key. Please ensure you have entered the correct key and not the 'anon' key."
             log_to_window(log_widget, f"ERROR: {error_detail}. HINT: Check if you are using the service_role key.")
@@ -523,12 +543,20 @@ def main_gui():
 
     seeder_frame = ttk.LabelFrame(tools_frame, text="Monthly Patient Seeder", padding=(10, 5))
     seeder_frame.pack(padx=10, pady=5, fill=tk.X)
+
     add_patient_btn = ttk.Button(seeder_frame, text="Add monthly data patient")
-    add_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
+    add_patient_btn.grid(row=0, column=0, padx=5, pady=5, sticky=tk.EW)
     all_buttons.append(add_patient_btn)
+
     remove_patient_btn = ttk.Button(seeder_frame, text="Remove monthly data patient")
-    remove_patient_btn.pack(side=tk.LEFT, padx=5, pady=5, expand=True, fill=tk.X)
+    remove_patient_btn.grid(row=0, column=1, padx=5, pady=5, sticky=tk.EW)
     all_buttons.append(remove_patient_btn)
+
+    use_api_var = tk.BooleanVar(value=True)
+    use_api_check = ttk.Checkbutton(seeder_frame, text="Use API Endpoint", variable=use_api_var)
+    use_api_check.grid(row=1, column=0, columnspan=2, pady=5)
+
+    seeder_frame.columnconfigure((0, 1), weight=1)
 
     # --- Bulk API Tester Frame ---
     bulk_api_tester_frame = ttk.LabelFrame(tools_frame, text="Bulk API Smoke Tester", padding=(10, 5))
@@ -626,8 +654,8 @@ def main_gui():
     login_button.config(command=lambda: threading.Thread(target=attempt_login, daemon=True).start())
     logout_button.config(command=do_logout)
     
-    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
-    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client']), daemon=True).start())
+    add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client'], use_api_var.get(), api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
+    remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client'], use_api_var.get(), api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
     run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], client_store.get('admin_token'), api_base_url_entry.get()), daemon=True).start())
     create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, supabase_url_entry, supabase_key_entry), daemon=True).start())
 
