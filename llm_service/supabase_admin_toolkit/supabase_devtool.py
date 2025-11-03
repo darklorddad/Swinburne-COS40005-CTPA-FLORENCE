@@ -492,21 +492,23 @@ def main_gui():
     # --- Tab Definitions ---
     login_tab = ttk.Frame(notebook, padding=10)
     config_tab = ttk.Frame(notebook, padding=10)
+    admin_creator_tab = ttk.Frame(notebook, padding=10)
     tools_frame = ttk.Frame(notebook, padding=10) # This will be the DevTool tab
 
     notebook.add(login_tab, text='Login')
     notebook.add(config_tab, text='Configuration')
+    notebook.add(admin_creator_tab, text='Create Admin')
     # The DevTool tab is added after login
 
     # --- Login Tab Content ---
-    login_content_frame = ttk.LabelFrame(login_tab, text="Admin Login", padding=(10, 5))
+    login_content_frame = ttk.LabelFrame(login_tab, text="Login", padding=(10, 5))
     login_content_frame.pack(padx=10, pady=10, fill=tk.X)
 
-    ttk.Label(login_content_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    ttk.Label(login_content_frame, text="Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
     admin_email_entry = ttk.Entry(login_content_frame, width=40)
     admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
 
-    ttk.Label(login_content_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    ttk.Label(login_content_frame, text="Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
     admin_password_entry = ttk.Entry(login_content_frame, show="*", width=40)
     admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
     
@@ -542,12 +544,25 @@ def main_gui():
     direct_mode_radio = ttk.Radiobutton(mode_frame, text="Direct DB", variable=mode_var, value="Direct")
     direct_mode_radio.pack(side=tk.LEFT, padx=5)
 
-    save_config_button = ttk.Button(config_content_frame, text="Save Configuration")
+    save_config_button = ttk.Button(config_content_frame, text="Save configuration")
     save_config_button.grid(row=4, column=0, columnspan=2, pady=10, sticky=tk.EW)
     config_content_frame.columnconfigure(1, weight=1)
 
+    # --- Admin Creator Tab Content ---
+    admin_creator_frame = ttk.LabelFrame(admin_creator_tab, text="Create Admin User", padding=(10, 5))
+    admin_creator_frame.pack(padx=10, pady=10, fill=tk.X)
+    ttk.Label(admin_creator_frame, text="Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
+    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
+    new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
+    ttk.Label(admin_creator_frame, text="Password:").grid(row=1, column=0, sticky=tk.W, pady=2)
+    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
+    new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
+    admin_creator_frame.columnconfigure(1, weight=1)
+    create_admin_btn = ttk.Button(admin_creator_frame, text="Create admin user")
+    create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
+
     # This list will hold all buttons that should be disabled during operations.
-    all_buttons = []
+    all_buttons = [create_admin_btn]
 
     # --- Tools Frame Content ---
     
@@ -578,20 +593,6 @@ def main_gui():
     run_tests_btn = ttk.Button(bulk_api_tester_frame, text="Run all endpoint smoke tests")
     run_tests_btn.pack(pady=5, fill=tk.X)
     all_buttons.append(run_tests_btn)
-
-    # --- Admin Creator Frame (now inside DevTool tab) ---
-    admin_creator_frame = ttk.LabelFrame(tools_frame, text="Admin User Creator", padding=(10, 5))
-    admin_creator_frame.pack(padx=10, pady=10, fill=tk.X)
-    ttk.Label(admin_creator_frame, text="Admin email:").grid(row=0, column=0, sticky=tk.W, pady=2)
-    new_admin_email_entry = ttk.Entry(admin_creator_frame, width=40)
-    new_admin_email_entry.grid(row=0, column=1, sticky=tk.EW, pady=2)
-    ttk.Label(admin_creator_frame, text="Admin password:").grid(row=1, column=0, sticky=tk.W, pady=2)
-    new_admin_password_entry = ttk.Entry(admin_creator_frame, show="*", width=40)
-    new_admin_password_entry.grid(row=1, column=1, sticky=tk.EW, pady=2)
-    admin_creator_frame.columnconfigure(1, weight=1)
-    create_admin_btn = ttk.Button(admin_creator_frame, text="Create admin user")
-    create_admin_btn.grid(row=2, column=0, columnspan=2, pady=10, sticky=tk.EW)
-    all_buttons.append(create_admin_btn)
 
 
 
@@ -664,8 +665,7 @@ def main_gui():
             connection_status_label.config(text=f"Connected as: {email} (Mode: {mode_var.get()})")
             notebook.add(tools_frame, text='DevTool')
             notebook.select(tools_frame)
-            notebook.hide(login_tab)
-            notebook.hide(config_tab)
+            notebook.forget(login_tab)
 
         except Exception as e:
             client_store['client'] = None
@@ -681,9 +681,8 @@ def main_gui():
         admin_password_entry.delete(0, tk.END)
         
         notebook.forget(tools_frame)
-        # Re-show the initial tabs by adding them back
-        notebook.add(login_tab)
-        notebook.add(config_tab)
+        # Re-show the login tab
+        notebook.insert(0, login_tab, text='Login')
         notebook.select(login_tab)
         log_to_window(log_widget, "Logged out.")
 
