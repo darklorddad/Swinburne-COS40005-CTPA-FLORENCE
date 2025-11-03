@@ -403,8 +403,8 @@ def remove_test_patient_data(log_widget, buttons, supabase_client: Client, use_a
     finally:
         for btn in buttons: btn.config(state=tk.NORMAL)
 
-def create_admin_user(log_widget, buttons, email_entry, password_entry, use_api: bool, base_url: str, admin_token: str, supabase_client: Client):
-    """Creates a new admin user, either via API or direct DB connection."""
+def create_admin_user(log_widget, buttons, email_entry, password_entry, base_url: str, admin_token: str, supabase_client: Client, supabase_url: str, supabase_key: str):
+    """Creates a new admin user. Uses API if logged in, otherwise uses Direct DB."""
     for btn in buttons: btn.config(state=tk.DISABLED)
     
     email = email_entry.get()
@@ -417,24 +417,28 @@ def create_admin_user(log_widget, buttons, email_entry, password_entry, use_api:
 
     log_to_window(log_widget, f"Attempting to create new admin user: {email}")
     try:
-        if use_api:
-            log_to_window(log_widget, "-> Using API endpoint.")
-            if not all([base_url, admin_token, supabase_client]):
-                raise Exception("API Base URL, Admin Token, and Supabase client are required.")
+        # If logged in (admin token exists), use the protected API endpoint.
+        if admin_token and supabase_client:
+            log_to_window(log_widget, "-> Logged in. Using API endpoint.")
+            if not base_url:
+                raise Exception("API Base URL is required to create admin via API.")
             
             headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
             payload = { "email": email, "password": password }
             
             with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
-                # The endpoint is in the `authentication` router, not the `admin` router
                 response = http_client.post("/auth/register_admin", headers=headers, json=payload)
                 response.raise_for_status()
+        # If not logged in, use a direct DB connection with the provided service key.
         else:
-            log_to_window(log_widget, "-> Using direct database connection.")
-            if not supabase_client:
-                raise Exception("Supabase client not initialized.")
+            log_to_window(log_widget, "-> Not logged in. Using direct database connection.")
+            if not all([supabase_url, supabase_key]):
+                raise Exception("Supabase URL and Service Key are required for direct DB connection.")
             
-            user_session = supabase_client.auth.admin.create_user({
+            # Create a temporary client for this operation
+            temp_client = create_client(supabase_url, supabase_key)
+            
+            user_session = temp_client.auth.admin.create_user({
                 "email": email,
                 "password": password,
                 "email_confirm": True,
@@ -717,7 +721,7 @@ def main_gui():
     add_patient_btn.config(command=lambda: threading.Thread(target=add_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
     remove_patient_btn.config(command=lambda: threading.Thread(target=remove_test_patient_data, args=(log_widget, all_buttons, client_store['client'], mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token')), daemon=True).start())
     run_tests_btn.config(command=lambda: threading.Thread(target=run_all_tests, args=(log_widget, all_buttons, client_store['client'], client_store.get('admin_token'), api_base_url_entry.get()), daemon=True).start())
-    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, mode_var.get() == "API", api_base_url_entry.get(), client_store.get('admin_token'), client_store.get('client')), daemon=True).start())
+    create_admin_btn.config(command=lambda: threading.Thread(target=create_admin_user, args=(log_widget, all_buttons, new_admin_email_entry, new_admin_password_entry, api_base_url_entry.get(), client_store.get('admin_token'), client_store.get('client'), supabase_url_entry.get(), supabase_key_entry.get()), daemon=True).start())
 
     # Load credentials and set initial view
     creds = load_credentials()
