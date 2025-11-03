@@ -4,6 +4,7 @@ from typing import Optional
 from enum import Enum
 from datetime import date, datetime
 from supabase_auth.errors import AuthApiError
+import traceback
 
 from ..client import supabase
 from .authentication import get_current_admin_user
@@ -25,7 +26,7 @@ class PatientAdminCreate(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
-    risk_level: Optional[RiskLevel] = 'LOW'
+    risk_level: Optional[RiskLevel] = RiskLevel.LOW
     organisation_id: Optional[int] = None
     clinician_id: Optional[int] = None
 
@@ -238,8 +239,12 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         return {"message": "Patient created successfully.", "profile": patient_profile}
 
     except AuthApiError as e:
+        print(traceback.format_exc())
+        print(f"AuthApiError during patient creation: {e.message}")
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
+        # Print the full traceback to the logs for debugging on Vercel
+        print(traceback.format_exc())
         # Rollback: delete the auth user if profile creation failed
         if new_user:
             supabase.auth.admin.delete_user(new_user.id)
@@ -310,6 +315,8 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
         return {"message": "Clinician created successfully.", "profile": clinician_profile}
 
     except AuthApiError as e:
+        print(traceback.format_exc())
+        print(f"AuthApiError during clinician creation: {e.message}")
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
         # Rollback: delete the auth user if profile creation failed

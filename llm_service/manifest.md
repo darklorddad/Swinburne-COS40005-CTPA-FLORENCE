@@ -22,6 +22,38 @@ Ranking of event-driven architectures considered for real-time monitoring, from 
 
 ---
 
+## Event-Driven LLM Trigger Implementation Plan
+
+To build an event-driven architecture for triggering the LLM, we can leverage Supabase's built-in Database Webhooks. This approach will automatically notify the backend when new data is inserted, which can then trigger the `llm_service`.
+
+Here is a high-level implementation plan:
+
+### 1. Configure Supabase Database Webhooks
+
+This is the event source. We will configure Supabase to send an HTTP POST request whenever a new row is inserted into a relevant table.
+
+*   In the Supabase project dashboard, navigate to **Database** > **Webhooks**.
+*   Click **Create a new webhook**.
+*   Give it a name (e.g., `New Patient Data Trigger`).
+*   In the "Table" dropdown, select `patient_monitor_data`. Another webhook can be created for `daily_patient_logs`.
+*   For "Events", check the `INSERT` box.
+*   Under "HTTP Request", set the "URL" to a new endpoint in `supabase_service`, for example: `http://<your_api_url>/hooks/new-data`.
+*   Save the webhook.
+
+### 2. Create a Webhook Receiver Endpoint in `supabase_service`
+
+This endpoint will act as a listener for events from Supabase and delegate the task to the `llm_service`.
+
+In `supabase_service/main.py`, a new endpoint will receive the webhook payload and make an asynchronous call to the `llm_service`.
+
+### 3. Expose an Endpoint in `llm_service`
+
+The `llm_service` needs to be a running web server (e.g., using FastAPI) to receive the call from `supabase_service`. This new endpoint will use the existing `event_handler.py` logic.
+
+This architecture effectively decouples the main application from the LLM, allowing complex AI processes to be triggered asynchronously whenever new patient data is recorded.
+
+---
+
 ## LLM Development Plan (Recommendation Engine)
 
 This section outlines the development plan for the AI-driven recommendation engine (Milestone 3). The chatbot interface (Milestone 5) will be handled by another team member.
