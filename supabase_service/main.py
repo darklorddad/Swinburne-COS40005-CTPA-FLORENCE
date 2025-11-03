@@ -1,6 +1,7 @@
 # main.py
 import os
 from fastapi import FastAPI, Depends, HTTPException, Header, Request
+from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Dict, Any
 
 # Import the router from your new authentication file
@@ -10,6 +11,15 @@ from .client import supabase
 from .routers.authentication import get_current_admin_user
 
 app = FastAPI()
+
+# Add CORS middleware to allow requests from the Flutter web app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 # Include the authentication router in your main application
 app.include_router(authentication.router)

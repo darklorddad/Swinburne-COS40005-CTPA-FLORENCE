@@ -30,7 +30,7 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL
-  static const String apiUrl = 'https://ss-florence-dhp.vercel.app/';
+  static const String apiUrl = 'https://ss-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
 
