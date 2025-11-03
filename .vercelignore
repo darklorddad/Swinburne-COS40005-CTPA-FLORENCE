@@ -1,0 +1,23 @@
+# Ignore other projects in the monorepo
+AI-Integration-branch/
+biotective/
+biotective_patient_dashboard/
+clinician_dashboard/
+Documents/
+florence_platform/
+Images/
+Patient_Data_Simulation_Generator/
+Rightest-Care/
+
+# Ignore test files for production deployment
+supabase_service/tests/
+
+# Ignore common development/local files
+.git/
+.gitignore
+.env
+.env.*
+*.pyc
+__pycache__/
+*.DS_Store
+node_modules/

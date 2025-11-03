@@ -1,0 +1,6 @@
+pandas
+PyYAML
+matplotlib
+seaborn
+jupyter
+nbconvert
