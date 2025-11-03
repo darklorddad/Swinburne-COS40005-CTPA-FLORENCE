@@ -66,7 +66,7 @@ async def register_user(user_data: UserRegistration):
         user_session = supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
-            "email_confirm": True,  # Auto-confirm user for simplicity.
+            "email_confirm": False,  # Require email confirmation.
             "app_metadata": {"role": user_data.role}
         })
         new_user = user_session.user
