@@ -138,7 +138,10 @@ def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str
             log_to_window(log_widget, "\n--- Testing /auth/me ---")
             for role, token in tokens.items():
                 if token:
-                    headers = {"Authorization": f"Bearer {token}"}
+                    headers = {
+                        "apikey": supabase_client.supabase_key,
+                        "Authorization": f"Bearer {token}"
+                    }
                     response = http_client.get("/auth/me", headers=headers)
                     log_to_window(log_widget, f"GET /auth/me with {role} token: {response.status_code}")
 
@@ -150,7 +153,7 @@ def run_all_tests(log_widget, buttons, supabase_client: Client, admin_token: str
                     log_to_window(log_widget, f"Skipping because no {auth_type} token is available.")
                     continue
 
-                headers = {}
+                headers = {"apikey": supabase_client.supabase_key}
                 if token:
                     headers["Authorization"] = f"Bearer {token}"
 
