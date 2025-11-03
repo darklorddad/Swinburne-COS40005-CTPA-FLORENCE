@@ -11,7 +11,7 @@ import json
 import base64
 import httpx
 from supabase import create_client, Client
-import azure_dark_theme
+import sv_ttk
 
 # Add project root to Python path to resolve imports
 project_root = Path(__file__).resolve().parent.parent.parent
@@ -433,7 +433,7 @@ def main_gui():
     root = tk.Tk()
     root.title("Supabase DevTool")
     root.geometry("800x600")
-    azure_dark_theme.set_theme("dark")
+    sv_ttk.set_theme("dark")
 
     # This will hold the active Supabase client and tokens for the toolkit.
     client_store = {'client': None, 'admin_token': None}
