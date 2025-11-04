@@ -633,7 +633,7 @@ async def delete_patient_by_admin(patient_id: int):
 @router.delete("/clinicians/{clinician_id}", summary="Remove any clinician")
 async def delete_clinician_by_admin(clinician_id: int):
     """
-    Deletes a clinician's profile, unassigns their patients, removes their notes,
+    Deletes a clinician's profile, unassigns their patients, preserves their notes,
     and deletes the corresponding user from Supabase Auth.
     """
     try:
