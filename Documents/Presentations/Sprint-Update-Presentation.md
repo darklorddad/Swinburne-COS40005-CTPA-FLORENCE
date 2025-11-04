@@ -24,6 +24,58 @@ To build a prototype AI-enabled digital health platform for chronic disease moni
 
 ---
 
+## System Architecture
+
+A modern, decoupled system designed for scalability, security, and rapid development.
+
+```mermaid
+graph TD
+    subgraph "User Interface"
+        A[Flutter App <br>(Mobile & Web)]
+    end
+
+    subgraph "Backend Services"
+        B[FastAPI Backend <br>(Serverless Functions)]
+    end
+
+    subgraph "AI Core"
+        C[LangChain Agent]
+        D[LLM <br>(e.g., GPT-4)]
+        E[Custom Tools <br>(DB Query, etc.)]
+    end
+
+    subgraph "Backend as a Service (BaaS)"
+        F[Supabase]
+        G[PostgreSQL DB <br>with RLS]
+        H[Authentication]
+        I[Storage]
+    end
+
+    A --> B
+    B --> C
+    B --> F
+    C --> D
+    C --> E
+    E --> G
+    B --> G
+    A -- "Auth" --> H
+```
+
+---
+
+## Key Technologies
+
+| Category | Technology | Rationale |
+| :--- | :--- | :--- |
+| **Frontend** | Flutter & Dart | True cross-platform (iOS, Android, Web) from a single codebase. |
+| **Backend** | Python & FastAPI | Unmatched AI/ML ecosystem and high-performance asynchronous API. |
+| **AI Core** | LangChain | Powerful agentic framework for building tool-using AI systems. |
+| **Database & BaaS** | Supabase & PostgreSQL | Open-source, relational power with Row-Level Security (RLS). |
+| **Visualisation** | `fl_chart` | Highly customisable and feature-rich charting library for Flutter. |
+| **DevOps** | Git & GitHub | Industry-standard version control with GitFlow and CI/CD actions. |
+
+---
+
 ## Sprint 1 - Foundation & Patient View
 
 ### Sprint 1 Goals (Completed)
