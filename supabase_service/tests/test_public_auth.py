@@ -102,28 +102,26 @@ def test_register_clinician(test_clinician_credentials):
     assert "Clinician registered successfully" in response.json()["message"]
 
 @pytest.mark.depends(on=['test_register_patient'])
-def test_login_patient(test_patient_credentials):
-    """Tests that a newly registered patient can log in."""
+def test_login_patient_unconfirmed(test_patient_credentials):
+    """Tests that a newly registered patient cannot log in before confirming their email."""
     response = client.post("/auth/login", json={
         "email": test_patient_credentials["email"],
         "password": test_patient_credentials["password"]
     })
-    assert response.status_code == 200, response.text
+    assert response.status_code == 401, response.text
     data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
+    assert "Email not confirmed" in data["detail"]
 
 @pytest.mark.depends(on=['test_register_clinician'])
-def test_login_clinician(test_clinician_credentials):
-    """Tests that a newly registered clinician can log in."""
+def test_login_clinician_unconfirmed(test_clinician_credentials):
+    """Tests that a newly registered clinician cannot log in before confirming their email."""
     response = client.post("/auth/login", json={
         "email": test_clinician_credentials["email"],
         "password": test_clinician_credentials["password"]
     })
-    assert response.status_code == 200, response.text
+    assert response.status_code == 401, response.text
     data = response.json()
-    assert "access_token" in data
-    assert data["token_type"] == "bearer"
+    assert "Email not confirmed" in data["detail"]
 
 @pytest.mark.skipif(not ADMIN_EMAIL or not ADMIN_PASSWORD, reason="Admin test credentials (TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) not provided in .env file")
 def test_login_admin():

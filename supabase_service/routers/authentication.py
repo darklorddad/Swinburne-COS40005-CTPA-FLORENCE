@@ -64,7 +64,7 @@ async def register_user(user_data: UserRegistration):
         user_session = supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
-            "email_confirm": True,  # Require email confirmation.
+            "email_confirm": False, # Send email confirmation link, do not auto-confirm.
             "app_metadata": {"role": user_data.role}
         })
         new_user = user_session.user
@@ -72,7 +72,10 @@ async def register_user(user_data: UserRegistration):
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
     except AuthApiError as e:
-        raise HTTPException(status_code=400, detail=f"User registration failed: {e.message}")
+        # Return a generic error to prevent user enumeration.
+        # The actual error can be monitored in server logs.
+        print(f"Registration AuthApiError: {e.message}")
+        raise HTTPException(status_code=400, detail="User registration failed. Please check your details and try again.")
     
     try:
         if user_data.role == 'PATIENT':
