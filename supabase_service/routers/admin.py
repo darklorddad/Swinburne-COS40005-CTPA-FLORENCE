@@ -8,6 +8,8 @@ import traceback
 
 from ..client import supabase
 from .authentication import get_current_admin_user
+from ..core.constants import DEFAULT_THRESHOLDS
+from ..models import MonitorDataType
 
 # --- Pydantic Models ---
 
@@ -96,15 +98,6 @@ class DailyLogAdminUpdate(BaseModel):
     glucose_after_meal: Optional[float] = None
     meal_desc: Optional[str] = None
 
-class MonitorDataType(str, Enum):
-    BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
-    BLOOD_PRESSURE_DIASTOLIC = 'BLOOD_PRESSURE_DIASTOLIC'
-    GLUCOSE = 'GLUCOSE'
-    BMI = 'BMI'
-    HBA1C = 'HBA1C'
-    ECG = 'ECG'
-    CHOLESTEROL = 'CHOLESTEROL'
-
 class MonitorDataAdminCreate(BaseModel):
     patient_id: int
     data_type: MonitorDataType
@@ -124,17 +117,6 @@ class PatientThresholdAdminUpdate(BaseModel):
 class ClinicianNoteAdminUpdate(BaseModel):
     note_content: Optional[str] = None
 
-
-DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
-    {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-    {'data_type': 'CHOLESTEROL', 'min_value': 100.0, 'max_value': 199.0},
-    {'data_type': 'ECG', 'min_value': 60.0, 'max_value': 100},
-    {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120},
-    {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80}
-]
-
 # --- Router Definition ---
 
 router = APIRouter(
@@ -149,21 +131,16 @@ router = APIRouter(
 async def get_all_patients():
     """Retrieves a list of all patient profiles in the system."""
     try:
-        # Select specific fields and related data from foreign tables
+        # Select all columns from patient_profiles and related data from foreign tables
         patients_response = supabase.table('patient_profiles').select(
-            "name, phone_number, gender, date_of_birth, "
-            "emergency_contact_name, emergency_contact_relationship, emergency_contact_phone, "
-            "risk_level, last_risk_assessment, "
+            "*, "
             "organisations(name), "
             "clinician_profiles(name)"
         ).execute()
 
-        # Process the data to create the desired flat structure
-        processed_patients = []
-        for patient in patients_response.data:
-            org_data = patient.get('organisations')
-            clinician_data = patient.get('clinician_profiles')
-            
+        # Add calculated age to each patient profile
+        patients = patients_response.data
+        for patient in patients:
             age = None
             dob_str = patient.get("date_of_birth")
             if dob_str:
@@ -173,24 +150,9 @@ async def get_all_patients():
                     age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
                 except (ValueError, TypeError):
                     age = None
-
-            processed_patient = {
-                "Name": patient.get("name"),
-                "Phone Number": patient.get("phone_number"),
-                "Gender": patient.get("gender"),
-                "Date of Birth": patient.get("date_of_birth"),
-                "Age": age,
-                "Organisation Name": org_data.get("name") if org_data else None,
-                "Emergency Contact Name": patient.get("emergency_contact_name"),
-                "Emergency Contact Relationship": patient.get("emergency_contact_relationship"),
-                "Emergency Contact Phone Number": patient.get("emergency_contact_phone"),
-                "Clinician Name": clinician_data.get("name") if clinician_data else None,
-                "Risk Level": patient.get("risk_level"),
-                "Last Risk Assessment": patient.get("last_risk_assessment")
-            }
-            processed_patients.append(processed_patient)
+            patient['age'] = age
             
-        return processed_patients
+        return patients
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 
@@ -257,27 +219,20 @@ async def get_all_clinicians():
     try:
         # Fetch clinicians with their organisation and assigned patients' names
         clinicians_response = supabase.table('clinician_profiles').select(
-            "name, phone_number, gender, "
+            "*, " # Select all columns from clinician_profiles
             "organisations(name), "
             "patient_profiles(name)"
         ).execute()
 
-        # Process the data to create the desired flat structure
-        processed_clinicians = []
-        for clinician in clinicians_response.data:
-            org_data = clinician.get('organisations')
+        # Process the data to simplify the nested patient list
+        clinicians = clinicians_response.data
+        for clinician in clinicians:
+            # Replace the list of patient profile objects with just a list of names for simplicity
             patients_data = clinician.get('patient_profiles', [])
+            clinician['assigned_patients'] = [patient['name'] for patient in patients_data if patient.get('name')]
+            del clinician['patient_profiles'] # Remove the original nested list
             
-            processed_clinician = {
-                "Name": clinician.get("name"),
-                "Phone Number": clinician.get("phone_number"),
-                "Gender": clinician.get("gender"),
-                "Organisation Name": org_data.get("name") if org_data else None,
-                "Assigned Patients": [patient['name'] for patient in patients_data if patient.get('name')]
-            }
-            processed_clinicians.append(processed_clinician)
-            
-        return processed_clinicians
+        return clinicians
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
 
@@ -352,24 +307,11 @@ async def get_all_daily_logs():
     """Retrieves a list of all daily patient logs with patient names."""
     try:
         logs_response = supabase.table('daily_patient_logs').select(
-            "log_date, meal_time, meal_desc, glucose_before_meal, glucose_after_meal, "
+            "*, " # Select all columns from daily_patient_logs
             "patient_profiles(name)"
         ).execute()
-
-        processed_logs = []
-        for log in logs_response.data:
-            patient_data = log.get('patient_profiles')
-            processed_log = {
-                "Patient Name": patient_data.get("name") if patient_data else None,
-                "Meal Time": log.get("meal_time"),
-                "Description": log.get("meal_desc"),
-                "Glucose Before Meal": log.get("glucose_before_meal"),
-                "Glucose After Meal": log.get("glucose_after_meal"),
-                "Log Date": log.get("log_date")
-            }
-            processed_logs.append(processed_log)
         
-        return processed_logs
+        return logs_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
@@ -416,38 +358,24 @@ async def delete_daily_log_by_admin(log_id: int):
 @router.get("/monitor-data", summary="Get a list of all patient monitor data")
 async def get_all_monitor_data():
     """Retrieves a list of all patient monitor data points with patient names."""
-    
-    # Define units for each data type
-    UNITS = {
-        'BLOOD_PRESSURE_SYSTOLIC': 'mmHg',
-        'BLOOD_PRESSURE_DIASTOLIC': 'mmHg',
-        'GLUCOSE': 'mg/dL',
-        'BMI': 'kg/m²',
-        'HBA1C': '%',
-        'ECG': 'bpm',
-        'CHOLESTEROL': 'mg/dL'
-    }
-
     try:
         data_response = supabase.table('patient_monitor_data').select(
-            "data_type, value, measured_at, "
+            "*, " # Select all columns from patient_monitor_data
             "patient_profiles(name)"
         ).execute()
 
-        processed_data = []
+        # Add unit information to each data point
         for item in data_response.data:
-            patient_data = item.get('patient_profiles')
-            data_type = item.get("data_type")
-            processed_item = {
-                "Patient Name": patient_data.get("name") if patient_data else None,
-                "Type": data_type,
-                "Unit": UNITS.get(data_type, "N/A"),
-                "Value": item.get("value"),
-                "Measured at": item.get("measured_at")
-            }
-            processed_data.append(processed_item)
+            data_type_str = item.get("data_type")
+            if data_type_str:
+                try:
+                    item['unit'] = MonitorDataType(data_type_str).unit
+                except ValueError:
+                    item['unit'] = 'N/A' # Handle cases where data_type is not in the enum
+            else:
+                item['unit'] = 'N/A'
         
-        return processed_data
+        return data_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
 
@@ -491,22 +419,11 @@ async def get_all_thresholds():
     """Retrieves a list of all patient thresholds with patient names."""
     try:
         thresholds_response = supabase.table('patient_thresholds').select(
-            "data_type, min_value, max_value, "
+            "*, " # Select all columns from patient_thresholds
             "patient_profiles(name)"
         ).execute()
-
-        processed_thresholds = []
-        for threshold in thresholds_response.data:
-            patient_data = threshold.get('patient_profiles')
-            processed_threshold = {
-                "Patient Name": patient_data.get("name") if patient_data else None,
-                "Type": threshold.get("data_type"),
-                "Minimum": threshold.get("min_value"),
-                "Maximum": threshold.get("max_value")
-            }
-            processed_thresholds.append(processed_threshold)
         
-        return processed_thresholds
+        return thresholds_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
 

@@ -7,6 +7,7 @@ from enum import Enum
 import math
 
 from ..client import supabase
+from ..models import MonitorDataType
 
 # --- Helper Functions / Dependencies ---
 
@@ -68,15 +69,6 @@ class PatientProfileUpdate(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
-
-class MonitorDataType(str, Enum):
-    BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
-    BLOOD_PRESSURE_DIASTOLIC = 'BLOOD_PRESSURE_DIASTOLIC'
-    GLUCOSE = 'GLUCOSE'
-    BMI = 'BMI'
-    HBA1C = 'HBA1C'
-    ECG = 'ECG'
-    CHOLESTEROL = 'CHOLESTEROL'
 
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
