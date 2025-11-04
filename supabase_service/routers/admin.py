@@ -682,20 +682,15 @@ async def delete_patient_by_admin(patient_id: int):
         patient_profile = patient_profile_res.data
         user_id = patient_profile.get("user_id")
 
-        # Step 2: If patient is assigned to a clinician, remove related data (e.g., notes).
-        # This prevents foreign key violations if ON DELETE CASCADE is not set.
-        if patient_profile.get("clinician_id"):
-            supabase.table('clinician_notes').delete().eq('patient_id', patient_id).execute()
-
-        # Step 3: Delete the patient's profile from the database.
-        # Note: This assumes other dependencies (monitor data, logs) are handled by CASCADE.
+        # Step 2: Delete the patient's profile from the database.
+        # Note: Related data (monitor data, logs, notes) is deleted automatically by 'ON DELETE CASCADE' in the database schema.
         deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
         
         if not deleted_profile_response.data:
             # This is a safeguard; it shouldn't be reached if the initial fetch succeeded.
             raise HTTPException(status_code=500, detail=f"Failed to delete patient profile {patient_id} after it was found.")
         
-        # Step 4: If there's an associated auth user, delete them.
+        # Step 3: If there's an associated auth user, delete them.
         if not user_id:
             return {"message": f"Patient profile with id {patient_id} deleted, but no associated auth user to delete."}
 
