@@ -6,3 +6,4 @@ supabase>=2.0.0
 python-dotenv
 passlib[bcrypt]
 python-jose[cryptography]
+pytest-dependency
