@@ -288,7 +288,7 @@ async def get_own_daily_logs(
             query = query.eq('meal_time', meal_time.value)
         
         # 3. Apply sorting and pagination
-        query = query.order('log_date', desc=True).order('meal_time', desc=True).range(from_row, to_row)
+        query = query.order('log_date', desc=True).order('id', desc=True).range(from_row, to_row)
 
         # Execute the query
         response = await query.execute()
