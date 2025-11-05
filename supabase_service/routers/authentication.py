@@ -162,8 +162,12 @@ async def register_admin(user_data: AdminRegistration):
         profile_res = await supabase_admin_client.table('admin_profiles').insert(profile_data).execute()
 
         if not profile_res.data:
-            # If profile creation fails, roll back the auth user creation
-            await supabase_admin_client.auth.admin.delete_user(new_user.id)
+            # If profile creation fails, attempt to roll back the auth user creation.
+            try:
+                await supabase_admin_client.auth.admin.delete_user(new_user.id)
+            except Exception as rollback_error:
+                # Log the critical failure but raise the original error to the client.
+                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
             raise HTTPException(status_code=500, detail="Failed to create admin profile after user creation.")
 
         return {"message": "Admin registered successfully."}
