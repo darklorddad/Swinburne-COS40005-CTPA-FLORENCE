@@ -163,6 +163,12 @@ async def register_admin(user_data: AdminRegistration):
 
         return {"message": "Admin registered successfully."}
     except AuthApiError as e:
+        logging.warning(f"Admin registration failed: {e.message}")
+        if "User already registered" in e.message:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail="An admin with this email address already exists."
+            )
         raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")
     except Exception as e:
         # Ensure rollback if any other exception occurs after user creation

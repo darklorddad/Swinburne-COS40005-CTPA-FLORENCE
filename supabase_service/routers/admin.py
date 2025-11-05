@@ -834,17 +834,25 @@ async def delete_patient_by_admin(patient_id: int):
         patient_profile_res = await supabase_admin_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
         user_id = patient_profile_res.data.get("user_id")
 
-        # Step 2: Delete the associated auth user.
+        # Step 2: Ensure a user_id exists before proceeding.
+        if not user_id:
+            # This indicates an orphaned profile, which is a server-side data integrity issue.
+            logging.error(f"Patient profile {patient_id} exists but has no associated user_id. Manual cleanup required.")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Cannot delete patient {patient_id}: data integrity issue (no associated auth user)."
+            )
+
+        # Step 3: Delete the associated auth user.
         # The 'ON DELETE CASCADE' on the 'patient_profiles' table will automatically delete the profile.
-        if user_id:
-            try:
-                await supabase_admin_client.auth.admin.delete_user(user_id)
-            except Exception as auth_error:
-                # If auth user deletion fails, the profile remains, which is safe.
-                raise HTTPException(
-                    status_code=500, 
-                    detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
-                )
+        try:
+            await supabase_admin_client.auth.admin.delete_user(user_id)
+        except Exception as auth_error:
+            # If auth user deletion fails, the profile remains, which is safe.
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
+            )
         
         return {"message": f"Patient profile with id {patient_id} and associated auth user deleted successfully."}
     except APIError as e:
