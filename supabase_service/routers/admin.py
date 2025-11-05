@@ -8,17 +8,12 @@ from supabase_auth.errors import AuthApiError
 from postgrest.exceptions import APIError
 import traceback
 
-from ..client import supabase
+from ..client import supabase_admin_client
 from .authentication import get_current_admin_user
-from ..models import MonitorDataType
+from ..models import MonitorDataType, UserRole, RiskLevel, MealTime
 from ..core.utils import calculate_age, create_paginated_response, ensure_not_empty
 
 # --- Pydantic Models ---
-
-class RiskLevel(str, Enum):
-    LOW = 'LOW'
-    MEDIUM = 'MEDIUM'
-    HIGH = 'HIGH'
 
 class PatientAdminCreate(BaseModel):
     email: EmailStr
@@ -71,11 +66,6 @@ class OrganisationAdminCreate(BaseModel):
     name: str
 
 # --- New Pydantic Models for Admin Updates ---
-
-class MealTime(str, Enum):
-    BREAKFAST = 'BREAKFAST'
-    LUNCH = 'LUNCH'
-    DINNER = 'DINNER'
 
 class DailyLogAdminCreate(BaseModel):
     patient_id: int
@@ -244,7 +234,7 @@ async def get_all_patients(
         to_row = from_row + page_size - 1
 
         # Select all columns from patient_profiles and related data from foreign tables
-        query = supabase.table('patient_profiles').select(
+        query = supabase_admin_client.table('patient_profiles').select(
             "*, "
             "organisations(name), "
             "clinician_profiles(name)",
@@ -265,7 +255,8 @@ async def get_all_patients(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
+        logging.error(f"Failed to retrieve patients: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/patients", summary="Add a new patient")
@@ -274,11 +265,11 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
     new_user = None
     try:
         # Step 1: Create the user in Supabase Auth
-        user_session = await supabase.auth.admin.create_user({
+        user_session = await supabase_admin_client.auth.admin.create_user({
             "email": patient_data.email,
             "password": patient_data.password,
             "email_confirm": True,  # Auto-confirm user
-            "app_metadata": {"role": "PATIENT"}
+            "app_metadata": {"role": UserRole.PATIENT.value}
         })
         new_user = user_session.user
         if not new_user:
@@ -299,7 +290,7 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
             "p_clinician_id": patient_data.clinician_id,
         }
         
-        patient_profile_res = await supabase.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
+        patient_profile_res = await supabase_admin_client.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
 
         if not patient_profile_res.data:
             raise Exception("Failed to create patient profile and thresholds in database via RPC.")
@@ -317,11 +308,11 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
             try:
-                await supabase.auth.admin.delete_user(new_user.id)
+                await supabase_admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         # The original error is the most important one to report.
-        raise HTTPException(status_code=500, detail=f"Failed to create patient: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An internal server error occurred during patient creation.")
 
 
 @router.get("/clinicians", summary="Get a list of all clinicians and their assigned patients", response_model=PaginatedCliniciansResponse)
@@ -335,7 +326,7 @@ async def get_all_clinicians(
         to_row = from_row + page_size - 1
 
         # Fetch clinicians with their organisation and assigned patients' names
-        query = supabase.table('clinician_profiles').select(
+        query = supabase_admin_client.table('clinician_profiles').select(
             "*, " # Select all columns from clinician_profiles
             "organisations(name), "
             "patient_profiles(name)",
@@ -360,7 +351,8 @@ async def get_all_clinicians(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
+        logging.error(f"Failed to retrieve clinicians: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/clinicians", summary="Add a new clinician")
@@ -369,16 +361,16 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
     new_user = None
     try:
         # Step 1: Validate that the organisation exists before creating a user.
-        org_check = await supabase.table('organisations').select('id', count='exact').eq('id', clinician_data.organisation_id).execute()
+        org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', clinician_data.organisation_id).execute()
         if org_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Organisation with id {clinician_data.organisation_id} not found.")
 
         # Step 2: Create the user in Supabase Auth
-        user_session = await supabase.auth.admin.create_user({
+        user_session = await supabase_admin_client.auth.admin.create_user({
             "email": clinician_data.email,
             "password": clinician_data.password,
             "email_confirm": True,  # Auto-confirm user
-            "app_metadata": {"role": "CLINICIAN"}
+            "app_metadata": {"role": UserRole.CLINICIAN.value}
         })
         new_user = user_session.user
         if not new_user:
@@ -392,7 +384,7 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
             "p_gender": clinician_data.gender,
             "p_organisation_id": clinician_data.organisation_id,
         }
-        clinician_profile_res = await supabase.rpc('create_clinician_with_profile', rpc_params).execute()
+        clinician_profile_res = await supabase_admin_client.rpc('create_clinician_with_profile', rpc_params).execute()
         if not clinician_profile_res.data:
             raise Exception("Failed to create clinician profile in database via RPC.")
         
@@ -409,11 +401,11 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
             try:
-                await supabase.auth.admin.delete_user(new_user.id)
+                await supabase_admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         # The original error is the most important one to report.
-        raise HTTPException(status_code=500, detail=f"Failed to create clinician: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"An internal server error occurred during clinician creation.")
 
 
 @router.get("/organisations", summary="Get a list of all organisations", response_model=PaginatedOrganisationsResponse)
@@ -426,7 +418,7 @@ async def get_all_organisations(
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase.table('organisations').select('*', count='exact').order('id', desc=True).range(from_row, to_row)
+        query = supabase_admin_client.table('organisations').select('*', count='exact').order('id', desc=True).range(from_row, to_row)
         organisations_response = await query.execute()
         
         return create_paginated_response(
@@ -436,19 +428,21 @@ async def get_all_organisations(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
+        logging.error(f"Failed to retrieve organisations: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/organisations", summary="Add a new organisation")
 async def add_organisation_by_admin(org_data: OrganisationAdminCreate):
     """Creates a new organisation."""
     try:
-        response = await supabase.table('organisations').insert({"name": org_data.name}).execute()
+        response = await supabase_admin_client.table('organisations').insert({"name": org_data.name}).execute()
         if not response.data:
             raise HTTPException(status_code=500, detail="Failed to create organisation.")
         return response.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create organisation: {str(e)}")
+        logging.error(f"Failed to create organisation: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.get("/daily-logs", summary="Get a list of all daily patient logs", response_model=PaginatedDailyLogsResponse)
@@ -461,7 +455,7 @@ async def get_all_daily_logs(
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase.table('daily_patient_logs').select(
+        query = supabase_admin_client.table('daily_patient_logs').select(
             "*, " # Select all columns from daily_patient_logs
             "patient_profiles(name)",
             count='exact'
@@ -476,7 +470,8 @@ async def get_all_daily_logs(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
+        logging.error(f"Failed to retrieve daily logs: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/daily-logs", summary="Add a daily patient log")
@@ -486,11 +481,11 @@ async def add_daily_log_by_admin(log_data: DailyLogAdminCreate):
         insert_dict = log_data.model_dump(mode='json')
         
         # Check if patient exists
-        patient_check = await supabase.table('patient_profiles').select('id', count='exact').eq('id', log_data.patient_id).execute()
+        patient_check = await supabase_admin_client.table('patient_profiles').select('id', count='exact').eq('id', log_data.patient_id).execute()
         if patient_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Patient with id {log_data.patient_id} not found.")
 
-        new_log_response = await supabase.table('daily_patient_logs').insert(insert_dict).execute()
+        new_log_response = await supabase_admin_client.table('daily_patient_logs').insert(insert_dict).execute()
         if not new_log_response.data:
             raise HTTPException(status_code=500, detail="Failed to create daily log.")
         return new_log_response.data[0]
@@ -503,21 +498,23 @@ async def add_daily_log_by_admin(log_data: DailyLogAdminCreate):
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
+        logging.error(f"Failed to add daily log: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.delete("/daily-logs/{log_id}", summary="Remove a daily patient log")
 async def delete_daily_log_by_admin(log_id: int):
     """Deletes a daily patient log entry by its ID."""
     try:
-        response = await supabase.table('daily_patient_logs').delete().eq('id', log_id).execute()
+        response = await supabase_admin_client.table('daily_patient_logs').delete().eq('id', log_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Daily log with id {log_id} not found.")
         return {"message": f"Daily log with id {log_id} deleted successfully."}
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete daily log: {str(e)}")
+        logging.error(f"Failed to delete daily log: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.get("/monitor-data", summary="Get a list of all patient monitor data", response_model=PaginatedMonitorDataResponse)
@@ -530,7 +527,7 @@ async def get_all_monitor_data(
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase.table('patient_monitor_data').select(
+        query = supabase_admin_client.table('patient_monitor_data').select(
             "*, " # Select all columns from patient_monitor_data
             "patient_profiles(name)",
             count='exact'
@@ -556,7 +553,8 @@ async def get_all_monitor_data(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
+        logging.error(f"Failed to retrieve monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/monitor-data", summary="Add a patient monitor data point")
@@ -565,32 +563,34 @@ async def add_monitor_data_by_admin(data: MonitorDataAdminCreate):
     insert_dict = data.model_dump(mode='json')
     try:
         # Check if patient exists
-        patient_check = await supabase.table('patient_profiles').select('id', count='exact').eq('id', data.patient_id).execute()
+        patient_check = await supabase_admin_client.table('patient_profiles').select('id', count='exact').eq('id', data.patient_id).execute()
         if patient_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Patient with id {data.patient_id} not found.")
 
-        new_data_response = await supabase.table('patient_monitor_data').insert(insert_dict).execute()
+        new_data_response = await supabase_admin_client.table('patient_monitor_data').insert(insert_dict).execute()
         if not new_data_response.data:
             raise HTTPException(status_code=500, detail="Failed to create monitor data point.")
         return new_data_response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add monitor data: {str(e)}")
+        logging.error(f"Failed to add monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.delete("/monitor-data/{data_id}", summary="Remove a patient monitor data point")
 async def delete_monitor_data_by_admin(data_id: int):
     """Deletes a patient monitor data point by its ID."""
     try:
-        response = await supabase.table('patient_monitor_data').delete().eq('id', data_id).execute()
+        response = await supabase_admin_client.table('patient_monitor_data').delete().eq('id', data_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Monitor data with id {data_id} not found.")
         return {"message": f"Monitor data with id {data_id} deleted successfully."}
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete monitor data: {str(e)}")
+        logging.error(f"Failed to delete monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.get("/thresholds", summary="Get a list of all patient thresholds", response_model=PaginatedThresholdsResponse)
@@ -603,7 +603,7 @@ async def get_all_thresholds(
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase.table('patient_thresholds').select(
+        query = supabase_admin_client.table('patient_thresholds').select(
             "*, " # Select all columns from patient_thresholds
             "patient_profiles(name)",
             count='exact'
@@ -618,7 +618,8 @@ async def get_all_thresholds(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+        logging.error(f"Failed to retrieve thresholds: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/patients/{patient_id}", summary="Edit any patient (including risk level)")
@@ -628,14 +629,15 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
     ensure_not_empty(update_dict)
 
     try:
-        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
+        updated_profile_response = await supabase_admin_client.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
         return updated_profile_response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update patient profile: {str(e)}")
+        logging.error(f"Failed to update patient profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/clinicians/{clinician_id}", summary="Edit any clinician")
@@ -645,14 +647,15 @@ async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianPro
     ensure_not_empty(update_dict)
 
     try:
-        updated_profile_response = await supabase.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
+        updated_profile_response = await supabase_admin_client.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
         return updated_profile_response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update clinician profile: {str(e)}")
+        logging.error(f"Failed to update clinician profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/organisations/{organisation_id}", summary="Edit any organisation")
@@ -662,14 +665,15 @@ async def update_organisation_by_admin(organisation_id: int, update_data: Organi
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase.table('organisations').update(update_dict).eq('id', organisation_id).execute()
+        response = await supabase_admin_client.table('organisations').update(update_dict).eq('id', organisation_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Organisation with id {organisation_id} not found.")
         return response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update organisation: {str(e)}")
+        logging.error(f"Failed to update organisation: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.delete("/organisations/{organisation_id}", summary="Remove any organisation")
@@ -680,7 +684,7 @@ async def delete_organisation_by_admin(organisation_id: int):
     """
     try:
         # Step 1: Check if any clinicians are assigned to this organisation.
-        clinician_check = await supabase.table('clinician_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
+        clinician_check = await supabase_admin_client.table('clinician_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
         if clinician_check.count > 0:
             raise HTTPException(
                 status_code=409, # Conflict
@@ -688,7 +692,7 @@ async def delete_organisation_by_admin(organisation_id: int):
             )
 
         # Step 2: Check if any patients are assigned to this organisation.
-        patient_check = await supabase.table('patient_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
+        patient_check = await supabase_admin_client.table('patient_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
         if patient_check.count > 0:
             raise HTTPException(
                 status_code=409, # Conflict
@@ -696,7 +700,7 @@ async def delete_organisation_by_admin(organisation_id: int):
             )
 
         # Step 3: Delete the organisation.
-        response = await supabase.table('organisations').delete().eq('id', organisation_id).execute()
+        response = await supabase_admin_client.table('organisations').delete().eq('id', organisation_id).execute()
 
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Organisation with id {organisation_id} not found.")
@@ -705,7 +709,8 @@ async def delete_organisation_by_admin(organisation_id: int):
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete organisation: {str(e)}")
+        logging.error(f"Failed to delete organisation: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/daily-logs/{log_id}", summary="Edit any daily patient log")
@@ -715,14 +720,15 @@ async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdat
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase.table('daily_patient_logs').update(update_dict).eq('id', log_id).execute()
+        response = await supabase_admin_client.table('daily_patient_logs').update(update_dict).eq('id', log_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Daily log with id {log_id} not found.")
         return response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update daily log: {str(e)}")
+        logging.error(f"Failed to update daily log: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/monitor-data/{data_id}", summary="Edit any patient monitor data point")
@@ -732,14 +738,15 @@ async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdm
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
+        response = await supabase_admin_client.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Monitor data with id {data_id} not found.")
         return response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
+        logging.error(f"Failed to update monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/thresholds/{threshold_id}", summary="Edit any patient threshold")
@@ -749,14 +756,15 @@ async def update_patient_threshold_by_admin(threshold_id: int, update_data: Pati
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase.table('patient_thresholds').update(update_dict).eq('id', threshold_id).execute()
+        response = await supabase_admin_client.table('patient_thresholds').update(update_dict).eq('id', threshold_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Threshold with id {threshold_id} not found.")
         return response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update threshold: {str(e)}")
+        logging.error(f"Failed to update threshold: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/notes/{note_id}", summary="Edit any clinician note")
@@ -766,14 +774,15 @@ async def update_clinician_note_by_admin(note_id: int, update_data: ClinicianNot
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase.table('clinician_notes').update(update_dict).eq('id', note_id).execute()
+        response = await supabase_admin_client.table('clinician_notes').update(update_dict).eq('id', note_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Note with id {note_id} not found.")
         return response.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update note: {str(e)}")
+        logging.error(f"Failed to update note: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.delete("/patients/{patient_id}", summary="Remove any patient")
@@ -784,14 +793,14 @@ async def delete_patient_by_admin(patient_id: int):
     """
     try:
         # Step 1: Retrieve the patient's profile to get their user_id.
-        patient_profile_res = await supabase.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+        patient_profile_res = await supabase_admin_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
         user_id = patient_profile_res.data.get("user_id")
 
         # Step 2: Delete the associated auth user.
         # The 'ON DELETE CASCADE' on the 'patient_profiles' table will automatically delete the profile.
         if user_id:
             try:
-                await supabase.auth.admin.delete_user(user_id)
+                await supabase_admin_client.auth.admin.delete_user(user_id)
             except Exception as auth_error:
                 # If auth user deletion fails, the profile remains, which is safe.
                 raise HTTPException(
@@ -807,7 +816,8 @@ async def delete_patient_by_admin(patient_id: int):
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete patient: {str(e)}")
+        logging.error(f"Failed to delete patient: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.delete("/clinicians/{clinician_id}", summary="Remove any clinician")
@@ -818,16 +828,17 @@ async def delete_clinician_by_admin(clinician_id: int):
     """
     try:
         # Call the database function to perform the deletion atomically.
-        await supabase.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
+        await supabase_admin_client.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
 
         return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
     except APIError as e:
         # The RPC function will raise an exception if the clinician is not found.
-        # We check for the specific message from our RPC.
-        if f"Clinician with id {clinician_id} not found." in e.message:
+        # Check for keywords in the message to make this less brittle.
+        if "not found" in e.message.lower():
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
         raise HTTPException(status_code=500, detail=f"Database error during clinician deletion: {e.message}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete clinician: {str(e)}")
+        logging.error(f"Failed to delete clinician: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 

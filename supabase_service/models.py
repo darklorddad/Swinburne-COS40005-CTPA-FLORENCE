@@ -1,5 +1,24 @@
 from enum import Enum
 
+class UserRole(str, Enum):
+    ADMIN = 'ADMIN'
+    CLINICIAN = 'CLINICIAN'
+    PATIENT = 'PATIENT'
+
+class PublicUserRole(str, Enum):
+    PATIENT = 'PATIENT'
+    CLINICIAN = 'CLINICIAN'
+
+class RiskLevel(str, Enum):
+    LOW = 'LOW'
+    MEDIUM = 'MEDIUM'
+    HIGH = 'HIGH'
+
+class MealTime(str, Enum):
+    BREAKFAST = 'BREAKFAST'
+    LUNCH = 'LUNCH'
+    DINNER = 'DINNER'
+
 class MonitorDataType(str, Enum):
     BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
     BLOOD_PRESSURE_DIASTOLIC = 'BLOOD_PRESSURE_DIASTOLIC'

@@ -1,24 +1,18 @@
 import os
-import httpx
 from pathlib import Path
 from supabase import create_async_client, AsyncClient, ClientOptions
 from dotenv import load_dotenv
 from typing import Optional, Any
 
-class _SupabaseClientProxy:
+# --- Client Proxies for Lazy Initialisation ---
+
+class _SupabaseAdminClientProxy:
+    """A proxy to lazily initialise the admin (service role) Supabase client."""
     _client: Optional[AsyncClient] = None
 
     def _get_client(self) -> AsyncClient:
-        """
-        Initialises and returns the Supabase client instance, ensuring it's a singleton.
-        This lazy initialisation solves issues where environment variables might not be
-        loaded at import time, especially during test runs.
-        """
         if self._client is None:
-            # Load environment variables from .env file in the project root.
             project_root = Path(__file__).resolve().parent.parent
-            # By default, load_dotenv does not override existing environment variables.
-            # This allows Vercel's environment variables to take precedence.
             load_dotenv(dotenv_path=project_root / '.env')
 
             url: str = os.environ.get("SUPABASE_URL")
@@ -26,28 +20,44 @@ class _SupabaseClientProxy:
 
             if not url or not key:
                 raise RuntimeError(
-                    "Supabase URL and Service Key could not be loaded. "
-                    "Ensure you have a .env file in the project root with SUPABASE_URL and SUPABASE_SERVICE_KEY."
+                    "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in your environment."
                 )
-
-            # Configure client with a timeout.
-            options = ClientOptions(
-                postgrest_client_timeout=10,
-                storage_client_timeout=10,
-            )
-
-            self._client = create_async_client(url, key, options=options)
-        
+            
+            self._client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
         return self._client
 
     def __getattr__(self, name: str) -> Any:
-        """
-        Delegates attribute access to the actual Supabase client,
-        initialising it if necessary.
-        """
-        client = self._get_client()
-        return getattr(client, name)
+        return getattr(self._get_client(), name)
 
-# The global supabase object is an instance of the proxy.
-# The actual client will be created only on first use.
-supabase: AsyncClient = _SupabaseClientProxy()
+class _SupabaseAnonClientProxy:
+    """A proxy to lazily initialise the anonymous Supabase client."""
+    _client: Optional[AsyncClient] = None
+
+    def _get_client(self) -> AsyncClient:
+        if self._client is None:
+            project_root = Path(__file__).resolve().parent.parent
+            load_dotenv(dotenv_path=project_root / '.env')
+
+            url: str = os.environ.get("SUPABASE_URL")
+            key: str = os.environ.get("SUPABASE_ANON_KEY")
+
+            if not url or not key:
+                raise RuntimeError(
+                    "SUPABASE_URL and SUPABASE_ANON_KEY must be set in your environment."
+                )
+
+            self._client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
+        return self._client
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._get_client(), name)
+
+# --- Exported Client Instances ---
+
+# The admin client uses the SERVICE_KEY and bypasses RLS.
+# Use this for administrative tasks and user management.
+supabase_admin_client: AsyncClient = _SupabaseAdminClientProxy()
+
+# The anonymous client uses the ANON_KEY.
+# Use this for public operations like login.
+supabase_anon_client: AsyncClient = _SupabaseAnonClientProxy()

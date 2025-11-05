@@ -1,58 +1,37 @@
 import logging
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from supabase_auth.errors import AuthApiError
 from postgrest.exceptions import APIError
-from enum import Enum
-from datetime import date, datetime, timedelta
-from gotrue.types import User
+from supabase.lib.client_async import AsyncClient
 
-from ..client import supabase
-from ..core.dependencies import get_current_user
+from ..client import supabase_admin_client
+from ..core.dependencies import get_user_supabase_client
 from ..core.utils import calculate_age, create_paginated_response
+from ..models import RiskLevel
 
 # --- Helper Functions / Dependencies ---
 
-async def verify_patient_assignment(patient_id: int, clinician_id: int):
+async def get_current_clinician_profile(supabase: AsyncClient = Depends(get_user_supabase_client)):
     """
-    Verifies that a patient is assigned to the specified clinician.
-    Raises HTTPException 404 if not found or not assigned.
-    """
-    try:
-        await supabase.table('patient_profiles').select('id').eq('id', patient_id).eq('clinician_id', clinician_id).single().execute()
-    except APIError as e:
-        if e.code == "PGRST116": # Not found
-            raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
-        raise HTTPException(status_code=500, detail=f"Database error verifying patient assignment: {e.message}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
-
-
-async def get_current_clinician_profile(user: User = Depends(get_current_user)):
-    """
-    Dependency to get the current user, verify they are a clinician,
-    and return their full profile from the `clinician_profiles` table.
+    Dependency to get the current user's clinician profile.
+    RLS ensures this only succeeds if the user is a clinician.
     """
     try:
-        # Fetch the clinician profile using the user's ID. This serves as the role check.
-        profile_response = await supabase.table('clinician_profiles').select('*').eq('user_id', user.id).single().execute()
-        
+        # RLS is active, so this select will only work if the user is a clinician.
+        profile_response = await supabase.table('clinician_profiles').select('*').single().execute()
         return profile_response.data
     except APIError as e:
         if e.code == "PGRST116": # "JSON object requested, but 0 rows returned"
-            raise HTTPException(status_code=403, detail="Access denied: User is not a clinician.")
-        raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
+            raise HTTPException(status_code=403, detail="Access denied: User is not a clinician or profile not found.")
+        logging.error(f"Database error fetching clinician profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error(f"Unexpected error fetching clinician profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 # --- Pydantic Models ---
-
-class RiskLevel(str, Enum):
-    LOW = 'LOW'
-    MEDIUM = 'MEDIUM'
-    HIGH = 'HIGH'
 
 class RiskAssessmentUpdate(BaseModel):
     risk_level: RiskLevel
@@ -94,19 +73,23 @@ async def get_own_clinician_profile(clinician_profile: dict = Depends(get_curren
 
 @router.get("/me/patients", summary="Get a list of all patients assigned to me", response_model=PaginatedAssignedPatientsResponse)
 async def get_assigned_patients(
-    clinician_profile: dict = Depends(get_current_clinician_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client),
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(20, ge=1, le=100, description="Items per page"),
 ):
-    """Retrieves a paginated list of all patients assigned to the currently authenticated clinician."""
+    """
+    Retrieves a paginated list of all patients assigned to the currently authenticated clinician.
+    RLS policies ensure that only assigned patients are returned.
+    """
     try:
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
+        # RLS on 'patient_profiles' restricts this query to only patients assigned to the current clinician.
         query = supabase.table('patient_profiles').select(
             'id, name, phone_number, risk_level',
             count='exact'
-        ).eq('clinician_id', clinician_profile['id']).order('name').range(from_row, to_row)
+        ).order('name').range(from_row, to_row)
         
         patients_response = await query.execute()
 
@@ -117,12 +100,13 @@ async def get_assigned_patients(
             page_size=page_size
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve assigned patients: {str(e)}")
+        logging.error(f"Failed to retrieve assigned patients: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 @router.get("/me/patients/{patient_id}", summary="Get full profile & data for an assigned patient only")
 async def get_assigned_patient_details(
     patient_id: int,
-    clinician_profile: dict = Depends(get_current_clinician_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client),
     # Pagination for related data
     monitor_page: int = Query(1, ge=1),
     monitor_page_size: int = Query(50, ge=1, le=100),
@@ -132,14 +116,12 @@ async def get_assigned_patient_details(
     notes_page_size: int = Query(20, ge=1, le=50),
 ):
     """
-    Retrieves the full profile and paginated related data for a single patient,
-    but only if they are assigned to the currently authenticated clinician.
+    Retrieves the full profile and paginated related data for a single patient.
+    RLS ensures this is only possible for patients assigned to the authenticated clinician.
     """
     try:
-        # 1. Verify patient is assigned to the current clinician
-        await verify_patient_assignment(patient_id, clinician_profile['id'])
-
-        # 2. Fetch patient profile
+        # RLS on 'patient_profiles' will enforce that the clinician can only fetch
+        # profiles of patients assigned to them. If not assigned, this will fail.
         profile_res = await supabase.table('patient_profiles').select('*').eq('id', patient_id).single().execute()
         profile = profile_res.data
         profile['age'] = calculate_age(profile.get("date_of_birth"))
@@ -152,7 +134,7 @@ async def get_assigned_patient_details(
         notes_from = (notes_page - 1) * notes_page_size
         notes_to = notes_from + notes_page_size - 1
 
-        # 4. Concurrently fetch all related data
+        # 4. Concurrently fetch all related data. RLS is applied to each of these queries.
         monitor_task = supabase.table('patient_monitor_data').select('*', count='exact').eq('patient_id', patient_id).order('measured_at', desc=True).range(monitor_from, monitor_to).execute()
         logs_task = supabase.table('daily_patient_logs').select('*', count='exact').eq('patient_id', patient_id).order('log_date', desc=True).range(logs_from, logs_to).execute()
         notes_task = supabase.table('clinician_notes').select('*', count='exact').eq('patient_id', patient_id).order('created_at', desc=True).range(notes_from, notes_to).execute()
@@ -187,23 +169,27 @@ async def get_assigned_patient_details(
         }
     except APIError as e:
         if e.code == "PGRST116": # "JSON object requested, but 0 rows returned"
-             # This should ideally not be reached if verify_patient_assignment passed,
-             # but could happen in a race condition (e.g., patient deleted after check).
-             raise HTTPException(status_code=404, detail="Patient not found.")
-        raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
+             # This now correctly indicates that the patient was not found OR not assigned to the clinician.
+             raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
+        logging.error(f"Database error retrieving patient details: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve patient details: {str(e)}")
+        logging.error(f"Failed to retrieve patient details: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 @router.put("/me/patients/{patient_id}/assess-risk", summary="Update the risk level for an assigned patient only")
-async def assess_patient_risk(patient_id: int, risk_data: RiskAssessmentUpdate, clinician_profile: dict = Depends(get_current_clinician_profile)):
-    """Updates the risk level for a patient assigned to the clinician."""
+async def assess_patient_risk(patient_id: int, risk_data: RiskAssessmentUpdate, supabase: AsyncClient = Depends(get_user_supabase_client)):
+    """
+    Updates the risk level for an assigned patient. RLS ensures this is only
+    possible for patients assigned to the clinician.
+    """
     try:
         update_payload = {
             "risk_level": risk_data.risk_level.value,
             "last_risk_assessment": "now()"
         }
-        # Atomically update only if the patient is assigned to the current clinician.
-        updated_patient_res = await supabase.table('patient_profiles').update(update_payload).eq('id', patient_id).eq('clinician_id', clinician_profile['id']).execute()
+        # RLS on 'patient_profiles' for UPDATE handles the authorization check.
+        updated_patient_res = await supabase.table('patient_profiles').update(update_payload).eq('id', patient_id).execute()
         
         if not updated_patient_res.data:
             raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
@@ -212,70 +198,72 @@ async def assess_patient_risk(patient_id: int, risk_data: RiskAssessmentUpdate, 
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update patient risk level: {str(e)}")
+        logging.error(f"Failed to update patient risk level: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 @router.post("/me/patients/{patient_id}/notes", summary="Add a new note for an assigned patient only")
-async def add_patient_note(patient_id: int, note_data: ClinicianNoteCreate, clinician_profile: dict = Depends(get_current_clinician_profile)):
+async def add_patient_note(
+    patient_id: int, 
+    note_data: ClinicianNoteCreate, 
+    clinician_profile: dict = Depends(get_current_clinician_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client)
+):
     """
-    Adds a clinical note to a patient, but only if they are assigned to the clinician.
+    Adds a clinical note to a patient. RLS ensures this is only possible for
+    patients assigned to the clinician.
     """
     try:
-        # 1. Verify patient is assigned to the current clinician
-        await verify_patient_assignment(patient_id, clinician_profile['id'])
-
-        # 2. Insert the note
         insert_payload = {
             "patient_id": patient_id,
             "clinician_id": clinician_profile['id'],
             "clinician_name_snapshot": clinician_profile.get('name'),
             "note_content": note_data.note_content
         }
+        # RLS policy on 'clinician_notes' for INSERT handles the authorization check.
         new_note_res = await supabase.table('clinician_notes').insert(insert_payload).execute()
         
         if not new_note_res.data:
-             # This can happen if RLS `WITH CHECK` fails, but PostgREST often returns a more specific error.
-             # We'll treat it as a generic failure to find/access the resource.
-            raise HTTPException(status_code=403, detail="Could not add note. This may be due to a permissions issue.")
+            raise HTTPException(status_code=403, detail="Could not add note. Patient may not be assigned to you or does not exist.")
 
         return new_note_res.data[0]
     except APIError as e:
-        # RLS check failure on insert/update often results in a 403 or 404 from PostgREST
         if e.code == "42501": # permission_denied
             raise HTTPException(status_code=403, detail="Access denied: You do not have permission to add a note for this patient.")
-        raise HTTPException(status_code=500, detail=f"Database error while adding note: {e.message}")
+        logging.error(f"Database error while adding note: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add note: {str(e)}")
+        logging.error(f"Failed to add note: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 @router.get("/me/patients/{patient_id}/thresholds", summary="Get thresholds for an assigned patient")
-async def get_patient_thresholds(patient_id: int, clinician_profile: dict = Depends(get_current_clinician_profile)):
+async def get_patient_thresholds(patient_id: int, supabase: AsyncClient = Depends(get_user_supabase_client)):
     """
-    Retrieves health thresholds for a patient, but only if they are assigned to the clinician.
+    Retrieves health thresholds for a patient. RLS ensures this is only possible
+    for patients assigned to the clinician.
     """
     try:
-        # 1. Verify patient is assigned to the current clinician
-        await verify_patient_assignment(patient_id, clinician_profile['id'])
-
-        # 2. Fetch the thresholds
-        thresholds = await supabase.table('patient_thresholds').select('*').eq('patient_id', patient_id).execute()
-        return thresholds.data
+        # RLS on 'patient_thresholds' for SELECT handles the authorization check.
+        thresholds_res = await supabase.table('patient_thresholds').select('*').eq('patient_id', patient_id).execute()
+        
+        # An empty list is a valid response if no thresholds are set, so we don't check for 404.
+        # RLS will have already prevented access if the patient isn't assigned.
+        return thresholds_res.data
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get thresholds: {str(e)}")
+        logging.error(f"Failed to get thresholds: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 @router.put("/me/patients/{patient_id}/thresholds", summary="Set/Update thresholds for an assigned patient")
-async def set_patient_thresholds(patient_id: int, thresholds: List[PatientThresholdUpdate], clinician_profile: dict = Depends(get_current_clinician_profile)):
+async def set_patient_thresholds(patient_id: int, thresholds: List[PatientThresholdUpdate], supabase: AsyncClient = Depends(get_user_supabase_client)):
     """
-    Sets or updates multiple health thresholds for a patient, but only if they are assigned to the clinician.
-    This uses an 'upsert' operation to either create new thresholds or update existing ones.
+    Sets or updates multiple health thresholds for an assigned patient.
+    RLS ensures this is only possible for patients assigned to the clinician.
     """
     try:
-        # 1. Verify patient is assigned to the current clinician
-        await verify_patient_assignment(patient_id, clinician_profile['id'])
-
-        # 2. Prepare and execute the upsert
+        # RLS on 'patient_thresholds' for INSERT/UPDATE handles the authorization check.
         upsert_payload = [
             {
                 "patient_id": patient_id,
@@ -288,36 +276,40 @@ async def set_patient_thresholds(patient_id: int, thresholds: List[PatientThresh
         updated_thresholds_res = await supabase.table('patient_thresholds').upsert(upsert_payload).execute()
         
         if not updated_thresholds_res.data:
-            raise HTTPException(status_code=403, detail="Could not set thresholds. This may be due to a permissions issue.")
+            raise HTTPException(status_code=403, detail="Could not set thresholds. Patient may not be assigned to you or does not exist.")
 
         return updated_thresholds_res.data
     except APIError as e:
         if e.code == "42501": # permission_denied
             raise HTTPException(status_code=403, detail="Access denied: You do not have permission to set thresholds for this patient.")
-        raise HTTPException(status_code=500, detail=f"Database error while setting thresholds: {e.message}")
+        logging.error(f"Database error while setting thresholds: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to set thresholds: {str(e)}")
+        logging.error(f"Failed to set thresholds: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.delete("/me", summary="Delete my own clinician profile")
 async def delete_own_clinician_profile(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """
-    Deletes the currently authenticated clinician's profile, unassigns their patients,
-    preserves their notes, and deletes the corresponding user from Supabase Auth.
+    Deletes the currently authenticated clinician's profile and associated auth user.
     This is an atomic operation handled by a database function.
+    This requires an admin client to call the RPC as a security definer.
     """
     try:
         clinician_id = clinician_profile.get("id")
         user_id = clinician_profile.get("user_id")
 
-        # Call the database function to perform the deletion atomically.
-        await supabase.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
+        # Call the database function using the admin client.
+        await supabase_admin_client.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
 
         return {"message": f"Clinician profile for user {user_id} and associated auth user deleted successfully."}
     except APIError as e:
         # The RPC function might raise an exception.
-        raise HTTPException(status_code=500, detail=f"Database error during clinician deletion: {e.message}")
+        logging.error(f"Database error during clinician deletion: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete own clinician profile: {str(e)}")
+        logging.error(f"Failed to delete own clinician profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")

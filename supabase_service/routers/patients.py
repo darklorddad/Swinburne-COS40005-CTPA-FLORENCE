@@ -2,52 +2,13 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from pydantic import BaseModel, model_validator
 from typing import Optional, List
-from supabase_auth.errors import AuthApiError
+from supabase.lib.client_async import AsyncClient
 from postgrest.exceptions import APIError
-from datetime import datetime, date, timedelta
-from enum import Enum
-from gotrue.types import User
+from datetime import date, timedelta
 
-from ..client import supabase
-from ..models import MonitorDataType
-from ..core.dependencies import get_current_user
+from ..models import MonitorDataType, MealTime
+from ..core.dependencies import get_user_supabase_client
 from ..core.utils import calculate_age, create_paginated_response, ensure_not_empty
-
-# --- Helper Functions / Dependencies ---
-
-async def get_current_patient_profile(user: User = Depends(get_current_user)):
-    """
-    A FastAPI dependency that authenticates the current user as a patient.
-
-    It validates the JWT from the 'Authorization' header, confirms the user
-    is a patient by checking for a corresponding entry in the `patient_profiles`
-    table, and returns the full patient profile.
-
-    Args:
-        authorization (str): The 'Authorization: Bearer <token>' header.
-
-    Returns:
-        dict: The full profile of the authenticated patient from the
-              `patient_profiles` table.
-
-    Raises:
-        HTTPException(403): If the authenticated user is not a patient (i.e., no
-                             patient profile exists for the user ID).
-        HTTPException(500): For any other server-side errors during the process.
-    """
-    try:
-        # Fetch the patient profile using the user's ID. This now serves as the role check.
-        profile_response = await supabase.table('patient_profiles').select('*').eq('user_id', user.id).single().execute()
-            
-        return profile_response.data
-    except APIError as e:
-        if e.code == "PGRST116": # "JSON object requested, but 0 rows returned"
-            raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
-        if "multiple rows" in e.message: # Fallback for multiple rows error
-             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
-        raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 # --- Pydantic Models ---
 
@@ -69,11 +30,6 @@ class MonitorDataCreate(BaseModel):
 class MonitorDataUpdate(BaseModel):
     value: Optional[float] = None
     measured_at: Optional[datetime] = None
-
-class MealTime(str, Enum):
-    BREAKFAST = 'BREAKFAST'
-    LUNCH = 'LUNCH'
-    DINNER = 'DINNER'
 
 class DailyLogCreate(BaseModel):
     log_date: date
@@ -126,12 +82,31 @@ router = APIRouter(
     tags=["Patient (Self-Service)"]
 )
 
+# --- Helper Functions / Dependencies ---
+
+async def get_current_patient_profile(supabase: AsyncClient = Depends(get_user_supabase_client)):
+    """
+    A FastAPI dependency that authenticates the current user as a patient
+    by fetching their profile. RLS ensures this only succeeds if they are a patient.
+    """
+    try:
+        profile_response = await supabase.table('patient_profiles').select('*').single().execute()
+        return profile_response.data
+    except APIError as e:
+        if e.code == "PGRST116": # "JSON object requested, but 0 rows returned"
+            raise HTTPException(status_code=403, detail="Access denied: User is not a patient or profile not found.")
+        logging.error(f"Database error fetching patient profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
+    except Exception as e:
+        logging.error(f"Unexpected error fetching patient profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
+
 
 @router.get("/me", summary="Get my own full patient profile")
 async def get_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
     """
-    Retrieves the complete profile for the currently authenticated patient,
-    including their age, gender, and date of birth.
+    Retrieves the complete profile for the currently authenticated patient.
+    RLS ensures they can only access their own profile.
     """
     profile_with_age = patient_profile.copy()
     profile_with_age['age'] = calculate_age(profile_with_age.get("date_of_birth"))
@@ -141,59 +116,30 @@ async def get_own_patient_profile(patient_profile: dict = Depends(get_current_pa
 @router.put("/me", summary="Update my own patient profile")
 async def update_own_patient_profile(
     update_data: PatientProfileUpdate,
-    patient_profile: dict = Depends(get_current_patient_profile)
+    supabase: AsyncClient = Depends(get_user_supabase_client)
 ):
     """
     Updates the profile of the currently authenticated patient.
-
-    Allows a patient to update their own profile information.
-    Only fields provided in the request body are updated.
+    RLS ensures a patient can only update their own profile.
     """
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     ensure_not_empty(update_dict)
 
     try:
-        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+        # RLS on the 'patient_profiles' table restricts this update to the user's own profile.
+        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).eq('user_id', 'auth.uid()').execute()
         if not updated_profile_response.data:
-            raise HTTPException(status_code=404, detail="Patient profile not found.")
+            # This could happen if RLS fails or the profile is gone.
+            raise HTTPException(status_code=404, detail="Patient profile not found or update failed.")
         return updated_profile_response.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
-
-
-@router.delete("/me", summary="Delete my own patient profile")
-async def delete_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
-    """
-    Deletes the currently authenticated patient's profile and the corresponding
-    user from Supabase Auth. All related data (monitor data, logs, etc.)
-    will be deleted via database cascade rules.
-    """
-    try:
-        user_id = patient_profile.get("user_id")
-
-        # Delete the associated auth user.
-        # The 'ON DELETE CASCADE' on the 'patient_profiles' table will automatically delete the profile
-        # and all other related data.
-        if user_id:
-            try:
-                await supabase.auth.admin.delete_user(user_id)
-            except Exception as auth_error:
-                # If auth user deletion fails, the profile remains, which is safe.
-                raise HTTPException(
-                    status_code=500, 
-                    detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
-                )
-
-        return {"message": f"Patient profile for user {user_id} and associated auth user deleted successfully."}
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete own patient profile: {str(e)}")
+        logging.error(f"Failed to update patient profile: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.get("/me/monitor-data", response_model=PaginatedMonitorDataResponse, summary="Get my paginated monitor data")
 async def get_own_monitor_data(
-    patient_profile: dict = Depends(get_current_patient_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client),
     # --- Filtering Parameters ---
     start_date: Optional[date] = None,
     end_date: Optional[date] = date.today(),
@@ -215,18 +161,14 @@ async def get_own_monitor_data(
     from_row = (page - 1) * page_size
     to_row = from_row + page_size - 1
     
-    patient_id = patient_profile['id']
-
     try:
+        # RLS automatically filters to the current patient's data.
         query = supabase.table('patient_monitor_data').select(
             "id, data_type, value, measured_at", 
             count='exact'
         )
 
-        # 1. Filter by the logged-in patient's ID
-        query = query.eq('patient_id', patient_id)
-
-        # 2. Apply optional filters
+        # Apply optional filters
         if start_date:
             query = query.gte('measured_at', str(start_date))
         if end_date:
@@ -250,42 +192,46 @@ async def get_own_monitor_data(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while fetching monitor data: {str(e)}")
+        logging.error(f"An error occurred while fetching monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/me/monitor-data", summary="Add a new monitor data point for myself")
 async def add_own_monitor_data(
     data: MonitorDataCreate,
-    patient_profile: dict = Depends(get_current_patient_profile)
+    patient_profile: dict = Depends(get_current_patient_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client)
 ):
     """
     Adds a new health monitor data point for the authenticated patient.
+    RLS ensures the patient_id is correct.
     """
     insert_dict = data.model_dump(mode='json')
-    insert_dict['patient_id'] = patient_profile['id']
+    insert_dict['patient_id'] = patient_profile['id'] # Still need to associate with the profile
     try:
         new_data_response = await supabase.table('patient_monitor_data').insert(insert_dict).execute()
         return new_data_response.data[0]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add monitor data: {str(e)}")
+        logging.error(f"Failed to add monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.put("/me/monitor-data/{data_id}", summary="Update one of my monitor data entries")
 async def update_own_monitor_data(
     data_id: int,
     update_data: MonitorDataUpdate,
-    patient_profile: dict = Depends(get_current_patient_profile)
+    supabase: AsyncClient = Depends(get_user_supabase_client)
 ):
     """
-    Updates a specific health monitor data entry for the authenticated patient.
+    Updates a specific health monitor data entry. RLS ensures the user can only
+    update their own entries.
     """
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     ensure_not_empty(update_dict)
 
     try:
-        # Atomically update the entry only if it belongs to the current patient.
-        # This is more explicit than relying solely on RLS and provides better error feedback.
-        updated_data_response = await supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).eq('patient_id', patient_profile['id']).execute()
+        # RLS policy on 'patient_monitor_data' handles the authorization check.
+        updated_data_response = await supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
         
         if not updated_data_response.data:
             raise HTTPException(status_code=404, detail="Monitor data entry not found or access denied.")
@@ -294,12 +240,13 @@ async def update_own_monitor_data(
     except HTTPException as e:
         raise e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
+        logging.error(f"Failed to update monitor data: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.get("/me/daily-logs", response_model=PaginatedDailyLogResponse, summary="Get my paginated daily logs")
 async def get_own_daily_logs(
-    patient_profile: dict = Depends(get_current_patient_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client),
     # --- Filtering Parameters ---
     start_date: Optional[date] = None,
     end_date: Optional[date] = date.today(),
@@ -321,18 +268,14 @@ async def get_own_daily_logs(
     from_row = (page - 1) * page_size
     to_row = from_row + page_size - 1
     
-    patient_id = patient_profile['id']
-
     try:
+        # RLS automatically filters to the current patient's logs.
         query = supabase.table('daily_patient_logs').select(
             "id, log_date, meal_time, glucose_before_meal, glucose_after_meal, meal_desc", 
             count='exact'
         )
 
-        # 1. Filter by the logged-in patient's ID
-        query = query.eq('patient_id', patient_id)
-
-        # 2. Apply optional filters
+        # Apply optional filters
         if start_date:
             query = query.gte('log_date', str(start_date))
         if end_date:
@@ -354,13 +297,15 @@ async def get_own_daily_logs(
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while fetching daily logs: {str(e)}")
+        logging.error(f"An error occurred while fetching daily logs: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.post("/me/daily-logs", summary="Add a new daily log for myself")
 async def add_own_daily_log(
     log_data: DailyLogCreate,
-    patient_profile: dict = Depends(get_current_patient_profile)
+    patient_profile: dict = Depends(get_current_patient_profile),
+    supabase: AsyncClient = Depends(get_user_supabase_client)
 ):
     """
     Adds a new daily log entry for the currently authenticated patient.
@@ -376,19 +321,23 @@ async def add_own_daily_log(
     except APIError as e:
         if e.code == "23505": # unique_violation
             raise HTTPException(status_code=409, detail="A log for this date and meal time already exists.")
-        raise HTTPException(status_code=500, detail=f"Database error while adding daily log: {e.message}")
+        logging.error(f"Database error while adding daily log: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
+        logging.error(f"Failed to add daily log: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
 @router.get("/me/thresholds", summary="Get my own defined health thresholds")
-async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient_profile)):
+async def get_own_thresholds(supabase: AsyncClient = Depends(get_user_supabase_client)):
     """
-    Retrieves the set of health thresholds defined for the currently authenticated patient.
+    Retrieves the health thresholds for the authenticated patient.
+    RLS ensures they can only see their own thresholds.
     """
     try:
-        thresholds_response = await supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
+        thresholds_response = await supabase.table('patient_thresholds').select('*').execute()
         return thresholds_response.data
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+        logging.error(f"Failed to retrieve thresholds: {e}")
+        raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
