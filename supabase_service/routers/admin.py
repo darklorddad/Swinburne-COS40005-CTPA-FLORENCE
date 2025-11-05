@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, model_validator, EmailStr
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 from datetime import date, datetime
 from supabase_auth.errors import AuthApiError
 import traceback
+import math
 
 from ..client import supabase
 from .authentication import get_current_admin_user
@@ -117,6 +118,110 @@ class PatientThresholdAdminUpdate(BaseModel):
 class ClinicianNoteAdminUpdate(BaseModel):
     note_content: Optional[str] = None
 
+
+# --- Pydantic Models for Paginated Admin Views ---
+
+class PatientProfileAdminView(BaseModel):
+    id: int
+    user_id: str # It's a UUID but comes as string
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    organisation_id: Optional[int] = None
+    clinician_id: Optional[int] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+    risk_level: str
+    last_risk_assessment: Optional[datetime] = None
+    organisations: Optional[dict] = None # e.g. {'name': 'Org Name'}
+    clinician_profiles: Optional[dict] = None # e.g. {'name': 'Clinician Name'}
+    age: Optional[int] = None
+
+class PaginatedPatientsResponse(BaseModel):
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    data: List[PatientProfileAdminView]
+
+class ClinicianProfileAdminView(BaseModel):
+    id: int
+    user_id: str
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    organisation_id: int
+    organisations: Optional[dict] = None
+    assigned_patients: List[str]
+
+class PaginatedCliniciansResponse(BaseModel):
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    data: List[ClinicianProfileAdminView]
+
+class OrganisationView(BaseModel):
+    id: int
+    name: str
+
+class PaginatedOrganisationsResponse(BaseModel):
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    data: List[OrganisationView]
+
+class DailyLogAdminView(BaseModel):
+    id: int
+    patient_id: int
+    log_date: date
+    meal_time: MealTime
+    glucose_before_meal: Optional[float] = None
+    glucose_after_meal: Optional[float] = None
+    meal_desc: Optional[str] = None
+    patient_profiles: Optional[dict] = None # e.g. {'name': 'Patient Name'}
+
+class PaginatedDailyLogsResponse(BaseModel):
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    data: List[DailyLogAdminView]
+
+class MonitorDataAdminView(BaseModel):
+    id: int
+    patient_id: int
+    data_type: str
+    value: float
+    measured_at: datetime
+    patient_profiles: Optional[dict] = None
+    unit: str
+
+class PaginatedMonitorDataResponse(BaseModel):
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    data: List[MonitorDataAdminView]
+
+class PatientThresholdAdminView(BaseModel):
+    id: int
+    patient_id: int
+    data_type: str
+    min_value: float
+    max_value: float
+    patient_profiles: Optional[dict] = None
+
+class PaginatedThresholdsResponse(BaseModel):
+    total_items: int
+    total_pages: int
+    current_page: int
+    page_size: int
+    data: List[PatientThresholdAdminView]
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -127,16 +232,25 @@ router = APIRouter(
 
 # --- Endpoints ---
 
-@router.get("/patients", summary="Get a list of all patients")
-async def get_all_patients():
-    """Retrieves a list of all patient profiles in the system."""
+@router.get("/patients", summary="Get a list of all patients", response_model=PaginatedPatientsResponse)
+async def get_all_patients(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+):
+    """Retrieves a paginated list of all patient profiles in the system."""
     try:
+        from_row = (page - 1) * page_size
+        to_row = from_row + page_size - 1
+
         # Select all columns from patient_profiles and related data from foreign tables
-        patients_response = supabase.table('patient_profiles').select(
+        query = supabase.table('patient_profiles').select(
             "*, "
             "organisations(name), "
-            "clinician_profiles(name)"
-        ).execute()
+            "clinician_profiles(name)",
+            count='exact'
+        ).order('id', desc=True).range(from_row, to_row)
+        
+        patients_response = query.execute()
 
         # Add calculated age to each patient profile
         patients = patients_response.data
@@ -151,8 +265,17 @@ async def get_all_patients():
                 except (ValueError, TypeError):
                     age = None
             patient['age'] = age
-            
-        return patients
+        
+        total_items = patients_response.count if patients_response.count is not None else 0
+        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
+
+        return {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "data": patients
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 
@@ -213,16 +336,25 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         raise HTTPException(status_code=500, detail=f"Failed to create patient: {str(e)}")
 
 
-@router.get("/clinicians", summary="Get a list of all clinicians and their assigned patients")
-async def get_all_clinicians():
-    """Retrieves a list of all clinicians, their details, and the names of patients assigned to them."""
+@router.get("/clinicians", summary="Get a list of all clinicians and their assigned patients", response_model=PaginatedCliniciansResponse)
+async def get_all_clinicians(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+):
+    """Retrieves a paginated list of all clinicians, their details, and the names of patients assigned to them."""
     try:
+        from_row = (page - 1) * page_size
+        to_row = from_row + page_size - 1
+
         # Fetch clinicians with their organisation and assigned patients' names
-        clinicians_response = supabase.table('clinician_profiles').select(
+        query = supabase.table('clinician_profiles').select(
             "*, " # Select all columns from clinician_profiles
             "organisations(name), "
-            "patient_profiles(name)"
-        ).execute()
+            "patient_profiles(name)",
+            count='exact'
+        ).order('id', desc=True).range(from_row, to_row)
+        
+        clinicians_response = query.execute()
 
         # Process the data to simplify the nested patient list
         clinicians = clinicians_response.data
@@ -231,8 +363,17 @@ async def get_all_clinicians():
             patients_data = clinician.get('patient_profiles', [])
             clinician['assigned_patients'] = [patient['name'] for patient in patients_data if patient.get('name')]
             del clinician['patient_profiles'] # Remove the original nested list
-            
-        return clinicians
+        
+        total_items = clinicians_response.count if clinicians_response.count is not None else 0
+        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
+
+        return {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "data": clinicians
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
 
@@ -280,12 +421,29 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
         raise HTTPException(status_code=500, detail=f"Failed to create clinician: {str(e)}")
 
 
-@router.get("/organisations", summary="Get a list of all organisations")
-async def get_all_organisations():
-    """Retrieves a list of all organisations in the system."""
+@router.get("/organisations", summary="Get a list of all organisations", response_model=PaginatedOrganisationsResponse)
+async def get_all_organisations(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(20, ge=1, le=100, description="Items per page"),
+):
+    """Retrieves a paginated list of all organisations in the system."""
     try:
-        organisations_response = supabase.table('organisations').select('*').execute()
-        return organisations_response.data
+        from_row = (page - 1) * page_size
+        to_row = from_row + page_size - 1
+
+        query = supabase.table('organisations').select('*', count='exact').order('id', desc=True).range(from_row, to_row)
+        organisations_response = query.execute()
+        
+        total_items = organisations_response.count if organisations_response.count is not None else 0
+        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
+
+        return {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "data": organisations_response.data
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
 
@@ -302,16 +460,34 @@ async def add_organisation_by_admin(org_data: OrganisationAdminCreate):
         raise HTTPException(status_code=500, detail=f"Failed to create organisation: {str(e)}")
 
 
-@router.get("/daily-logs", summary="Get a list of all daily patient logs")
-async def get_all_daily_logs():
-    """Retrieves a list of all daily patient logs with patient names."""
+@router.get("/daily-logs", summary="Get a list of all daily patient logs", response_model=PaginatedDailyLogsResponse)
+async def get_all_daily_logs(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+):
+    """Retrieves a paginated list of all daily patient logs with patient names."""
     try:
-        logs_response = supabase.table('daily_patient_logs').select(
+        from_row = (page - 1) * page_size
+        to_row = from_row + page_size - 1
+
+        query = supabase.table('daily_patient_logs').select(
             "*, " # Select all columns from daily_patient_logs
-            "patient_profiles(name)"
-        ).execute()
+            "patient_profiles(name)",
+            count='exact'
+        ).order('log_date', desc=True).order('id', desc=True).range(from_row, to_row)
         
-        return logs_response.data
+        logs_response = query.execute()
+        
+        total_items = logs_response.count if logs_response.count is not None else 0
+        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
+
+        return {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "data": logs_response.data
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
@@ -355,14 +531,23 @@ async def delete_daily_log_by_admin(log_id: int):
         raise HTTPException(status_code=500, detail=f"Failed to delete daily log: {str(e)}")
 
 
-@router.get("/monitor-data", summary="Get a list of all patient monitor data")
-async def get_all_monitor_data():
-    """Retrieves a list of all patient monitor data points with patient names."""
+@router.get("/monitor-data", summary="Get a list of all patient monitor data", response_model=PaginatedMonitorDataResponse)
+async def get_all_monitor_data(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+):
+    """Retrieves a paginated list of all patient monitor data points with patient names."""
     try:
-        data_response = supabase.table('patient_monitor_data').select(
+        from_row = (page - 1) * page_size
+        to_row = from_row + page_size - 1
+
+        query = supabase.table('patient_monitor_data').select(
             "*, " # Select all columns from patient_monitor_data
-            "patient_profiles(name)"
-        ).execute()
+            "patient_profiles(name)",
+            count='exact'
+        ).order('measured_at', desc=True).range(from_row, to_row)
+
+        data_response = query.execute()
 
         # Add unit information to each data point
         for item in data_response.data:
@@ -375,7 +560,16 @@ async def get_all_monitor_data():
             else:
                 item['unit'] = 'N/A'
         
-        return data_response.data
+        total_items = data_response.count if data_response.count is not None else 0
+        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
+
+        return {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "data": data_response.data
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
 
@@ -414,16 +608,34 @@ async def delete_monitor_data_by_admin(data_id: int):
         raise HTTPException(status_code=500, detail=f"Failed to delete monitor data: {str(e)}")
 
 
-@router.get("/thresholds", summary="Get a list of all patient thresholds")
-async def get_all_thresholds():
-    """Retrieves a list of all patient thresholds with patient names."""
+@router.get("/thresholds", summary="Get a list of all patient thresholds", response_model=PaginatedThresholdsResponse)
+async def get_all_thresholds(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+):
+    """Retrieves a paginated list of all patient thresholds with patient names."""
     try:
-        thresholds_response = supabase.table('patient_thresholds').select(
+        from_row = (page - 1) * page_size
+        to_row = from_row + page_size - 1
+
+        query = supabase.table('patient_thresholds').select(
             "*, " # Select all columns from patient_thresholds
-            "patient_profiles(name)"
-        ).execute()
+            "patient_profiles(name)",
+            count='exact'
+        ).order('patient_id').order('id').range(from_row, to_row)
         
-        return thresholds_response.data
+        thresholds_response = query.execute()
+        
+        total_items = thresholds_response.count if thresholds_response.count is not None else 0
+        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
+
+        return {
+            "total_items": total_items,
+            "total_pages": total_pages,
+            "current_page": page,
+            "page_size": page_size,
+            "data": thresholds_response.data
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
 

@@ -154,8 +154,9 @@ async def login_user(credentials: UserLogin):
                 status_code=500, 
                 detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
             )
-        # Otherwise, it's likely a normal authentication failure.
-        raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
+        # Otherwise, it's a normal authentication failure. Return a generic error to prevent user enumeration.
+        print(f"Login failed for {credentials.email}: {e.message}")
+        raise HTTPException(status_code=401, detail="Invalid login credentials.")
 
 
 @router.get("/me")
