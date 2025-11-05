@@ -6,7 +6,6 @@ from typing import List, Optional
 from postgrest.exceptions import APIError
 from supabase.lib.client_async import AsyncClient
 
-from ..client import supabase_admin_client
 from ..core.dependencies import get_user_supabase_client
 from ..core.utils import calculate_age, create_paginated_response
 from ..models import RiskLevel
@@ -291,25 +290,3 @@ async def set_patient_thresholds(patient_id: int, thresholds: List[PatientThresh
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
-@router.delete("/me", summary="Delete my own clinician profile")
-async def delete_own_clinician_profile(clinician_profile: dict = Depends(get_current_clinician_profile)):
-    """
-    Deletes the currently authenticated clinician's profile and associated auth user.
-    This is an atomic operation handled by a database function.
-    This requires an admin client to call the RPC as a security definer.
-    """
-    try:
-        clinician_id = clinician_profile.get("id")
-        user_id = clinician_profile.get("user_id")
-
-        # Call the database function using the admin client.
-        await supabase_admin_client.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
-
-        return {"message": f"Clinician profile for user {user_id} and associated auth user deleted successfully."}
-    except APIError as e:
-        # The RPC function might raise an exception.
-        logging.error(f"Database error during clinician deletion: {e}")
-        raise HTTPException(status_code=500, detail="An internal server error occurred.")
-    except Exception as e:
-        logging.error(f"Failed to delete own clinician profile: {e}")
-        raise HTTPException(status_code=500, detail="An internal server error occurred.")
