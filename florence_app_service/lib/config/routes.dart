@@ -41,6 +41,9 @@ class AppRoutes {
   static const String education = '/education';
   static const String help = '/help';
 
+  // Clinician routes
+  static const String clinicianDashboard = '/clinician/dashboard';
+
   // Logging routes
   static const String logGlucose = '/log/glucose';
   static const String logMeal = '/log/meal';
@@ -61,6 +64,9 @@ class AppRoutes {
 
       case register:
         return _buildRoute(const RegisterScreen());
+
+      case clinicianDashboard:
+        return _buildRoute(const _PlaceholderScreen(title: 'Clinician Dashboard'));
 
       case onboarding:
         return _buildRoute(const _PlaceholderScreen(title: 'Onboarding'));

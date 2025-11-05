@@ -55,11 +55,20 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       
       if (response.user != null && mounted) {
-        Helpers.showSuccess(context, 'Welcome back!');
-        AppRoutes.pushAndRemoveUntil(
-          context,
-          AppRoutes.dashboard,
-        );
+        // Check user role and navigate accordingly
+        final role = response.user!.appMetadata?['role'];
+
+        if (role == 'PATIENT') {
+          Helpers.showSuccess(context, 'Welcome back!');
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
+        } else if (role == 'CLINICIAN') {
+          Helpers.showSuccess(context, 'Welcome back, Clinician!');
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.clinicianDashboard);
+        } else {
+          // Role not supported or not found
+          Helpers.showError(context, 'Your user role is not supported in this application.');
+          await supabase.auth.signOut();
+        }
       }
     } on AuthException catch (error) {
       if (mounted) {

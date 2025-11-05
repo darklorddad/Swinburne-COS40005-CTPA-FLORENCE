@@ -32,8 +32,16 @@ class _SplashScreenState extends State<SplashScreen> {
       final user = supabase.auth.currentUser;
       
       if (session != null && user != null) {
-        // User is logged in, go to dashboard
-        AppRoutes.pushReplacement(context, AppRoutes.dashboard);
+        // User is logged in, check role and navigate
+        final role = user.appMetadata?['role'];
+        if (role == 'PATIENT') {
+          AppRoutes.pushReplacement(context, AppRoutes.dashboard);
+        } else if (role == 'CLINICIAN') {
+          AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard);
+        } else {
+          // Role not supported or not found, go to login
+          AppRoutes.pushReplacement(context, AppRoutes.login);
+        }
       } else {
         // User is not logged in, go to login
         AppRoutes.pushReplacement(context, AppRoutes.login);
