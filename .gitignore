@@ -7,9 +7,6 @@ Git-history/
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-#SQL
-*.sql
-
 # Contains sensitive information such as name, student ID, email and etc.
 Group-List.xlsx
 Project-selection.jpg
@@ -26,12 +23,16 @@ COS40005-EAT40005-Sprint-Reports-Group-7*
 20250918_220518.jpg
 20250918_221022.jpg
 
+#SQL
+*.sql
+
 # Environment variables (API keys, database credentials, secret tokens and etc. goes here)
 .env
 
 *.tmp
 .admin_creds.json
 .monthly_patient_id
+.temp
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
