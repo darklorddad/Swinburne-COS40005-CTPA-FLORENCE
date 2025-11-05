@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
@@ -40,8 +41,13 @@ class AdminRegistration(BaseModel):
 
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
-    if user_data.role == 'CLINICIAN' and user_data.organisation_id is None:
-        raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
+    if user_data.role == 'CLINICIAN':
+        if user_data.organisation_id is None:
+            raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
+        # Check if organisation exists before creating user
+        org_check = supabase.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
+        if org_check.count == 0:
+            raise HTTPException(status_code=404, detail=f"Organisation with id {user_data.organisation_id} not found.")
 
     new_user = None
     try:
@@ -58,25 +64,28 @@ async def register_user(user_data: UserRegistration):
     except AuthApiError as e:
         # Return a generic error to prevent user enumeration.
         # The actual error can be monitored in server logs.
-        print(f"Registration AuthApiError: {e.message}")
+        logging.warning(f"Registration AuthApiError: {e.message}")
         raise HTTPException(status_code=400, detail="User registration failed. Please check your details and try again.")
     
     try:
         if user_data.role == 'PATIENT':
-            profile_data = {
-                "user_id": new_user.id, "name": user_data.name, "phone_number": user_data.phone_number,
-                "gender": user_data.gender,
-                "date_of_birth": user_data.date_of_birth.isoformat() if user_data.date_of_birth else None,
-                "emergency_contact_name": user_data.emergency_contact_name,
-                "emergency_contact_relationship": user_data.emergency_contact_relationship,
-                "emergency_contact_phone": user_data.emergency_contact_phone,
+            # Use the atomic RPC function to create profile and thresholds together
+            rpc_params = {
+                "p_user_id": str(new_user.id),
+                "p_name": user_data.name,
+                "p_phone_number": user_data.phone_number,
+                "p_gender": user_data.gender,
+                "p_date_of_birth": user_data.date_of_birth.isoformat() if user_data.date_of_birth else None,
+                "p_emergency_contact_name": user_data.emergency_contact_name,
+                "p_emergency_contact_relationship": user_data.emergency_contact_relationship,
+                "p_emergency_contact_phone": user_data.emergency_contact_phone,
+                "p_risk_level": "LOW", # Default risk level for new public sign-ups
+                "p_organisation_id": None,
+                "p_clinician_id": None,
             }
-            patient_profile = supabase.table('patient_profiles').insert(profile_data).execute().data[0]
-            
-            thresholds_to_insert = [
-                {**threshold, 'patient_id': patient_profile['id']} for threshold in DEFAULT_THRESHOLDS
-            ]
-            supabase.table('patient_thresholds').insert(thresholds_to_insert).execute()
+            profile_res = supabase.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
+            if not profile_res.data:
+                raise Exception("Failed to create patient profile and thresholds via RPC.")
 
         elif user_data.role == 'CLINICIAN':
             profile_data = {
@@ -122,19 +131,38 @@ async def get_current_admin_user(authorization: str = Header(...)):
 
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
 async def register_admin(user_data: AdminRegistration):
-    """Registers a new admin user. This endpoint is protected and only accessible by other admins."""
+    """
+    Registers a new admin user and creates their profile.
+    This endpoint is protected and only accessible by other admins.
+    """
+    new_user = None
     try:
-        # The global `supabase` client is already configured with the service key.
-        supabase.auth.admin.create_user({
+        user_session = supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
             "app_metadata": {"role": "ADMIN"},
         })
+        new_user = user_session.user
+        if not new_user:
+            raise HTTPException(status_code=500, detail="Failed to create admin user in authentication system.")
+
+        # Create a corresponding profile in the admin_profiles table
+        profile_data = {"user_id": new_user.id}
+        profile_res = supabase.table('admin_profiles').insert(profile_data).execute()
+
+        if not profile_res.data:
+            # If profile creation fails, roll back the auth user creation
+            supabase.auth.admin.delete_user(new_user.id)
+            raise HTTPException(status_code=500, detail="Failed to create admin profile after user creation.")
+
         return {"message": "Admin registered successfully."}
     except AuthApiError as e:
         raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")
     except Exception as e:
+        # Ensure rollback if any other exception occurs after user creation
+        if new_user:
+            supabase.auth.admin.delete_user(new_user.id)
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
@@ -155,7 +183,7 @@ async def login_user(credentials: UserLogin):
                 detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
             )
         # Otherwise, it's a normal authentication failure. Return a generic error to prevent user enumeration.
-        print(f"Login failed for {credentials.email}: {e.message}")
+        logging.warning(f"Login failed for email {credentials.email}: {e.message}")
         raise HTTPException(status_code=401, detail="Invalid login credentials.")
 
 

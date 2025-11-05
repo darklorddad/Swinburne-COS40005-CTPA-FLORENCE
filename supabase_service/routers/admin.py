@@ -1,9 +1,11 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, model_validator, EmailStr
 from typing import Optional, List
 from enum import Enum
 from datetime import date, datetime
 from supabase_auth.errors import AuthApiError
+from postgrest.exceptions import APIError
 import traceback
 import math
 
@@ -321,12 +323,11 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         return {"message": "Patient created successfully.", "profile": patient_profile}
 
     except AuthApiError as e:
-        print(traceback.format_exc())
-        print(f"AuthApiError during patient creation: {e.message}")
+        logging.error(f"AuthApiError during patient creation: {e.message}")
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
-        # Print the full traceback to the logs for debugging on Vercel
-        print(traceback.format_exc())
+        # Log the full traceback for debugging
+        logging.exception("Failed to create patient.")
         # Rollback: delete the auth user if profile creation failed
         if new_user:
             supabase.auth.admin.delete_user(new_user.id)
@@ -380,7 +381,12 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
     """Creates a new clinician, including their authentication user and profile."""
     new_user = None
     try:
-        # Step 1: Create the user in Supabase Auth
+        # Step 1: Validate that the organisation exists before creating a user.
+        org_check = supabase.table('organisations').select('id', count='exact').eq('id', clinician_data.organisation_id).execute()
+        if org_check.count == 0:
+            raise HTTPException(status_code=404, detail=f"Organisation with id {clinician_data.organisation_id} not found.")
+
+        # Step 2: Create the user in Supabase Auth
         user_session = supabase.auth.admin.create_user({
             "email": clinician_data.email,
             "password": clinician_data.password,
@@ -408,11 +414,11 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
         return {"message": "Clinician created successfully.", "profile": clinician_profile}
 
     except AuthApiError as e:
-        print(traceback.format_exc())
-        print(f"AuthApiError during clinician creation: {e.message}")
+        logging.error(f"AuthApiError during clinician creation: {e.message}")
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
         # Rollback: delete the auth user if profile creation failed
+        logging.exception("Failed to create clinician.")
         if new_user:
             supabase.auth.admin.delete_user(new_user.id)
         raise HTTPException(status_code=500, detail=f"Failed to create clinician: {str(e)}")
@@ -506,11 +512,13 @@ async def add_daily_log_by_admin(log_data: DailyLogAdminCreate):
         return new_log_response.data[0]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except APIError as e:
+        if e.code == "23505": # unique_violation
+            raise HTTPException(status_code=409, detail="A log for this patient, date and meal time already exists.")
+        raise HTTPException(status_code=500, detail=f"Database error while adding daily log: {e.message}")
     except HTTPException as e:
         raise e
     except Exception as e:
-        if "duplicate key value violates unique constraint" in str(e):
-            raise HTTPException(status_code=409, detail="A log for this patient, date and meal time already exists.")
         raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
 
 
@@ -694,8 +702,8 @@ async def update_organisation_by_admin(organisation_id: int, update_data: Organi
 @router.delete("/organisations/{organisation_id}", summary="Remove any organisation")
 async def delete_organisation_by_admin(organisation_id: int):
     """
-    Deletes an organisation. This is only possible if no clinicians are currently
-    assigned to it. Any patients assigned to this organisation will be unassigned.
+    Deletes an organisation. This is only possible if no clinicians or patients
+    are currently assigned to it.
     """
     try:
         # Step 1: Check if any clinicians are assigned to this organisation.
@@ -706,8 +714,13 @@ async def delete_organisation_by_admin(organisation_id: int):
                 detail=f"Cannot delete organisation {organisation_id} because it has {clinician_check.count} clinician(s) assigned. Please reassign or delete them first."
             )
 
-        # Step 2: Unassign any patients from this organisation.
-        supabase.table('patient_profiles').update({"organisation_id": None}).eq('organisation_id', organisation_id).execute()
+        # Step 2: Check if any patients are assigned to this organisation.
+        patient_check = supabase.table('patient_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
+        if patient_check.count > 0:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail=f"Cannot delete organisation {organisation_id} because it has {patient_check.count} patient(s) assigned. Please unassign them first."
+            )
 
         # Step 3: Delete the organisation.
         response = supabase.table('organisations').delete().eq('id', organisation_id).execute()
@@ -801,34 +814,30 @@ async def delete_patient_by_admin(patient_id: int):
     corresponding user from Supabase Auth.
     """
     try:
-        # Step 1: Retrieve the patient's profile to get user_id and check for clinician assignment.
-        # This also verifies the patient exists before proceeding.
-        patient_profile_res = supabase.table('patient_profiles').select("user_id, clinician_id").eq('id', patient_id).single().execute()
-        
-        patient_profile = patient_profile_res.data
-        user_id = patient_profile.get("user_id")
+        # Step 1: Retrieve the patient's profile to get their user_id.
+        patient_profile_res = supabase.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+        user_id = patient_profile_res.data.get("user_id")
 
-        # Step 2: Delete the patient's profile from the database.
-        # Note: Related data (monitor data, logs, notes) is deleted automatically by 'ON DELETE CASCADE' in the database schema.
+        # Step 2: Delete the associated auth user first to prevent orphaned users.
+        if user_id:
+            try:
+                supabase.auth.admin.delete_user(user_id)
+            except Exception as auth_error:
+                # If auth user deletion fails, abort the entire operation.
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
+                )
+
+        # Step 3: Delete the patient's profile from the database.
+        # Related data is deleted automatically by 'ON DELETE CASCADE'.
         deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
         
         if not deleted_profile_response.data:
-            # This is a safeguard; it shouldn't be reached if the initial fetch succeeded.
-            raise HTTPException(status_code=500, detail=f"Failed to delete patient profile {patient_id} after it was found.")
+            # This is a critical state: the auth user was deleted but the profile was not.
+            logging.critical(f"CRITICAL: Auth user {user_id} was deleted, but failed to delete patient profile {patient_id}. Manual cleanup required.")
+            raise HTTPException(status_code=500, detail=f"Auth user deleted, but failed to delete patient profile {patient_id}.")
         
-        # Step 3: If there's an associated auth user, delete them.
-        if not user_id:
-            return {"message": f"Patient profile with id {patient_id} deleted, but no associated auth user to delete."}
-
-        try:
-            supabase.auth.admin.delete_user(user_id)
-        except Exception as auth_error:
-            # The profile is already deleted, so we report a partial success with an error.
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Patient profile {patient_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
-            )
-
         return {"message": f"Patient profile with id {patient_id} and associated auth user deleted successfully."}
     except HTTPException as e:
         raise e
@@ -848,7 +857,6 @@ async def delete_clinician_by_admin(clinician_id: int):
     try:
         # Step 1: Retrieve the clinician's profile to get user_id and name.
         clinician_profile_res = supabase.table('clinician_profiles').select("user_id, name").eq('id', clinician_id).single().execute()
-        
         clinician_profile = clinician_profile_res.data
         user_id = clinician_profile.get("user_id")
         clinician_name = clinician_profile.get("name")
@@ -856,29 +864,28 @@ async def delete_clinician_by_admin(clinician_id: int):
         # Step 2: Unassign all patients from this clinician.
         supabase.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
 
-        # Step 3: Preserve notes by detaching them from the clinician and snapshotting their name.
+        # Step 3: Preserve notes by detaching them from the clinician.
         supabase.table('clinician_notes').update({
             "clinician_id": None,
             "clinician_name_snapshot": clinician_name
         }).eq('clinician_id', clinician_id).execute()
 
-        # Step 4: Delete the clinician's profile.
+        # Step 4: Delete the associated auth user first to prevent orphaned users.
+        if user_id:
+            try:
+                supabase.auth.admin.delete_user(user_id)
+            except Exception as auth_error:
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
+                )
+
+        # Step 5: Delete the clinician's profile.
         deleted_profile_response = supabase.table('clinician_profiles').delete().eq('id', clinician_id).execute()
         
         if not deleted_profile_response.data:
-            raise HTTPException(status_code=500, detail=f"Failed to delete clinician profile {clinician_id} after it was found.")
-        
-        # Step 5: If there's an associated auth user, delete them.
-        if not user_id:
-            return {"message": f"Clinician profile with id {clinician_id} deleted, but no associated auth user to delete."}
-
-        try:
-            supabase.auth.admin.delete_user(user_id)
-        except Exception as auth_error:
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Clinician profile {clinician_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
-            )
+            logging.critical(f"CRITICAL: Auth user {user_id} was deleted, but failed to delete clinician profile {clinician_id}. Manual cleanup required.")
+            raise HTTPException(status_code=500, detail=f"Auth user deleted, but failed to delete clinician profile {clinician_id}.")
 
         return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
     except HTTPException as e:

@@ -1,7 +1,9 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from pydantic import BaseModel, model_validator
 from typing import Optional, List
 from supabase_auth.errors import AuthApiError
+from postgrest.exceptions import APIError
 from datetime import datetime, date, timedelta
 from enum import Enum
 import math
@@ -194,25 +196,25 @@ async def delete_own_patient_profile(patient_profile: dict = Depends(get_current
         patient_id = patient_profile.get("id")
         user_id = patient_profile.get("user_id")
 
-        # Step 1: Delete the patient's profile.
-        # The database is configured with ON DELETE CASCADE, so this will trigger
-        # the deletion of all related data in other tables.
+        # Step 1: Delete the associated auth user first to prevent orphaned users.
+        if user_id:
+            try:
+                supabase.auth.admin.delete_user(user_id)
+            except Exception as auth_error:
+                # If auth user deletion fails, abort the entire operation.
+                raise HTTPException(
+                    status_code=500, 
+                    detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
+                )
+
+        # Step 2: Delete the patient's profile.
+        # ON DELETE CASCADE in the DB will handle deletion of related data.
         deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
         
         if not deleted_profile_response.data:
-            raise HTTPException(status_code=500, detail=f"Failed to delete own patient profile {patient_id} after it was found.")
-        
-        # Step 2: If there's an associated auth user, delete them.
-        if not user_id:
-            return {"message": f"Patient profile with id {patient_id} deleted, but no associated auth user to delete."}
-
-        try:
-            supabase.auth.admin.delete_user(user_id)
-        except Exception as auth_error:
-            raise HTTPException(
-                status_code=500, 
-                detail=f"Patient profile {patient_id} deleted, but failed to delete user {user_id} from auth: {str(auth_error)}"
-            )
+            # This is a critical state: the auth user was deleted but the profile was not.
+            logging.critical(f"CRITICAL: Auth user {user_id} was deleted, but failed to delete patient profile {patient_id}. Manual cleanup required.")
+            raise HTTPException(status_code=500, detail=f"Auth user deleted, but failed to delete patient profile {patient_id}.")
 
         return {"message": f"Patient profile with id {patient_id} and associated auth user deleted successfully."}
     except HTTPException as e:
@@ -413,9 +415,11 @@ async def add_own_daily_log(
         return new_log_response.data[0]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        if "duplicate key value violates unique constraint" in str(e):
+    except APIError as e:
+        if e.code == "23505": # unique_violation
             raise HTTPException(status_code=409, detail="A log for this date and meal time already exists.")
+        raise HTTPException(status_code=500, detail=f"Database error while adding daily log: {e.message}")
+    except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
 
 

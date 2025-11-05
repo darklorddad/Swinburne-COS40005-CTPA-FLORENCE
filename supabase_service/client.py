@@ -22,12 +22,12 @@ class _SupabaseClientProxy:
             load_dotenv(dotenv_path=project_root / '.env')
 
             url: str = os.environ.get("SUPABASE_URL")
-            key: str = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
+            key: str = os.environ.get("SUPABASE_SERVICE_KEY")
 
             if not url or not key:
                 raise RuntimeError(
-                    "Supabase URL and Key could not be loaded. "
-                    "Ensure you have a .env file in the project root with SUPABASE_URL and a service key."
+                    "Supabase URL and Service Key could not be loaded. "
+                    "Ensure you have a .env file in the project root with SUPABASE_URL and SUPABASE_SERVICE_KEY."
                 )
 
             # Configure client with a timeout.
