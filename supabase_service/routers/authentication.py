@@ -100,10 +100,21 @@ async def register_user(user_data: UserRegistration):
         return {"message": f"{user_data.role.value.capitalize()} registered successfully. Please check your email for verification."}
 
     except AuthApiError as e:
-        # Return a generic error to prevent user enumeration.
-        # The actual error can be monitored in server logs.
+        # Log the specific error for debugging.
         logging.warning(f"Registration AuthApiError: {e.message}")
-        raise HTTPException(status_code=400, detail="User registration failed. Please check your details and try again.")
+        
+        # Check for a specific, safe-to-disclose error.
+        if "User already registered" in e.message:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail="A user with this email address already exists."
+            )
+        
+        # For all other auth errors, return a generic message to prevent user enumeration.
+        raise HTTPException(
+            status_code=400, 
+            detail="User registration failed. Please check your details and try again."
+        )
     except Exception as e:
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
