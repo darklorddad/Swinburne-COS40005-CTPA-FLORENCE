@@ -110,7 +110,8 @@ def test_login_patient_unconfirmed(test_patient_credentials):
     })
     assert response.status_code == 401, response.text
     data = response.json()
-    assert "Email not confirmed" in data["detail"]
+    # The specific error message comes from the auth provider.
+    assert data["detail"] == "Email not confirmed"
 
 @pytest.mark.depends(on=['test_register_clinician'])
 def test_login_clinician_unconfirmed(test_clinician_credentials):
@@ -121,7 +122,8 @@ def test_login_clinician_unconfirmed(test_clinician_credentials):
     })
     assert response.status_code == 401, response.text
     data = response.json()
-    assert "Email not confirmed" in data["detail"]
+    # The specific error message comes from the auth provider.
+    assert data["detail"] == "Email not confirmed"
 
 @pytest.mark.skipif(not ADMIN_EMAIL or not ADMIN_PASSWORD, reason="Admin test credentials (TEST_ADMIN_EMAIL, TEST_ADMIN_PASSWORD) not provided in .env file")
 def test_login_admin():

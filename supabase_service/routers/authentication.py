@@ -10,7 +10,6 @@ from gotrue.models import User
 # Import the shared Supabase client
 from ..client import supabase
 from ..core.dependencies import get_current_user
-from ..core.constants import DEFAULT_THRESHOLDS
 
 router = APIRouter(
     prefix="/auth",
@@ -177,15 +176,15 @@ async def login_user(credentials: UserLogin):
     except AuthApiError as e:
         # Log the actual error for server-side debugging.
         logging.warning(f"Login failed for email {credentials.email}: {e.message}")
-        # Check for a specific server-side configuration error that should be reported with a 500 status.
-        if "Database error querying schema" in e.message:
+        # Check for a server-side configuration error. The message is from the auth provider.
+        if "Database error" in e.message:
             raise HTTPException(
-                status_code=500, 
+                status_code=500,
                 detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
             )
-        # For all other authentication errors (e.g., wrong password, email not confirmed),
-        # return a generic 401 error to prevent user enumeration.
-        raise HTTPException(status_code=401, detail="Invalid login credentials.")
+        # For other auth errors (e.g., wrong password, email not confirmed),
+        # return a 401 error with the specific message from the auth provider.
+        raise HTTPException(status_code=401, detail=e.message)
 
 
 @router.get("/me", response_model=User)

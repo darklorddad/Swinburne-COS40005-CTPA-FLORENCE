@@ -31,9 +31,8 @@ async def get_current_patient_profile(user: User = Depends(get_current_user)):
               `patient_profiles` table.
 
     Raises:
-        HTTPException(401): If the authentication scheme is invalid or the token
-                             is expired or incorrect.
-        HTTPException(403): If the authenticated user is not a patient.
+        HTTPException(403): If the authenticated user is not a patient (i.e., no
+                             patient profile exists for the user ID).
         HTTPException(500): For any other server-side errors during the process.
     """
     try:

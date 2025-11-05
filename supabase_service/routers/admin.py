@@ -10,7 +10,6 @@ import traceback
 
 from ..client import supabase
 from .authentication import get_current_admin_user
-from ..core.constants import DEFAULT_THRESHOLDS
 from ..models import MonitorDataType
 from ..core.utils import calculate_age, create_paginated_response, ensure_not_empty
 
@@ -351,7 +350,8 @@ async def get_all_clinicians(
             # Replace the list of patient profile objects with just a list of names for simplicity
             patients_data = clinician.get('patient_profiles', [])
             clinician['assigned_patients'] = [patient['name'] for patient in patients_data if patient.get('name')]
-            del clinician['patient_profiles'] # Remove the original nested list
+            # Safely remove the original nested list, which might not exist if there are no patients.
+            clinician.pop('patient_profiles', None)
         
         return create_paginated_response(
             query_response_data=clinicians,
@@ -823,7 +823,8 @@ async def delete_clinician_by_admin(clinician_id: int):
         return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
     except APIError as e:
         # The RPC function will raise an exception if the clinician is not found.
-        if 'not found' in e.message:
+        # We check for the specific message from our RPC.
+        if f"Clinician with id {clinician_id} not found." in e.message:
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
         raise HTTPException(status_code=500, detail=f"Database error during clinician deletion: {e.message}")
     except Exception as e:
