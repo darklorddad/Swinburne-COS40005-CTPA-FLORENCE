@@ -54,18 +54,23 @@ async def register_user(user_data: UserRegistration):
 
     new_user = None
     try:
-        # Step 1: Create Auth User (requires admin client)
-        user_session = await supabase_admin_client.auth.admin.create_user({
+        # Step 1: Create Auth User using public sign-up to trigger verification email.
+        user_session = await supabase_anon_client.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password,
-            "email_confirm": False, # Send email confirmation link, do not auto-confirm.
-            "app_metadata": {"role": user_data.role.value}
         })
         new_user = user_session.user
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
-        # Step 2: Create Database Profile (requires admin client to call RPC as definer)
+        # Step 2: Immediately update the user with the admin client to set their role.
+        # This is a separate step because public sign-up cannot set app_metadata.
+        await supabase_admin_client.auth.admin.update_user_by_id(
+            new_user.id,
+            {"app_metadata": {"role": user_data.role.value}}
+        )
+
+        # Step 3: Create Database Profile (requires admin client to call RPC as definer)
         if user_data.role == PublicUserRole.PATIENT:
             # Use the atomic RPC function to create profile and thresholds together
             rpc_params = {
