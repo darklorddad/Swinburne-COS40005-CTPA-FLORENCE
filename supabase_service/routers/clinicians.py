@@ -126,18 +126,17 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
 async def assess_patient_risk(patient_id: int, risk_data: RiskAssessmentUpdate, clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Updates the risk level for a patient assigned to the clinician."""
     try:
-        # Verify patient is assigned
-        patient_check = supabase.table('patient_profiles').select('id', count='exact').eq('id', patient_id).eq('clinician_id', clinician_profile['id']).execute()
-        if patient_check.count == 0:
-            raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
-
         update_payload = {
             "risk_level": risk_data.risk_level.value,
             "last_risk_assessment": "now()"
         }
-        updated_patient = supabase.table('patient_profiles').update(update_payload).eq('id', patient_id).execute()
+        # Atomically update only if the patient is assigned to the current clinician.
+        updated_patient_res = supabase.table('patient_profiles').update(update_payload).eq('id', patient_id).eq('clinician_id', clinician_profile['id']).execute()
         
-        return updated_patient.data[0]
+        if not updated_patient_res.data:
+            raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
+
+        return updated_patient_res.data[0]
     except HTTPException as e:
         raise e
     except Exception as e:

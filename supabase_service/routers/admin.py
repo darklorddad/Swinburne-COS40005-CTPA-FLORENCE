@@ -296,30 +296,27 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
-        # Step 2: Create the patient profile
-        profile_data = {
-            "user_id": new_user.id,
-            "name": patient_data.name,
-            "phone_number": patient_data.phone_number,
-            "gender": patient_data.gender,
-            "date_of_birth": patient_data.date_of_birth.isoformat() if patient_data.date_of_birth else None,
-            "emergency_contact_name": patient_data.emergency_contact_name,
-            "emergency_contact_relationship": patient_data.emergency_contact_relationship,
-            "emergency_contact_phone": patient_data.emergency_contact_phone,
-            "risk_level": patient_data.risk_level.value if patient_data.risk_level else 'LOW',
-            "organisation_id": patient_data.organisation_id,
-            "clinician_id": patient_data.clinician_id,
+        # Step 2: Call the database function to create the profile and default thresholds atomically.
+        rpc_params = {
+            "p_user_id": str(new_user.id),
+            "p_name": patient_data.name,
+            "p_phone_number": patient_data.phone_number,
+            "p_gender": patient_data.gender,
+            "p_date_of_birth": patient_data.date_of_birth.isoformat() if patient_data.date_of_birth else None,
+            "p_emergency_contact_name": patient_data.emergency_contact_name,
+            "p_emergency_contact_relationship": patient_data.emergency_contact_relationship,
+            "p_emergency_contact_phone": patient_data.emergency_contact_phone,
+            "p_risk_level": patient_data.risk_level.value,
+            "p_organisation_id": patient_data.organisation_id,
+            "p_clinician_id": patient_data.clinician_id,
         }
-        patient_profile_res = supabase.table('patient_profiles').insert(profile_data).execute()
-        if not patient_profile_res.data:
-            raise Exception("Failed to create patient profile in database.")
-        patient_profile = patient_profile_res.data[0]
+        
+        patient_profile_res = supabase.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
 
-        # Step 3: Create default thresholds for the new patient
-        thresholds_to_insert = [
-            {**threshold, 'patient_id': patient_profile['id']} for threshold in DEFAULT_THRESHOLDS
-        ]
-        supabase.table('patient_thresholds').insert(thresholds_to_insert).execute()
+        if not patient_profile_res.data:
+            raise Exception("Failed to create patient profile and thresholds in database via RPC.")
+        
+        patient_profile = patient_profile_res.data[0]
 
         return {"message": "Patient created successfully.", "profile": patient_profile}
 
