@@ -54,6 +54,7 @@ async def register_user(user_data: UserRegistration):
 
     new_user = None
     try:
+        # Step 1: Create Auth User
         user_session = await supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
@@ -64,13 +65,7 @@ async def register_user(user_data: UserRegistration):
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
-    except AuthApiError as e:
-        # Return a generic error to prevent user enumeration.
-        # The actual error can be monitored in server logs.
-        logging.warning(f"Registration AuthApiError: {e.message}")
-        raise HTTPException(status_code=400, detail="User registration failed. Please check your details and try again.")
-    
-    try:
+        # Step 2: Create Database Profile
         if user_data.role == 'PATIENT':
             # Use the atomic RPC function to create profile and thresholds together
             rpc_params = {
@@ -104,6 +99,11 @@ async def register_user(user_data: UserRegistration):
         
         return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
 
+    except AuthApiError as e:
+        # Return a generic error to prevent user enumeration.
+        # The actual error can be monitored in server logs.
+        logging.warning(f"Registration AuthApiError: {e.message}")
+        raise HTTPException(status_code=400, detail="User registration failed. Please check your details and try again.")
     except Exception as e:
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:

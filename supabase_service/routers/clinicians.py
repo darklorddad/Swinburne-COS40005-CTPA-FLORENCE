@@ -306,35 +306,18 @@ async def delete_own_clinician_profile(clinician_profile: dict = Depends(get_cur
     """
     Deletes the currently authenticated clinician's profile, unassigns their patients,
     preserves their notes, and deletes the corresponding user from Supabase Auth.
+    This is an atomic operation handled by a database function.
     """
     try:
         clinician_id = clinician_profile.get("id")
         user_id = clinician_profile.get("user_id")
-        clinician_name = clinician_profile.get("name")
 
-        # Step 1: Unassign all patients from this clinician.
-        await supabase.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
-
-        # Step 2: Preserve notes by detaching them from the clinician.
-        await supabase.table('clinician_notes').update({
-            "clinician_id": None,
-            "clinician_name_snapshot": clinician_name
-        }).eq('clinician_id', clinician_id).execute()
-
-        # Step 3: Delete the associated auth user.
-        # The 'ON DELETE CASCADE' on the 'clinician_profiles' table will automatically delete the profile.
-        if user_id:
-            try:
-                await supabase.auth.admin.delete_user(user_id)
-            except Exception as auth_error:
-                # If auth user deletion fails, the profile remains, which is safe.
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
-                )
+        # Call the database function to perform the deletion atomically.
+        await supabase.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
 
         return {"message": f"Clinician profile for user {user_id} and associated auth user deleted successfully."}
-    except HTTPException as e:
-        raise e
+    except APIError as e:
+        # The RPC function might raise an exception.
+        raise HTTPException(status_code=500, detail=f"Database error during clinician deletion: {e.message}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete own clinician profile: {str(e)}")
