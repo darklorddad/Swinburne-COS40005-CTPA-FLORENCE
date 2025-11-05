@@ -116,6 +116,7 @@ async def get_own_patient_profile(patient_profile: dict = Depends(get_current_pa
 @router.put("/me", summary="Update my own patient profile")
 async def update_own_patient_profile(
     update_data: PatientProfileUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile),
     supabase: AsyncClient = Depends(get_user_supabase_client)
 ):
     """
@@ -126,9 +127,11 @@ async def update_own_patient_profile(
     ensure_not_empty(update_dict)
 
     try:
-        # RLS on the 'patient_profiles' table restricts this update to the user's own profile.
-        # The .eq() filter is removed; RLS handles the authorization check securely on the database side.
-        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).execute()
+        # RLS on 'patient_profiles' restricts this update, but the client library
+        # also requires a filter to prevent accidental full-table updates.
+        # We use the patient's own ID, fetched securely via the get_current_patient_profile dependency.
+        patient_id = patient_profile['id']
+        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
         if not updated_profile_response.data:
             # This could happen if RLS fails or the profile is gone.
             raise HTTPException(status_code=404, detail="Patient profile not found or update failed.")

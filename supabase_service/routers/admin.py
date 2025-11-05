@@ -824,18 +824,39 @@ async def delete_patient_by_admin(patient_id: int):
 async def delete_clinician_by_admin(clinician_id: int):
     """
     Deletes a clinician's profile, unassigns their patients, preserves their notes,
-    and deletes the corresponding user from Supabase Auth. This is an atomic operation.
+    and deletes the corresponding user from Supabase Auth.
     """
     try:
-        # Call the database function to perform the deletion atomically.
-        await supabase_admin_client.rpc('delete_clinician_and_clean_up', {'p_clinician_id': clinician_id}).execute()
+        # Step 1: Retrieve user_id and name before deletion.
+        clinician_profile_res = await supabase_admin_client.table('clinician_profiles').select("user_id, name").eq('id', clinician_id).single().execute()
+        
+        profile_data = clinician_profile_res.data
+        user_id = profile_data.get("user_id")
+        clinician_name = profile_data.get("name")
+
+        # Step 2: Unassign all patients from this clinician.
+        await supabase_admin_client.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
+
+        # Step 3: Preserve notes by detaching them from the clinician.
+        await supabase_admin_client.table('clinician_notes').update({
+            "clinician_id": None,
+            "clinician_name_snapshot": clinician_name
+        }).eq('clinician_id', clinician_id).execute()
+
+        # Step 4: Delete the associated auth user.
+        # The 'ON DELETE CASCADE' on the 'clinician_profiles' table will automatically delete the profile.
+        if user_id:
+            await supabase_admin_client.auth.admin.delete_user(user_id)
+        else:
+            # If there's no user_id, we can't delete the auth user, but we should still delete the profile row directly
+            # if it somehow exists without a user_id. This is a fallback.
+            await supabase_admin_client.table('clinician_profiles').delete().eq('id', clinician_id).execute()
 
         return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
     except APIError as e:
-        # The RPC function will raise an exception if the clinician is not found.
-        # Check for keywords in the message to make this less brittle.
-        if "not found" in e.message.lower():
+        if e.code == "PGRST116": # Not found from the initial select
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
+        logging.error(f"Database error during clinician deletion: {e}")
         raise HTTPException(status_code=500, detail=f"Database error during clinician deletion: {e.message}")
     except Exception as e:
         logging.error(f"Failed to delete clinician: {e}")
