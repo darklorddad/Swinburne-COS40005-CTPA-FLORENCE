@@ -4,7 +4,7 @@ from pydantic import BaseModel, model_validator
 from typing import Optional, List
 from supabase.lib.client_async import AsyncClient
 from postgrest.exceptions import APIError
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from ..models import MonitorDataType, MealTime
 from ..core.dependencies import get_user_supabase_client
