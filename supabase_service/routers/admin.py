@@ -312,6 +312,11 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
 
     except AuthApiError as e:
         logging.error(f"AuthApiError during patient creation: {e.message}")
+        if "User already registered" in e.message:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail="A user with this email address already exists."
+            )
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
         # Log the full traceback for debugging
@@ -405,6 +410,11 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
 
     except AuthApiError as e:
         logging.error(f"AuthApiError during clinician creation: {e.message}")
+        if "User already registered" in e.message:
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail="A user with this email address already exists."
+            )
         raise HTTPException(status_code=400, detail=f"User creation failed: {e.message}")
     except Exception as e:
         # Rollback: delete the auth user if profile creation failed
