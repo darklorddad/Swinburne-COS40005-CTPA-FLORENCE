@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';

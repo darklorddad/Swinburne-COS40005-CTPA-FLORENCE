@@ -1,5 +1,6 @@
 /// Notification Service for FLORENCE Digital Health Platform
 /// Manages in-app notifications and automation triggers
+library;
 
 import 'dart:async';
 import 'package:flutter/foundation.dart';

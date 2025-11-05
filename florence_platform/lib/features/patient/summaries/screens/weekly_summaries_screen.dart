@@ -1,5 +1,6 @@
 /// Weekly Summaries Screen for FLORENCE Digital Health Platform
 /// Displays weekly health summaries with trends and AI insights
+library;
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';

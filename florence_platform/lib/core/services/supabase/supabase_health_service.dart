@@ -2,6 +2,7 @@
 /// This service is prepared but NOT YET CONNECTED
 ///
 /// To enable: Set ENABLE_SUPABASE = true in environment.dart
+library;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../features/patient/core/models/health_data_models.dart';

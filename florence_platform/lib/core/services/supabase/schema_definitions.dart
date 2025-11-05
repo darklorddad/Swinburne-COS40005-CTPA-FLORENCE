@@ -1,6 +1,7 @@
 /// Supabase Database Schema Definitions
 /// This file contains the table schemas for the FLORENCE platform
 /// These schemas are NOT YET CONNECTED to Supabase
+library;
 
 /*
  * ============================================================================
