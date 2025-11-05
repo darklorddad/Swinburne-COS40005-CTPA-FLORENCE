@@ -127,7 +127,8 @@ async def update_own_patient_profile(
 
     try:
         # RLS on the 'patient_profiles' table restricts this update to the user's own profile.
-        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).eq('user_id', 'auth.uid()').execute()
+        # The .eq() filter is removed; RLS handles the authorization check securely on the database side.
+        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).execute()
         if not updated_profile_response.data:
             # This could happen if RLS fails or the profile is gone.
             raise HTTPException(status_code=404, detail="Patient profile not found or update failed.")

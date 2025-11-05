@@ -8,7 +8,6 @@ from typing import Optional, Dict, Any
 # Import the router from your new authentication file
 from .routers import authentication, patients, clinicians, admin
 # Import the Supabase client from its dedicated file
-from .client import supabase
 from .routers.authentication import get_current_admin_user
 
 app = FastAPI()
