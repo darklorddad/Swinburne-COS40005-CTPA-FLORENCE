@@ -1,14 +1,14 @@
 import os
 import httpx
 from pathlib import Path
-from supabase import create_client, Client, ClientOptions
+from supabase import create_async_client, AsyncClient, ClientOptions
 from dotenv import load_dotenv
 from typing import Optional, Any
 
 class _SupabaseClientProxy:
-    _client: Optional[Client] = None
+    _client: Optional[AsyncClient] = None
 
-    def _get_client(self) -> Client:
+    def _get_client(self) -> AsyncClient:
         """
         Initialises and returns the Supabase client instance, ensuring it's a singleton.
         This lazy initialisation solves issues where environment variables might not be
@@ -36,7 +36,7 @@ class _SupabaseClientProxy:
                 storage_client_timeout=10,
             )
 
-            self._client = create_client(url, key, options=options)
+            self._client = create_async_client(url, key, options=options)
         
         return self._client
 
@@ -50,4 +50,4 @@ class _SupabaseClientProxy:
 
 # The global supabase object is an instance of the proxy.
 # The actual client will be created only on first use.
-supabase: Client = _SupabaseClientProxy()
+supabase: AsyncClient = _SupabaseClientProxy()

@@ -1,11 +1,11 @@
 import logging
-import logging
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
-from gotrue.types import User
+from gotrue.types import User as GotrueUser
+from gotrue.models import User
 
 # Import the shared Supabase client
 from ..client import supabase
@@ -48,13 +48,13 @@ async def register_user(user_data: UserRegistration):
         if user_data.organisation_id is None:
             raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
         # Check if organisation exists before creating user
-        org_check = supabase.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
+        org_check = await supabase.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
         if org_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Organisation with id {user_data.organisation_id} not found.")
 
     new_user = None
     try:
-        user_session = supabase.auth.admin.create_user({
+        user_session = await supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": False, # Send email confirmation link, do not auto-confirm.
@@ -86,27 +86,31 @@ async def register_user(user_data: UserRegistration):
                 "p_organisation_id": None,
                 "p_clinician_id": None,
             }
-            profile_res = supabase.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
+            profile_res = await supabase.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
             if not profile_res.data:
                 raise Exception("Failed to create patient profile and thresholds via RPC.")
 
         elif user_data.role == 'CLINICIAN':
-            profile_data = {
-                "user_id": new_user.id, "name": user_data.name, "phone_number": user_data.phone_number,
-                "gender": user_data.gender,
-                "organisation_id": user_data.organisation_id,
+            rpc_params = {
+                "p_user_id": str(new_user.id),
+                "p_name": user_data.name,
+                "p_phone_number": user_data.phone_number,
+                "p_gender": user_data.gender,
+                "p_organisation_id": user_data.organisation_id,
             }
-            supabase.table('clinician_profiles').insert(profile_data).execute()
+            profile_res = await supabase.rpc('create_clinician_with_profile', rpc_params).execute()
+            if not profile_res.data:
+                raise Exception("Failed to create clinician profile via RPC.")
         
         return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
 
     except Exception as e:
         if new_user:
-            supabase.auth.admin.delete_user(new_user.id)
+            await supabase.auth.admin.delete_user(new_user.id)
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
 
 
-async def get_current_admin_user(user: User = Depends(get_current_user)):
+async def get_current_admin_user(user: GotrueUser = Depends(get_current_user)):
     """Dependency to get the current user and verify they are an admin."""
     # Explicitly check for the ADMIN role in app_metadata
     if user.app_metadata.get('role') != 'ADMIN':
@@ -122,7 +126,7 @@ async def register_admin(user_data: AdminRegistration):
     """
     new_user = None
     try:
-        user_session = supabase.auth.admin.create_user({
+        user_session = await supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
@@ -134,11 +138,11 @@ async def register_admin(user_data: AdminRegistration):
 
         # Create a corresponding profile in the admin_profiles table
         profile_data = {"user_id": new_user.id}
-        profile_res = supabase.table('admin_profiles').insert(profile_data).execute()
+        profile_res = await supabase.table('admin_profiles').insert(profile_data).execute()
 
         if not profile_res.data:
             # If profile creation fails, roll back the auth user creation
-            supabase.auth.admin.delete_user(new_user.id)
+            await supabase.auth.admin.delete_user(new_user.id)
             raise HTTPException(status_code=500, detail="Failed to create admin profile after user creation.")
 
         return {"message": "Admin registered successfully."}
@@ -147,7 +151,7 @@ async def register_admin(user_data: AdminRegistration):
     except Exception as e:
         # Ensure rollback if any other exception occurs after user creation
         if new_user:
-            supabase.auth.admin.delete_user(new_user.id)
+            await supabase.auth.admin.delete_user(new_user.id)
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
@@ -155,7 +159,7 @@ async def register_admin(user_data: AdminRegistration):
 async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
     try:
-        response = supabase.auth.sign_in_with_password({
+        response = await supabase.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })
@@ -172,18 +176,7 @@ async def login_user(credentials: UserLogin):
         raise HTTPException(status_code=401, detail="Invalid login credentials.")
 
 
-@router.get("/me")
-async def get_current_user(authorization: str = Header(...)):
+@router.get("/me", response_model=User)
+async def get_user_profile(user: GotrueUser = Depends(get_current_user)):
     """Retrieves the profile of the currently authenticated user based on the JWT."""
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
-    
-    token = authorization.split(" ")[1]
-    
-    try:
-        user_response = supabase.auth.get_user(token)
-        return user_response.user
-    except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return user

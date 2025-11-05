@@ -15,7 +15,7 @@ async def get_current_user(authorization: str = Header(...)) -> User:
     token = authorization.split(" ")[1]
     
     try:
-        user_response = supabase.auth.get_user(token)
+        user_response = await supabase.auth.get_user(token)
         user = user_response.user
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")

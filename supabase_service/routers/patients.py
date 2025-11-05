@@ -38,16 +38,16 @@ async def get_current_patient_profile(user: User = Depends(get_current_user)):
     """
     try:
         # Fetch the patient profile using the user's ID. This now serves as the role check.
-        profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).single().execute()
+        profile_response = await supabase.table('patient_profiles').select('*').eq('user_id', user.id).single().execute()
             
         return profile_response.data
-    except Exception as e:
-        # This will catch the .single() error if more than one profile is found
-        if "Multiple rows returned" in str(e):
-             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
-        # If no rows are found, .single() raises an error. We treat this as an access denied case.
-        if "Expected 1 row, got 0" in str(e):
+    except APIError as e:
+        if e.code == "PGRST116": # "JSON object requested, but 0 rows returned"
             raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
+        if "multiple rows" in e.message: # Fallback for multiple rows error
+             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
+        raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Pydantic Models ---
@@ -154,7 +154,7 @@ async def update_own_patient_profile(
     ensure_not_empty(update_dict)
 
     try:
-        updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+        updated_profile_response = await supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail="Patient profile not found.")
         return updated_profile_response.data[0]
@@ -170,30 +170,22 @@ async def delete_own_patient_profile(patient_profile: dict = Depends(get_current
     will be deleted via database cascade rules.
     """
     try:
-        patient_id = patient_profile.get("id")
         user_id = patient_profile.get("user_id")
 
-        # Step 1: Delete the associated auth user first to prevent orphaned users.
+        # Delete the associated auth user.
+        # The 'ON DELETE CASCADE' on the 'patient_profiles' table will automatically delete the profile
+        # and all other related data.
         if user_id:
             try:
-                supabase.auth.admin.delete_user(user_id)
+                await supabase.auth.admin.delete_user(user_id)
             except Exception as auth_error:
-                # If auth user deletion fails, abort the entire operation.
+                # If auth user deletion fails, the profile remains, which is safe.
                 raise HTTPException(
                     status_code=500, 
                     detail=f"Failed to delete auth user {user_id}. Aborting deletion. Error: {str(auth_error)}"
                 )
 
-        # Step 2: Delete the patient's profile.
-        # ON DELETE CASCADE in the DB will handle deletion of related data.
-        deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
-        
-        if not deleted_profile_response.data:
-            # This is a critical state: the auth user was deleted but the profile was not.
-            logging.critical(f"CRITICAL: Auth user {user_id} was deleted, but failed to delete patient profile {patient_id}. Manual cleanup required.")
-            raise HTTPException(status_code=500, detail=f"Auth user deleted, but failed to delete patient profile {patient_id}.")
-
-        return {"message": f"Patient profile with id {patient_id} and associated auth user deleted successfully."}
+        return {"message": f"Patient profile for user {user_id} and associated auth user deleted successfully."}
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -249,7 +241,7 @@ async def get_own_monitor_data(
         query = query.order('measured_at', desc=True).range(from_row, to_row)
 
         # Execute the query
-        response = query.execute()
+        response = await query.execute()
         
         return create_paginated_response(
             query_response_data=response.data,
@@ -273,7 +265,7 @@ async def add_own_monitor_data(
     insert_dict = data.model_dump(mode='json')
     insert_dict['patient_id'] = patient_profile['id']
     try:
-        new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
+        new_data_response = await supabase.table('patient_monitor_data').insert(insert_dict).execute()
         return new_data_response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add monitor data: {str(e)}")
@@ -292,9 +284,9 @@ async def update_own_monitor_data(
     ensure_not_empty(update_dict)
 
     try:
-        # The RLS policy "Patients can manage their own monitor data" ensures
-        # the update only succeeds if the patient owns the data entry.
-        updated_data_response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
+        # Atomically update the entry only if it belongs to the current patient.
+        # This is more explicit than relying solely on RLS and provides better error feedback.
+        updated_data_response = await supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).eq('patient_id', patient_profile['id']).execute()
         
         if not updated_data_response.data:
             raise HTTPException(status_code=404, detail="Monitor data entry not found or access denied.")
@@ -353,7 +345,7 @@ async def get_own_daily_logs(
         query = query.order('log_date', desc=True).order('meal_time', desc=True).range(from_row, to_row)
 
         # Execute the query
-        response = query.execute()
+        response = await query.execute()
         
         return create_paginated_response(
             query_response_data=response.data,
@@ -378,7 +370,7 @@ async def add_own_daily_log(
         insert_dict = log_data.model_dump(mode='json')
         insert_dict['patient_id'] = patient_profile['id']
         
-        new_log_response = supabase.table('daily_patient_logs').insert(insert_dict).execute()
+        new_log_response = await supabase.table('daily_patient_logs').insert(insert_dict).execute()
         return new_log_response.data[0]
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -396,7 +388,7 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
     Retrieves the set of health thresholds defined for the currently authenticated patient.
     """
     try:
-        thresholds_response = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
+        thresholds_response = await supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
         return thresholds_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
