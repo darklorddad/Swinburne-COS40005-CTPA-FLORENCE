@@ -145,27 +145,24 @@ async def get_assigned_patient_details(
 
         return {
             "profile": profile,
-            "monitor_data": {
-                "data": monitor_res.data,
-                "total_items": monitor_res.count,
-                "current_page": monitor_page,
-                "page_size": monitor_page_size,
-                "total_pages": math.ceil(monitor_res.count / monitor_page_size) if monitor_res.count else 0
-            },
-            "daily_logs": {
-                "data": logs_res.data,
-                "total_items": logs_res.count,
-                "current_page": logs_page,
-                "page_size": logs_page_size,
-                "total_pages": math.ceil(logs_res.count / logs_page_size) if logs_res.count else 0
-            },
-            "notes": {
-                "data": notes_res.data,
-                "total_items": notes_res.count,
-                "current_page": notes_page,
-                "page_size": notes_page_size,
-                "total_pages": math.ceil(notes_res.count / notes_page_size) if notes_res.count else 0
-            },
+            "monitor_data": create_paginated_response(
+                query_response_data=monitor_res.data,
+                query_response_count=monitor_res.count,
+                page=monitor_page,
+                page_size=monitor_page_size
+            ),
+            "daily_logs": create_paginated_response(
+                query_response_data=logs_res.data,
+                query_response_count=logs_res.count,
+                page=logs_page,
+                page_size=logs_page_size
+            ),
+            "notes": create_paginated_response(
+                query_response_data=notes_res.data,
+                query_response_count=notes_res.count,
+                page=notes_page,
+                page_size=notes_page_size
+            ),
             "thresholds": thresholds_res.data
         }
     except Exception as e:

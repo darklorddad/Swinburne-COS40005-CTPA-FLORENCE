@@ -737,8 +737,7 @@ async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdm
 async def update_patient_threshold_by_admin(threshold_id: int, update_data: PatientThresholdAdminUpdate):
     """Updates any patient threshold entry."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         response = supabase.table('patient_thresholds').update(update_dict).eq('id', threshold_id).execute()
