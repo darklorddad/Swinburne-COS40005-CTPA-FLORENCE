@@ -1,0 +1,2 @@
+# Development and testing dependencies
+pytest-dependency==0.6.0
