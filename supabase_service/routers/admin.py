@@ -264,6 +264,17 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
     """Creates a new patient, including their authentication user and profile."""
     new_user = None
     try:
+        # Proactively check foreign keys before creating the user
+        if patient_data.organisation_id:
+            org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', patient_data.organisation_id).execute()
+            if org_check.count == 0:
+                raise HTTPException(status_code=404, detail=f"Organisation with id {patient_data.organisation_id} not found.")
+        
+        if patient_data.clinician_id:
+            clinician_check = await supabase_admin_client.table('clinician_profiles').select('id', count='exact').eq('id', patient_data.clinician_id).execute()
+            if clinician_check.count == 0:
+                raise HTTPException(status_code=404, detail=f"Clinician with id {patient_data.clinician_id} not found.")
+
         # Step 1: Create the user in Supabase Auth
         user_session = await supabase_admin_client.auth.admin.create_user({
             "email": patient_data.email,
@@ -629,6 +640,17 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
     ensure_not_empty(update_dict)
 
     try:
+        # Proactively check foreign keys before updating
+        if 'organisation_id' in update_dict and update_dict['organisation_id'] is not None:
+            org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', update_dict['organisation_id']).execute()
+            if org_check.count == 0:
+                raise HTTPException(status_code=404, detail=f"Organisation with id {update_dict['organisation_id']} not found.")
+        
+        if 'clinician_id' in update_dict and update_dict['clinician_id'] is not None:
+            clinician_check = await supabase_admin_client.table('clinician_profiles').select('id', count='exact').eq('id', update_dict['clinician_id']).execute()
+            if clinician_check.count == 0:
+                raise HTTPException(status_code=404, detail=f"Clinician with id {update_dict['clinician_id']} not found.")
+
         updated_profile_response = await supabase_admin_client.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
@@ -647,6 +669,12 @@ async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianPro
     ensure_not_empty(update_dict)
 
     try:
+        # Proactively check foreign keys before updating
+        if 'organisation_id' in update_dict and update_dict['organisation_id'] is not None:
+            org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', update_dict['organisation_id']).execute()
+            if org_check.count == 0:
+                raise HTTPException(status_code=404, detail=f"Organisation with id {update_dict['organisation_id']} not found.")
+
         updated_profile_response = await supabase_admin_client.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
