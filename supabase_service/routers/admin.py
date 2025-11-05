@@ -431,7 +431,7 @@ async def get_all_thresholds():
 @router.put("/patients/{patient_id}", summary="Edit any patient (including risk level)")
 async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAdminUpdate):
     """Updates any patient's profile. Can be used to change risk level or other details."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
@@ -449,7 +449,7 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
 @router.put("/clinicians/{clinician_id}", summary="Edit any clinician")
 async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianProfileAdminUpdate):
     """Updates any clinician's profile."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
@@ -467,7 +467,7 @@ async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianPro
 @router.put("/organisations/{organisation_id}", summary="Edit any organisation")
 async def update_organisation_by_admin(organisation_id: int, update_data: OrganisationAdminUpdate):
     """Updates any organisation's details."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
@@ -516,7 +516,7 @@ async def delete_organisation_by_admin(organisation_id: int):
 @router.put("/daily-logs/{log_id}", summary="Edit any daily patient log")
 async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdate):
     """Updates any daily patient log entry."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
@@ -534,7 +534,7 @@ async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdat
 @router.put("/monitor-data/{data_id}", summary="Edit any patient monitor data point")
 async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdminUpdate):
     """Updates any patient monitor data point."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
@@ -552,7 +552,7 @@ async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdm
 @router.put("/thresholds/{threshold_id}", summary="Edit any patient threshold")
 async def update_patient_threshold_by_admin(threshold_id: int, update_data: PatientThresholdAdminUpdate):
     """Updates any patient threshold entry."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
@@ -570,7 +570,7 @@ async def update_patient_threshold_by_admin(threshold_id: int, update_data: Pati
 @router.put("/notes/{note_id}", summary="Edit any clinician note")
 async def update_clinician_note_by_admin(note_id: int, update_data: ClinicianNoteAdminUpdate):
     """Updates any clinician note."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 

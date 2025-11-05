@@ -84,35 +84,38 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
     but only if they are assigned to the currently authenticated clinician.
     """
     try:
-        # Verify patient is assigned to this clinician
-        patient_profile_res = supabase.table('patient_profiles').select('*', count='exact').eq('id', patient_id).eq('clinician_id', clinician_profile['id']).single().execute()
+        # Verify patient is assigned to this clinician and fetch all data in one go
+        patient_data_res = supabase.table('patient_profiles').select(
+            '*, '
+            'patient_monitor_data(*), '
+            'daily_patient_logs(*), '
+            'patient_thresholds(*), '
+            'clinician_notes(*)'
+        ).eq('id', patient_id).eq('clinician_id', clinician_profile['id']).single().execute()
         
-        patient_profile = patient_profile_res.data
+        patient_data = patient_data_res.data
 
         # Calculate age
-        dob_str = patient_profile.get("date_of_birth")
+        dob_str = patient_data.get("date_of_birth")
         if dob_str:
             try:
                 dob = date.fromisoformat(dob_str)
                 today = date.today()
-                patient_profile['age'] = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+                patient_data['age'] = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
             except (ValueError, TypeError):
-                patient_profile['age'] = None
+                patient_data['age'] = None
         else:
-            patient_profile['age'] = None
+            patient_data['age'] = None
 
-        # Fetch related data
-        monitor_data = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_id).execute().data
-        daily_logs = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_id).execute().data
-        thresholds = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_id).execute().data
-        notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
-
+        # The related data is nested. Separate it for a consistent API response.
+        profile = {k: v for k, v in patient_data.items() if k not in ['patient_monitor_data', 'daily_patient_logs', 'patient_thresholds', 'clinician_notes']}
+        
         return {
-            "profile": patient_profile,
-            "monitor_data": monitor_data,
-            "daily_logs": daily_logs,
-            "thresholds": thresholds,
-            "notes": notes
+            "profile": profile,
+            "monitor_data": patient_data.get('patient_monitor_data', []),
+            "daily_logs": patient_data.get('daily_patient_logs', []),
+            "thresholds": patient_data.get('patient_thresholds', []),
+            "notes": patient_data.get('clinician_notes', [])
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):
