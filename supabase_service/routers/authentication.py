@@ -1,12 +1,15 @@
 import logging
+import logging
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
+from gotrue.types import User
 
 # Import the shared Supabase client
 from ..client import supabase
+from ..core.dependencies import get_current_user
 from ..core.constants import DEFAULT_THRESHOLDS
 
 router = APIRouter(
@@ -103,30 +106,12 @@ async def register_user(user_data: UserRegistration):
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
 
 
-async def get_current_admin_user(authorization: str = Header(...)):
+async def get_current_admin_user(user: User = Depends(get_current_user)):
     """Dependency to get the current user and verify they are an admin."""
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
-    
-    token = authorization.split(" ")[1]
-    
-    try:
-        user_response = supabase.auth.get_user(token)
-        user = user_response.user
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid token.")
-        
-        # Explicitly check for the ADMIN role in app_metadata
-        if user.app_metadata.get('role') != 'ADMIN':
-            raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
-            
-        return user
-    except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    # Explicitly check for the ADMIN role in app_metadata
+    if user.app_metadata.get('role') != 'ADMIN':
+        raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
+    return user
 
 
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])

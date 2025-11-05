@@ -7,12 +7,12 @@ from datetime import date, datetime
 from supabase_auth.errors import AuthApiError
 from postgrest.exceptions import APIError
 import traceback
-import math
 
 from ..client import supabase
 from .authentication import get_current_admin_user
 from ..core.constants import DEFAULT_THRESHOLDS
 from ..models import MonitorDataType
+from ..core.utils import calculate_age, create_paginated_response, ensure_not_empty
 
 # --- Pydantic Models ---
 
@@ -257,27 +257,14 @@ async def get_all_patients(
         # Add calculated age to each patient profile
         patients = patients_response.data
         for patient in patients:
-            age = None
-            dob_str = patient.get("date_of_birth")
-            if dob_str:
-                try:
-                    dob = date.fromisoformat(dob_str)
-                    today = date.today()
-                    age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-                except (ValueError, TypeError):
-                    age = None
-            patient['age'] = age
+            patient['age'] = calculate_age(patient.get("date_of_birth"))
         
-        total_items = patients_response.count if patients_response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": patients
-        }
+        return create_paginated_response(
+            query_response_data=patients,
+            query_response_count=patients_response.count,
+            page=page,
+            page_size=page_size
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patients: {str(e)}")
 
@@ -362,16 +349,12 @@ async def get_all_clinicians(
             clinician['assigned_patients'] = [patient['name'] for patient in patients_data if patient.get('name')]
             del clinician['patient_profiles'] # Remove the original nested list
         
-        total_items = clinicians_response.count if clinicians_response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": clinicians
-        }
+        return create_paginated_response(
+            query_response_data=clinicians,
+            query_response_count=clinicians_response.count,
+            page=page,
+            page_size=page_size
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
 
@@ -437,16 +420,12 @@ async def get_all_organisations(
         query = supabase.table('organisations').select('*', count='exact').order('id', desc=True).range(from_row, to_row)
         organisations_response = query.execute()
         
-        total_items = organisations_response.count if organisations_response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": organisations_response.data
-        }
+        return create_paginated_response(
+            query_response_data=organisations_response.data,
+            query_response_count=organisations_response.count,
+            page=page,
+            page_size=page_size
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
 
@@ -481,16 +460,12 @@ async def get_all_daily_logs(
         
         logs_response = query.execute()
         
-        total_items = logs_response.count if logs_response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": logs_response.data
-        }
+        return create_paginated_response(
+            query_response_data=logs_response.data,
+            query_response_count=logs_response.count,
+            page=page,
+            page_size=page_size
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
@@ -565,16 +540,12 @@ async def get_all_monitor_data(
             else:
                 item['unit'] = 'N/A'
         
-        total_items = data_response.count if data_response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": data_response.data
-        }
+        return create_paginated_response(
+            query_response_data=data_response.data,
+            query_response_count=data_response.count,
+            page=page,
+            page_size=page_size
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
 
@@ -631,16 +602,12 @@ async def get_all_thresholds(
         
         thresholds_response = query.execute()
         
-        total_items = thresholds_response.count if thresholds_response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": thresholds_response.data
-        }
+        return create_paginated_response(
+            query_response_data=thresholds_response.data,
+            query_response_count=thresholds_response.count,
+            page=page,
+            page_size=page_size
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
 
@@ -649,8 +616,7 @@ async def get_all_thresholds(
 async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAdminUpdate):
     """Updates any patient's profile. Can be used to change risk level or other details."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
@@ -667,8 +633,7 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
 async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianProfileAdminUpdate):
     """Updates any clinician's profile."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         updated_profile_response = supabase.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
@@ -685,8 +650,7 @@ async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianPro
 async def update_organisation_by_admin(organisation_id: int, update_data: OrganisationAdminUpdate):
     """Updates any organisation's details."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         response = supabase.table('organisations').update(update_dict).eq('id', organisation_id).execute()
@@ -739,8 +703,7 @@ async def delete_organisation_by_admin(organisation_id: int):
 async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdate):
     """Updates any daily patient log entry."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         response = supabase.table('daily_patient_logs').update(update_dict).eq('id', log_id).execute()
@@ -757,8 +720,7 @@ async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdat
 async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdminUpdate):
     """Updates any patient monitor data point."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
@@ -793,8 +755,7 @@ async def update_patient_threshold_by_admin(threshold_id: int, update_data: Pati
 async def update_clinician_note_by_admin(note_id: int, update_data: ClinicianNoteAdminUpdate):
     """Updates any clinician note."""
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         response = supabase.table('clinician_notes').update(update_dict).eq('id', note_id).execute()

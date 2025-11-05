@@ -6,14 +6,16 @@ from supabase_auth.errors import AuthApiError
 from postgrest.exceptions import APIError
 from datetime import datetime, date, timedelta
 from enum import Enum
-import math
+from gotrue.types import User
 
 from ..client import supabase
 from ..models import MonitorDataType
+from ..core.dependencies import get_current_user
+from ..core.utils import calculate_age, create_paginated_response, ensure_not_empty
 
 # --- Helper Functions / Dependencies ---
 
-async def get_current_patient_profile(authorization: str = Header(...)):
+async def get_current_patient_profile(user: User = Depends(get_current_user)):
     """
     A FastAPI dependency that authenticates the current user as a patient.
 
@@ -34,23 +36,11 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         HTTPException(403): If the authenticated user is not a patient.
         HTTPException(500): For any other server-side errors during the process.
     """
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
-    
-    token = authorization.split(" ")[1]
-    
     try:
-        user_response = supabase.auth.get_user(token)
-        user = user_response.user
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid token.")
-        
         # Fetch the patient profile using the user's ID. This now serves as the role check.
         profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).single().execute()
             
         return profile_response.data
-    except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
     except Exception as e:
         # This will catch the .single() error if more than one profile is found
         if "Multiple rows returned" in str(e):
@@ -145,19 +135,7 @@ async def get_own_patient_profile(patient_profile: dict = Depends(get_current_pa
     including their age, gender, and date of birth.
     """
     profile_with_age = patient_profile.copy()
-    dob_str = profile_with_age.get("date_of_birth")
-    
-    if dob_str:
-        try:
-            dob = date.fromisoformat(dob_str)
-            today = date.today()
-            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
-            profile_with_age['age'] = age
-        except (ValueError, TypeError):
-            profile_with_age['age'] = None
-    else:
-        profile_with_age['age'] = None
-            
+    profile_with_age['age'] = calculate_age(profile_with_age.get("date_of_birth"))
     return profile_with_age
 
 
@@ -173,8 +151,7 @@ async def update_own_patient_profile(
     Only fields provided in the request body are updated.
     """
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
         updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
@@ -274,17 +251,12 @@ async def get_own_monitor_data(
         # Execute the query
         response = query.execute()
         
-        data_points = response.data
-        total_items = response.count if response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": data_points
-        }
+        return create_paginated_response(
+            query_response_data=response.data,
+            query_response_count=response.count,
+            page=page,
+            page_size=page_size
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while fetching monitor data: {str(e)}")
@@ -317,16 +289,16 @@ async def update_own_monitor_data(
     Updates a specific health monitor data entry for the authenticated patient.
     """
     update_dict = update_data.model_dump(mode='json', exclude_unset=True)
-    if not update_dict:
-        raise HTTPException(status_code=400, detail="No update data provided.")
+    ensure_not_empty(update_dict)
 
     try:
-        # Verify the data point belongs to the patient before updating
-        existing_data_res = supabase.table('patient_monitor_data').select('id', count='exact').eq('id', data_id).eq('patient_id', patient_profile['id']).execute()
-        if existing_data_res.count == 0:
+        # The RLS policy "Patients can manage their own monitor data" ensures
+        # the update only succeeds if the patient owns the data entry.
+        updated_data_response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
+        
+        if not updated_data_response.data:
             raise HTTPException(status_code=404, detail="Monitor data entry not found or access denied.")
 
-        updated_data_response = supabase.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
         return updated_data_response.data[0]
     except HTTPException as e:
         raise e
@@ -383,17 +355,12 @@ async def get_own_daily_logs(
         # Execute the query
         response = query.execute()
         
-        log_entries = response.data
-        total_items = response.count if response.count is not None else 0
-        total_pages = math.ceil(total_items / page_size) if total_items > 0 else 0
-
-        return {
-            "total_items": total_items,
-            "total_pages": total_pages,
-            "current_page": page,
-            "page_size": page_size,
-            "data": log_entries
-        }
+        return create_paginated_response(
+            query_response_data=response.data,
+            query_response_count=response.count,
+            page=page,
+            page_size=page_size
+        )
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while fetching daily logs: {str(e)}")
