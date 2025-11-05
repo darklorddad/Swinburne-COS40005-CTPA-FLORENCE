@@ -5,7 +5,6 @@ from typing import Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
 from gotrue.types import User as GotrueUser
-from gotrue.models import User
 
 # Import the shared Supabase client
 from ..client import supabase_admin_client, supabase_anon_client
@@ -209,7 +208,7 @@ async def login_user(credentials: UserLogin):
         raise HTTPException(status_code=401, detail=e.message)
 
 
-@router.get("/me", response_model=User)
+@router.get("/me", response_model=GotrueUser)
 async def get_user_profile(user: GotrueUser = Depends(get_current_user)):
     """Retrieves the profile of the currently authenticated user based on the JWT."""
     return user
