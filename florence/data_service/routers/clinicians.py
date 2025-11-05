@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from postgrest.exceptions import APIError
-from supabase.lib.client_async import AsyncClient
+from supabase import AsyncClient
 
 from ..core.dependencies import get_user_supabase_client
 from ..core.utils import calculate_age, create_paginated_response

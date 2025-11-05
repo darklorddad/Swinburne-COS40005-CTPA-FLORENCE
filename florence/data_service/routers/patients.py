@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException, Header, Query
 from pydantic import BaseModel, model_validator
 from typing import Optional, List
-from supabase.lib.client_async import AsyncClient
+from supabase import AsyncClient
 from postgrest.exceptions import APIError
 from datetime import date, timedelta, datetime
 
