@@ -708,6 +708,16 @@ async def delete_organisation_by_admin(organisation_id: int):
         return {"message": f"Organisation with id {organisation_id} deleted successfully."}
     except HTTPException as e:
         raise e
+    except APIError as e:
+        # Catch foreign key violations that might occur due to a race condition
+        # between the checks and the delete operation.
+        if e.code == "23503": # foreign_key_violation
+            raise HTTPException(
+                status_code=409, # Conflict
+                detail=f"Cannot delete organisation {organisation_id} because it is still referenced by another record. Please ensure no patients or clinicians are assigned and try again."
+            )
+        logging.error(f"Database error during organisation deletion: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
     except Exception as e:
         logging.error(f"Failed to delete organisation: {e}")
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
@@ -824,42 +834,23 @@ async def delete_patient_by_admin(patient_id: int):
 async def delete_clinician_by_admin(clinician_id: int):
     """
     Deletes a clinician's profile, unassigns their patients, preserves their notes,
-    and deletes the corresponding user from Supabase Auth.
+    and deletes the corresponding user from Supabase Auth by calling an atomic RPC function.
     """
     try:
-        # Step 1: Retrieve user_id and name before deletion.
-        clinician_profile_res = await supabase_admin_client.table('clinician_profiles').select("user_id, name").eq('id', clinician_id).single().execute()
-        
-        profile_data = clinician_profile_res.data
-        user_id = profile_data.get("user_id")
-        clinician_name = profile_data.get("name")
+        await supabase_admin_client.rpc(
+            'delete_clinician_and_clean_up',
+            {'p_clinician_id': clinician_id}
+        ).execute()
 
-        # Step 2: Unassign all patients from this clinician.
-        await supabase_admin_client.table('patient_profiles').update({"clinician_id": None}).eq('clinician_id', clinician_id).execute()
-
-        # Step 3: Preserve notes by detaching them from the clinician.
-        await supabase_admin_client.table('clinician_notes').update({
-            "clinician_id": None,
-            "clinician_name_snapshot": clinician_name
-        }).eq('clinician_id', clinician_id).execute()
-
-        # Step 4: Delete the associated auth user.
-        # The 'ON DELETE CASCADE' on the 'clinician_profiles' table will automatically delete the profile.
-        if user_id:
-            await supabase_admin_client.auth.admin.delete_user(user_id)
-        else:
-            # If there's no user_id, we can't delete the auth user, but we should still delete the profile row directly
-            # if it somehow exists without a user_id. This is a fallback.
-            await supabase_admin_client.table('clinician_profiles').delete().eq('id', clinician_id).execute()
-
-        return {"message": f"Clinician profile with id {clinician_id} and associated auth user deleted successfully."}
+        return {"message": f"Clinician with id {clinician_id} and associated data has been successfully cleaned up and deleted."}
     except APIError as e:
-        if e.code == "PGRST116": # Not found from the initial select
+        # The RPC function raises an exception if the clinician is not found.
+        if 'not found' in e.message:
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
-        logging.error(f"Database error during clinician deletion: {e}")
-        raise HTTPException(status_code=500, detail=f"Database error during clinician deletion: {e.message}")
+        logging.error(f"Database error during clinician deletion via RPC: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
     except Exception as e:
-        logging.error(f"Failed to delete clinician: {e}")
+        logging.error(f"Failed to delete clinician via RPC: {e}")
         raise HTTPException(status_code=500, detail="An internal server error occurred.")
 
 
