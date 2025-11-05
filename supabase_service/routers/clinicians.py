@@ -136,12 +136,15 @@ async def get_assigned_patient_details(
     but only if they are assigned to the currently authenticated clinician.
     """
     try:
-        # 1. Fetch patient profile and verify assignment
-        profile_res = await supabase.table('patient_profiles').select('*').eq('id', patient_id).eq('clinician_id', clinician_profile['id']).single().execute()
+        # 1. Verify patient is assigned to the current clinician
+        await verify_patient_assignment(patient_id, clinician_profile['id'])
+
+        # 2. Fetch patient profile
+        profile_res = await supabase.table('patient_profiles').select('*').eq('id', patient_id).single().execute()
         profile = profile_res.data
         profile['age'] = calculate_age(profile.get("date_of_birth"))
 
-        # 2. Define pagination ranges
+        # 3. Define pagination ranges
         monitor_from = (monitor_page - 1) * monitor_page_size
         monitor_to = monitor_from + monitor_page_size - 1
         logs_from = (logs_page - 1) * logs_page_size
@@ -149,7 +152,7 @@ async def get_assigned_patient_details(
         notes_from = (notes_page - 1) * notes_page_size
         notes_to = notes_from + notes_page_size - 1
 
-        # 3. Concurrently fetch all related data
+        # 4. Concurrently fetch all related data
         monitor_task = supabase.table('patient_monitor_data').select('*', count='exact').eq('patient_id', patient_id).order('measured_at', desc=True).range(monitor_from, monitor_to).execute()
         logs_task = supabase.table('daily_patient_logs').select('*', count='exact').eq('patient_id', patient_id).order('log_date', desc=True).range(logs_from, logs_to).execute()
         notes_task = supabase.table('clinician_notes').select('*', count='exact').eq('patient_id', patient_id).order('created_at', desc=True).range(notes_from, notes_to).execute()
@@ -159,7 +162,7 @@ async def get_assigned_patient_details(
             monitor_task, logs_task, notes_task, thresholds_task
         )
 
-        # 4. Assemble the response
+        # 5. Assemble the response
         return {
             "profile": profile,
             "monitor_data": create_paginated_response(
@@ -184,7 +187,9 @@ async def get_assigned_patient_details(
         }
     except APIError as e:
         if e.code == "PGRST116": # "JSON object requested, but 0 rows returned"
-             raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
+             # This should ideally not be reached if verify_patient_assignment passed,
+             # but could happen in a race condition (e.g., patient deleted after check).
+             raise HTTPException(status_code=404, detail="Patient not found.")
         raise HTTPException(status_code=500, detail=f"Database error: {e.message}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve patient details: {str(e)}")

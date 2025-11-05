@@ -315,9 +315,13 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
     except Exception as e:
         # Log the full traceback for debugging
         logging.exception("Failed to create patient.")
-        # Rollback: delete the auth user if profile creation failed
+        # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
-            await supabase.auth.admin.delete_user(new_user.id)
+            try:
+                await supabase.auth.admin.delete_user(new_user.id)
+            except Exception as rollback_error:
+                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
+        # The original error is the most important one to report.
         raise HTTPException(status_code=500, detail=f"Failed to create patient: {str(e)}")
 
 
@@ -402,8 +406,13 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
     except Exception as e:
         # Rollback: delete the auth user if profile creation failed
         logging.exception("Failed to create clinician.")
+        # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
-            await supabase.auth.admin.delete_user(new_user.id)
+            try:
+                await supabase.auth.admin.delete_user(new_user.id)
+            except Exception as rollback_error:
+                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
+        # The original error is the most important one to report.
         raise HTTPException(status_code=500, detail=f"Failed to create clinician: {str(e)}")
 
 

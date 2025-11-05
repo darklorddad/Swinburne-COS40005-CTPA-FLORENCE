@@ -105,8 +105,13 @@ async def register_user(user_data: UserRegistration):
         return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
 
     except Exception as e:
+        # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
-            await supabase.auth.admin.delete_user(new_user.id)
+            try:
+                await supabase.auth.admin.delete_user(new_user.id)
+            except Exception as rollback_error:
+                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
+        # The original error is the most important one to report.
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
 
 
@@ -150,8 +155,13 @@ async def register_admin(user_data: AdminRegistration):
         raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")
     except Exception as e:
         # Ensure rollback if any other exception occurs after user creation
+        # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
-            await supabase.auth.admin.delete_user(new_user.id)
+            try:
+                await supabase.auth.admin.delete_user(new_user.id)
+            except Exception as rollback_error:
+                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
+        # The original error is the most important one to report.
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
@@ -165,14 +175,16 @@ async def login_user(credentials: UserLogin):
         })
         return response
     except AuthApiError as e:
-        # Check for a specific server-side configuration error.
+        # Log the actual error for server-side debugging.
+        logging.warning(f"Login failed for email {credentials.email}: {e.message}")
+        # Check for a specific server-side configuration error that should be reported with a 500 status.
         if "Database error querying schema" in e.message:
             raise HTTPException(
                 status_code=500, 
                 detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
             )
-        # Otherwise, it's a normal authentication failure. Return a generic error to prevent user enumeration.
-        logging.warning(f"Login failed for email {credentials.email}: {e.message}")
+        # For all other authentication errors (e.g., wrong password, email not confirmed),
+        # return a generic 401 error to prevent user enumeration.
         raise HTTPException(status_code=401, detail="Invalid login credentials.")
 
 
