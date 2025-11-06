@@ -66,6 +66,7 @@ async def register_user(user_data: UserRegistration):
 
         # Step 2: Immediately update the user with the admin client to set their role.
         # This is a separate step because public sign-up cannot set app_metadata.
+        admin_client = await get_supabase_admin_client()
         await admin_client.auth.admin.update_user_by_id(
             new_user.id,
             {"app_metadata": {"role": user_data.role.value}}
