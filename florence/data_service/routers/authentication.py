@@ -43,11 +43,12 @@ class AdminRegistration(BaseModel):
 
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
+    admin_client = await supabase_admin_client
     if user_data.role == PublicUserRole.CLINICIAN:
         if user_data.organisation_id is None:
             raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
         # Check if organisation exists before creating user
-        org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
+        org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
         if org_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Organisation with id {user_data.organisation_id} not found.")
 
@@ -65,7 +66,7 @@ async def register_user(user_data: UserRegistration):
 
         # Step 2: Immediately update the user with the admin client to set their role.
         # This is a separate step because public sign-up cannot set app_metadata.
-        await supabase_admin_client.auth.admin.update_user_by_id(
+        await admin_client.auth.admin.update_user_by_id(
             new_user.id,
             {"app_metadata": {"role": user_data.role.value}}
         )
@@ -86,7 +87,7 @@ async def register_user(user_data: UserRegistration):
                 "p_organisation_id": None,
                 "p_clinician_id": None,
             }
-            profile_res = await supabase_admin_client.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
+            profile_res = await admin_client.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
             if not profile_res.data:
                 raise Exception("Failed to create patient profile and thresholds via RPC.")
 
@@ -98,7 +99,7 @@ async def register_user(user_data: UserRegistration):
                 "p_gender": user_data.gender,
                 "p_organisation_id": user_data.organisation_id,
             }
-            profile_res = await supabase_admin_client.rpc('create_clinician_with_profile', rpc_params).execute()
+            profile_res = await admin_client.rpc('create_clinician_with_profile', rpc_params).execute()
             if not profile_res.data:
                 raise Exception("Failed to create clinician profile via RPC.")
         
@@ -124,7 +125,7 @@ async def register_user(user_data: UserRegistration):
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
             try:
-                await supabase_admin_client.auth.admin.delete_user(new_user.id)
+                await admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         logging.error(f"Failed to create user profile: {e}")
@@ -148,9 +149,10 @@ async def register_admin(user_data: AdminRegistration):
     Registers a new admin user and creates their profile.
     This endpoint is protected and only accessible by other admins.
     """
+    admin_client = await supabase_admin_client
     new_user = None
     try:
-        user_session = await supabase_admin_client.auth.admin.create_user({
+        user_session = await admin_client.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
@@ -162,7 +164,7 @@ async def register_admin(user_data: AdminRegistration):
 
         # Create a corresponding profile in the admin_profiles table
         profile_data = {"user_id": new_user.id}
-        profile_res = await supabase_admin_client.table('admin_profiles').insert(profile_data).execute()
+        profile_res = await admin_client.table('admin_profiles').insert(profile_data).execute()
 
         if not profile_res.data:
             # Let the generic exception handler below deal with the rollback.
@@ -181,7 +183,7 @@ async def register_admin(user_data: AdminRegistration):
         # Ensure rollback if any other exception occurs after user creation
         if new_user:
             try:
-                await supabase_admin_client.auth.admin.delete_user(new_user.id)
+                await admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         logging.error(f"Failed to create admin profile: {e}")
