@@ -43,17 +43,17 @@ class AdminRegistration(BaseModel):
 
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
-    admin_client = await get_supabase_admin_client()
-    if user_data.role == PublicUserRole.CLINICIAN:
-        if user_data.organisation_id is None:
-            raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
-        # Check if organisation exists before creating user
-        org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
-        if org_check.count == 0:
-            raise HTTPException(status_code=404, detail=f"Organisation with id {user_data.organisation_id} not found.")
-
     new_user = None
     try:
+        admin_client = await get_supabase_admin_client()
+        if user_data.role == PublicUserRole.CLINICIAN:
+            if user_data.organisation_id is None:
+                raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
+            # Check if organisation exists before creating user
+            org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
+            if org_check.count == 0:
+                raise HTTPException(status_code=404, detail=f"Organisation with id {user_data.organisation_id} not found.")
+
         # Step 1: Create Auth User using public sign-up to trigger verification email.
         anon_client = await get_supabase_anon_client()
         user_session = await anon_client.auth.sign_up({
@@ -125,7 +125,9 @@ async def register_user(user_data: UserRegistration):
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
             try:
-                await admin_client.auth.admin.delete_user(new_user.id)
+                # Must get a new client instance for the rollback operation
+                admin_client_rollback = await get_supabase_admin_client()
+                await admin_client_rollback.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         logging.error(f"Failed to create user profile: {e}")
