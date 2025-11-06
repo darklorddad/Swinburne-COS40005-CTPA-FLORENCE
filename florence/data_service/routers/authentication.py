@@ -127,6 +127,9 @@ async def register_user(user_data: UserRegistration):
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         logging.error(f"Failed to create user profile: {e}")
+        # Provide more detail for configuration errors during development
+        if isinstance(e, RuntimeError):
+            raise HTTPException(status_code=500, detail=str(e))
         raise HTTPException(status_code=500, detail="An internal server error occurred during user creation.")
 
 

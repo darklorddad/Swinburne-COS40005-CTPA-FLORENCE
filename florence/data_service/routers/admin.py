@@ -327,6 +327,9 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
                 await supabase_admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
+        # Provide more detail for configuration errors during development
+        if isinstance(e, RuntimeError):
+            raise HTTPException(status_code=500, detail=str(e))
         # The original error is the most important one to report.
         raise HTTPException(status_code=500, detail=f"An internal server error occurred during patient creation.")
 
@@ -425,6 +428,9 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
                 await supabase_admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
+        # Provide more detail for configuration errors during development
+        if isinstance(e, RuntimeError):
+            raise HTTPException(status_code=500, detail=str(e))
         # The original error is the most important one to report.
         raise HTTPException(status_code=500, detail=f"An internal server error occurred during clinician creation.")
 
