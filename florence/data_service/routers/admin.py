@@ -278,13 +278,12 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
                 raise HTTPException(status_code=404, detail=f"Clinician with id {patient_data.clinician_id} not found.")
 
         # Step 1: Create the user in Supabase Auth
-        user_session = await admin_client.auth.admin.create_user({
+        new_user = await admin_client.auth.admin.create_user({
             "email": patient_data.email,
             "password": patient_data.password,
             "email_confirm": True,  # Auto-confirm user
             "app_metadata": {"role": UserRole.PATIENT.value}
         })
-        new_user = user_session.user
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
@@ -389,13 +388,12 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
             raise HTTPException(status_code=404, detail=f"Organisation with id {clinician_data.organisation_id} not found.")
 
         # Step 2: Create the user in Supabase Auth
-        user_session = await admin_client.auth.admin.create_user({
+        new_user = await admin_client.auth.admin.create_user({
             "email": clinician_data.email,
             "password": clinician_data.password,
             "email_confirm": True,  # Auto-confirm user
             "app_metadata": {"role": UserRole.CLINICIAN.value}
         })
-        new_user = user_session.user
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
