@@ -7,7 +7,7 @@ from supabase_auth.errors import AuthApiError
 from gotrue.types import User as GotrueUser
 
 # Import the shared Supabase client
-from ..client import supabase_admin_client, supabase_anon_client
+from ..client import get_supabase_admin_client, get_supabase_anon_client
 from ..core.dependencies import get_current_user
 from ..models import UserRole, PublicUserRole
 
@@ -43,7 +43,7 @@ class AdminRegistration(BaseModel):
 
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
-    admin_client = await supabase_admin_client
+    admin_client = await get_supabase_admin_client()
     if user_data.role == PublicUserRole.CLINICIAN:
         if user_data.organisation_id is None:
             raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
@@ -55,7 +55,7 @@ async def register_user(user_data: UserRegistration):
     new_user = None
     try:
         # Step 1: Create Auth User using public sign-up to trigger verification email.
-        anon_client = await supabase_anon_client
+        anon_client = await get_supabase_anon_client()
         user_session = await anon_client.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password,
@@ -149,7 +149,7 @@ async def register_admin(user_data: AdminRegistration):
     Registers a new admin user and creates their profile.
     This endpoint is protected and only accessible by other admins.
     """
-    admin_client = await supabase_admin_client
+    admin_client = await get_supabase_admin_client()
     new_user = None
     try:
         new_user = await admin_client.auth.admin.create_user({
@@ -194,7 +194,7 @@ async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
     try:
         # Use the anonymous client for public-facing login
-        anon_client = await supabase_anon_client
+        anon_client = await get_supabase_anon_client()
         response = await anon_client.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
