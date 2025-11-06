@@ -199,7 +199,7 @@ class _LoginScreenState extends State<LoginScreen> {
         
         // App name
         Text(
-          'BioTective Health',
+          'Florence',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 color: AppTheme.primaryBlue,
                 fontWeight: FontWeight.bold,

@@ -28,7 +28,7 @@ class Env {
   static const bool enableAnalytics = false;
   
   // App Configuration
-  static const String appName = 'BioTective Health';
+  static const String appName = 'Florence';
   static const String appVersion = '1.0.0';
   
   // Validation

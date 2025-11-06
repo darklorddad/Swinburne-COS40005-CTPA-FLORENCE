@@ -230,7 +230,7 @@ class AdminSidebar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'BioTective',
+                    'Florence',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AdminTheme.textOnDark,
                           fontWeight: FontWeight.w700,

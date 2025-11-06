@@ -82,7 +82,7 @@ class _SplashScreenState extends State<SplashScreen> {
             
             // App name
             Text(
-              'BioTective Health',
+              'Florence',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,

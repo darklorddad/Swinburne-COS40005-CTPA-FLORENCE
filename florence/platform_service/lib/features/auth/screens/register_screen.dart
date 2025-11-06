@@ -214,7 +214,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       children: [
         Text(
-          'Join BioTective Health',
+          'Join Florence',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),

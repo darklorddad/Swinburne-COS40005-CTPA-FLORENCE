@@ -1,5 +1,5 @@
 // ============================================================================
-// RESPONSIVE LAYOUT SYSTEM FOR BIOTECTIVE
+// RESPONSIVE LAYOUT SYSTEM FOR FLORENCE
 // ============================================================================
 // This file contains all the utilities needed for responsive & adaptive design
 

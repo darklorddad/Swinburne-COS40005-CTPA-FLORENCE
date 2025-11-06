@@ -710,7 +710,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build app bar
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      title: const Text('BioTective Health'),
+      title: const Text('Florence'),
       actions: [
         const NotificationBell(),
         IconButton(

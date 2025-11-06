@@ -202,7 +202,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                'BioTective Admin',
+                                'Florence Admin',
                                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                       fontWeight: FontWeight.w700,
                                     ),

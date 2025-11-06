@@ -38,7 +38,7 @@ class App extends StatelessWidget {
           return AnnotatedRegion<SystemUiOverlayStyle>(
             value: systemUiOverlay,
             child: MaterialApp(
-              title: 'BioTective Health',
+              title: 'Florence',
               debugShowCheckedModeBanner: false,
 
               // Theme with dynamic mode switching
