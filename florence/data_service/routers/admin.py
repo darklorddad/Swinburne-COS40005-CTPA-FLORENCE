@@ -8,7 +8,7 @@ from supabase_auth.errors import AuthApiError
 from postgrest.exceptions import APIError
 import traceback
 
-from ..client import supabase_admin_client
+from ..client import get_supabase_admin_client
 from .authentication import get_current_admin_user
 from ..models import MonitorDataType, UserRole, RiskLevel, MealTime
 from ..core.utils import calculate_age, create_paginated_response, ensure_not_empty
@@ -230,11 +230,12 @@ async def get_all_patients(
 ):
     """Retrieves a paginated list of all patient profiles in the system."""
     try:
+        admin_client = await get_supabase_admin_client()
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
         # Select all columns from patient_profiles and related data from foreign tables
-        query = supabase_admin_client.table('patient_profiles').select(
+        query = admin_client.table('patient_profiles').select(
             "*, "
             "organisations(name), "
             "clinician_profiles(name)",
@@ -264,19 +265,20 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
     """Creates a new patient, including their authentication user and profile."""
     new_user = None
     try:
+        admin_client = await get_supabase_admin_client()
         # Proactively check foreign keys before creating the user
         if patient_data.organisation_id:
-            org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', patient_data.organisation_id).execute()
+            org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', patient_data.organisation_id).execute()
             if org_check.count == 0:
                 raise HTTPException(status_code=404, detail=f"Organisation with id {patient_data.organisation_id} not found.")
         
         if patient_data.clinician_id:
-            clinician_check = await supabase_admin_client.table('clinician_profiles').select('id', count='exact').eq('id', patient_data.clinician_id).execute()
+            clinician_check = await admin_client.table('clinician_profiles').select('id', count='exact').eq('id', patient_data.clinician_id).execute()
             if clinician_check.count == 0:
                 raise HTTPException(status_code=404, detail=f"Clinician with id {patient_data.clinician_id} not found.")
 
         # Step 1: Create the user in Supabase Auth
-        user_session = await supabase_admin_client.auth.admin.create_user({
+        user_session = await admin_client.auth.admin.create_user({
             "email": patient_data.email,
             "password": patient_data.password,
             "email_confirm": True,  # Auto-confirm user
@@ -301,7 +303,7 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
             "p_clinician_id": patient_data.clinician_id,
         }
         
-        patient_profile_res = await supabase_admin_client.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
+        patient_profile_res = await admin_client.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
 
         if not patient_profile_res.data:
             raise Exception("Failed to create patient profile and thresholds in database via RPC.")
@@ -324,7 +326,7 @@ async def add_patient_by_admin(patient_data: PatientAdminCreate):
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
             try:
-                await supabase_admin_client.auth.admin.delete_user(new_user.id)
+                await admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         # Provide more detail for configuration errors during development
@@ -341,11 +343,12 @@ async def get_all_clinicians(
 ):
     """Retrieves a paginated list of all clinicians, their details, and the names of patients assigned to them."""
     try:
+        admin_client = await get_supabase_admin_client()
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
         # Fetch clinicians with their organisation and assigned patients' names
-        query = supabase_admin_client.table('clinician_profiles').select(
+        query = admin_client.table('clinician_profiles').select(
             "*, " # Select all columns from clinician_profiles
             "organisations(name), "
             "patient_profiles(name)",
@@ -379,13 +382,14 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
     """Creates a new clinician, including their authentication user and profile."""
     new_user = None
     try:
+        admin_client = await get_supabase_admin_client()
         # Step 1: Validate that the organisation exists before creating a user.
-        org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', clinician_data.organisation_id).execute()
+        org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', clinician_data.organisation_id).execute()
         if org_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Organisation with id {clinician_data.organisation_id} not found.")
 
         # Step 2: Create the user in Supabase Auth
-        user_session = await supabase_admin_client.auth.admin.create_user({
+        user_session = await admin_client.auth.admin.create_user({
             "email": clinician_data.email,
             "password": clinician_data.password,
             "email_confirm": True,  # Auto-confirm user
@@ -403,7 +407,7 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
             "p_gender": clinician_data.gender,
             "p_organisation_id": clinician_data.organisation_id,
         }
-        clinician_profile_res = await supabase_admin_client.rpc('create_clinician_with_profile', rpc_params).execute()
+        clinician_profile_res = await admin_client.rpc('create_clinician_with_profile', rpc_params).execute()
         if not clinician_profile_res.data:
             raise Exception("Failed to create clinician profile in database via RPC.")
         
@@ -425,7 +429,7 @@ async def add_clinician_by_admin(clinician_data: ClinicianAdminCreate):
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
             try:
-                await supabase_admin_client.auth.admin.delete_user(new_user.id)
+                await admin_client.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
         # Provide more detail for configuration errors during development
@@ -442,10 +446,11 @@ async def get_all_organisations(
 ):
     """Retrieves a paginated list of all organisations in the system."""
     try:
+        admin_client = await get_supabase_admin_client()
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase_admin_client.table('organisations').select('*', count='exact').order('id', desc=True).range(from_row, to_row)
+        query = admin_client.table('organisations').select('*', count='exact').order('id', desc=True).range(from_row, to_row)
         organisations_response = await query.execute()
         
         return create_paginated_response(
@@ -463,7 +468,8 @@ async def get_all_organisations(
 async def add_organisation_by_admin(org_data: OrganisationAdminCreate):
     """Creates a new organisation."""
     try:
-        response = await supabase_admin_client.table('organisations').insert({"name": org_data.name}).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('organisations').insert({"name": org_data.name}).execute()
         if not response.data:
             raise HTTPException(status_code=500, detail="Failed to create organisation.")
         return response.data[0]
@@ -479,10 +485,11 @@ async def get_all_daily_logs(
 ):
     """Retrieves a paginated list of all daily patient logs with patient names."""
     try:
+        admin_client = await get_supabase_admin_client()
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase_admin_client.table('daily_patient_logs').select(
+        query = admin_client.table('daily_patient_logs').select(
             "*, " # Select all columns from daily_patient_logs
             "patient_profiles(name)",
             count='exact'
@@ -505,14 +512,15 @@ async def get_all_daily_logs(
 async def add_daily_log_by_admin(log_data: DailyLogAdminCreate):
     """Adds a new daily log entry for a specified patient."""
     try:
+        admin_client = await get_supabase_admin_client()
         insert_dict = log_data.model_dump(mode='json')
         
         # Check if patient exists
-        patient_check = await supabase_admin_client.table('patient_profiles').select('id', count='exact').eq('id', log_data.patient_id).execute()
+        patient_check = await admin_client.table('patient_profiles').select('id', count='exact').eq('id', log_data.patient_id).execute()
         if patient_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Patient with id {log_data.patient_id} not found.")
 
-        new_log_response = await supabase_admin_client.table('daily_patient_logs').insert(insert_dict).execute()
+        new_log_response = await admin_client.table('daily_patient_logs').insert(insert_dict).execute()
         if not new_log_response.data:
             raise HTTPException(status_code=500, detail="Failed to create daily log.")
         return new_log_response.data[0]
@@ -533,7 +541,8 @@ async def add_daily_log_by_admin(log_data: DailyLogAdminCreate):
 async def delete_daily_log_by_admin(log_id: int):
     """Deletes a daily patient log entry by its ID."""
     try:
-        response = await supabase_admin_client.table('daily_patient_logs').delete().eq('id', log_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('daily_patient_logs').delete().eq('id', log_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Daily log with id {log_id} not found.")
         return {"message": f"Daily log with id {log_id} deleted successfully."}
@@ -551,10 +560,11 @@ async def get_all_monitor_data(
 ):
     """Retrieves a paginated list of all patient monitor data points with patient names."""
     try:
+        admin_client = await get_supabase_admin_client()
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase_admin_client.table('patient_monitor_data').select(
+        query = admin_client.table('patient_monitor_data').select(
             "*, " # Select all columns from patient_monitor_data
             "patient_profiles(name)",
             count='exact'
@@ -589,12 +599,13 @@ async def add_monitor_data_by_admin(data: MonitorDataAdminCreate):
     """Adds a new health monitor data point for a specified patient."""
     insert_dict = data.model_dump(mode='json')
     try:
+        admin_client = await get_supabase_admin_client()
         # Check if patient exists
-        patient_check = await supabase_admin_client.table('patient_profiles').select('id', count='exact').eq('id', data.patient_id).execute()
+        patient_check = await admin_client.table('patient_profiles').select('id', count='exact').eq('id', data.patient_id).execute()
         if patient_check.count == 0:
             raise HTTPException(status_code=404, detail=f"Patient with id {data.patient_id} not found.")
 
-        new_data_response = await supabase_admin_client.table('patient_monitor_data').insert(insert_dict).execute()
+        new_data_response = await admin_client.table('patient_monitor_data').insert(insert_dict).execute()
         if not new_data_response.data:
             raise HTTPException(status_code=500, detail="Failed to create monitor data point.")
         return new_data_response.data[0]
@@ -609,7 +620,8 @@ async def add_monitor_data_by_admin(data: MonitorDataAdminCreate):
 async def delete_monitor_data_by_admin(data_id: int):
     """Deletes a patient monitor data point by its ID."""
     try:
-        response = await supabase_admin_client.table('patient_monitor_data').delete().eq('id', data_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('patient_monitor_data').delete().eq('id', data_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Monitor data with id {data_id} not found.")
         return {"message": f"Monitor data with id {data_id} deleted successfully."}
@@ -627,10 +639,11 @@ async def get_all_thresholds(
 ):
     """Retrieves a paginated list of all patient thresholds with patient names."""
     try:
+        admin_client = await get_supabase_admin_client()
         from_row = (page - 1) * page_size
         to_row = from_row + page_size - 1
 
-        query = supabase_admin_client.table('patient_thresholds').select(
+        query = admin_client.table('patient_thresholds').select(
             "*, " # Select all columns from patient_thresholds
             "patient_profiles(name)",
             count='exact'
@@ -656,18 +669,19 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
     ensure_not_empty(update_dict)
 
     try:
+        admin_client = await get_supabase_admin_client()
         # Proactively check foreign keys before updating
         if 'organisation_id' in update_dict and update_dict['organisation_id'] is not None:
-            org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', update_dict['organisation_id']).execute()
+            org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', update_dict['organisation_id']).execute()
             if org_check.count == 0:
                 raise HTTPException(status_code=404, detail=f"Organisation with id {update_dict['organisation_id']} not found.")
         
         if 'clinician_id' in update_dict and update_dict['clinician_id'] is not None:
-            clinician_check = await supabase_admin_client.table('clinician_profiles').select('id', count='exact').eq('id', update_dict['clinician_id']).execute()
+            clinician_check = await admin_client.table('clinician_profiles').select('id', count='exact').eq('id', update_dict['clinician_id']).execute()
             if clinician_check.count == 0:
                 raise HTTPException(status_code=404, detail=f"Clinician with id {update_dict['clinician_id']} not found.")
 
-        updated_profile_response = await supabase_admin_client.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
+        updated_profile_response = await admin_client.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
         return updated_profile_response.data[0]
@@ -685,13 +699,14 @@ async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianPro
     ensure_not_empty(update_dict)
 
     try:
+        admin_client = await get_supabase_admin_client()
         # Proactively check foreign keys before updating
         if 'organisation_id' in update_dict and update_dict['organisation_id'] is not None:
-            org_check = await supabase_admin_client.table('organisations').select('id', count='exact').eq('id', update_dict['organisation_id']).execute()
+            org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', update_dict['organisation_id']).execute()
             if org_check.count == 0:
                 raise HTTPException(status_code=404, detail=f"Organisation with id {update_dict['organisation_id']} not found.")
 
-        updated_profile_response = await supabase_admin_client.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
+        updated_profile_response = await admin_client.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Clinician with id {clinician_id} not found.")
         return updated_profile_response.data[0]
@@ -709,7 +724,8 @@ async def update_organisation_by_admin(organisation_id: int, update_data: Organi
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase_admin_client.table('organisations').update(update_dict).eq('id', organisation_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('organisations').update(update_dict).eq('id', organisation_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Organisation with id {organisation_id} not found.")
         return response.data[0]
@@ -727,8 +743,9 @@ async def delete_organisation_by_admin(organisation_id: int):
     are currently assigned to it.
     """
     try:
+        admin_client = await get_supabase_admin_client()
         # Step 1: Check if any clinicians are assigned to this organisation.
-        clinician_check = await supabase_admin_client.table('clinician_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
+        clinician_check = await admin_client.table('clinician_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
         if clinician_check.count > 0:
             raise HTTPException(
                 status_code=409, # Conflict
@@ -736,7 +753,7 @@ async def delete_organisation_by_admin(organisation_id: int):
             )
 
         # Step 2: Check if any patients are assigned to this organisation.
-        patient_check = await supabase_admin_client.table('patient_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
+        patient_check = await admin_client.table('patient_profiles').select('id', count='exact').eq('organisation_id', organisation_id).execute()
         if patient_check.count > 0:
             raise HTTPException(
                 status_code=409, # Conflict
@@ -744,7 +761,7 @@ async def delete_organisation_by_admin(organisation_id: int):
             )
 
         # Step 3: Delete the organisation.
-        response = await supabase_admin_client.table('organisations').delete().eq('id', organisation_id).execute()
+        response = await admin_client.table('organisations').delete().eq('id', organisation_id).execute()
 
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Organisation with id {organisation_id} not found.")
@@ -774,7 +791,8 @@ async def update_daily_log_by_admin(log_id: int, update_data: DailyLogAdminUpdat
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase_admin_client.table('daily_patient_logs').update(update_dict).eq('id', log_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('daily_patient_logs').update(update_dict).eq('id', log_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Daily log with id {log_id} not found.")
         return response.data[0]
@@ -792,7 +810,8 @@ async def update_monitor_data_by_admin(data_id: int, update_data: MonitorDataAdm
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase_admin_client.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('patient_monitor_data').update(update_dict).eq('id', data_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Monitor data with id {data_id} not found.")
         return response.data[0]
@@ -810,7 +829,8 @@ async def update_patient_threshold_by_admin(threshold_id: int, update_data: Pati
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase_admin_client.table('patient_thresholds').update(update_dict).eq('id', threshold_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('patient_thresholds').update(update_dict).eq('id', threshold_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Threshold with id {threshold_id} not found.")
         return response.data[0]
@@ -828,7 +848,8 @@ async def update_clinician_note_by_admin(note_id: int, update_data: ClinicianNot
     ensure_not_empty(update_dict)
 
     try:
-        response = await supabase_admin_client.table('clinician_notes').update(update_dict).eq('id', note_id).execute()
+        admin_client = await get_supabase_admin_client()
+        response = await admin_client.table('clinician_notes').update(update_dict).eq('id', note_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail=f"Note with id {note_id} not found.")
         return response.data[0]
@@ -846,8 +867,9 @@ async def delete_patient_by_admin(patient_id: int):
     corresponding user from Supabase Auth.
     """
     try:
+        admin_client = await get_supabase_admin_client()
         # Step 1: Retrieve the patient's profile to get their user_id.
-        patient_profile_res = await supabase_admin_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
+        patient_profile_res = await admin_client.table('patient_profiles').select("user_id").eq('id', patient_id).single().execute()
         user_id = patient_profile_res.data.get("user_id")
 
         # Step 2: Ensure a user_id exists before proceeding.
@@ -862,7 +884,7 @@ async def delete_patient_by_admin(patient_id: int):
         # Step 3: Delete the associated auth user.
         # The 'ON DELETE CASCADE' on the 'patient_profiles' table will automatically delete the profile.
         try:
-            await supabase_admin_client.auth.admin.delete_user(user_id)
+            await admin_client.auth.admin.delete_user(user_id)
         except Exception as auth_error:
             # If auth user deletion fails, the profile remains, which is safe.
             raise HTTPException(
@@ -889,7 +911,8 @@ async def delete_clinician_by_admin(clinician_id: int):
     and deletes the corresponding user from Supabase Auth by calling an atomic RPC function.
     """
     try:
-        await supabase_admin_client.rpc(
+        admin_client = await get_supabase_admin_client()
+        await admin_client.rpc(
             'delete_clinician_and_clean_up',
             {'p_clinician_id': clinician_id}
         ).execute()
