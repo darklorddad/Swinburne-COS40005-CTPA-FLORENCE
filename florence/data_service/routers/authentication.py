@@ -54,7 +54,8 @@ async def register_user(user_data: UserRegistration):
     new_user = None
     try:
         # Step 1: Create Auth User using public sign-up to trigger verification email.
-        user_session = await supabase_anon_client.auth.sign_up({
+        anon_client = await supabase_anon_client
+        user_session = await anon_client.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password,
         })
@@ -192,7 +193,8 @@ async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
     try:
         # Use the anonymous client for public-facing login
-        response = await supabase_anon_client.auth.sign_in_with_password({
+        anon_client = await supabase_anon_client
+        response = await anon_client.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })
