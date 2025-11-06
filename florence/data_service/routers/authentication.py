@@ -152,13 +152,12 @@ async def register_admin(user_data: AdminRegistration):
     admin_client = await supabase_admin_client
     new_user = None
     try:
-        user_session = await admin_client.auth.admin.create_user({
+        new_user = await admin_client.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
             "app_metadata": {"role": UserRole.ADMIN.value},
         })
-        new_user = user_session.user
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create admin user in authentication system.")
 
