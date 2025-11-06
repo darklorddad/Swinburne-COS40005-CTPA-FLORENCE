@@ -7,8 +7,8 @@ from typing import Optional, Dict, Any
 
 # Import the router from your new authentication file
 from .routers import authentication, patients, clinicians, admin
-# Import the Supabase client from its dedicated file
-from .routers.authentication import get_current_admin_user
+# The get_current_admin_user dependency is used within the authentication router,
+# so there is no need to import it here directly.
 
 app = FastAPI()
 
