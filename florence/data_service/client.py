@@ -19,23 +19,27 @@ async def get_supabase_admin_client() -> AsyncClient:
     This client bypasses RLS and should be used for administrative tasks.
     """
     global _admin_client
-    if _admin_client is None:
-        async with _admin_client_lock:
-            # Double-check lock pattern
-            if _admin_client is None:
-                project_root = Path(__file__).resolve().parent.parent.parent
-                load_dotenv(dotenv_path=project_root / '.env')
+    if _admin_client:
+        return _admin_client
 
-                url: str = os.environ.get("SUPABASE_URL")
-                key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+    async with _admin_client_lock:
+        # Check again inside the lock to prevent creating the client twice
+        if _admin_client:
+            return _admin_client
 
-                if not url or not key:
-                    raise RuntimeError(
-                        "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in your environment."
-                    )
-                
-                _admin_client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
-    return _admin_client
+        project_root = Path(__file__).resolve().parent.parent.parent
+        load_dotenv(dotenv_path=project_root / '.env')
+
+        url: str = os.environ.get("SUPABASE_URL")
+        key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+
+        if not url or not key:
+            raise RuntimeError(
+                "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in your environment."
+            )
+        
+        _admin_client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
+        return _admin_client
 
 async def get_supabase_anon_client() -> AsyncClient:
     """
@@ -43,20 +47,24 @@ async def get_supabase_anon_client() -> AsyncClient:
     This client is subject to RLS and is used for public operations like login/signup.
     """
     global _anon_client
-    if _anon_client is None:
-        async with _anon_client_lock:
-            # Double-check lock pattern
-            if _anon_client is None:
-                project_root = Path(__file__).resolve().parent.parent.parent
-                load_dotenv(dotenv_path=project_root / '.env')
+    if _anon_client:
+        return _anon_client
 
-                url: str = os.environ.get("SUPABASE_URL")
-                key: str = os.environ.get("SUPABASE_ANON_KEY")
+    async with _anon_client_lock:
+        # Check again inside the lock
+        if _anon_client:
+            return _anon_client
 
-                if not url or not key:
-                    raise RuntimeError(
-                        "SUPABASE_URL and SUPABASE_ANON_KEY must be set in your environment."
-                    )
+        project_root = Path(__file__).resolve().parent.parent.parent
+        load_dotenv(dotenv_path=project_root / '.env')
 
-                _anon_client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
-    return _anon_client
+        url: str = os.environ.get("SUPABASE_URL")
+        key: str = os.environ.get("SUPABASE_ANON_KEY")
+
+        if not url or not key:
+            raise RuntimeError(
+                "SUPABASE_URL and SUPABASE_ANON_KEY must be set in your environment."
+            )
+
+        _anon_client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
+        return _anon_client
