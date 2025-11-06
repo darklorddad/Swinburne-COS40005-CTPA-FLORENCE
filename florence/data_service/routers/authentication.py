@@ -121,6 +121,11 @@ async def register_user(user_data: UserRegistration):
             status_code=400, 
             detail="User registration failed. Please check your details and try again."
         )
+    except HTTPException:
+        # Re-raise HTTPException to preserve the original status code (e.g., 404, 400).
+        # This prevents it from being caught by the generic 'Exception' handler below
+        # and being incorrectly reported as a 500 Internal Server Error.
+        raise
     except Exception as e:
         # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
@@ -130,7 +135,10 @@ async def register_user(user_data: UserRegistration):
                 await admin_client_rollback.auth.admin.delete_user(new_user.id)
             except Exception as rollback_error:
                 logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
-        logging.error(f"Failed to create user profile: {e}")
+        
+        # Add exc_info=True to log the full exception traceback for easier debugging
+        logging.error(f"An unexpected error occurred during user creation:", exc_info=True)
+        
         # Provide more detail for configuration errors during development
         if isinstance(e, RuntimeError):
             raise HTTPException(status_code=500, detail=str(e))

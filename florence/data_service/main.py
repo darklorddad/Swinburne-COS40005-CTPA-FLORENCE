@@ -1,8 +1,10 @@
 # main.py
 import os
 import logging
+import time
 from fastapi import FastAPI, Depends, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from typing import Optional, Dict, Any
 
 # Import the router from your new authentication file
@@ -11,6 +13,32 @@ from .routers import authentication, patients, clinicians, admin
 # so there is no need to import it here directly.
 
 app = FastAPI()
+
+# Add this middleware to log all requests and catch any unhandled exceptions
+@app.middleware("http")
+async def log_requests_and_handle_errors(request: Request, call_next):
+    """
+    Middleware to log requests, add a process time header, and
+    catch unhandled server errors to ensure a JSON 500 response.
+    """
+    start_time = time.time()
+    try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        response.headers["X-Process-Time"] = f"{process_time:.4f}s"
+        logging.info(f'Request: {request.method} {request.url.path} - Status: {response.status_code}')
+        return response
+    except Exception:
+        process_time = time.time() - start_time
+        logging.error(
+            f"Unhandled exception for request {request.method} {request.url.path} after {process_time:.4f}s",
+            exc_info=True # This will log the full traceback
+        )
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "An internal server error occurred."},
+        )
+
 
 # Configure logging
 logging.basicConfig(
