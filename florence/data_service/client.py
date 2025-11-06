@@ -12,7 +12,7 @@ class _SupabaseAdminClientProxy:
 
     def _get_client(self) -> AsyncClient:
         if self._client is None:
-            project_root = Path(__file__).resolve().parent.parent
+            project_root = Path(__file__).resolve().parent.parent.parent
             load_dotenv(dotenv_path=project_root / '.env')
 
             url: str = os.environ.get("SUPABASE_URL")
@@ -35,7 +35,7 @@ class _SupabaseAnonClientProxy:
 
     def _get_client(self) -> AsyncClient:
         if self._client is None:
-            project_root = Path(__file__).resolve().parent.parent
+            project_root = Path(__file__).resolve().parent.parent.parent
             load_dotenv(dotenv_path=project_root / '.env')
 
             url: str = os.environ.get("SUPABASE_URL")

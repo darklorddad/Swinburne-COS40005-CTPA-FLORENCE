@@ -11,7 +11,7 @@ import threading
 import time
 
 # Add project root to Python path to resolve imports
-project_root = Path(__file__).resolve().parent.parent.parent
+project_root = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from supabase_service.main import app
