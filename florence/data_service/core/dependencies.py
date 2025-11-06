@@ -5,7 +5,7 @@ from supabase_auth.errors import AuthApiError
 from gotrue.types import User
 from supabase import create_async_client, AsyncClient, ClientOptions
 
-from ..client import supabase_admin_client
+from ..client import get_supabase_admin_client
 
 async def get_auth_token(authorization: str = Header(...)) -> str:
     """Dependency to extract the JWT from the Authorization header."""
@@ -19,7 +19,8 @@ async def get_current_user(token: str = Depends(get_auth_token)) -> User:
     Uses the admin client for validation as a trusted server-side operation.
     """
     try:
-        user_response = await supabase_admin_client.auth.get_user(token)
+        admin_client = await get_supabase_admin_client()
+        user_response = await admin_client.auth.get_user(token)
         user = user_response.user
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
