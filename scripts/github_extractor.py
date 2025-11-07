@@ -110,6 +110,20 @@ class GitHubExtractor:
               id
               title
               url
+              views(first: 50) {{
+                nodes {{
+                  id
+                  name
+                  layout
+                  groupByFields(first: 1) {{
+                    nodes {{
+                      ... on ProjectV2FieldCommon {{
+                        name
+                      }}
+                    }}
+                  }}
+                }}
+              }}
               items(first: 100, after: $itemsCursor) {{
                 pageInfo {{
                   hasNextPage
@@ -202,79 +216,132 @@ class GitHubExtractor:
         return project_data
 
 
+def _format_item_to_markdown(item):
+    """Formats a single project item into a list of Markdown strings."""
+    md_item = []
+    content = item.get('content')
+    if not content:
+        return []
+
+    item_type = content.get('__typename')
+    item_title = content.get('title', 'No Title')
+
+    if item_type in ('Issue', 'PullRequest'):
+        item_url = content.get('url')
+        item_number = content.get('number')
+        md_item.append(f"#### [{item_title}]({item_url}) (#{item_number})\n")
+    else:  # DraftIssue
+        md_item.append(f"#### {item_title}\n")
+
+    md_item.append(f"- **Type**: {item_type}")
+
+    if item_type in ('Issue', 'PullRequest'):
+        state = content.get('state')
+        md_item.append(f"- **State**: {state}")
+        
+        assignees = [a['login'] for a in content.get('assignees', {}).get('nodes', [])]
+        if assignees:
+            md_item.append(f"- **Assignees**: {', '.join(assignees)}")
+
+        labels = [l['name'] for l in content.get('labels', {}).get('nodes', [])]
+        if labels:
+            md_item.append(f"- **Labels**: {', '.join(labels)}")
+
+    elif item_type == 'DraftIssue':
+        body = content.get('body')
+        if body:
+            indented_body = "\n".join([f"  > {line}" for line in body.splitlines()])
+            md_item.append(f"- **Body**:\n{indented_body}")
+
+    # Process custom fields
+    field_values = item.get('fieldValues', {}).get('nodes', [])
+    for fv in field_values:
+        if not fv: continue
+        field = fv.get('field')
+        if not field: continue
+        
+        field_name = field.get('name')
+        field_type = fv.get('__typename')
+        
+        value = None
+        if field_type == 'ProjectV2ItemFieldSingleSelectValue':
+            value = fv.get('name')
+        elif field_type == 'ProjectV2ItemFieldTextValue':
+            value = fv.get('text')
+        elif field_type == 'ProjectV2ItemFieldDateValue':
+            value = fv.get('date')
+        elif field_type == 'ProjectV2ItemFieldNumberValue':
+            value = fv.get('number')
+        
+        if value is not None:
+            md_item.append(f"- **{field_name}**: {value}")
+
+    md_item.append("\n")
+    return md_item
+
+
 def format_project_to_markdown(project_details):
-    """Formats the detailed project data into a Markdown string."""
+    """Formats the detailed project data into a Markdown string, structured by views."""
     md = []
     title = project_details.get('title', 'Untitled Project')
     url = project_details.get('url', '')
     md.append(f"# Project: [{title}]({url})\n")
 
     items = project_details.get('items', {}).get('nodes', [])
+    views = project_details.get('views', {}).get('nodes', [])
+
     if not items:
         md.append("This project has no items.")
         return "\n".join(md)
 
-    md.append("## Items\n")
+    if not views:
+        md.append("## All Items\n")
+        for item in items:
+            md.extend(_format_item_to_markdown(item))
+        return "\n".join(md)
 
-    for item in items:
-        content = item.get('content')
-        if not content:
-            continue
+    for view in views:
+        view_name = view.get('name', 'Unnamed View')
+        view_layout = view.get('layout', 'UNKNOWN_LAYOUT')
+        md.append(f"## View: {view_name} (`{view_layout}`)\n")
 
-        item_type = content.get('__typename')
-        item_title = content.get('title', 'No Title')
-
-        if item_type in ('Issue', 'PullRequest'):
-            item_url = content.get('url')
-            item_number = content.get('number')
-            md.append(f"### [{item_title}]({item_url}) (#{item_number})\n")
-        else:  # DraftIssue
-            md.append(f"### {item_title}\n")
-
-        md.append(f"- **Type**: {item_type}")
-
-        if item_type in ('Issue', 'PullRequest'):
-            state = content.get('state')
-            md.append(f"- **State**: {state}")
+        group_by_fields = view.get('groupByFields', {}).get('nodes', [])
+        
+        if view_layout == 'BOARD_LAYOUT' and group_by_fields:
+            group_field_name = group_by_fields[0]['name']
+            md.append(f"Grouped by: **{group_field_name}**\n")
             
-            assignees = [a['login'] for a in content.get('assignees', {}).get('nodes', [])]
-            if assignees:
-                md.append(f"- **Assignees**: {', '.join(assignees)}")
+            # Group items by the field value
+            grouped_items = {"Uncategorized": []}
+            for item in items:
+                found_group = False
+                for fv in item.get('fieldValues', {}).get('nodes', []):
+                    if (fv and fv.get('__typename') == 'ProjectV2ItemFieldSingleSelectValue' and 
+                            fv.get('field') and fv['field'].get('name') == group_field_name):
+                        group_name = fv.get('name', 'Uncategorized')
+                        if group_name not in grouped_items:
+                            grouped_items[group_name] = []
+                        grouped_items[group_name].append(item)
+                        found_group = True
+                        break
+                if not found_group:
+                    grouped_items["Uncategorized"].append(item)
 
-            labels = [l['name'] for l in content.get('labels', {}).get('nodes', [])]
-            if labels:
-                md.append(f"- **Labels**: {', '.join(labels)}")
+            if len(grouped_items) > 1 and not grouped_items["Uncategorized"]:
+                del grouped_items["Uncategorized"]
 
-        elif item_type == 'DraftIssue':
-            body = content.get('body')
-            if body:
-                # Indent body for better readability in markdown
-                indented_body = "\n".join([f"  > {line}" for line in body.splitlines()])
-                md.append(f"- **Body**:\n{indented_body}")
-
-        # Process custom fields
-        field_values = item.get('fieldValues', {}).get('nodes', [])
-        for fv in field_values:
-            if not fv: continue
-            field = fv.get('field')
-            if not field: continue
-            
-            field_name = field.get('name')
-            field_type = fv.get('__typename')
-            
-            value = None
-            if field_type == 'ProjectV2ItemFieldSingleSelectValue':
-                value = fv.get('name')
-            elif field_type == 'ProjectV2ItemFieldTextValue':
-                value = fv.get('text')
-            elif field_type == 'ProjectV2ItemFieldDateValue':
-                value = fv.get('date')
-            elif field_type == 'ProjectV2ItemFieldNumberValue':
-                value = fv.get('number')
-            
-            if value is not None:
-                md.append(f"- **{field_name}**: {value}")
-
+            # Render grouped items
+            for group_name, group_items in sorted(grouped_items.items()):
+                md.append(f"### {group_name}\n")
+                if not group_items:
+                    md.append("_No items in this column._\n\n")
+                for item in group_items:
+                    md.extend(_format_item_to_markdown(item))
+        else:
+            # For Table, Roadmap, or non-grouped boards, just list all items
+            for item in items:
+                md.extend(_format_item_to_markdown(item))
+        
         md.append("\n---\n")
 
     return "\n".join(md)
