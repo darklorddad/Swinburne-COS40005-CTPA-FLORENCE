@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import sys
+from dotenv import load_dotenv
 
 class GitHubExtractor:
     """
@@ -148,6 +149,7 @@ def main():
 
     args = parser.parse_args()
 
+    load_dotenv()
     token = args.token or os.environ.get("GITHUB_TOKEN")
     if not token:
         print("Error: GitHub token not provided. Use --token or set GITHUB_TOKEN environment variable.", file=sys.stderr)
