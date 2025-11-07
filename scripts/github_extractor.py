@@ -98,31 +98,186 @@ class GitHubExtractor:
 
     def get_project_details(self, owner, project_number):
         """
-        Fetches details for a GitHub Project, including its views.
-        This uses the GraphQL API as it's required for Projects V2.
+        Fetches details for a GitHub Project, including its items and fields.
+        This uses the GraphQL API and handles pagination for items.
         """
         owner_type = self._get_owner_type(owner)
 
         query = f"""
-        query($login: String!, $projectNumber: Int!) {{
+        query GetProjectDetails($login: String!, $projectNumber: Int!, $itemsCursor: String) {{
           {owner_type}(login: $login) {{
             projectV2(number: $projectNumber) {{
               id
               title
               url
-              views(first: 50) {{
+              items(first: 100, after: $itemsCursor) {{
+                pageInfo {{
+                  hasNextPage
+                  endCursor
+                }}
                 nodes {{
                   id
-                  name
-                  layout
+                  content {{
+                    ... on DraftIssue {{
+                      __typename
+                      title
+                      body
+                    }}
+                    ... on Issue {{
+                      __typename
+                      title
+                      url
+                      number
+                      state
+                      assignees(first: 5) {{ nodes {{ login }} }}
+                      labels(first: 10) {{ nodes {{ name }} }}
+                    }}
+                    ... on PullRequest {{
+                      __typename
+                      title
+                      url
+                      number
+                      state
+                      assignees(first: 5) {{ nodes {{ login }} }}
+                      labels(first: 10) {{ nodes {{ name }} }}
+                    }}
+                  }}
+                  fieldValues(first: 20) {{
+                    nodes {{
+                      ... on ProjectV2ItemFieldTextValue {{
+                        __typename
+                        text
+                        field {{ ... on ProjectV2Field {{ name }} }}
+                      }}
+                      ... on ProjectV2ItemFieldSingleSelectValue {{
+                        __typename
+                        name
+                        field {{ ... on ProjectV2Field {{ name }} }}
+                      }}
+                      ... on ProjectV2ItemFieldDateValue {{
+                        __typename
+                        date
+                        field {{ ... on ProjectV2Field {{ name }} }}
+                      }}
+                      ... on ProjectV2ItemFieldNumberValue {{
+                        __typename
+                        number
+                        field {{ ... on ProjectV2Field {{ name }} }}
+                      }}
+                    }}
+                  }}
                 }}
               }}
             }}
           }}
         }}
         """
-        variables = {"login": owner, "projectNumber": project_number}
-        return self._make_graphql_request(query, variables)
+
+        all_items = []
+        has_next_page = True
+        cursor = None
+        project_data = None
+
+        while has_next_page:
+            variables = {
+                "login": owner,
+                "projectNumber": project_number,
+                "itemsCursor": cursor
+            }
+            result = self._make_graphql_request(query, variables)
+            
+            current_project_data = result["data"][owner_type]["projectV2"]
+            if not project_data:
+                project_data = current_project_data
+
+            items_page = current_project_data["items"]
+            all_items.extend(items_page["nodes"])
+            
+            has_next_page = items_page["pageInfo"]["hasNextPage"]
+            cursor = items_page["pageInfo"]["endCursor"]
+
+        # Replace the paginated items with the full list
+        project_data["items"] = {"nodes": all_items}
+        
+        return project_data
+
+
+def format_project_to_markdown(project_details):
+    """Formats the detailed project data into a Markdown string."""
+    md = []
+    title = project_details.get('title', 'Untitled Project')
+    url = project_details.get('url', '')
+    md.append(f"# Project: [{title}]({url})\n")
+
+    items = project_details.get('items', {}).get('nodes', [])
+    if not items:
+        md.append("This project has no items.")
+        return "\n".join(md)
+
+    md.append("## Items\n")
+
+    for item in items:
+        content = item.get('content')
+        if not content:
+            continue
+
+        item_type = content.get('__typename')
+        item_title = content.get('title', 'No Title')
+
+        if item_type in ('Issue', 'PullRequest'):
+            item_url = content.get('url')
+            item_number = content.get('number')
+            md.append(f"### [{item_title}]({item_url}) (#{item_number})\n")
+        else:  # DraftIssue
+            md.append(f"### {item_title}\n")
+
+        md.append(f"- **Type**: {item_type}")
+
+        if item_type in ('Issue', 'PullRequest'):
+            state = content.get('state')
+            md.append(f"- **State**: {state}")
+            
+            assignees = [a['login'] for a in content.get('assignees', {}).get('nodes', [])]
+            if assignees:
+                md.append(f"- **Assignees**: {', '.join(assignees)}")
+
+            labels = [l['name'] for l in content.get('labels', {}).get('nodes', [])]
+            if labels:
+                md.append(f"- **Labels**: {', '.join(labels)}")
+
+        elif item_type == 'DraftIssue':
+            body = content.get('body')
+            if body:
+                # Indent body for better readability in markdown
+                indented_body = "\n".join([f"  > {line}" for line in body.splitlines()])
+                md.append(f"- **Body**:\n{indented_body}")
+
+        # Process custom fields
+        field_values = item.get('fieldValues', {}).get('nodes', [])
+        for fv in field_values:
+            if not fv: continue
+            field = fv.get('field')
+            if not field: continue
+            
+            field_name = field.get('name')
+            field_type = fv.get('__typename')
+            
+            value = None
+            if field_type == 'ProjectV2ItemFieldSingleSelectValue':
+                value = fv.get('name')
+            elif field_type == 'ProjectV2ItemFieldTextValue':
+                value = fv.get('text')
+            elif field_type == 'ProjectV2ItemFieldDateValue':
+                value = fv.get('date')
+            elif field_type == 'ProjectV2ItemFieldNumberValue':
+                value = fv.get('number')
+            
+            if value is not None:
+                md.append(f"- **{field_name}**: {value}")
+
+        md.append("\n---\n")
+
+    return "\n".join(md)
 
 
 def main():
@@ -191,7 +346,21 @@ def main():
                 print(f"Found project number {project_number}. Fetching details...")
 
             project_data = extractor.get_project_details(args.owner, project_number)
-            print(json.dumps(project_data, indent=2))
+            
+            markdown_output = format_project_to_markdown(project_data)
+            
+            project_title = project_data.get('title', 'Untitled_GitHub_Project')
+            # Sanitize title for filename
+            safe_title = "".join(c for c in project_title if c.isalnum() or c in (' ', '-')).rstrip().replace(' ', '_')
+            filename = f"{safe_title}.md"
+            
+            script_dir = os.path.dirname(os.path.realpath(__file__))
+            filepath = os.path.join(script_dir, filename)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(markdown_output)
+            
+            print(f"Successfully extracted project details to {filepath}")
 
     except (ValueError, requests.exceptions.RequestException) as e:
         print(f"Error: {e}", file=sys.stderr)
