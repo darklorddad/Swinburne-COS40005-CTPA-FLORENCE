@@ -396,7 +396,7 @@ def format_project_to_markdown(project_details):
                 for header in headers[1:]: # Skip title
                     value = field_map.get(header, '')
                     # Sanitize pipe characters inside table cells
-                    safe_value = str(value).replace('|', '\|')
+                    safe_value = str(value).replace('|', '\\|')
                     row_values.append(safe_value)
                 
                 md.append(f"| {' | '.join(row_values)} |")
