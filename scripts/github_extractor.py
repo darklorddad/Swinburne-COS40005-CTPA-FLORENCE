@@ -51,28 +51,56 @@ class GitHubExtractor:
         """Fetches branches for a repository."""
         return self._make_request(f"repos/{owner}/{repo}/branches")
 
-    def get_project_details(self, owner, project_number):
-        """
-        Fetches details for a GitHub Project, including its views.
-        This uses the GraphQL API as it's required for Projects V2.
-        """
-        # We need to determine if the owner is a User or an Organization for the GraphQL query.
-        owner_type = ""
+    def _get_owner_type(self, owner):
+        """Determines if an owner is a 'user' or 'organization'."""
         try:
             # Check if it's an organization first
             self._make_request(f"orgs/{owner}")
-            owner_type = "organization"
+            return "organization"
         except requests.exceptions.HTTPError as e:
             if e.response.status_code != 404:
                 raise
             # If not an org, check if it's a user
             try:
                 self._make_request(f"users/{owner}")
-                owner_type = "user"
+                return "user"
             except requests.exceptions.HTTPError as user_e:
                 if user_e.response.status_code == 404:
                     raise ValueError(f"Could not find user or organization '{owner}'") from user_e
                 raise
+
+    def find_project_number_by_name(self, owner, project_name):
+        """Finds a project number by its name for a given owner."""
+        owner_type = self._get_owner_type(owner)
+
+        query = f"""
+        query($login: String!) {{
+          {owner_type}(login: $login) {{
+            projectsV2(first: 100) {{
+              nodes {{
+                title
+                number
+              }}
+            }}
+          }}
+        }}
+        """
+        variables = {"login": owner}
+        result = self._make_graphql_request(query, variables)
+
+        projects = result["data"][owner_type]["projectsV2"]["nodes"]
+        for project in projects:
+            if project["title"].lower() == project_name.lower():
+                return project["number"]
+
+        return None
+
+    def get_project_details(self, owner, project_number):
+        """
+        Fetches details for a GitHub Project, including its views.
+        This uses the GraphQL API as it's required for Projects V2.
+        """
+        owner_type = self._get_owner_type(owner)
 
         query = f"""
         query($login: String!, $projectNumber: Int!) {{
@@ -116,7 +144,7 @@ def main():
     # Sub-parser for project information
     project_parser = subparsers.add_parser("project", help="Extract project information (views).")
     project_parser.add_argument("owner", help="The owner of the project (user or organization).")
-    project_parser.add_argument("project_number", type=int, help="The project number.")
+    project_parser.add_argument("project_identifier", help="The project number or name/title.")
 
     args = parser.parse_args()
 
@@ -149,8 +177,18 @@ def main():
             print(json.dumps(result, indent=2))
 
         elif args.command == "project":
-            print(f"Fetching data for project {args.project_number} owned by {args.owner}")
-            project_data = extractor.get_project_details(args.owner, args.project_number)
+            try:
+                project_number = int(args.project_identifier)
+                print(f"Fetching data for project number {project_number} owned by {args.owner}")
+            except ValueError:
+                print(f"Identifier '{args.project_identifier}' is not a number; searching for project by name...")
+                project_number = extractor.find_project_number_by_name(args.owner, args.project_identifier)
+                if project_number is None:
+                    print(f"Error: Could not find a project named '{args.project_identifier}' for owner '{args.owner}'.", file=sys.stderr)
+                    sys.exit(1)
+                print(f"Found project number {project_number}. Fetching details...")
+
+            project_data = extractor.get_project_details(args.owner, project_number)
             print(json.dumps(project_data, indent=2))
 
     except (ValueError, requests.exceptions.RequestException) as e:
