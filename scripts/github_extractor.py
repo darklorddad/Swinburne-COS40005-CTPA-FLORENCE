@@ -3,6 +3,7 @@ import json
 import os
 import requests
 import sys
+from datetime import datetime
 from dotenv import load_dotenv
 
 class GitHubExtractor:
@@ -122,6 +123,13 @@ class GitHubExtractor:
                       }}
                     }}
                   }}
+                  visibleFields(first: 20) {{
+                    nodes {{
+                      ... on ProjectV2FieldCommon {{
+                        name
+                      }}
+                    }}
+                  }}
                 }}
               }}
               items(first: 100, after: $itemsCursor) {{
@@ -214,6 +222,38 @@ class GitHubExtractor:
         project_data["items"] = {"nodes": all_items}
         
         return project_data
+
+
+def _get_item_field_values_map(item):
+    """Returns a dictionary of an item's field names to their values."""
+    field_map = {}
+    # Add title and URL from the content node
+    content = item.get('content', {})
+    if content:
+        field_map['Title'] = content.get('title', 'No Title')
+        if 'url' in content:
+            field_map['URL'] = content.get('url')
+
+    for fv in item.get('fieldValues', {}).get('nodes', []):
+        if not fv or not fv.get('field'):
+            continue
+        
+        field_name = fv['field'].get('name')
+        field_type = fv.get('__typename')
+        value = None
+
+        if field_type == 'ProjectV2ItemFieldSingleSelectValue':
+            value = fv.get('name')
+        elif field_type == 'ProjectV2ItemFieldTextValue':
+            value = fv.get('text')
+        elif field_type == 'ProjectV2ItemFieldDateValue':
+            value = fv.get('date')
+        elif field_type == 'ProjectV2ItemFieldNumberValue':
+            value = fv.get('number')
+        
+        if field_name and value is not None:
+            field_map[field_name] = value
+    return field_map
 
 
 def _format_item_to_markdown(item):
@@ -337,8 +377,56 @@ def format_project_to_markdown(project_details):
                     md.append("_No items in this column._\n\n")
                 for item in group_items:
                     md.extend(_format_item_to_markdown(item))
+
+        elif view_layout == 'TABLE_LAYOUT':
+            visible_fields = [f['name'] for f in view.get('visibleFields', {}).get('nodes', []) if f]
+            headers = ['Title'] + [h for h in visible_fields if h != 'Title']
+
+            md.append(f"| {' | '.join(headers)} |")
+            md.append(f"|{' :--- |' * len(headers)}")
+
+            for item in items:
+                field_map = _get_item_field_values_map(item)
+                
+                title_text = field_map.get('Title', '')
+                title_url = field_map.get('URL')
+                title_cell = f"[{title_text}]({title_url})" if title_url else title_text
+                
+                row_values = [title_cell]
+                for header in headers[1:]: # Skip title
+                    value = field_map.get(header, '')
+                    # Sanitize pipe characters inside table cells
+                    safe_value = str(value).replace('|', '\|')
+                    row_values.append(safe_value)
+                
+                md.append(f"| {' | '.join(row_values)} |")
+        
+        elif view_layout == 'ROADMAP_LAYOUT':
+            # Group items by month based on any date field
+            grouped_by_month = {}
+            for item in items:
+                date_fv = next((fv for fv in item.get('fieldValues', {}).get('nodes', []) if fv and fv.get('__typename') == 'ProjectV2ItemFieldDateValue' and fv.get('date')), None)
+                
+                if date_fv:
+                    date_val = date_fv['date']
+                    try:
+                        month_key = datetime.strptime(date_val, '%Y-%m-%d').strftime('%Y-%m (%B)')
+                        if month_key not in grouped_by_month:
+                            grouped_by_month[month_key] = []
+                        grouped_by_month[month_key].append(item)
+                    except ValueError:
+                        pass # Ignore if date format is unexpected
+            
+            if not grouped_by_month:
+                md.append("_No items with date fields found for this roadmap._\n")
+            else:
+                for month in sorted(grouped_by_month.keys()):
+                    md.append(f"### {month}\n")
+                    for item in grouped_by_month[month]:
+                        md.extend(_format_item_to_markdown(item))
+
         else:
-            # For Table, Roadmap, or non-grouped boards, just list all items
+            # For non-grouped boards or other layouts, just list all items
             for item in items:
                 md.extend(_format_item_to_markdown(item))
         
