@@ -31,7 +31,7 @@ class Environment {
 
   /// Backend API URL
   // static const String apiUrl = 'http://127.0.0.1:8000';
-  static const String apiUrl = '10.82.71.105:8000';
+  static const String apiUrl = 'http://10.82.71.105:8000';
 
 
   // ==================== SUPABASE CONFIGURATION ====================

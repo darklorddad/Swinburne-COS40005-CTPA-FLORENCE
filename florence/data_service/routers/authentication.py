@@ -65,6 +65,7 @@ async def register_user(user_data: UserRegistration):
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,  # Auto-confirm user for simplicity.
+            "app_metadata": {"role": user_data.role},
         })
         new_user = user_session.user
         if not new_user:
