@@ -30,44 +30,42 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
+    // This await ensures that the widget is mounted before we start listening.
     await Future.delayed(Duration.zero);
     if (!mounted) return;
 
-    // Listen for both successful authentication and errors
+    // The onAuthStateChange stream is the single source of truth for auth state.
+    // It handles the initial session, deep links, and sign-in/out events.
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
-        // This handles successful sign-ins (from deep link or existing session)
-        final Session? session = data.session;
-        if (session != null && !_hasNavigated) {
+        if (_hasNavigated) return;
+
+        final session = data.session;
+        if (session != null) {
+          // A session is present. This can be from an existing session on app start,
+          // or from a successful login or deep link.
           _navigateToDashboard(session.user);
+        } else {
+          // No session is present. This can be from a fresh app start,
+          // a sign-out event, or the initial state before a deep link is processed.
+          _navigateToLogin();
         }
       },
       onError: (error) {
-        // This is the new, crucial part for handling errors like expired links
-        if (error is AuthException && !_hasNavigated) {
+        if (_hasNavigated) return;
+
+        // An error on the auth stream, typically from an invalid deep link.
+        if (error is AuthException) {
           String message = 'An authentication error occurred. Please try again.';
           if (error.statusCode == '401' || error.message.contains('invalid or has expired')) {
             message = 'This confirmation link has expired or is invalid. Please log in or sign up again.';
           }
           _navigateToLogin(message: message);
+        } else {
+          _navigateToLogin(message: 'An unexpected error occurred during authentication.');
         }
       },
     );
-
-    // Handle the initial state for users who are already logged in
-    final initialSession = supabase.auth.currentSession;
-    if (initialSession != null) {
-      _navigateToDashboard(initialSession.user);
-    } else {
-      // For new users or expired links, a short delay allows the onError to fire
-      Future.delayed(const Duration(milliseconds: 1000), () {
-        if (!mounted || _hasNavigated) return;
-        // If nothing has happened after 1 second, it's a normal startup for a logged-out user
-        if (supabase.auth.currentSession == null) {
-          _navigateToLogin();
-        }
-      });
-    }
   }
 
   void _navigateToDashboard(User user) {
