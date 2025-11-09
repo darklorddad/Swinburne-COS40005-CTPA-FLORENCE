@@ -18,34 +18,33 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
-  // Controllers
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  // State
   bool _isLoading = false;
   bool _rememberMe = false;
-  String? _errorMessage;
+  String? _errorMessage; // Will hold errors from login attempts OR deep links
+  bool _hasCheckedArgs = false; // Prevents re-checking arguments on every rebuild
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Check for an initial message passed from another route (e.g., SplashScreen)
-    // This runs only once when the screen is first built.
-    Future.delayed(Duration.zero, () {
-      if (!mounted) return;
+    // This runs when the screen is built and ensures we catch the incoming message
+    if (!_hasCheckedArgs) {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['message'] != null) {
-        setState(() {
-          _errorMessage = args['message'];
+        // Use postFrameCallback to avoid calling setState during build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          setState(() {
+            _errorMessage = args['message'];
+          });
         });
       }
-    });
+      _hasCheckedArgs = true;
+    }
   }
-  
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -53,17 +52,16 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
   
-  /// Handle login
   Future<void> _handleLogin() async {
-    // Validate form
     if (!_formKey.currentState!.validate()) {
       return;
     }
     
-    // Hide keyboard
     Helpers.hideKeyboard(context);
-    
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null; // Clear previous errors on a new attempt
+    });
     
     try {
       final response = await supabase.auth.signInWithPassword(
@@ -72,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       
       if (response.user != null && mounted) {
-        // Check user role and navigate accordingly
         final role = response.user!.appMetadata?['role'];
 
         if (role == 'PATIENT') {
@@ -82,18 +79,17 @@ class _LoginScreenState extends State<LoginScreen> {
           Helpers.showSuccess(context, 'Welcome back, Clinician!');
           AppRoutes.pushAndRemoveUntil(context, AppRoutes.clinicianDashboard);
         } else {
-          // Role not supported or not found
-          Helpers.showError(context, 'Your user role is not supported in this application.');
+          Helpers.showError(context, 'Your user role is not supported.');
           await supabase.auth.signOut();
         }
       }
     } on AuthException catch (error) {
       if (mounted) {
-        Helpers.showError(context, error.message);
+        setState(() => _errorMessage = error.message);
       }
     } catch (error) {
       if (mounted) {
-        Helpers.showError(context, 'An unexpected error occurred. Please try again.');
+        setState(() => _errorMessage = 'An unexpected error occurred. Please try again.');
       }
     } finally {
       if (mounted) {
@@ -136,6 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildHeader(),
                     const SizedBox(height: 48),
                     
+                    // THIS IS THE NEW ERROR DISPLAY WIDGET
                     if (_errorMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
@@ -143,25 +140,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(
                           color: AppTheme.errorColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: AppTheme.errorColor.withOpacity(0.3),
-                          ),
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.error_outline,
-                              color: AppTheme.errorColor,
-                              size: 20,
-                            ),
+                            const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 _errorMessage!,
-                                style: const TextStyle(
-                                  color: AppTheme.errorColor,
-                                  fontSize: 13,
-                                ),
+                                style: const TextStyle(color: AppTheme.errorColor, fontSize: 13),
                               ),
                             ),
                           ],
@@ -169,7 +156,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                     
-                    // Email field
                     CustomTextField(
                       label: 'Email',
                       hint: 'Enter your email',
@@ -192,9 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         fieldName: 'Password',
                       ),
                       textInputAction: TextInputAction.done,
-                      onChanged: (_) {
-                        // Clear error when user types
-                      },
+                      validator: (value) => Validators.required(value, fieldName: 'Password'),
+                      textInputAction: TextInputAction.done,
                     ),
                     const SizedBox(height: 16),
                     
@@ -227,16 +212,14 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
   
-  /// Build header with logo and title
   Widget _buildHeader() {
     return Column(
       children: [
-        // Logo (you can replace with actual logo)
         Container(
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+            color: AppTheme.primaryBlue.withOpacity(0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -246,8 +229,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        
-        // App name
         Text(
           'Florence',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -256,8 +237,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
         ),
         const SizedBox(height: 8),
-        
-        // Subtitle
         Text(
           'Monitor your health, improve your life',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
