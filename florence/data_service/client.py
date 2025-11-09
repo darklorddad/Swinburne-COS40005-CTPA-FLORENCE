@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from supabase import create_client, Client, ClientOptions
-from supabase.client_options import AuthClientOptions, PostgrestClientOptions
+from supabase.lib.client_options import AuthClientOptions, PostgrestClientOptions
 from dotenv import load_dotenv
 from typing import Optional, Any
 
