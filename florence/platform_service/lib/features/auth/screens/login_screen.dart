@@ -28,21 +28,22 @@ class _LoginScreenState extends State<LoginScreen> {
   // State
   bool _isLoading = false;
   bool _rememberMe = false;
-  bool _hasShownInitialMessage = false; // Add this flag
+  String? _errorMessage;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Show a message if passed via arguments (e.g., from an expired link)
-    if (!_hasShownInitialMessage) {
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    // Check for an initial message passed from another route (e.g., SplashScreen)
+    // This runs only once when the screen is first built.
+    Future.delayed(Duration.zero, () {
+      if (!mounted) return;
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['message'] != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Helpers.showError(context, args['message']!);
+        setState(() {
+          _errorMessage = args['message'];
         });
       }
-      _hasShownInitialMessage = true;
-    }
+    });
   }
   
   @override
@@ -134,6 +135,39 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Logo and Title
                     _buildHeader(),
                     const SizedBox(height: 48),
+                    
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: AppTheme.errorColor.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              color: AppTheme.errorColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(
+                                  color: AppTheme.errorColor,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     
                     // Email field
                     CustomTextField(
