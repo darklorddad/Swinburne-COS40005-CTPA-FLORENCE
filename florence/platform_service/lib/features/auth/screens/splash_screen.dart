@@ -1,10 +1,12 @@
+import 'dart:async'; // Add this import
 import 'package:flutter/material.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
 import '../../../main.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'; // Add this import
 
 /// Splash Screen
-/// Shows app logo and checks authentication status
+/// Shows app logo and listens for authentication status changes
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -13,27 +15,36 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  StreamSubscription<AuthState>? _authSubscription;
+
   @override
   void initState() {
     super.initState();
-    _checkAuthAndNavigate();
+    _redirect();
   }
-  
-  /// Check authentication status and navigate accordingly
-  Future<void> _checkAuthAndNavigate() async {
-    // Wait a bit to show splash screen
-    await Future.delayed(const Duration(seconds: 2));
-    
+
+  @override
+  void dispose() {
+    // Be sure to cancel the subscription when the widget is disposed
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _redirect() async {
+    // Wait for the widget to be fully built before navigating
+    await Future.delayed(Duration.zero);
     if (!mounted) return;
-    
-    try {
-      // Check if user is logged in
-      final session = supabase.auth.currentSession;
-      final user = supabase.auth.currentUser;
+
+    // Listen for authentication state changes
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
       
-      if (session != null && user != null) {
-        // User is logged in, check role and navigate
+      if (event == AuthChangeEvent.signedIn && session != null) {
+        // User is signed in, check role and navigate
+        final user = session.user;
         final role = user.appMetadata?['role'];
+
         if (role == 'PATIENT') {
           AppRoutes.pushReplacement(context, AppRoutes.dashboard);
         } else if (role == 'CLINICIAN') {
@@ -42,20 +53,26 @@ class _SplashScreenState extends State<SplashScreen> {
           // Role not supported or not found, go to login
           AppRoutes.pushReplacement(context, AppRoutes.login);
         }
-      } else {
-        // User is not logged in, go to login
+      } else if (event == AuthChangeEvent.signedOut) {
+        // User signed out, go to login
         AppRoutes.pushReplacement(context, AppRoutes.login);
       }
-    } catch (e) {
-      // Error checking auth (e.g., Supabase not configured)
-      // In demo mode, just go to login
-      debugPrint('Auth check error (Demo Mode): $e');
-      if (mounted) {
+    });
+
+    // Handle the initial state (if the app is opened normally, not from a link)
+    final session = supabase.auth.currentSession;
+    if (session == null) {
+       // Give Supabase a moment to process a deep link if it exists
+      await Future.delayed(const Duration(seconds: 1));
+      if (!mounted) return;
+      
+      // If still no session after the delay, navigate to login
+      if (supabase.auth.currentSession == null) {
         AppRoutes.pushReplacement(context, AppRoutes.login);
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -94,7 +111,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               'Monitor your health, improve your life',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withOpacity(0.9),
                   ),
               textAlign: TextAlign.center,
             ),
