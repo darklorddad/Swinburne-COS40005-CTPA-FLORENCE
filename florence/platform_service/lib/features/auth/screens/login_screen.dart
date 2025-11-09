@@ -173,13 +173,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       label: 'Password',
                       hint: 'Enter your password',
                       controller: _passwordController,
-                      validator: (value) => Validators.required(
-                        value,
-                        fieldName: 'Password',
-                      ),
-                      textInputAction: TextInputAction.done,
                       validator: (value) => Validators.required(value, fieldName: 'Password'),
                       textInputAction: TextInputAction.done,
+                      onChanged: (value) {
+                        // When user starts typing a new password, clear the error message
+                        if (_errorMessage != null) {
+                          setState(() {
+                            _errorMessage = null;
+                          });
+                        }
+                      },
                     ),
                     const SizedBox(height: 16),
                     
