@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
 import '../../../main.dart';
+import '../../../core/utils/helpers.dart'; // Make sure this import is present
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,7 +15,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   StreamSubscription<AuthState>? _authSubscription;
-  bool _hasNavigated = false; // Add a flag to prevent multiple navigations
+  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -29,35 +30,40 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Wait for the widget to be fully built before any logic
     await Future.delayed(Duration.zero);
     if (!mounted) return;
 
-    // Listen for authentication state changes from Supabase
-    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      final Session? session = data.session;
-      if (session != null && !_hasNavigated) {
-        _navigateToDashboard(session.user);
-      }
-    });
+    // Listen for both successful authentication and errors
+    _authSubscription = supabase.auth.onAuthStateChange.listen(
+      (data) {
+        // This handles successful sign-ins (from deep link or existing session)
+        final Session? session = data.session;
+        if (session != null && !_hasNavigated) {
+          _navigateToDashboard(session.user);
+        }
+      },
+      onError: (error) {
+        // This is the new, crucial part for handling errors like expired links
+        if (error is AuthException && !_hasNavigated) {
+          String message = 'An authentication error occurred. Please try again.';
+          if (error.statusCode == '401' || error.message.contains('invalid or has expired')) {
+            message = 'This confirmation link has expired or is invalid. Please log in or sign up again.';
+          }
+          _navigateToLogin(message: message);
+        }
+      },
+    );
 
-    // Handle the initial state right away
+    // Handle the initial state for users who are already logged in
     final initialSession = supabase.auth.currentSession;
     if (initialSession != null) {
-      // If a session already exists (user was already logged in), go to dashboard
       _navigateToDashboard(initialSession.user);
     } else {
-      // If no session, wait a brief moment to see if a deep link session is established.
-      // This is the key part for handling both normal startup and deep link startup.
-      Future.delayed(const Duration(milliseconds: 500), () {
+      // For new users or expired links, a short delay allows the onError to fire
+      Future.delayed(const Duration(milliseconds: 1000), () {
         if (!mounted || _hasNavigated) return;
-
-        final sessionAfterDelay = supabase.auth.currentSession;
-        if (sessionAfterDelay == null) {
-          // If after the delay there is still no session, it means either:
-          // 1. It was a normal app start for a logged-out user.
-          // 2. It was an invalid/expired deep link.
-          // In both cases, we navigate to the login screen.
+        // If nothing has happened after 1 second, it's a normal startup for a logged-out user
+        if (supabase.auth.currentSession == null) {
           _navigateToLogin();
         }
       });
@@ -66,18 +72,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToDashboard(User user) {
     if (!mounted || _hasNavigated) return;
-    setState(() {
-      _hasNavigated = true;
-    });
+    setState(() { _hasNavigated = true; });
 
-    // Determine the correct welcome message
     String message;
     final confirmedAt = user.emailConfirmedAt;
+    // Check if the user was just confirmed in the last few minutes
     if (confirmedAt != null && DateTime.now().difference(DateTime.parse(confirmedAt)).inMinutes < 2) {
-      // If confirmed within the last 2 minutes, it's a new confirmation
-      message = 'Welcome! Your email has been confirmed.';
+      message = 'Welcome! Your email has been successfully confirmed.';
     } else {
-      // Otherwise, they were already confirmed and are just logging in
       message = 'Welcome back!';
     }
 
@@ -93,15 +95,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToLogin({String? message}) {
     if (!mounted || _hasNavigated) return;
-    setState(() {
-      _hasNavigated = true;
-    });
+    setState(() { _hasNavigated = true; });
     AppRoutes.pushReplacement(context, AppRoutes.login, arguments: {'message': message});
   }
 
   @override
   Widget build(BuildContext context) {
-    // The UI remains the same, showing the loading screen
     return Scaffold(
       backgroundColor: AppTheme.primaryBlue,
       body: Center(
