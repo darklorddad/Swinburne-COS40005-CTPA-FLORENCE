@@ -17,7 +17,7 @@ class UserRegistration(BaseModel):
     password: str
     role: Literal['PATIENT', 'CLINICIAN']
     name: str
-    phone_number: str
+    phone_number: Optional[str] = None
     # Clinician specific
     organisation_id: Optional[int] = None
     # Patient specific
