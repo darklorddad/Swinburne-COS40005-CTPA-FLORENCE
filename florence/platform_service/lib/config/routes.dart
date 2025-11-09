@@ -52,6 +52,14 @@ class AppRoutes {
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
+    // This handles deep links that come with a URL fragment (#).
+    // The router tries to interpret this as a route, causing a crash.
+    // We intercept it and redirect to the SplashScreen, which will then
+    // handle the authentication logic from the URL fragment.
+    if (settings.name != null && settings.name!.startsWith('/#')) {
+      return _buildRoute(const SplashScreen());
+    }
+
     // Parse route arguments if any
     final args = settings.arguments;
 
