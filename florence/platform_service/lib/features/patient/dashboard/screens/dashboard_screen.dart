@@ -70,6 +70,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isRefreshing = false;
   String? _userName;
+  bool _hasShownWelcomeMessage = false; // Add this flag
 
   // Services
   final PatientProfileService _profileService = PatientProfileService();
@@ -79,6 +80,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     _loadUserData();
     _profileService.addListener(_onProfileChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Show a welcome message if passed via arguments from the splash screen
+    if (!_hasShownWelcomeMessage) {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['message'] != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Helpers.showSuccess(context, args['message']!);
+        });
+        _hasShownWelcomeMessage = true;
+      }
+    }
   }
 
   @override

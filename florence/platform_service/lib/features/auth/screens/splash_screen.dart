@@ -70,22 +70,33 @@ class _SplashScreenState extends State<SplashScreen> {
       _hasNavigated = true;
     });
 
+    // Determine the correct welcome message
+    String message;
+    final confirmedAt = user.emailConfirmedAt;
+    if (confirmedAt != null && DateTime.now().difference(DateTime.parse(confirmedAt)).inMinutes < 2) {
+      // If confirmed within the last 2 minutes, it's a new confirmation
+      message = 'Welcome! Your email has been confirmed.';
+    } else {
+      // Otherwise, they were already confirmed and are just logging in
+      message = 'Welcome back!';
+    }
+
     final role = user.appMetadata?['role'];
     if (role == 'PATIENT') {
-      AppRoutes.pushReplacement(context, AppRoutes.dashboard);
+      AppRoutes.pushReplacement(context, AppRoutes.dashboard, arguments: {'message': message});
     } else if (role == 'CLINICIAN') {
-      AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard);
+      AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard, arguments: {'message': message});
     } else {
-      AppRoutes.pushReplacement(context, AppRoutes.login);
+      _navigateToLogin(message: 'Login failed: Unsupported user role.');
     }
   }
 
-  void _navigateToLogin() {
+  void _navigateToLogin({String? message}) {
     if (!mounted || _hasNavigated) return;
     setState(() {
       _hasNavigated = true;
     });
-    AppRoutes.pushReplacement(context, AppRoutes.login);
+    AppRoutes.pushReplacement(context, AppRoutes.login, arguments: {'message': message});
   }
 
   @override

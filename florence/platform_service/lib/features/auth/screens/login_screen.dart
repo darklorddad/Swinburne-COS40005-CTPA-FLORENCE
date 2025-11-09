@@ -28,6 +28,22 @@ class _LoginScreenState extends State<LoginScreen> {
   // State
   bool _isLoading = false;
   bool _rememberMe = false;
+  bool _hasShownInitialMessage = false; // Add this flag
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Show a message if passed via arguments (e.g., from an expired link)
+    if (!_hasShownInitialMessage) {
+      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args['message'] != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Helpers.showError(context, args['message']!);
+        });
+      }
+      _hasShownInitialMessage = true;
+    }
+  }
   
   @override
   void dispose() {
