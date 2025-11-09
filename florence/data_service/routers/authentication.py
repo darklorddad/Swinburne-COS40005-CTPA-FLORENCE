@@ -65,6 +65,7 @@ async def register_user(user_data: UserRegistration):
             "email": user_data.email,
             "password": user_data.password,
             "options": {
+                "email_redirect_to": "florence://login-callback",
                 "data": {
                     "role": user_data.role
                 }
