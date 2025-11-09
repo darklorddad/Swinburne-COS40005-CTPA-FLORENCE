@@ -1,7 +1,8 @@
 import os
-import httpx
 from pathlib import Path
 from supabase import create_client, Client, ClientOptions
+from supabase.lib.auth.options import AuthClientOptions
+from supabase.lib.postgrest.options import PostgrestClientOptions
 from dotenv import load_dotenv
 from typing import Optional, Any
 
@@ -28,10 +29,10 @@ class _SupabaseClientProxy:
                     "Ensure you have a .env file in the project root with SUPABASE_URL and a service key."
                 )
 
-            # Configure client timeouts.
+            # Configure client timeouts using nested options.
             options = ClientOptions(
-                postgrest_client_timeout=10,
-                auth_client_timeout=10,
+                auth=AuthClientOptions(timeout=10),
+                postgrest=PostgrestClientOptions(timeout=10),
             )
 
             self._client = create_client(url, key, options=options)
