@@ -1,12 +1,10 @@
-import 'dart:async'; // Add this import
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
 import '../../../main.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // Add this import
 
-/// Splash Screen
-/// Shows app logo and listens for authentication status changes
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -16,6 +14,7 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen> {
   StreamSubscription<AuthState>? _authSubscription;
+  bool _hasNavigated = false; // Add a flag to prevent multiple navigations
 
   @override
   void initState() {
@@ -25,63 +24,79 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void dispose() {
-    // Be sure to cancel the subscription when the widget is disposed
     _authSubscription?.cancel();
     super.dispose();
   }
 
   Future<void> _redirect() async {
-    // Wait for the widget to be fully built before navigating
+    // Wait for the widget to be fully built before any logic
     await Future.delayed(Duration.zero);
     if (!mounted) return;
 
-    // Listen for authentication state changes
+    // Listen for authentication state changes from Supabase
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      final AuthChangeEvent event = data.event;
       final Session? session = data.session;
-      
-      if (event == AuthChangeEvent.signedIn && session != null) {
-        // User is signed in, check role and navigate
-        final user = session.user;
-        final role = user.appMetadata?['role'];
-
-        if (role == 'PATIENT') {
-          AppRoutes.pushReplacement(context, AppRoutes.dashboard);
-        } else if (role == 'CLINICIAN') {
-          AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard);
-        } else {
-          // Role not supported or not found, go to login
-          AppRoutes.pushReplacement(context, AppRoutes.login);
-        }
-      } else if (event == AuthChangeEvent.signedOut) {
-        // User signed out, go to login
-        AppRoutes.pushReplacement(context, AppRoutes.login);
+      if (session != null && !_hasNavigated) {
+        _navigateToDashboard(session.user);
       }
     });
 
-    // Handle the initial state (if the app is opened normally, not from a link)
-    final session = supabase.auth.currentSession;
-    if (session == null) {
-       // Give Supabase a moment to process a deep link if it exists
-      await Future.delayed(const Duration(seconds: 1));
-      if (!mounted) return;
-      
-      // If still no session after the delay, navigate to login
-      if (supabase.auth.currentSession == null) {
-        AppRoutes.pushReplacement(context, AppRoutes.login);
-      }
+    // Handle the initial state right away
+    final initialSession = supabase.auth.currentSession;
+    if (initialSession != null) {
+      // If a session already exists (user was already logged in), go to dashboard
+      _navigateToDashboard(initialSession.user);
+    } else {
+      // If no session, wait a brief moment to see if a deep link session is established.
+      // This is the key part for handling both normal startup and deep link startup.
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (!mounted || _hasNavigated) return;
+
+        final sessionAfterDelay = supabase.auth.currentSession;
+        if (sessionAfterDelay == null) {
+          // If after the delay there is still no session, it means either:
+          // 1. It was a normal app start for a logged-out user.
+          // 2. It was an invalid/expired deep link.
+          // In both cases, we navigate to the login screen.
+          _navigateToLogin();
+        }
+      });
     }
+  }
+
+  void _navigateToDashboard(User user) {
+    if (!mounted || _hasNavigated) return;
+    setState(() {
+      _hasNavigated = true;
+    });
+
+    final role = user.appMetadata?['role'];
+    if (role == 'PATIENT') {
+      AppRoutes.pushReplacement(context, AppRoutes.dashboard);
+    } else if (role == 'CLINICIAN') {
+      AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard);
+    } else {
+      AppRoutes.pushReplacement(context, AppRoutes.login);
+    }
+  }
+
+  void _navigateToLogin() {
+    if (!mounted || _hasNavigated) return;
+    setState(() {
+      _hasNavigated = true;
+    });
+    AppRoutes.pushReplacement(context, AppRoutes.login);
   }
 
   @override
   Widget build(BuildContext context) {
+    // The UI remains the same, showing the loading screen
     return Scaffold(
       backgroundColor: AppTheme.primaryBlue,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Logo
             Container(
               width: 120,
               height: 120,
@@ -96,8 +111,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
             const SizedBox(height: 32),
-            
-            // App name
             Text(
               'Florence',
               style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -106,8 +119,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
             ),
             const SizedBox(height: 8),
-            
-            // Tagline
             Text(
               'Monitor your health, improve your life',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -116,8 +127,6 @@ class _SplashScreenState extends State<SplashScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 48),
-            
-            // Loading indicator
             const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
