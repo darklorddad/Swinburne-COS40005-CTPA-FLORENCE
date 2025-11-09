@@ -1,70 +1,50 @@
 import os
+import httpx
 from pathlib import Path
-from supabase import create_async_client, AsyncClient, ClientOptions
+from supabase import create_client, Client, ClientOptions
 from dotenv import load_dotenv
 from typing import Optional, Any
-import asyncio
 
-# --- Lazy Initialisation for Supabase Clients ---
+class _SupabaseClientProxy:
+    _client: Optional[Client] = None
 
-_admin_client: Optional[AsyncClient] = None
-_admin_client_lock = asyncio.Lock()
+    def _get_client(self) -> Client:
+        """
+        Initialises and returns the Supabase client instance, ensuring it's a singleton.
+        This lazy initialisation solves issues where environment variables might not be
+        loaded at import time, especially during test runs.
+        """
+        if self._client is None:
+            # Load environment variables from .env file in the project root.
+            project_root = Path(__file__).resolve().parent.parent
+            load_dotenv(dotenv_path=project_root / '.env', override=True)
 
-_anon_client: Optional[AsyncClient] = None
-_anon_client_lock = asyncio.Lock()
+            url: str = os.environ.get("SUPABASE_URL")
+            key: str = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
 
-async def get_supabase_admin_client() -> AsyncClient:
-    """
-    Lazily initializes and returns a Supabase client with admin (service role) privileges.
-    This client bypasses RLS and should be used for administrative tasks.
-    """
-    global _admin_client
-    if _admin_client:
-        return _admin_client
+            if not url or not key:
+                raise RuntimeError(
+                    "Supabase URL and Key could not be loaded. "
+                    "Ensure you have a .env file in the project root with SUPABASE_URL and a service key."
+                )
 
-    async with _admin_client_lock:
-        # Check again inside the lock to prevent creating the client twice
-        if _admin_client:
-            return _admin_client
-
-        project_root = Path(__file__).resolve().parent.parent.parent
-        load_dotenv(dotenv_path=project_root / '.env')
-
-        url: str = os.environ.get("SUPABASE_URL")
-        key: str = os.environ.get("SUPABASE_SERVICE_KEY")
-
-        if not url or not key:
-            raise RuntimeError(
-                "SUPABASE_URL and SUPABASE_SERVICE_KEY must be set in your environment."
+            # Configure httpx client with a timeout.
+            options = ClientOptions(
+                httpx_client=httpx.Client(timeout=10.0)
             )
+
+            self._client = create_client(url, key, options=options)
         
-        _admin_client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
-        return _admin_client
+        return self._client
 
-async def get_supabase_anon_client() -> AsyncClient:
-    """
-    Lazily initializes and returns a Supabase client with anonymous user privileges.
-    This client is subject to RLS and is used for public operations like login/signup.
-    """
-    global _anon_client
-    if _anon_client:
-        return _anon_client
+    def __getattr__(self, name: str) -> Any:
+        """
+        Delegates attribute access to the actual Supabase client,
+        initialising it if necessary.
+        """
+        client = self._get_client()
+        return getattr(client, name)
 
-    async with _anon_client_lock:
-        # Check again inside the lock
-        if _anon_client:
-            return _anon_client
-
-        project_root = Path(__file__).resolve().parent.parent.parent
-        load_dotenv(dotenv_path=project_root / '.env')
-
-        url: str = os.environ.get("SUPABASE_URL")
-        key: str = os.environ.get("SUPABASE_ANON_KEY")
-
-        if not url or not key:
-            raise RuntimeError(
-                "SUPABASE_URL and SUPABASE_ANON_KEY must be set in your environment."
-            )
-
-        _anon_client = create_async_client(url, key, options=ClientOptions(postgrest_client_timeout=10))
-        return _anon_client
+# The global supabase object is an instance of the proxy.
+# The actual client will be created only on first use.
+supabase: Client = _SupabaseClientProxy()

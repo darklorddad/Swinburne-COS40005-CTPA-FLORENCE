@@ -1,15 +1,11 @@
-import logging
 from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Literal, Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
-from gotrue.types import User as GotrueUser
 
 # Import the shared Supabase client
-from ..client import get_supabase_admin_client, get_supabase_anon_client
-from ..core.dependencies import get_current_user
-from ..models import UserRole, PublicUserRole
+from ..client import supabase
 
 router = APIRouter(
     prefix="/auth",
@@ -19,13 +15,13 @@ router = APIRouter(
 class UserRegistration(BaseModel):
     email: EmailStr
     password: str
-    role: PublicUserRole
+    role: Literal['PATIENT', 'CLINICIAN']
     name: str
-    phone_number: Optional[str] = None
-    gender: Optional[str] = None
+    phone_number: str
     # Clinician specific
     organisation_id: Optional[int] = None
     # Patient specific
+    gender: Optional[str] = None
     date_of_birth: Optional[date] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
@@ -41,190 +37,142 @@ class AdminRegistration(BaseModel):
     email: EmailStr
     password: str
 
+
+DEFAULT_THRESHOLDS = [
+    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
+    {'data_type': 'CHOLESTEROL', 'min_value': 100.0, 'max_value': 199.0},
+    {'data_type': 'ECG', 'min_value': 60.0, 'max_value': 100},
+    {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120},
+    {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80}
+
+    # NOTE: BLOOD_PRESSURE is not added by default because its value (e.g., "120/80")
+    # doesn't fit the `min_value`/`max_value` NUMERIC columns in the `patient_thresholds` table.
+    # A clinician or admin should set this manually based on a specific metric (e.g., Systolic only).
+    # NOTE: ECG is also not added as its result is typically qualitative (e.g., "Normal Sinus Rhythm")
+    # and does not have a simple numeric min/max threshold.
+]
+
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
+    if user_data.role == 'CLINICIAN' and user_data.organisation_id is None:
+        raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
+
     new_user = None
     try:
-        admin_client = await get_supabase_admin_client()
-        if user_data.role == PublicUserRole.CLINICIAN:
-            if user_data.organisation_id is None:
-                raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
-            # Check if organisation exists before creating user
-            org_check = await admin_client.table('organisations').select('id', count='exact').eq('id', user_data.organisation_id).execute()
-            if org_check.count == 0:
-                raise HTTPException(status_code=404, detail=f"Organisation with id {user_data.organisation_id} not found.")
-
-        # Step 1: Create Auth User using public sign-up to trigger verification email.
-        anon_client = await get_supabase_anon_client()
-        user_session = await anon_client.auth.sign_up({
+        user_session = supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
+            "email_confirm": True,  # Auto-confirm user for simplicity.
         })
         new_user = user_session.user
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
 
-        # Step 2: Immediately update the user with the admin client to set their role.
-        # This is a separate step because public sign-up cannot set app_metadata.
-        await admin_client.auth.admin.update_user_by_id(
-            new_user.id,
-            {"app_metadata": {"role": user_data.role.value}}
-        )
-
-        # Step 3: Create Database Profile (requires admin client to call RPC as definer)
-        if user_data.role == PublicUserRole.PATIENT:
-            # Use the atomic RPC function to create profile and thresholds together
-            rpc_params = {
-                "p_user_id": str(new_user.id),
-                "p_name": user_data.name,
-                "p_phone_number": user_data.phone_number,
-                "p_gender": user_data.gender,
-                "p_date_of_birth": user_data.date_of_birth.isoformat() if user_data.date_of_birth else None,
-                "p_emergency_contact_name": user_data.emergency_contact_name,
-                "p_emergency_contact_relationship": user_data.emergency_contact_relationship,
-                "p_emergency_contact_phone": user_data.emergency_contact_phone,
-                "p_risk_level": "LOW", # Default risk level for new public sign-ups
-                "p_organisation_id": None,
-                "p_clinician_id": None,
-            }
-            profile_res = await admin_client.rpc('create_patient_with_profile_and_thresholds', rpc_params).execute()
-            if not profile_res.data:
-                raise Exception("Failed to create patient profile and thresholds via RPC.")
-
-        elif user_data.role == PublicUserRole.CLINICIAN:
-            rpc_params = {
-                "p_user_id": str(new_user.id),
-                "p_name": user_data.name,
-                "p_phone_number": user_data.phone_number,
-                "p_gender": user_data.gender,
-                "p_organisation_id": user_data.organisation_id,
-            }
-            profile_res = await admin_client.rpc('create_clinician_with_profile', rpc_params).execute()
-            if not profile_res.data:
-                raise Exception("Failed to create clinician profile via RPC.")
-        
-        return {"message": f"{user_data.role.value.capitalize()} registered successfully. Please check your email for verification."}
-
     except AuthApiError as e:
-        # Log the specific error for debugging.
-        logging.warning(f"Registration AuthApiError: {e.message}")
+        raise HTTPException(status_code=400, detail=f"User registration failed: {e.message}")
+    
+    try:
+        if user_data.role == 'PATIENT':
+            profile_data = {
+                "user_id": new_user.id, "name": user_data.name, "phone_number": user_data.phone_number,
+                "gender": user_data.gender,
+                "date_of_birth": user_data.date_of_birth.isoformat() if user_data.date_of_birth else None,
+                "emergency_contact_name": user_data.emergency_contact_name,
+                "emergency_contact_relationship": user_data.emergency_contact_relationship,
+                "emergency_contact_phone": user_data.emergency_contact_phone,
+            }
+            patient_profile = supabase.table('patient_profiles').insert(profile_data).execute().data[0]
+            
+            thresholds_to_insert = [
+                {**threshold, 'patient_id': patient_profile['id']} for threshold in DEFAULT_THRESHOLDS
+            ]
+            supabase.table('patient_thresholds').insert(thresholds_to_insert).execute()
+
+        elif user_data.role == 'CLINICIAN':
+            profile_data = {
+                "user_id": new_user.id, "name": user_data.name, "phone_number": user_data.phone_number,
+                "organisation_id": user_data.organisation_id,
+            }
+            supabase.table('clinician_profiles').insert(profile_data).execute()
         
-        # Check for a specific, safe-to-disclose error.
-        if "User already registered" in e.message:
-            raise HTTPException(
-                status_code=409, # Conflict
-                detail="A user with this email address already exists."
-            )
-        
-        # For all other auth errors, return a generic message to prevent user enumeration.
-        raise HTTPException(
-            status_code=400, 
-            detail="User registration failed. Please check your details and try again."
-        )
-    except HTTPException:
-        # Re-raise HTTPException to preserve the original status code (e.g., 404, 400).
-        # This prevents it from being caught by the generic 'Exception' handler below
-        # and being incorrectly reported as a 500 Internal Server Error.
-        raise
+        return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
+
     except Exception as e:
-        # If profile creation fails, attempt to roll back the auth user creation.
         if new_user:
-            try:
-                # Must get a new client instance for the rollback operation
-                admin_client_rollback = await get_supabase_admin_client()
-                await admin_client_rollback.auth.admin.delete_user(new_user.id)
-            except Exception as rollback_error:
-                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
-        
-        # Add exc_info=True to log the full exception traceback for easier debugging
-        logging.error(f"An unexpected error occurred during user creation:", exc_info=True)
-        
-        # Provide more detail for configuration errors during development
-        if isinstance(e, RuntimeError):
-            raise HTTPException(status_code=500, detail=str(e))
-        raise HTTPException(status_code=500, detail="An internal server error occurred during user creation.")
+            supabase.auth.admin.delete_user(new_user.id)
+        raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
 
 
-async def get_current_admin_user(user: GotrueUser = Depends(get_current_user)):
+async def get_current_admin_user(authorization: str = Header(...)):
     """Dependency to get the current user and verify they are an admin."""
-    # Explicitly check for the ADMIN role in app_metadata
-    if user.app_metadata.get('role') != UserRole.ADMIN.value:
-        raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
-    return user
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
+    token = authorization.split(" ")[1]
+    
+    try:
+        user_response = supabase.auth.get_user(token)
+        user = user_response.user
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token.")
+        
+        if user.app_metadata.get('role', '').upper() != 'ADMIN':
+            raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
+            
+        return user
+    except AuthApiError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
 async def register_admin(user_data: AdminRegistration):
-    """
-    Registers a new admin user and creates their profile.
-    This endpoint is protected and only accessible by other admins.
-    """
-    admin_client = await get_supabase_admin_client()
-    new_user = None
+    """Registers a new admin user. This endpoint is protected and only accessible by other admins."""
     try:
-        new_user = await admin_client.auth.admin.create_user({
+        supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
-            "app_metadata": {"role": UserRole.ADMIN.value},
+            "app_metadata": {"role": "ADMIN"},
         })
-        if not new_user:
-            raise HTTPException(status_code=500, detail="Failed to create admin user in authentication system.")
-
-        # Create a corresponding profile in the admin_profiles table
-        profile_data = {"user_id": new_user.id}
-        profile_res = await admin_client.table('admin_profiles').insert(profile_data).execute()
-
-        if not profile_res.data:
-            # Let the generic exception handler below deal with the rollback.
-            raise Exception("Failed to create admin profile after user creation.")
-
         return {"message": "Admin registered successfully."}
     except AuthApiError as e:
-        logging.warning(f"Admin registration failed: {e.message}")
-        if "User already registered" in e.message:
-            raise HTTPException(
-                status_code=409, # Conflict
-                detail="An admin with this email address already exists."
-            )
         raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")
     except Exception as e:
-        # Ensure rollback if any other exception occurs after user creation
-        if new_user:
-            try:
-                await admin_client.auth.admin.delete_user(new_user.id)
-            except Exception as rollback_error:
-                logging.error(f"CRITICAL: Failed to roll back auth user {new_user.id} after profile creation failed. Manual cleanup required. Rollback error: {rollback_error}")
-        logging.error(f"Failed to create admin profile: {e}")
-        raise HTTPException(status_code=500, detail="An internal server error occurred during admin creation.")
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
 @router.post("/login")
 async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
     try:
-        # Use the anonymous client for public-facing login
-        anon_client = await get_supabase_anon_client()
-        response = await anon_client.auth.sign_in_with_password({
+        response = supabase.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })
-        return response
+        return response.session
     except AuthApiError as e:
-        # Log the actual error for server-side debugging.
-        logging.warning(f"Login failed for email {credentials.email}: {e.message}")
-        # Check for a server-side configuration error. The message is from the auth provider.
-        if "Database error" in e.message:
-            raise HTTPException(
-                status_code=500,
-                detail="Login failed due to a server-side database configuration issue. Please contact an administrator."
-            )
-        # For other auth errors (e.g., wrong password, email not confirmed),
-        # return a 401 error with the specific message from the auth provider.
-        raise HTTPException(status_code=401, detail=e.message)
+        # Supabase often returns a generic "Invalid login credentials" message.
+        raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
 
 
-@router.get("/me", response_model=GotrueUser)
-async def get_user_profile(user: GotrueUser = Depends(get_current_user)):
+@router.get("/me")
+async def get_current_user(authorization: str = Header(...)):
     """Retrieves the profile of the currently authenticated user based on the JWT."""
-    return user
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
+    token = authorization.split(" ")[1]
+    
+    try:
+        user_response = supabase.auth.get_user(token)
+        return user_response.user
+    except AuthApiError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
