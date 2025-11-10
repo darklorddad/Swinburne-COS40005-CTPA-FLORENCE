@@ -22,7 +22,7 @@ class App extends StatefulWidget {
 }
 
 class _AppState extends State<App> {
-  late final StreamSubscription<AuthState> _authSubscription;
+  StreamSubscription<AuthState>? _authSubscription;
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -42,26 +42,25 @@ class _AppState extends State<App> {
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
-        debugPrint('[Auth Listener] onAuthStateChange received event: ${data.event}');
-        _handleNavigation(data.session);
+        final event = data.event;
+        // Only handle events that happen AFTER the initial load.
+        // The SplashScreen handles the initial navigation.
+        if (event == AuthChangeEvent.signedOut) {
+          debugPrint('[Auth Listener] onAuthStateChange received event: $event');
+          _handleNavigation(data.session);
+        }
       },
       onError: (error) {
         // This handles deep link errors (e.g., expired token).
-        String message = 'An authentication error occurred. Please try again.';
         if (error is AuthException) {
-          // Use the more specific message from Supabase if available and user-friendly
-          if (error.message.contains('invalid or has expired')) {
-            message = 'This confirmation link is invalid or has expired. Please try again.';
-          } else {
-            message = error.message; // Use the direct error message from Supabase
-          }
+          String message = 'This confirmation link is invalid or has expired. Please try again.';
+          debugPrint('[Auth Listener] onError: Navigating to login with message: "$message"');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+                AppRoutes.login, (route) => false,
+                arguments: {'message': message});
+          });
         }
-        debugPrint('[Auth Listener] onError: Navigating to login with message: "$message"');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          navigatorKey.currentState?.pushNamedAndRemoveUntil(
-              AppRoutes.login, (route) => false,
-              arguments: {'message': message});
-        });
       },
     );
   }
@@ -70,20 +69,11 @@ class _AppState extends State<App> {
     // This function is now the single source of truth for navigation.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (session != null) {
-        final user = session.user;
-        final role = user.userMetadata?['role'];
-        final isNewUser = user.createdAt != null &&
-            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
-        String message = isNewUser ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
-        debugPrint('[Auth Listener] Session found. Role: $role. Navigating to dashboard.');
-        if (role == 'PATIENT') {
-          navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false, arguments: {'message': message});
-        } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-          navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.clinicianDashboard, (route) => false, arguments: {'message': message});
-        } else {
-          navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
-        }
+        // This case is handled by the SplashScreen on initial load.
+        // This block will now primarily handle re-authentication or future multi-user scenarios.
+        debugPrint('[Auth Listener] Session updated while app is running.');
       } else {
+        // This handles logout.
         debugPrint('[Auth Listener] No session found. Navigating to login.');
         navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
       }
