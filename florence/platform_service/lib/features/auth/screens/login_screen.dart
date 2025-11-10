@@ -25,20 +25,23 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _rememberMe = false;
   String? _errorMessage; // Will hold errors from login attempts OR deep links
-  bool _hasCheckedArgs = false; // Prevents re-checking arguments on every rebuild
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     // This runs when the screen is built and ensures we catch any incoming message
     // from the splash screen or deep link error handler.
-    if (!_hasCheckedArgs) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args['message'] != null) {
-        // We can set this directly here. The build method will pick it up.
-        _errorMessage = args['message'];
-      }
-      _hasCheckedArgs = true;
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final message = args?['message'] as String?;
+
+    // Only update state if the new message is different from the current one.
+    if (message != null && message != _errorMessage) {
+      // Use a post-frame callback to safely update the state after the build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {
+          _errorMessage = message;
+        });
+      });
     }
   }
 

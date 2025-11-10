@@ -27,6 +27,7 @@ class _AppState extends State<App> {
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   bool _hasHandledInitialAuth = false; // Prevents multiple initial navigations
+  bool _hasHandledError = false; // Prevents navigation race condition on error
 
   @override
   void initState() {
@@ -46,23 +47,27 @@ class _AppState extends State<App> {
         final session = data.session;
         final event = data.event;
 
-        // Handle initial session check only once on app start
+        // Handle initial session check only once on app start.
         if (event == AuthChangeEvent.initialSession && !_hasHandledInitialAuth) {
           _hasHandledInitialAuth = true;
-          // A small delay to allow the splash screen to render smoothly
+          // A small delay to allow splash screen to render and deep link errors to be processed.
           await Future.delayed(const Duration(milliseconds: 500));
+          // If an error hasn't already triggered navigation, proceed.
+          if (!_hasHandledError) {
+            _handleNavigation(session);
+          }
+        } else if (event == AuthChangeEvent.signedIn) {
+          // Handle sign-in events (e.g., from a deep link after the app is already running)
           _handleNavigation(session);
-        }
-        // Handle sign-in events (e.g., from a deep link after the app is already running)
-        else if (event == AuthChangeEvent.signedIn) {
-          _handleNavigation(session);
-        }
-        // Handle sign-out events
-        else if (event == AuthChangeEvent.signedOut) {
+        } else if (event == AuthChangeEvent.signedOut) {
+          // Handle sign-out events
           _handleNavigation(null);
         }
       },
       onError: (error) {
+        if (_hasHandledError) return; // Only handle the first error
+        _hasHandledError = true;
+
         String message = 'An authentication error occurred. Please try again.';
         if (error is AuthException) {
           // Use the more specific message from Supabase if available and user-friendly
@@ -72,7 +77,7 @@ class _AppState extends State<App> {
             message = error.message; // Use the direct error message from Supabase
           }
         }
-        // Ensure the navigator is ready before trying to push a new route.
+        // Ensure the navigator is ready by waiting for the first frame to be built.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           navigatorKey.currentState?.pushNamedAndRemoveUntil(
               AppRoutes.login, (route) => false,
