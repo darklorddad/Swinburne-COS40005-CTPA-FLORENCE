@@ -77,6 +77,7 @@ class _AppState extends State<App> {
             message = error.message; // Use the direct error message from Supabase
           }
         }
+        debugPrint('[Auth Listener] onError: Navigating to login with message: "$message"');
         // Ensure the navigator is ready by waiting for the first frame to be built.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           navigatorKey.currentState?.pushNamedAndRemoveUntil(

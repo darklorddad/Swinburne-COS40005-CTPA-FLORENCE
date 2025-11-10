@@ -29,18 +29,23 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    debugPrint('[LoginScreen] didChangeDependencies called.');
     // This runs when the screen is built and ensures we catch any incoming message
     // from the splash screen or deep link error handler.
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final message = args?['message'] as String?;
+    debugPrint('[LoginScreen] Arguments received: ${args?.toString()}');
 
     // Only update state if the new message is different from the current one.
     if (message != null && message != _errorMessage) {
+      debugPrint('[LoginScreen] New error message found: "$message"');
       // Use a post-frame callback to safely update the state after the build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {
-          _errorMessage = message;
-        });
+        if (mounted) {
+          setState(() {
+            _errorMessage = message;
+          });
+        }
       });
     }
   }
@@ -111,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
   
   @override
   Widget build(BuildContext context) {
+    debugPrint('[LoginScreen] build called. Current errorMessage: "$_errorMessage"');
     // Responsive sizing
     final isDesktop = Helpers.isDesktop(context);
     final maxWidth = isDesktop ? 400.0 : double.infinity;
