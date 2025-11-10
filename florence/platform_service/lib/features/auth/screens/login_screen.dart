@@ -30,16 +30,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // This runs when the screen is built and ensures we catch the incoming message
+    // This runs when the screen is built and ensures we catch any incoming message
+    // from the splash screen or deep link error handler.
     if (!_hasCheckedArgs) {
       final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['message'] != null) {
-        // Use postFrameCallback to avoid calling setState during build
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          setState(() {
-            _errorMessage = args['message'];
-          });
-        });
+        // We can set this directly here. The build method will pick it up.
+        _errorMessage = args['message'];
       }
       _hasCheckedArgs = true;
     }
