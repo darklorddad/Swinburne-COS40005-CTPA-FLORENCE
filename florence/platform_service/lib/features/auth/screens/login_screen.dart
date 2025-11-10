@@ -25,23 +25,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _rememberMe = false;
   String? _errorMessage; // Will hold errors from login attempts OR deep links
-  bool _didExtractArgs = false; // Prevents re-extracting arguments on every rebuild
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // This runs when the screen is built and ensures we catch any incoming message
-    // from the splash screen or deep link error handler.
-    // We only want to do this once when the screen is first pushed.
-    if (!_didExtractArgs) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      final message = args?['message'] as String?;
-      if (message != null) {
-        _errorMessage = message;
-      }
-      _didExtractArgs = true;
-    }
-  }
 
   @override
   void dispose() {
@@ -109,7 +92,17 @@ class _LoginScreenState extends State<LoginScreen> {
   
   @override
   Widget build(BuildContext context) {
-    debugPrint('[LoginScreen] build called. Current errorMessage: "$_errorMessage"');
+    // Extract arguments on every build. This is the most reliable way to get the
+    // message from a deep link navigation.
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final routeMessage = args?['message'] as String?;
+
+    // The message to display is either from the route or from a failed login attempt.
+    // The route message (from deep links) takes precedence.
+    final displayMessage = routeMessage ?? _errorMessage;
+    
+    debugPrint('[LoginScreen] build called. Route message: "$routeMessage", State message: "$_errorMessage", Displaying: "$displayMessage"');
+
     // Responsive sizing
     final isDesktop = Helpers.isDesktop(context);
     final maxWidth = isDesktop ? 400.0 : double.infinity;
@@ -132,7 +125,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 48),
                     
                     // THIS IS THE NEW ERROR DISPLAY WIDGET
-                    if (_errorMessage != null) ...[
+                    if (displayMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 16),
@@ -146,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                _errorMessage!,
+                                displayMessage,
                                 style: const TextStyle(color: AppTheme.errorColor, fontSize: 13),
                               ),
                             ),
