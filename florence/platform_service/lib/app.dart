@@ -43,22 +43,20 @@ class _AppState extends State<App> {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
         final event = data.event;
-        // Only handle events that happen AFTER the initial load.
-        // The SplashScreen handles the initial navigation.
+        // The SplashScreen handles the initial navigation. This listener only
+        // handles events that happen AFTER the app is running, like a user signing out.
         if (event == AuthChangeEvent.signedOut) {
-          debugPrint('[Auth Listener] onAuthStateChange received event: $event');
-          _handleNavigation(data.session);
+          debugPrint('[Auth Listener] User signed out. Navigating to login.');
+          _handleNavigation(null);
         }
       },
       onError: (error) {
         // This handles deep link errors (e.g., expired token).
         if (error is AuthException) {
           String message = 'This confirmation link is invalid or has expired. Please try again.';
-          debugPrint('[Auth Listener] onError: Navigating to login with message: "$message"');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             navigatorKey.currentState?.pushNamedAndRemoveUntil(
-                AppRoutes.login, (route) => false,
-                arguments: {'message': message});
+                AppRoutes.login, (route) => false, arguments: {'message': message});
           });
         }
       },
@@ -66,16 +64,17 @@ class _AppState extends State<App> {
   }
 
   void _handleNavigation(Session? session) {
-    // This function is now the single source of truth for navigation.
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentRouteName = ModalRoute.of(navigatorKey.currentContext!)?.settings.name;
       if (session != null) {
-        // This case is handled by the SplashScreen on initial load.
-        // This block will now primarily handle re-authentication or future multi-user scenarios.
-        debugPrint('[Auth Listener] Session updated while app is running.');
+        // This case is now handled by the SplashScreen.
+        // This block is for future logic if a session is restored while the app is running.
       } else {
-        // This handles logout.
+        // If we are not already on the login screen, navigate there.
+        if (currentRouteName != AppRoutes.login) {
         debugPrint('[Auth Listener] No session found. Navigating to login.');
         navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+        }
       }
     });
   }

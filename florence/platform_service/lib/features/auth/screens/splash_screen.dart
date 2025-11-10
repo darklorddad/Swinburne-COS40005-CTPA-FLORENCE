@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../config/theme.dart';
 import '../../../config/routes.dart';
 import '../../../main.dart';
-import '../../../config/theme.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,50 +13,49 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  StreamSubscription<AuthState>? _authSubscription;
+
   @override
   void initState() {
     super.initState();
-    _redirect();
+    // Start listening for the auth state as soon as the widget is ready.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _redirect());
   }
 
-  Future<void> _redirect() async {
-    // Wait for the widget to be fully built and for Supabase to potentially handle a deep link.
-    // This is crucial for both cold and warm starts.
-    await Future.delayed(const Duration(milliseconds: 500));
+  @override
+  void dispose() {
+    // Ensure we cancel the subscription to prevent memory leaks.
+    _authSubscription?.cancel();
+    super.dispose();
+  }
 
-    if (!mounted) return;
+  void _redirect() {
+    // Listen for the FIRST auth state change. This is the definitive initial state.
+    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
+      // As soon as we get the first event, we can navigate and stop listening.
+      _authSubscription?.cancel();
+      final session = data.session;
+      if (session != null) {
+        final user = session.user;
+        final role = user.userMetadata?['role'];
+        final isNewUser = user.createdAt != null && DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
+        String message = isNewUser ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
 
-    // The session may have been restored by the Supabase client from a deep link by now.
-    final session = supabase.auth.currentSession;
-
-    if (session != null) {
-      debugPrint('[SplashScreen] Session found on initial check. Navigating to dashboard.');
-      final user = session.user;
-      final role = user.userMetadata?['role'];
-      
-      // Check if this was a very recent confirmation to show the welcome message
-      final confirmedAt = user.emailConfirmedAt;
-      bool isRecentConfirmation = confirmedAt != null && DateTime.now().difference(DateTime.parse(confirmedAt)).inMinutes < 2;
-      String message = isRecentConfirmation ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
-
-      if (role == 'PATIENT') {
-        AppRoutes.pushReplacement(context, AppRoutes.dashboard, arguments: {'message': message});
-      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-        AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard, arguments: {'message': message});
+        if (role == 'PATIENT') {
+          AppRoutes.pushReplacement(context, AppRoutes.dashboard, arguments: {'message': message});
+        } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+          AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard, arguments: {'message': message});
+        } else {
+          AppRoutes.pushReplacement(context, AppRoutes.login, arguments: {'message': 'Login failed: Unsupported user role.'});
+        }
       } else {
-        AppRoutes.pushReplacement(context, AppRoutes.login, arguments: {'message': 'Login failed: Unsupported user role.'});
+        AppRoutes.pushReplacement(context, AppRoutes.login);
       }
-    } else {
-      // If there's no session after the delay, it's safe to assume we should go to login.
-      // The onError listener in app.dart will still handle invalid deep link cases that navigate here.
-      debugPrint('[SplashScreen] No session found on initial check. Navigating to login.');
-      AppRoutes.pushReplacement(context, AppRoutes.login);
-    }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    // The UI remains the same, just a loading/branding screen.
     return Scaffold(
       backgroundColor: AppTheme.primaryBlue,
       body: Center(
