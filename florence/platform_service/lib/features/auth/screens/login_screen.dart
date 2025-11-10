@@ -34,19 +34,13 @@ class _LoginScreenState extends State<LoginScreen> {
     // from the splash screen or deep link error handler.
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     final message = args?['message'] as String?;
-    debugPrint('[LoginScreen] Arguments received: ${args?.toString()}');
+    debugPrint('[LoginScreen] didChangeDependencies: Arguments received: ${args?.toString()}');
 
     // Only update state if the new message is different from the current one.
     if (message != null && message != _errorMessage) {
-      debugPrint('[LoginScreen] New error message found: "$message"');
-      // Use a post-frame callback to safely update the state after the build.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          setState(() {
-            _errorMessage = message;
-          });
-        }
-      });
+      debugPrint('[LoginScreen] didChangeDependencies: New error message found: "$message". Updating state.');
+      // Update the state directly. Flutter handles the build cycle correctly.
+      _errorMessage = message;
     }
   }
 

@@ -65,13 +65,13 @@ class AppRoutes {
 
     switch (settings.name) {
       case splash:
-        return _buildRoute(const SplashScreen());
+        return _buildRoute(const SplashScreen(), settings);
 
       case login:
-        return _buildRoute(const LoginScreen());
+        return _buildRoute(const LoginScreen(), settings);
 
       case register:
-        return _buildRoute(const RegisterScreen());
+        return _buildRoute(const RegisterScreen(), settings);
 
       case clinicianDashboard:
         return _buildRoute(const _PlaceholderScreen(title: 'Clinician Dashboard'));
@@ -80,31 +80,31 @@ class AppRoutes {
         return _buildRoute(const _PlaceholderScreen(title: 'Onboarding'));
 
       case dashboard:
-        return _buildRoute(const DashboardScreen());
+        return _buildRoute(const DashboardScreen(), settings);
 
       case trends:
-        return _buildRoute(const TrendsScreen());
+        return _buildRoute(const TrendsScreen(), settings);
 
       case chat:
-        return _buildRoute(const ChatScreen());
+        return _buildRoute(const ChatScreen(), settings);
 
       case recommendations:
-        return _buildRoute(const RecommendationsScreen());
+        return _buildRoute(const RecommendationsScreen(), settings);
 
       case profile:
-        return _buildRoute(const ProfileScreen());
+        return _buildRoute(const ProfileScreen(), settings);
 
       case logGlucose:
-        return _buildRoute(const LogGlucoseScreen());
+        return _buildRoute(const LogGlucoseScreen(), settings);
 
       case logMeal:
-        return _buildRoute(const LogMealScreen());
+        return _buildRoute(const LogMealScreen(), settings);
 
       case logActivity:
-        return _buildRoute(const LogActivityScreen());
+        return _buildRoute(const LogActivityScreen(), settings);
 
       case logMedication: 
-        return _buildRoute(const LogMedicationScreen());
+        return _buildRoute(const LogMedicationScreen(), settings);
 
       default:
         return _buildRoute(
@@ -116,8 +116,8 @@ class AppRoutes {
   }
 
   /// Helper method to build routes with transitions
-  static MaterialPageRoute _buildRoute(Widget page) {
-    return MaterialPageRoute(builder: (_) => page);
+  static MaterialPageRoute _buildRoute(Widget page, [RouteSettings? settings]) {
+    return MaterialPageRoute(builder: (_) => page, settings: settings);
   }
 
   /// Navigation helpers
