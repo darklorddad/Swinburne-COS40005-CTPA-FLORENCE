@@ -63,9 +63,21 @@ class _AppState extends State<App> {
         }
       },
       onError: (error) {
-        String message = 'This confirmation link is invalid or has expired. Please try again.';
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(
-          AppRoutes.login, (route) => false, arguments: {'message': message});
+        String message = 'An authentication error occurred. Please try again.';
+        if (error is AuthException) {
+          // Use the more specific message from Supabase if available and user-friendly
+          if (error.message.contains('invalid or has expired')) {
+            message = 'This confirmation link is invalid or has expired. Please try again.';
+          } else {
+            message = error.message; // Use the direct error message from Supabase
+          }
+        }
+        // Ensure the navigator is ready before trying to push a new route.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              AppRoutes.login, (route) => false,
+              arguments: {'message': message});
+        });
       },
     );
   }
