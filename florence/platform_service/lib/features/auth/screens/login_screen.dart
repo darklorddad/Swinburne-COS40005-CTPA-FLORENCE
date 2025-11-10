@@ -70,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
       
       if (response.user != null && mounted) {
-        final role = response.user!.appMetadata?['role'];
+        final role = response.user!.userMetadata?['role'];
 
         if (role == 'PATIENT') {
           Helpers.showSuccess(context, 'Welcome back!');

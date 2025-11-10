@@ -81,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
       message = 'Welcome back!';
     }
 
-    final role = user.appMetadata?['role'];
+    final role = user.userMetadata?['role'];
     if (role == 'PATIENT') {
       AppRoutes.pushReplacement(context, AppRoutes.dashboard, arguments: {'message': message});
     } else if (role == 'CLINICIAN') {
