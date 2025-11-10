@@ -26,6 +26,7 @@ class _AppState extends State<App> {
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  bool _hasHandledInitialAuth = false; // Prevents multiple initial navigations
 
   @override
   void initState() {
@@ -41,40 +42,48 @@ class _AppState extends State<App> {
 
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
-      (data) {
+      (data) async {
         final session = data.session;
         final event = data.event;
 
-        // We only want to react to a successful sign-in or a token refresh
-        // that happens after the initial load.
-        if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.initialSession) {
-          if (session != null) {
-            _navigateToDashboard(session.user);
-          }
+        // Handle initial session check only once on app start
+        if (event == AuthChangeEvent.initialSession && !_hasHandledInitialAuth) {
+          _hasHandledInitialAuth = true;
+          // A small delay to allow the splash screen to render smoothly
+          await Future.delayed(const Duration(milliseconds: 500));
+          _handleNavigation(session);
+        }
+        // Handle sign-in events (e.g., from a deep link after the app is already running)
+        else if (event == AuthChangeEvent.signedIn) {
+          _handleNavigation(session);
+        }
+        // Handle sign-out events
+        else if (event == AuthChangeEvent.signedOut) {
+          _handleNavigation(null);
         }
       },
       onError: (error) {
-        if (error is AuthException) {
-          // An error on the auth stream, typically from an invalid deep link.
-          String message = 'This confirmation link has expired or is invalid. Please log in or sign up again.';
-          // Use the navigatorKey to show a snackbar or navigate
-          navigatorKey.currentState?.pushReplacementNamed(
-            AppRoutes.login,
-            arguments: {'message': message},
-          );
-        }
+        String message = 'This confirmation link is invalid or has expired. Please try again.';
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(
+          AppRoutes.login, (route) => false, arguments: {'message': message});
       },
     );
   }
 
-  void _navigateToDashboard(User user) {
-    final role = user.userMetadata?['role'];
-    String message = 'Welcome! Your email has been successfully confirmed.';
-
-    if (role == 'PATIENT') {
-      navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false, arguments: {'message': message});
-    } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-      navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.clinicianDashboard, (route) => false, arguments: {'message': message});
+  void _handleNavigation(Session? session) {
+    if (session != null) {
+      final user = session.user;
+      final role = user.userMetadata?['role'];
+      String message = 'Welcome! Your email has been successfully confirmed.';
+      if (role == 'PATIENT') {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false, arguments: {'message': message});
+      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.clinicianDashboard, (route) => false, arguments: {'message': message});
+      } else {
+        navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
+      }
+    } else {
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
   }
 

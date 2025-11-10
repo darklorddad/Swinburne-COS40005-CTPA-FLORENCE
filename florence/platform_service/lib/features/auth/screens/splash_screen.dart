@@ -1,45 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../config/routes.dart';
-import '../../../main.dart';
 import '../../../config/theme.dart';
 
-class SplashScreen extends StatefulWidget {
+/// The splash screen is now just a simple UI placeholder.
+/// All navigation logic is handled by the persistent listener in `app.dart`.
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    // Give the app a moment to settle before navigating
-    Future.delayed(const Duration(seconds: 1), _redirect);
-  }
-
-  Future<void> _redirect() async {
-    if (!mounted) return;
-
-    // Perform a one-time check for the current session on app start.
-    // The persistent listener in app.dart will handle dynamic changes.
-    final session = supabase.auth.currentSession;
-
-    if (session != null) {
-      final role = session.user.userMetadata?['role'];
-      if (role == 'PATIENT') {
-        AppRoutes.pushReplacement(context, AppRoutes.dashboard, arguments: {'message': 'Welcome back!'});
-      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-        AppRoutes.pushReplacement(context, AppRoutes.clinicianDashboard, arguments: {'message': 'Welcome back!'});
-      } else {
-        AppRoutes.pushReplacement(context, AppRoutes.login, arguments: {'message': 'Login failed: Unsupported user role.'});
-      }
-    } else {
-      AppRoutes.pushReplacement(context, AppRoutes.login);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
