@@ -25,22 +25,21 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _rememberMe = false;
   String? _errorMessage; // Will hold errors from login attempts OR deep links
+  bool _didExtractArgs = false; // Prevents re-extracting arguments on every rebuild
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    debugPrint('[LoginScreen] didChangeDependencies called.');
     // This runs when the screen is built and ensures we catch any incoming message
     // from the splash screen or deep link error handler.
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final message = args?['message'] as String?;
-    debugPrint('[LoginScreen] didChangeDependencies: Arguments received: ${args?.toString()}');
-
-    // Only update state if the new message is different from the current one.
-    if (message != null && message != _errorMessage) {
-      debugPrint('[LoginScreen] didChangeDependencies: New error message found: "$message". Updating state.');
-      // Update the state directly. Flutter handles the build cycle correctly.
-      _errorMessage = message;
+    // We only want to do this once when the screen is first pushed.
+    if (!_didExtractArgs) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final message = args?['message'] as String?;
+      if (message != null) {
+        _errorMessage = message;
+      }
+      _didExtractArgs = true;
     }
   }
 

@@ -26,8 +26,6 @@ class _AppState extends State<App> {
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-  bool _hasHandledInitialAuth = false; // Prevents multiple initial navigations
-  bool _hasHandledError = false; // Prevents navigation race condition on error
 
   @override
   void initState() {
@@ -43,34 +41,15 @@ class _AppState extends State<App> {
 
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
-      (data) async {
-        final session = data.session;
-        final event = data.event;
-
-        // Handle initial session check only once on app start.
-        if (event == AuthChangeEvent.initialSession && !_hasHandledInitialAuth) {
-          _hasHandledInitialAuth = true;
-          // A small delay to allow splash screen to render and deep link errors to be processed.
-          await Future.delayed(const Duration(milliseconds: 500));
-          // If an error hasn't already triggered navigation, proceed.
-          if (!_hasHandledError) {
-            _handleNavigation(session);
-          }
-        } else if (event == AuthChangeEvent.signedIn) {
-          // Handle sign-in events (e.g., from a deep link after the app is already running)
-          _handleNavigation(session);
-        } else if (event == AuthChangeEvent.signedOut) {
-          // Handle sign-out events
-          _handleNavigation(null);
-        }
+      (data) {
+        // This single callback handles all auth states: initial session, sign in, sign out.
+        // It navigates based on whether a session exists.
+        _handleNavigation(data.session);
       },
       onError: (error) {
-        if (_hasHandledError) return; // Only handle the first error
-        _hasHandledError = true;
-
+        // This handles deep link errors (e.g., expired token).
         String message = 'An authentication error occurred. Please try again.';
         if (error is AuthException) {
-          // Use the more specific message from Supabase if available and user-friendly
           if (error.message.contains('invalid or has expired')) {
             message = 'This confirmation link is invalid or has expired. Please try again.';
           } else {
@@ -78,7 +57,6 @@ class _AppState extends State<App> {
           }
         }
         debugPrint('[Auth Listener] onError: Navigating to login with message: "$message"');
-        // Ensure the navigator is ready by waiting for the first frame to be built.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           navigatorKey.currentState?.pushNamedAndRemoveUntil(
               AppRoutes.login, (route) => false,
@@ -89,10 +67,15 @@ class _AppState extends State<App> {
   }
 
   void _handleNavigation(Session? session) {
+    // This function is now the single source of truth for navigation.
+    // It ensures we don't navigate until the first frame is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
     if (session != null) {
       final user = session.user;
       final role = user.userMetadata?['role'];
-      String message = 'Welcome! Your email has been successfully confirmed.';
+      final isNewUser = user.createdAt != null && DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
+      String message = isNewUser ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
+
       if (role == 'PATIENT') {
         navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false, arguments: {'message': message});
       } else if (role == 'CLINICIAN' || role == 'ADMIN') {
@@ -101,8 +84,10 @@ class _AppState extends State<App> {
         navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
       }
     } else {
+      // No session, go to login.
       navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
+    });
   }
 
   @override
