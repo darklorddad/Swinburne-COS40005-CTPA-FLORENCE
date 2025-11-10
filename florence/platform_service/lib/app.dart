@@ -40,14 +40,18 @@ class _AppState extends State<App> {
   }
 
   void _setupAuthListener() {
+    // Handle the initial auth state right away
+    _handleNavigation(supabase.auth.currentSession);
+
+    // Then, listen for any future changes
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
         final event = data.event;
-        // The SplashScreen handles the initial navigation. This listener only
-        // handles events that happen AFTER the app is running, like a user signing out.
-        if (event == AuthChangeEvent.signedOut) {
-          debugPrint('[Auth Listener] User signed out. Navigating to login.');
-          _handleNavigation(null);
+        // This listener handles auth changes that happen AFTER the app's initial load,
+        // such as a user signing out or a sign-in from a deep link while the app is already open.
+        if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.signedOut) {
+          debugPrint('[Auth Listener] Auth state changed: $event. Handling navigation.');
+          _handleNavigation(data.session);
         }
       },
       onError: (error) {
@@ -65,15 +69,41 @@ class _AppState extends State<App> {
 
   void _handleNavigation(Session? session) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final currentRouteName = ModalRoute.of(navigatorKey.currentContext!)?.settings.name;
+      final navigator = navigatorKey.currentState;
+      if (navigator == null) return;
+      final context = navigator.context;
+      final currentRouteName = ModalRoute.of(context)?.settings.name;
+
       if (session != null) {
-        // This case is now handled by the SplashScreen.
-        // This block is for future logic if a session is restored while the app is running.
+        final user = session.user;
+        final role = user.userMetadata?['role'];
+        final isNewUser = user.createdAt != null &&
+            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
+        String message = isNewUser
+            ? 'Welcome! Your email has been successfully confirmed.'
+            : 'Welcome back!';
+
+        String destinationRoute;
+        Object? routeArguments = {'message': message};
+
+        if (role == 'PATIENT') {
+          destinationRoute = AppRoutes.dashboard;
+        } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+          destinationRoute = AppRoutes.clinicianDashboard;
+        } else {
+          destinationRoute = AppRoutes.login;
+          routeArguments = {'message': 'Login failed: Unsupported user role.'};
+        }
+
+        if (currentRouteName != destinationRoute) {
+          navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false,
+              arguments: routeArguments);
+        }
       } else {
         // If we are not already on the login screen, navigate there.
         if (currentRouteName != AppRoutes.login) {
-        debugPrint('[Auth Listener] No session found. Navigating to login.');
-        navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+          debugPrint('[Auth Listener] No session found. Navigating to login.');
+          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
         }
       }
     });

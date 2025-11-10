@@ -1,7 +1,6 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../../core/config/environment.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../main.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
@@ -47,7 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     // Check if terms are accepted
     if (!_acceptTerms) {
       Helpers.showWarning(
@@ -56,39 +55,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
       return;
     }
-    
+
     // Hide keyboard
     Helpers.hideKeyboard(context);
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
-      final response = await http.post(
-        Uri.parse('${Environment.apiUrl}/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-          'name': _fullNameController.text.trim(),
+      // Use supabase.auth.signUp directly
+      await supabase.auth.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        data: {
+          'full_name': _fullNameController.text.trim(),
           'role': 'PATIENT',
-        }),
+        },
+        emailRedirectTo: 'florence://login-callback',
       );
 
       if (mounted) {
-        if (response.statusCode == 200) {
-          Helpers.showSuccess(
-            context,
-            'Registration successful! Please check your email to verify your account.',
-          );
-          AppRoutes.pop(context);
-        } else {
-          final errorData = jsonDecode(response.body);
-          Helpers.showError(context, errorData['detail'] ?? 'Registration failed.');
-        }
+        Helpers.showSuccess(
+          context,
+          'Registration successful! Please check your email to verify your account.',
+        );
+        AppRoutes.pop(context);
+      }
+    } on AuthException catch (error) {
+      if (mounted) {
+        Helpers.showError(context, error.message);
       }
     } catch (error) {
       if (mounted) {
-        Helpers.showError(context, 'Could not connect to the server. Please try again later.');
+        Helpers.showError(context, 'An unexpected error occurred. Please try again later.');
       }
     } finally {
       if (mounted) {
