@@ -55,7 +55,7 @@ class _AppState extends State<App> {
         }
       },
       onError: (error) {
-        // This handles deep link errors (e.g., expired token).
+        // This handles deep link errors (e.g., an expired token).
         if (error is AuthException) {
           String message = 'This confirmation link is invalid or has expired. Please try again.';
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,29 +64,26 @@ class _AppState extends State<App> {
 
             final currentSession = supabase.auth.currentSession;
             if (currentSession != null) {
-              // CASE 1: USER IS ALREADY LOGGED IN
+              // CASE 1: USER IS ALREADY LOGGED IN.
               // Show a non-disruptive snackbar with the error message.
               Helpers.showError(navigator.context, message);
 
-              // If the error caused the app to navigate to the splash screen,
-              // we need to navigate the user back to their correct dashboard.
-              // We do this WITHOUT passing any arguments to avoid the "Welcome back" message.
-              final currentRouteName = ModalRoute.of(navigator.context)?.settings.name;
-              if (currentRouteName == AppRoutes.splash) {
-                final role = currentSession.user.userMetadata?['role'];
-                String targetRoute = AppRoutes.login; // Default fallback
+              // Since the router may have incorrectly navigated to the splash screen,
+              // we must now force navigation to the correct, authenticated route.
+              // This "rescues" the user from the loading screen.
+              final role = currentSession.user.userMetadata?['role'];
+              String targetRoute = AppRoutes.dashboard; // Default for patients
 
-                if (role == 'PATIENT') {
-                  targetRoute = AppRoutes.dashboard;
-                } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-                  targetRoute = AppRoutes.clinicianDashboard;
-                }
-                // Navigate without arguments to prevent any success messages.
-                navigator.pushNamedAndRemoveUntil(targetRoute, (route) => false);
+              if (role == 'CLINICIAN' || role == 'ADMIN') {
+                targetRoute = AppRoutes.clinicianDashboard;
               }
+              
+              // Navigate to the correct screen, clearing the history (which may include the splash screen).
+              navigator.pushNamedAndRemoveUntil(targetRoute, (route) => false);
+
             } else {
-              // CASE 2: USER IS NOT LOGGED IN
-              // Navigate to the login screen with the error message.
+              // CASE 2: USER IS NOT LOGGED IN.
+              // Navigate to the login screen and display the error message there.
               navigator.pushNamedAndRemoveUntil(
                   AppRoutes.login, (route) => false, arguments: {'message': message});
             }
