@@ -1,0 +1,60 @@
+# The name of our workflow, visible on GitHub Actions tab
+name: Deploy Flutter App
+
+# This workflow runs on any push to the 'main' branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    # Use the latest version of Ubuntu to run our jobs
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Check out the code from the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up the Flutter environment
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # Step 3: Install the Shorebird CLI
+      - name: Install Shorebird
+        run: curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
+
+      # Step 4: Add Shorebird to the system path
+      - name: Add Shorebird to PATH
+        run: echo "$HOME/.shorebird/bin" >> $GITHUB_PATH
+
+      # Step 5: Authenticate with Shorebird using our GitHub Secret
+      - name: Authenticate Shorebird
+        run: shorebird login --ci ${{ secrets.SHOREBIRD_TOKEN }}
+
+      # Step 6: Decide whether to PATCH or RELEASE
+      # This checks if the commit message contains the special tag '[release]'
+      - name: Deploy a Patch (Hot Restart Update)
+        if: "!contains(github.event.head_commit.message, '[release]')"
+        run: shorebird patch android --force
+
+      - name: Deploy a Full Release (New Install)
+        if: "contains(github.event.head_commit.message, '[release]')"
+        run: |
+          # Build the new release version with Shorebird
+          shorebird release android
+          
+          # Setup Firebase Tools
+          npm install -g firebase-tools
+          
+          # Decode the service account key from Base64
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}" | base64 --decode > ${{ github.workspace }}/service-account.json
+          
+          # Upload the release build to Firebase App Distribution
+          firebase appdistribution:distribute build/app/outputs/bundle/release/app-release.aab \
+            --app "${{ secrets.FIREBASE_APP_ID }}" \
+            --release-notes "New release build triggered by commit: ${{ github.event.head_commit.message }}" \
+            --groups "testers" \
+            --token "${{ secrets.FIREBASE_TOKEN }}" # Note: Use FIREBASE_TOKEN for authentication with firebase-tools

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "609541142807",
+    "project_id": "swinburne-cos40005-florence",
+    "storage_bucket": "swinburne-cos40005-florence.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:609541142807:android:5fd8a46d5d6a31e2b1df52",
+        "android_client_info": {
+          "package_name": "com.vanq.florence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3ItgXCDz3NTfzLYHUfpDa3mmFFi-3SOE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
