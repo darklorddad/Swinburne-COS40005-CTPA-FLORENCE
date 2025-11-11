@@ -31,8 +31,8 @@ class Environment {
 
   /// Backend API URL
   // static const String apiUrl = 'http://127.0.0.1:8000';
-  static const String apiUrl = 'http://10.191.69.105:8000';
-
+  // static const String apiUrl = 'http://10.191.69.105:8000';
+  static const String apiUrl = 'ss-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
   
@@ -40,12 +40,12 @@ class Environment {
   // You can find these in your Supabase project settings under "API"
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    defaultValue: 'https://<your-project-ref>.supabase.co',
+    defaultValue: 'https://opltjtmmiuwbaikvlive.supabase.co',
   );
   
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue: '<your-anon-key>',
+    defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wbHRqdG1taXV3YmFpa3ZsaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2OTc0NDYsImV4cCI6MjA3NTI3MzQ0Nn0.iRpi8CpnGA6fVMxEpsKw0GeIabxyCPFMBtCssmMNsLs',
   );
 
   // ==================== APP CONFIGURATION ====================
