@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(flutter run:*)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
