@@ -37,7 +37,7 @@ jobs:
       # Step 5: Upload to Firebase App Distribution (only if it was a release)
       - name: Upload to Firebase App Distribution
         if: "contains(github.event.head_commit.message, '[release]')"
-        uses: wzieba/Firebase-Distribution-Action@v1 # <-- This line has been corrected
+        uses: wzieba/Firebase-Distribution-Github-Action # <-- This line has been corrected
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           # Use the Base64 encoded JSON, not a token
