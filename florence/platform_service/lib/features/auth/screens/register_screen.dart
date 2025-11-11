@@ -81,10 +81,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.statusCode == 200) {
         if (mounted) {
-          final responseBody = jsonDecode(response.body);
           Helpers.showSuccess(
             context,
-            responseBody['message'] ?? 'Registration successful! Please check your email.',
+            'Registered successfully! Please check your email for verification.',
           );
           AppRoutes.pop(context); // Go back to login screen
         }

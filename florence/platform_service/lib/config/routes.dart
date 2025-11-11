@@ -56,7 +56,11 @@ class AppRoutes {
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    final routeName = settings.name ?? '';
+    // The router can receive the full path including the fragment from a deep link.
+    // We parse the URI to extract just the path for routing.
+    final routePath = settings.name ?? '';
+    final uri = Uri.parse(routePath);
+    final routeName = uri.path;
 
     // Parse route arguments if any
     final args = settings.arguments;
