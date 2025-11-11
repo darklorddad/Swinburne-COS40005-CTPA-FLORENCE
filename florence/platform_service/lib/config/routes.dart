@@ -58,23 +58,6 @@ class AppRoutes {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final routeName = settings.name ?? '';
 
-    // Intercept deep links from auth providers. They can come in various forms:
-    // - /#access_token=... (older implicit grant flow)
-    // - /?code=... (newer PKCE flow for verification)
-    // - /?error=... (when a link is invalid, expired, or used)
-    // - /login-callback... (a specific path we might have configured)
-    //
-    // By checking for these key parameters, we can direct all auth-related deep
-    // links to a neutral loading screen (SplashScreen). This prevents the "No route
-    // defined" error while the central auth listener in app.dart securely
-    // processes the link in the background.
-    if (routeName.contains('access_token=') ||
-        routeName.contains('code=') ||
-        routeName.contains('error=') ||
-        routeName.startsWith('/login-callback')) {
-      return _buildRoute(const SplashScreen(), settings);
-    }
-
     // Parse route arguments if any
     final args = settings.arguments;
 
