@@ -58,20 +58,18 @@ class _AppState extends State<App> {
         });
       },
       onError: (error) {
-        debugPrint('[Auth Listener] Deep link error: $error');
+        debugPrint('[Auth Listener] Error: $error');
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final navigator = navigatorKey.currentState;
-          if (navigator == null || !navigator.mounted) return;
-          
-          // Check if we're already on login screen to avoid duplicate messages
-          final currentRoute = ModalRoute.of(navigator.context)?.settings.name;
-          if (currentRoute != AppRoutes.login) {
-            navigator.pushNamedAndRemoveUntil(
-              AppRoutes.login,
-              (route) => false,
-              arguments: {'message': 'This confirmation link is invalid or has expired. Please try again.'},
-            );
-          }
+          final nav = navigatorKey.currentState;
+          if (nav?.mounted != true) return;
+
+          // Clear stack and show login with error
+          final message = 'Authentication failed. Please sign in again.';
+          nav!.pushNamedAndRemoveUntil(
+            AppRoutes.login,
+            (route) => false,
+            arguments: {'message': message},
+          );
         });
       },
     );

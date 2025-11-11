@@ -22,7 +22,7 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // First, check if there's an existing session immediately
+    // Check for existing session immediately
     final currentSession = supabase.auth.currentSession;
     if (currentSession != null) {
       debugPrint('[SplashScreen] Found existing session, navigating directly');
@@ -30,31 +30,31 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
 
-    // Set a timeout for cases where no session exists
+    bool hasNavigated = false;
+
+    // Timeout fallback if no auth event arrives
     final timer = Timer(const Duration(seconds: 3), () {
-      debugPrint('[SplashScreen] Timeout reached. No session found. Navigating to login.');
-      _authSubscription?.cancel();
-      if (mounted) {
+      if (!hasNavigated && mounted) {
+        debugPrint('[SplashScreen] Timeout: No session established');
+        hasNavigated = true;
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
     });
 
-    // Listen for auth changes (including deep links)
+    // Listen for auth events (deep link callbacks trigger signedIn)
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      debugPrint('[SplashScreen] Auth event received: ${data.event}. Cancelling timeout.');
-      timer.cancel();
-      _authSubscription?.cancel();
+      debugPrint('[SplashScreen] Auth event: ${data.event}');
+      timer.cancel(); // Cancel timeout on any auth event
 
-      final session = data.session;
-      if (session != null) {
-        debugPrint('[SplashScreen] Session FOUND from event. Navigating to dashboard.');
-        _navigateFromSession(session);
-      } else {
-        debugPrint('[SplashScreen] Event received but NO session. Navigating to login.');
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      if (data.session != null) {
+        debugPrint('[SplashScreen] Session acquired, navigating');
+        _authSubscription?.cancel();
+        if (!hasNavigated && mounted) {
+          hasNavigated = true;
+          _navigateFromSession(data.session!);
         }
       }
+      // Ignore initialSession with null session - wait for signedIn event
     });
   }
 

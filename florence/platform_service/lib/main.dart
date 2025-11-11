@@ -1,6 +1,7 @@
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'packagepackage:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
 import 'core/config/environment.dart';
 
@@ -11,6 +12,21 @@ void main() async {
   
   // Initialize Supabase
   await _initializeSupabase();
+
+  // Initialize app links handler
+  final appLinks = AppLinks();
+
+  // Handle initial deep link (e.g., from cold start)
+  final initialUri = await appLinks.getInitialLink();
+  if (initialUri != null) {
+    debugPrint('[Main] Initial deep link: $initialUri');
+  }
+
+  // Listen for subsequent deep links
+  appLinks.uriLinkStream.listen((uri) {
+    debugPrint('[Main] Incoming deep link: $uri');
+    // Supabase will automatically process this if MainActivity is configured
+  });
   
   // Set preferred orientations (optional - comment out if you want landscape support)
   await SystemChrome.setPreferredOrientations([
@@ -44,6 +60,7 @@ Future<void> _initializeSupabase() async {
     await Supabase.initialize(
       url: Environment.supabaseUrl,
       anonKey: Environment.supabaseAnonKey,
+      authCallbackUrlHostname: 'login-callback', // Must match your deep link path
       debug: true, // Set to false in production
     );
     
