@@ -434,25 +434,24 @@ class _TrendsScreenState extends State<TrendsScreen>
                   ],
                 ),
                 lineTouchData: LineTouchData(
+                  // The 'touchTooltipData' property now takes a 'LineTouchTooltipData'
                   touchTooltipData: LineTouchTooltipData(
-                    // This is the modern, correct way to style the tooltip background
-                    getBoxBackground: (FlSpot spot) {
-                      return BoxDecoration(
-                        color: AppTheme.primaryBlue.withValues(alpha: 0.8),
-                        borderRadius: BorderRadius.circular(8),
-                      );
-                    },
-                    getTooltipItems: (touchedSpots) {
-                      return touchedSpots.map((spot) {
-                        return LineTooltipItem(
-                          '${spot.y.toInt()} mg/dL',
-                          const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        );
-                      }).toList();
-                    },
+                    // which itself has a 'tooltipData' property.
+                    tooltipData: TouchTooltipData(
+                      // THIS is where the background color property now lives.
+                      tooltipBgColor: AppTheme.primaryBlue.withValues(alpha: 0.8),
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          return LineTooltipItem(
+                            '${spot.y.toInt()} mg/dL',
+                            const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        }).toList();
+                      },
+                    ),
                   ),
                 ),
               ),
