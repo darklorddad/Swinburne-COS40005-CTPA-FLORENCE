@@ -1,44 +1,32 @@
 # The name of our workflow, visible on GitHub Actions tab
 name: Deploy Flutter App
 
-# --- TRIGGER DEFINITIONS ---
 on:
-  # 1. AUTOMATIC TRIGGER (for Patches)
-  # Runs whenever code is pushed to the 'main' branch.
   push:
     branches:
       - main
-
-  # 2. MANUAL TRIGGER (for Releases)
-  # Adds a "Run workflow" button on the Actions tab in GitHub.
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
-    # Use the latest version of Ubuntu to run our jobs
     runs-on: ubuntu-latest
-
     steps:
-      # Step 1: Check out the code from the repository
-      # This uses the code from the 'main' branch for both automatic and manual runs.
+      # --- SETUP STEPS ---
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Shorebird
       - name: Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
 
-      # --- LOGIC FOR PATCHES ---
-      # This step only runs if the trigger was an automatic 'push'.
+      # --- PATCH LOGIC (RUNS ON PUSH) ---
       - name: Deploy a Patch (Automatic)
         if: github.event_name == 'push'
         working-directory: florence/platform_service
-        run: shorebird patch android --no-confirm
+        run: shorebird patch android --no-confirm --release-version=latest
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # --- LOGIC FOR RELEASES ---
-      # These steps only run if the trigger was a manual 'workflow_dispatch'.
+      # --- RELEASE LOGIC (RUNS ON MANUAL TRIGGER) ---
       - name: Build a Full Release (Manual)
         if: github.event_name == 'workflow_dispatch'
         working-directory: florence/platform_service
@@ -46,11 +34,18 @@ jobs:
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
+      # --- OFFICIAL GOOGLE FIREBASE DEPLOYMENT STEPS ---
+      - name: Authenticate with Google Cloud
+        if: github.event_name == 'workflow_dispatch'
+        uses: google-github-actions/auth@v2
+        with:
+          # Use the original secret name
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
+
       - name: Upload to Firebase App Distribution (Manual)
         if: github.event_name == 'workflow_dispatch'
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        uses: google-github-actions/firebase-appdistribution-action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
           file: florence/platform_service/build/app/outputs/bundle/release/app-release.aab

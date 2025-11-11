@@ -6,7 +6,7 @@ class Environment {
 
   /// Enable Supabase backend integration
   /// Set to true when ready to connect to Supabase
-  static const bool enableSupabase = false;
+  static const bool enableSupabase = true;
 
   /// Enable AI features (DeepSeek API)
   /// Set to true to use AI-powered recommendations and chatbot
@@ -30,8 +30,8 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL
-  static const String apiUrl = 'http://127.0.0.1:8000';
-  // static const String apiUrl = 'http://10.191.69.105:8000';
+  // static const String apiUrl = 'http://127.0.0.1:8000';
+  static const String apiUrl = 'http://10.191.69.105:8000';
   // static const String apiUrl = 'ss-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
