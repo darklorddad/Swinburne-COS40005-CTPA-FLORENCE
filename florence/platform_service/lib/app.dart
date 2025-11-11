@@ -30,9 +30,17 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
-    // The Supabase client automatically handles listening for deep links.
-    // Our onAuthStateChange listener is all that's needed to react to them.
+    // Start listening for auth state changes immediately.
     _setupAuthListener();
+
+    // **This is the crucial part for deep linking.**
+    // It listens for incoming app links and passes them to the Supabase client
+    // to handle authentication from a magic link or third-party provider.
+    Supabase.instance.onAuthDeeplink.listen((event) {
+      debugPrint('[Deep Link Listener] Deeplink received: $event');
+    }, onError: (error) {
+      debugPrint('[Deep Link Listener] Deeplink error: $error');
+    });
   }
 
   @override
