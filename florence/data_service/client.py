@@ -15,7 +15,7 @@ class _SupabaseClientProxy:
         """
         if self._client is None:
             # Load environment variables from .env file in the project root.
-            project_root = Path(__file__).resolve().parent.parent
+            project_root = Path(__file__).resolve().parent.parent.parent
             load_dotenv(dotenv_path=project_root / '.env', override=True)
 
             url: str = os.environ.get("SUPABASE_URL")
