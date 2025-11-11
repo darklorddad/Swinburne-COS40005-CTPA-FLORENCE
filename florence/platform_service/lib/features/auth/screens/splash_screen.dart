@@ -20,14 +20,17 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
+    debugPrint('[SplashScreen] _redirect: Initializing startup check.');
     // Wait for a short duration to allow the Supabase client to initialize
     // and process any deep links that may have launched the app on a cold start.
-    await Future.delayed(const Duration(milliseconds: 1000));
+    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
+    debugPrint('[SplashScreen] _redirect: Delay complete. Checking for current session...');
     final session = supabase.auth.currentSession;
     if (session != null) {
+      debugPrint('[SplashScreen] _redirect: Session FOUND. Navigating to dashboard.');
       // A session was found, meaning the user is logged in.
       final user = session.user;
       final role = user.userMetadata?['role'];
@@ -41,6 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
       // This initial navigation gets the user to the right place.
       Navigator.of(context).pushReplacementNamed(destinationRoute);
     } else {
+      debugPrint('[SplashScreen] _redirect: Session NOT FOUND. Navigating to login.');
       // No session found, user is not logged in.
       Navigator.of(context).pushReplacementNamed(AppRoutes.login);
     }

@@ -74,10 +74,11 @@ class _AppState extends State<App> {
 
   void _handleNavigation(AuthState data) {
     debugPrint('[Auth Listener] Handling navigation for event: ${data.event}');
+    final session = data.session;
+    debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
+
     final navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) return;
-
-    final session = data.session;
 
     if (session != null) {
       // User is logged in.
