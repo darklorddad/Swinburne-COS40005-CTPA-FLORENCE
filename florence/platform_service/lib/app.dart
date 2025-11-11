@@ -44,13 +44,6 @@ class _AppState extends State<App> {
         final event = data.event;
         debugPrint('[Auth Listener] Event received: $event');
 
-        // The SplashScreen handles the initial navigation. This listener handles all
-        // subsequent auth changes (login, logout, token refresh, etc.).
-        if (event == AuthChangeEvent.initialSession) {
-          debugPrint('[Auth Listener] Ignoring initialSession event; handled by SplashScreen.');
-          return;
-        }
-
         // Use a post-frame callback to ensure the widget tree is built before navigating.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleNavigation(data);
@@ -80,20 +73,28 @@ class _AppState extends State<App> {
     final navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) return;
 
-    if (session != null) {
-      // User is logged in.
-      final user = session.user;
+    final event = data.event;
+
+    // A signedIn event means authentication was successful.
+    // If a session object already exists (e.g., from a warm start), we also treat the user as logged in.
+    if (event == AuthChangeEvent.signedIn || session != null) {
+      debugPrint('[Auth Listener] Session found or signedIn event received. Navigating to authenticated route.');
+      final user = session?.user ?? supabase.auth.currentUser; // Get user from session or client
+      if (user == null) {
+        debugPrint('[Auth Listener] ERROR: Signed in but user is null. Navigating to login.');
+        navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+        return;
+      }
+      
       final role = user.userMetadata?['role'];
-      debugPrint('[Auth Listener] Session found. Role: $role. Navigating...');
+      debugPrint('[Auth Listener] User role: $role');
 
       final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && user.createdAt != null &&
             DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
 
       String destinationRoute;
-      if (role == 'PATIENT') {
+      if (role == 'PATIENT' || role == 'CLINICIAN' || role == 'ADMIN') { // Added clinician and admin for robustness
         destinationRoute = AppRoutes.dashboard;
-      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-        destinationRoute = AppRoutes.clinicianDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
         return;
@@ -101,10 +102,12 @@ class _AppState extends State<App> {
 
       final message = isSignUpConfirmation ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
-    } else {
-      // If there's no session, it means the user signed out or the session expired.
-      debugPrint('[Auth Listener] No session found. Navigating to login.');
+    } else if (event == AuthChangeEvent.signedOut || (event == AuthChangeEvent.initialSession && session == null)) {
+      // If the user signed out, or if this is the very first check and there's no session, go to login.
+      debugPrint('[Auth Listener] No session found for initial check or sign out. Navigating to login.');
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    } else {
+      debugPrint('[Auth Listener] Unhandled navigation event: $event');
     }
   }
 
