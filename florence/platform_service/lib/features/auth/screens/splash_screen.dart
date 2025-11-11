@@ -22,22 +22,30 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Set a timeout. If no authentication event is received within 3 seconds,
-    // it means there's no stored session and no deep link. Navigate to login.
+    // This timeout is a safety net. If no valid auth event happens after 3 seconds,
+    // it means there's no stored session and no incoming deep link.
     final timer = Timer(const Duration(seconds: 3), () {
-      debugPrint('[SplashScreen] Timeout reached. Navigating to login.');
-      _authSubscription?.cancel(); // Important: clean up the listener
+      debugPrint('[SplashScreen] TIMEOUT. No valid session found, navigating to login.');
+      _authSubscription?.cancel();
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
     });
 
-    // Listen for the first auth event. This will fire for both stored sessions
-    // and for deep link authentications on a cold start.
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      debugPrint('[SplashScreen] Auth event received: ${data.event}. Cancelling timeout.');
-      timer.cancel(); // We received an event, so the timeout is no longer needed.
-      _authSubscription?.cancel(); // This listener's job is done.
+      debugPrint('[SplashScreen] Auth event received: ${data.event}.');
+
+      // CRITICAL FIX: On a cold start, the first event is `initialSession` with a null session.
+      // We must ignore this specific case and continue listening for the `signedIn` event
+      // that will be triggered by the deep link processing.
+      if (data.event == AuthChangeEvent.initialSession && data.session == null) {
+        debugPrint('[SplashScreen] Ignoring initialSession with null session. Waiting for deep link...');
+        return; // Do nothing. Keep listening and let the timeout run.
+      }
+
+      // For any other event (a real signedIn, or initialSession with a valid session), we can act.
+      timer.cancel();
+      _authSubscription?.cancel();
 
       final session = data.session;
       if (session != null) {
@@ -56,7 +64,8 @@ class _SplashScreenState extends State<SplashScreen> {
 
         Navigator.of(context).pushReplacementNamed(destinationRoute, arguments: {'message': message});
       } else {
-        debugPrint('[SplashScreen] Event received but NO session. Navigating to login.');
+        // This branch will now only be hit on a real signedOut event.
+        debugPrint('[SplashScreen] Event received but NO session (e.g., signedOut). Navigating to login.');
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(AppRoutes.login);
         }
