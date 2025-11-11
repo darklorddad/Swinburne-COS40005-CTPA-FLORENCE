@@ -42,7 +42,7 @@ void main() async {
   );
 
   // Run the app
-  runApp(App());
+  runApp(App(initialUri: initialUri));
 }
 
 /// Initialize Supabase

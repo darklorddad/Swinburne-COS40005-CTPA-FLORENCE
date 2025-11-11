@@ -6,7 +6,9 @@ import '../../../main.dart';
 import '../../../config/theme.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  final Uri? initialUri;
+
+  const SplashScreen({super.key, this.initialUri});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -22,6 +24,19 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
+    // Handle deep link errors immediately
+    if (widget.initialUri != null && widget.initialUri!.queryParameters.containsKey('error_description')) {
+      final errorDescription = widget.initialUri!.queryParameters['error_description']!.replaceAll('+', ' ');
+      debugPrint('[SplashScreen] Deep link error found: $errorDescription');
+      // Use a post-frame callback to ensure the widget is built before navigating.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': errorDescription});
+        }
+      });
+      return; // Stop further processing
+    }
+
     // Check for existing session immediately
     final currentSession = supabase.auth.currentSession;
     if (currentSession != null) {
@@ -44,9 +59,9 @@ class _SplashScreenState extends State<SplashScreen> {
     // Listen for auth events (deep link callbacks trigger signedIn)
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
       debugPrint('[SplashScreen] Auth event: ${data.event}');
-      timer.cancel(); // Cancel timeout on any auth event
 
       if (data.session != null) {
+        timer.cancel(); // Cancel the timeout only when a session is found.
         debugPrint('[SplashScreen] Session acquired, navigating');
         _authSubscription?.cancel();
         if (!hasNavigated && mounted) {
@@ -55,6 +70,7 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       }
       // Ignore initialSession with null session - wait for signedIn event
+      // If initialSession is null, the timer will eventually fire and navigate to login.
     });
   }
 

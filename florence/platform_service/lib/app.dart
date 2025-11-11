@@ -14,7 +14,9 @@ import 'main.dart';
 /// This sets up the MaterialApp with theme, routing, and providers
 
 class App extends StatefulWidget {
-  App({super.key});
+  final Uri? initialUri;
+
+  App({super.key, this.initialUri});
 
   @override
   State<App> createState() => _AppState();
@@ -155,7 +157,15 @@ class _AppState extends State<App> {
 
               // Routing
               initialRoute: AppRoutes.splash,
-              onGenerateRoute: AppRoutes.generateRoute,
+              onGenerateRoute: (settings) {
+                if (settings.name == AppRoutes.splash) {
+                  // Pass the initialUri to the splash screen as an argument
+                  return AppRoutes.generateRoute(
+                    settings.copyWith(arguments: {'initialUri': widget.initialUri}),
+                  );
+                }
+                return AppRoutes.generateRoute(settings);
+              },
 
               // Localization (for future use)
               // localizationsDelegates: const [
