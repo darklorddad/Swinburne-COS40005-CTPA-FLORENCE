@@ -24,7 +24,27 @@ class _LoginScreenState extends State<LoginScreen> {
   
   bool _isLoading = false;
   bool _rememberMe = false;
-  String? _errorMessage; // Will hold errors from login attempts OR deep links
+  String? _errorMessage;
+  bool _hasShownRouteError = false; // Add this flag to show the toast only once
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Check for a message passed from navigation arguments (e.g., from an invalid deep link).
+    // This is the ideal place to handle one-time actions when a screen is pushed with arguments.
+    if (!_hasShownRouteError) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final routeMessage = args?['message'] as String?;
+      if (routeMessage != null) {
+        // Schedule the snackbar to show after the build is complete to avoid build-time errors.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Helpers.showError(context, routeMessage);
+        });
+        // Set the flag to true so this message is only shown once per navigation event.
+        _hasShownRouteError = true;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -92,16 +112,11 @@ class _LoginScreenState extends State<LoginScreen> {
   
   @override
   Widget build(BuildContext context) {
-    // Extract arguments on every build. This is the most reliable way to get the
-    // message from a deep link navigation.
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final routeMessage = args?['message'] as String?;
-
-    // The message to display is either from the route or from a failed login attempt.
-    // The route message (from deep links) takes precedence.
-    final displayMessage = routeMessage ?? _errorMessage;
+    // We no longer need to read arguments here, as it's handled in didChangeDependencies.
+    // The only message we need to display as part of the layout is for failed login attempts.
+    final displayMessage = _errorMessage;
     
-    debugPrint('[LoginScreen] build called. Route message: "$routeMessage", State message: "$_errorMessage", Displaying: "$displayMessage"');
+    debugPrint('[LoginScreen] build called. State message: "$_errorMessage", Displaying: "$displayMessage"');
 
     // Responsive sizing
     final isDesktop = Helpers.isDesktop(context);
@@ -124,7 +139,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildHeader(),
                     const SizedBox(height: 48),
                     
-                    // THIS IS THE NEW ERROR DISPLAY WIDGET
+                    // Display an in-screen error message ONLY for failed login attempts.
+                    // Deep link errors are now handled by the toast in didChangeDependencies.
                     if (displayMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.all(12),
