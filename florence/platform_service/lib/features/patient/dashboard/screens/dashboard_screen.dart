@@ -42,7 +42,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Show a welcome message if passed via arguments from the splash screen
+    // Show a welcome message if passed via arguments from auth flow
     if (!_hasShownWelcomeMessage) {
       final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
       if (args != null && args['message'] != null) {

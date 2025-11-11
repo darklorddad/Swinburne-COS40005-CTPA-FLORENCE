@@ -33,17 +33,7 @@ class _SplashScreenState extends State<SplashScreen> {
     });
 
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      debugPrint('[SplashScreen] Auth event received: ${data.event}.');
-
-      // CRITICAL FIX: On a cold start, the first event is `initialSession` with a null session.
-      // We must ignore this specific case and continue listening for the `signedIn` event
-      // that will be triggered by the deep link processing.
-      if (data.event == AuthChangeEvent.initialSession && data.session == null) {
-        debugPrint('[SplashScreen] Ignoring initialSession with null session. Waiting for deep link...');
-        return; // Do nothing. Keep listening and let the timeout run.
-      }
-
-      // For any other event (a real signedIn, or initialSession with a valid session), we can act.
+      debugPrint('[SplashScreen] Auth event received: ${data.event}. Cancelling timeout.');
       timer.cancel();
       _authSubscription?.cancel();
 
@@ -57,15 +47,18 @@ class _SplashScreenState extends State<SplashScreen> {
           destinationRoute = AppRoutes.clinicianDashboard;
         }
         
-        final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && session.user.createdAt != null &&
+        // Check if this is a new sign-up confirmation
+        final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && 
+            session.user.createdAt != null &&
             DateTime.now().difference(DateTime.parse(session.user.createdAt!)).inMinutes < 2;
         
-        final message = isSignUpConfirmation ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
+        final message = isSignUpConfirmation ? 
+            'Welcome! Your email has been successfully confirmed.' : 
+            'Welcome back!';
 
         Navigator.of(context).pushReplacementNamed(destinationRoute, arguments: {'message': message});
       } else {
-        // This branch will now only be hit on a real signedOut event.
-        debugPrint('[SplashScreen] Event received but NO session (e.g., signedOut). Navigating to login.');
+        debugPrint('[SplashScreen] Event received but NO session. Navigating to login.');
         if (mounted) {
           Navigator.of(context).pushReplacementNamed(AppRoutes.login);
         }
