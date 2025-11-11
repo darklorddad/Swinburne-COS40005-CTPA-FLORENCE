@@ -52,7 +52,7 @@ Florence Platform is a patient-centric digital health dashboard that empowers in
 ## Project Structure
 
 ```
-florence_platform/
+florence/
 ├── lib/
 │   ├── main.dart                 # Application entry point
 │   ├── app.dart                  # App configuration and routing
@@ -194,7 +194,7 @@ florence_platform/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd florence_platform
+   cd florence
    ```
 
 2. **Install dependencies**

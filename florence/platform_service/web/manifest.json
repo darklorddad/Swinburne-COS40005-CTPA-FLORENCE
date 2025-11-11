@@ -1,6 +1,6 @@
 {
-    "name": "florence_platform",
-    "short_name": "florence_platform",
+    "name": "florence",
+    "short_name": "florence",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
