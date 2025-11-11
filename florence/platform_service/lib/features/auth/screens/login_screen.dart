@@ -66,6 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
+      debugPrint('[Login Screen] Attempting login for user: ${_emailController.text.trim()}');
       // Call the backend API instead of Supabase directly
       final response = await http.post(
         Uri.parse('${Environment.apiUrl}/auth/login'),
@@ -84,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (refreshToken != null) {
           // Manually set the session using the refresh token. The Supabase client
           // will use this to fetch a valid access token and establish the session.
+          debugPrint('[Login Screen] Login API call successful. Setting session with refresh token.');
           // This will trigger the onAuthStateChange listener in app.dart.
           await supabase.auth.setSession(refreshToken);
         } else {
@@ -91,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
           throw Exception('Invalid session returned from the server.');
         }
       } else {
+        debugPrint('[Login Screen] Login API call failed with status ${response.statusCode}');
         // If the backend returns an error (e.g., 401 Unauthorized)
         final errorBody = jsonDecode(response.body);
         final detail = errorBody['detail'] ?? 'An unknown error occurred.';

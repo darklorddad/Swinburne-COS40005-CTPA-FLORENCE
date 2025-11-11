@@ -45,6 +45,7 @@ class _AppState extends State<App> {
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
+        debugPrint('[Auth Listener] Event received: ${data.event}');
         // Any auth event means the initial state is resolved, so cancel the timer.
         _splashTimeoutTimer?.cancel();
         
@@ -56,6 +57,7 @@ class _AppState extends State<App> {
       },
       onError: (error) {
         // This handles deep link errors (e.g., an expired token).
+        debugPrint('[Auth Listener] onError received: $error');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final navigator = navigatorKey.currentState;
           if (navigator == null || !navigator.mounted) return;
@@ -71,32 +73,38 @@ class _AppState extends State<App> {
   }
 
   void _handleNavigation(AuthState data) {
+    debugPrint('[Auth Listener] Handling navigation for event: ${data.event}');
     final navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) return;
 
     final session = data.session;
     final event = data.event;
 
-    // Handle the very first event when the app starts (cold start)
+    // 1. Handle the very first event on a cold start
     if (event == AuthChangeEvent.initialSession) {
       if (session == null) {
         // The user is not logged in. Wait briefly on the splash screen
         // to see if a deep link provides a session. If not, the timer will navigate to login.
+        debugPrint('[Auth Listener] initialSession: No session found. Starting splash timeout timer...');
         _splashTimeoutTimer = Timer(const Duration(milliseconds: 1500), () {
+          debugPrint('[Auth Listener] Splash timeout finished. Navigating to login.');
           navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
         });
         return; // Wait for timer or another auth event
       }
-      // If a session exists on initial load, proceed to the logic below to navigate.
+      // If a session *does* exist on initial load, proceed to the logic below.
     }
 
+    // 2. Handle a valid session (from any event)
     if (session != null) {
       // User is logged in.
       final user = session.user;
       final role = user.userMetadata?['role'];
+      debugPrint('[Auth Listener] Session found. User ID: ${user.id}, Role: $role');
 
       final isSignUpConfirmation = event == AuthChangeEvent.signedIn && user.createdAt != null &&
             DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
+      debugPrint('[Auth Listener] isSignUpConfirmation: $isSignUpConfirmation');
 
       String destinationRoute;
       if (role == 'PATIENT') {
@@ -104,18 +112,21 @@ class _AppState extends State<App> {
       } else if (role == 'CLINICIAN' || role == 'ADMIN') {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
-        // Unsupported role, force back to login.
+        debugPrint('[Auth Listener] Unsupported role: "$role". Navigating to login.');
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
         return;
       }
 
       final message = isSignUpConfirmation ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
+      debugPrint('[Auth Listener] Navigating to $destinationRoute');
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
-    } else if (event != AuthChangeEvent.initialSession) {
-      // If the event is not the initial one and there's no session, it must be a sign-out.
+
+    } else {
+      // 3. Handle no session for non-initial events (e.g., signOut)
+      // The initialSession case is handled by the timer above.
+      debugPrint('[Auth Listener] No session found for event: ${data.event}. Navigating to login.');
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
-    // The case of `initialSession` with a null session is handled by the timer above.
   }
 
   @override
