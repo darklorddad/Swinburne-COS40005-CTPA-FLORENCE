@@ -64,17 +64,29 @@ class _AppState extends State<App> {
 
             final currentSession = supabase.auth.currentSession;
             if (currentSession != null) {
-              // If logged in, show a non-disruptive snackbar.
+              // CASE 1: USER IS ALREADY LOGGED IN
+              // Show a non-disruptive snackbar with the error message.
               Helpers.showError(navigator.context, message);
-              
-              // **THE FIX IS HERE:**
-              // After showing the error, ensure the user is navigated away
-              // from the splash screen and back to their dashboard.
-              // The existing _handleNavigation function does this perfectly.
-              _handleNavigation(currentSession);
 
+              // If the error caused the app to navigate to the splash screen,
+              // we need to navigate the user back to their correct dashboard.
+              // We do this WITHOUT passing any arguments to avoid the "Welcome back" message.
+              final currentRouteName = ModalRoute.of(navigator.context)?.settings.name;
+              if (currentRouteName == AppRoutes.splash) {
+                final role = currentSession.user.userMetadata?['role'];
+                String targetRoute = AppRoutes.login; // Default fallback
+
+                if (role == 'PATIENT') {
+                  targetRoute = AppRoutes.dashboard;
+                } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+                  targetRoute = AppRoutes.clinicianDashboard;
+                }
+                // Navigate without arguments to prevent any success messages.
+                navigator.pushNamedAndRemoveUntil(targetRoute, (route) => false);
+              }
             } else {
-              // If not logged in, navigate to the login screen with the error.
+              // CASE 2: USER IS NOT LOGGED IN
+              // Navigate to the login screen with the error message.
               navigator.pushNamedAndRemoveUntil(
                   AppRoutes.login, (route) => false, arguments: {'message': message});
             }
