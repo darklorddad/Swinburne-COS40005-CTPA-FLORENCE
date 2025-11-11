@@ -62,11 +62,17 @@ class _AppState extends State<App> {
             final navigator = navigatorKey.currentState;
             if (navigator == null || !navigator.mounted) return;
 
-            // **THE FIX IS HERE:**
-            // Check if a user is ALREADY logged in.
-            if (supabase.auth.currentSession != null) {
-              // If logged in, show a non-disruptive snackbar instead of logging them out.
+            final currentSession = supabase.auth.currentSession;
+            if (currentSession != null) {
+              // If logged in, show a non-disruptive snackbar.
               Helpers.showError(navigator.context, message);
+              
+              // **THE FIX IS HERE:**
+              // After showing the error, ensure the user is navigated away
+              // from the splash screen and back to their dashboard.
+              // The existing _handleNavigation function does this perfectly.
+              _handleNavigation(currentSession);
+
             } else {
               // If not logged in, navigate to the login screen with the error.
               navigator.pushNamedAndRemoveUntil(
