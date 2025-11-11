@@ -435,7 +435,7 @@ class _TrendsScreenState extends State<TrendsScreen>
                 ),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    tooltipBgColor: AppTheme.primaryBlue.withValues(alpha: 0.8),
+                    tooltipColor: AppTheme.primaryBlue.withValues(alpha: 0.8),
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         return LineTooltipItem(
