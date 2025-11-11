@@ -22,6 +22,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
+  Timer? _splashTimeoutTimer;
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -29,22 +30,24 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
+    // The Supabase client automatically handles listening for deep links.
+    // Our onAuthStateChange listener is all that's needed to react to them.
     _setupAuthListener();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _splashTimeoutTimer?.cancel();
     super.dispose();
   }
 
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
-        // Use a post-frame callback to ensure the widget tree is built and ready for navigation.
-        // This prevents race conditions during app startup.
+        // Use a post-frame callback to ensure the widget tree is built before navigating.
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleNavigation(data.session, data.event);
+          _handleNavigation(data);
         });
       },
       onError: (error) {
@@ -53,8 +56,6 @@ class _AppState extends State<App> {
           final navigator = navigatorKey.currentState;
           if (navigator == null || !navigator.mounted) return;
           
-          // On any auth error from a deep link, the safest action is to go to the login screen
-          // with a clear message, regardless of the current session state.
           navigator.pushNamedAndRemoveUntil(
             AppRoutes.login,
             (route) => false,
@@ -65,19 +66,18 @@ class _AppState extends State<App> {
     );
   }
 
-  void _handleNavigation(Session? session, AuthChangeEvent event) {
+  void _handleNavigation(AuthState data) {
     final navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) return;
-    final currentRouteName = ModalRoute.of(navigator.context)?.settings.name;
 
-    if (session != null) {
-      // User is logged in.
-      final user = session.user;
+    // Any auth event (signIn, signOut, etc.) means the initial state is resolved,
+    // so we can cancel the splash screen timeout timer if it's running.
+    _splashTimeoutTimer?.cancel();
+
+    if (data.session != null) {
+      // USER IS LOGGED IN
+      final user = data.session!.user;
       final role = user.userMetadata?['role'];
-      
-      // More reliable way to check for a new user confirming their email via deep link.
-      final isSignUpConfirmation = event == AuthChangeEvent.signedIn && user.createdAt != null &&
-            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
 
       String destinationRoute;
       if (role == 'PATIENT') {
@@ -85,25 +85,33 @@ class _AppState extends State<App> {
       } else if (role == 'CLINICIAN' || role == 'ADMIN') {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
-        // Unsupported role, force back to login with an error message.
-        if (currentRouteName != AppRoutes.login) {
-          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
-        }
+        // Unsupported role, force back to login.
+        navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
         return;
       }
+      
+      // Check if this is a new user confirming their email via a deep link.
+      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && user.createdAt != null &&
+            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
 
-      // Only navigate if we are not already on the destination screen.
-      // This prevents navigation loops if the auth state changes for other reasons (e.g., token refresh).
-      if (currentRouteName != destinationRoute) {
-          final message = isSignUpConfirmation
-              ? 'Welcome! Your email has been successfully confirmed.'
-              : 'Welcome back!';
-          navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
-      }
+      final message = isSignUpConfirmation
+          ? 'Welcome! Your email has been successfully confirmed.'
+          : 'Welcome back!';
+      
+      navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
+
     } else {
-      // User is not logged in.
-      // If we are not already on the login screen, navigate there.
-      if (currentRouteName != AppRoutes.login) {
+      // USER IS NOT LOGGED IN
+      // On a cold start, the first event is 'initialSession'. If the session is null,
+      // we start a timer. If no other auth event (like a `signedIn` from a deep link)
+      // occurs before the timer finishes, we know the user is truly logged out.
+      if (data.event == AuthChangeEvent.initialSession) {
+        _splashTimeoutTimer = Timer(const Duration(seconds: 1), () {
+          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+        });
+      } else {
+        // For any other event where the session is null (like a `signedOut` event),
+        // we can navigate to the login screen immediately.
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
       }
     }
