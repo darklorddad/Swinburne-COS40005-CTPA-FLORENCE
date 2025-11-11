@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/routes.dart';
@@ -23,23 +22,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Initialize app links handler
-    final appLinks = AppLinks();
-
-    // Handle initial deep link (e.g., from cold start)
-    final initialUri = await appLinks.getInitialLink();
-    if (initialUri != null && initialUri.queryParameters.containsKey('error_description')) {
-      final errorDescription = initialUri.queryParameters['error_description']!.replaceAll('+', ' ');
-      debugPrint('[SplashScreen] Deep link error found: $errorDescription');
-      // Use a post-frame callback to ensure the widget is built before navigating.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': errorDescription});
-        }
-      });
-      return; // Stop further processing
-    }
-
     // Check for existing session immediately
     final currentSession = supabase.auth.currentSession;
     if (currentSession != null) {
@@ -75,6 +57,18 @@ class _SplashScreenState extends State<SplashScreen> {
       }
       // Ignore initialSession with null session - wait for signedIn event
       // If initialSession is null, the timer will eventually fire and navigate to login.
+    }, onError: (error) {
+      debugPrint('[SplashScreen] Auth stream error: $error');
+      timer.cancel(); // Cancel timer because we are handling the error navigation now.
+      if (!hasNavigated && mounted) {
+        hasNavigated = true;
+        // The error from an expired link is an AuthException.
+        final message = (error is AuthException) ? error.message : 'An authentication error occurred.';
+        Navigator.of(context).pushReplacementNamed(
+          AppRoutes.login,
+          arguments: {'message': message},
+        );
+      }
     });
   }
 
