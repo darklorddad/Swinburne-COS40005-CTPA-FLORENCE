@@ -22,16 +22,24 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // This timeout is a safety net. If no valid auth event happens after 3 seconds,
-    // it means there's no stored session and no incoming deep link.
+    // First, check if there's an existing session immediately
+    final currentSession = supabase.auth.currentSession;
+    if (currentSession != null) {
+      debugPrint('[SplashScreen] Found existing session, navigating directly');
+      _navigateFromSession(currentSession);
+      return;
+    }
+
+    // Set a timeout for cases where no session exists
     final timer = Timer(const Duration(seconds: 3), () {
-      debugPrint('[SplashScreen] TIMEOUT. No valid session found, navigating to login.');
+      debugPrint('[SplashScreen] Timeout reached. No session found. Navigating to login.');
       _authSubscription?.cancel();
       if (mounted) {
         Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
     });
 
+    // Listen for auth changes (including deep links)
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
       debugPrint('[SplashScreen] Auth event received: ${data.event}. Cancelling timeout.');
       timer.cancel();
@@ -40,23 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final session = data.session;
       if (session != null) {
         debugPrint('[SplashScreen] Session FOUND from event. Navigating to dashboard.');
-        final role = session.user.userMetadata?['role'];
-        String destinationRoute = AppRoutes.dashboard;
-
-        if (role == 'CLINICIAN' || role == 'ADMIN') {
-          destinationRoute = AppRoutes.clinicianDashboard;
-        }
-        
-        // Check if this is a new sign-up confirmation
-        final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && 
-            session.user.createdAt != null &&
-            DateTime.now().difference(DateTime.parse(session.user.createdAt!)).inMinutes < 2;
-        
-        final message = isSignUpConfirmation ? 
-            'Welcome! Your email has been successfully confirmed.' : 
-            'Welcome back!';
-
-        Navigator.of(context).pushReplacementNamed(destinationRoute, arguments: {'message': message});
+        _navigateFromSession(session);
       } else {
         debugPrint('[SplashScreen] Event received but NO session. Navigating to login.');
         if (mounted) {
@@ -64,6 +56,24 @@ class _SplashScreenState extends State<SplashScreen> {
         }
       }
     });
+  }
+
+  void _navigateFromSession(Session session) {
+    final role = session.user.userMetadata?['role'];
+    String destinationRoute = AppRoutes.dashboard;
+
+    if (role == 'CLINICIAN' || role == 'ADMIN') {
+      destinationRoute = AppRoutes.clinicianDashboard;
+    }
+    
+    final isSignUpConfirmation = session.user.createdAt != null &&
+        DateTime.now().difference(DateTime.parse(session.user.createdAt!)).inMinutes < 2;
+    
+    final message = isSignUpConfirmation ? 
+        'Welcome! Your email has been successfully confirmed.' : 
+        'Welcome back!';
+
+    Navigator.of(context).pushReplacementNamed(destinationRoute, arguments: {'message': message});
   }
 
   @override

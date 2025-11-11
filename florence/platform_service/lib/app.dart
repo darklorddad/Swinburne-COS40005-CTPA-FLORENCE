@@ -58,16 +58,20 @@ class _AppState extends State<App> {
         });
       },
       onError: (error) {
-        // This handles deep link errors (e.g., an expired token).
         debugPrint('[Auth Listener] Deep link error: $error');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final navigator = navigatorKey.currentState;
           if (navigator == null || !navigator.mounted) return;
-          navigator.pushNamedAndRemoveUntil(
-            AppRoutes.login,
-            (route) => false,
-            arguments: {'message': 'This confirmation link is invalid or has expired. Please try again.'},
-          );
+          
+          // Check if we're already on login screen to avoid duplicate messages
+          final currentRoute = ModalRoute.of(navigator.context)?.settings.name;
+          if (currentRoute != AppRoutes.login) {
+            navigator.pushNamedAndRemoveUntil(
+              AppRoutes.login,
+              (route) => false,
+              arguments: {'message': 'This confirmation link is invalid or has expired. Please try again.'},
+            );
+          }
         });
       },
     );
@@ -81,37 +85,37 @@ class _AppState extends State<App> {
     final session = data.session;
     debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
 
-    // Handle deep link authentication (signUp confirmation)
-    if (session != null) {
-      final user = session.user;
-      final role = user.userMetadata?['role'];
-      debugPrint('[App Listener] Session found. Role: $role. Navigating...');
-      
-      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && 
-          user.createdAt != null &&
-          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
+    // Only handle events AFTER initial session (SplashScreen handles initial session)
+    if (data.event != AuthChangeEvent.initialSession) {
+      if (session != null) {
+        final user = session.user;
+        final role = user.userMetadata?['role'];
+        debugPrint('[App Listener] Post-initial session found. Role: $role. Navigating...');
+        
+        final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && 
+            user.createdAt != null &&
+            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
 
-      String destinationRoute;
-      if (role == 'PATIENT') {
-        destinationRoute = AppRoutes.dashboard;
-      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-        destinationRoute = AppRoutes.clinicianDashboard;
+        String destinationRoute;
+        if (role == 'PATIENT') {
+          destinationRoute = AppRoutes.dashboard;
+        } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+          destinationRoute = AppRoutes.clinicianDashboard;
+        } else {
+          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, 
+              arguments: {'message': 'Login failed: Unsupported user role.'});
+          return;
+        }
+
+        final message = isSignUpConfirmation ? 
+            'Welcome! Your email has been successfully confirmed.' : 
+            'Welcome back!';
+            
+        navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, 
+            arguments: {'message': message});
       } else {
-        navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, 
-            arguments: {'message': 'Login failed: Unsupported user role.'});
-        return;
-      }
-
-      final message = isSignUpConfirmation ? 
-          'Welcome! Your email has been successfully confirmed.' : 
-          'Welcome back!';
-          
-      navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, 
-          arguments: {'message': message});
-    } else {
-      // Only navigate to login if this is not a deep link processing scenario
-      if (data.event != AuthChangeEvent.signedIn) {
-        debugPrint('[App Listener] No session found. Navigating to login.');
+        // Handle sign out or session expiration
+        debugPrint('[App Listener] No session found after initial. Navigating to login.');
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
       }
     }
