@@ -8,6 +8,8 @@ import 'package:clinician_dashboard/widgets/risk_indicator.dart';
 import 'package:clinician_dashboard/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
+enum GlucoseUnit { mgPerdL, mmolPerL }
+
 class _ChatMessage {
   final String text;
   final bool isUser;
@@ -35,6 +37,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   late TabController _tabController;
   late Patient _patient;
   late PatientHealthData _healthData;
+  // Glucose unit state for Avg Glucose metric
+  GlucoseUnit _glucoseUnit = GlucoseUnit.mgPerdL;
+  // Graph timeframe (days)
+  int _graphDays = 30;
   
   // Chatbot state
   final TextEditingController _chatController = TextEditingController();
@@ -356,6 +362,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
   
   Widget _buildHealthDataTab() {
+    // Filter datasets by selected timeframe
+    final now = DateTime.now();
+    final since = now.subtract(Duration(days: _graphDays));
+    final filteredGlucose = _healthData.glucoseReadings.where((r) => r.timestamp.isAfter(since)).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final filteredHbA1c = _healthData.hbA1cReadings.where((r) => r.timestamp.isAfter(since)).toList()
+      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    final filteredActivity = _healthData.activityData.where((a) => a.date.isAfter(since)).toList()
+      ..sort((a, b) => a.date.compareTo(b.date));
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -374,14 +390,53 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   ),
                 ),
                 const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SegmentedButton<int>(
+                    segments: const <ButtonSegment<int>>[
+                      ButtonSegment(value: 7, label: Text('7d')),
+                      ButtonSegment(value: 14, label: Text('14d')),
+                      ButtonSegment(value: 30, label: Text('30d')),
+                      ButtonSegment(value: 90, label: Text('90d')),
+                    ],
+                    selected: <int>{_graphDays},
+                    showSelectedIcon: false,
+                    style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                    onSelectionChanged: (s) {
+                      setState(() {
+                        _graphDays = s.first;
+                      });
+                    },
+                  ),
+                ),
                 SizedBox(
                   height: 250,
                   child: GlucoseChart(
-                    readings: _healthData.glucoseReadings,
-                    hbA1cReadings: _healthData.hbA1cReadings,
+                    readings: filteredGlucose,
+                    hbA1cReadings: filteredHbA1c,
                   ),
                 ),
                 const Divider(),
+                // Unit selector for Avg Glucose metric
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: SegmentedButton<GlucoseUnit>(
+                    segments: const <ButtonSegment<GlucoseUnit>>[
+                      ButtonSegment(value: GlucoseUnit.mgPerdL, label: Text('mg/dL')),
+                      ButtonSegment(value: GlucoseUnit.mmolPerL, label: Text('mmol/L')),
+                    ],
+                    selected: <GlucoseUnit>{_glucoseUnit},
+                    showSelectedIcon: false,
+                    style: const ButtonStyle(
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onSelectionChanged: (newSelection) {
+                      setState(() {
+                        _glucoseUnit = newSelection.first;
+                      });
+                    },
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Row(
@@ -389,22 +444,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     children: [
                       _buildGlucoseStatChip(
                         'Avg Glucose',
-                        '${_calculateAverageGlucose().toInt()} mg/dL',
-                        AppTheme.primaryColor,
+                        _formatAvgGlucose(_calculateAverageGlucoseFor(filteredGlucose)),
+                        Colors.green,
                       ),
                       _buildGlucoseStatChip(
                         'High Events',
-                        _healthData.glucoseReadings.where((r) => r.isHigh).length.toString(),
+                        filteredGlucose.where((r) => r.isHigh).length.toString(),
                         AppTheme.highRiskColor,
                       ),
                       _buildGlucoseStatChip(
                         'Low Events',
-                        _healthData.glucoseReadings.where((r) => r.isLow).length.toString(),
-                        Colors.purple,
+                        filteredGlucose.where((r) => r.isLow).length.toString(),
+                        Colors.blue,
                       ),
                       _buildGlucoseStatChip(
                         'Latest HbA1c',
-                        '${_healthData.hbA1cReadings.isEmpty ? "-" : _healthData.hbA1cReadings.first.value.toString()}%',
+                        '${filteredHbA1c.isEmpty ? "-" : filteredHbA1c.first.value.toString()}%',
                         Colors.orange,
                       ),
                     ],
@@ -435,7 +490,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 SizedBox(
                   height: 220,
                   child: ActivityChart(
-                    activityData: _healthData.activityData,
+                    activityData: filteredActivity,
                   ),
                 ),
                 const Divider(),
@@ -472,6 +527,83 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         
         const SizedBox(height: 16),
         
+        // Medications Card
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Current Medications',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (_healthData.medications.isEmpty)
+                  const Text('No active medications recorded.'),
+                ..._healthData.medications.map((m) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  m.name,
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  m.dosage,
+                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                _buildNutrientChip('Route', m.route, AppTheme.primaryColor),
+                                _buildNutrientChip('Frequency', m.frequency, Colors.green),
+                                if (m.startDate != null)
+                                  _buildNutrientChip('Started', DateFormat('MMM d, yyyy').format(m.startDate!), Colors.orange),
+                              ],
+                            ),
+                            if (m.notes != null) ...[
+                              const SizedBox(height: 4),
+                              Text(m.notes!, style: const TextStyle(fontSize: 13)),
+                            ]
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 16),
+
         // Diet Log Card
         Card(
           child: Padding(
@@ -1036,10 +1168,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
   
-  double _calculateAverageGlucose() {
-    if (_healthData.glucoseReadings.isEmpty) return 0;
-    final sum = _healthData.glucoseReadings.fold(0.0, (prev, element) => prev + element.value);
-    return sum / _healthData.glucoseReadings.length;
+  double _calculateAverageGlucoseFor(List<GlucoseReading> readings) {
+    if (readings.isEmpty) return 0;
+    final sum = readings.fold(0.0, (prev, element) => prev + element.value);
+    return sum / readings.length;
+  }
+
+  String _formatAvgGlucose(double valueMgPerdL) {
+    if (_glucoseUnit == GlucoseUnit.mgPerdL) {
+      return '${valueMgPerdL.toInt()} mg/dL';
+    }
+    // Convert mg/dL to mmol/L: value / 18
+    final mmol = valueMgPerdL / 18.0;
+    return '${mmol.toStringAsFixed(1)} mmol/L';
   }
   
   double _calculateAverageSteps() {

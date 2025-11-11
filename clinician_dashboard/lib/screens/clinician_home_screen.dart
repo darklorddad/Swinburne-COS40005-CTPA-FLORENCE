@@ -6,6 +6,7 @@ import 'package:clinician_dashboard/widgets/patient_list_item.dart';
 import 'package:clinician_dashboard/widgets/alert_item.dart';
 import 'package:clinician_dashboard/widgets/patient_filter.dart';
 import 'package:clinician_dashboard/screens/patient_detail_screen.dart';
+import 'package:clinician_dashboard/screens/clinician_profile_screen.dart';
 
 class ClinicianHomeScreen extends StatefulWidget {
   const ClinicianHomeScreen({super.key});
@@ -88,7 +89,12 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
               IconButton(
                 icon: const Icon(Icons.person),
                 onPressed: () {
-                  _showClinicianProfileDialog();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ClinicianProfileScreen(),
+                    ),
+                  );
                 },
               ),
             ],
@@ -182,7 +188,12 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
           IconButton(
             icon: const Icon(Icons.person),
             onPressed: () {
-              _showClinicianProfileDialog();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ClinicianProfileScreen(),
+                ),
+              );
             },
           ),
         ],
@@ -510,31 +521,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
     );
   }
 
-  void _showClinicianProfileDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Clinician Profile'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Name: Dr. Example Clinician'),
-            SizedBox(height: 8),
-            Text('Role: Endocrinologist'),
-            SizedBox(height: 8),
-            Text('Patients Assigned: 5'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          )
-        ],
-      ),
-    );
-  }
 
   void _showAddPatientDialog() {
     _newPatientNameController.clear();

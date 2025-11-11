@@ -47,7 +47,7 @@ class GlucoseChart extends StatelessWidget {
             return FlLine(
               color: value == highThreshold
                   ? AppTheme.highRiskColor.withValues(alpha: 0.3)
-                  : Colors.purple.withValues(alpha: 0.3),
+                  : Colors.blue.withValues(alpha: 0.3),
               strokeWidth: 1,
               dashArray: [5, 5],
             );
@@ -176,7 +176,7 @@ class GlucoseChart extends StatelessWidget {
           }),
           isCurved: true,
           gradient: LinearGradient(
-            colors: [AppTheme.primaryColor.withValues(alpha: 0.5), AppTheme.primaryColor],
+            colors: [Colors.green.withValues(alpha: 0.5), Colors.green],
           ),
           barWidth: 3,
           isStrokeCapRound: true,
@@ -190,7 +190,7 @@ class GlucoseChart extends StatelessWidget {
               if (reading.value >= highThreshold) {
                 dotColor = AppTheme.highRiskColor;
               } else if (reading.value <= lowThreshold) {
-                dotColor = Colors.purple;
+                dotColor = Colors.blue;
               }
               
               return FlDotCirclePainter(
@@ -205,8 +205,8 @@ class GlucoseChart extends StatelessWidget {
             show: true,
             gradient: LinearGradient(
               colors: [
-                AppTheme.primaryColor.withValues(alpha: 0.2),
-                AppTheme.primaryColor.withValues(alpha: 0.0),
+                Colors.green.withValues(alpha: 0.2),
+                Colors.green.withValues(alpha: 0.0),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -255,7 +255,7 @@ class GlucoseChart extends StatelessWidget {
           ),
           HorizontalLine(
             y: lowThreshold,
-            color: Colors.purple,
+            color: Colors.blue,
             strokeWidth: 1,
             dashArray: [5, 5],
             label: HorizontalLineLabel(
@@ -263,7 +263,7 @@ class GlucoseChart extends StatelessWidget {
               alignment: Alignment.bottomRight,
               padding: const EdgeInsets.only(right: 5, top: 5),
               style: const TextStyle(
-                color: Colors.purple,
+                color: Colors.blue,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
