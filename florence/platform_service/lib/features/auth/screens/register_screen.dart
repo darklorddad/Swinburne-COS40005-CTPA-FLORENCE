@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../main.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/config/environment.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
@@ -63,31 +65,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Use supabase.auth.signUp directly
-      await supabase.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        data: {
-          'full_name': _fullNameController.text.trim(),
-          'role': 'PATIENT',
-        },
-        emailRedirectTo: 'florence://login-callback',
+      // Call the backend API instead of Supabase directly
+      final response = await http.post(
+        Uri.parse('${Environment.apiUrl}/auth/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+          'role': 'PATIENT', // Hardcoded for patient registration
+          'name': _fullNameController.text.trim(),
+          // The backend model allows other fields, but the form only has these.
+          // The backend will handle nulls for optional fields.
+        }),
       );
 
-      if (mounted) {
-        Helpers.showSuccess(
-          context,
-          'Registration successful! Please check your email to verify your account.',
-        );
-        AppRoutes.pop(context);
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        Helpers.showError(context, error.message);
+      if (response.statusCode == 200) {
+        if (mounted) {
+          final responseBody = jsonDecode(response.body);
+          Helpers.showSuccess(
+            context,
+            responseBody['message'] ?? 'Registration successful! Please check your email.',
+          );
+          AppRoutes.pop(context); // Go back to login screen
+        }
+      } else {
+        // Handle backend error
+        final errorBody = jsonDecode(response.body);
+        throw Exception(errorBody['detail'] ?? 'Registration failed.');
       }
     } catch (error) {
       if (mounted) {
-        Helpers.showError(context, 'An unexpected error occurred. Please try again later.');
+        Helpers.showError(context, error.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/config/environment.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
@@ -65,42 +68,50 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
-      final response = await supabase.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+      // Call the backend API instead of Supabase directly
+      final response = await http.post(
+        Uri.parse('${Environment.apiUrl}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        }),
       );
-      
-      if (response.user != null && mounted) {
-        final role = response.user!.userMetadata?['role'];
 
-        if (role == 'PATIENT') {
-          Helpers.showSuccess(context, 'Welcome back!');
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, predicate: (route) => false);
-        } else if (role == 'CLINICIAN') {
-          Helpers.showSuccess(context, 'Welcome back, Clinician!');
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.clinicianDashboard, predicate: (route) => false);
+      if (response.statusCode == 200) {
+        // Backend returns the session object on success
+        final session = jsonDecode(response.body);
+        final accessToken = session['access_token'];
+        final refreshToken = session['refresh_token'];
+
+        if (accessToken != null && refreshToken != null) {
+          // Manually set the session in the Supabase client.
+          // This is crucial as it will trigger the onAuthStateChange listener in app.dart
+          // which handles all the navigation logic.
+          await supabase.auth.setSession(accessToken, refreshToken: refreshToken);
         } else {
-          Helpers.showError(context, 'Your user role is not supported.');
-          await supabase.auth.signOut();
+          // If the server response is malformed
+          throw Exception('Invalid session returned from the server.');
         }
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        // Check for the specific "Email not confirmed" error.
-        if (error.message.toLowerCase().contains('email not confirmed')) {
-          // Show this as a toast/snackbar for better UX.
-          Helpers.showError(context, error.message);
-          // Ensure the on-screen error is cleared.
-          setState(() => _errorMessage = null);
-        } else {
-          // For all other auth errors (like invalid credentials), show the persistent on-screen message.
-          setState(() => _errorMessage = error.message);
-        }
+      } else {
+        // If the backend returns an error (e.g., 401 Unauthorized)
+        final errorBody = jsonDecode(response.body);
+        // The backend's error message is in the 'detail' field
+        throw Exception(errorBody['detail'] ?? 'An unknown error occurred.');
       }
     } catch (error) {
-      // Unexpected error
+      // Catch backend errors, network errors, etc.
       if (mounted) {
-        setState(() => _errorMessage = 'An unexpected error occurred. Please try again.');
+        final errorMessage = error.toString().replaceFirst('Exception: ', '');
+        
+        // The backend doesn't distinguish "Email not confirmed" from "Invalid credentials".
+        // It returns the same "Login failed: Invalid login credentials" for both.
+        // We can check for that specific message to provide a hint.
+        if (errorMessage.contains('Invalid login credentials')) {
+          setState(() => _errorMessage = 'Invalid email or password. Please also check if you have confirmed your email.');
+        } else {
+          setState(() => _errorMessage = errorMessage);
+        }
       }
     } finally {
       if (mounted) {
