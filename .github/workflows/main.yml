@@ -17,31 +17,29 @@ jobs:
         uses: actions/checkout@v4
 
       # Step 2: Set up Shorebird
-      # This action correctly installs Shorebird and sets up the environment.
       - name: Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
 
-      # Step 3: Decide whether to PATCH or RELEASE based on commit message
-      # The SHOREBIRD_TOKEN is automatically used by the 'patch' and 'release' commands.
-      - name: Deploy a Patch (Hot Restart Update)
+      # Step 3: Deploy a Patch (Hot Restart Update)
+      - name: Deploy a Patch
         if: "!contains(github.event.head_commit.message, '[release]')"
-        run: shorebird patch android --force
+        run: shorebird patch android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # This step only runs if the commit message contains '[release]'
+      # Step 4: Build a Full Release
       - name: Build a Full Release
         if: "contains(github.event.head_commit.message, '[release]')"
-        run: shorebird release android
+        run: shorebird release android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # Step 4: Upload to Firebase App Distribution (only if it was a release)
+      # Step 5: Upload to Firebase App Distribution (only if it was a release)
       - name: Upload to Firebase App Distribution
         if: "contains(github.event.head_commit.message, '[release]')"
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
-          appId: ${{ secrets.FIREBASE_APP_ID }}
+          appId: ${{ secrets.FIREBIRD_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
           groups: testers
           file: build/app/outputs/bundle/release/app-release.aab
