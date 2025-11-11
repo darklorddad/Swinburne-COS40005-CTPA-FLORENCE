@@ -45,7 +45,11 @@ class _AppState extends State<App> {
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
+        // Any auth event means the initial state is resolved, so cancel the timer.
+        _splashTimeoutTimer?.cancel();
+        
         // Use a post-frame callback to ensure the widget tree is built before navigating.
+        // This is crucial for handling events immediately after app startup.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleNavigation(data);
         });
@@ -70,14 +74,29 @@ class _AppState extends State<App> {
     final navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) return;
 
-    // Any auth event (signIn, signOut, etc.) means the initial state is resolved,
-    // so we can cancel the splash screen timeout timer if it's running.
-    _splashTimeoutTimer?.cancel();
+    final session = data.session;
+    final event = data.event;
 
-    if (data.session != null) {
-      // USER IS LOGGED IN
-      final user = data.session!.user;
+    // Handle the very first event when the app starts (cold start)
+    if (event == AuthChangeEvent.initialSession) {
+      if (session == null) {
+        // The user is not logged in. Wait briefly on the splash screen
+        // to see if a deep link provides a session. If not, the timer will navigate to login.
+        _splashTimeoutTimer = Timer(const Duration(milliseconds: 1500), () {
+          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+        });
+        return; // Wait for timer or another auth event
+      }
+      // If a session exists on initial load, proceed to the logic below to navigate.
+    }
+
+    if (session != null) {
+      // User is logged in.
+      final user = session.user;
       final role = user.userMetadata?['role'];
+
+      final isSignUpConfirmation = event == AuthChangeEvent.signedIn && user.createdAt != null &&
+            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
 
       String destinationRoute;
       if (role == 'PATIENT') {
@@ -89,32 +108,14 @@ class _AppState extends State<App> {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
         return;
       }
-      
-      // Check if this is a new user confirming their email via a deep link.
-      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && user.createdAt != null &&
-            DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
 
-      final message = isSignUpConfirmation
-          ? 'Welcome! Your email has been successfully confirmed.'
-          : 'Welcome back!';
-      
+      final message = isSignUpConfirmation ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
-
-    } else {
-      // USER IS NOT LOGGED IN
-      // On a cold start, the first event is 'initialSession'. If the session is null,
-      // we start a timer. If no other auth event (like a `signedIn` from a deep link)
-      // occurs before the timer finishes, we know the user is truly logged out.
-      if (data.event == AuthChangeEvent.initialSession) {
-        _splashTimeoutTimer = Timer(const Duration(seconds: 1), () {
-          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-        });
-      } else {
-        // For any other event where the session is null (like a `signedOut` event),
-        // we can navigate to the login screen immediately.
-        navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-      }
+    } else if (event != AuthChangeEvent.initialSession) {
+      // If the event is not the initial one and there's no session, it must be a sign-out.
+      navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
+    // The case of `initialSession` with a null session is handled by the timer above.
   }
 
   @override
