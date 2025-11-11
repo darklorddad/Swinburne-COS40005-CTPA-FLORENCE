@@ -52,18 +52,19 @@ class AppRoutes {
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
-    // This handles deep links that come with a URL fragment (#).
-    // The router tries to interpret this as a route, causing a crash.
-    // We intercept it and redirect to the SplashScreen, which will then
-    // handle the authentication logic from the URL fragment.
-    if (settings.name != null && settings.name!.startsWith('/#')) {
-      return _buildRoute(const SplashScreen());
+    // This handles deep links that come with a URL fragment (#) or query params (?).
+    // The router tries to interpret the path as a route, which may not exist.
+    // We intercept any auth callback paths and show the SplashScreen, which acts as a
+    // loading screen while the auth state listener in app.dart processes the session.
+    final routeName = settings.name ?? '';
+    if (routeName.startsWith('/#') || routeName.startsWith('/login-callback')) {
+      return _buildRoute(const SplashScreen(), settings);
     }
 
     // Parse route arguments if any
     final args = settings.arguments;
 
-    switch (settings.name) {
+    switch (routeName) {
       case splash:
         return _buildRoute(const SplashScreen(), settings);
 
