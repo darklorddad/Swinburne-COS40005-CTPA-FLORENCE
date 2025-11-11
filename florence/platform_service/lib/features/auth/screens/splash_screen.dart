@@ -22,52 +22,42 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Check for existing session immediately
-    final currentSession = supabase.auth.currentSession;
-    if (currentSession != null) {
-      debugPrint('[SplashScreen] Found existing session, navigating directly');
-      _navigateFromSession(currentSession);
-      return;
-    }
+    // This delay is important to allow the app to finish its initial render
+    // and for the Supabase client to process any incoming deep links.
+    await Future.delayed(Duration.zero);
+
+    if (!mounted) return;
 
     bool hasNavigated = false;
 
-    // Timeout fallback if no auth event arrives
-    final timer = Timer(const Duration(seconds: 3), () {
-      if (!hasNavigated && mounted) {
-        debugPrint('[SplashScreen] Timeout: No session established');
-        _authSubscription?.cancel();
-        hasNavigated = true;
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-      }
-    });
+    // Set up the listener for auth changes. This will fire for deep links or existing sessions.
+    _authSubscription = supabase.auth.onAuthStateChange.listen(
+      (data) {
+        if (hasNavigated) return; // Prevent multiple navigations
 
-    // Listen for auth events (deep link callbacks trigger signedIn)
-    _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      debugPrint('[SplashScreen] Auth event: ${data.event}');
-
-      if (data.session != null) {
-        timer.cancel(); // Cancel the timeout only when a session is found.
-        debugPrint('[SplashScreen] Session acquired, navigating');
-        _authSubscription?.cancel();
-        if (!hasNavigated && mounted) {
+        final session = data.session;
+        if (session != null) {
           hasNavigated = true;
-          _navigateFromSession(data.session!);
+          _authSubscription?.cancel();
+          _navigateFromSession(session);
         }
-      }
-      // Ignore initialSession with null session - wait for signedIn event
-      // If initialSession is null, the timer will eventually fire and navigate to login.
-    }, onError: (error) {
-      debugPrint('[SplashScreen] Auth stream error: $error');
-      timer.cancel(); // Cancel timer because we are handling the error navigation now.
-      if (!hasNavigated && mounted) {
+      },
+      onError: (error) {
+        if (hasNavigated) return;
         hasNavigated = true;
-        // The error from an expired link is an AuthException.
-        final message = (error is AuthException) ? error.message : 'An authentication error occurred.';
-        Navigator.of(context).pushReplacementNamed(
-          AppRoutes.login,
-          arguments: {'message': message},
-        );
+        _authSubscription?.cancel();
+        final message = error is AuthException ? error.message : 'Authentication error.';
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': message});
+      },
+    );
+
+    // If after a short delay there's still no session, go to login.
+    // This handles the case of a manual app launch with no user logged in.
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!hasNavigated && mounted && supabase.auth.currentSession == null) {
+        hasNavigated = true;
+        _authSubscription?.cancel();
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
     });
   }
