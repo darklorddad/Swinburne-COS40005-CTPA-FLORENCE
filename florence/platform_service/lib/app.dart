@@ -160,9 +160,9 @@ class _AppState extends State<App> {
               onGenerateRoute: (settings) {
                 if (settings.name == AppRoutes.splash) {
                   // Pass the initialUri to the splash screen as an argument
-                  return AppRoutes.generateRoute(
-                    settings.copyWith(arguments: {'initialUri': widget.initialUri}),
-                  );
+                  return AppRoutes.generateRoute(RouteSettings(
+                      name: settings.name,
+                      arguments: {'initialUri': widget.initialUri}));
                 }
                 return AppRoutes.generateRoute(settings);
               },
