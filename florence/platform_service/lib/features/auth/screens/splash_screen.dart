@@ -39,7 +39,16 @@ class _SplashScreenState extends State<SplashScreen> {
         if (session != null) {
           hasNavigated = true;
           _authSubscription?.cancel();
-          _navigateFromSession(session);
+          if (mounted) {
+            _navigateFromSession(session);
+          }
+        } else {
+          // This handles the case where the stream fires but there is no session.
+          hasNavigated = true;
+          _authSubscription?.cancel();
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+          }
         }
       },
       onError: (error) {
@@ -47,19 +56,11 @@ class _SplashScreenState extends State<SplashScreen> {
         hasNavigated = true;
         _authSubscription?.cancel();
         final message = error is AuthException ? error.message : 'Authentication error.';
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': message});
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': message});
+        }
       },
     );
-
-    // If after a short delay there's still no session, go to login.
-    // This handles the case of a manual app launch with no user logged in.
-    Future.delayed(const Duration(seconds: 1), () {
-      if (!hasNavigated && mounted && supabase.auth.currentSession == null) {
-        hasNavigated = true;
-        _authSubscription?.cancel();
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-      }
-    });
   }
 
   void _navigateFromSession(Session session) {
