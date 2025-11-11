@@ -59,8 +59,19 @@ class _AppState extends State<App> {
         if (error is AuthException) {
           String message = 'This confirmation link is invalid or has expired. Please try again.';
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            navigatorKey.currentState?.pushNamedAndRemoveUntil(
-                AppRoutes.login, (route) => false, arguments: {'message': message});
+            final navigator = navigatorKey.currentState;
+            if (navigator == null || !navigator.mounted) return;
+
+            // **THE FIX IS HERE:**
+            // Check if a user is ALREADY logged in.
+            if (supabase.auth.currentSession != null) {
+              // If logged in, show a non-disruptive snackbar instead of logging them out.
+              Helpers.showError(navigator.context, message);
+            } else {
+              // If not logged in, navigate to the login screen with the error.
+              navigator.pushNamedAndRemoveUntil(
+                  AppRoutes.login, (route) => false, arguments: {'message': message});
+            }
           });
         }
       },
