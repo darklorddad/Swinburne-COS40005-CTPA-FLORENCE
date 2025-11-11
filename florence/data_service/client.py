@@ -19,7 +19,7 @@ class _SupabaseClientProxy:
             load_dotenv(dotenv_path=project_root / '.env', override=True)
 
             url: str = os.environ.get("SUPABASE_URL")
-            key: str = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
+            key: str = os.environ.get("SUPABASE_SERVICE_KEY")
 
             if not url or not key:
                 raise RuntimeError(
