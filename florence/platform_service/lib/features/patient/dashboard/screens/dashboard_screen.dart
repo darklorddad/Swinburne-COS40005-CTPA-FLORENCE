@@ -626,3 +626,134 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 
+/// Quick log modal
+class _QuickLogModal extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade300,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Title
+          Text(
+            'Quick Log',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 24),
+
+          // Action buttons
+          GridView.count(
+            shrinkWrap: true,
+            crossAxisCount: 2,
+            mainAxisSpacing: 16,
+            crossAxisSpacing: 16,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _QuickLogButton(
+                icon: Icons.water_drop,
+                label: 'Glucose',
+                color: AppTheme.primaryRed,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logGlucose);
+                },
+              ),
+              _QuickLogButton(
+                icon: Icons.restaurant,
+                label: 'Meal',
+                color: AppTheme.mealColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logMeal);
+                },
+              ),
+              _QuickLogButton(
+                icon: Icons.directions_run,
+                label: 'Activity',
+                color: AppTheme.activityColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logActivity);
+                },
+              ),
+              _QuickLogButton(
+                icon: Icons.medication,
+                label: 'Medication',
+                color: AppTheme.medicationColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logMedication);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+}
+
+/// Quick log button widget
+class _QuickLogButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _QuickLogButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withOpacity(0.3), width: 2),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 48, color: color),
+            const SizedBox(height: 12),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
