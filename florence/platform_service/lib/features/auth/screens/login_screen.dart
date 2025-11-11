@@ -81,14 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         // Backend returns the session object on success
         final session = jsonDecode(response.body);
-        final accessToken = session['access_token'];
         final refreshToken = session['refresh_token'];
 
-        if (accessToken != null && refreshToken != null) {
-          // Manually set the session in the Supabase client.
-          // This is crucial as it will trigger the onAuthStateChange listener in app.dart
-          // which handles all the navigation logic.
-          await supabase.auth.setSession(accessToken, refreshToken: refreshToken);
+        if (refreshToken != null) {
+          // Manually set the session using the refresh token. The Supabase client
+          // will use this to fetch a valid access token and establish the session.
+          // This will trigger the onAuthStateChange listener in app.dart.
+          await supabase.auth.setSession(refreshToken);
         } else {
           // If the server response is malformed
           throw Exception('Invalid session returned from the server.');
