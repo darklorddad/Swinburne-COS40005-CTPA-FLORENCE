@@ -20,7 +20,7 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> with WidgetsBindingObserver {
+class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
 
   // Navigator key to allow navigation from outside the build context
@@ -29,26 +29,13 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _setupAuthListener();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
-    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // When the app comes back into the foreground, re-check the session.
-    // This is crucial for handling deep links that open the app from a killed or background state.
-    if (state == AppLifecycleState.resumed) {
-      debugPrint('[App Lifecycle] App resumed. Re-checking auth state.');
-      // Re-trigger navigation handling to catch the session created by the deep link.
-      _handleNavigation(supabase.auth.currentSession);
-    }
   }
 
   void _setupAuthListener() {
@@ -103,9 +90,11 @@ class _AppState extends State<App> with WidgetsBindingObserver {
   }
 
   void _handleNavigation(Session? session) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Use a short delay to allow the app to settle and process any pending deep links
+    // before attempting to navigate. This resolves the race condition.
+    Future.delayed(const Duration(milliseconds: 100), () async {
       final navigator = navigatorKey.currentState;
-      if (navigator == null) return;
+      if (navigator == null || !navigator.mounted) return;
       final context = navigator.context;
       final currentRouteName = ModalRoute.of(context)?.settings.name;
 
