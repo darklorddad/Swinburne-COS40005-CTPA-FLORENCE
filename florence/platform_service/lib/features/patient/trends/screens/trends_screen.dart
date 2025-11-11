@@ -434,24 +434,23 @@ class _TrendsScreenState extends State<TrendsScreen>
                   ],
                 ),
                 lineTouchData: LineTouchData(
-                  // The 'touchTooltipData' property now takes a 'LineTouchTooltipData'
                   touchTooltipData: LineTouchTooltipData(
-                    // which itself has a 'tooltipData' property.
-                    tooltipData: TouchTooltipData(
-                      // THIS is where the background color property now lives.
-                      tooltipBgColor: AppTheme.primaryBlue.withValues(alpha: 0.8),
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((spot) {
-                          return LineTooltipItem(
-                            '${spot.y.toInt()} mg/dL',
-                            const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          );
-                        }).toList();
-                      },
-                    ),
+                    // This is the correct property from the documentation.
+                    // It requires a function that returns a color.
+                    getTooltipColor: (LineBarSpot touchedSpot) {
+                      return AppTheme.primaryBlue.withValues(alpha: 0.8);
+                    },
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        return LineTooltipItem(
+                          '${spot.y.toInt()} mg/dL',
+                          const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        );
+                      }).toList();
+                    },
                   ),
                 ),
               ),
