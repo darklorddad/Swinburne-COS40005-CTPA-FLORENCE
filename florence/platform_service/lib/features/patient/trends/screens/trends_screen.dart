@@ -435,9 +435,13 @@ class _TrendsScreenState extends State<TrendsScreen>
                 ),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    tooltipBoxData: TooltipBoxData(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.8),
-                    ),
+                    // This is the modern, correct way to style the tooltip background
+                    getBoxBackground: (FlSpot spot) {
+                      return BoxDecoration(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(8),
+                      );
+                    },
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         return LineTooltipItem(
