@@ -6,7 +6,7 @@ class Environment {
 
   /// Enable Supabase backend integration
   /// Set to true when ready to connect to Supabase
-  static const bool enableSupabase = true;
+  static const bool enableSupabase = false;
 
   /// Enable AI features (DeepSeek API)
   /// Set to true to use AI-powered recommendations and chatbot
@@ -36,11 +36,11 @@ class Environment {
 
   // ==================== SUPABASE CONFIGURATION ====================
 
-  /// Supabase URL (IMPORTANT: CONFIGURE THIS)
-  static const String supabaseUrl = 'https://opltjtmmiuwbaikvlive.supabase.co';
+  /// Supabase URL (to be configured when ready)
+  static const String supabaseUrl = 'https://your-project.supabase.co';
 
-  /// Supabase Anon Key (IMPORTANT: CONFIGURE THIS)
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wbHRqdG1taXV3YmFpa3ZsaXZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk2OTc0NDYsImV4cCI6MjA3NTI3MzQ0Nn0.iRpi8CpnGA6fVMxEpsKw0GeIabxyCPFMBtCssmMNsLs';
+  /// Supabase Anon Key (to be configured when ready)
+  static const String supabaseAnonKey = 'your-anon-key-here';
 
   // ==================== APP CONFIGURATION ====================
 

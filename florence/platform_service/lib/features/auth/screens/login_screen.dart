@@ -98,6 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       }
     } catch (error) {
+      // Unexpected error
       if (mounted) {
         setState(() => _errorMessage = 'An unexpected error occurred. Please try again.');
       }

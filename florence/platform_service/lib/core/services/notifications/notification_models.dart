@@ -1,4 +1,5 @@
 /// Notification Models for FLORENCE Digital Health Platform
+library;
 
 import 'package:flutter/foundation.dart';
 

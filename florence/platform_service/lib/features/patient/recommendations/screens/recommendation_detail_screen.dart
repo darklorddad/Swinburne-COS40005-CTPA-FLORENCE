@@ -6,12 +6,12 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import 'recommendations_screen.dart';
+import '../models/recommendation_models.dart';
 
 /// Recommendation Detail Screen
 /// Shows full details of a recommendation with explanation and action steps
 class RecommendationDetailScreen extends StatefulWidget {
-  final Recommendation recommendation;
+  final HealthRecommendation recommendation;
 
   const RecommendationDetailScreen({
     super.key,
@@ -160,7 +160,7 @@ class _RecommendationDetailScreenState
   }
 
   /// Build header section
-  Widget _buildHeader(Recommendation recommendation) {
+  Widget _buildHeader(HealthRecommendation recommendation) {
     final categoryConfig = _getCategoryConfig(recommendation.category);
     final priorityConfig = _getPriorityConfig(recommendation.priority);
 
@@ -244,7 +244,7 @@ class _RecommendationDetailScreenState
   }
 
   /// Build Why This Matters section
-  Widget _buildWhyThisMattersSection(Recommendation recommendation) {
+  Widget _buildWhyThisMattersSection(HealthRecommendation recommendation) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: BaseCard(
@@ -288,7 +288,7 @@ class _RecommendationDetailScreenState
   }
 
   /// Build Action Steps section
-  Widget _buildActionStepsSection(Recommendation recommendation) {
+  Widget _buildActionStepsSection(HealthRecommendation recommendation) {
     final steps = _getActionSteps(recommendation);
 
     return Padding(
@@ -370,7 +370,7 @@ class _RecommendationDetailScreenState
                   ],
                 ),
               );
-            }),
+            }).toList(),
           ],
         ),
       ),
@@ -475,7 +475,7 @@ class _RecommendationDetailScreenState
                   ],
                 ),
               );
-            }),
+            }).toList(),
           ],
         ),
       ),
@@ -483,7 +483,7 @@ class _RecommendationDetailScreenState
   }
 
   /// Build mini chart
-  Widget _buildMiniChart(Recommendation recommendation) {
+  Widget _buildMiniChart(HealthRecommendation recommendation) {
     // Mock data for the mini chart
     final spots = [
       const FlSpot(0, 120),
@@ -609,7 +609,7 @@ class _RecommendationDetailScreenState
   }
 
   /// Get full explanation based on recommendation
-  String _getFullExplanation(Recommendation recommendation) {
+  String _getFullExplanation(HealthRecommendation recommendation) {
     switch (recommendation.category) {
       case RecommendationCategory.meal:
         return 'Based on your glucose data from the past week, we\'ve noticed a pattern of elevated blood glucose levels following dinner. Your post-dinner readings have been averaging 195 mg/dL, which is significantly above your target range of 70-180 mg/dL.\n\nHigh-carbohydrate meals, especially those consumed later in the evening, can lead to prolonged glucose elevation and affect your overnight levels. Reducing your carb intake at dinner can help stabilize your glucose and improve your overall diabetes management.';
@@ -635,7 +635,7 @@ class _RecommendationDetailScreenState
   }
 
   /// Get action steps based on recommendation
-  List<String> _getActionSteps(Recommendation recommendation) {
+  List<String> _getActionSteps(HealthRecommendation recommendation) {
     switch (recommendation.category) {
       case RecommendationCategory.meal:
         return [

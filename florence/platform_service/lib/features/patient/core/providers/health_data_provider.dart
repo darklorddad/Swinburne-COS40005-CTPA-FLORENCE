@@ -1,5 +1,6 @@
 /// Health Data Provider for FLORENCE Digital Health Platform
 /// State management for patient health data using Provider
+library;
 
 import 'package:flutter/foundation.dart';
 import '../models/health_data_models.dart';

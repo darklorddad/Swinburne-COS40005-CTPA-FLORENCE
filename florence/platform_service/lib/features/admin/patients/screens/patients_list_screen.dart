@@ -232,7 +232,7 @@ class _PatientsListScreenState extends State<PatientsListScreen> {
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    initialValue: _filterRisk,
+                    value: _filterRisk,
                     decoration: InputDecoration(
                       labelText: 'Risk Level',
                       border: OutlineInputBorder(
@@ -264,7 +264,7 @@ class _PatientsListScreenState extends State<PatientsListScreen> {
                 SizedBox(
                   width: 150,
                   child: DropdownButtonFormField<String>(
-                    initialValue: _filterStatus,
+                    value: _filterStatus,
                     decoration: InputDecoration(
                       labelText: 'Status',
                       border: OutlineInputBorder(
@@ -323,7 +323,7 @@ class _PatientsListScreenState extends State<PatientsListScreen> {
         child: DataTable(
           columnSpacing: 48,
           horizontalMargin: 24,
-          headingRowColor: WidgetStateProperty.all(
+          headingRowColor: MaterialStateProperty.all(
             AdminTheme.backgroundColor,
           ),
           columns: const [

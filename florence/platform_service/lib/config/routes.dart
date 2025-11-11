@@ -9,8 +9,12 @@ import '../features/patient/logging/screens/log_medication_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
 import '../features/patient/trends/screens/trends_screen.dart';
+import '../features/patient/trends/screens/glucose_trends_detail_screen.dart';
+import '../features/patient/trends/screens/meal_impact_screen.dart';
+import '../features/patient/trends/screens/activity_impact_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
+import '../features/patient/summaries/screens/weekly_summaries_screen.dart';
 
 /// Application routing configuration
 /// Centralized navigation management
@@ -40,9 +44,6 @@ class AppRoutes {
   static const String achievements = '/achievements';
   static const String education = '/education';
   static const String help = '/help';
-
-  // Clinician routes
-  static const String clinicianDashboard = '/clinician/dashboard';
 
   // Logging routes
   static const String logGlucose = '/log/glucose';
@@ -84,9 +85,6 @@ class AppRoutes {
       case register:
         return _buildRoute(const RegisterScreen(), settings);
 
-      case clinicianDashboard:
-        return _buildRoute(const _PlaceholderScreen(title: 'Clinician Dashboard'));
-
       case onboarding:
         return _buildRoute(const _PlaceholderScreen(title: 'Onboarding'));
 
@@ -95,6 +93,18 @@ class AppRoutes {
 
       case trends:
         return _buildRoute(const TrendsScreen(), settings);
+
+      case trendsDetail:
+        return _buildRoute(const GlucoseTrendsDetailScreen());
+
+      case mealImpact:
+        return _buildRoute(const MealImpactScreen());
+
+      case activityImpact:
+        return _buildRoute(const ActivityImpactScreen());
+
+      case weeklyReport:
+        return _buildRoute(const WeeklySummariesScreen());
 
       case chat:
         return _buildRoute(const ChatScreen(), settings);

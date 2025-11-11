@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../../core/utils/validators.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../shared/widgets/button_widgets.dart';
+import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
@@ -20,23 +26,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Mock user data (will be replaced with real data)
   String _userName = 'John Doe';
   String _userEmail = 'john.doe@example.com';
-  final String _dateOfBirth = 'January 15, 1985';
-  final String _gender = 'Male';
-  final String _phoneNumber = '+60 12-345 6789';
-  final String _diabetesType = 'Type 2';
-  final double _targetMin = 70.0;
-  final double _targetMax = 180.0;
+  String _dateOfBirth = 'January 15, 1985';
+  String _gender = 'Male';
+  String _phoneNumber = '+60 12-345 6789';
+  String _diabetesType = 'Type 2';
+  double _targetMin = 70.0;
+  double _targetMax = 180.0;
   
   // Medications list (mock)
-  final List<Map<String, String>> _medications = [
+  List<Map<String, String>> _medications = [
     {'name': 'Metformin', 'dosage': '500mg', 'frequency': 'Twice daily'},
     {'name': 'Insulin', 'dosage': '10 units', 'frequency': 'Before meals'},
   ];
   
   // Settings
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
-  bool _isDarkMode = false;
-  
+
   // App info
   final String _appVersion = '1.0.0';
   
@@ -137,11 +142,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   /// Toggle dark mode
   void _toggleDarkMode(bool value) {
-    setState(() {
-      _isDarkMode = value;
-    });
-    // TODO: Implement theme switching with provider
-    Helpers.showInfo(context, 'Theme switching coming soon');
+    Provider.of<ThemeProvider>(context, listen: false).setTheme(
+      value ? ThemeMode.dark : ThemeMode.light,
+    );
   }
   
   /// Check for updates
@@ -382,7 +385,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               );
-            }),
+            }).toList(),
         ],
       ),
     );
@@ -441,13 +444,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   /// Build settings section
   Widget _buildSettingsSection() {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('Settings', Icons.settings_outlined),
           const SizedBox(height: 16),
-          
+
           // Glucose unit
           _buildSettingItem(
             'Glucose Unit',
@@ -457,13 +462,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             showChevron: true,
           ),
           const Divider(height: 24),
-          
+
           // Dark mode toggle
           _buildSettingToggle(
             'Dark Mode',
             'Switch between light and dark theme',
             Icons.dark_mode_outlined,
-            _isDarkMode,
+            themeProvider.isDarkMode,
             _toggleDarkMode,
           ),
         ],
@@ -662,7 +667,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeThumbColor: AppTheme.primaryBlue,
+          activeTrackColor: AppTheme.primaryBlue,
         ),
       ],
     );

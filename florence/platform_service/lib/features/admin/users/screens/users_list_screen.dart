@@ -168,7 +168,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    initialValue: _filterRole,
+                    value: _filterRole,
                     decoration: InputDecoration(
                       labelText: 'Role',
                       border: OutlineInputBorder(
@@ -202,7 +202,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 SizedBox(
                   width: 150,
                   child: DropdownButtonFormField<String>(
-                    initialValue: _filterStatus,
+                    value: _filterStatus,
                     decoration: InputDecoration(
                       labelText: 'Status',
                       border: OutlineInputBorder(
@@ -261,7 +261,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
         child: DataTable(
           columnSpacing: 48,
           horizontalMargin: 24,
-          headingRowColor: WidgetStateProperty.all(
+          headingRowColor: MaterialStateProperty.all(
             AdminTheme.backgroundColor,
           ),
           columns: const [

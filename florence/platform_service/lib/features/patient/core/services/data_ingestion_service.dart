@@ -1,5 +1,6 @@
 /// Data Ingestion Service for FLORENCE Digital Health Platform
 /// Handles in-memory data management for health records
+library;
 
 import 'dart:math';
 import '../models/health_data_models.dart';
@@ -328,9 +329,8 @@ class DataIngestionService {
         final timestamp = DateTime(date.year, date.month, date.day, hour, _random.nextInt(60));
 
         double baseValue = 140 + _randomGaussian(-20, 20);
-        if (hour >= 6 && hour <= 9) {
-          baseValue += 15;
-        } else if (hour >= 12 && hour <= 14) baseValue += 20;
+        if (hour >= 6 && hour <= 9) baseValue += 15;
+        else if (hour >= 12 && hour <= 14) baseValue += 20;
         else if (hour >= 18 && hour <= 20) baseValue += 18;
 
         _glucoseReadings.add(GlucoseReading(

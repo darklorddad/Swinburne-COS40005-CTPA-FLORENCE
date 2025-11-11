@@ -1,5 +1,6 @@
 /// DeepSeek API Integration Service for FLORENCE Digital Health Platform
 /// Provides AI-powered features using DeepSeek's Chat API
+library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;

@@ -1,5 +1,6 @@
 /// AI Chatbot Service for FLORENCE Digital Health Platform
 /// Context-aware health chatbot using DeepSeek AI
+library;
 
 import '../../../../core/services/ai/deepseek_service.dart';
 import '../../../../core/config/environment.dart';
@@ -185,7 +186,7 @@ class ChatbotService {
         return 'Your latest glucose reading is ${latestGlucose.toStringAsFixed(0)} mg/dL. '
             'Over the past week, your average has been ${avgGlucose.toStringAsFixed(0)} mg/dL '
             'with ${timeInRange.toStringAsFixed(0)}% time in range (70-180 mg/dL). '
-            '${timeInRange < 70 ? "Let's work on improving your time in range!" : "Great job staying in range!"}';
+            '${timeInRange < 70 ? "Let\'s work on improving your time in range!" : "Great job staying in range!"}';
       }
     }
 

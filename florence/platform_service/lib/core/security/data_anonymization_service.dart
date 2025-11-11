@@ -1,5 +1,6 @@
 /// Data Anonymization Service for FLORENCE Digital Health Platform
 /// Masks and anonymizes personally identifiable information (PII)
+library;
 
 import 'dart:math';
 

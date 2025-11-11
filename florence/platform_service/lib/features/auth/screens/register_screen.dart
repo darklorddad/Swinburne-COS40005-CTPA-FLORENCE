@@ -7,6 +7,7 @@ import '../../../shared/widgets/button_widgets.dart';
 import '../../../shared/widgets/input_widgets.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
+import '../../../main.dart';
 
 /// Registration Screen
 /// Allows new users to create an account

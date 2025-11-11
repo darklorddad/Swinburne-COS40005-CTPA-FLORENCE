@@ -51,8 +51,8 @@ class _HospitalAdminDashboardScreenState
         _orgMetrics = {
           'totalUsers': orgUsers.length,
           'activeUsers': orgUsers.where((u) => u.isActive).length,
-          'totalPatients': org.patientCount ?? 0,
-          'activePatients': ((org.patientCount ?? 0) * 0.95).round(), // Mock
+          'totalPatients': org.patientCount,
+          'activePatients': (org.patientCount * 0.95).round(), // Mock
           'todayAppointments': 15, // Mock
           'upcomingAppointments': 42, // Mock
           'pendingReviews': 8, // Mock
@@ -66,7 +66,7 @@ class _HospitalAdminDashboardScreenState
   @override
   Widget build(BuildContext context) {
     final currentUser = _permissionService.currentUser;
-    final org = currentUser?.organization;
+    final org = currentUser?.organizationName;
 
     if (org == null) {
       return const Scaffold(
@@ -293,7 +293,7 @@ class _HospitalAdminDashboardScreenState
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 20),
@@ -449,7 +449,7 @@ class _HospitalAdminDashboardScreenState
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
+              color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -566,7 +566,7 @@ class _HospitalAdminDashboardScreenState
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: AdminTheme.infoColor.withValues(alpha: 0.1),
+                color: AdminTheme.infoColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(

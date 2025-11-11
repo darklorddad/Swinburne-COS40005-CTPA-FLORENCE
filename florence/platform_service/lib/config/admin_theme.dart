@@ -206,12 +206,12 @@ class AdminTheme {
 
     // Data Table Theme
     dataTableTheme: DataTableThemeData(
-      headingRowColor: WidgetStateProperty.all(tableHeaderColor),
-      dataRowColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
+      headingRowColor: MaterialStateProperty.all(tableHeaderColor),
+      dataRowColor: MaterialStateProperty.resolveWith((states) {
+        if (states.contains(MaterialState.selected)) {
           return tableSelectedColor;
         }
-        if (states.contains(WidgetState.hovered)) {
+        if (states.contains(MaterialState.hovered)) {
           return tableRowHoverColor;
         }
         return null;

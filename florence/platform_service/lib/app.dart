@@ -7,7 +7,6 @@ import 'config/theme.dart';
 import 'config/routes.dart';
 import 'core/utils/helpers.dart';
 import 'core/providers/theme_provider.dart';
-// import 'config/admin_routes.dart';
 import 'features/patient/core/providers/health_data_provider.dart';
 import 'main.dart';
 
@@ -170,7 +169,7 @@ class _AppState extends State<App> {
               themeMode: themeProvider.themeMode,
 
               // Routing
-              initialRoute: AppRoutes.splash,
+              initialRoute: AppRoutes.dashboard,
               onGenerateRoute: AppRoutes.generateRoute,
 
               // Localization (for future use)

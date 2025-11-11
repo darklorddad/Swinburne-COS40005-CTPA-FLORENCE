@@ -38,20 +38,20 @@ class _TrendsScreenState extends State<TrendsScreen>
   ];
 
   // Mock glucose data for charts
-  final List<FlSpot> _glucoseData = [];
+  List<FlSpot> _glucoseData = [];
 
   // Mock statistics
-  final double _averageGlucose = 118.5;
-  final double _highestGlucose = 195.0;
-  final double _lowestGlucose = 65.0;
-  final double _standardDeviation = 28.5;
-  final double _estimatedA1c = 6.2;
-  final int _totalReadings = 28;
+  double _averageGlucose = 118.5;
+  double _highestGlucose = 195.0;
+  double _lowestGlucose = 65.0;
+  double _standardDeviation = 28.5;
+  double _estimatedA1c = 6.2;
+  int _totalReadings = 28;
 
   // Time in range percentages
-  final double _timeInRange = 72.0;
-  final double _timeAboveRange = 18.0;
-  final double _timeBelowRange = 10.0;
+  double _timeInRange = 72.0;
+  double _timeAboveRange = 18.0;
+  double _timeBelowRange = 10.0;
 
   // Detected patterns
   List<DetectedPattern> _patterns = [];

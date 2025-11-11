@@ -3,7 +3,10 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
+import '../../../../config/routes.dart';
 import 'recommendation_detail_screen.dart';
+import '../services/recommendation_engine.dart';
+import '../models/recommendation_models.dart';
 
 /// Recommendations Feed Screen
 /// Displays list of AI-generated health recommendations
@@ -18,12 +21,16 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = false;
+  bool _isGenerating = false;
 
-  // Mock recommendations data
-  List<Recommendation> _allRecommendations = [];
-  List<Recommendation> _activeRecommendations = [];
-  List<Recommendation> _completedRecommendations = [];
-  List<Recommendation> _dismissedRecommendations = [];
+  // Recommendation engine
+  final RecommendationEngine _engine = RecommendationEngine();
+
+  // Recommendations data
+  List<HealthRecommendation> _allRecommendations = [];
+  List<HealthRecommendation> _activeRecommendations = [];
+  List<HealthRecommendation> _completedRecommendations = [];
+  List<HealthRecommendation> _dismissedRecommendations = [];
 
   @override
   void initState() {
@@ -43,14 +50,21 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Load from Supabase
-      // For now, generate mock data
-      _generateMockRecommendations();
+      // Get all cached recommendations from engine
+      _allRecommendations = _engine.allRecommendations;
+
+      // If no recommendations, generate them
+      if (_allRecommendations.isEmpty) {
+        await _generateNewRecommendations();
+      }
 
       // Filter by status
       _filterRecommendations();
     } catch (e) {
       debugPrint('Error loading recommendations: $e');
+      if (mounted) {
+        Helpers.showError(context, 'Failed to load recommendations');
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -58,104 +72,41 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     }
   }
 
-  /// Generate mock recommendations
-  void _generateMockRecommendations() {
-    _allRecommendations = [
-      // Active recommendations
-      Recommendation(
-        id: '1',
-        category: RecommendationCategory.meal,
-        priority: RecommendationPriority.high,
-        title: 'Reduce Carbs at Dinner',
-        description:
-            'Your glucose spikes 2 hours after dinner. Try reducing your carb intake by 25% for better overnight levels.',
-        generatedAt: DateTime.now().subtract(const Duration(hours: 2)),
-        status: RecommendationStatus.active,
-      ),
-      Recommendation(
-        id: '2',
-        category: RecommendationCategory.activity,
-        priority: RecommendationPriority.high,
-        title: 'Morning Walk Routine',
-        description:
-            'Your glucose is most stable on days you walk in the morning. Try a 20-minute walk at 8 AM daily.',
-        generatedAt: DateTime.now().subtract(const Duration(hours: 5)),
-        status: RecommendationStatus.active,
-      ),
-      Recommendation(
-        id: '3',
-        category: RecommendationCategory.timing,
-        priority: RecommendationPriority.medium,
-        title: 'Earlier Lunch Time',
-        description:
-            'Your post-lunch glucose is better when you eat before 1 PM. Consider moving lunch 30 minutes earlier.',
-        generatedAt: DateTime.now().subtract(const Duration(days: 1)),
-        status: RecommendationStatus.active,
-      ),
-      Recommendation(
-        id: '4',
-        category: RecommendationCategory.sleep,
-        priority: RecommendationPriority.medium,
-        title: 'Consistent Sleep Schedule',
-        description:
-            'Your overnight glucose is more stable when you sleep by 10 PM. Try maintaining a consistent bedtime.',
-        generatedAt: DateTime.now().subtract(const Duration(days: 2)),
-        status: RecommendationStatus.active,
-      ),
-      Recommendation(
-        id: '5',
-        category: RecommendationCategory.lifestyle,
-        priority: RecommendationPriority.low,
-        title: 'Stay Hydrated',
-        description:
-            'Your glucose readings are better on days you log water intake. Aim for 8 glasses daily.',
-        generatedAt: DateTime.now().subtract(const Duration(days: 3)),
-        status: RecommendationStatus.active,
-      ),
+  /// Generate new AI recommendations
+  Future<void> _generateNewRecommendations() async {
+    setState(() => _isGenerating = true);
 
-      // Completed recommendations
-      Recommendation(
-        id: '6',
-        category: RecommendationCategory.activity,
-        priority: RecommendationPriority.high,
-        title: 'Post-Meal Walking',
-        description:
-            'Take a 10-minute walk after meals to help manage glucose spikes.',
-        generatedAt: DateTime.now().subtract(const Duration(days: 5)),
-        status: RecommendationStatus.completed,
-        completedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      Recommendation(
-        id: '7',
-        category: RecommendationCategory.meal,
-        priority: RecommendationPriority.medium,
-        title: 'Add Protein to Breakfast',
-        description:
-            'Include at least 20g of protein in your breakfast for better glucose control.',
-        generatedAt: DateTime.now().subtract(const Duration(days: 7)),
-        status: RecommendationStatus.completed,
-        completedAt: DateTime.now().subtract(const Duration(days: 2)),
-      ),
+    try {
+      final newRecs = await _engine.generateRecommendations(daysToAnalyze: 7);
 
-      // Dismissed recommendations
-      Recommendation(
-        id: '8',
-        category: RecommendationCategory.medication,
-        priority: RecommendationPriority.low,
-        title: 'Evening Medication Reminder',
-        description:
-            'Set a reminder for your evening medication at 7 PM.',
-        generatedAt: DateTime.now().subtract(const Duration(days: 10)),
-        status: RecommendationStatus.dismissed,
-        dismissedAt: DateTime.now().subtract(const Duration(days: 8)),
-      ),
-    ];
+      if (mounted) {
+        setState(() {
+          _allRecommendations = _engine.allRecommendations;
+        });
+
+        if (newRecs.isNotEmpty) {
+          Helpers.showSuccess(
+            context,
+            'Generated ${newRecs.length} new recommendations',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error generating recommendations: $e');
+      if (mounted) {
+        Helpers.showError(context, 'Failed to generate recommendations');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isGenerating = false);
+      }
+    }
   }
 
   /// Filter recommendations by status
   void _filterRecommendations() {
     _activeRecommendations = _allRecommendations
-        .where((r) => r.status == RecommendationStatus.active)
+        .where((r) => r.isActive)
         .toList();
 
     _completedRecommendations = _allRecommendations
@@ -168,21 +119,23 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   }
 
   /// Mark recommendation as done
-  Future<void> _markAsDone(Recommendation recommendation) async {
-    setState(() {
-      recommendation.status = RecommendationStatus.completed;
-      recommendation.completedAt = DateTime.now();
-    });
+  Future<void> _markAsDone(HealthRecommendation recommendation) async {
+    try {
+      _engine.completeRecommendation(recommendation.id);
 
-    _filterRecommendations();
+      setState(() {
+        _allRecommendations = _engine.allRecommendations;
+        _filterRecommendations();
+      });
 
-    Helpers.showSuccess(context, 'Marked as done! Great job! 🎉');
-
-    // TODO: Update in Supabase
+      Helpers.showSuccess(context, 'Marked as done! Great job!');
+    } catch (e) {
+      Helpers.showError(context, 'Failed to update recommendation');
+    }
   }
 
   /// Dismiss recommendation
-  Future<void> _dismissRecommendation(Recommendation recommendation) async {
+  Future<void> _dismissRecommendation(HealthRecommendation recommendation) async {
     final confirmed = await Helpers.showConfirmDialog(
       context,
       title: 'Dismiss Recommendation',
@@ -190,21 +143,23 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     );
 
     if (confirmed) {
-      setState(() {
-        recommendation.status = RecommendationStatus.dismissed;
-        recommendation.dismissedAt = DateTime.now();
-      });
+      try {
+        _engine.dismissRecommendation(recommendation.id);
 
-      _filterRecommendations();
+        setState(() {
+          _allRecommendations = _engine.allRecommendations;
+          _filterRecommendations();
+        });
 
-      Helpers.showInfo(context, 'Recommendation dismissed');
-
-      // TODO: Update in Supabase
+        Helpers.showInfo(context, 'Recommendation dismissed');
+      } catch (e) {
+        Helpers.showError(context, 'Failed to dismiss recommendation');
+      }
     }
   }
 
   /// View recommendation details
-  void _viewDetails(Recommendation recommendation) {
+  void _viewDetails(HealthRecommendation recommendation) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -220,6 +175,29 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recommendations'),
+        actions: [
+          // Generate new recommendations button
+          IconButton(
+            icon: _isGenerating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.auto_awesome),
+            onPressed: _isGenerating
+                ? null
+                : () async {
+                    await _generateNewRecommendations();
+                    _filterRecommendations();
+                    setState(() {});
+                  },
+            tooltip: 'Generate New Recommendations',
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: [
@@ -264,21 +242,18 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadRecommendations,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Active tab
-                  _buildRecommendationsList(_activeRecommendations, true),
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                // Active tab
+                _buildRecommendationsList(_activeRecommendations, true),
 
-                  // Completed tab
-                  _buildRecommendationsList(_completedRecommendations, false),
+                // Completed tab
+                _buildRecommendationsList(_completedRecommendations, false),
 
-                  // Dismissed tab
-                  _buildRecommendationsList(_dismissedRecommendations, false),
-                ],
-              ),
+                // Dismissed tab
+                _buildRecommendationsList(_dismissedRecommendations, false),
+              ],
             ),
     );
   }
@@ -304,20 +279,65 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
 
   /// Build recommendations list
   Widget _buildRecommendationsList(
-    List<Recommendation> recommendations,
+    List<HealthRecommendation> recommendations,
     bool showActions,
   ) {
-    if (recommendations.isEmpty) {
-      return _buildEmptyState();
-    }
+    return Column(
+      children: [
+        // ALWAYS VISIBLE: Generate New Recommendations Button at the top
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: ElevatedButton.icon(
+            onPressed: _isGenerating
+                ? null
+                : () async {
+                    await _generateNewRecommendations();
+                    _filterRecommendations();
+                    setState(() {});
+                  },
+            icon: _isGenerating
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.auto_awesome),
+            label: Text(_isGenerating
+                ? 'Generating Recommendations...'
+                : 'Generate New Recommendations'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryBlue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: recommendations.length,
-      itemBuilder: (context, index) {
-        final recommendation = recommendations[index];
-        return _buildRecommendationCard(recommendation, showActions);
-      },
+        // Recommendations List
+        Expanded(
+          child: recommendations.isEmpty
+              ? _buildEmptyState()
+              : RefreshIndicator(
+                  onRefresh: _loadRecommendations,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    itemCount: recommendations.length,
+                    itemBuilder: (context, index) {
+                      final recommendation = recommendations[index];
+                      return _buildRecommendationCard(recommendation, showActions);
+                    },
+                  ),
+                ),
+        ),
+      ],
     );
   }
 
@@ -360,7 +380,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
 
   /// Build single recommendation card
   Widget _buildRecommendationCard(
-    Recommendation recommendation,
+    HealthRecommendation recommendation,
     bool showActions,
   ) {
     return Dismissible(
@@ -525,7 +545,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Completed ${_formatTime(recommendation.completedAt!)}',
+                    'Completed',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.primaryGreen,
                           fontWeight: FontWeight.w600,
@@ -546,7 +566,7 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    'Dismissed ${_formatTime(recommendation.dismissedAt!)}',
+                    'Dismissed',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondaryColor,
                         ),
@@ -680,54 +700,4 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
       return Formatters.date(time);
     }
   }
-}
-
-/// Recommendation model
-class Recommendation {
-  final String id;
-  final RecommendationCategory category;
-  final RecommendationPriority priority;
-  final String title;
-  final String description;
-  final DateTime generatedAt;
-  RecommendationStatus status;
-  DateTime? completedAt;
-  DateTime? dismissedAt;
-
-  Recommendation({
-    required this.id,
-    required this.category,
-    required this.priority,
-    required this.title,
-    required this.description,
-    required this.generatedAt,
-    required this.status,
-    this.completedAt,
-    this.dismissedAt,
-  });
-}
-
-/// Recommendation category
-enum RecommendationCategory {
-  meal,
-  activity,
-  sleep,
-  timing,
-  lifestyle,
-  medication,
-}
-
-/// Recommendation priority
-enum RecommendationPriority {
-  urgent,
-  high,
-  medium,
-  low,
-}
-
-/// Recommendation status
-enum RecommendationStatus {
-  active,
-  completed,
-  dismissed,
 }

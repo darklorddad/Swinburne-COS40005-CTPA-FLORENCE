@@ -1,62 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../../../main.dart';
 import '../widgets/health_summary_card.dart';
+import '../widgets/quick_stats_grid.dart';
+import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../widgets/upcoming_reminders_card.dart';
 import '../../core/services/patient_profile_service.dart';
 import '../../core/providers/health_data_provider.dart';
-
-/// ============================================================================
-/// RESPONSIVE UTILITIES
-/// ============================================================================
-
-extension ResponsiveExtension on BuildContext {
-  double get screenWidth => MediaQuery.of(this).size.width;
-  bool get isMobile => screenWidth < 600;
-  bool get isTablet => screenWidth >= 600 && screenWidth < 1024;
-  bool get isDesktop => screenWidth >= 1024;
-  
-  T responsive<T>({
-    required T mobile,
-    T? tablet,
-    T? desktop,
-  }) {
-    if (isDesktop && desktop != null) return desktop;
-    if (isTablet && tablet != null) return tablet;
-    return mobile;
-  }
-}
-
-class ResponsiveWrapper extends StatelessWidget {
-  final Widget child;
-  
-  const ResponsiveWrapper({super.key, required this.child});
-  
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: context.responsive(
-            mobile: double.infinity,
-            tablet: 800,
-            desktop: 1200,
-          ),
-        ),
-        child: child,
-      ),
-    );
-  }
-}
-
-/// ============================================================================
-/// RESPONSIVE DASHBOARD SCREEN
-/// ============================================================================
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
@@ -230,454 +187,370 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onRefresh: _handleRefresh,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  child: ResponsiveWrapper(
-                    child: Padding(
-                      padding: EdgeInsets.all(
-                        context.responsive(
-                          mobile: 16.0,
-                          tablet: 24.0,
-                          desktop: 32.0,
-                        ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Profile switcher
+                      _buildProfileSwitcher(),
+                      const SizedBox(height: 16),
+
+                      // Welcome header
+                      _buildWelcomeHeader(),
+                      const SizedBox(height: 24),
+
+                      // Health summary card (hero card)
+                      HealthSummaryCard(
+                        latestGlucose: latestGlucose,
+                        timestamp: latestGlucoseTime,
+                        onTap: () => AppRoutes.push(context, AppRoutes.trends),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Profile switcher
-                          _buildProfileSwitcher(),
-                          SizedBox(height: context.responsive(mobile: 16.0, desktop: 20.0)),
+                      const SizedBox(height: 16),
 
-                          // Welcome header
-                          _buildWelcomeHeader(),
-                          SizedBox(height: context.responsive(mobile: 24.0, desktop: 32.0)),
-
-                          // Health summary card (hero card)
-                          HealthSummaryCard(
-                            latestGlucose: latestGlucose,
-                            timestamp: latestGlucoseTime,
-                            onTap: () => AppRoutes.push(context, AppRoutes.trends),
-                          ),
-                          SizedBox(height: context.responsive(mobile: 16.0, desktop: 24.0)),
-
-                          // AI Insight
-                          _buildSectionHeader('Today\'s Insight'),
-                          const SizedBox(height: 12),
-                          AIInsightCard(
-                            insight:
-                                'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                            onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-                          ),
-                          SizedBox(height: context.responsive(mobile: 16.0, desktop: 24.0)),
-
-                          // Quick stats grid - RESPONSIVE
-                          _buildResponsiveStatsGrid(
-                            averageGlucose: averageGlucose,
-                            hba1c: hba1c,
-                            todayReadings: todayReadings,
-                            streakDays: streakDays,
-                          ),
-                          SizedBox(height: context.responsive(mobile: 16.0, desktop: 24.0)),
-                  
-                          // Quick actions - RESPONSIVE
-                          _buildSectionHeader('Quick Actions'),
-                          const SizedBox(height: 12),
-                          _buildResponsiveQuickActions(),
-                          SizedBox(height: context.responsive(mobile: 16.0, desktop: 24.0)),
-
-                          // Weekly Summary - RESPONSIVE
-                          _buildSectionHeader('Weekly Summary'),
-                          const SizedBox(height: 12),
-                          _buildResponsiveWeeklySummary(healthData),
-                          SizedBox(height: context.responsive(mobile: 16.0, desktop: 24.0)),
-
-                          // Upcoming reminders
-                          _buildSectionHeader('Upcoming Reminders'),
-                          const SizedBox(height: 12),
-                          UpcomingRemindersCard(
-                            reminders: [
-                              {
-                                'title': 'Log Glucose',
-                                'time': '2:00 PM',
-                                'icon': Icons.water_drop,
-                              },
-                              {
-                                'title': 'Take Medication',
-                                'time': '4:00 PM',
-                                'icon': Icons.medication,
-                              },
-                              {
-                                'title': 'Evening Walk',
-                                'time': '6:00 PM',
-                                'icon': Icons.directions_walk,
-                              },
-                            ],
-                          ),
-                          const SizedBox(height: 80),
-                        ],
+                      // AI Insight
+                      _buildSectionHeader('Today\'s Insight'),
+                      const SizedBox(height: 12),
+                      AIInsightCard(
+                        insight:
+                            'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                        onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
                       ),
+                      const SizedBox(height: 16),
+
+                      // Quick stats grid
+                      QuickStatsGrid(
+                        averageGlucose: averageGlucose,
+                        hba1c: hba1c,
+                        todayReadings: todayReadings,
+                        streakDays: streakDays,
+                      ),
+                      const SizedBox(height: 16),
+              
+              // Quick actions
+              _buildSectionHeader('Quick Actions'),
+              const SizedBox(height: 12),
+              QuickActionsGrid(
+                onLogGlucose:
+                    () => AppRoutes.push(context, AppRoutes.logGlucose),
+                onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+                onLogActivity:
+                    () => AppRoutes.push(context, AppRoutes.logActivity),
+                onLogMedication:
+                    () => AppRoutes.push(context, AppRoutes.logMedication),
+              ),
+              const SizedBox(height: 16),
+
+              // Weekly Summary
+              _buildSectionHeader('Weekly Summary'),
+              const SizedBox(height: 12),
+              _buildWeeklySummaryCard(healthData),
+              const SizedBox(height: 16),
+
+              // Upcoming reminders
+              _buildSectionHeader('Upcoming Reminders'),
+              const SizedBox(height: 12),
+              UpcomingRemindersCard(
+                reminders: [
+                  {
+                    'title': 'Log Glucose',
+                    'time': '2:00 PM',
+                    'icon': Icons.water_drop,
+                  },
+                  {
+                    'title': 'Take Medication',
+                    'time': '4:00 PM',
+                    'icon': Icons.medication,
+                  },
+                  {
+                    'title': 'Evening Walk',
+                    'time': '6:00 PM',
+                    'icon': Icons.directions_walk,
+                  },
+                ],
+                onViewAll:
+                    () => AppRoutes.push(context, AppRoutes.notifications),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
+            ),
+          ),
+          // Loading overlay
+          if (_isRefreshing)
+            Container(
+              color: Colors.black.withValues(alpha: 0.3),
+              child: const Center(
+                child: Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Refreshing data...'),
+                      ],
                     ),
                   ),
                 ),
               ),
-              
-              // Refresh button
-              if (_isRefreshing)
-                Container(
-                  color: Colors.black26,
-                  child: const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
+            ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: _showQuickLogModal,
-            child: const Icon(Icons.add),
+          floatingActionButton: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Refresh data button
+              FloatingActionButton(
+                heroTag: 'refresh',
+                onPressed: _isRefreshing ? null : _handleDataRefresh,
+                tooltip: 'Refresh Data',
+                backgroundColor: AppTheme.primaryBlue,
+                child: Icon(_isRefreshing ? Icons.hourglass_empty : Icons.refresh),
+              ),
+              const SizedBox(height: 16),
+              // Quick log button
+              FloatingActionButton(
+                heroTag: 'add',
+                onPressed: _showQuickLogModal,
+                tooltip: 'Quick Log',
+                child: const Icon(Icons.add),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  /// Build responsive stats grid
-  Widget _buildResponsiveStatsGrid({
-    required double averageGlucose,
-    required double hba1c,
-    required int todayReadings,
-    required int streakDays,
-  }) {
-    // Use LayoutBuilder to get available width
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Determine number of columns based on screen width
-        final crossAxisCount = context.responsive(
-          mobile: 2,
-          tablet: 2,
-          desktop: 4,
-        );
+  /// Build profile switcher
+  Widget _buildProfileSwitcher() {
+    final currentProfile = _profileService.currentProfile;
 
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: context.responsive(
-            mobile: 1.3,
-            tablet: 1.4,
-            desktop: 1.2,
-          ),
-          children: [
-            _buildStatCard(
-              icon: Icons.show_chart,
-              iconColor: AppTheme.primaryBlue,
-              label: 'Avg Glucose',
-              value: averageGlucose.toStringAsFixed(0),
-              unit: 'mg/dL',
-            ),
-            _buildStatCard(
-              icon: Icons.pie_chart,
-              iconColor: AppTheme.primaryGreen,
-              label: 'HbA1c',
-              value: hba1c.toStringAsFixed(1),
-              unit: '%',
-            ),
-            _buildStatCard(
-              icon: Icons.water_drop,
-              iconColor: AppTheme.mealColor,
-              label: 'Today\'s Logs',
-              value: '$todayReadings',
-              unit: 'readings',
-            ),
-            _buildStatCard(
-              icon: Icons.local_fire_department,
-              iconColor: AppTheme.primaryRed,
-              label: 'Streak',
-              value: '$streakDays',
-              unit: 'days',
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Build stat card
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String value,
-    required String unit,
-  }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          colors: [
+            AppTheme.primaryBlue.withValues(alpha: 0.1),
+            AppTheme.primaryBlue.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+          color: AppTheme.primaryBlue.withValues(alpha: 0.3),
+          width: 2,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: iconColor, size: 20),
-              const SizedBox(width: 8),
+              Icon(
+                Icons.science_outlined,
+                color: AppTheme.primaryBlue,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 13,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Demo Mode - Patient Profile',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            color: AppTheme.primaryBlue,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      currentProfile.description,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const Spacer(),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  height: 1,
+          const SizedBox(height: 16),
+          // Profile selection chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: PatientProfileService.availableProfiles.map((profile) {
+              final isSelected = profile.type == _profileService.currentProfileType;
+
+              return ChoiceChip(
+                label: Text(profile.name),
+                selected: isSelected,
+                onSelected: (_) => _handleProfileSwitch(profile.type),
+                selectedColor: AppTheme.primaryBlue,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(
-                  unit,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
+                avatar: isSelected
+                    ? const Icon(Icons.check_circle, color: Colors.white, size: 18)
+                    : null,
+              );
+            }).toList(),
           ),
         ],
       ),
     );
   }
 
-  /// Build responsive quick actions
-  Widget _buildResponsiveQuickActions() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final crossAxisCount = context.responsive(
-          mobile: 2,
-          tablet: 2,
-          desktop: 4,
-        );
-
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: crossAxisCount,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: context.responsive(
-            mobile: 1.1,
-            tablet: 1.3,
-            desktop: 1.2,
-          ),
-          children: [
-            _buildQuickActionCard(
-              icon: Icons.water_drop,
-              label: 'Log Glucose',
-              subtitle: 'Track blood sugar',
-              color: AppTheme.primaryRed,
-              onTap: () => AppRoutes.push(context, AppRoutes.logGlucose),
-            ),
-            _buildQuickActionCard(
-              icon: Icons.restaurant,
-              label: 'Log Meal',
-              subtitle: 'Record what you ate',
-              color: AppTheme.mealColor,
-              onTap: () => AppRoutes.push(context, AppRoutes.logMeal),
-            ),
-            _buildQuickActionCard(
-              icon: Icons.directions_run,
-              label: 'Log Activity',
-              subtitle: 'Track exercise',
-              color: AppTheme.activityColor,
-              onTap: () => AppRoutes.push(context, AppRoutes.logActivity),
-            ),
-            _buildQuickActionCard(
-              icon: Icons.medication,
-              label: 'Log Medication',
-              subtitle: 'Record medicines',
-              color: AppTheme.medicationColor,
-              onTap: () => AppRoutes.push(context, AppRoutes.logMedication),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  /// Build quick action card
-  Widget _buildQuickActionCard({
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+  /// Build app bar
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text('BioTective Health'),
+      actions: [
+        const NotificationBell(),
+        IconButton(
+          icon: const Icon(Icons.chat_bubble_outline),
+          onPressed: () => AppRoutes.push(context, AppRoutes.chat),
+          tooltip: 'AI Health Assistant',
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const Spacer(),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey.shade600,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-            Icon(
-              Icons.chevron_right,
-              size: 16,
-              color: Colors.grey.shade400,
-            ),
-          ],
+        IconButton(
+          icon: const Icon(Icons.person_outline),
+          onPressed: () => AppRoutes.push(context, AppRoutes.profile),
+          tooltip: 'Profile',
         ),
-      ),
-    );
-  }
-
-  /// Build responsive weekly summary
-  Widget _buildResponsiveWeeklySummary(HealthDataProvider healthData) {
-    final timeInRange = healthData.getTimeInRange(
-      startDate: DateTime.now().subtract(const Duration(days: 7)),
-    );
-    final avgGlucose = healthData.getAverageGlucose(
-      startDate: DateTime.now().subtract(const Duration(days: 7)),
-    );
-
-    return InkWell(
-      onTap: () => AppRoutes.push(context, AppRoutes.trends),
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: EdgeInsets.all(
-          context.responsive(mobile: 16.0, desktop: 20.0),
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.accentPurple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.summarize,
-                    color: AppTheme.accentPurple,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'logout') {
+              _handleLogout();
+            } else if (value == 'settings') {
+              AppRoutes.push(context, AppRoutes.settings);
+            }
+          },
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
                     children: [
-                      Text(
-                        'This Week\'s Progress',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Tap to view detailed report',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                      ),
+                      Icon(Icons.settings_outlined),
+                      SizedBox(width: 12),
+                      Text('Settings'),
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.chevron_right,
-                  color: AppTheme.textSecondaryColor,
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout),
+                      SizedBox(width: 12),
+                      Text('Sign Out'),
+                    ],
+                  ),
                 ),
               ],
-            ),
-            SizedBox(height: context.responsive(mobile: 16.0, desktop: 20.0)),
-            
-            // Responsive metrics layout
-            if (context.isMobile)
-              // Mobile: Stack vertically
-              Column(
+        ),
+      ],
+    );
+  }
+
+  /// Build welcome header
+  Widget _buildWelcomeHeader() {
+    final greeting = _getGreeting();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          greeting,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondaryColor),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          _userName ?? 'Welcome',
+          style: Theme.of(
+            context,
+          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  /// Build section header
+  Widget _buildSectionHeader(String title) {
+    return Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+    );
+  }
+
+  /// Build weekly summary card
+  Widget _buildWeeklySummaryCard(HealthDataProvider healthData) {
+    final summary = healthData.last7DaysSummary;
+    final timeInRange = summary.timeInRange;
+    final avgGlucose = summary.averageGlucose;
+
+    return Card(
+      child: InkWell(
+        onTap: () => AppRoutes.push(context, AppRoutes.weeklyReport),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  _buildSummaryMetric(
-                    'Time in Range',
-                    '${timeInRange.toStringAsFixed(0)}%',
-                    timeInRange >= 70
-                        ? AppTheme.primaryGreen
-                        : timeInRange >= 50
-                            ? AppTheme.warningColor
-                            : AppTheme.errorColor,
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Container(
-                      height: 1,
-                      color: Colors.grey.shade300,
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentPurple.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.summarize,
+                      color: AppTheme.accentPurple,
+                      size: 24,
                     ),
                   ),
-                  _buildSummaryMetric(
-                    'Avg Glucose',
-                    '${avgGlucose.toStringAsFixed(0)} mg/dL',
-                    AppTheme.primaryBlue,
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'This Week\'s Progress',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Tap to view detailed report',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppTheme.textSecondaryColor,
                   ),
                 ],
-              )
-            else
-              // Tablet/Desktop: Side by side
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -695,7 +568,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     width: 1,
                     height: 40,
                     color: Colors.grey.shade300,
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
                   ),
                   Expanded(
                     child: _buildSummaryMetric(
@@ -706,19 +578,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ],
               ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  /// Build section header
-  Widget _buildSectionHeader(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
       ),
     );
   }
@@ -868,7 +730,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Text(
           value,
           style: TextStyle(
-            fontSize: context.responsive(mobile: 20.0, desktop: 24.0),
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -1029,3 +891,4 @@ class _QuickLogButton extends StatelessWidget {
     );
   }
 }
+

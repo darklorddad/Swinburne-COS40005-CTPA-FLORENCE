@@ -139,7 +139,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
             SizedBox(
               width: 180,
               child: DropdownButtonFormField<String>(
-                initialValue: _filterStatus,
+                value: _filterStatus,
                 decoration: InputDecoration(
                   labelText: 'Status',
                   border: OutlineInputBorder(

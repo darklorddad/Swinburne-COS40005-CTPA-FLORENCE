@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/config/environment.dart';
+import '../services/chatbot_service.dart';
 
 /// Chat Screen - AI Health Assistant
 /// Conversational interface for health questions and guidance
@@ -14,25 +17,27 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
+  final _chatbotService = ChatbotService();
   bool _isTyping = false;
-  
+
   // Chat messages
   final List<ChatMessage> _messages = [];
-  
-  // Suggested questions
-  final List<String> _suggestedQuestions = [
-    "Why did my glucose spike?",
-    "What should I eat for lunch?",
-    "How am I doing this week?",
-    "Explain my last recommendation",
-    "Tips for better sleep",
-    "Best time to exercise",
-  ];
+
+  // Suggested questions (will be updated from service)
+  List<String> _suggestedQuestions = [];
   
   @override
   void initState() {
     super.initState();
     _addWelcomeMessage();
+    _loadSuggestedQuestions();
+  }
+
+  /// Load suggested questions from service
+  void _loadSuggestedQuestions() {
+    setState(() {
+      _suggestedQuestions = _chatbotService.getSuggestedQuestions();
+    });
   }
   
   @override
@@ -56,7 +61,7 @@ class _ChatScreenState extends State<ChatScreen> {
   /// Send message
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
-    
+
     // Add user message
     setState(() {
       _messages.add(
@@ -69,50 +74,49 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
       _isTyping = true;
     });
-    
+
     // Scroll to bottom
     _scrollToBottom();
-    
-    // Simulate AI response
-    await Future.delayed(const Duration(seconds: 2));
-    
-    // Add AI response
-    if (mounted) {
-      setState(() {
-        _messages.add(
-          ChatMessage(
-            text: _generateMockResponse(text),
-            isUser: false,
-            timestamp: DateTime.now(),
-          ),
-        );
-        _isTyping = false;
-      });
-      _scrollToBottom();
+
+    try {
+      // Get AI response from chatbot service
+      final response = await _chatbotService.sendMessage(text.trim());
+
+      // Add AI response
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            ChatMessage(
+              text: response.content,
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
+          _isTyping = false;
+        });
+        _scrollToBottom();
+
+        // Update suggested questions based on context
+        _loadSuggestedQuestions();
+      }
+    } catch (e) {
+      // If AI fails, use fallback response
+      if (mounted) {
+        setState(() {
+          _messages.add(
+            ChatMessage(
+              text: "I'm having trouble connecting to the AI service right now. Please check your internet connection. In the meantime, you can:\n\n• View your trends and patterns\n• Check your recommendations\n• Log your health data\n\nError: ${e.toString()}",
+              isUser: false,
+              timestamp: DateTime.now(),
+            ),
+          );
+          _isTyping = false;
+        });
+        _scrollToBottom();
+      }
     }
   }
-  
-  /// Generate mock AI response
-  String _generateMockResponse(String userMessage) {
-    final message = userMessage.toLowerCase();
-    
-    if (message.contains('spike') || message.contains('high')) {
-      return "Based on your recent data, I noticed your glucose spiked after your 2 PM meal yesterday (195 mg/dL). This typically happens with high-carb meals.\n\n💡 Tips:\n• Try pairing carbs with protein\n• Consider smaller portions\n• Take a 10-minute walk after meals\n\nWould you like me to suggest some balanced meal options?";
-    } else if (message.contains('eat') || message.contains('lunch') || message.contains('meal')) {
-      return "For lunch, I'd recommend:\n\n🥗 Option 1: Grilled Chicken Salad\n• Protein: 35g\n• Carbs: 25g\n• Expected glucose: 120-140 mg/dL\n\n🍲 Option 2: Vegetable Stir-fry with Tofu\n• Protein: 28g\n• Carbs: 30g\n• Expected glucose: 115-135 mg/dL\n\nBased on your patterns, Option 1 works best for you! Want the recipe?";
-    } else if (message.contains('week') || message.contains('doing') || message.contains('progress')) {
-      return "Great question! Let me check your weekly progress:\n\n📊 This Week's Summary:\n• Average glucose: 118 mg/dL ⬇️ 5 from last week\n• Time in range: 72% ⬆️ 8% improvement\n• Readings logged: 28/28 ✓\n• Streak: 7 days! 🔥\n\nYou're doing fantastic! Your consistency is really paying off. Keep it up!";
-    } else if (message.contains('recommend') || message.contains('tip')) {
-      return "Based on your data, here are my top recommendations:\n\n1. 🏃 **Morning Exercise**\n   Your glucose is most stable after morning walks\n\n2. 🥘 **Dinner Timing**\n   Try eating dinner by 7 PM for better overnight levels\n\n3. 💧 **Hydration**\n   Your readings improve on well-hydrated days\n\nWant more details on any of these?";
-    } else if (message.contains('sleep')) {
-      return "Sleep quality significantly affects glucose control! Here are some tips:\n\n😴 Better Sleep Habits:\n• Keep consistent sleep schedule\n• Avoid heavy meals 3 hours before bed\n• Your best overnight glucose: when you sleep by 10 PM\n• Aim for 7-8 hours\n\nYour data shows glucose is 15% more stable when you get good sleep!";
-    } else if (message.contains('exercise') || message.contains('activity')) {
-      return "Great timing! Exercise is powerful for glucose management.\n\n🏃 Best Times for You:\n• Morning: 9-10 AM (based on your patterns)\n• After meals: Helps lower post-meal spikes\n• Avoid late evening: Can affect overnight levels\n\n💪 Recommended Activities:\n• Walking: 30 min lowers glucose by ~20-30 mg/dL\n• Cycling: Moderate intensity works best\n• Yoga: Great for stress + glucose stability\n\nWant a personalized workout plan?";
-    } else {
-      return "That's a great question! I'm analyzing your health data to provide the most accurate answer.\n\nBased on your recent patterns:\n• Your glucose management has improved 8% this week\n• You're logging consistently (great job!)\n• Your morning readings are very stable\n\nCould you tell me more about what specifically you'd like to know? I'm here to help with:\n✓ Glucose patterns\n✓ Meal suggestions\n✓ Activity recommendations\n✓ Interpreting your data";
-    }
-  }
-  
+
   /// Scroll to bottom
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {

@@ -17,7 +17,7 @@ dependencies:
 
   # Backend & API
   supabase_flutter: ^2.3.4
-  http: ^1.5.0
+  http: ^1.2.0
 
   # Data Visualization
   fl_chart: ^0.66.0
@@ -27,6 +27,7 @@ dependencies:
 
   # Date & Time Handling
   intl: ^0.19.0
+  table_calendar: ^3.0.9
 
   # Image Handling
   image_picker: ^1.0.7

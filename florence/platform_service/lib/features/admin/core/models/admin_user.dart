@@ -1,6 +1,4 @@
 import 'admin_enums.dart';
-import 'organization.dart';
-import '../services/admin_auth_service.dart';
 
 /// Admin User model
 /// Represents users with administrative or clinical access
@@ -182,17 +180,5 @@ class AdminUser {
     } else {
       return 'Just now';
     }
-  }
-
-  /// Get organization object
-  /// Returns null for Super Admin or if organization not found
-  Organization? get organization {
-    if (organizationId == null) return null;
-    
-    // Import AdminAuthService to get organization
-    // Note: This creates a dependency on the auth service
-    // In production, consider using a separate organization service
-    final authService = AdminAuthService();
-    return authService.getOrganizationById(organizationId!);
   }
 }

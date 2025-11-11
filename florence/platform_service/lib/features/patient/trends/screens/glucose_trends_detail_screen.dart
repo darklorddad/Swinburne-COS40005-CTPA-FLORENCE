@@ -32,9 +32,9 @@ class _GlucoseTrendsDetailScreenState extends State<GlucoseTrendsDetailScreen>
   ];
 
   // Mock glucose data for charts
-  final List<FlSpot> _glucoseData = [];
-  final List<BarChartGroupData> _dailyAverages = [];
-  final Map<int, Map<int, double>> _heatmapData = {}; // day × hour → glucose
+  List<FlSpot> _glucoseData = [];
+  List<BarChartGroupData> _dailyAverages = [];
+  Map<int, Map<int, double>> _heatmapData = {}; // day × hour → glucose
 
   // Statistics
   double _averageGlucose = 118.5;
@@ -894,7 +894,7 @@ class _GlucoseTrendsDetailScreenState extends State<GlucoseTrendsDetailScreen>
               return Expanded(
                 child: Center(
                   child: Text(
-                    '$hour:00',
+                    '${hour}:00',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
