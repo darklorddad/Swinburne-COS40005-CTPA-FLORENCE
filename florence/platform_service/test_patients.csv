@@ -1,0 +1,51 @@
+patient_id,first_name,last_name,email,age,gender,diabetes_type,diagnosis_date,baseline_glucose,hba1c,medication_count,avg_daily_readings,avg_glucose,glucose_variability,meal_count,activity_count,adherence_rate,risk_score
+P0001,Ismail,Wong,patient1@florence.demo,61,Male,Pre-diabetes,2024-09-05,110.0,5.5,1,6.1,118.9,11.7,102,18,86.2,11.38
+P0002,Peter,Ibrahim,patient2@florence.demo,26,Male,Type 1,2025-01-21,160.0,7.2,2,6.0,169.5,11.1,102,16,81.7,31.83
+P0003,John,Lim,patient3@florence.demo,64,Female,Pre-diabetes,2022-05-31,110.0,5.5,1,6.2,119.4,10.8,106,16,81.6,11.84
+P0004,Lee,Garcia,patient4@florence.demo,48,Male,Type 2,2023-08-18,140.0,6.5,2,6.2,150.3,11.2,108,20,81.6,11.84
+P0005,Yusof,Wang,patient5@florence.demo,43,Female,Type 2,2023-04-18,140.0,6.5,2,6.0,149.8,11.8,106,22,72.1,12.79
+P0006,Kumar,Tan,patient6@florence.demo,78,Female,Type 2,2024-05-25,140.0,6.5,1,6.3,149.7,11.8,111,16,71.1,12.89
+P0007,Yusof,Yap,patient7@florence.demo,39,Female,Type 1,2025-02-02,160.0,7.2,2,5.9,168.6,12.6,105,15,86.8,31.32
+P0008,David,Wong,patient8@florence.demo,78,Male,Type 2,2021-03-27,140.0,6.5,1,6.3,149.6,12.9,103,18,83.3,11.67
+P0009,Chen,Wang,patient9@florence.demo,54,Male,Type 2,2023-09-29,140.0,6.5,1,5.7,149.7,11.1,102,20,81.8,11.82
+P0010,Hui,Ng,patient10@florence.demo,28,Male,Pre-diabetes,2025-10-19,110.0,5.5,1,5.6,119.7,12.5,106,20,81.7,11.83
+P0011,Robert,Ahmad,patient11@florence.demo,36,Female,Type 2,2022-07-28,140.0,6.5,2,6.0,149.0,11.7,108,15,73.6,12.64
+P0012,Raj,Ibrahim,patient12@florence.demo,36,Male,Type 2,2021-03-31,140.0,6.5,1,5.7,150.2,11.1,107,19,99.3,10.07
+P0013,Wei,Yusof,patient13@florence.demo,46,Male,Type 1,2023-06-05,160.0,7.2,2,6.0,169.0,11.2,97,21,92.2,30.78
+P0014,John,Smith,patient14@florence.demo,79,Female,Pre-diabetes,2020-11-14,110.0,5.5,1,6.2,119.1,11.4,108,19,94.4,10.56
+P0015,Emily,Wong,patient15@florence.demo,70,Female,Pre-diabetes,2021-09-26,110.0,5.5,1,6.0,118.9,10.9,108,12,71.7,12.83
+P0016,Sarah,Abdullah,patient16@florence.demo,66,Female,Pre-diabetes,2021-09-10,110.0,5.5,1,6.3,119.0,11.3,104,15,70.2,12.98
+P0017,Ming,Ibrahim,patient17@florence.demo,58,Male,Type 2,2022-02-11,140.0,6.5,1,5.7,149.6,12.1,105,19,75.5,12.45
+P0018,Ming,Patel,patient18@florence.demo,25,Female,Type 1,2021-05-19,160.0,7.2,2,6.1,169.1,10.8,108,16,85.3,31.47
+P0019,Maria,Lee,patient19@florence.demo,49,Male,Pre-diabetes,2025-06-23,110.0,5.5,1,5.8,119.9,11.0,105,20,94.3,10.57
+P0020,Wong,Williams,patient20@florence.demo,59,Male,Pre-diabetes,2024-03-23,110.0,5.5,1,5.9,119.3,12.5,102,12,99.8,10.02
+P0021,Zainab,Lee,patient21@florence.demo,49,Male,Pre-diabetes,2021-11-02,110.0,5.5,1,5.7,119.6,12.0,102,21,89.7,11.03
+P0022,Yusof,Ibrahim,patient22@florence.demo,48,Female,Pre-diabetes,2024-12-25,110.0,5.5,1,5.9,119.6,11.2,105,21,81.8,11.82
+P0023,Wong,Zhang,patient23@florence.demo,37,Female,Pre-diabetes,2022-06-24,110.0,5.5,1,5.9,119.3,10.5,106,15,80.3,11.97
+P0024,Raj,Krishnan,patient24@florence.demo,71,Male,Type 1,2021-09-30,160.0,7.2,2,6.0,170.0,11.6,103,15,95.4,30.46
+P0025,James,Wong,patient25@florence.demo,43,Male,Type 1,2021-01-19,160.0,7.2,2,5.4,170.5,10.7,102,21,90.6,30.94
+P0026,Hui,Osman,patient26@florence.demo,29,Male,Type 2,2024-07-20,140.0,6.5,1,5.7,148.7,10.6,110,19,92.8,10.72
+P0027,Tan,Osman,patient27@florence.demo,36,Male,Pre-diabetes,2022-06-02,110.0,5.5,1,6.4,119.9,10.7,106,17,79.6,12.04
+P0028,Raj,Lim,patient28@florence.demo,29,Female,Pre-diabetes,2025-05-18,110.0,5.5,1,6.1,119.3,11.4,103,21,81.2,11.88
+P0029,Hassan,Garcia,patient29@florence.demo,25,Female,Pre-diabetes,2023-07-02,110.0,5.5,1,6.2,119.3,11.5,103,18,90.9,10.91
+P0030,Raj,Williams,patient30@florence.demo,70,Female,Type 2,2021-01-02,140.0,6.5,2,6.6,148.6,12.4,107,15,76.9,12.31
+P0031,Ismail,Smith,patient31@florence.demo,34,Male,Pre-diabetes,2020-11-03,110.0,5.5,1,5.5,119.7,11.8,104,16,84.4,11.56
+P0032,Fatimah,Yusof,patient32@florence.demo,59,Female,Type 2,2025-03-15,140.0,6.5,1,5.8,149.2,11.2,104,15,99.5,10.05
+P0033,Zainab,Zhang,patient33@florence.demo,28,Female,Pre-diabetes,2022-12-17,110.0,5.5,1,5.6,119.7,12.0,102,15,78.8,12.12
+P0034,Kumar,Krishnan,patient34@florence.demo,68,Female,Pre-diabetes,2021-07-15,110.0,5.5,1,5.9,120.1,11.0,103,22,75.5,12.45
+P0035,Aziz,Lim,patient35@florence.demo,36,Female,Type 2,2025-03-06,140.0,6.5,1,5.8,150.1,10.8,106,19,73.5,12.65
+P0036,Yusof,Ng,patient36@florence.demo,78,Female,Type 2,2024-04-01,140.0,6.5,2,6.2,149.2,11.0,108,18,85.1,11.49
+P0037,Yusof,Ibrahim,patient37@florence.demo,72,Male,Type 2,2021-08-20,140.0,6.5,2,6.0,149.9,11.4,110,20,91.5,10.85
+P0038,Amirah,Smith,patient38@florence.demo,40,Male,Type 1,2021-07-01,160.0,7.2,2,5.8,169.7,12.0,102,15,89.8,31.02
+P0039,Chen,Mohamed,patient39@florence.demo,68,Female,Type 1,2020-11-02,160.0,7.2,2,6.1,169.1,11.0,105,19,80.1,31.99
+P0040,Chen,Ibrahim,patient40@florence.demo,54,Female,Type 1,2021-07-22,160.0,7.2,2,6.3,169.6,12.4,106,21,81.8,31.82
+P0041,Ismail,Garcia,patient41@florence.demo,29,Female,Pre-diabetes,2025-09-12,110.0,5.5,1,5.8,118.9,12.0,113,15,98.3,10.17
+P0042,Ismail,Smith,patient42@florence.demo,25,Female,Pre-diabetes,2022-09-28,110.0,5.5,1,6.1,119.9,11.0,103,16,74.1,12.59
+P0043,Raj,Wang,patient43@florence.demo,32,Male,Type 2,2024-07-22,140.0,6.5,1,5.9,149.7,11.0,106,17,93.6,10.64
+P0044,Wong,Ahmad,patient44@florence.demo,77,Female,Type 2,2025-07-20,140.0,6.5,2,6.3,148.9,11.8,103,16,86.3,11.37
+P0045,Mohammed,Zhang,patient45@florence.demo,35,Male,Pre-diabetes,2023-10-21,110.0,5.5,1,5.9,118.6,10.9,108,19,91.9,10.81
+P0046,Ali,Chong,patient46@florence.demo,64,Male,Pre-diabetes,2022-10-04,110.0,5.5,1,5.9,119.9,11.4,107,20,95.5,10.45
+P0047,James,Yusof,patient47@florence.demo,35,Male,Type 1,2022-09-02,160.0,7.2,2,5.9,168.9,11.4,101,18,87.8,31.22
+P0048,Ali,Garcia,patient48@florence.demo,38,Male,Type 2,2023-01-11,140.0,6.5,1,6.2,149.5,12.4,102,17,94.4,10.56
+P0049,Chen,Martinez,patient49@florence.demo,50,Female,Type 1,2023-05-31,160.0,7.2,2,5.8,169.5,12.2,104,20,84.1,31.59
+P0050,David,Zhang,patient50@florence.demo,30,Male,Pre-diabetes,2023-02-23,110.0,5.5,1,6.0,118.9,12.1,104,22,84.0,11.60
