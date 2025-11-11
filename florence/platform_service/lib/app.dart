@@ -44,6 +44,15 @@ class _AppState extends State<App> {
         final event = data.event;
         debugPrint('[Auth Listener] Event received: $event');
 
+        // The SplashScreen handles the initial navigation. This listener handles
+        // all subsequent auth changes (login, logout, token refresh, etc.).
+        if (event == AuthChangeEvent.initialSession) {
+          // We ignore this event because SplashScreen is responsible for the
+          // initial routing decision on a cold start, handling the deep link race condition.
+          debugPrint('[Auth Listener] Ignoring initialSession event; handled by SplashScreen.');
+          return;
+        }
+
         // Use a post-frame callback to ensure the widget tree is built before navigating.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleNavigation(data);
