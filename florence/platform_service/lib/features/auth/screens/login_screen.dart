@@ -75,10 +75,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (role == 'PATIENT') {
           Helpers.showSuccess(context, 'Welcome back!');
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, predicate: (route) => false);
         } else if (role == 'CLINICIAN') {
           Helpers.showSuccess(context, 'Welcome back, Clinician!');
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.clinicianDashboard);
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.clinicianDashboard, predicate: (route) => false);
         } else {
           Helpers.showError(context, 'Your user role is not supported.');
           await supabase.auth.signOut();
@@ -86,7 +86,16 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } on AuthException catch (error) {
       if (mounted) {
-        setState(() => _errorMessage = error.message);
+        // Check for the specific "Email not confirmed" error.
+        if (error.message.toLowerCase().contains('email not confirmed')) {
+          // Show this as a toast/snackbar for better UX.
+          Helpers.showError(context, error.message);
+          // Ensure the on-screen error is cleared.
+          setState(() => _errorMessage = null);
+        } else {
+          // For all other auth errors (like invalid credentials), show the persistent on-screen message.
+          setState(() => _errorMessage = error.message);
+        }
       }
     } catch (error) {
       if (mounted) {
