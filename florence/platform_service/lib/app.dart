@@ -20,7 +20,7 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends State<App> with WidgetsBindingObserver {
   StreamSubscription<AuthState>? _authSubscription;
 
   // Navigator key to allow navigation from outside the build context
@@ -29,13 +29,26 @@ class _AppState extends State<App> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupAuthListener();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // When the app comes back into the foreground, re-check the session.
+    // This is crucial for handling deep links that open the app from a killed or background state.
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('[App Lifecycle] App resumed. Re-checking auth state.');
+      // Re-trigger navigation handling to catch the session created by the deep link.
+      _handleNavigation(supabase.auth.currentSession);
+    }
   }
 
   void _setupAuthListener() {
