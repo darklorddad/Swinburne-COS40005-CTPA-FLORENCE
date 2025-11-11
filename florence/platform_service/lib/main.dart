@@ -56,4 +56,4 @@ Future<void> _initializeSupabase() async {
 
 /// Global Supabase client accessor
 /// Usage: supabase.auth.signIn(...)
-final supabase = Supabase.instance.client;
+SupabaseClient get supabase => Supabase.instance.client;
