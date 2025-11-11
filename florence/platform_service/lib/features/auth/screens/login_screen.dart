@@ -27,6 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   
   bool _isLoading = false;
   bool _rememberMe = false;
+  String? _errorMessage;
   bool _hasShownRouteError = false; // Add this flag to show the toast only once
 
   @override
@@ -62,6 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
     
     Helpers.hideKeyboard(context);
     setState(() {
+      _errorMessage = null; // Clear previous errors
       _isLoading = true;
     });
     
@@ -106,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (error) {
       // Catch backend errors, network errors, etc.
       if (mounted) {
-        Helpers.showError(context, error.toString().replaceFirst('Exception: ', ''));
+        setState(() => _errorMessage = error.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {
@@ -149,6 +151,30 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildHeader(),
                     const SizedBox(height: 48),
                     
+                    // Display an in-screen error message for failed login attempts.
+                    if (_errorMessage != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: AppTheme.errorColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: const TextStyle(color: AppTheme.errorColor, fontSize: 13),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    
                     CustomTextField(
                       label: 'Email',
                       hint: 'Enter your email',
@@ -168,6 +194,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       validator: (value) => Validators.required(value, fieldName: 'Password'),
                       textInputAction: TextInputAction.done,
+                      onChanged: (value) {
+                        // When user starts typing a new password, clear the error message
+                        if (_errorMessage != null) {
+                          setState(() {
+                            _errorMessage = null;
+                          });
+                        }
+                      },
                     ),
                     const SizedBox(height: 16),
                     
