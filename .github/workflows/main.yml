@@ -37,11 +37,11 @@ jobs:
       # Step 5: Upload to Firebase App Distribution (only if it was a release)
       - name: Upload to Firebase App Distribution
         if: "contains(github.event.head_commit.message, '[release]')"
-        uses: wzieba/Firebase-Distribution-Github-Action # <-- This line has been corrected
+        # THIS IS THE CORRECTED LINE with the full repository name
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
-          # Use the Base64 encoded JSON, not a token
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
           groups: testers
-          # Shorebird now outputs an .aab file for releases
+          # Shorebird outputs an .aab file for releases
           file: build/app/outputs/bundle/release/app-release.aab
