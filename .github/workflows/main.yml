@@ -22,7 +22,8 @@ jobs:
 
       # Step 3: Authenticate with Shorebird using our GitHub Secret
       - name: Authenticate Shorebird
-        run: shorebird login --ci ${{ secrets.SHOREBIRD_TOKEN }}
+        # THIS IS THE CORRECTED COMMAND
+        run: shorebird login:ci --token ${{ secrets.SHOREBIRD_TOKEN }}
 
       # Step 4: Decide whether to PATCH or RELEASE based on commit message
       - name: Deploy a Patch (Hot Restart Update)
@@ -37,11 +38,9 @@ jobs:
       # Step 5: Upload to Firebase App Distribution (only if it was a release)
       - name: Upload to Firebase App Distribution
         if: "contains(github.event.head_commit.message, '[release]')"
-        # THIS IS THE CORRECTED LINE with the full repository name
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
           groups: testers
-          # Shorebird outputs an .aab file for releases
           file: build/app/outputs/bundle/release/app-release.aab
