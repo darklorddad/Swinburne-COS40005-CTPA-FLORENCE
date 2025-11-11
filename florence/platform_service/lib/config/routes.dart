@@ -51,6 +51,9 @@ class AppRoutes {
   static const String logActivity = '/log/activity';
   static const String logMedication = '/log/medication';
 
+  // Clinician/Admin routes
+  static const String clinicianDashboard = '/clinician-dashboard';
+
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
     final routeName = settings.name ?? '';
@@ -126,6 +129,9 @@ class AppRoutes {
 
       case logMedication: 
         return _buildRoute(const LogMedicationScreen(), settings);
+
+      case clinicianDashboard:
+        return _buildRoute(const _PlaceholderScreen(title: 'Clinician Dashboard'));
 
       default:
         return _buildRoute(
