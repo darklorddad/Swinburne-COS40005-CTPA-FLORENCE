@@ -6,31 +6,31 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.7.2
+  sdk: ^3.9.2
 
 dependencies:
   flutter:
     sdk: flutter
 
   # State Management
-  provider: ^6.1.1
+  provider: ^6.1.2
 
   # Backend & API
-  supabase_flutter: ^2.3.4
-  http: ^1.2.0
+  supabase_flutter: ^2.5.8
+  http: ^1.2.1
 
   # Data Visualization
-  fl_chart: ^0.66.0
+  fl_chart: ^1.1.1
 
   # Data Serialization
   json_annotation: ^4.8.1
 
   # Date & Time Handling
-  intl: ^0.19.0
-  table_calendar: ^3.0.9
+  intl: ^0.20.0
+  table_calendar: ^3.2.0
 
   # Image Handling
-  image_picker: ^1.0.7
+  image_picker: ^1.1.2
   cached_network_image: ^3.3.1
 
   cupertino_icons: ^1.0.8
@@ -40,11 +40,11 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
 
   # Code Generation
-  build_runner: ^2.4.8
-  json_serializable: ^6.7.1
+  build_runner: ^2.4.11
+  json_serializable: ^6.8.0
 
   change_app_package_name: ^1.1.0
 
