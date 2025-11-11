@@ -38,6 +38,8 @@ To run the FastAPI server locally, execute the following command from the projec
 uvicorn florence.data_service.main:app --reload --host 0.0.0.0
 ```
 
+This command is intended for local development. The `--reload` flag automatically restarts the server when code changes are detected, and `--host 0.0.0.0` makes the server accessible on your local network.
+
 The API will be available at `http://127.0.0.1:8000`, and the interactive documentation (Swagger UI) can be accessed at `http://127.0.0.1:8000/docs`.
 
 ## Developer Tool
