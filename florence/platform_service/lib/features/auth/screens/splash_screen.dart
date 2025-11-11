@@ -22,43 +22,38 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // This delay is important to allow the app to finish its initial render
-    // and for the Supabase client to process any incoming deep links.
+    // This delay ensures the widget is mounted and ready, and gives a moment
+    // for the Supabase client to process any incoming deep links from a cold start.
     await Future.delayed(Duration.zero);
 
     if (!mounted) return;
 
-    bool hasNavigated = false;
+    // 1. Check for an immediate session. The deep link might have been processed
+    //    by the Supabase plugin before this Dart code even runs.
+    final currentSession = supabase.auth.currentSession;
+    if (currentSession != null) {
+      _navigateFromSession(currentSession);
+      return; // Navigation handled, we are done.
+    }
 
-    // Set up the listener for auth changes. This will fire for deep links or existing sessions.
+    // 2. If no immediate session, set up a listener for auth changes.
+    //    This will catch the session if it's established while the splash screen is visible.
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
-        if (hasNavigated) return; // Prevent multiple navigations
-
+        _authSubscription?.cancel(); // We only need the first event.
         final session = data.session;
+
         if (session != null) {
-          hasNavigated = true;
-          _authSubscription?.cancel();
-          if (mounted) {
-            _navigateFromSession(session);
-          }
+          _navigateFromSession(session);
         } else {
-          // This handles the case where the stream fires but there is no session.
-          hasNavigated = true;
-          _authSubscription?.cancel();
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-          }
+          // No session found, navigate to login. This handles manual app starts with no user.
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
         }
       },
       onError: (error) {
-        if (hasNavigated) return;
-        hasNavigated = true;
         _authSubscription?.cancel();
         final message = error is AuthException ? error.message : 'Authentication error.';
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': message});
-        }
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': message});
       },
     );
   }
