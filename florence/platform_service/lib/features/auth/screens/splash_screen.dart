@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../config/routes.dart';
@@ -6,9 +7,7 @@ import '../../../main.dart';
 import '../../../config/theme.dart';
 
 class SplashScreen extends StatefulWidget {
-  final Uri? initialUri;
-
-  const SplashScreen({super.key, this.initialUri});
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -24,53 +23,57 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // Handle deep link errors immediately
-    if (widget.initialUri != null && widget.initialUri!.queryParameters.containsKey('error_description')) {
-      final errorDescription = widget.initialUri!.queryParameters['error_description']!.replaceAll('+', ' ');
-      debugPrint('[SplashScreen] Deep link error found: $errorDescription');
-      // Use a post-frame callback to ensure the widget is built before navigating.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': errorDescription});
-        }
-      });
-      return; // Stop further processing
+    // 1. Proactively check for an initial deep link.
+    final appLinks = AppLinks();
+    final initialUri = await appLinks.getInitialAppLink();
+
+    if (initialUri != null && initialUri.fragment.contains('error')) {
+      final fragmentParams = Uri.splitQueryString(initialUri.fragment);
+      final errorDescription = fragmentParams['error_description']?.replaceAll('+', ' ') ?? 'The link is invalid or has expired.';
+      debugPrint('[SplashScreen] Initial deep link has an error: $errorDescription');
+      if (mounted) {
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': errorDescription});
+      }
+      return; // Stop further execution.
     }
 
-    // Check for existing session immediately
-    final currentSession = supabase.auth.currentSession;
-    if (currentSession != null) {
+    // If there's an existing session, navigate immediately.
+    if (supabase.auth.currentSession != null) {
       debugPrint('[SplashScreen] Found existing session, navigating directly');
-      _navigateFromSession(currentSession);
+      _navigateFromSession(supabase.auth.currentSession!);
       return;
     }
 
+    // 2. Set up listener with a timeout as a fallback.
     bool hasNavigated = false;
-
-    // Timeout fallback if no auth event arrives
-    final timer = Timer(const Duration(seconds: 3), () {
+    final timer = Timer(const Duration(seconds: 2), () {
       if (!hasNavigated && mounted) {
-        debugPrint('[SplashScreen] Timeout: No session established');
-        hasNavigated = true;
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        debugPrint('[SplashScreen] TIMEOUT. No auth event. Navigating to login.');
+        _authSubscription?.cancel();
+        if (supabase.auth.currentSession == null) {
+          hasNavigated = true;
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+        }
       }
     });
 
-    // Listen for auth events (deep link callbacks trigger signedIn)
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      debugPrint('[SplashScreen] Auth event: ${data.event}');
+      debugPrint('[SplashScreen] Auth event received: ${data.event}.');
 
-      if (data.session != null) {
-        timer.cancel(); // Cancel the timeout only when a session is found.
-        debugPrint('[SplashScreen] Session acquired, navigating');
-        _authSubscription?.cancel();
-        if (!hasNavigated && mounted) {
-          hasNavigated = true;
-          _navigateFromSession(data.session!);
-        }
+      if (hasNavigated || !mounted) return;
+
+      timer.cancel();
+      _authSubscription?.cancel();
+      hasNavigated = true;
+
+      final session = data.session;
+      if (session != null) {
+        debugPrint('[SplashScreen] Session FOUND from event. Navigating...');
+        _navigateFromSession(session);
+      } else {
+        debugPrint('[SplashScreen] Event received but NO session. Navigating to login.');
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
-      // Ignore initialSession with null session - wait for signedIn event
-      // If initialSession is null, the timer will eventually fire and navigate to login.
     });
   }
 

@@ -67,9 +67,7 @@ class AppRoutes {
 
     switch (routeName) {
       case splash:
-        final splashArgs = args as Map<String, dynamic>?;
-        final initialUri = splashArgs?['initialUri'] as Uri?;
-        return _buildRoute(SplashScreen(initialUri: initialUri), settings);
+        return _buildRoute(const SplashScreen(), settings);
 
       case login:
         return _buildRoute(const LoginScreen(), settings);

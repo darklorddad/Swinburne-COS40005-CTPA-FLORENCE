@@ -16,11 +16,6 @@ void main() async {
   // Initialize app links handler
   final appLinks = AppLinks();
 
-  // Handle initial deep link (e.g., from cold start)
-  final initialUri = await appLinks.getInitialLink();
-  if (initialUri != null) {
-    debugPrint('[Main] Initial deep link: $initialUri');
-  }
 
   // Listen for subsequent deep links
   appLinks.uriLinkStream.listen((uri) {
@@ -42,7 +37,7 @@ void main() async {
   );
 
   // Run the app
-  runApp(App(initialUri: initialUri));
+  runApp(App());
 }
 
 /// Initialize Supabase
