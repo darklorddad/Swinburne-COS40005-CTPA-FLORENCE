@@ -1,18 +1,26 @@
 # The name of our workflow, visible on GitHub Actions tab
 name: Deploy Flutter App
 
-# This workflow runs on any push to the 'main' branch
+# --- TRIGGER DEFINITIONS ---
 on:
+  # 1. AUTOMATIC TRIGGER (for Patches)
+  # Runs whenever code is pushed to the 'main' branch.
   push:
     branches:
       - main
+
+  # 2. MANUAL TRIGGER (for Releases)
+  # Adds a "Run workflow" button on the Actions tab in GitHub.
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
     # Use the latest version of Ubuntu to run our jobs
     runs-on: ubuntu-latest
+
     steps:
       # Step 1: Check out the code from the repository
+      # This uses the code from the 'main' branch for both automatic and manual runs.
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -20,31 +28,29 @@ jobs:
       - name: Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
 
-      # Step 3: Deploy a Patch
-      - name: Deploy a Patch
-        if: "!contains(github.event.head_commit.message, '[release]')"
-        # CORRECT: The working directory is your Flutter project's root folder
+      # --- LOGIC FOR PATCHES ---
+      # This step only runs if the trigger was an automatic 'push'.
+      - name: Deploy a Patch (Automatic)
+        if: github.event_name == 'push'
         working-directory: florence/platform_service
         run: shorebird patch android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # Step 4: Build a Full Release
-      - name: Build a Full Release
-        if: "contains(github.event.head_commit.message, '[release]')"
-        # CORRECT: The working directory is your Flutter project's root folder
+      # --- LOGIC FOR RELEASES ---
+      # These steps only run if the trigger was a manual 'workflow_dispatch'.
+      - name: Build a Full Release (Manual)
+        if: github.event_name == 'workflow_dispatch'
         working-directory: florence/platform_service
         run: shorebird release android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # Step 5: Upload to Firebase App Distribution
-      - name: Upload to Firebase App Distribution
-        if: "contains(github.event.head_commit.message, '[release]')"
+      - name: Upload to Firebase App Distribution (Manual)
+        if: github.event_name == 'workflow_dispatch'
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
           groups: testers
-          # CORRECT: The path to the build artifact, prefixed with the subdirectory
           file: florence/platform_service/build/app/outputs/bundle/release/app-release.aab
