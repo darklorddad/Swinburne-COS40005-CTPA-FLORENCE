@@ -22,54 +22,48 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
-  Timer? _splashTimeoutTimer;
 
   // Navigator key to allow navigation from outside the build context
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState<State<Navigator>>>();
 
   @override
   void initState() {
     super.initState();
-    // Start listening for auth state changes immediately.
     _setupAuthListener();
-
-    // **This is the crucial part for deep linking.**
-    // It listens for incoming app links and passes them to the Supabase client
-    // to handle authentication from a magic link or third-party provider.
-    Supabase.instance.onAuthDeeplink.listen((event) {
-      debugPrint('[Deep Link Listener] Deeplink received: $event');
-    }, onError: (error) {
-      debugPrint('[Deep Link Listener] Deeplink error: $error');
-    });
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
-    _splashTimeoutTimer?.cancel();
     super.dispose();
   }
 
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
-        debugPrint('[Auth Listener] Event received: ${data.event}');
-        // Any auth event means the initial state is resolved, so cancel the timer.
-        _splashTimeoutTimer?.cancel();
+        final event = data.event;
+        debugPrint('[Auth Listener] Event received: $event');
         
+        // The SplashScreen handles the initial navigation. This listener handles all
+        // subsequent auth changes (login, logout, warm-start deep links).
+        if (event == AuthChangeEvent.initialSession) {
+          // We ignore this event because the SplashScreen is responsible for the
+          // initial routing decision on a cold start.
+          debugPrint('[Auth Listener] Ignoring initialSession event; handled by SplashScreen.');
+          return;
+        }
+
         // Use a post-frame callback to ensure the widget tree is built before navigating.
-        // This is crucial for handling events immediately after app startup.
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _handleNavigation(data);
         });
       },
       onError: (error) {
         // This handles deep link errors (e.g., an expired token).
-        debugPrint('[Auth Listener] onError received: $error');
+        debugPrint('[Auth Listener] Deep link error: $error');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           final navigator = navigatorKey.currentState;
           if (navigator == null || !navigator.mounted) return;
-          
           navigator.pushNamedAndRemoveUntil(
             AppRoutes.login,
             (route) => false,
@@ -86,33 +80,15 @@ class _AppState extends State<App> {
     if (navigator == null || !navigator.mounted) return;
 
     final session = data.session;
-    final event = data.event;
 
-    // 1. Handle the very first event on a cold start
-    if (event == AuthChangeEvent.initialSession) {
-      if (session == null) {
-        // The user is not logged in. Wait briefly on the splash screen
-        // to see if a deep link provides a session. If not, the timer will navigate to login.
-        debugPrint('[Auth Listener] initialSession: No session found. Starting splash timeout timer...');
-        _splashTimeoutTimer = Timer(const Duration(milliseconds: 1500), () {
-          debugPrint('[Auth Listener] Splash timeout finished. Navigating to login.');
-          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
-        });
-        return; // Wait for timer or another auth event
-      }
-      // If a session *does* exist on initial load, proceed to the logic below.
-    }
-
-    // 2. Handle a valid session (from any event)
     if (session != null) {
       // User is logged in.
       final user = session.user;
       final role = user.userMetadata?['role'];
-      debugPrint('[Auth Listener] Session found. User ID: ${user.id}, Role: $role');
+      debugPrint('[Auth Listener] Session found. Role: $role. Navigating...');
 
-      final isSignUpConfirmation = event == AuthChangeEvent.signedIn && user.createdAt != null &&
+      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn && user.createdAt != null &&
             DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
-      debugPrint('[Auth Listener] isSignUpConfirmation: $isSignUpConfirmation');
 
       String destinationRoute;
       if (role == 'PATIENT') {
@@ -120,19 +96,15 @@ class _AppState extends State<App> {
       } else if (role == 'CLINICIAN' || role == 'ADMIN') {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
-        debugPrint('[Auth Listener] Unsupported role: "$role". Navigating to login.');
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
         return;
       }
 
       final message = isSignUpConfirmation ? 'Welcome! Your email has been successfully confirmed.' : 'Welcome back!';
-      debugPrint('[Auth Listener] Navigating to $destinationRoute');
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
-
     } else {
-      // 3. Handle no session for non-initial events (e.g., signOut)
-      // The initialSession case is handled by the timer above.
-      debugPrint('[Auth Listener] No session found for event: ${data.event}. Navigating to login.');
+      // If there's no session, it means the user signed out or the session expired.
+      debugPrint('[Auth Listener] No session found. Navigating to login.');
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
   }
