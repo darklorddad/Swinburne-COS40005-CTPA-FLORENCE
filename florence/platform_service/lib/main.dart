@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app.dart';
-import 'config/env.dart';
+import 'core/config/environment.dart';
 
 /// Main entry point of the application
 void main() async {
@@ -33,17 +33,17 @@ void main() async {
 Future<void> _initializeSupabase() async {
   try {
     // Check if configuration is valid
-    if (!Env.isConfigured) {
+    if (!Environment.isConfigured) {
       debugPrint('⚠️  WARNING: Supabase is not configured!');
-      debugPrint('⚠️  Please update your Supabase URL and Anon Key in lib/config/env.dart');
+      debugPrint('⚠️  Please update your Supabase URL and Anon Key in lib/core/config/environment.dart');
       debugPrint('⚠️  The app will run in offline/demo mode.');
       return;
     }
     
     // Initialize Supabase
     await Supabase.initialize(
-      url: Env.supabaseUrl,
-      anonKey: Env.supabaseAnonKey,
+      url: Environment.supabaseUrl,
+      anonKey: Environment.supabaseAnonKey,
       debug: true, // Set to false in production
     );
     
@@ -56,4 +56,4 @@ Future<void> _initializeSupabase() async {
 
 /// Global Supabase client accessor
 /// Usage: supabase.auth.signIn(...)
-SupabaseClient get supabase => Supabase.instance.client;
+final supabase = Supabase.instance.client;

@@ -35,12 +35,18 @@ class Environment {
 
 
   // ==================== SUPABASE CONFIGURATION ====================
-
-  /// Supabase URL (to be configured when ready)
-  static const String supabaseUrl = 'https://your-project.supabase.co';
-
-  /// Supabase Anon Key (to be configured when ready)
-  static const String supabaseAnonKey = 'your-anon-key-here';
+  
+  // IMPORTANT: Replace these with your actual Supabase project URL and Anon Key
+  // You can find these in your Supabase project settings under "API"
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://<your-project-ref>.supabase.co',
+  );
+  
+  static const String supabaseAnonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    defaultValue: '<your-anon-key>',
+  );
 
   // ==================== APP CONFIGURATION ====================
 
@@ -135,4 +141,10 @@ class Environment {
 
   /// Check if running in development
   static bool get isDevelopment => appEnvironment == 'development';
+
+  /// Validation to check if Supabase keys are default placeholders
+  static bool get isConfigured {
+    return supabaseUrl != 'https://<your-project-ref>.supabase.co' &&
+           supabaseAnonKey != '<your-anon-key>';
+  }
 }
