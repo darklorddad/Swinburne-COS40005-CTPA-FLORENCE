@@ -60,9 +60,6 @@ Future<void> _initializeSupabase() async {
     await Supabase.initialize(
       url: Environment.supabaseUrl,
       anonKey: Environment.supabaseAnonKey,
-      authOptions: const AuthClientOptions(
-        authCallbackUrlHostname: 'login-callback', // Must match your deep link path
-      ),
       debug: true, // Set to false in production
     );
     
