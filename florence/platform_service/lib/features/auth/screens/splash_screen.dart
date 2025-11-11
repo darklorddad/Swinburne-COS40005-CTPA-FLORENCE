@@ -23,57 +23,58 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _redirect() async {
-    // 1. Proactively check for an initial deep link.
+    // Initialize app links handler
     final appLinks = AppLinks();
-    final initialUri = await appLinks.getInitialAppLink();
 
-    if (initialUri != null && initialUri.fragment.contains('error')) {
-      final fragmentParams = Uri.splitQueryString(initialUri.fragment);
-      final errorDescription = fragmentParams['error_description']?.replaceAll('+', ' ') ?? 'The link is invalid or has expired.';
-      debugPrint('[SplashScreen] Initial deep link has an error: $errorDescription');
-      if (mounted) {
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': errorDescription});
-      }
-      return; // Stop further execution.
+    // Handle initial deep link (e.g., from cold start)
+    final initialUri = await appLinks.getInitialLink();
+    if (initialUri != null && initialUri.queryParameters.containsKey('error_description')) {
+      final errorDescription = initialUri.queryParameters['error_description']!.replaceAll('+', ' ');
+      debugPrint('[SplashScreen] Deep link error found: $errorDescription');
+      // Use a post-frame callback to ensure the widget is built before navigating.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed(AppRoutes.login, arguments: {'message': errorDescription});
+        }
+      });
+      return; // Stop further processing
     }
 
-    // If there's an existing session, navigate immediately.
-    if (supabase.auth.currentSession != null) {
+    // Check for existing session immediately
+    final currentSession = supabase.auth.currentSession;
+    if (currentSession != null) {
       debugPrint('[SplashScreen] Found existing session, navigating directly');
-      _navigateFromSession(supabase.auth.currentSession!);
+      _navigateFromSession(currentSession);
       return;
     }
 
-    // 2. Set up listener with a timeout as a fallback.
     bool hasNavigated = false;
-    final timer = Timer(const Duration(seconds: 2), () {
+
+    // Timeout fallback if no auth event arrives
+    final timer = Timer(const Duration(seconds: 3), () {
       if (!hasNavigated && mounted) {
-        debugPrint('[SplashScreen] TIMEOUT. No auth event. Navigating to login.');
+        debugPrint('[SplashScreen] Timeout: No session established');
         _authSubscription?.cancel();
-        if (supabase.auth.currentSession == null) {
-          hasNavigated = true;
-          Navigator.of(context).pushReplacementNamed(AppRoutes.login);
-        }
+        hasNavigated = true;
+        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
       }
     });
 
+    // Listen for auth events (deep link callbacks trigger signedIn)
     _authSubscription = supabase.auth.onAuthStateChange.listen((data) {
-      debugPrint('[SplashScreen] Auth event received: ${data.event}.');
+      debugPrint('[SplashScreen] Auth event: ${data.event}');
 
-      if (hasNavigated || !mounted) return;
-
-      timer.cancel();
-      _authSubscription?.cancel();
-      hasNavigated = true;
-
-      final session = data.session;
-      if (session != null) {
-        debugPrint('[SplashScreen] Session FOUND from event. Navigating...');
-        _navigateFromSession(session);
-      } else {
-        debugPrint('[SplashScreen] Event received but NO session. Navigating to login.');
-        Navigator.of(context).pushReplacementNamed(AppRoutes.login);
+      if (data.session != null) {
+        timer.cancel(); // Cancel the timeout only when a session is found.
+        debugPrint('[SplashScreen] Session acquired, navigating');
+        _authSubscription?.cancel();
+        if (!hasNavigated && mounted) {
+          hasNavigated = true;
+          _navigateFromSession(data.session!);
+        }
       }
+      // Ignore initialSession with null session - wait for signedIn event
+      // If initialSession is null, the timer will eventually fire and navigate to login.
     });
   }
 
