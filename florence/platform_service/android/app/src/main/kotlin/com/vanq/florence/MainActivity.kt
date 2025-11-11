@@ -1,4 +1,4 @@
-package com.example.florence_platform
+package com.vanq.florence
 
 import io.flutter.embedding.android.FlutterActivity
 
