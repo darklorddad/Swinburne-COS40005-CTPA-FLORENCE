@@ -14,28 +14,17 @@ jobs:
     steps:
       # Step 1: Check out the code from the repository
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Step 2: Set up the Flutter environment
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
+      # Step 2: Set up Shorebird (this also installs the correct Flutter version)
+      - name: Setup Shorebird
+        uses: shorebirdtech/setup-shorebird@v1
 
-      # Step 3: Install the Shorebird CLI
-      - name: Install Shorebird
-        run: curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh | bash
-
-      # Step 4: Add Shorebird to the system path
-      - name: Add Shorebird to PATH
-        run: echo "$HOME/.shorebird/bin" >> $GITHUB_PATH
-
-      # Step 5: Authenticate with Shorebird using our GitHub Secret
+      # Step 3: Authenticate with Shorebird using our GitHub Secret
       - name: Authenticate Shorebird
         run: shorebird login --ci ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # Step 6: Decide whether to PATCH or RELEASE
-      # This checks if the commit message contains the special tag '[release]'
+      # Step 4: Decide whether to PATCH or RELEASE based on commit message
       - name: Deploy a Patch (Hot Restart Update)
         if: "!contains(github.event.head_commit.message, '[release]')"
         run: shorebird patch android --force
@@ -44,17 +33,19 @@ jobs:
         if: "contains(github.event.head_commit.message, '[release]')"
         run: |
           # Build the new release version with Shorebird
-          shorebird release android
+          shorebird release android -- --split-per-abi
           
-          # Setup Firebase Tools
-          npm install -g firebase-tools
+          # The output will be in build/app/outputs/apk/release/
+          # We need to find the main APK file.
+          # For simplicity, we assume the arm64 one is primary for most modern devices.
+          # A more robust script could upload all APKs.
           
-          # Decode the service account key from Base64
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}" | base64 --decode > ${{ github.workspace }}/service-account.json
-          
-          # Upload the release build to Firebase App Distribution
-          firebase appdistribution:distribute build/app/outputs/bundle/release/app-release.aab \
-            --app "${{ secrets.FIREBASE_APP_ID }}" \
-            --release-notes "New release build triggered by commit: ${{ github.event.head_commit.message }}" \
-            --groups "testers" \
-            --token "${{ secrets.FIREBASE_TOKEN }}" # Note: Use FIREBASE_TOKEN for authentication with firebase-tools
+      # Step 5: Upload to Firebase App Distribution (only if it was a release)
+      - name: Upload to Firebase App Distribution
+        if: "contains(github.event.head_commit.message, '[release]')"
+        uses: wzieba/Firebase-Distribution-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
+          groups: testers
+          file: build/app/outputs/apk/release/app-arm64-v8a-release.apk
