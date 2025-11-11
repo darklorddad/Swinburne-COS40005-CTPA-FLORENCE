@@ -27,7 +27,6 @@ class _LoginScreenState extends State<LoginScreen> {
   
   bool _isLoading = false;
   bool _rememberMe = false;
-  String? _errorMessage;
   bool _hasShownRouteError = false; // Add this flag to show the toast only once
 
   @override
@@ -64,7 +63,6 @@ class _LoginScreenState extends State<LoginScreen> {
     Helpers.hideKeyboard(context);
     setState(() {
       _isLoading = true;
-      _errorMessage = null; // Clear previous errors on a new attempt
     });
     
     try {
@@ -95,22 +93,17 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         // If the backend returns an error (e.g., 401 Unauthorized)
         final errorBody = jsonDecode(response.body);
-        // The backend's error message is in the 'detail' field
-        throw Exception(errorBody['detail'] ?? 'An unknown error occurred.');
+        final detail = errorBody['detail'] ?? 'An unknown error occurred.';
+        // The backend returns a generic message for both invalid credentials and unconfirmed email.
+        if (detail.contains('Invalid login credentials')) {
+          throw Exception('Invalid email or password. Please also check if you have confirmed your email.');
+        }
+        throw Exception(detail);
       }
     } catch (error) {
       // Catch backend errors, network errors, etc.
       if (mounted) {
-        final errorMessage = error.toString().replaceFirst('Exception: ', '');
-        
-        // The backend doesn't distinguish "Email not confirmed" from "Invalid credentials".
-        // It returns the same "Login failed: Invalid login credentials" for both.
-        // We can check for that specific message to provide a hint.
-        if (errorMessage.contains('Invalid login credentials')) {
-          setState(() => _errorMessage = 'Invalid email or password. Please also check if you have confirmed your email.');
-        } else {
-          setState(() => _errorMessage = errorMessage);
-        }
+        Helpers.showError(context, error.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {
@@ -132,12 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
   
   @override
   Widget build(BuildContext context) {
-    // We no longer need to read arguments here, as it's handled in didChangeDependencies.
-    // The only message we need to display as part of the layout is for failed login attempts.
-    final displayMessage = _errorMessage;
-    
-    debugPrint('[LoginScreen] build called. State message: "$_errorMessage", Displaying: "$displayMessage"');
-
     // Responsive sizing
     final isDesktop = Helpers.isDesktop(context);
     final maxWidth = isDesktop ? 400.0 : double.infinity;
@@ -159,31 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildHeader(),
                     const SizedBox(height: 48),
                     
-                    // Display an in-screen error message ONLY for failed login attempts.
-                    // Deep link errors are now handled by the toast in didChangeDependencies.
-                    if (displayMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                displayMessage,
-                                style: const TextStyle(color: AppTheme.errorColor, fontSize: 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    
                     CustomTextField(
                       label: 'Email',
                       hint: 'Enter your email',
@@ -203,14 +165,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       validator: (value) => Validators.required(value, fieldName: 'Password'),
                       textInputAction: TextInputAction.done,
-                      onChanged: (value) {
-                        // When user starts typing a new password, clear the error message
-                        if (_errorMessage != null) {
-                          setState(() {
-                            _errorMessage = null;
-                          });
-                        }
-                      },
                     ),
                     const SizedBox(height: 16),
                     
