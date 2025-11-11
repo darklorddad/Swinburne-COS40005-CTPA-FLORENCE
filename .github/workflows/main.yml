@@ -24,7 +24,7 @@ jobs:
       - name: Deploy a Patch
         if: "!contains(github.event.head_commit.message, '[release]')"
         # IMPORTANT: Add the working-directory line
-        working-directory: your-project-subdirectory 
+        working-directory: florence\platform_service
         run: shorebird patch android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
@@ -33,7 +33,7 @@ jobs:
       - name: Build a Full Release
         if: "contains(github.event.head_commit.message, '[release]')"
         # IMPORTANT: Add the working-directory line
-        working-directory: your-project-subdirectory
+        working-directory: florence\platform_service
         run: shorebird release android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
@@ -47,4 +47,4 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
           groups: testers
           # The file path is relative to the root, so we need to include the subdirectory
-          file: your-project-subdirectory/build/app/outputs/bundle/release/app-release.aab
+          file: florence/platform_service/build/app/outputs/bundle/release/app-release.aab
