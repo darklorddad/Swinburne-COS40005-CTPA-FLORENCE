@@ -39,19 +39,16 @@ class _AppState extends State<App> {
   }
 
   void _setupAuthListener() {
-    // Handle the initial auth state right away
-    _handleNavigation(supabase.auth.currentSession);
-
     // Then, listen for any future changes
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
         final event = data.event;
-        // This listener handles auth changes that happen AFTER the app's initial load,
-        // such as a user signing out or a sign-in from a deep link while the app is already open.
-        if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.signedOut) {
-          debugPrint('[Auth Listener] Auth state changed: $event. Handling navigation.');
-          _handleNavigation(data.session);
-        }
+        // The onAuthStateChange stream fires an initial event, AuthChangeEvent.initialSession,
+        // which we can use to handle the app's first load.
+        // It also fires on signIn, signOut, tokenRefreshed, etc.
+        // We handle all navigation from this single point.
+        debugPrint('[Auth Listener] Auth state changed: $event. Handling navigation.');
+        _handleNavigation(data.session);
       },
       onError: (error) {
         // This handles deep link errors (e.g., an expired token).
@@ -127,7 +124,7 @@ class _AppState extends State<App> {
       } else {
         // If we are not already on the login screen, navigate there.
         if (currentRouteName != AppRoutes.login) {
-          debugPrint('[Auth Listener] No session found. Navigating to login.');
+          debugPrint('[Auth Listener] No session found on auth event. Navigating to login.');
           navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
         }
       }
