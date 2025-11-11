@@ -35,7 +35,7 @@ This directory contains the FastAPI backend for the Florence platform, which ser
 To run the FastAPI server locally, execute the following command from the project root directory:
 
 ```bash
-uvicorn florence.data_service.main:app --reload
+uvicorn data_service.main:app --reload --host 0.0.0.0
 ```
 
 The API will be available at `http://127.0.0.1:8000`, and the interactive documentation (Swagger UI) can be accessed at `http://127.0.0.1:8000/docs`.
