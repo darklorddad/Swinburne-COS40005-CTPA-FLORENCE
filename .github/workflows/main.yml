@@ -42,7 +42,7 @@ jobs:
       - name: Build a Full Release (Manual)
         if: github.event_name == 'workflow_dispatch'
         working-directory: florence/platform_service
-        run: flutter build apk
+        run: shorebird flutter build apk --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
