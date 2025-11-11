@@ -29,23 +29,19 @@ jobs:
         if: "!contains(github.event.head_commit.message, '[release]')"
         run: shorebird patch android --force
 
-      - name: Deploy a Full Release (New Install)
+      # This step only runs if the commit message contains '[release]'
+      - name: Build a Full Release
         if: "contains(github.event.head_commit.message, '[release]')"
-        run: |
-          # Build the new release version with Shorebird
-          shorebird release android -- --split-per-abi
-          
-          # The output will be in build/app/outputs/apk/release/
-          # We need to find the main APK file.
-          # For simplicity, we assume the arm64 one is primary for most modern devices.
-          # A more robust script could upload all APKs.
-          
+        run: shorebird release android
+
       # Step 5: Upload to Firebase App Distribution (only if it was a release)
       - name: Upload to Firebase App Distribution
         if: "contains(github.event.head_commit.message, '[release]')"
-        uses: wzieba/Firebase-Distribution-Action@v1
+        uses: wzieba/Firebase-Distribution-Action@v1 # <-- This line has been corrected
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
+          # Use the Base64 encoded JSON, not a token
           serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
           groups: testers
-          file: build/app/outputs/apk/release/app-arm64-v8a-release.apk
+          # Shorebird now outputs an .aab file for releases
+          file: build/app/outputs/bundle/release/app-release.aab
