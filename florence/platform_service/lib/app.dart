@@ -24,7 +24,7 @@ class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
 
   // Navigator key to allow navigation from outside the build context
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState<State<Navigator>>>();
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
