@@ -121,7 +121,7 @@ class AlertItem extends StatelessWidget {
       case AlertType.highBloodPressure:
         return AppTheme.highRiskColor;
       case AlertType.lowGlucose:
-        return Colors.purple;
+        return Colors.blue;
       case AlertType.lowPhysicalActivity:
       case AlertType.missedMedication:
         return AppTheme.mediumRiskColor;

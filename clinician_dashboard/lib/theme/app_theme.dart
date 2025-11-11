@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Modern color palette (cool blue primary, teal secondary, amber accent)
-  static const Color primaryColor = Color(0xFF2563EB); // Indigo-500-ish
-  static const Color secondaryColor = Color(0xFF14B8A6); // Teal-400
-  static const Color accentColor = Color(0xFFF59E0B); // Amber-500
+  // Patient dashboard color palette
+  static const Color primaryColor = Color(0xFF2F70F8); // Primary blue from patient dashboard
+  static const Color secondaryColor = Color(0xFF1A73E8); // Secondary blue
+  static const Color accentColor = Color(0xFFF59E0B); // Amber/Orange
   
-  static const Color highRiskColor = Color(0xFFEF4444);
-  static const Color mediumRiskColor = Color(0xFFF59E0B);
-  static const Color lowRiskColor = Color(0xFF22C55E);
+  static const Color highRiskColor = Color(0xFFF44336); // Red
+  static const Color mediumRiskColor = Color(0xFFFFC107); // Yellow/Amber
+  static const Color lowRiskColor = Color(0xFF4CAF50); // Green
   
-  static const Color textPrimary = Color(0xFF111827); // Gray-900
-  static const Color textSecondary = Color(0xFF6B7280); // Gray-500
-  static const Color dividerColor = Color(0xFFE5E7EB); // Gray-200
+  static const Color textPrimary = Color(0xFF212121); // Dark gray/black
+  static const Color textSecondary = Color(0xFF70757A); // Medium gray
+  static const Color textTertiary = Color(0xFF999999); // Light gray
+  static const Color dividerColor = Color(0xFFE0E0E0); // Light gray divider
   
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
@@ -24,7 +25,7 @@ class AppTheme {
       surface: Colors.white,
       surfaceTint: Colors.transparent,
     ),
-    scaffoldBackgroundColor: const Color(0xFFF8FAFC), // Gray-50
+    scaffoldBackgroundColor: const Color(0xFFF5F5F5), // Light gray background like patient dashboard
     textTheme: GoogleFonts.interTextTheme().copyWith(
       bodyMedium: GoogleFonts.inter(
         color: textSecondary,
@@ -58,22 +59,21 @@ class AppTheme {
       surfaceTintColor: Colors.transparent,
     ),
     cardTheme: CardThemeData(
-      elevation: 2,
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      elevation: 1,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: Colors.white,
-      shadowColor: Colors.black12,
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: dividerColor),
+        borderRadius: BorderRadius.circular(12),
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
         foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(24),
         ),
         elevation: 0,
       ),
@@ -81,10 +81,10 @@ class AppTheme {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         foregroundColor: primaryColor,
-        side: const BorderSide(color: dividerColor),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        side: const BorderSide(color: dividerColor, width: 1),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(24),
         ),
       ),
     ),
@@ -101,18 +101,18 @@ class AppTheme {
       filled: true,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: dividerColor),
+        borderSide: const BorderSide(color: dividerColor, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: dividerColor),
+        borderSide: const BorderSide(color: dividerColor, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: primaryColor, width: 2),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      hintStyle: const TextStyle(color: textSecondary),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      hintStyle: const TextStyle(color: textSecondary, fontSize: 14),
     ),
     dataTableTheme: DataTableThemeData(
       headingRowColor: const WidgetStatePropertyAll(Color(0xFFEFF6FF)),
@@ -120,20 +120,40 @@ class AppTheme {
       headingTextStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: const Color(0xFFF1F5F9),
-      labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w500),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: dividerColor),
+      backgroundColor: Colors.white,
+      labelStyle: GoogleFonts.inter(
+        fontWeight: FontWeight.w500,
+        fontSize: 14,
       ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: dividerColor, width: 1),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primaryColor,
       foregroundColor: Colors.white,
-      elevation: 0,
-      shape: StadiumBorder(),
+      elevation: 4,
+      shape: const CircleBorder(),
     ),
     dividerTheme: const DividerThemeData(color: dividerColor, thickness: 1),
+    tabBarTheme: TabBarThemeData(
+      labelColor: primaryColor,
+      unselectedLabelColor: textSecondary,
+      labelStyle: GoogleFonts.inter(
+        fontWeight: FontWeight.w600,
+        fontSize: 14,
+      ),
+      unselectedLabelStyle: GoogleFonts.inter(
+        fontWeight: FontWeight.w500,
+        fontSize: 14,
+      ),
+      indicator: const UnderlineTabIndicator(
+        borderSide: BorderSide(color: primaryColor, width: 3),
+      ),
+      indicatorSize: TabBarIndicatorSize.tab,
+    ),
   );
 
   static Color getRiskColor(String riskLevel) {
