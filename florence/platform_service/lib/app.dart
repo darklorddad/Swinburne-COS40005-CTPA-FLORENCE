@@ -39,98 +39,74 @@ class _AppState extends State<App> {
   }
 
   void _setupAuthListener() {
-    // Then, listen for any future changes
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
-        final event = data.event;
-        // The onAuthStateChange stream fires an initial event, AuthChangeEvent.initialSession,
-        // which we can use to handle the app's first load.
-        // It also fires on signIn, signOut, tokenRefreshed, etc.
-        // We handle all navigation from this single point.
-        debugPrint('[Auth Listener] Auth state changed: $event. Handling navigation.');
-        _handleNavigation(data.session);
+        // Use a post-frame callback to ensure the widget tree is built and ready for navigation.
+        // This prevents race conditions during app startup.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleNavigation(data.session, data.event);
+        });
       },
       onError: (error) {
         // This handles deep link errors (e.g., an expired token).
-        if (error is AuthException) {
-          String message = 'This confirmation link is invalid or has expired. Please try again.';
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            final navigator = navigatorKey.currentState;
-            if (navigator == null || !navigator.mounted) return;
-
-            final currentSession = supabase.auth.currentSession;
-            if (currentSession != null) {
-              // CASE 1: USER IS ALREADY LOGGED IN.
-              // Show a non-disruptive snackbar with the error message.
-              Helpers.showError(navigator.context, message);
-
-              // Since the router may have incorrectly navigated to the splash screen,
-              // we must now force navigation to the correct, authenticated route.
-              // This "rescues" the user from the loading screen.
-              final role = currentSession.user.userMetadata?['role'];
-              String targetRoute = AppRoutes.dashboard; // Default for patients
-
-              if (role == 'CLINICIAN' || role == 'ADMIN') {
-                targetRoute = AppRoutes.clinicianDashboard;
-              }
-              
-              // Navigate to the correct screen, clearing the history (which may include the splash screen).
-              navigator.pushNamedAndRemoveUntil(targetRoute, (route) => false);
-
-            } else {
-              // CASE 2: USER IS NOT LOGGED IN.
-              // Navigate to the login screen and display the error message there.
-              navigator.pushNamedAndRemoveUntil(
-                  AppRoutes.login, (route) => false, arguments: {'message': message});
-            }
-          });
-        }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final navigator = navigatorKey.currentState;
+          if (navigator == null || !navigator.mounted) return;
+          
+          // On any auth error from a deep link, the safest action is to go to the login screen
+          // with a clear message, regardless of the current session state.
+          navigator.pushNamedAndRemoveUntil(
+            AppRoutes.login,
+            (route) => false,
+            arguments: {'message': 'This confirmation link is invalid or has expired. Please try again.'},
+          );
+        });
       },
     );
   }
 
-  void _handleNavigation(Session? session) {
-    // Use a short delay to allow the app to settle and process any pending deep links
-    // before attempting to navigate. This resolves the race condition.
-    Future.delayed(const Duration(milliseconds: 100), () async {
-      final navigator = navigatorKey.currentState;
-      if (navigator == null || !navigator.mounted) return;
-      final context = navigator.context;
-      final currentRouteName = ModalRoute.of(context)?.settings.name;
+  void _handleNavigation(Session? session, AuthChangeEvent event) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null || !navigator.mounted) return;
+    final currentRouteName = ModalRoute.of(navigator.context)?.settings.name;
 
-      if (session != null) {
-        final user = session.user;
-        final role = user.userMetadata?['role'];
-        final isNewUser = user.createdAt != null &&
+    if (session != null) {
+      // User is logged in.
+      final user = session.user;
+      final role = user.userMetadata?['role'];
+      
+      // More reliable way to check for a new user confirming their email via deep link.
+      final isSignUpConfirmation = event == AuthChangeEvent.signedIn && user.createdAt != null &&
             DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
-        String message = isNewUser
-            ? 'Welcome! Your email has been successfully confirmed.'
-            : 'Welcome back!';
 
-        String destinationRoute;
-        Object? routeArguments = {'message': message};
-
-        if (role == 'PATIENT') {
-          destinationRoute = AppRoutes.dashboard;
-        } else if (role == 'CLINICIAN' || role == 'ADMIN') {
-          destinationRoute = AppRoutes.clinicianDashboard;
-        } else {
-          destinationRoute = AppRoutes.login;
-          routeArguments = {'message': 'Login failed: Unsupported user role.'};
-        }
-
-        if (currentRouteName != destinationRoute) {
-          navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false,
-              arguments: routeArguments);
-        }
+      String destinationRoute;
+      if (role == 'PATIENT') {
+        destinationRoute = AppRoutes.dashboard;
+      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+        destinationRoute = AppRoutes.clinicianDashboard;
       } else {
-        // If we are not already on the login screen, navigate there.
+        // Unsupported role, force back to login with an error message.
         if (currentRouteName != AppRoutes.login) {
-          debugPrint('[Auth Listener] No session found on auth event. Navigating to login.');
-          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+          navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false, arguments: {'message': 'Login failed: Unsupported user role.'});
         }
+        return;
       }
-    });
+
+      // Only navigate if we are not already on the destination screen.
+      // This prevents navigation loops if the auth state changes for other reasons (e.g., token refresh).
+      if (currentRouteName != destinationRoute) {
+          final message = isSignUpConfirmation
+              ? 'Welcome! Your email has been successfully confirmed.'
+              : 'Welcome back!';
+          navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false, arguments: {'message': message});
+      }
+    } else {
+      // User is not logged in.
+      // If we are not already on the login screen, navigate there.
+      if (currentRouteName != AppRoutes.login) {
+        navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+      }
+    }
   }
 
   @override
