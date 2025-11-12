@@ -273,8 +273,7 @@ def add_test_patient_data(log_widget, buttons, client_store: dict, mode_var: tk.
             for meal_time in ["BREAKFAST", "LUNCH", "DINNER"]:
                 logs_to_insert.append({
                     "patient_id": patient_id, "log_date": log_date.isoformat(), "meal_time": meal_time,
-                    "glucose_before_meal": round(random.uniform(80, 110), 1), "glucose_after_meal": round(random.uniform(120, 180), 1),
-                    "meal_desc": f"A typical {meal_time.lower()}."
+                    "glucose_before_meal": round(random.uniform(80, 110), 1), "glucose_after_meal": round(random.uniform(120, 180), 1)
                 })
         
         monitor_data_to_insert = []
