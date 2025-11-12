@@ -60,27 +60,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       final userData = await authService.getMe();
       
-      // Supabase user_metadata is nested, let's assume your backend flattens it
-      // or we access it as needed. For now, let's assume it's in user_metadata.
+      // The Supabase user object has a nested `user_metadata` field.
+      // Your backend's /auth/me returns the whole user object.
+      // We need to access the nested fields correctly.
       setState(() {
         _userName = userData['user_metadata']?['name'] ?? 'John Doe';
         _userEmail = userData['email'] ?? 'user@example.com';
       });
       
-      // TODO: Load additional profile data from Supabase
-      // final profile = await profileService.getUserProfile();
-      // setState(() {
-      //   _dateOfBirth = profile.dateOfBirth;
-      //   _gender = profile.gender;
-      //   _phoneNumber = profile.phoneNumber;
-      //   _diabetesType = profile.diabetesType;
-      //   _targetMin = profile.targetGlucoseMin;
-      //   _targetMax = profile.targetGlucoseMax;
-      //   _medications = profile.medications;
-      // });
+      // TODO: Load additional patient profile data from a new backend endpoint
+      // e.g., GET /patients/me
       
     } catch (e) {
       debugPrint('Error loading profile: $e');
+      if (mounted) {
+        Helpers.showError(context, 'Failed to load profile data.');
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -219,7 +214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 50,
                 backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
                 child: Text(
-                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                  _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : 'U',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                         color: AppTheme.primaryBlue,
                         fontWeight: FontWeight.bold,
@@ -387,7 +382,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.medicationColor.withValues(alpha: 0.1),
+            color: AppTheme.medicationColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(

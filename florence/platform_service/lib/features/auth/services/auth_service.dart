@@ -57,7 +57,7 @@ class AuthService with ChangeNotifier {
       throw Exception(error['detail'] ?? 'Token exchange failed');
     }
   }
-
+  
   Future<Map<String, dynamic>> getMe() async {
     if (_token == null) {
       throw Exception('Not authenticated');
