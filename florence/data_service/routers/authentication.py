@@ -164,7 +164,7 @@ async def confirm_email_redirect():
 
 async def get_current_user_id_from_token(authorization: str = Header(...)):
     """
-    New dependency to validate our backend's JWT and return the user ID (sub).
+    Dependency to validate our backend's JWT and return the user ID (sub).
     """
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
@@ -183,26 +183,27 @@ async def get_current_user_id_from_token(authorization: str = Header(...)):
         return user_id
     except JWTError:
         raise credentials_exception
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
-async def get_current_admin_user(user_id: str = Depends(get_current_user_id_from_token)):
-    """Dependency to get the current user ID from the token and verify they are an admin."""
+async def get_current_admin_user(authorization: str = Header(...)):
+    """Dependency to get the current user and verify they are an admin."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
+    token = authorization.split(" ")[1]
+    
     try:
-        user_response = supabase.auth.admin.get_user_by_id(user_id)
+        user_response = supabase.auth.get_user(token)
         user = user_response.user
         if not user:
-            raise HTTPException(status_code=401, detail="User not found.")
-
+            raise HTTPException(status_code=401, detail="Invalid token.")
+        
         if user.app_metadata.get('role', '').upper() != 'ADMIN':
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
-
+            
         return user
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while verifying admin status: {str(e)}")
+    except AuthApiError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
 
 
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
