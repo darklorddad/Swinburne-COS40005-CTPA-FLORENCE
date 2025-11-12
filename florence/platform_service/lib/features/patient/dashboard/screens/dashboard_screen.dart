@@ -147,9 +147,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (confirmed) {
       try {
-        // Use the AuthService to handle logout logic
         await Provider.of<AuthService>(context, listen: false).logout();
-        // The listener in app.dart will handle navigation to the login screen.
       } catch (e) {
         if (mounted) {
           Helpers.showError(context, 'Failed to sign out: ${e.toString()}');
@@ -423,38 +421,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: const Icon(Icons.person_outline),
           onPressed: () => AppRoutes.push(context, AppRoutes.profile),
           tooltip: 'Profile',
-        ),
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'logout') {
-              _handleLogout();
-            } else if (value == 'settings') {
-              AppRoutes.push(context, AppRoutes.settings);
-            }
-          },
-          itemBuilder:
-              (context) => [
-                const PopupMenuItem(
-                  value: 'settings',
-                  child: Row(
-                    children: [
-                      Icon(Icons.settings_outlined),
-                      SizedBox(width: 12),
-                      Text('Settings'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'logout',
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout),
-                      SizedBox(width: 12),
-                      Text('Sign Out'),
-                    ],
-                  ),
-                ),
-              ],
         ),
       ],
     );

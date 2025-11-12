@@ -145,13 +145,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile & Settings'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Sign Out',
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
