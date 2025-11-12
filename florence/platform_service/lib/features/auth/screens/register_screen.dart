@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
@@ -320,6 +321,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: AppTheme.primaryBlue,
                       fontWeight: FontWeight.w600,
                     ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Helpers.showInfo(
+                            context, 'Terms of Service page coming soon');
+                      },
                   ),
                   const TextSpan(text: ' and '),
                   TextSpan(
@@ -328,6 +334,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: AppTheme.primaryBlue,
                       fontWeight: FontWeight.w600,
                     ),
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () {
+                        Helpers.showInfo(
+                            context, 'Privacy Policy page coming soon');
+                      },
                   ),
                 ],
               ),
