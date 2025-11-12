@@ -31,6 +31,61 @@ class ApiService {
     }
   }
 
+  Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${Environment.apiUrl}$endpoint'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      );
+      return _processResponse(response);
+    } catch (e) {
+      debugPrint('API POST Error ($endpoint): $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+    try {
+      final response = await http.put(
+        Uri.parse('${Environment.apiUrl}$endpoint'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      );
+      return _processResponse(response);
+    } catch (e) {
+      debugPrint('API PUT Error ($endpoint): $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('${Environment.apiUrl}$endpoint'),
+        headers: await _getHeaders(),
+        body: jsonEncode(data),
+      );
+      return _processResponse(response);
+    } catch (e) {
+      debugPrint('API PATCH Error ($endpoint): $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<dynamic> delete(String endpoint) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('${Environment.apiUrl}$endpoint'),
+        headers: await _getHeaders(),
+      );
+      return _processResponse(response);
+    } catch (e) {
+      debugPrint('API DELETE Error ($endpoint): $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
   dynamic _processResponse(http.Response response) {
     debugPrint('API Response (${response.request?.method} ${response.request?.url.path}): ${response.statusCode}');
     if (response.statusCode >= 200 && response.statusCode < 300) {
