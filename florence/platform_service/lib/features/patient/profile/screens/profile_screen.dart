@@ -9,7 +9,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import '../../../../main.dart';
+import '../../../auth/services/auth_service.dart';
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings
@@ -99,17 +99,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     
     if (confirmed) {
-      try {
-        await supabase.auth.signOut();
-        if (mounted) {
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      } catch (e) {
-        if (mounted) {
-          // In demo mode, just navigate to login
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      }
+      // Use the AuthService to logout. The listener in app.dart will handle navigation.
+      await Provider.of<AuthService>(context, listen: false).logout();
     }
   }
   
