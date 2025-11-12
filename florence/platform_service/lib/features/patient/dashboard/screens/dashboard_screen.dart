@@ -5,7 +5,7 @@ import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
+import '../../../../main.dart';
 import '../widgets/health_summary_card.dart';
 import '../widgets/quick_stats_grid.dart';
 import '../widgets/quick_actions_grid.dart';
@@ -13,6 +13,7 @@ import '../widgets/ai_insight_card.dart';
 import '../widgets/upcoming_reminders_card.dart';
 import '../../core/services/patient_profile_service.dart';
 import '../../core/providers/health_data_provider.dart';
+import '../../../../config/routes.dart';
 import '../../../auth/services/auth_service.dart';
 
 /// Home Dashboard Screen
