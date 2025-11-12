@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'auth_service.dart';
+import '../../features/patient/auth/services/auth_service.dart';
 import '../config/environment.dart';
 
 class ApiService {
