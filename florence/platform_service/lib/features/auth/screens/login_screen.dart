@@ -26,7 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
-  bool _rememberMe = false;
   String? _errorMessage;
   bool _hasShownRouteError = false; // Add this flag to show the toast only once
 
@@ -206,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
                     
                     // Remember me and forgot password row
-                    _buildRememberMeRow(),
+                    _buildForgotPasswordLink(),
                     const SizedBox(height: 32),
                     
                     // Login button
@@ -270,51 +269,24 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
   
-  /// Build remember me checkbox and forgot password link
-  Widget _buildRememberMeRow() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        // Remember me checkbox
-        Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _rememberMe,
-                onChanged: _isLoading
-                    ? null
-                    : (value) {
-                        setState(() => _rememberMe = value ?? false);
-                      },
+  Widget _buildForgotPasswordLink() {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: _isLoading ? null : _goToForgotPassword,
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          minimumSize: const Size(0, 0),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          'Forgot password?',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.primaryBlue,
+                fontWeight: FontWeight.w600,
               ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Remember me',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
         ),
-        
-        // Forgot password link
-        TextButton(
-          onPressed: _isLoading ? null : _goToForgotPassword,
-          style: TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: const Size(0, 0),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-          child: Text(
-            'Forgot password?',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.primaryBlue,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-        ),
-      ],
+      ),
     );
   }
   
