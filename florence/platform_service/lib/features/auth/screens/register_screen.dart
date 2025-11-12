@@ -25,7 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   
   // Controllers
-  final _fullNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -36,7 +36,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   
   @override
   void dispose() {
-    _fullNameController.dispose();
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -73,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           'email': _emailController.text.trim(),
           'password': _passwordController.text,
           'role': 'PATIENT', // Hardcoded for patient registration
-          'name': _fullNameController.text.trim(),
+          'name': _nameController.text.trim(),
           // The backend model allows other fields, but the form only has these.
           // The backend will handle nulls for optional fields.
         }),
@@ -137,11 +137,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _buildHeader(),
                     const SizedBox(height: 32),
                     
-                    // Full name field
+                    // Name field
                     CustomTextField(
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
-                      controller: _fullNameController,
+                      label: 'Name',
+                      hint: 'Enter your name',
+                      controller: _nameController,
                       validator: Validators.name,
                       textCapitalization: TextCapitalization.words,
                       textInputAction: TextInputAction.next,
