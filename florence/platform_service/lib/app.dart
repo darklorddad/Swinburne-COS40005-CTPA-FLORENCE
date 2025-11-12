@@ -117,7 +117,7 @@ class _AppState extends State<App> {
       try {
         // Notify the backend of the new session by fetching user data.
         // This validates the token with the backend and allows it to create a server-side session.
-        await _apiService.get('/users/me');
+        await _apiService.get('/auth/me');
         debugPrint('[App Listener] Backend session validated successfully.');
       } catch (e) {
         // If the user is not found on the backend during the first login after email confirmation,
