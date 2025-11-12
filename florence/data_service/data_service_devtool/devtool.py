@@ -191,7 +191,7 @@ def add_test_patient_data(log_widget, buttons, client_store: dict, mode_var: tk.
     for btn in buttons: btn.config(state=tk.DISABLED)
 
     use_api = mode_var.get() == "API"
-    base_url = base_url_entry.get()
+    base_url = base_url_entry.get().strip('/')
     supabase_client = client_store.get('client')
     admin_token = client_store.get('admin_token')
 
@@ -203,24 +203,40 @@ def add_test_patient_data(log_widget, buttons, client_store: dict, mode_var: tk.
 
     new_user = None
     patient_id = None
+    patient_token = None # To store the new patient's token
     try:
         new_user = None # For rollback on direct DB creation
 
         if use_api:
             log_to_window(log_widget, "Attempting to create patient via API endpoint...")
-            if not all([base_url, admin_token, supabase_client]):
-                messagebox.showerror("Error", "API Base URL, Admin Token, and Supabase client are required to use the API endpoint.")
+            if not all([base_url, supabase_client]):
+                messagebox.showerror("Error", "API Base URL and Supabase client are required to use the API endpoint.")
                 raise Exception("Missing arguments for API call.")
 
-            headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
+            # Step 1: Create patient via the public /auth/register endpoint
+            headers = { "apikey": supabase_client.supabase_key }
             payload = {
-                "email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD, "name": "Monthly Data Patient (API)",
-                "phone_number": "555-0123", "date_of_birth": "1985-05-15", "gender": "Male"
+                "email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD, "role": "PATIENT",
+                "name": "Monthly Data Patient (API)", "phone_number": "555-0123", "date_of_birth": "1985-05-15", "gender": "Male"
             }
-            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
-                response = http_client.post("/admin/patients", headers=headers, json=payload)
+            with httpx.Client(base_url=base_url, timeout=20.0) as http_client:
+                response = http_client.post("/auth/register", headers=headers, json=payload)
                 response.raise_for_status()
-                patient_profile = response.json().get("profile", {})
+                log_to_window(log_widget, "Patient registered successfully.")
+
+                # Step 2: Log in as the new patient to get their token and ID
+                login_payload = {"email": TEST_PATIENT_EMAIL, "password": TEST_PATIENT_PASSWORD}
+                login_response = http_client.post("/auth/login", headers=headers, json=login_payload)
+                login_response.raise_for_status()
+                patient_token = login_response.json().get("access_token")
+                if not patient_token: raise Exception("Failed to get patient access token after login.")
+                log_to_window(log_widget, "Logged in as new patient.")
+
+                # Step 3: Get the patient's profile to find their ID
+                patient_headers = {**headers, "Authorization": f"Bearer {patient_token}"}
+                profile_response = http_client.get("/patients/me", headers=patient_headers)
+                profile_response.raise_for_status()
+                patient_profile = profile_response.json()
                 patient_id = patient_profile.get("id")
                 if not patient_id: raise Exception("API response did not contain a patient profile ID.")
                 log_to_window(log_widget, f"Patient created via API with ID: {patient_id}")
@@ -275,17 +291,22 @@ def add_test_patient_data(log_widget, buttons, client_store: dict, mode_var: tk.
         log_to_window(log_widget, f"-> Generated {len(logs_to_insert)} daily logs and {len(monitor_data_to_insert)} monitor data points.")
 
         if use_api:
-            log_to_window(log_widget, "Seeding data via API. This may take a moment...")
-            headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}" }
-            with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
+            log_to_window(log_widget, "Seeding data via API using patient's own token. This may take a moment...")
+            # Use the patient's own token for the seeding requests
+            patient_headers = { "apikey": supabase_client.supabase_key, "Authorization": f"Bearer {patient_token}" }
+            with httpx.Client(base_url=base_url, timeout=30.0) as http_client:
                 for i, log_payload in enumerate(logs_to_insert):
-                    response = http_client.post("/admin/daily-logs", headers=headers, json=log_payload)
+                    # Remove patient_id as it's inferred from the token by the endpoint
+                    log_payload.pop("patient_id", None)
+                    response = http_client.post("/patients/me/daily-logs", headers=patient_headers, json=log_payload)
                     response.raise_for_status()
                     if (i + 1) % 10 == 0: log_to_window(log_widget, f"  -> Seeded {i+1}/{len(logs_to_insert)} daily logs...")
                 log_to_window(log_widget, "-> All daily logs seeded.")
                 
                 for i, data_payload in enumerate(monitor_data_to_insert):
-                    response = http_client.post("/admin/monitor-data", headers=headers, json=data_payload)
+                    # Remove patient_id as it's inferred from the token by the endpoint
+                    data_payload.pop("patient_id", None)
+                    response = http_client.post("/patients/me/monitor-data", headers=patient_headers, json=data_payload)
                     response.raise_for_status()
                     if (i + 1) % 10 == 0: log_to_window(log_widget, f"  -> Seeded {i+1}/{len(monitor_data_to_insert)} monitor data points...")
                 log_to_window(log_widget, "-> All monitor data seeded.")
@@ -321,18 +342,11 @@ def add_test_patient_data(log_widget, buttons, client_store: dict, mode_var: tk.
             messagebox.showerror("Error", f"An error occurred: {error_detail}")
         
         # --- Rollback Logic ---
+        # API rollback is harder now because we don't have the user ID easily.
+        # We rely on the 'remove' button which finds the user by email.
         if use_api and patient_id:
-            log_to_window(log_widget, f"Attempting to roll back and delete patient {patient_id} via API...")
-            try:
-                headers = {"apikey": supabase_client.supabase_key, "Authorization": f"Bearer {admin_token}"}
-                with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
-                    response = http_client.delete(f"/admin/patients/{patient_id}", headers=headers)
-                    if response.status_code not in [200, 404]: # Success if deleted or already gone
-                        response.raise_for_status()
-                log_to_window(log_widget, "Rollback of API-created patient successful.")
-                if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink()
-            except Exception as rollback_e:
-                log_to_window(log_widget, f"ERROR: API Rollback failed: {rollback_e}")
+             log_to_window(log_widget, "Rollback: Seeding failed. Use the 'Remove monthly data patient' button to clean up.")
+             if ID_STORAGE_FILE.exists(): ID_STORAGE_FILE.unlink() # remove partial success file
 
         elif not use_api and new_user: # Only attempt rollback for direct DB method
             log_to_window(log_widget, f"Attempting to roll back and delete auth user {new_user.id}...")
