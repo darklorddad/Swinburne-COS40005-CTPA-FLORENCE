@@ -114,10 +114,11 @@ class _AppState extends State<App> {
           DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes <
               2;
 
+      dynamic backendUser;
       try {
         // Notify the backend of the new session by fetching user data.
         // This validates the token with the backend and allows it to create a server-side session.
-        await _apiService.get('/auth/me');
+        backendUser = await _apiService.get('/auth/me');
         debugPrint('[App Listener] Backend session validated successfully.');
       } catch (e) {
         // If the user is not found on the backend during the first login after email confirmation,
@@ -129,6 +130,8 @@ class _AppState extends State<App> {
             // using the data from the JWT.
             await _apiService.post('/users/sync', {});
             debugPrint('[App Listener] User profile synced successfully.');
+            // After syncing, we need to fetch the user data again.
+            backendUser = await _apiService.get('/auth/me');
           } catch (syncError) {
             debugPrint('[App Listener] Failed to sync user profile: $syncError');
             await supabase.auth.signOut();
@@ -153,7 +156,8 @@ class _AppState extends State<App> {
         }
       }
 
-      final role = user.userMetadata?['role'];
+      // The user object from the backend is now the source of truth for the role.
+      final role = backendUser?['user_metadata']?['role'];
       debugPrint('[App Listener] Session found. Role: $role. Navigating...');
 
       String destinationRoute;

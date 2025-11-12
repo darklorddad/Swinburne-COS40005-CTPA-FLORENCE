@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -23,6 +24,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  final ApiService _apiService = ApiService();
   bool _isLoading = false;
   
   // Mock user data (will be replaced with real data)
@@ -56,35 +58,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Load user data
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
+
     try {
-      // Try to get user from Supabase if available
-      try {
-        final user = supabase.auth.currentUser;
-        if (user != null) {
-          setState(() {
-            _userName = user.userMetadata?['full_name'] ?? 'John Doe';
-            _userEmail = user.email ?? 'user@example.com';
-          });
-        }
-      } catch (e) {
-        debugPrint('Auth error (Demo Mode): $e');
+      // Get email from the local session (safe)
+      final email = supabase.auth.currentUser?.email ?? 'user@example.com';
+
+      // Fetch the full profile from the backend API
+      final profile = await _apiService.get('/patients/me');
+
+      if (mounted) {
+        setState(() {
+          _userEmail = email;
+          _userName = profile['name'] ?? 'John Doe';
+          _dateOfBirth = profile['date_of_birth'] != null
+              ? Formatters.date(DateTime.parse(profile['date_of_birth']))
+              : 'Not set';
+          _gender = profile['gender'] ?? 'Not set';
+          _phoneNumber = profile['phone_number'] ?? 'Not set';
+          // TODO: Load other profile fields like diabetes type, targets, etc.
+        });
       }
-      
-      // TODO: Load additional profile data from Supabase
-      // final profile = await profileService.getUserProfile();
-      // setState(() {
-      //   _dateOfBirth = profile.dateOfBirth;
-      //   _gender = profile.gender;
-      //   _phoneNumber = profile.phoneNumber;
-      //   _diabetesType = profile.diabetesType;
-      //   _targetMin = profile.targetGlucoseMin;
-      //   _targetMax = profile.targetGlucoseMax;
-      //   _medications = profile.medications;
-      // });
-      
     } catch (e) {
       debugPrint('Error loading profile: $e');
+      if (mounted) {
+        Helpers.showError(context, 'Failed to load profile data.');
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
