@@ -5,8 +5,8 @@ import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
-import '../../../../main.dart';
-import '../widgets/health_summary_card.dart';
+import '../../../../config/routes.dart';
+import '../widgets/health_summary_card.
 import '../widgets/quick_stats_grid.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
