@@ -139,8 +139,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     
                     // Full name field
                     CustomTextField(
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
+                      label: 'Name',
+                      hint: 'Enter your name',
                       controller: _fullNameController,
                       validator: Validators.name,
                       textCapitalization: TextCapitalization.words,
