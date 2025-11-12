@@ -26,7 +26,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
-  bool _rememberMe = false;
   String? _errorMessage;
   bool _hasShownRouteError = false; // Add this flag to show the toast only once
 
@@ -270,34 +269,11 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
   
-  /// Build remember me checkbox and forgot password link
+  /// Build forgot password link
   Widget _buildRememberMeRow() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        // Remember me checkbox
-        Row(
-          children: [
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: Checkbox(
-                value: _rememberMe,
-                onChanged: _isLoading
-                    ? null
-                    : (value) {
-                        setState(() => _rememberMe = value ?? false);
-                      },
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              'Remember me',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        
         // Forgot password link
         TextButton(
           onPressed: _isLoading ? null : _goToForgotPassword,
