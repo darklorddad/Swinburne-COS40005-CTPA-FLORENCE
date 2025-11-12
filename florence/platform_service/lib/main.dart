@@ -34,9 +34,9 @@ Future<void> _initializeSupabase() async {
   try {
     // Check if configuration is valid
     if (!Environment.isConfigured) {
-      debugPrint('⚠️  WARNING: Supabase is not configured!');
-      debugPrint('⚠️  Please update your Supabase URL and Anon Key in lib/core/config/environment.dart');
-      debugPrint('⚠️  The app will run in offline/demo mode.');
+      debugPrint('WARNING: Supabase is not configured!');
+      debugPrint('Please update your Supabase URL and Anon Key in lib/core/config/environment.dart');
+      debugPrint('The app will run in offline/demo mode.');
       return;
     }
     
@@ -47,10 +47,10 @@ Future<void> _initializeSupabase() async {
       debug: true, // Set to false in production
     );
     
-    debugPrint('✅ Supabase initialized successfully');
+    debugPrint('Supabase initialized successfully');
   } catch (e) {
-    debugPrint('❌ Error initializing Supabase: $e');
-    debugPrint('⚠️  The app will run in offline/demo mode.');
+    debugPrint('Error initializing Supabase: $e');
+    debugPrint('The app will run in offline/demo mode.');
   }
 }
 
