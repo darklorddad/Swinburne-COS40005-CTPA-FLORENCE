@@ -14,11 +14,10 @@ class AuthService with ChangeNotifier {
   String? get token => _token;
   bool get isAuthenticated => _token != null;
 
-  AuthService() {
-    _tryAutoLogin();
-  }
+  // The constructor no longer needs to call the login check
+  AuthService();
 
-  Future<void> _tryAutoLogin() async {
+  Future<void> tryAutoLogin() async {
     final storedToken = await _storage.read(key: 'auth_token');
     if (storedToken != null) {
       _token = storedToken;

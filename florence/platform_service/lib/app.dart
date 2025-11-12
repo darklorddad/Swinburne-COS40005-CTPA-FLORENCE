@@ -42,10 +42,13 @@ class AppRoot extends StatefulWidget {
 class _AppRootState extends State<AppRoot> {
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<Uri>? _linkSubscription;
+  late Future<void> _authInitialization;
 
   @override
   void initState() {
     super.initState();
+    // We create a future from the AuthService initialization
+    _authInitialization = Provider.of<AuthService>(context, listen: false).tryAutoLogin();
     _setupDeepLinkListener();
   }
 
@@ -81,22 +84,32 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
-    // This Consumer will rebuild the MaterialApp's home when auth state changes
-    return Consumer<AuthService>(
-      builder: (context, authService, child) {
-        return MaterialApp(
-          navigatorKey: navigatorKey,
-          title: 'Florence',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
-          themeMode: Provider.of<ThemeProvider>(context).themeMode,
-          home: authService.isAuthenticated
-              ? const DashboardScreen()
-              : const LoginScreen(),
-          onGenerateRoute: AppRoutes.generateRoute,
-        );
-      },
+    return MaterialApp(
+      navigatorKey: navigatorKey,
+      title: 'Florence',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: Provider.of<ThemeProvider>(context).themeMode,
+      home: FutureBuilder(
+        // Use the FutureBuilder to show a splash screen during initialization
+        future: _authInitialization,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SplashScreen(); // Show splash while checking auth
+          }
+          
+          // Once checked, use the Consumer to decide the screen
+          return Consumer<AuthService>(
+            builder: (context, authService, child) {
+              return authService.isAuthenticated
+                  ? const DashboardScreen()
+                  : const LoginScreen();
+            },
+          );
+        },
+      ),
+      onGenerateRoute: AppRoutes.generateRoute,
     );
   }
 }
