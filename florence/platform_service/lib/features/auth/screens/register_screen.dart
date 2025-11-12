@@ -204,6 +204,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 16),
                     
+                    // Divider
+                    _buildDivider(),
+                    const SizedBox(height: 16),
+                    
                     // Login link
                     _buildLoginLink(),
                   ],
@@ -349,6 +353,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
   
+  /// Build divider with "or" text
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Divider(
+            color: AppTheme.borderColor,
+            thickness: 1,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'or',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                ),
+          ),
+        ),
+        Expanded(
+          child: Divider(
+            color: AppTheme.borderColor,
+            thickness: 1,
+          ),
+        ),
+      ],
+    );
+  }
+
   /// Build login link
   Widget _buildLoginLink() {
     return Row(
