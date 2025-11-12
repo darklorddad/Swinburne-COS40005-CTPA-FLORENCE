@@ -1,8 +1,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/environment.dart';
+
+/// A simple static class to hold the session token.
+/// This should be set by the authentication logic after a successful login.
+class SessionManager {
+  static String? currentToken;
+}
 
 class ApiService {
   Future<Map<String, String>> _getHeaders() async {
@@ -11,9 +16,8 @@ class ApiService {
       'apikey': Environment.supabaseAnonKey,
     };
 
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session != null) {
-      headers['Authorization'] = 'Bearer ${session.accessToken}';
+    if (SessionManager.currentToken != null) {
+      headers['Authorization'] = 'Bearer ${SessionManager.currentToken}';
     }
     return headers;
   }
