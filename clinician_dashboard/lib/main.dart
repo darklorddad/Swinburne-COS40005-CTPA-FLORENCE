@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'BioTective Clinician Dashboard',
+      title: 'Florence Clinician Dashboard',
       theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       home: const ClinicianHomeScreen(),
