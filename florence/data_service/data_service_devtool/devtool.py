@@ -731,7 +731,7 @@ def main_gui():
                         raise Exception("Login response did not contain an access_token.")
                         
                     # Step 2: Use the token to call /auth/me and get the user's role
-                    auth_headers = {"apikey": key, "Authorization": f"Bearer {access_token}"}
+                    auth_headers = {"Authorization": f"Bearer {access_token}"}
                     me_response = http_client.get("/auth/me", headers=auth_headers)
                     me_response.raise_for_status() # Will raise an error if token is invalid
                     me_data = me_response.json()

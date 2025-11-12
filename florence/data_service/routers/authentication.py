@@ -185,25 +185,17 @@ async def get_current_user_id_from_token(authorization: str = Header(...)):
         raise credentials_exception
 
 
-async def get_current_admin_user(authorization: str = Header(...)):
-    """Dependency to get the current user and verify they are an admin."""
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
-    
-    token = authorization.split(" ")[1]
-    
+async def get_current_admin_user(user_id: str = Depends(get_current_user_id_from_token)):
+    """Dependency to get the current user from a backend JWT and verify they are an admin."""
     try:
-        user_response = supabase.auth.get_user(token)
-        user = user_response.user
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid token.")
-        
+        user = supabase.auth.admin.get_user_by_id(user_id).user
         if user.app_metadata.get('role', '').upper() != 'ADMIN':
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
-            
         return user
     except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+        raise HTTPException(status_code=401, detail=f"Invalid token or user not found: {e.message}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
