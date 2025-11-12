@@ -718,12 +718,12 @@ def main_gui():
                 if not base_url:
                     raise Exception("API Base URL is required for API mode.")
                     
-                headers = {"apikey": key}
                 payload = {"email": email, "password": password}
                     
                 with httpx.Client(base_url=base_url.strip('/'), timeout=20.0) as http_client:
                     # Step 1: Log in to get the backend's access token
-                    response = http_client.post("/auth/login", headers=headers, json=payload)
+                    # Public endpoints like /login do not require an apikey header.
+                    response = http_client.post("/auth/login", json=payload)
                     response.raise_for_status()
                     auth_response_data = response.json()
                     access_token = auth_response_data.get("access_token")
