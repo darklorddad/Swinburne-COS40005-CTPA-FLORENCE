@@ -47,7 +47,7 @@ class _AppState extends State<App> {
 
   void _setupDeepLinkListener() {
     final appLinks = AppLinks();
-    _linkSubscription = appLinks.uriLinkStream.listen((uri) {
+    _linkSubscription = appLinks.uriLinkStream.listen((uri) async {
       debugPrint('[App] Received deep link: $uri');
       // Manually handle the session recovery from the deep link fragment.
       if (uri.fragment.contains('refresh_token=')) {
@@ -55,8 +55,22 @@ class _AppState extends State<App> {
         final refreshToken = params['refresh_token'];
         if (refreshToken != null) {
           debugPrint('[App] Found refresh token in deep link. Manually setting session.');
-          // This will trigger the onAuthStateChange listener to handle navigation.
-          supabase.auth.setSession(refreshToken);
+          try {
+            // This will trigger the onAuthStateChange listener to handle navigation.
+            await supabase.auth.setSession(refreshToken);
+          } on AuthException catch (error) {
+            debugPrint('[Deep Link] Error setting session from deep link: $error');
+            final nav = navigatorKey.currentState;
+            if (nav?.mounted != true) return;
+
+            const message = 'This confirmation link is invalid or has expired';
+
+            nav!.pushNamedAndRemoveUntil(
+              AppRoutes.login,
+              (route) => false,
+              arguments: {'message': message},
+            );
+          }
         }
       }
     });
