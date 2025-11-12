@@ -54,30 +54,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Load user data
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-    
-    // Add a try-catch block to handle potential authentication errors
+
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       if (authService.isAuthenticated) {
+        // Fetch both user and patient profile data
         final userData = await authService.getMe();
-        
-        // The Supabase user object has a nested `user_metadata` field.
-        // Your backend's /auth/me returns the whole user object.
-        // We need to access the nested fields correctly.
-        setState(() {
-          _userName = userData['user_metadata']?['name'] ?? 'John Doe';
-          _userEmail = userData['email'] ?? 'user@example.com';
-        });
-        
-        // TODO: Load additional patient profile data from a new backend endpoint
-        // e.g., GET /patients/me
+        final patientProfile = await authService.getPatientProfile();
+
+        if (mounted) {
+          setState(() {
+            _userName = patientProfile['name'] ?? 'John Doe';
+            _userEmail = userData['email'] ?? 'user@example.com';
+            _dateOfBirth = patientProfile['date_of_birth'] != null
+                ? Formatters.date(DateTime.parse(patientProfile['date_of_birth']))
+                : 'Not set';
+            _gender = patientProfile['gender'] ?? 'Not set';
+            _phoneNumber = patientProfile['phone_number'] ?? 'Not set';
+          });
+        }
       } else {
         throw Exception("User is not authenticated.");
       }
     } catch (e) {
       debugPrint('Error loading profile: $e');
       if (mounted) {
-        Helpers.showError(context, 'Failed to load profile data. Please try logging in again.');
+        Helpers.showError(
+            context, 'Failed to load profile data. Please try logging in again.');
       }
     } finally {
       if (mounted) {

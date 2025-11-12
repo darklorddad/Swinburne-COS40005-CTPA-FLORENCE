@@ -71,22 +71,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Load user data
   Future<void> _loadUserData() async {
     try {
-      // Try to get user from Supabase if available
-      try {
-        final user = supabase.auth.currentUser;
-        if (user != null) {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      if (authService.isAuthenticated) {
+        final patientProfile = await authService.getPatientProfile();
+        if (mounted) {
           setState(() {
-            _userName = user.userMetadata?['full_name'] ?? _profileService.currentProfile.name;
+            _userName = patientProfile['name'] ?? 'Welcome';
           });
         }
-      } catch (e) {
-        // If Supabase fails, use profile name
-        setState(() {
-          _userName = _profileService.currentProfile.name;
-        });
       }
     } catch (e) {
       debugPrint('Error loading user data: $e');
+      // Gracefully fail without showing an error on the dashboard
+      if (mounted) {
+        setState(() {
+          _userName = 'Welcome';
+        });
+      }
     }
   }
 
@@ -409,7 +410,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build app bar
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Text('BioTective Health'),
+      title: const Text('Florence'),
       actions: [
         const NotificationBell(),
         IconButton(

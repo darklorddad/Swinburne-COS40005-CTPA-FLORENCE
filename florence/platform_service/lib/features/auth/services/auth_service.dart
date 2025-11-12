@@ -76,8 +76,31 @@ class AuthService with ChangeNotifier {
 
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['detail'] ?? 'Failed to fetch user profile');
     }
-    throw Exception('Failed to fetch user profile');
+  }
+
+  Future<Map<String, dynamic>> getPatientProfile() async {
+    if (_token == null) {
+      throw Exception('Not authenticated');
+    }
+
+    final response = await http.get(
+      Uri.parse('${Environment.apiUrl}/patients/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      final error = jsonDecode(response.body);
+      throw Exception(error['detail'] ?? 'Failed to fetch patient profile');
+    }
   }
 
   Future<void> logout() async {
