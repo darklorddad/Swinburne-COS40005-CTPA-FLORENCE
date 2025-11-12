@@ -20,9 +20,8 @@ import '../features/patient/summaries/screens/weekly_summaries_screen.dart';
 /// Centralized navigation management
 class AppRoutes {
   // Route names
-  static const String splash = '/splash'; // Changed from '/'
+  static const String splash = '/';
   static const String login = '/login';
-  static const String loginCallback = '/login-callback'; // Add this line
   static const String register = '/register';
   static const String onboarding = '/onboarding';
 
@@ -67,12 +66,9 @@ class AppRoutes {
     final args = settings.arguments;
 
     switch (routeName) {
-      // The splash case is no longer the default route '/'
       case splash:
         return _buildRoute(const SplashScreen(), settings);
 
-      // Add this case to handle the auth callback
-      case loginCallback:
       case login:
         return _buildRoute(const LoginScreen(), settings);
 

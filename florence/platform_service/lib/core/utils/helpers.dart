@@ -20,7 +20,7 @@ class Helpers {
           ],
         ),
         backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -38,7 +38,7 @@ class Helpers {
           ],
         ),
         backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
     );

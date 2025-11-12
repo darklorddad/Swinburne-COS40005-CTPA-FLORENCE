@@ -106,33 +106,55 @@ class _AppState extends State<App> {
       SessionManager.currentToken = session.accessToken;
       debugPrint('[App Listener] Session token stored in SessionManager.');
 
-      try {
-        // Notify the backend of the new session by fetching user data.
-        // This validates the token with the backend and allows it to create a server-side session.
-        await _apiService.get('/users/me');
-        debugPrint('[App Listener] Backend session validated successfully.');
-      } catch (e) {
-        debugPrint('[App Listener] Backend session validation failed: $e');
-        // If backend validation fails, the client session is invalid. Sign out.
-        await supabase.auth.signOut();
-        // The signOut will trigger this listener again, and the `else` block will navigate to login.
-        navigator.pushNamedAndRemoveUntil(
-          AppRoutes.login,
-          (route) => false,
-          arguments: {'message': 'Session validation failed. Please log in again.'},
-        );
-        return; // Stop processing
-      }
-
       final user = session.user;
-      final role = user.userMetadata?['role'];
-      debugPrint('[App Listener] Session found. Role: $role. Navigating...');
 
       // This logic handles deep link sign-ins (email confirmation)
       final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn &&
           user.createdAt != null &&
           DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes <
               2;
+
+      try {
+        // Notify the backend of the new session by fetching user data.
+        // This validates the token with the backend and allows it to create a server-side session.
+        await _apiService.get('/users/me');
+        debugPrint('[App Listener] Backend session validated successfully.');
+      } catch (e) {
+        // If the user is not found on the backend during the first login after email confirmation,
+        // it means we need to create their profile on our backend.
+        if (isSignUpConfirmation && e.toString().contains('Not Found')) {
+          debugPrint('[App Listener] User not found on backend. Attempting to sync profile.');
+          try {
+            // This endpoint should trigger the backend to create a user record
+            // using the data from the JWT.
+            await _apiService.post('/users/sync', {});
+            debugPrint('[App Listener] User profile synced successfully.');
+          } catch (syncError) {
+            debugPrint('[App Listener] Failed to sync user profile: $syncError');
+            await supabase.auth.signOut();
+            navigator.pushNamedAndRemoveUntil(
+              AppRoutes.login,
+              (route) => false,
+              arguments: {'message': 'Failed to create your profile. Please contact support.'},
+            );
+            return; // Stop processing
+          }
+        } else {
+          // For any other error, or if the user is not found on a subsequent login,
+          // treat it as a validation failure.
+          debugPrint('[App Listener] Backend session validation failed: $e');
+          await supabase.auth.signOut();
+          navigator.pushNamedAndRemoveUntil(
+            AppRoutes.login,
+            (route) => false,
+            arguments: {'message': 'Session validation failed. Please log in again.'},
+          );
+          return; // Stop processing
+        }
+      }
+
+      final role = user.userMetadata?['role'];
+      debugPrint('[App Listener] Session found. Role: $role. Navigating...');
 
       String destinationRoute;
       if (role == 'PATIENT') {

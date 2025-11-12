@@ -3,28 +3,9 @@ from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 from datetime import date
-from supabase_auth.errors import AuthApiError
 
 from ..client import supabase
-from .authentication import get_current_user_id_from_token
-
-# --- Helper Functions / Dependencies ---
-
-async def verify_admin(user_id: str = Depends(get_current_user_id_from_token)):
-    """
-    Dependency that uses the user ID from our JWT to verify the user is an admin
-    by checking their role in the Supabase auth table.
-    """
-    try:
-        # We need to use the admin client to get user details by ID
-        user = supabase.auth.admin.get_user_by_id(user_id).user
-        if user.app_metadata.get('role', '').upper() != 'ADMIN':
-            raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
-        return user
-    except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token or user not found: {e.message}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+from .authentication import get_current_admin_user
 
 # --- Pydantic Models ---
 
@@ -54,7 +35,7 @@ class AssignClinician(BaseModel):
 router = APIRouter(
     prefix="/admin",
     tags=["Admin (Global Management)"],
-    dependencies=[Depends(verify_admin)] # Protect all routes in this router
+    dependencies=[Depends(get_current_admin_user)] # Protect all routes in this router
 )
 
 # --- Endpoints ---

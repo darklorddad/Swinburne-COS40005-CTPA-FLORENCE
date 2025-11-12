@@ -1,18 +1,11 @@
-from fastapi import APIRouter, HTTPException, Header, Depends, status
-from fastapi.responses import HTMLResponse
+from fastapi import APIRouter, HTTPException, Header, Depends
 from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
-from datetime import date, datetime, timedelta
+from datetime import date
 from supabase_auth.errors import AuthApiError
-from jose import JWTError, jwt
 
 # Import the shared Supabase client
 from ..client import supabase
-
-# --- JWT Configuration ---
-SECRET_KEY = "a_very_secret_key_that_should_be_in_env_vars" # IMPORTANT: Move to .env in production
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 # 1 day
 
 router = APIRouter(
     prefix="/auth",
@@ -40,10 +33,6 @@ class UserLogin(BaseModel):
     password: str
 
 
-class TokenExchange(BaseModel):
-    refresh_token: str
-
-
 class AdminRegistration(BaseModel):
     email: EmailStr
     password: str
@@ -65,17 +54,6 @@ DEFAULT_THRESHOLDS = [
     # and does not have a simple numeric min/max threshold.
 ]
 
-# --- Helper Functions ---
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
 @router.post("/register")
 async def register_user(user_data: UserRegistration):
     if user_data.role == 'CLINICIAN' and user_data.organisation_id is None:
@@ -87,8 +65,7 @@ async def register_user(user_data: UserRegistration):
             "email": user_data.email,
             "password": user_data.password,
             "options": {
-                # IMPORTANT: This now points to YOUR backend
-                "email_redirect_to": "http://10.191.69.105:8000/auth/confirm",
+                "email_redirect_to": "florence://login-callback",
                 "data": {
                     "role": user_data.role
                 }
@@ -133,67 +110,27 @@ async def register_user(user_data: UserRegistration):
         raise HTTPException(status_code=500, detail=f"Failed to create user profile: {str(e)}")
 
 
-@router.get("/confirm", response_class=HTMLResponse)
-async def confirm_email_redirect():
-    """
-    Serves a simple HTML page with JavaScript to capture the auth tokens from the URL fragment
-    and redirect to the mobile app's deep link.
-    """
-    return """
-    <html>
-        <head>
-            <title>Confirming Email...</title>
-            <script>
-                // This script runs in the user's browser after Supabase redirects them here.
-                // It reads the access_token and refresh_token from the URL fragment (#)
-                // and immediately redirects to the app's custom URL scheme.
-                try {
-                    const hash = window.location.hash.substring(1);
-                    window.location.replace(`florence://login-callback#${hash}`);
-                } catch (e) {
-                    document.body.innerText = "Error: Could not redirect back to the app. Please open the app manually.";
-                }
-            </script>
-        </head>
-        <body>
-            <p>Redirecting you back to the Florence app...</p>
-        </body>
-    </html>
-    """
-
-
-async def get_current_user_id_from_token(authorization: str = Header(...)):
-    """
-    Dependency to validate our backend's JWT and return the user ID (sub).
-    """
+async def get_current_admin_user(authorization: str = Header(...)):
+    """Dependency to get the current user and verify they are an admin."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
     token = authorization.split(" ")[1]
-
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-        return user_id
-    except JWTError:
-        raise credentials_exception
-
-
-async def get_current_admin_user(user_id: str = Depends(get_current_user_id_from_token)):
-    """Dependency to get the current user from a backend JWT and verify they are an admin."""
-    try:
-        user = supabase.auth.admin.get_user_by_id(user_id).user
+        user_response = supabase.auth.get_user(token)
+        user = user_response.user
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid token.")
+        
         if user.app_metadata.get('role', '').upper() != 'ADMIN':
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
+            
         return user
     except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token or user not found: {e.message}")
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -223,47 +160,22 @@ async def login_user(credentials: UserLogin):
             "email": credentials.email,
             "password": credentials.password
         })
-
-        # Instead of returning Supabase session, create and return our OWN JWT
-        user_id = response.user.id
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        backend_access_token = create_access_token(
-            data={"sub": user_id}, expires_delta=access_token_expires
-        )
-        return {"access_token": backend_access_token, "token_type": "bearer"}
-
+        return response.session
     except AuthApiError as e:
         # Supabase often returns a generic "Invalid login credentials" message.
         raise HTTPException(status_code=401, detail=f"Login failed: {e.message}")
 
 
-@router.post("/token")
-async def exchange_refresh_token(token_data: TokenExchange):
-    """
-    Exchanges a Supabase refresh token (from an email link) for our backend's own JWT.
-    """
-    try:
-        session_response = supabase.auth.refresh_session(token_data.refresh_token)
-        user_id = session_response.user.id
-
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        backend_access_token = create_access_token(
-            data={"sub": user_id}, expires_delta=access_token_expires
-        )
-        return {"access_token": backend_access_token, "token_type": "bearer"}
-    except AuthApiError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid refresh token: {e.message}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
-
-
-
-
 @router.get("/me")
-async def get_current_user(user_id: str = Depends(get_current_user_id_from_token)):
+async def get_current_user(authorization: str = Header(...)):
     """Retrieves the profile of the currently authenticated user based on the JWT."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
+    
+    token = authorization.split(" ")[1]
+    
     try:
-        user_response = supabase.auth.admin.get_user_by_id(user_id)
+        user_response = supabase.auth.get_user(token)
         return user_response.user
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")

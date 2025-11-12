@@ -31,7 +31,7 @@ class ApiService {
       return _processResponse(response);
     } catch (e) {
       debugPrint('API GET Error ($endpoint): $e');
-      throw Exception('Failed to connect to the server.');
+      rethrow;
     }
   }
 
@@ -45,7 +45,7 @@ class ApiService {
       return _processResponse(response);
     } catch (e) {
       debugPrint('API POST Error ($endpoint): $e');
-      throw Exception('Failed to connect to the server.');
+      rethrow;
     }
   }
 
@@ -59,7 +59,7 @@ class ApiService {
       return _processResponse(response);
     } catch (e) {
       debugPrint('API PUT Error ($endpoint): $e');
-      throw Exception('Failed to connect to the server.');
+      rethrow;
     }
   }
 
@@ -73,7 +73,7 @@ class ApiService {
       return _processResponse(response);
     } catch (e) {
       debugPrint('API PATCH Error ($endpoint): $e');
-      throw Exception('Failed to connect to the server.');
+      rethrow;
     }
   }
 
@@ -86,7 +86,7 @@ class ApiService {
       return _processResponse(response);
     } catch (e) {
       debugPrint('API DELETE Error ($endpoint): $e');
-      throw Exception('Failed to connect to the server.');
+      rethrow;
     }
   }
 
