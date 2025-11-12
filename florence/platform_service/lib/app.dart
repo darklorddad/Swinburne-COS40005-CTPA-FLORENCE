@@ -60,19 +60,20 @@ class _AppRootState extends State<AppRoot> {
     _linkSubscription = appLinks.uriLinkStream.listen((uri) {
       debugPrint('[App] Received deep link: $uri');
       if (uri.fragment.contains('refresh_token=')) {
-        try {
-          final params = Uri.splitQueryString(uri.fragment);
-          final refreshToken = params['refresh_token'];
-          if (refreshToken != null) {
-            debugPrint('[App] Found refresh token in deep link. Exchanging for backend token.');
-            // Now we can safely call the provider because this widget is below MultiProvider
-            Provider.of<AuthService>(context, listen: false).exchangeToken(refreshToken);
-          }
-        } catch (e) {
-          debugPrint("[App] Error exchanging token from deep link: $e");
-          if (navigatorKey.currentContext != null) {
-            Helpers.showError(navigatorKey.currentContext!, "Failed to verify email link.");
-          }
+        final params = Uri.splitQueryString(uri.fragment);
+        final refreshToken = params['refresh_token'];
+        if (refreshToken != null) {
+          debugPrint('[App] Found refresh token in deep link. Exchanging for backend token.');
+          // Now we can safely call the provider because this widget is below MultiProvider.
+          // We use .catchError to handle any exceptions during the async operation.
+          Provider.of<AuthService>(context, listen: false)
+              .exchangeToken(refreshToken)
+              .catchError((e) {
+            debugPrint("[App] Error during token exchange: $e");
+            if (navigatorKey.currentContext != null) {
+              Helpers.showError(navigatorKey.currentContext!, "Failed to verify email link. Please try again.");
+            }
+          });
         }
       }
     });
