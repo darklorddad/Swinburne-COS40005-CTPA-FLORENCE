@@ -92,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
         var errorMessage = error.toString().replaceFirst('Exception: ', '');
         // The backend returns a generic message for both invalid credentials and unconfirmed email.
         if (errorMessage.contains('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please also check if you have confirmed your email.';
+          errorMessage = 'Invalid email or password. Please also check if you have confirmed your email';
         }
         setState(() => _errorMessage = errorMessage);
       }

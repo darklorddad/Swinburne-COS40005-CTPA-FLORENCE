@@ -81,7 +81,7 @@ class _AppState extends State<App> {
           final nav = navigatorKey.currentState;
           if (nav?.mounted != true) return;
 
-          String message = 'Authentication failed. Please try again.';
+          String message = 'Authentication failed. Please try again';
           if (error is AuthException) {
             final errorMessage = error.message.toLowerCase();
             if (errorMessage.contains('invalid refresh token') ||
@@ -146,7 +146,7 @@ class _AppState extends State<App> {
             navigator.pushNamedAndRemoveUntil(
               AppRoutes.login,
               (route) => false,
-              arguments: {'message': 'Failed to create your profile. Please contact support.'},
+              arguments: {'message': 'Failed to create your profile. Please contact support'},
             );
             return; // Stop processing
           }
@@ -158,7 +158,7 @@ class _AppState extends State<App> {
           navigator.pushNamedAndRemoveUntil(
             AppRoutes.login,
             (route) => false,
-            arguments: {'message': 'Session validation failed. Please log in again.'},
+            arguments: {'message': 'Session validation failed. Please log in again'},
           );
           return; // Stop processing
         }
@@ -175,7 +175,7 @@ class _AppState extends State<App> {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
-            arguments: {'message': 'Login failed: Unsupported user role.'});
+            arguments: {'message': 'Login failed: Unsupported user role'});
         return;
       }
 
