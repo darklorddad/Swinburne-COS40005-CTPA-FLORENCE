@@ -1,4 +1,3 @@
-import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,16 +12,6 @@ void main() async {
   // Initialize Supabase
   await _initializeSupabase();
 
-  // Initialize app links handler
-  final appLinks = AppLinks();
-
-
-  // Listen for subsequent deep links
-  appLinks.uriLinkStream.listen((uri) {
-    debugPrint('[Main] Incoming deep link: $uri');
-    // Supabase will automatically process this if MainActivity is configured
-  });
-  
   // Set preferred orientations (optional - comment out if you want landscape support)
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
