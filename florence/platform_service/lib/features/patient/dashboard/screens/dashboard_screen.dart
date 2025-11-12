@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
@@ -33,6 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // Services
   final PatientProfileService _profileService = PatientProfileService();
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -71,23 +73,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Load user data
   Future<void> _loadUserData() async {
-    try {
-      // Try to get user from Supabase if available
-      try {
-        final user = supabase.auth.currentUser;
-        if (user != null) {
-          setState(() {
-            _userName = user.userMetadata?['full_name'] ?? _profileService.currentProfile.name;
-          });
-        }
-      } catch (e) {
-        // If Supabase fails, use profile name
+    // The settings provider will tell us if we are in demo mode
+    final settings = context.read<SettingsProvider>();
+    if (settings.isDemoMode) {
+      if (mounted) {
         setState(() {
           _userName = _profileService.currentProfile.name;
         });
       }
+      return;
+    }
+
+    try {
+      // Fetch the full profile from the backend API
+      final profile = await _apiService.get('/patients/me');
+      if (mounted) {
+        setState(() {
+          _userName = profile['name'] as String? ?? 'Patient';
+        });
+      }
     } catch (e) {
-      debugPrint('Error loading user data: $e');
+      debugPrint('Error loading user data for dashboard: $e');
+      // Fallback to a generic name if API fails
+      if (mounted) {
+        setState(() {
+          _userName = 'Patient';
+        });
+      }
     }
   }
 
