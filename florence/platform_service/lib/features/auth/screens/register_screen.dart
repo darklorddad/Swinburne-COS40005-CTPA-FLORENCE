@@ -1,16 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../../../core/config/environment.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
 import '../../../shared/widgets/input_widgets.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
-import '../../../main.dart';
 
 /// Registration Screen
 /// Allows new users to create an account
@@ -24,7 +20,8 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   // Form key for validation
   final _formKey = GlobalKey<FormState>();
-  
+  final ApiService _apiService = ApiService();
+
   // Controllers
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -66,32 +63,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Call the backend API instead of Supabase directly
-      final response = await http.post(
-        Uri.parse('${Environment.apiUrl}/auth/register'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-          'role': 'PATIENT', // Hardcoded for patient registration
-          'name': _nameController.text.trim(),
-          // The backend model allows other fields, but the form only has these.
-          // The backend will handle nulls for optional fields.
-        }),
-      );
+      // Call the backend API using ApiService
+      await _apiService.post('/auth/register', {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+        'role': 'PATIENT', // Hardcoded for patient registration
+        'name': _nameController.text.trim(),
+      });
 
-      if (response.statusCode == 200) {
-        if (mounted) {
-          Helpers.showSuccess(
-            context,
-            'Registered successfully! Please check your email for verification',
-          );
-          AppRoutes.pop(context); // Go back to login screen
-        }
-      } else {
-        // Handle backend error
-        final errorBody = jsonDecode(response.body);
-        throw Exception(errorBody['detail'] ?? 'Registration failed.');
+      if (mounted) {
+        Helpers.showSuccess(
+          context,
+          'Registered successfully! Please check your email for verification',
+        );
+        AppRoutes.pop(context); // Go back to login screen
       }
     } catch (error) {
       if (mounted) {

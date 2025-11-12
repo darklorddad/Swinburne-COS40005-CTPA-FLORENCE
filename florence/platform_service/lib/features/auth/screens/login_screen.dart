@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../../../core/config/environment.dart';
+import '../../../core/services/api_service.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
@@ -24,7 +22,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+  final ApiService _apiService = ApiService();
+
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasShownRouteError = false; // Add this flag to show the toast only once
@@ -68,46 +67,34 @@ class _LoginScreenState extends State<LoginScreen> {
     
     try {
       debugPrint('[Login Screen] Attempting login for user: ${_emailController.text.trim()}');
-      // Call the backend API instead of Supabase directly
-      final response = await http.post(
-        Uri.parse('${Environment.apiUrl}/auth/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': _emailController.text.trim(),
-          'password': _passwordController.text,
-        }),
-      );
+      
+      // Call the backend API using ApiService
+      final session = await _apiService.post('/auth/login', {
+        'email': _emailController.text.trim(),
+        'password': _passwordController.text,
+      });
 
-      if (response.statusCode == 200) {
-        // Backend returns the session object on success
-        final session = jsonDecode(response.body);
-        final refreshToken = session['refresh_token'];
+      final refreshToken = session['refresh_token'];
 
-        if (refreshToken != null) {
-          // Manually set the session using the refresh token. The Supabase client
-          // will use this to fetch a valid access token and establish the session.
-          debugPrint('[Login Screen] Login API call successful. Setting session with refresh token.');
-          // This will trigger the onAuthStateChange listener in app.dart.
-          await supabase.auth.setSession(refreshToken);
-        } else {
-          // If the server response is malformed
-          throw Exception('Invalid session returned from the server.');
-        }
+      if (refreshToken != null) {
+        // Manually set the session using the refresh token. The Supabase client
+        // will use this to fetch a valid access token and establish the session.
+        debugPrint('[Login Screen] Login API call successful. Setting session with refresh token.');
+        // This will trigger the onAuthStateChange listener in app.dart.
+        await supabase.auth.setSession(refreshToken);
       } else {
-        debugPrint('[Login Screen] Login API call failed with status ${response.statusCode}');
-        // If the backend returns an error (e.g., 401 Unauthorized)
-        final errorBody = jsonDecode(response.body);
-        final detail = errorBody['detail'] ?? 'An unknown error occurred.';
-        // The backend returns a generic message for both invalid credentials and unconfirmed email.
-        if (detail.contains('Invalid login credentials')) {
-          throw Exception('Invalid email or password. Please also check if you have confirmed your email.');
-        }
-        throw Exception(detail);
+        // If the server response is malformed
+        throw Exception('Invalid session returned from the server.');
       }
     } catch (error) {
       // Catch backend errors, network errors, etc.
       if (mounted) {
-        setState(() => _errorMessage = error.toString().replaceFirst('Exception: ', ''));
+        var errorMessage = error.toString().replaceFirst('Exception: ', '');
+        // The backend returns a generic message for both invalid credentials and unconfirmed email.
+        if (errorMessage.contains('Invalid login credentials')) {
+          errorMessage = 'Invalid email or password. Please also check if you have confirmed your email.';
+        }
+        setState(() => _errorMessage = errorMessage);
       }
     } finally {
       if (mounted) {

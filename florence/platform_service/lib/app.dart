@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
+import 'core/services/api_service.dart';
 import 'core/utils/helpers.dart';
 import 'core/providers/settings_provider.dart';
 import 'core/providers/theme_provider.dart';
@@ -25,6 +26,7 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<Uri>? _linkSubscription;
+  final ApiService _apiService = ApiService();
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -69,8 +71,8 @@ class _AppState extends State<App> {
         // This listener is the single source of truth for auth-based navigation.
         // It handles all auth events: initial session, sign in, sign out, password recovery, etc.
         // We use a post-frame callback to ensure the widget tree is built before navigating.
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _handleNavigation(data);
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          await _handleNavigation(data);
         });
       },
       onError: (error) {
@@ -91,7 +93,7 @@ class _AppState extends State<App> {
     );
   }
 
-  void _handleNavigation(AuthState data) {
+  Future<void> _handleNavigation(AuthState data) async {
     debugPrint('[Auth Listener] Handling navigation for event: ${data.event}');
     final navigator = navigatorKey.currentState;
     if (navigator == null || !navigator.mounted) return;
@@ -100,6 +102,28 @@ class _AppState extends State<App> {
     debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
 
     if (session != null) {
+      // Store the token for ApiService to use
+      SessionManager.currentToken = session.accessToken;
+      debugPrint('[App Listener] Session token stored in SessionManager.');
+
+      try {
+        // Notify the backend of the new session by fetching user data.
+        // This validates the token with the backend and allows it to create a server-side session.
+        await _apiService.get('/users/me');
+        debugPrint('[App Listener] Backend session validated successfully.');
+      } catch (e) {
+        debugPrint('[App Listener] Backend session validation failed: $e');
+        // If backend validation fails, the client session is invalid. Sign out.
+        await supabase.auth.signOut();
+        // The signOut will trigger this listener again, and the `else` block will navigate to login.
+        navigator.pushNamedAndRemoveUntil(
+          AppRoutes.login,
+          (route) => false,
+          arguments: {'message': 'Session validation failed. Please log in again.'},
+        );
+        return; // Stop processing
+      }
+
       final user = session.user;
       final role = user.userMetadata?['role'];
       debugPrint('[App Listener] Session found. Role: $role. Navigating...');
@@ -130,6 +154,7 @@ class _AppState extends State<App> {
     } else {
       // Handle sign out, session expiration, or no initial session
       debugPrint('[App Listener] No session found. Navigating to login.');
+      SessionManager.currentToken = null; // Clear the token on sign out
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
   }
