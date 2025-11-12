@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -22,6 +23,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<Uri>? _linkSubscription;
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -30,12 +32,31 @@ class _AppState extends State<App> {
   void initState() {
     super.initState();
     _setupAuthListener();
+    _setupDeepLinkListener();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
+    _linkSubscription?.cancel();
     super.dispose();
+  }
+
+  void _setupDeepLinkListener() {
+    final appLinks = AppLinks();
+    _linkSubscription = appLinks.uriLinkStream.listen((uri) {
+      debugPrint('[App] Received deep link: $uri');
+      // Manually handle the session recovery from the deep link fragment.
+      if (uri.fragment.contains('refresh_token=')) {
+        final params = Uri.splitQueryString(uri.fragment);
+        final refreshToken = params['refresh_token'];
+        if (refreshToken != null) {
+          debugPrint('[App] Found refresh token in deep link. Manually setting session.');
+          // This will trigger the onAuthStateChange listener to handle navigation.
+          supabase.auth.setSession(refreshToken);
+        }
+      }
+    });
   }
 
   void _setupAuthListener() {
@@ -101,10 +122,10 @@ class _AppState extends State<App> {
 
       final message = isSignUpConfirmation
           ? 'Welcome! Your email has been successfully confirmed.'
-          : null; // No message for regular logins/session restores
+          : 'Welcome back!';
 
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false,
-          arguments: message != null ? {'message': message} : null);
+          arguments: {'message': message});
     } else {
       // Handle sign out, session expiration, or no initial session
       debugPrint('[App Listener] No session found. Navigating to login.');
