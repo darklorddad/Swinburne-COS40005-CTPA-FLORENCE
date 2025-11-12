@@ -58,6 +58,25 @@ class AuthService with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> getMe() async {
+    if (_token == null) {
+      throw Exception('Not authenticated');
+    }
+
+    final response = await http.get(
+      Uri.parse('${Environment.apiUrl}/auth/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $_token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
+    throw Exception('Failed to fetch user profile');
+  }
+
   Future<void> logout() async {
     _token = null;
     await _storage.delete(key: 'auth_token');

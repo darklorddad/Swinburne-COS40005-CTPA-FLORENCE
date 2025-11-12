@@ -56,18 +56,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Try to get user from Supabase if available
-      try {
-        final user = supabase.auth.currentUser;
-        if (user != null) {
-          setState(() {
-            _userName = user.userMetadata?['full_name'] ?? 'John Doe';
-            _userEmail = user.email ?? 'user@example.com';
-          });
-        }
-      } catch (e) {
-        debugPrint('Auth error (Demo Mode): $e');
-      }
+      // Get user from our backend via AuthService
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final userData = await authService.getMe();
+      
+      // Supabase user_metadata is nested, let's assume your backend flattens it
+      // or we access it as needed. For now, let's assume it's in user_metadata.
+      setState(() {
+        _userName = userData['user_metadata']?['name'] ?? 'John Doe';
+        _userEmail = userData['email'] ?? 'user@example.com';
+      });
       
       // TODO: Load additional profile data from Supabase
       // final profile = await profileService.getUserProfile();

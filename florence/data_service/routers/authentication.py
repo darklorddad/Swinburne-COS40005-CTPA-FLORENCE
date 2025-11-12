@@ -246,6 +246,18 @@ async def exchange_refresh_token(token_data: TokenExchange):
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
 
 
+@router.get("/me")
+async def get_current_user(user_id: str = Depends(get_current_user_id_from_token)):
+    """Retrieves the profile of the currently authenticated user based on the JWT."""
+    try:
+        user_response = supabase.auth.admin.get_user_by_id(user_id)
+        return user_response.user
+    except AuthApiError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 async def get_current_user_id_from_token(authorization: str = Header(...)):
     """
     New dependency to validate our backend's JWT and return the user ID (sub).
