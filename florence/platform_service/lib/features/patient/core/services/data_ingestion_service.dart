@@ -2,6 +2,7 @@
 /// Handles in-memory data management for health records
 library;
 
+import '../../../../core/services/api_service.dart';
 import 'dart:math';
 import '../models/health_data_models.dart';
 
@@ -9,6 +10,7 @@ import '../models/health_data_models.dart';
 /// This service acts as a data layer that can later be connected to Supabase
 class DataIngestionService {
   // In-memory data stores
+  final ApiService _apiService = ApiService();
   final List<GlucoseReading> _glucoseReadings = [];
   final List<MealLog> _meals = [];
   final List<ActivityLog> _activities = [];
@@ -21,12 +23,55 @@ class DataIngestionService {
   // Singleton instance
   static final DataIngestionService _instance = DataIngestionService._internal();
   factory DataIngestionService() => _instance;
-  DataIngestionService._internal() {
-    _initializeMockData();
+  DataIngestionService._internal();
+
+  /// Fetch real data from the backend
+  Future<void> fetchRealData() async {
+    clearAllData();
+    try {
+      // The backend returns monitor data which contains glucose, hba1c etc.
+      final monitorData = await _apiService.get('/patients/me/monitor-data') as List;
+
+      for (var item in monitorData) {
+        final dataType = item['data_type'];
+        final timestamp = DateTime.parse(item['measured_at']);
+        final id = item['id'].toString();
+        final value = (item['value'] as num).toDouble();
+
+        switch (dataType) {
+          case 'GLUCOSE':
+            _glucoseReadings.add(GlucoseReading(
+              id: id,
+              timestamp: timestamp,
+              value: value,
+              context: _getGlucoseContext(timestamp.hour),
+            ));
+            break;
+          case 'HBA1C':
+            _hba1cResults.add(HbA1cResult(
+              id: id,
+              testDate: timestamp,
+              value: value,
+            ));
+            break;
+        }
+      }
+      
+      // TODO: Fetch other data types (meals, activities, sleep, medications) from their respective endpoints if they exist.
+
+      // Sort data after fetching
+      _glucoseReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      _hba1cResults.sort((a, b) => b.testDate.compareTo(a.testDate));
+
+    } catch (e) {
+      print("Error fetching real data: $e");
+      clearAllData();
+    }
   }
 
   /// Initialize with realistic mock data
-  void _initializeMockData() {
+  void generateAndLoadMockData() {
+    clearAllData();
     _generateMockGlucoseReadings();
     _generateMockMeals();
     _generateMockActivities();
@@ -53,7 +98,7 @@ class DataIngestionService {
       readings = readings.where((r) => r.timestamp.isBefore(endDate)).toList();
     }
 
-    return List.unmodifiable(readings..sort((a, b) => b.timestamp.compareTo(a.timestamp)));
+    return List.unmodifiable(readings);
   }
 
   Future<GlucoseReading> addGlucoseReading(GlucoseReading reading) async {
@@ -91,7 +136,7 @@ class DataIngestionService {
       meals = meals.where((m) => m.timestamp.isBefore(endDate)).toList();
     }
 
-    return List.unmodifiable(meals..sort((a, b) => b.timestamp.compareTo(a.timestamp)));
+    return List.unmodifiable(meals);
   }
 
   Future<MealLog> addMeal(MealLog meal) async {
@@ -129,7 +174,7 @@ class DataIngestionService {
       activities = activities.where((a) => a.timestamp.isBefore(endDate)).toList();
     }
 
-    return List.unmodifiable(activities..sort((a, b) => b.timestamp.compareTo(a.timestamp)));
+    return List.unmodifiable(activities);
   }
 
   Future<ActivityLog> addActivity(ActivityLog activity) async {
@@ -221,7 +266,7 @@ class DataIngestionService {
       logs = logs.where((s) => s.bedTime.isBefore(endDate)).toList();
     }
 
-    return List.unmodifiable(logs..sort((a, b) => b.bedTime.compareTo(a.bedTime)));
+    return List.unmodifiable(logs);
   }
 
   Future<SleepLog> addSleepLog(SleepLog log) async {
@@ -546,8 +591,8 @@ class DataIngestionService {
   }
 
   /// Refresh mock data
-  void refreshMockData() {
+  void refreshMockData() { // Renamed for clarity, called by provider
     clearAllData();
-    _initializeMockData();
+    generateAndLoadMockData();
   }
 }

@@ -2,18 +2,30 @@
 /// State management for patient health data using Provider
 library;
 
+import '../../../../core/providers/settings_provider.dart';
 import 'package:flutter/foundation.dart';
 import '../models/health_data_models.dart';
 import '../services/data_ingestion_service.dart';
 import '../../chat/services/chatbot_service.dart';
 
 /// Provider for managing all health-related data
+/// This provider now depends on SettingsProvider to determine which data source to use.
 class HealthDataProvider with ChangeNotifier {
   final DataIngestionService _dataService = DataIngestionService();
   final ChatbotService _chatbotService = ChatbotService();
 
   bool _isLoading = false;
   String? _error;
+  bool _isInitialized = false;
+
+  SettingsProvider? _settingsProvider;
+  void update(SettingsProvider settingsProvider) {
+    _settingsProvider = settingsProvider;
+    if (!_isInitialized) {
+      _isInitialized = true;
+      refreshData(); // Initial data load
+    }
+  }
 
   bool get isLoading => _isLoading;
   String? get error => _error;
@@ -42,6 +54,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.addGlucoseReading(reading);
 
       _isLoading = false;
@@ -59,6 +72,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.deleteGlucoseReading(id);
 
       _isLoading = false;
@@ -76,6 +90,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.updateGlucoseReading(reading);
 
       _isLoading = false;
@@ -109,6 +124,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.addMeal(meal);
 
       _isLoading = false;
@@ -126,6 +142,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.deleteMeal(id);
 
       _isLoading = false;
@@ -143,6 +160,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.updateMeal(meal);
 
       _isLoading = false;
@@ -177,6 +195,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.addActivity(activity);
 
       _isLoading = false;
@@ -194,6 +213,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.deleteActivity(id);
 
       _isLoading = false;
@@ -211,6 +231,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.updateActivity(activity);
 
       _isLoading = false;
@@ -232,6 +253,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.addMedication(medication);
 
       _isLoading = false;
@@ -249,6 +271,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.deleteMedication(id);
 
       _isLoading = false;
@@ -266,6 +289,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.updateMedication(medication);
 
       _isLoading = false;
@@ -283,6 +307,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.markDoseTaken(medicationId, doseId);
 
       _isLoading = false;
@@ -306,6 +331,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.addHbA1cResult(result);
 
       _isLoading = false;
@@ -339,6 +365,7 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
+      // TODO: API call if not demo mode
       await _dataService.addSleepLog(log);
 
       _isLoading = false;
@@ -426,11 +453,18 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      _dataService.refreshMockData();
+      final bool isDemo = _settingsProvider?.isDemoMode ?? true;
+      if (isDemo) {
+        print('HealthDataProvider: Refreshing in DEMO mode.');
+        _dataService.generateAndLoadMockData();
+      } else {
+        print('HealthDataProvider: Refreshing in LIVE mode.');
+        await _dataService.fetchRealData();
+      }
 
       // CRITICAL: Invalidate chatbot context so it fetches fresh data
       _chatbotService.invalidateContext();
-      print('HealthDataProvider: Data refreshed, chatbot context invalidated');
+      print('HealthDataProvider: Data refreshed for ${isDemo ? 'DEMO' : 'LIVE'} mode, chatbot context invalidated');
 
       _isLoading = false;
       notifyListeners();

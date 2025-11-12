@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../core/providers/settings_provider.dart';
+import '../../core/providers/health_data_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
@@ -123,6 +125,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _editHealthProfile() {
     Helpers.showInfo(context, 'Edit health profile feature coming soon');
     // TODO: Navigate to edit health profile screen
+  }
+  
+  /// Toggle Demo Mode
+  void _toggleDemoMode(bool value) async {
+    await context.read<SettingsProvider>().setDemoMode(value);
+    context.read<HealthDataProvider>().refreshData();
   }
   
   /// Add medication
@@ -444,8 +452,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   /// Build settings section
   Widget _buildSettingsSection() {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -464,12 +470,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Divider(height: 24),
 
           // Dark mode toggle
-          _buildSettingToggle(
-            'Dark Mode',
-            'Switch between light and dark theme',
-            Icons.dark_mode_outlined,
-            themeProvider.isDarkMode,
-            _toggleDarkMode,
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, _) => _buildSettingToggle(
+              'Dark Mode',
+              'Switch between light and dark theme',
+              Icons.dark_mode_outlined,
+              themeProvider.isDarkMode,
+              _toggleDarkMode,
+            ),
+          ),
+          const Divider(height: 24),
+          // Demo mode toggle
+          Consumer<SettingsProvider>(
+            builder: (context, settingsProvider, _) => _buildSettingToggle(
+                'Demo Mode', 'Use mock data for demonstration purposes', Icons.science_outlined, settingsProvider.isDemoMode, _toggleDemoMode),
           ),
         ],
       ),

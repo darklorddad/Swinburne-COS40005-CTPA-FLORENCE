@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'core/utils/helpers.dart';
+import 'core/providers/settings_provider.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/patient/core/providers/health_data_provider.dart';
 import 'main.dart';
@@ -137,12 +138,18 @@ class _AppState extends State<App> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        // Theme provider for dark mode switching
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        // Health data provider for patient data management
-        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
-        // Add more providers here as needed
-        // ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+
+        // Health data provider, dependent on SettingsProvider
+        ChangeNotifierProxyProvider<SettingsProvider, HealthDataProvider>(
+          create: (context) => HealthDataProvider(),
+          update: (context, settings, healthData) {
+            if (healthData == null) return HealthDataProvider();
+            healthData.update(settings);
+            return healthData;
+          },
+        ),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {

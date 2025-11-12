@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // Health Data
+import 'settings_provider.dart';
 import '../../features/patient/core/providers/health_data_provider.dart';
 
 // Services
@@ -29,6 +30,11 @@ List<ChangeNotifierProvider> createAppProviders() {
     ChangeNotifierProvider(
       create: (_) => PatientProfileService(),
     ),
+
+    // Settings Provider
+    ChangeNotifierProvider(
+      create: (_) => SettingsProvider(),
+    ),
   ];
 }
 
@@ -50,6 +56,9 @@ extension HealthDataContext on BuildContext {
 
   PatientProfileService get patientProfile =>
       Provider.of<PatientProfileService>(this, listen: false);
+
+  SettingsProvider get settings =>
+      Provider.of<SettingsProvider>(this, listen: false);
 }
 
 /// Example usage in main.dart:

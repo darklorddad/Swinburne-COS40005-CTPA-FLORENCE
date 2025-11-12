@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
+import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
@@ -13,6 +14,7 @@ import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../widgets/upcoming_reminders_card.dart';
 import '../../core/services/patient_profile_service.dart';
+import '../../../../core/providers/settings_provider.dart';
 import '../../core/providers/health_data_provider.dart';
 
 /// Home Dashboard Screen
@@ -165,6 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = context.watch<SettingsProvider>();
     return Consumer<HealthDataProvider>(
       builder: (context, healthData, child) {
         // Calculate stats from provider
@@ -191,8 +194,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Profile switcher
-                      _buildProfileSwitcher(),
+                      // Profile switcher (only in demo mode)
+                      if (settingsProvider.isDemoMode)
+                        _buildProfileSwitcher(),
                       const SizedBox(height: 16),
 
                       // Welcome header
@@ -200,11 +204,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 24),
 
                       // Health summary card (hero card)
-                      HealthSummaryCard(
-                        latestGlucose: latestGlucose,
-                        timestamp: latestGlucoseTime,
-                        onTap: () => AppRoutes.push(context, AppRoutes.trends),
-                      ),
+                      if (healthData.allGlucoseReadings.isEmpty && !settingsProvider.isDemoMode)
+                        NoGlucoseReadingsWidget(onAddReading: () => AppRoutes.push(context, AppRoutes.logGlucose))
+                      else
+                        HealthSummaryCard(
+                          latestGlucose: latestGlucose,
+                          timestamp: latestGlucoseTime,
+                          onTap: () => AppRoutes.push(context, AppRoutes.trends),
+                        ),
                       const SizedBox(height: 16),
 
                       // AI Insight

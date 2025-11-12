@@ -1,12 +1,15 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
+import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../../../core/services/automation/pattern_detection_service.dart';
-import '../../core/services/data_ingestion_service.dart';
 import 'pattern_detail_screen.dart';
+import '../../core/providers/health_data_provider.dart';
 
 /// Trends Screen
 /// Displays glucose trends, charts, and analytics
@@ -20,13 +23,11 @@ class TrendsScreen extends StatefulWidget {
 class _TrendsScreenState extends State<TrendsScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _isLoading = false;
   bool _isDetectingPatterns = false;
   String _selectedPeriod = '7 Days';
 
   // Services
   final PatternDetectionService _patternService = PatternDetectionService();
-  final DataIngestionService _dataService = DataIngestionService();
 
   // Time period options
   final List<String> _periods = [
@@ -37,22 +38,6 @@ class _TrendsScreenState extends State<TrendsScreen>
     '90 Days',
   ];
 
-  // Mock glucose data for charts
-  List<FlSpot> _glucoseData = [];
-
-  // Mock statistics
-  double _averageGlucose = 118.5;
-  double _highestGlucose = 195.0;
-  double _lowestGlucose = 65.0;
-  double _standardDeviation = 28.5;
-  double _estimatedA1c = 6.2;
-  int _totalReadings = 28;
-
-  // Time in range percentages
-  double _timeInRange = 72.0;
-  double _timeAboveRange = 18.0;
-  double _timeBelowRange = 10.0;
-
   // Detected patterns
   List<DetectedPattern> _patterns = [];
 
@@ -60,7 +45,6 @@ class _TrendsScreenState extends State<TrendsScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _loadTrendsData();
     _loadPatterns();
   }
 
@@ -68,47 +52,6 @@ class _TrendsScreenState extends State<TrendsScreen>
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-  
-  /// Load trends data
-  Future<void> _loadTrendsData() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      // TODO: Load real data from Supabase
-      // For now, generate mock data
-      _generateMockData();
-      
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-    } catch (e) {
-      debugPrint('Error loading trends: $e');
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
-  }
-  
-  /// Generate mock glucose data
-  void _generateMockData() {
-    _glucoseData.clear();
-    
-    // Generate 7 days of data (4 readings per day)
-    final random = [
-      110, 125, 145, 118, // Day 1
-      105, 132, 158, 122, // Day 2
-      98, 128, 142, 115,  // Day 3
-      112, 138, 165, 125, // Day 4
-      108, 122, 148, 120, // Day 5
-      115, 135, 155, 128, // Day 6
-      102, 118, 138, 112, // Day 7
-    ];
-    
-    for (int i = 0; i < random.length; i++) {
-      _glucoseData.add(FlSpot(i.toDouble(), random[i].toDouble()));
-    }
   }
   
   /// Load patterns
@@ -168,7 +111,6 @@ class _TrendsScreenState extends State<TrendsScreen>
     setState(() {
       _selectedPeriod = period;
     });
-    _loadTrendsData();
     _loadPatterns();
   }
   
@@ -200,14 +142,53 @@ class _TrendsScreenState extends State<TrendsScreen>
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
+      body: Consumer<HealthDataProvider>(builder: (context, healthData, child) {
+        if (healthData.isLoading && healthData.allGlucoseReadings.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (healthData.allGlucoseReadings.isEmpty) {
+          return NoGlucoseReadingsWidget(
+            onAddReading: () => AppRoutes.push(context, AppRoutes.logGlucose),
+          );
+        }
+
+        final readings = healthData.allGlucoseReadings;
+        final glucoseData = readings
+            .asMap()
+            .entries
+            .map((entry) => FlSpot(entry.key.toDouble(), entry.value.value))
+            .toList()
+            .reversed
+            .toList();
+
+        // Statistics
+        final values = readings.map((e) => e.value).toList();
+        final averageGlucose = values.reduce((a, b) => a + b) / values.length;
+        final highestGlucose = values.reduce((a, b) => a > b ? a : b);
+        final lowestGlucose = values.reduce((a, b) => a < b ? a : b);
+        final totalReadings = values.length;
+        final variance = values
+                .map((v) => (v - averageGlucose) * (v - averageGlucose))
+                .reduce((a, b) => a + b) /
+            values.length;
+        final standardDeviation = sqrt(variance);
+        final estimatedA1c = (averageGlucose + 46.7) / 28.7;
+
+        // Time in range percentages
+        final timeInRange = (readings.where((r) => r.isNormal).length / readings.length) * 100;
+        final timeAboveRange = (readings.where((r) => r.isHigh).length / readings.length) * 100;
+        final timeBelowRange = (readings.where((r) => r.isLow).length / readings.length) * 100;
+
+        return TabBarView(
               controller: _tabController,
               children: [
                 // Overview Tab
                 RefreshIndicator(
-                  onRefresh: _loadTrendsData,
+                  onRefresh: () async {
+                    await context.read<HealthDataProvider>().refreshData();
+                    await _loadPatterns();
+                  },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
@@ -219,15 +200,15 @@ class _TrendsScreenState extends State<TrendsScreen>
                         const SizedBox(height: 24),
 
                         // Glucose line chart
-                        _buildGlucoseChart(),
+                        _buildGlucoseChart(glucoseData),
                         const SizedBox(height: 24),
 
                         // Time in range chart
-                        _buildTimeInRangeSection(),
+                        _buildTimeInRangeSection(timeInRange, timeAboveRange, timeBelowRange),
                         const SizedBox(height: 24),
 
                         // Statistics cards
-                        _buildStatisticsSection(),
+                        _buildStatisticsSection(averageGlucose, estimatedA1c, highestGlucose, lowestGlucose, standardDeviation, totalReadings),
                         const SizedBox(height: 24),
 
                         // Insights card
@@ -244,11 +225,14 @@ class _TrendsScreenState extends State<TrendsScreen>
 
                 // Patterns Tab
                 RefreshIndicator(
-                  onRefresh: _loadPatterns,
+                  onRefresh: () async {
+                    await _loadPatterns();
+                  },
                   child: _buildPatternsTab(),
                 ),
               ],
-            ),
+            );
+      }),
     );
   }
   
@@ -283,7 +267,7 @@ class _TrendsScreenState extends State<TrendsScreen>
   }
   
   /// Build glucose line chart
-  Widget _buildGlucoseChart() {
+  Widget _buildGlucoseChart(List<FlSpot> glucoseData) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -385,12 +369,12 @@ class _TrendsScreenState extends State<TrendsScreen>
                   ),
                 ),
                 minX: 0,
-                maxX: _glucoseData.length.toDouble() - 1,
+                maxX: glucoseData.length.toDouble() - 1,
                 minY: 40,
                 maxY: 220,
                 lineBarsData: [
                   LineChartBarData(
-                    spots: _glucoseData,
+                    spots: glucoseData,
                     isCurved: true,
                     color: AppTheme.primaryBlue,
                     barWidth: 3,
@@ -501,7 +485,11 @@ class _TrendsScreenState extends State<TrendsScreen>
   }
   
   /// Build time in range section
-  Widget _buildTimeInRangeSection() {
+  Widget _buildTimeInRangeSection(
+    double timeInRange,
+    double timeAboveRange,
+    double timeBelowRange,
+  ) {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -527,8 +515,8 @@ class _TrendsScreenState extends State<TrendsScreen>
                       centerSpaceRadius: 50,
                       sections: [
                         PieChartSectionData(
-                          value: _timeInRange,
-                          title: '${_timeInRange.toInt()}%',
+                          value: timeInRange,
+                          title: '${timeInRange.toInt()}%',
                           color: AppTheme.glucoseNormal,
                           radius: 50,
                           titleStyle: const TextStyle(
@@ -538,8 +526,8 @@ class _TrendsScreenState extends State<TrendsScreen>
                           ),
                         ),
                         PieChartSectionData(
-                          value: _timeAboveRange,
-                          title: '${_timeAboveRange.toInt()}%',
+                          value: timeAboveRange,
+                          title: '${timeAboveRange.toInt()}%',
                           color: AppTheme.glucoseHigh,
                           radius: 50,
                           titleStyle: const TextStyle(
@@ -549,8 +537,8 @@ class _TrendsScreenState extends State<TrendsScreen>
                           ),
                         ),
                         PieChartSectionData(
-                          value: _timeBelowRange,
-                          title: '${_timeBelowRange.toInt()}%',
+                          value: timeBelowRange,
+                          title: '${timeBelowRange.toInt()}%',
                           color: AppTheme.glucoseLow,
                           radius: 50,
                           titleStyle: const TextStyle(
@@ -574,21 +562,21 @@ class _TrendsScreenState extends State<TrendsScreen>
                     _buildTimeRangeItem(
                       'In Range',
                       '70-180 mg/dL',
-                      _timeInRange,
+                      timeInRange,
                       AppTheme.glucoseNormal,
                     ),
                     const SizedBox(height: 12),
                     _buildTimeRangeItem(
                       'Above Range',
                       '>180 mg/dL',
-                      _timeAboveRange,
+                      timeAboveRange,
                       AppTheme.glucoseHigh,
                     ),
                     const SizedBox(height: 12),
                     _buildTimeRangeItem(
                       'Below Range',
                       '<70 mg/dL',
-                      _timeBelowRange,
+                      timeBelowRange,
                       AppTheme.glucoseLow,
                     ),
                   ],
@@ -643,7 +631,14 @@ class _TrendsScreenState extends State<TrendsScreen>
   }
   
   /// Build statistics section
-  Widget _buildStatisticsSection() {
+  Widget _buildStatisticsSection(
+    double averageGlucose,
+    double estimatedA1c,
+    double highestGlucose,
+    double lowestGlucose,
+    double standardDeviation,
+    int totalReadings,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -665,42 +660,42 @@ class _TrendsScreenState extends State<TrendsScreen>
           children: [
             StatCard(
               label: 'Average',
-              value: _averageGlucose.toStringAsFixed(0),
+              value: averageGlucose.toStringAsFixed(0),
               unit: 'mg/dL',
               icon: Icons.show_chart,
               color: AppTheme.primaryBlue,
             ),
             StatCard(
               label: 'Estimated A1c',
-              value: _estimatedA1c.toStringAsFixed(1),
+              value: estimatedA1c.toStringAsFixed(1),
               unit: '%',
               icon: Icons.pie_chart,
               color: AppTheme.primaryGreen,
             ),
             StatCard(
               label: 'Highest',
-              value: _highestGlucose.toStringAsFixed(0),
+              value: highestGlucose.toStringAsFixed(0),
               unit: 'mg/dL',
               icon: Icons.arrow_upward,
               color: AppTheme.glucoseHigh,
             ),
             StatCard(
               label: 'Lowest',
-              value: _lowestGlucose.toStringAsFixed(0),
+              value: lowestGlucose.toStringAsFixed(0),
               unit: 'mg/dL',
               icon: Icons.arrow_downward,
               color: AppTheme.glucoseLow,
             ),
             StatCard(
               label: 'Std Deviation',
-              value: _standardDeviation.toStringAsFixed(0),
+              value: standardDeviation.toStringAsFixed(0),
               unit: 'mg/dL',
               icon: Icons.analytics_outlined,
               color: AppTheme.mealColor,
             ),
             StatCard(
               label: 'Total Readings',
-              value: _totalReadings.toString(),
+              value: totalReadings.toString(),
               unit: 'readings',
               icon: Icons.water_drop_outlined,
               color: AppTheme.medicationColor,
