@@ -105,28 +105,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
+    setState(() => _isRefreshing = true);
     final healthDataProvider = context.read<HealthDataProvider>();
     await healthDataProvider.refreshData();
-  }
-
-  /// Handle data regeneration
-  Future<void> _handleDataRefresh() async {
-    setState(() => _isRefreshing = true);
-
-    try {
-      await _profileService.refreshCurrentProfile();
-
-      if (mounted) {
-        Helpers.showSuccess(context, 'Data refreshed successfully');
-      }
-    } catch (e) {
-      if (mounted) {
-        Helpers.showError(context, 'Failed to refresh data');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-      }
+    if (mounted) {
+      setState(() => _isRefreshing = false);
     }
   }
 
@@ -323,7 +306,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 // Refresh data button
                 FloatingActionButton(
                   heroTag: 'refresh',
-                  onPressed: _isRefreshing ? null : _handleDataRefresh,
+                  onPressed: _isRefreshing ? null : _handleRefresh,
                   tooltip: 'Refresh Data',
                   backgroundColor: AppTheme.primaryBlue,
                   child: Icon(_isRefreshing ? Icons.hourglass_empty : Icons.refresh),
@@ -430,7 +413,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build app bar
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Text('BioTective Health'),
+      title: const Text('Florence'),
       actions: [
         const NotificationBell(),
         IconButton(

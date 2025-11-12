@@ -125,12 +125,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // TODO: Navigate to edit health profile screen
   }
   
-  /// Toggle Demo Mode
-  void _toggleDemoMode(bool value) async {
-    await context.read<SettingsProvider>().setDemoMode(value);
-    context.read<HealthDataProvider>().refreshData();
-  }
-  
   /// Add medication
   void _addMedication() {
     Helpers.showInfo(context, 'Add medication feature coming soon');
@@ -478,11 +472,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const Divider(height: 24),
-          // Demo mode toggle
-          Consumer<SettingsProvider>(
-            builder: (context, settingsProvider, _) => _buildSettingToggle(
-                'Demo Mode', 'Use mock data for demonstration purposes', Icons.science_outlined, settingsProvider.isDemoMode, _toggleDemoMode),
-          ),
         ],
       ),
     );

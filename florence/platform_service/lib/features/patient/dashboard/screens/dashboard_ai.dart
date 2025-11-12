@@ -35,20 +35,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadUserData();
-    _profileService.addListener(_onProfileChanged);
   }
 
   @override
   void dispose() {
-    _profileService.removeListener(_onProfileChanged);
     super.dispose();
-  }
-
-  /// Handle profile changes
-  void _onProfileChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   /// Load user data
@@ -85,48 +76,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
+    setState(() => _isRefreshing = true);
     final healthDataProvider = context.read<HealthDataProvider>();
     await healthDataProvider.refreshData();
-  }
-
-  /// Handle data regeneration
-  Future<void> _handleDataRefresh() async {
-    setState(() => _isRefreshing = true);
-
-    try {
-      await _profileService.refreshCurrentProfile();
-
-      if (mounted) {
-        Helpers.showSuccess(context, 'Data refreshed successfully');
-      }
-    } catch (e) {
-      if (mounted) {
-        Helpers.showError(context, 'Failed to refresh data');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isRefreshing = false);
-      }
-    }
-  }
-
-  /// Handle profile switch
-  Future<void> _handleProfileSwitch(PatientProfileType newProfile) async {
-    if (_profileService.currentProfileType == newProfile) return;
-
-    try {
-      await _profileService.switchProfile(newProfile);
-
-      if (mounted) {
-        Helpers.showSuccess(
-          context,
-          'Switched to ${_profileService.currentProfile.name}',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Helpers.showError(context, 'Failed to switch profile');
-      }
+    if (mounted) {
+      setState(() => _isRefreshing = false);
     }
   }
 
@@ -185,10 +139,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Profile switcher
-                      _buildProfileSwitcher(),
-                      const SizedBox(height: 16),
-
                       // Welcome header
                       _buildWelcomeHeader(),
                       const SizedBox(height: 24),
@@ -297,7 +247,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               // Refresh data button
               FloatingActionButton(
                 heroTag: 'refresh',
-                onPressed: _isRefreshing ? null : _handleDataRefresh,
+                onPressed: _isRefreshing ? null : _handleRefresh,
                 tooltip: 'Refresh Data',
                 backgroundColor: AppTheme.primaryBlue,
                 child: Icon(_isRefreshing ? Icons.hourglass_empty : Icons.refresh),
@@ -317,88 +267,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Build profile switcher
-  Widget _buildProfileSwitcher() {
-    final currentProfile = _profileService.currentProfile;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryBlue.withValues(alpha: 0.1),
-            AppTheme.primaryBlue.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.science_outlined,
-                color: AppTheme.primaryBlue,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Demo Mode - Patient Profile',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppTheme.primaryBlue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      currentProfile.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Profile selection chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: PatientProfileService.availableProfiles.map((profile) {
-              final isSelected = profile.type == _profileService.currentProfileType;
-
-              return ChoiceChip(
-                label: Text(profile.name),
-                selected: isSelected,
-                onSelected: (_) => _handleProfileSwitch(profile.type),
-                selectedColor: AppTheme.primaryBlue,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                avatar: isSelected
-                    ? const Icon(Icons.check_circle, color: Colors.white, size: 18)
-                    : null,
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Build app bar
   AppBar _buildAppBar() {
