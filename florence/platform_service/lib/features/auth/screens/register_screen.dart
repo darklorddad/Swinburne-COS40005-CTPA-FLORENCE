@@ -81,13 +81,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.statusCode == 200) {
         if (mounted) {
-          // Show a persistent snackbar to make sure the user sees it
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Registration successful! Please check your email to verify your account.'),
-              duration: Duration(seconds: 10), // Give user time to read
-              backgroundColor: AppTheme.successColor,
-            ),
+          Helpers.showSuccess(
+            context,
+            'Registered successfully! Please check your email for verification.',
           );
           AppRoutes.pop(context); // Go back to login screen
         }
@@ -143,8 +139,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     
                     // Full name field
                     CustomTextField(
-                      label: 'Name',
-                      hint: 'Enter your name',
+                      label: 'Full Name',
+                      hint: 'Enter your full name',
                       controller: _fullNameController,
                       validator: Validators.name,
                       textCapitalization: TextCapitalization.words,
