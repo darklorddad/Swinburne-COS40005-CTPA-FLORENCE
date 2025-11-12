@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../../../core/config/environment.dart';
+import '../../../main.dart';
 
 class AuthService with ChangeNotifier {
   final _storage = const FlutterSecureStorage();
@@ -78,6 +81,14 @@ class AuthService with ChangeNotifier {
   }
 
   Future<void> logout() async {
+    try {
+      // Also sign out from Supabase to clear the session
+      await supabase.auth.signOut();
+    } catch (e) {
+      // It's good practice to log or handle potential errors,
+      // but we still want to clear the local token regardless.
+      debugPrint("Error signing out from Supabase: $e");
+    }
     _token = null;
     await _storage.delete(key: 'auth_token');
     notifyListeners();
