@@ -11,6 +11,7 @@ import 'features/auth/services/auth_service.dart';
 import 'features/patient/core/providers/health_data_provider.dart';
 import 'features/patient/dashboard/screens/dashboard_screen.dart';
 import 'features/auth/screens/login_screen.dart';
+import 'features/auth/screens/splash_screen.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
