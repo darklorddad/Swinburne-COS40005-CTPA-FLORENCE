@@ -5,6 +5,7 @@ import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
+import '../../../../config/routes.dart';
 import '../../../../main.dart';
 import '../widgets/health_summary_card.dart';
 import '../widgets/quick_stats_grid.dart';
@@ -13,8 +14,6 @@ import '../widgets/ai_insight_card.dart';
 import '../widgets/upcoming_reminders_card.dart';
 import '../../core/services/patient_profile_service.dart';
 import '../../core/providers/health_data_provider.dart';
-import '../../../../config/routes.dart';
-import '../../../auth/services/auth_service.dart';
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
@@ -71,23 +70,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Load user data
   Future<void> _loadUserData() async {
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      if (authService.isAuthenticated) {
-        final patientProfile = await authService.getPatientProfile();
-        if (mounted) {
+      // Try to get user from Supabase if available
+      try {
+        final user = supabase.auth.currentUser;
+        if (user != null) {
           setState(() {
-            _userName = patientProfile['name'] ?? 'Welcome';
+            _userName = user.userMetadata?['full_name'] ?? _profileService.currentProfile.name;
           });
         }
+      } catch (e) {
+        // If Supabase fails, use profile name
+        setState(() {
+          _userName = _profileService.currentProfile.name;
+        });
       }
     } catch (e) {
       debugPrint('Error loading user data: $e');
-      // Gracefully fail without showing an error on the dashboard
-      if (mounted) {
-        setState(() {
-          _userName = 'Welcome';
-        });
-      }
     }
   }
 
@@ -148,10 +146,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     if (confirmed) {
       try {
-        await Provider.of<AuthService>(context, listen: false).logout();
+        await supabase.auth.signOut();
+        if (mounted) {
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
+        }
       } catch (e) {
         if (mounted) {
-          Helpers.showError(context, 'Failed to sign out: ${e.toString()}');
+          Helpers.showError(context, 'Failed to sign out');
         }
       }
     }
@@ -410,7 +411,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build app bar
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Text('Florence'),
+      title: const Text('BioTective Health'),
       actions: [
         const NotificationBell(),
         IconButton(
@@ -422,6 +423,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: const Icon(Icons.person_outline),
           onPressed: () => AppRoutes.push(context, AppRoutes.profile),
           tooltip: 'Profile',
+        ),
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'logout') {
+              _handleLogout();
+            } else if (value == 'settings') {
+              AppRoutes.push(context, AppRoutes.settings);
+            }
+          },
+          itemBuilder:
+              (context) => [
+                const PopupMenuItem(
+                  value: 'settings',
+                  child: Row(
+                    children: [
+                      Icon(Icons.settings_outlined),
+                      SizedBox(width: 12),
+                      Text('Settings'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout),
+                      SizedBox(width: 12),
+                      Text('Sign Out'),
+                    ],
+                  ),
+                ),
+              ],
         ),
       ],
     );

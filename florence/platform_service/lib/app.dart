@@ -1,60 +1,43 @@
 import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'core/utils/helpers.dart';
 import 'core/providers/theme_provider.dart';
-import 'features/auth/services/auth_service.dart';
 import 'features/patient/core/providers/health_data_provider.dart';
-import 'features/patient/dashboard/screens/dashboard_screen.dart';
-import 'features/auth/screens/login_screen.dart';
-import 'features/auth/screens/splash_screen.dart';
+import 'main.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
 
-class App extends StatelessWidget {
-  const App({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        // Our new AuthService provider
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
-      ],
-      child: const AppRoot(),
-    );
-  }
-}
-
-class AppRoot extends StatefulWidget {
-  const AppRoot({super.key});
+class App extends StatefulWidget {
+  App({super.key});
 
   @override
-  State<AppRoot> createState() => _AppRootState();
+  State<App> createState() => _AppState();
 }
 
-class _AppRootState extends State<AppRoot> {
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+class _AppState extends State<App> {
+  StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<Uri>? _linkSubscription;
-  late Future<void> _authInitialization;
+
+  // Navigator key to allow navigation from outside the build context
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
-    // We create a future from the AuthService initialization
-    _authInitialization = Provider.of<AuthService>(context, listen: false).tryAutoLogin();
+    _setupAuthListener();
     _setupDeepLinkListener();
   }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     _linkSubscription?.cancel();
     super.dispose();
   }
@@ -63,54 +46,145 @@ class _AppRootState extends State<AppRoot> {
     final appLinks = AppLinks();
     _linkSubscription = appLinks.uriLinkStream.listen((uri) {
       debugPrint('[App] Received deep link: $uri');
+      // Manually handle the session recovery from the deep link fragment.
       if (uri.fragment.contains('refresh_token=')) {
         final params = Uri.splitQueryString(uri.fragment);
         final refreshToken = params['refresh_token'];
         if (refreshToken != null) {
-          debugPrint('[App] Found refresh token in deep link. Exchanging for backend token.');
-          // Now we can safely call the provider because this widget is below MultiProvider.
-          // We use .catchError to handle any exceptions during the async operation.
-          Provider.of<AuthService>(context, listen: false)
-              .exchangeToken(refreshToken)
-              .catchError((e) {
-            debugPrint("[App] Error during token exchange: $e");
-            if (navigatorKey.currentContext != null) {
-              Helpers.showError(navigatorKey.currentContext!, "Failed to verify email link. Please try again.");
-            }
-          });
+          debugPrint('[App] Found refresh token in deep link. Manually setting session.');
+          // This will trigger the onAuthStateChange listener to handle navigation.
+          supabase.auth.setSession(refreshToken);
         }
       }
     });
   }
 
+  void _setupAuthListener() {
+    _authSubscription = supabase.auth.onAuthStateChange.listen(
+      (data) {
+        final event = data.event;
+        debugPrint('[Auth Listener] Event received: $event');
+
+        // This listener is the single source of truth for auth-based navigation.
+        // It handles all auth events: initial session, sign in, sign out, password recovery, etc.
+        // We use a post-frame callback to ensure the widget tree is built before navigating.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _handleNavigation(data);
+        });
+      },
+      onError: (error) {
+        debugPrint('[Auth Listener] Error: $error');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final nav = navigatorKey.currentState;
+          if (nav?.mounted != true) return;
+
+          // Clear stack and show login with error
+          final message = 'Authentication failed. Please sign in again.';
+          nav!.pushNamedAndRemoveUntil(
+            AppRoutes.login,
+            (route) => false,
+            arguments: {'message': message},
+          );
+        });
+      },
+    );
+  }
+
+  void _handleNavigation(AuthState data) {
+    debugPrint('[Auth Listener] Handling navigation for event: ${data.event}');
+    final navigator = navigatorKey.currentState;
+    if (navigator == null || !navigator.mounted) return;
+
+    final session = data.session;
+    debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
+
+    if (session != null) {
+      final user = session.user;
+      final role = user.userMetadata?['role'];
+      debugPrint('[App Listener] Session found. Role: $role. Navigating...');
+
+      // This logic handles deep link sign-ins (email confirmation)
+      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn &&
+          user.createdAt != null &&
+          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes <
+              2;
+
+      String destinationRoute;
+      if (role == 'PATIENT') {
+        destinationRoute = AppRoutes.dashboard;
+      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+        destinationRoute = AppRoutes.clinicianDashboard;
+      } else {
+        navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
+            arguments: {'message': 'Login failed: Unsupported user role.'});
+        return;
+      }
+
+      final message = isSignUpConfirmation
+          ? 'Welcome! Your email has been successfully confirmed.'
+          : 'Welcome back!';
+
+      navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false,
+          arguments: {'message': message});
+    } else {
+      // Handle sign out, session expiration, or no initial session
+      debugPrint('[App Listener] No session found. Navigating to login.');
+      navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Florence',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: Provider.of<ThemeProvider>(context).themeMode,
-      home: FutureBuilder(
-        // Use the FutureBuilder to show a splash screen during initialization
-        future: _authInitialization,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return SplashScreen(); // Show splash while checking auth
-          }
-          
-          // Once checked, use the Consumer to decide the screen
-          return Consumer<AuthService>(
-            builder: (context, authService, child) {
-              return authService.isAuthenticated
-                  ? const DashboardScreen()
-                  : const LoginScreen();
-            },
+    return MultiProvider(
+      providers: [
+        // Theme provider for dark mode switching
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        // Health data provider for patient data management
+        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
+        // Add more providers here as needed
+        // ChangeNotifierProvider(create: (_) => AuthProvider()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          // Dynamic system UI overlay based on theme
+          final isDark = themeProvider.isDarkMode;
+          final systemUiOverlay = SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+            systemNavigationBarColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          );
+
+          return AnnotatedRegion<SystemUiOverlayStyle>(
+            value: systemUiOverlay,
+            child: MaterialApp(
+              navigatorKey: navigatorKey, // Assign the key here
+              title: 'Florence',
+              debugShowCheckedModeBanner: false,
+
+              // Theme with dynamic mode switching
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeProvider.themeMode,
+
+              // Routing
+              initialRoute: AppRoutes.splash,
+              onGenerateRoute: AppRoutes.generateRoute,
+
+              // Localization (for future use)
+              // localizationsDelegates: const [
+              //   GlobalMaterialLocalizations.delegate,
+              //   GlobalWidgetsLocalizations.delegate,
+              //   GlobalCupertinoLocalizations.delegate,
+              // ],
+              // supportedLocales: const [
+              //   Locale('en', 'US'),
+              //   Locale('ms', 'MY'),
+              // ],
+            ),
           );
         },
       ),
-      onGenerateRoute: AppRoutes.generateRoute,
     );
   }
 }

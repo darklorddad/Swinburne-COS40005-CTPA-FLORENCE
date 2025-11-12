@@ -9,7 +9,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import '../../../auth/services/auth_service.dart';
+import '../../../../main.dart';
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings
@@ -54,34 +54,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   /// Load user data
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
-
+    
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      if (authService.isAuthenticated) {
-        // Fetch both user and patient profile data
-        final userData = await authService.getMe();
-        final patientProfile = await authService.getPatientProfile();
-
-        if (mounted) {
+      // Try to get user from Supabase if available
+      try {
+        final user = supabase.auth.currentUser;
+        if (user != null) {
           setState(() {
-            _userName = patientProfile['name'] ?? 'John Doe';
-            _userEmail = userData['email'] ?? 'user@example.com';
-            _dateOfBirth = patientProfile['date_of_birth'] != null
-                ? Formatters.date(DateTime.parse(patientProfile['date_of_birth']))
-                : 'Not set';
-            _gender = patientProfile['gender'] ?? 'Not set';
-            _phoneNumber = patientProfile['phone_number'] ?? 'Not set';
+            _userName = user.userMetadata?['full_name'] ?? 'John Doe';
+            _userEmail = user.email ?? 'user@example.com';
           });
         }
-      } else {
-        throw Exception("User is not authenticated.");
+      } catch (e) {
+        debugPrint('Auth error (Demo Mode): $e');
       }
+      
+      // TODO: Load additional profile data from Supabase
+      // final profile = await profileService.getUserProfile();
+      // setState(() {
+      //   _dateOfBirth = profile.dateOfBirth;
+      //   _gender = profile.gender;
+      //   _phoneNumber = profile.phoneNumber;
+      //   _diabetesType = profile.diabetesType;
+      //   _targetMin = profile.targetGlucoseMin;
+      //   _targetMax = profile.targetGlucoseMax;
+      //   _medications = profile.medications;
+      // });
+      
     } catch (e) {
       debugPrint('Error loading profile: $e');
-      if (mounted) {
-        Helpers.showError(
-            context, 'Failed to load profile data. Please try logging in again.');
-      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
@@ -98,8 +99,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
     
     if (confirmed) {
-      // Use the AuthService to logout. The listener in app.dart will handle navigation.
-      await Provider.of<AuthService>(context, listen: false).logout();
+      try {
+        await supabase.auth.signOut();
+        if (mounted) {
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
+        }
+      } catch (e) {
+        if (mounted) {
+          // In demo mode, just navigate to login
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
+        }
+      }
     }
   }
   
@@ -148,6 +158,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile & Settings'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _handleLogout,
+            tooltip: 'Sign Out',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -213,7 +230,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 radius: 50,
                 backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
                 child: Text(
-                  _userName.isNotEmpty ? _userName.substring(0, 1).toUpperCase() : 'U',
+                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                         color: AppTheme.primaryBlue,
                         fontWeight: FontWeight.bold,
@@ -381,7 +398,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AppTheme.medicationColor.withOpacity(0.1),
+            color: AppTheme.medicationColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(

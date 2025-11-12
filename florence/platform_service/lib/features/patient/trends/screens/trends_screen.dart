@@ -515,7 +515,6 @@ class _TrendsScreenState extends State<TrendsScreen>
           const SizedBox(height: 24),
           
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Pie chart
               Expanded(
@@ -570,7 +569,6 @@ class _TrendsScreenState extends State<TrendsScreen>
               Expanded(
                 flex: 3,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildTimeRangeItem(
