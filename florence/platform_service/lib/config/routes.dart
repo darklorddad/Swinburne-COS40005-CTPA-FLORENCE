@@ -22,6 +22,7 @@ class AppRoutes {
   // Route names
   static const String splash = '/splash'; // Changed from '/'
   static const String login = '/login';
+  static const String loginCallback = '/login-callback'; // Add this line
   static const String register = '/register';
   static const String onboarding = '/onboarding';
 
@@ -70,6 +71,8 @@ class AppRoutes {
       case splash:
         return _buildRoute(const SplashScreen(), settings);
 
+      // Add this case to handle the auth callback
+      case loginCallback:
       case login:
         return _buildRoute(const LoginScreen(), settings);
 

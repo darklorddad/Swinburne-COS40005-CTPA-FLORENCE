@@ -81,9 +81,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.statusCode == 200) {
         if (mounted) {
-          Helpers.showSuccess(
-            context,
-            'Registered successfully! Please check your email for verification.',
+          // Show a persistent snackbar to make sure the user sees it
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Registration successful! Please check your email to verify your account.'),
+              duration: Duration(seconds: 10), // Give user time to read
+              backgroundColor: AppTheme.successColor,
+            ),
           );
           AppRoutes.pop(context); // Go back to login screen
         }
