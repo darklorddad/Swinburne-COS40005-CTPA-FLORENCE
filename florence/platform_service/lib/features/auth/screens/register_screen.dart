@@ -84,7 +84,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         if (mounted) {
           Helpers.showSuccess(
             context,
-            'Registered successfully! Please check your email for verification.',
+            'Registered successfully! Please check your email for verification',
           );
           AppRoutes.pop(context); // Go back to login screen
         }
