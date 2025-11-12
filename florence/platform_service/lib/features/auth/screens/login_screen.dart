@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../../../core/config/environment.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../shared/widgets/button_widgets.dart';
 import '../../../shared/widgets/input_widgets.dart';
 import '../../../config/theme.dart';
 import '../../../config/routes.dart';
-import '../services/auth_service.dart';
+import '../../../main.dart';
 
 /// Login Screen
 /// Allows users to sign in with email and password
@@ -23,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   
   bool _isLoading = false;
+  bool _rememberMe = false;
   String? _errorMessage;
   bool _hasShownRouteError = false; // Add this flag to show the toast only once
 
@@ -64,12 +68,43 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
-      // Use the new AuthService to login
-      await Provider.of<AuthService>(context, listen: false).login(
-        _emailController.text.trim(),
-        _passwordController.text,
+      debugPrint('[Login Screen] Attempting login for user: ${_emailController.text.trim()}');
+      // Call the backend API instead of Supabase directly
+      final response = await http.post(
+        Uri.parse('${Environment.apiUrl}/auth/login'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': _emailController.text.trim(),
+          'password': _passwordController.text,
+        }),
       );
-      // Navigation will be handled by the listener in app.dart
+
+      if (response.statusCode == 200) {
+        // Backend returns the session object on success
+        final session = jsonDecode(response.body);
+        final refreshToken = session['refresh_token'];
+
+        if (refreshToken != null) {
+          // Manually set the session using the refresh token. The Supabase client
+          // will use this to fetch a valid access token and establish the session.
+          debugPrint('[Login Screen] Login API call successful. Setting session with refresh token.');
+          // This will trigger the onAuthStateChange listener in app.dart.
+          await supabase.auth.setSession(refreshToken);
+        } else {
+          // If the server response is malformed
+          throw Exception('Invalid session returned from the server.');
+        }
+      } else {
+        debugPrint('[Login Screen] Login API call failed with status ${response.statusCode}');
+        // If the backend returns an error (e.g., 401 Unauthorized)
+        final errorBody = jsonDecode(response.body);
+        final detail = errorBody['detail'] ?? 'An unknown error occurred.';
+        // The backend returns a generic message for both invalid credentials and unconfirmed email.
+        if (detail.contains('Invalid login credentials')) {
+          throw Exception('Invalid email or password. Please also check if you have confirmed your email.');
+        }
+        throw Exception(detail);
+      }
     } catch (error) {
       // Catch backend errors, network errors, etc.
       if (mounted) {
@@ -171,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 16),
                     
                     // Remember me and forgot password row
-                    _buildForgotPasswordLink(),
+                    _buildRememberMeRow(),
                     const SizedBox(height: 32),
                     
                     // Login button
@@ -235,24 +270,51 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
   
-  Widget _buildForgotPasswordLink() {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: TextButton(
-        onPressed: _isLoading ? null : _goToForgotPassword,
-        style: TextButton.styleFrom(
-          padding: EdgeInsets.zero,
-          minimumSize: const Size(0, 0),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        ),
-        child: Text(
-          'Forgot password?',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.primaryBlue,
-                fontWeight: FontWeight.w600,
+  /// Build remember me checkbox and forgot password link
+  Widget _buildRememberMeRow() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Remember me checkbox
+        Row(
+          children: [
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: _rememberMe,
+                onChanged: _isLoading
+                    ? null
+                    : (value) {
+                        setState(() => _rememberMe = value ?? false);
+                      },
               ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'Remember me',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
         ),
-      ),
+        
+        // Forgot password link
+        TextButton(
+          onPressed: _isLoading ? null : _goToForgotPassword,
+          style: TextButton.styleFrom(
+            padding: EdgeInsets.zero,
+            minimumSize: const Size(0, 0),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: Text(
+            'Forgot password?',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.primaryBlue,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ),
+      ],
     );
   }
   
