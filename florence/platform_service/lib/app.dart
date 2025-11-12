@@ -98,8 +98,9 @@ class _AppState extends State<App> {
           String message = 'Authentication failed. Please try again';
           if (error is AuthException) {
             final errorMessage = error.message.toLowerCase();
-            if (errorMessage.contains('invalid refresh token') ||
-                errorMessage.contains('token has expired')) {
+            // Check for token-related errors that occur with deep links
+            if ((errorMessage.contains('invalid') && errorMessage.contains('token')) ||
+                errorMessage.contains('expired')) {
               message = 'This confirmation link is invalid or has expired';
             }
           }
