@@ -1,23 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
-import '../../features/patient/auth/services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/environment.dart';
 
 class ApiService {
-  final AuthService _authService = AuthService();
-
   Future<Map<String, String>> _getHeaders() async {
-    if (!_authService.isAuthenticated) {
-      await _authService.tryAutoLogin();
-    }
-    
     final headers = {
       'Content-Type': 'application/json',
+      'apikey': Environment.supabaseAnonKey,
     };
 
-    if (_authService.isAuthenticated) {
-      headers['Authorization'] = 'Bearer ${_authService.token}';
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      headers['Authorization'] = 'Bearer ${session.accessToken}';
     }
     return headers;
   }
