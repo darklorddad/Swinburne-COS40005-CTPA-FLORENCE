@@ -6,27 +6,18 @@ from datetime import datetime, date
 from enum import Enum
 
 from ..client import supabase
+from .authentication import get_current_user_id_from_token
 
 # --- Helper Functions / Dependencies ---
 
-async def get_current_patient_profile(authorization: str = Header(...)):
+async def get_current_patient_profile(user_id: str = Depends(get_current_user_id_from_token)):
     """
     Dependency to get the current user, verify they are a patient,
     and return their full profile from the `patient_profiles` table.
     """
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Invalid authentication scheme.")
-    
-    token = authorization.split(" ")[1]
-    
     try:
-        user_response = supabase.auth.get_user(token)
-        user = user_response.user
-        if not user:
-            raise HTTPException(status_code=401, detail="Invalid token.")
-        
         # Fetch the patient profile using the user's ID. This now serves as the role check.
-        profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).single().execute()
+        profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user_id).single().execute()
             
         return profile_response.data
     except AuthApiError as e:
