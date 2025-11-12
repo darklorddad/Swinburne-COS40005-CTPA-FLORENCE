@@ -81,8 +81,16 @@ class _AppState extends State<App> {
           final nav = navigatorKey.currentState;
           if (nav?.mounted != true) return;
 
+          String message = 'Authentication failed, please try again';
+          if (error is AuthException) {
+            final errorMessage = error.message.toLowerCase();
+            if (errorMessage.contains('invalid refresh token') ||
+                errorMessage.contains('token has expired')) {
+              message = 'This confirmation link is invalid or has expired';
+            }
+          }
+
           // Clear stack and show login with error
-          final message = 'Authentication failed. Please sign in again.';
           nav!.pushNamedAndRemoveUntil(
             AppRoutes.login,
             (route) => false,
@@ -138,7 +146,7 @@ class _AppState extends State<App> {
             navigator.pushNamedAndRemoveUntil(
               AppRoutes.login,
               (route) => false,
-              arguments: {'message': 'Failed to create your profile. Please contact support.'},
+              arguments: {'message': 'Failed to create your profile, please contact support'},
             );
             return; // Stop processing
           }
@@ -150,7 +158,7 @@ class _AppState extends State<App> {
           navigator.pushNamedAndRemoveUntil(
             AppRoutes.login,
             (route) => false,
-            arguments: {'message': 'Session validation failed. Please log in again.'},
+            arguments: {'message': 'Session validation failed, please log in again'},
           );
           return; // Stop processing
         }
@@ -167,7 +175,7 @@ class _AppState extends State<App> {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
-            arguments: {'message': 'Login failed: Unsupported user role.'});
+            arguments: {'message': 'Login failed: Unsupported user role'});
         return;
       }
 
