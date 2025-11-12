@@ -96,7 +96,7 @@ class _AppRootState extends State<AppRoot> {
         future: _authInitialization,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SplashScreen(); // Show splash while checking auth
+            return SplashScreen(); // Show splash while checking auth
           }
           
           // Once checked, use the Consumer to decide the screen
