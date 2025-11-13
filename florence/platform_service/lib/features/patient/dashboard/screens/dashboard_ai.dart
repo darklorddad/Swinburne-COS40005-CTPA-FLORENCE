@@ -284,38 +284,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           onPressed: () => AppRoutes.push(context, AppRoutes.profile),
           tooltip: 'Profile',
         ),
-        PopupMenuButton<String>(
-          onSelected: (value) {
-            if (value == 'logout') {
-              _handleLogout();
-            } else if (value == 'settings') {
-              AppRoutes.push(context, AppRoutes.settings);
-            }
-          },
-          itemBuilder:
-              (context) => [
-                const PopupMenuItem(
-                  value: 'settings',
-                  child: Row(
-                    children: [
-                      Icon(Icons.settings_outlined),
-                      SizedBox(width: 12),
-                      Text('Settings'),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'logout',
-                  child: Row(
-                    children: [
-                      Icon(Icons.logout),
-                      SizedBox(width: 12),
-                      Text('Sign Out'),
-                    ],
-                  ),
-                ),
-              ],
-        ),
       ],
     );
   }
