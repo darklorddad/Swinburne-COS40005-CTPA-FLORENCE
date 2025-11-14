@@ -187,10 +187,10 @@ class HealthSummaryService {
     }
 
     // Activity
-    if (stats.totalActivityMinutes >= Environment.activityTargetWeekly) {
+    if (stats.totalActivityMinutes >= 150) {
       buffer.writeln('✓ Met activity goal with ${stats.totalActivityMinutes} minutes!');
     } else {
-      buffer.writeln('• Activity: ${stats.totalActivityMinutes} minutes. Aim for ${Environment.activityTargetWeekly} minutes/week.');
+      buffer.writeln('• Activity: ${stats.totalActivityMinutes} minutes. Aim for 150 minutes/week.');
     }
 
     // Medication adherence
@@ -255,7 +255,7 @@ class HealthSummaryService {
       achievements.add('Outstanding Medication Adherence');
     }
 
-    if (stats.totalActivityMinutes >= Environment.activityTargetWeekly) {
+    if (stats.totalActivityMinutes >= 150) {
       achievements.add('Met Weekly Activity Goal');
     }
 
@@ -274,8 +274,8 @@ class HealthSummaryService {
       improvements.add('Increase time in range (currently ${stats.timeInRange.toStringAsFixed(0)}%)');
     }
 
-    if (stats.totalActivityMinutes < Environment.activityTargetWeekly) {
-      improvements.add('Add ${Environment.activityTargetWeekly - stats.totalActivityMinutes} more minutes of activity');
+    if (stats.totalActivityMinutes < 150) {
+      improvements.add('Add ${150 - stats.totalActivityMinutes} more minutes of activity');
     }
 
     if (stats.medicationAdherence < 0.8) {
@@ -308,8 +308,8 @@ class HealthSummaryService {
     else if (stats.hypoEvents <= 5) score += 10;
 
     // Activity (0-20 points)
-    if (stats.totalActivityMinutes >= Environment.activityTargetWeekly) score += 20;
-    else if (stats.totalActivityMinutes >= Environment.activityTargetWeekly * 0.7) score += 15;
+    if (stats.totalActivityMinutes >= 150) score += 20;
+    else if (stats.totalActivityMinutes >= 150 * 0.7) score += 15;
     else score += 5;
 
     // Medication adherence (0-20 points)

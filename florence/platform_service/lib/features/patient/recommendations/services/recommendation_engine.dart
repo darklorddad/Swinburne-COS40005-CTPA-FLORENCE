@@ -405,12 +405,12 @@ class RecommendationEngine {
     }
 
     // Low activity
-    if (summary.totalActivityMinutes < Environment.activityTargetWeekly) {
+    if (summary.totalActivityMinutes < 150) {
       recommendations.add(HealthRecommendation(
         id: 'rec_activity_low_${DateTime.now().millisecondsSinceEpoch}',
         category: RecommendationCategory.activity,
         title: 'Increase Physical Activity',
-        description: 'You logged ${summary.totalActivityMinutes} minutes this week. Aim for ${Environment.activityTargetWeekly} minutes.',
+        description: 'You logged ${summary.totalActivityMinutes} minutes this week. Aim for 150 minutes.',
         priority: RecommendationPriority.medium,
         status: RecommendationStatus.active,
         generatedAt: DateTime.now(),

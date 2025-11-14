@@ -194,7 +194,7 @@ class ChatbotService {
     if (message.contains('activity') || message.contains('exercise') || message.contains('walk')) {
       final activityMinutes = context['totalActivityMinutes7d'] ?? 0;
       return 'This week you\'ve logged $activityMinutes minutes of physical activity. '
-          '${activityMinutes >= Environment.activityTargetWeekly ? "Excellent work meeting your activity goal!" : "Try to aim for ${Environment.activityTargetWeekly} minutes per week. Even short walks after meals help!"}';
+          '${activityMinutes >= 150 ? "Excellent work meeting your activity goal!" : "Try to aim for 150 minutes per week. Even short walks after meals help!"}';
     }
 
     // Meal questions
@@ -271,7 +271,7 @@ class ChatbotService {
     }
 
     final activityMinutes = context['totalActivityMinutes7d'] ?? 0;
-    if (activityMinutes < Environment.activityTargetWeekly) {
+    if (activityMinutes < 150) {
       suggestions.add('What exercises are best for diabetes?');
     }
 
