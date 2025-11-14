@@ -19,7 +19,7 @@ class AIInsightCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -91,9 +91,10 @@ class AIInsightCard extends StatelessWidget {
             // Insight text
             Text(
               insight,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     height: 1.5,
+                    fontWeight: FontWeight.w500,
                   ),
               maxLines: 3,
               overflow: TextOverflow.ellipsis,

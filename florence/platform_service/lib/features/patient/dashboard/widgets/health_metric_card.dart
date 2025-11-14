@@ -33,7 +33,7 @@ class HealthMetricCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -110,7 +110,7 @@ class HealthMetricCard extends StatelessWidget {
           children: [
             Text(
               value,
-              style: Theme.of(context).textTheme.displayMedium?.copyWith(
+              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -141,7 +141,7 @@ class HealthMetricCard extends StatelessWidget {
 
   Widget _buildChart(BuildContext context) {
     return SizedBox(
-      height: 60,
+      height: 40,
       child: LineChart(
         LineChartData(
           gridData: const FlGridData(show: false),
