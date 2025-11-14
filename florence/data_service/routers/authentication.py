@@ -66,14 +66,17 @@ async def register_user(user_data: UserRegistration):
             "password": user_data.password,
             "options": {
                 "email_redirect_to": "florence://login-callback",
-                "data": {
-                    "role": user_data.role
-                }
             }
         })
         new_user = user_session.user
         if not new_user:
             raise HTTPException(status_code=500, detail="Failed to create user in authentication system.")
+
+        # After creating the user, update their app_metadata with the role using an admin call.
+        # This is necessary because sign_up doesn't allow setting app_metadata directly.
+        supabase.auth.admin.update_user_by_id(
+            new_user.id, {"app_metadata": {"role": user_data.role}}
+        )
 
     except AuthApiError as e:
         raise HTTPException(status_code=400, detail=f"User registration failed: {e.message}")
