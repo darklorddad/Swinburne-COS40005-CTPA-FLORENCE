@@ -25,7 +25,6 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   StreamSubscription<AuthState>? _authSubscription;
-  StreamSubscription<Uri>? _linkSubscription;
   final ApiService _apiService = ApiService();
 
   // Navigator key to allow navigation from outside the build context
@@ -35,46 +34,14 @@ class _AppState extends State<App> {
   void initState() {
     super.initState();
     _setupAuthListener();
-    _setupDeepLinkListener();
   }
 
   @override
   void dispose() {
     _authSubscription?.cancel();
-    _linkSubscription?.cancel();
     super.dispose();
   }
 
-  void _setupDeepLinkListener() {
-    final appLinks = AppLinks();
-    _linkSubscription = appLinks.uriLinkStream.listen((uri) async {
-      debugPrint('[App] Received deep link: $uri');
-      // Manually handle the session recovery from the deep link fragment.
-      if (uri.fragment.contains('refresh_token=')) {
-        final params = Uri.splitQueryString(uri.fragment);
-        final refreshToken = params['refresh_token'];
-        if (refreshToken != null) {
-          debugPrint('[App] Found refresh token in deep link. Manually setting session.');
-          try {
-            // This will trigger the onAuthStateChange listener to handle navigation.
-            await supabase.auth.setSession(refreshToken);
-          } on AuthException catch (error) {
-            debugPrint('[Deep Link] Error setting session from deep link: $error');
-            final nav = navigatorKey.currentState;
-            if (nav?.mounted != true) return;
-
-            const message = 'This confirmation link is invalid or has expired';
-
-            nav!.pushNamedAndRemoveUntil(
-              AppRoutes.login,
-              (route) => false,
-              arguments: {'message': message},
-            );
-          }
-        }
-      }
-    });
-  }
 
   void _setupAuthListener() {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
@@ -180,7 +147,7 @@ class _AppState extends State<App> {
       }
 
       // The user object from the backend is now the source of truth for the role.
-      final role = backendUser?['user_metadata']?['role'];
+      final role = backendUser?['role'];
       debugPrint('[App Listener] Session found. Role: $role. Navigating...');
 
       String destinationRoute;
