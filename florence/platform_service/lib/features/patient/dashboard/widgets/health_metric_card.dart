@@ -37,8 +37,8 @@ class HealthMetricCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
+              Helpers.lighten(color, 0.1),
               color,
-              Helpers.darken(color, 0.15),
             ],
           ),
           borderRadius: BorderRadius.circular(20),

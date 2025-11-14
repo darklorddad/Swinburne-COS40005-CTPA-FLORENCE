@@ -26,8 +26,8 @@ class AIInsightCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
+              Helpers.lighten(AppTheme.primaryBlue, 0.1),
               AppTheme.primaryBlue,
-              Helpers.darken(AppTheme.primaryBlue, 0.15),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
