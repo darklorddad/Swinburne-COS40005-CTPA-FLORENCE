@@ -315,12 +315,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             ],
           ),
-          floatingActionButton: FloatingActionButton(
-            heroTag: 'add',
-            onPressed: _showQuickLogModal,
-            tooltip: 'Quick Log',
-            child: const Icon(Icons.add),
-          ),
         );
       },
     );
@@ -414,6 +408,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AppBar(
       title: const Text('Florence'),
       actions: [
+        IconButton(
+          icon: const Icon(Icons.add),
+          onPressed: _showQuickLogModal,
+          tooltip: 'Quick Log',
+        ),
         const NotificationBell(),
         IconButton(
           icon: const Icon(Icons.chat_bubble_outline),
