@@ -19,7 +19,7 @@ class AIInsightCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -45,7 +45,7 @@ class AIInsightCard extends StatelessWidget {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -53,7 +53,7 @@ class AIInsightCard extends StatelessWidget {
                   child: const Icon(
                     Icons.lightbulb,
                     color: Colors.white,
-                    size: 24,
+                    size: 32,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -91,7 +91,7 @@ class AIInsightCard extends StatelessWidget {
             // Insight text
             Text(
               insight,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     color: Colors.white,
                     height: 1.5,
                     fontWeight: FontWeight.w500,

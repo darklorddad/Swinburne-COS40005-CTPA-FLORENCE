@@ -33,7 +33,7 @@ class HealthMetricCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -56,9 +56,9 @@ class HealthMetricCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildHeader(context),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             _buildValue(context),
-            const SizedBox(height: 16),
+            const Spacer(),
             if (chartData.isNotEmpty) _buildChart(context),
           ],
         ),
@@ -72,11 +72,11 @@ class HealthMetricCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.white.withOpacity(0.9), size: 20),
-            const SizedBox(width: 8),
+            Icon(icon, color: Colors.white.withOpacity(0.9), size: 18),
+            const SizedBox(width: 6),
             Text(
               label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.white.withOpacity(0.9),
                   ),
             ),
@@ -110,18 +110,18 @@ class HealthMetricCard extends StatelessWidget {
           children: [
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 4),
             if (unit.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 8.0),
+                padding: const EdgeInsets.only(top: 4.0),
                 child: Text(
                   unit,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white.withOpacity(0.9),
                       ),
                 ),
@@ -141,7 +141,7 @@ class HealthMetricCard extends StatelessWidget {
 
   Widget _buildChart(BuildContext context) {
     return SizedBox(
-      height: 40,
+      height: 30,
       child: LineChart(
         LineChartData(
           gridData: const FlGridData(show: false),

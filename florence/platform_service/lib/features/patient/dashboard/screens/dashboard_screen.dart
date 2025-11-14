@@ -598,7 +598,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
 
     return SizedBox(
-      height: 200, // Fixed height for the horizontal list
+      height: 180, // Fixed height for the horizontal list
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: cards.length,
