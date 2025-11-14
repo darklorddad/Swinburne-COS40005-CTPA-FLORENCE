@@ -17,6 +17,9 @@ class DataIngestionService {
   final List<MedicationLog> _medications = [];
   final List<HbA1cResult> _hba1cResults = [];
   final List<SleepLog> _sleepLogs = [];
+  final List<BloodPressureReading> _bloodPressureReadings = [];
+  final List<CholesterolResult> _cholesterolResults = [];
+  final List<BmiResult> _bmiResults = [];
 
   final Random _random = Random();
 
@@ -31,6 +34,9 @@ class DataIngestionService {
     try {
       // The backend returns monitor data which contains glucose, hba1c etc.
       final monitorData = await _apiService.get('/patients/me/monitor-data') as List;
+      
+      final systolicReadings = <String, dynamic>{};
+      final diastolicReadings = <String, dynamic>{};
 
       for (var item in monitorData) {
         final dataType = item['data_type'];
@@ -54,14 +60,50 @@ class DataIngestionService {
               value: value,
             ));
             break;
+          case 'BLOOD_PRESSURE_SYSTOLIC':
+            systolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
+            break;
+          case 'BLOOD_PRESSURE_DIASTOLIC':
+            diastolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
+            break;
+          case 'CHOLESTEROL':
+            _cholesterolResults.add(CholesterolResult(
+              id: id,
+              testDate: timestamp,
+              value: value,
+            ));
+            break;
+          case 'BMI':
+            _bmiResults.add(BmiResult(
+              id: id,
+              testDate: timestamp,
+              value: value,
+            ));
+            break;
         }
       }
+
+      // Pair up blood pressure readings
+      systolicReadings.forEach((timestampStr, systolicData) {
+        if (diastolicReadings.containsKey(timestampStr)) {
+          final diastolicData = diastolicReadings[timestampStr];
+          _bloodPressureReadings.add(BloodPressureReading(
+            id: systolicData['id'], // Use systolic ID as primary
+            timestamp: DateTime.parse(timestampStr),
+            systolic: systolicData['value'],
+            diastolic: diastolicData['value'],
+          ));
+        }
+      });
       
       // TODO: Fetch other data types (meals, activities, sleep, medications) from their respective endpoints if they exist.
 
       // Sort data after fetching
       _glucoseReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       _hba1cResults.sort((a, b) => b.testDate.compareTo(a.testDate));
+      _bloodPressureReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      _cholesterolResults.sort((a, b) => b.testDate.compareTo(a.testDate));
+      _bmiResults.sort((a, b) => b.testDate.compareTo(a.testDate));
 
     } catch (e) {
       print("Error fetching real data: $e");
@@ -78,6 +120,9 @@ class DataIngestionService {
     _generateMockMedications();
     _generateMockHbA1cResults();
     _generateMockSleepLogs();
+    _generateMockBloodPressureReadings();
+    _generateMockCholesterolResults();
+    _generateMockBmiResults();
   }
 
   // ==================== GLUCOSE READINGS ====================
@@ -248,6 +293,28 @@ class DataIngestionService {
 
   HbA1cResult? get latestHbA1c =>
       _hba1cResults.isNotEmpty ? _hba1cResults.first : null;
+
+  // ==================== BLOOD PRESSURE ====================
+
+  List<BloodPressureReading> get allBloodPressureReadings =>
+      List.unmodifiable(_bloodPressureReadings);
+
+  BloodPressureReading? get latestBloodPressure =>
+      _bloodPressureReadings.isNotEmpty ? _bloodPressureReadings.first : null;
+
+  // ==================== CHOLESTEROL ====================
+
+  List<CholesterolResult> get allCholesterolResults =>
+      List.unmodifiable(_cholesterolResults);
+
+  CholesterolResult? get latestCholesterol =>
+      _cholesterolResults.isNotEmpty ? _cholesterolResults.first : null;
+
+  // ==================== BMI ====================
+
+  List<BmiResult> get allBmiResults => List.unmodifiable(_bmiResults);
+
+  BmiResult? get latestBmi => _bmiResults.isNotEmpty ? _bmiResults.first : null;
 
   // ==================== SLEEP LOGS ====================
 
@@ -497,6 +564,53 @@ class DataIngestionService {
     }
   }
 
+  void _generateMockBloodPressureReadings() {
+    final now = DateTime.now();
+    const days = 30;
+    for (int day = 0; day < days; day++) {
+      if (_random.nextBool()) { // Not every day
+        final date = now.subtract(Duration(days: days - day));
+        final timestamp = DateTime(date.year, date.month, date.day, 7 + _random.nextInt(2), _random.nextInt(60));
+        _bloodPressureReadings.add(BloodPressureReading(
+          id: 'bp_${timestamp.millisecondsSinceEpoch}',
+          timestamp: timestamp,
+          systolic: 110 + _random.nextInt(20).toDouble(),
+          diastolic: 70 + _random.nextInt(15).toDouble(),
+        ));
+      }
+    }
+  }
+
+  void _generateMockCholesterolResults() {
+    final now = DateTime.now();
+    final testDates = [
+      now.subtract(const Duration(days: 120)),
+      now.subtract(const Duration(days: 240)),
+    ];
+    for (var testDate in testDates) {
+      _cholesterolResults.add(CholesterolResult(
+        id: 'chol_${testDate.millisecondsSinceEpoch}',
+        testDate: testDate,
+        value: 180 + _random.nextDouble() * 40, // 180-220
+      ));
+    }
+  }
+
+  void _generateMockBmiResults() {
+    final now = DateTime.now();
+    final testDates = [
+      now.subtract(const Duration(days: 100)),
+      now.subtract(const Duration(days: 200)),
+    ];
+    for (var testDate in testDates) {
+      _bmiResults.add(BmiResult(
+        id: 'bmi_${testDate.millisecondsSinceEpoch}',
+        testDate: testDate,
+        value: 22 + _random.nextDouble() * 5, // 22-27
+      ));
+    }
+  }
+
   void _generateMockHbA1cResults() {
     final now = DateTime.now();
     final testDates = [
@@ -588,6 +702,9 @@ class DataIngestionService {
     _medications.clear();
     _hba1cResults.clear();
     _sleepLogs.clear();
+    _bloodPressureReadings.clear();
+    _cholesterolResults.clear();
+    _bmiResults.clear();
   }
 
   /// Refresh mock data

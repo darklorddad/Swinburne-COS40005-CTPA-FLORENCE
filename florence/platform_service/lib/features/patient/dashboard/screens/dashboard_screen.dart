@@ -145,7 +145,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final averageGlucose = healthData.getAverageGlucose(
           startDate: DateTime.now().subtract(const Duration(days: 7)),
         );
-        final hba1c = healthData.latestHbA1c?.value ?? _profileService.currentProfile.targetHbA1c;
+        final hba1c = healthData.latestHbA1c?.value ?? 0.0;
+        final bloodPressure = healthData.latestBloodPressure;
+        final cholesterol = healthData.latestCholesterol?.value ?? 0.0;
+        final bmi = healthData.latestBmi?.value ?? 0.0;
         final todayReadings = healthData.getGlucoseReadings(
           startDate: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
         ).length;
@@ -192,8 +195,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       QuickStatsGrid(
                         averageGlucose: averageGlucose,
                         hba1c: hba1c,
+                        bloodPressure: bloodPressure,
+                        cholesterol: cholesterol,
+                        bmi: bmi,
                         todayReadings: todayReadings,
-                        streakDays: streakDays,
                       ),
                       const SizedBox(height: 16),
               
@@ -510,9 +515,10 @@ class _QuickLogModal extends StatelessWidget {
           // Action buttons
           GridView.count(
             shrinkWrap: true,
-            crossAxisCount: 2,
+            crossAxisCount: 3,
             mainAxisSpacing: 16,
             crossAxisSpacing: 16,
+            childAspectRatio: 0.9,
             physics: const NeverScrollableScrollPhysics(),
             children: [
               _QuickLogButton(
@@ -522,6 +528,33 @@ class _QuickLogModal extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   AppRoutes.push(context, AppRoutes.logGlucose);
+                },
+              ),
+              _QuickLogButton(
+                icon: Icons.monitor_heart,
+                label: 'Blood Pressure',
+                color: AppTheme.primaryRed,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logBloodPressure);
+                },
+              ),
+              _QuickLogButton(
+                icon: Icons.bloodtype,
+                label: 'Cholesterol',
+                color: AppTheme.accentPurple,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logCholesterol);
+                },
+              ),
+              _QuickLogButton(
+                icon: Icons.height,
+                label: 'BMI',
+                color: AppTheme.primaryGreen,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logBmi);
                 },
               ),
               _QuickLogButton(
@@ -588,14 +621,15 @@ class _QuickLogButton extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 48, color: color),
-            const SizedBox(height: 12),
+            Icon(icon, size: 36, color: color),
+            const SizedBox(height: 8),
             Text(
               label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

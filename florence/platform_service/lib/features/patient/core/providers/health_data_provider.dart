@@ -323,6 +323,12 @@ class HealthDataProvider with ChangeNotifier {
 
   HbA1cResult? get latestHbA1c => _dataService.latestHbA1c;
 
+  BloodPressureReading? get latestBloodPressure => _dataService.latestBloodPressure;
+
+  CholesterolResult? get latestCholesterol => _dataService.latestCholesterol;
+
+  BmiResult? get latestBmi => _dataService.latestBmi;
+
   Future<void> addHbA1cResult(HbA1cResult result) async {
     try {
       _isLoading = true;

@@ -3,6 +3,9 @@ import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';
 import '../features/auth/screens/register_screen.dart';
 import '../features/patient/dashboard/screens/dashboard_screen.dart';
+import '../features/patient/logging/screens/log_bmi_screen.dart';
+import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
+import '../features/patient/logging/screens/log_cholesterol_screen.dart';
 import '../features/patient/logging/screens/log_glucose_screen.dart';
 import '../features/patient/logging/screens/log_activity_screen.dart';
 import '../features/patient/logging/screens/log_medication_screen.dart';
@@ -50,6 +53,9 @@ class AppRoutes {
   static const String logMeal = '/log/meal';
   static const String logActivity = '/log/activity';
   static const String logMedication = '/log/medication';
+  static const String logBloodPressure = '/log/blood-pressure';
+  static const String logCholesterol = '/log/cholesterol';
+  static const String logBmi = '/log/bmi';
 
   // Clinician/Admin routes
   static const String clinicianDashboard = '/clinician-dashboard';
@@ -116,6 +122,15 @@ class AppRoutes {
 
       case logMedication: 
         return _buildRoute(const LogMedicationScreen(), settings);
+
+      case logBloodPressure:
+        return _buildRoute(const LogBloodPressureScreen(), settings);
+
+      case logCholesterol:
+        return _buildRoute(const LogCholesterolScreen(), settings);
+
+      case logBmi:
+        return _buildRoute(const LogBmiScreen(), settings);
 
       case clinicianDashboard:
         return _buildRoute(const _PlaceholderScreen(title: 'Clinician Dashboard'));

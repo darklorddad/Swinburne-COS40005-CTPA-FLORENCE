@@ -384,6 +384,158 @@ class MedicationDose {
   }
 }
 
+/// Blood Pressure Reading Model
+@immutable
+class BloodPressureReading {
+  final String id;
+  final DateTime timestamp;
+  final double systolic;
+  final double diastolic;
+  final String? notes;
+
+  const BloodPressureReading({
+    required this.id,
+    required this.timestamp,
+    required this.systolic,
+    required this.diastolic,
+    this.notes,
+  });
+
+  String get value => '${systolic.toStringAsFixed(0)}/${diastolic.toStringAsFixed(0)}';
+
+  BloodPressureReading copyWith({
+    String? id,
+    DateTime? timestamp,
+    double? systolic,
+    double? diastolic,
+    String? notes,
+  }) {
+    return BloodPressureReading(
+      id: id ?? this.id,
+      timestamp: timestamp ?? this.timestamp,
+      systolic: systolic ?? this.systolic,
+      diastolic: diastolic ?? this.diastolic,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'timestamp': timestamp.toIso8601String(),
+      'systolic': systolic,
+      'diastolic': diastolic,
+      'notes': notes,
+    };
+  }
+
+  factory BloodPressureReading.fromJson(Map<String, dynamic> json) {
+    return BloodPressureReading(
+      id: json['id'] as String,
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      systolic: (json['systolic'] as num).toDouble(),
+      diastolic: (json['diastolic'] as num).toDouble(),
+      notes: json['notes'] as String?,
+    );
+  }
+}
+
+/// Cholesterol Test Result Model
+@immutable
+class CholesterolResult {
+  final String id;
+  final DateTime testDate;
+  final double value; // mg/dL
+  final String? notes;
+
+  const CholesterolResult({
+    required this.id,
+    required this.testDate,
+    required this.value,
+    this.notes,
+  });
+
+  CholesterolResult copyWith({
+    String? id,
+    DateTime? testDate,
+    double? value,
+    String? notes,
+  }) {
+    return CholesterolResult(
+      id: id ?? this.id,
+      testDate: testDate ?? this.testDate,
+      value: value ?? this.value,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'testDate': testDate.toIso8601String(),
+      'value': value,
+      'notes': notes,
+    };
+  }
+
+  factory CholesterolResult.fromJson(Map<String, dynamic> json) {
+    return CholesterolResult(
+      id: json['id'] as String,
+      testDate: DateTime.parse(json['testDate'] as String),
+      value: (json['value'] as num).toDouble(),
+      notes: json['notes'] as String?,
+    );
+  }
+}
+
+/// BMI Result Model
+@immutable
+class BmiResult {
+  final String id;
+  final DateTime testDate;
+  final double value;
+  final String? notes;
+
+  const BmiResult({
+    required this.id,
+    required this.testDate,
+    required this.value,
+    this.notes,
+  });
+
+  BmiResult copyWith({
+    String? id,
+    DateTime? testDate,
+    double? value,
+    String? notes,
+  }) {
+    return BmiResult(
+      id: id ?? this.id,
+      testDate: testDate ?? this.testDate,
+      value: value ?? this.value,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'testDate': testDate.toIso8601String(),
+      'value': value,
+      'notes': notes,
+    };
+  }
+
+  factory BmiResult.fromJson(Map<String, dynamic> json) {
+    return BmiResult(
+      id: json['id'] as String,
+      testDate: DateTime.parse(json['testDate'] as String),
+      value: (json['value'] as num).toDouble(),
+      notes: json['notes'] as String?,
+    );
+  }
+}
+
 /// HbA1c Test Result Model
 @immutable
 class HbA1cResult {
