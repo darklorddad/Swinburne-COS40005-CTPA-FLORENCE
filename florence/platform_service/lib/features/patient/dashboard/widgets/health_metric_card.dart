@@ -1,7 +1,7 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/utils/formatters.dart';
+import '../../../../shared/widgets/card_widgets.dart';
 
 class HealthMetricCard extends StatelessWidget {
   final String label;
@@ -69,12 +69,12 @@ class HealthMetricCard extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.white.withOpacity(0.9), size: 18),
+            Icon(icon, color: color, size: 18),
             const SizedBox(width: 6),
             Text(
               label,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppTheme.textPrimaryColor,
                   ),
             ),
           ],
@@ -82,13 +82,13 @@ class HealthMetricCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             status,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
+                  color: color,
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -108,7 +108,7 @@ class HealthMetricCard extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
+                    color: color,
                     fontWeight: FontWeight.bold,
                   ),
             ),
@@ -119,7 +119,7 @@ class HealthMetricCard extends StatelessWidget {
                 child: Text(
                   unit,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: AppTheme.textSecondaryColor,
                       ),
                 ),
               ),
@@ -129,7 +129,7 @@ class HealthMetricCard extends StatelessWidget {
         Text(
           'Last updated: ${Formatters.timeAgo(timestamp)}',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withOpacity(0.8),
+                color: AppTheme.textSecondaryColor,
               ),
         ),
       ],

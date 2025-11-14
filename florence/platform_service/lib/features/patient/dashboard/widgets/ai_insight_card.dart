@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/utils/helpers.dart';
 
 /// AI Insight Card
 /// Displays AI-generated health insights and recommendations
