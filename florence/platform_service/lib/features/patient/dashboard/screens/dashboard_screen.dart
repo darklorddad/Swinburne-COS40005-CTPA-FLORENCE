@@ -406,7 +406,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Build app bar
   AppBar _buildAppBar() {
     return AppBar(
-      title: const Text('Florence'),
+      title: InkWell(
+        onTap: _handleRefresh,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.favorite_rounded),
+              const SizedBox(width: 8),
+              const Text('Florence'),
+            ],
+          ),
+        ),
+      ),
       actions: [
         IconButton(
           icon: const Icon(Icons.add),
