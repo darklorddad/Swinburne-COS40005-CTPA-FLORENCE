@@ -322,10 +322,16 @@ class HealthDataProvider with ChangeNotifier {
 
   HbA1cResult? get latestHbA1c => _dataService.latestHbA1c;
 
-  BloodPressureReading? get latestBloodPressure => _dataService.latestBloodPressure;
+  List<BloodPressureReading> get allBloodPressureReadings =>
+      _dataService.allBloodPressureReadings;
+  BloodPressureReading? get latestBloodPressure =>
+      _dataService.latestBloodPressure;
 
+  List<CholesterolResult> get allCholesterolResults =>
+      _dataService.allCholesterolResults;
   CholesterolResult? get latestCholesterol => _dataService.latestCholesterol;
 
+  List<BmiResult> get allBmiResults => _dataService.allBmiResults;
   BmiResult? get latestBmi => _dataService.latestBmi;
 
   Future<void> addHbA1cResult(HbA1cResult result) async {

@@ -10,8 +10,7 @@ import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../../../main.dart';
-import '../widgets/health_summary_card.dart';
-import '../widgets/quick_stats_grid.dart';
+import '../widgets/health_metric_card.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../widgets/upcoming_reminders_card.dart';
@@ -140,21 +139,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final settingsProvider = context.watch<SettingsProvider>();
     return Consumer<HealthDataProvider>(
       builder: (context, healthData, child) {
-        // Calculate stats from provider
-        final latestGlucose = healthData.latestGlucose?.value ?? 0.0;
-        final latestGlucoseTime = healthData.latestGlucose?.timestamp ?? DateTime.now();
-        final averageGlucose = healthData.getAverageGlucose(
-          startDate: DateTime.now().subtract(const Duration(days: 7)),
-        );
-        final hba1c = healthData.latestHbA1c?.value ?? 0.0;
-        final bloodPressure = healthData.latestBloodPressure;
-        final cholesterol = healthData.latestCholesterol?.value ?? 0.0;
-        final bmi = healthData.latestBmi?.value ?? 0.0;
-        final todayReadings = healthData.getGlucoseReadings(
-          startDate: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
-        ).length;
-        const streakDays = 7; // TODO: Implement streak calculation
-
         return Scaffold(
           appBar: _buildAppBar(),
           body: Stack(
@@ -171,17 +155,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _buildWelcomeHeader(),
                       const SizedBox(height: 24),
 
-                      // Health summary card (hero card)
-                      if (healthData.allGlucoseReadings.isEmpty)
-                        NoGlucoseReadingsWidget(onAddReading: () => AppRoutes.push(context, AppRoutes.logGlucose))
-                      else
-                        HealthSummaryCard(
-                          latestGlucose: latestGlucose,
-                          timestamp: latestGlucoseTime,
-                          onTap: () => AppRoutes.push(context, AppRoutes.trends),
-                        ),
-                      const SizedBox(height: 16),
-
                       // AI Insight
                       _buildSectionHeader('Today\'s Insight'),
                       const SizedBox(height: 12),
@@ -190,17 +163,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                         onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
-                      // Quick stats grid
-                      QuickStatsGrid(
-                        averageGlucose: averageGlucose,
-                        hba1c: hba1c,
-                        bloodPressure: bloodPressure,
-                        cholesterol: cholesterol,
-                        bmi: bmi,
-                        todayReadings: todayReadings,
-                      ),
+                      // Health Cards
+                      _buildSectionHeader('Your Health Metrics'),
+                      const SizedBox(height: 12),
+                      if (healthData.allGlucoseReadings.isEmpty)
+                        NoGlucoseReadingsWidget(onAddReading: () => AppRoutes.push(context, AppRoutes.logGlucose))
+                      else
+                        _buildHealthCards(healthData),
                       const SizedBox(height: 16),
               
               // Quick actions
@@ -476,6 +447,181 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } else {
       return 'Good Evening';
     }
+  }
+
+  /// Build Health Cards
+  Widget _buildHealthCards(HealthDataProvider healthData) {
+    final latestGlucose = healthData.latestGlucose;
+    final latestBP = healthData.latestBloodPressure;
+    final latestHba1c = healthData.latestHbA1c;
+    final latestCholesterol = healthData.latestCholesterol;
+    final latestBmi = healthData.latestBmi;
+
+    return Column(
+      children: [
+        if (latestGlucose != null) ...[
+          HealthMetricCard(
+            label: 'Glucose',
+            value: latestGlucose.value.toStringAsFixed(0),
+            unit: 'mg/dL',
+            status: _getGlucoseStatus(latestGlucose.value),
+            timestamp: latestGlucose.timestamp,
+            icon: Icons.water_drop_outlined,
+            color: _getGlucoseColor(latestGlucose.value),
+            chartData: healthData.allGlucoseReadings
+                .take(10)
+                .toList()
+                .reversed
+                .toList()
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                .toList(),
+            onTap: () => AppRoutes.push(context, AppRoutes.trends),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (latestBP != null) ...[
+          HealthMetricCard(
+            label: 'Blood Pressure',
+            value: latestBP.value,
+            unit: 'mmHg',
+            status: _getBPStatus(latestBP.systolic, latestBP.diastolic),
+            timestamp: latestBP.timestamp,
+            icon: Icons.monitor_heart_outlined,
+            color: _getBPColor(latestBP.systolic, latestBP.diastolic),
+            chartData: healthData.allBloodPressureReadings
+                .take(10)
+                .toList()
+                .reversed
+                .toList()
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.systolic))
+                .toList(),
+            onTap: () => AppRoutes.push(context, AppRoutes.trends),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (latestHba1c != null) ...[
+          HealthMetricCard(
+            label: 'HbA1c',
+            value: latestHba1c.value.toStringAsFixed(1),
+            unit: '%',
+            status: latestHba1c.interpretation,
+            timestamp: latestHba1c.testDate,
+            icon: Icons.pie_chart_outline,
+            color: _getHba1cColor(latestHba1c.value),
+            chartData: healthData.allHbA1cResults
+                .take(10)
+                .toList()
+                .reversed
+                .toList()
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                .toList(),
+            onTap: () => AppRoutes.push(context, AppRoutes.trends),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (latestCholesterol != null) ...[
+          HealthMetricCard(
+            label: 'Cholesterol',
+            value: latestCholesterol.value.toStringAsFixed(0),
+            unit: 'mg/dL',
+            status: _getCholesterolStatus(latestCholesterol.value),
+            timestamp: latestCholesterol.testDate,
+            icon: Icons.bloodtype_outlined,
+            color: _getCholesterolColor(latestCholesterol.value),
+            chartData: healthData.allCholesterolResults
+                .take(10)
+                .toList()
+                .reversed
+                .toList()
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                .toList(),
+            onTap: () => AppRoutes.push(context, AppRoutes.trends),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (latestBmi != null) ...[
+          HealthMetricCard(
+            label: 'BMI',
+            value: latestBmi.value.toStringAsFixed(1),
+            unit: '',
+            status: Helpers.getBMICategory(latestBmi.value),
+            timestamp: latestBmi.testDate,
+            icon: Icons.height_outlined,
+            color: _getBmiColor(latestBmi.value),
+            chartData: healthData.allBmiResults
+                .take(10)
+                .toList()
+                .reversed
+                .toList()
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                .toList(),
+            onTap: () => AppRoutes.push(context, AppRoutes.trends),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // --- Health Metric Helpers ---
+
+  Color _getGlucoseColor(double? value) {
+    if (value == null) return AppTheme.textSecondaryColor;
+    if (value < 70) return AppTheme.glucoseLow;
+    if (value > 180) return AppTheme.glucoseHigh;
+    return AppTheme.glucoseNormal;
+  }
+
+  String _getGlucoseStatus(double? value) {
+    if (value == null) return 'N/A';
+    if (value < 70) return 'Low';
+    if (value > 180) return 'High';
+    return 'Normal';
+  }
+
+  Color _getBPColor(double systolic, double diastolic) {
+    if (systolic > 140 || diastolic > 90) return AppTheme.errorColor;
+    if (systolic > 120 || diastolic > 80) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
+  }
+
+  String _getBPStatus(double systolic, double diastolic) {
+    if (systolic > 140 || diastolic > 90) return 'High';
+    if (systolic > 120 || diastolic > 80) return 'Elevated';
+    return 'Normal';
+  }
+
+  Color _getHba1cColor(double value) {
+    if (value >= 7.0) return AppTheme.errorColor;
+    if (value >= 6.5) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
+  }
+
+  Color _getCholesterolColor(double value) {
+    if (value >= 240) return AppTheme.errorColor;
+    if (value >= 200) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
+  }
+
+  String _getCholesterolStatus(double value) {
+    if (value >= 240) return 'High';
+    if (value >= 200) return 'Borderline';
+    return 'Desirable';
+  }
+
+  Color _getBmiColor(double value) {
+    if (value < 18.5 || value >= 30) return AppTheme.errorColor;
+    if (value >= 25) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
   }
 }
 
