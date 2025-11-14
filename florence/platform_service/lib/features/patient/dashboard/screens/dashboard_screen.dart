@@ -500,15 +500,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         timestamp: latestGlucose.timestamp,
         icon: Icons.water_drop_outlined,
         color: _getGlucoseColor(latestGlucose.value),
-        chartData: healthData.allGlucoseReadings
-            .take(10)
-            .toList()
-            .reversed
-            .toList()
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-            .toList(),
         onTap: () => AppRoutes.push(context, AppRoutes.trends),
       ));
     }
@@ -521,15 +512,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         timestamp: latestBP.timestamp,
         icon: Icons.monitor_heart_outlined,
         color: _getBPColor(latestBP.systolic, latestBP.diastolic),
-        chartData: healthData.allBloodPressureReadings
-            .take(10)
-            .toList()
-            .reversed
-            .toList()
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value.systolic))
-            .toList(),
         onTap: () => AppRoutes.push(context, AppRoutes.trends),
       ));
     }
@@ -542,15 +524,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         timestamp: latestHba1c.testDate,
         icon: Icons.pie_chart_outline,
         color: _getHba1cColor(latestHba1c.value),
-        chartData: healthData.allHbA1cResults
-            .take(10)
-            .toList()
-            .reversed
-            .toList()
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-            .toList(),
         onTap: () => AppRoutes.push(context, AppRoutes.trends),
       ));
     }
@@ -563,15 +536,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         timestamp: latestCholesterol.testDate,
         icon: Icons.bloodtype_outlined,
         color: _getCholesterolColor(latestCholesterol.value),
-        chartData: healthData.allCholesterolResults
-            .take(10)
-            .toList()
-            .reversed
-            .toList()
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-            .toList(),
         onTap: () => AppRoutes.push(context, AppRoutes.trends),
       ));
     }
@@ -584,15 +548,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         timestamp: latestBmi.testDate,
         icon: Icons.height_outlined,
         color: _getBmiColor(latestBmi.value),
-        chartData: healthData.allBmiResults
-            .take(10)
-            .toList()
-            .reversed
-            .toList()
-            .asMap()
-            .entries
-            .map((e) => FlSpot(e.key.toDouble(), e.value.value))
-            .toList(),
         onTap: () => AppRoutes.push(context, AppRoutes.trends),
       ));
     }

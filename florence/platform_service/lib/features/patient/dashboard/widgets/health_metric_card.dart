@@ -11,7 +11,6 @@ class HealthMetricCard extends StatelessWidget {
   final DateTime timestamp;
   final IconData icon;
   final Color color;
-  final List<FlSpot> chartData;
   final VoidCallback? onTap;
 
   const HealthMetricCard({
@@ -23,7 +22,6 @@ class HealthMetricCard extends StatelessWidget {
     required this.timestamp,
     required this.icon,
     required this.color,
-    required this.chartData,
     this.onTap,
   });
 
@@ -54,12 +52,11 @@ class HealthMetricCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildHeader(context),
-            const SizedBox(height: 8),
-            _buildValue(context),
             const SizedBox(height: 16),
-            if (chartData.isNotEmpty) _buildChart(context),
+            _buildValue(context),
           ],
         ),
       ),
@@ -139,30 +136,4 @@ class HealthMetricCard extends StatelessWidget {
     );
   }
 
-  Widget _buildChart(BuildContext context) {
-    return SizedBox(
-      height: 30,
-      child: LineChart(
-        LineChartData(
-          gridData: const FlGridData(show: false),
-          titlesData: const FlTitlesData(show: false),
-          borderData: FlBorderData(show: false),
-          lineBarsData: [
-            LineChartBarData(
-              spots: chartData,
-              isCurved: true,
-              color: Colors.white.withOpacity(0.8),
-              barWidth: 3,
-              isStrokeCapRound: true,
-              dotData: const FlDotData(show: false),
-              belowBarData: BarAreaData(
-                show: true,
-                color: Colors.white.withOpacity(0.2),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
