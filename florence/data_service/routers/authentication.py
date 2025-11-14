@@ -185,7 +185,7 @@ async def get_current_user(authorization: str = Header(...)):
         return {
             "id": user.id,
             "aud": user.aud,
-            "role": user.role,
+            "role": user.app_metadata.get('role'),
             "email": user.email,
             "created_at": user.created_at.isoformat(),
             "app_metadata": user.app_metadata,
