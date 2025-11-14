@@ -12,7 +12,7 @@ class Helpers {
   static void showSuccess(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        margin: const EdgeInsets.fromLTRB(24, 8, 24, 80),
         content: Row(
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
@@ -31,7 +31,7 @@ class Helpers {
   static void showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        margin: const EdgeInsets.fromLTRB(24, 8, 24, 80),
         content: Row(
           children: [
             const Icon(Icons.error, color: Colors.white),
@@ -50,7 +50,7 @@ class Helpers {
   static void showInfo(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        margin: const EdgeInsets.fromLTRB(24, 8, 24, 80),
         content: Row(
           children: [
             const Icon(Icons.info, color: Colors.white),
@@ -69,7 +69,7 @@ class Helpers {
   static void showWarning(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        margin: const EdgeInsets.fromLTRB(24, 8, 24, 80),
         content: Row(
           children: [
             const Icon(Icons.warning, color: Colors.white),
