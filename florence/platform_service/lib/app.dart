@@ -9,6 +9,7 @@ import 'config/routes.dart';
 import 'core/services/api_service.dart';
 import 'core/utils/helpers.dart';
 import 'core/providers/theme_provider.dart';
+import 'core/providers/settings_provider.dart';
 import 'features/patient/core/providers/health_data_provider.dart';
 import 'main.dart';
 
@@ -213,6 +214,7 @@ class _AppState extends State<App> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
         ChangeNotifierProvider(create: (_) => HealthDataProvider()..initialize()),
       ],
       child: Consumer<ThemeProvider>(
