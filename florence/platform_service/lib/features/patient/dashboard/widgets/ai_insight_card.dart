@@ -26,15 +26,15 @@ class AIInsightCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppTheme.medicationColor,
-              AppTheme.medicationColor.withValues(alpha: 0.7),
+              AppTheme.primaryBlue,
+              Helpers.darken(AppTheme.primaryBlue, 0.15),
             ],
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.medicationColor.withValues(alpha: 0.3),
-              blurRadius: 15,
+              color: AppTheme.primaryBlue.withOpacity(0.3),
+              blurRadius: 12,
               offset: const Offset(0, 5),
             ),
           ],
