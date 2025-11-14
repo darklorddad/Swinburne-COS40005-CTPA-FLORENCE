@@ -31,6 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isRefreshing = false;
   String? _userName;
   bool _hasShownWelcomeMessage = false; // Add this flag
+  int _loadUserRetries = 0;
 
   // Services
   final PatientProfileService _profileService = PatientProfileService();
@@ -90,15 +91,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         setState(() {
           _userName = profile['name'] as String? ?? 'Patient';
+          _loadUserRetries = 0; // Reset on success
         });
       }
     } catch (e) {
       debugPrint('Error loading user data for dashboard: $e');
-      // Fallback to a generic name if API fails
-      if (mounted) {
-        setState(() {
-          _userName = 'Patient';
-        });
+
+      final user = supabase.auth.currentUser;
+      final isNewUser = user != null &&
+          user.createdAt != null &&
+          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
+
+      // If it's a new user and the profile isn't found yet, retry up to 2 times.
+      if (isNewUser && e.toString().contains('Access denied') && _loadUserRetries < 2) {
+        _loadUserRetries++;
+        debugPrint('Dashboard: Patient profile not found for new user. Retry attempt #$_loadUserRetries...');
+        await Future.delayed(const Duration(seconds: 3));
+        await _loadUserData(); // Recursive retry
+      } else {
+        // Fallback to a generic name if API fails after retries or for other errors
+        if (mounted) {
+          setState(() {
+            _userName = 'Patient';
+          });
+        }
       }
     }
   }
