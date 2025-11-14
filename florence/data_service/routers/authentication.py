@@ -179,7 +179,18 @@ async def get_current_user(authorization: str = Header(...)):
     
     try:
         user_response = supabase.auth.get_user(token)
-        return user_response.user
+        user = user_response.user
+        # Manually construct the response to ensure correct key names ('app_metadata')
+        # for the Flutter client, which expects this instead of 'raw_app_meta_data'.
+        return {
+            "id": user.id,
+            "aud": user.aud,
+            "role": user.role,
+            "email": user.email,
+            "created_at": user.created_at.isoformat(),
+            "app_metadata": user.app_metadata,
+            "user_metadata": user.user_metadata,
+        }
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
     except Exception as e:
