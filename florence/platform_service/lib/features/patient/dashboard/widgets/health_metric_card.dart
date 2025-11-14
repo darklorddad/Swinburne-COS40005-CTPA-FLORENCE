@@ -58,7 +58,7 @@ class HealthMetricCard extends StatelessWidget {
             _buildHeader(context),
             const SizedBox(height: 8),
             _buildValue(context),
-            const Spacer(),
+            const SizedBox(height: 16),
             if (chartData.isNotEmpty) _buildChart(context),
           ],
         ),
