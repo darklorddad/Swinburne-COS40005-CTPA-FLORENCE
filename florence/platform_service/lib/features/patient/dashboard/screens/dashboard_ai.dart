@@ -269,26 +269,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             ],
           ),
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              // Refresh data button
-              FloatingActionButton(
-                heroTag: 'refresh',
-                onPressed: _isRefreshing ? null : _handleRefresh,
-                tooltip: 'Refresh Data',
-                backgroundColor: AppTheme.primaryBlue,
-                child: Icon(_isRefreshing ? Icons.hourglass_empty : Icons.refresh),
-              ),
-              const SizedBox(height: 16),
-              // Quick log button
-              FloatingActionButton(
-                heroTag: 'add',
-                onPressed: _showQuickLogModal,
-                tooltip: 'Quick Log',
-                child: const Icon(Icons.add),
-              ),
-            ],
-          ),
         );
       },
     );
