@@ -597,20 +597,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ));
     }
 
-    return SizedBox(
-      height: 180, // Fixed height for the horizontal list
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: cards.length,
-        clipBehavior: Clip.none, // Allow shadows to render outside bounds
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        separatorBuilder: (context, index) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          return SizedBox(
-            width: MediaQuery.of(context).size.width * 0.75,
-            child: cards[index],
-          );
-        },
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          for (int i = 0; i < cards.length; i++) ...[
+            cards[i],
+            if (i < cards.length - 1) const SizedBox(height: 12),
+          ],
+        ],
       ),
     );
   }
