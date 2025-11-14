@@ -18,9 +18,7 @@ class HealthDataProvider with ChangeNotifier {
   String? _error;
   bool _isInitialized = false;
 
-  SettingsProvider? _settingsProvider;
-  void update(SettingsProvider settingsProvider) {
-    _settingsProvider = settingsProvider;
+  void initialize() {
     if (!_isInitialized) {
       _isInitialized = true;
       refreshData(); // Initial data load
@@ -453,18 +451,11 @@ class HealthDataProvider with ChangeNotifier {
       _error = null;
       notifyListeners();
 
-      final bool isDemo = _settingsProvider?.isDemoMode ?? true;
-      if (isDemo) {
-        print('HealthDataProvider: Refreshing in DEMO mode.');
-        _dataService.generateAndLoadMockData();
-      } else {
-        print('HealthDataProvider: Refreshing in LIVE mode.');
-        await _dataService.fetchRealData();
-      }
+      await _dataService.fetchRealData();
 
       // CRITICAL: Invalidate chatbot context so it fetches fresh data
       _chatbotService.invalidateContext();
-      print('HealthDataProvider: Data refreshed for ${isDemo ? 'DEMO' : 'LIVE'} mode, chatbot context invalidated');
+      print('HealthDataProvider: Data refreshed, chatbot context invalidated');
 
       _isLoading = false;
       notifyListeners();

@@ -14,8 +14,6 @@ import '../widgets/quick_stats_grid.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../widgets/upcoming_reminders_card.dart';
-import '../../core/services/patient_profile_service.dart';
-import '../../../../core/providers/settings_provider.dart';
 import '../../core/providers/health_data_provider.dart';
 
 /// Home Dashboard Screen
@@ -34,14 +32,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _loadUserRetries = 0;
 
   // Services
-  final PatientProfileService _profileService = PatientProfileService();
   final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-    _profileService.addListener(_onProfileChanged);
   }
 
   @override
@@ -61,30 +57,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void dispose() {
-    _profileService.removeListener(_onProfileChanged);
     super.dispose();
-  }
-
-  /// Handle profile changes
-  void _onProfileChanged() {
-    if (mounted) {
-      setState(() {});
-    }
   }
 
   /// Load user data
   Future<void> _loadUserData() async {
-    // The settings provider will tell us if we are in demo mode
-    final settings = context.read<SettingsProvider>();
-    if (settings.isDemoMode) {
-      if (mounted) {
-        setState(() {
-          _userName = _profileService.currentProfile.name;
-        });
-      }
-      return;
-    }
-
     try {
       // Fetch the full profile from the backend API
       final profile = await _apiService.get('/patients/me');
@@ -129,25 +106,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Handle profile switch
-  Future<void> _handleProfileSwitch(PatientProfileType newProfile) async {
-    if (_profileService.currentProfileType == newProfile) return;
-
-    try {
-      await _profileService.switchProfile(newProfile);
-
-      if (mounted) {
-        Helpers.showSuccess(
-          context,
-          'Switched to ${_profileService.currentProfile.name}',
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        Helpers.showError(context, 'Failed to switch profile');
-      }
-    }
-  }
 
   /// Handle logout
   Future<void> _handleLogout() async {
@@ -205,17 +163,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Profile switcher (only in demo mode)
-                      if (settingsProvider.isDemoMode)
-                        _buildProfileSwitcher(),
-                      const SizedBox(height: 16),
-
                       // Welcome header
                       _buildWelcomeHeader(),
                       const SizedBox(height: 24),
 
                       // Health summary card (hero card)
-                      if (healthData.allGlucoseReadings.isEmpty && !settingsProvider.isDemoMode)
+                      if (healthData.allGlucoseReadings.isEmpty)
                         NoGlucoseReadingsWidget(onAddReading: () => AppRoutes.push(context, AppRoutes.logGlucose))
                       else
                         HealthSummaryCard(
@@ -320,88 +273,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Build profile switcher
-  Widget _buildProfileSwitcher() {
-    final currentProfile = _profileService.currentProfile;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppTheme.primaryBlue.withValues(alpha: 0.1),
-            AppTheme.primaryBlue.withValues(alpha: 0.05),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppTheme.primaryBlue.withValues(alpha: 0.3),
-          width: 2,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.science_outlined,
-                color: AppTheme.primaryBlue,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Demo Mode - Patient Profile',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: AppTheme.primaryBlue,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      currentProfile.description,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Profile selection chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: PatientProfileService.availableProfiles.map((profile) {
-              final isSelected = profile.type == _profileService.currentProfileType;
-
-              return ChoiceChip(
-                label: Text(profile.name),
-                selected: isSelected,
-                onSelected: (_) => _handleProfileSwitch(profile.type),
-                selectedColor: AppTheme.primaryBlue,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-                avatar: isSelected
-                    ? const Icon(Icons.check_circle, color: Colors.white, size: 18)
-                    : null,
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
 
   /// Build app bar
   AppBar _buildAppBar() {
