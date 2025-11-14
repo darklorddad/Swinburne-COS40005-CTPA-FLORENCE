@@ -39,11 +39,11 @@ This flow bypasses the custom backend entirely for maximum efficiency.
 1.  **User Action:** The user clicks the verification link in their email (e.g., `florence://login-callback#access_token=...`).
 2.  **OS → Client:** The mobile operating system opens the Florence app due to the custom `florence://` URL scheme.
 3.  **Client (Supabase SDK):**
-    a. The `supabase_flutter` library, initialised at app startup, automatically intercepts the incoming deep link.
-    b. It parses the `access_token` and `refresh_token` from the URL fragment.
-    c. It communicates **directly with the Supabase Auth service** to confirm the email verification.
-    d. It creates and securely stores the session locally on the device.
-4.  **Client (Navigation):** The successful creation of the session triggers the app's central `onAuthStateChange` listener, which automatically navigates the user from the splash/login screen to the main dashboard.
+    a. The `Supabase.initialize()` function, called at app startup, registers an internal listener for deep links.
+    b. When the app is opened by the link, this listener automatically intercepts it.
+    c. The library parses the `access_token` and `refresh_token` from the URL fragment.
+    d. It communicates **directly with the Supabase Auth service** to confirm the email verification and then creates and securely stores the session locally on the device.
+4.  **Client (Navigation):** The successful storage of the session causes the `supabase.auth.onAuthStateChange` stream to emit a `signedIn` event. The app's central listener, subscribed to this stream, receives the event and automatically navigates the user from the splash/login screen to the main dashboard.
 
 ### 4. Session Refresh Flow (Client-Side)
 
