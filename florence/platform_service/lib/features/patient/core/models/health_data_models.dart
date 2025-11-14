@@ -1,6 +1,5 @@
 /// Health Data Models for FLORENCE Digital Health Platform
 /// Comprehensive data models for patient health tracking
-library;
 
 import 'package:flutter/foundation.dart';
 

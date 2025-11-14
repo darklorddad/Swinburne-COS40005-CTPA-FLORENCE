@@ -1,6 +1,5 @@
 /// Patient Profile Service for FLORENCE Digital Health Platform
 /// Manages multiple patient profiles for testing and demonstration
-library;
 
 import 'dart:math';
 import 'package:flutter/foundation.dart';

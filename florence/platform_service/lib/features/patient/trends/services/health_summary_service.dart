@@ -1,6 +1,5 @@
 /// Health Summary Service for FLORENCE Digital Health Platform
 /// Generates AI-powered health summaries
-library;
 
 import '../../../../core/services/ai/deepseek_service.dart';
 import '../../../../core/config/environment.dart';

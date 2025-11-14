@@ -1,6 +1,5 @@
 /// AI-Powered Recommendation Engine for FLORENCE Digital Health Platform
 /// Generates personalized health recommendations using DeepSeek AI
-library;
 
 import 'dart:convert';
 import '../../../../core/services/ai/deepseek_service.dart';
