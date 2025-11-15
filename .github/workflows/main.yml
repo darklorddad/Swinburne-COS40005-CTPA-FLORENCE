@@ -20,7 +20,6 @@ jobs:
 
     steps:
       # Step 1: Check out the code from the repository
-      # This uses the code from the 'main' branch for both automatic and manual runs.
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -39,18 +38,25 @@ jobs:
 
       # --- LOGIC FOR RELEASES ---
       # These steps only run if the trigger was a manual 'workflow_dispatch'.
-      - name: Build a Full Release (Manual)
+      - name: Create a Full Release (Manual)
         if: github.event_name == 'workflow_dispatch'
         working-directory: florence/platform_service
-        run: shorebird build apk
+        # Corrected command: 'release android --artifact apk' instead of 'build apk'
+        # The '--force' flag is added to automatically proceed with the release.
+        run: shorebird release android --artifact apk --force
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
       - name: Upload to Firebase App Distribution (Manual)
         if: github.event_name == 'workflow_dispatch'
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        # Updated method using Firebase CLI
+        uses: actions/setup-node@v3
         with:
-          appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
-          groups: testers
-          file: florence/platform_service/build/app/outputs/apk/release/Florence.apk
+          node-version: '18'
+      - run: npm install -g firebase-tools
+      - run: |
+          firebase appdistribution:distribute florence/platform_service/build/app/outputs/apk/release/app-release.apk \
+            --app "${{ secrets.FIREBASE_APP_ID }}" \
+            --release-notes "Manual release from GitHub Actions" \
+            --groups "testers" \
+            --token "${{ secrets.FIREBASE_CLI_TOKEN }}"

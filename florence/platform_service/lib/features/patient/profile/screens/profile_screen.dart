@@ -4,7 +4,6 @@ import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
-import '../../../../core/providers/settings_provider.dart';
 import '../../core/providers/health_data_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../shared/widgets/button_widgets.dart';
