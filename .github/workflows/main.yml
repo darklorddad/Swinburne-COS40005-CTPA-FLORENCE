@@ -43,7 +43,7 @@ jobs:
         working-directory: florence/platform_service
         # Corrected command: 'release android --artifact apk' instead of 'build apk'
         # The '--force' flag is added to automatically proceed with the release.
-        run: shorebird release android --artifact apk --force
+        run: shorebird release android --no-confirm
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
