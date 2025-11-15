@@ -38,6 +38,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    // Trigger the initial data load for the health provider.
+    // This is done here because the dashboard is the first screen after login,
+    // ensuring the auth token is available.
+    context.read<HealthDataProvider>().initialize();
     _loadUserData();
   }
 

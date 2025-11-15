@@ -215,7 +215,7 @@ class _AppState extends State<App> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => HealthDataProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
