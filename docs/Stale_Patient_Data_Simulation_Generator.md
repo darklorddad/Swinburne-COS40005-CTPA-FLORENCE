@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-The `Patient_Data_Simulation_Generator` is a standalone GUI application built with `tkinter`. Its purpose is to generate and visualize simulated patient data. This tool is likely used for testing and development purposes, allowing developers to work with realistic-looking data without using real patient information.
+The `stale_patient_data_simulation_generator` is a standalone GUI application built with `tkinter`. Its purpose is to generate and visualize simulated patient data. This tool is likely used for testing and development purposes, allowing developers to work with realistic-looking data without using real patient information.
 
 ## 2. Core Components
 
