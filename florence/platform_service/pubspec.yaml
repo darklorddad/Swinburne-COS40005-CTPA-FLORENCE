@@ -1,56 +1,66 @@
-name: florence
-description: Digital Health Platform for Chronic Disease Monitoring
+name: florence_app
+description: AI-Enabled Digital Health Platform for Chronic Disease Monitoring
 
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.9.2
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
   # State Management
-  provider: ^6.1.2
+  provider:
 
   # Backend & API
-  supabase_flutter: ^2.5.8
-  http: ^1.2.1
+  supabase_flutter:
+  http:
 
   # Data Visualization
-  fl_chart: ^1.1.1
+  fl_chart:
 
   # Data Serialization
-  json_annotation: ^4.8.1
+  json_annotation:
 
   # Date & Time Handling
-  intl: ^0.20.0
-  table_calendar: ^3.2.0
+  intl:
+  table_calendar:
 
   # Image Handling
-  image_picker: ^1.1.2
-  cached_network_image: ^3.3.1
+  image_picker:
+  cached_network_image:
 
-  cupertino_icons: ^1.0.8
-  app_links: ^6.4.1
+  # iOS Style Icons
+  cupertino_icons:
 
+  # Deep Linking
+  app_links:
+
+  # SVG Support
+  flutter_svg:
+
+  # Local Storage
+  shared_preferences:
+
+  # Fonts
   google_fonts:
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^6.0.0
+  flutter_lints:
 
   # Code Generation
-  build_runner: ^2.4.11
-  json_serializable: ^6.8.0
+  build_runner:
+  json_serializable:
 
-  change_app_package_name: ^1.1.0
+  change_app_package_name:
 
-  flutter_app_name: ^0.1.1 
+  flutter_app_name:
 
 flutter:
 
