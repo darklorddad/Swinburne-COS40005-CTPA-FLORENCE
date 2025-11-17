@@ -1,0 +1,39 @@
+{
+    "data_service": {
+        "components": [
+            "florence.data_service.client._SupabaseClientProxy",
+            "florence.data_service.routers.authentication.UserRegistration",
+            "florence.data_service.routers.authentication.UserLogin",
+            "florence.data_service.routers.authentication.AdminRegistration",
+            "florence.data_service.routers.patients.PatientProfileUpdate",
+            "florence.data_service.routers.patients.MonitorDataCreate",
+            "florence.data_service.routers.patients.MonitorDataUpdate",
+            "florence.data_service.routers.patients.DailyLogCreate",
+            "florence.data_service.routers.clinicians.ClinicianNoteCreate",
+            "florence.data_service.routers.clinicians.RiskAssessmentUpdate",
+            "florence.data_service.routers.clinicians.PatientThresholdUpdate",
+            "florence.data_service.routers.admin.PatientProfileAdminUpdate",
+            "florence.data_service.routers.admin.AssignClinician"
+        ],
+        "children": {}
+    },
+    "llm_engine_service": {
+        "components": [
+            "llm_engine_service.OpenRouterLAM"
+        ],
+        "children": {}
+    },
+    "platform_service": {
+        "components": [
+            "platform_service.GeneratedPluginRegistrant",
+            "platform_service.win32_window"
+        ],
+        "children": {}
+    },
+    "stale_patient_data_simulation_generator": {
+        "components": [
+            "stale_patient_data_simulation_generator.PatientDataGUI"
+        ],
+        "children": {}
+    }
+}

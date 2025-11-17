@@ -1,0 +1,16 @@
+{
+    "statistics": {
+        "total_components": 116,
+        "leaf_nodes": 23,
+        "max_depth": 2
+    },
+    "files_generated": [
+        "overview.md",
+        "module_tree.json",
+        "first_module_tree.json",
+        "data_service.md",
+        "llm_engine_service.md",
+        "platform_service.md",
+        "stale_patient_data_simulation_generator.md"
+    ]
+}

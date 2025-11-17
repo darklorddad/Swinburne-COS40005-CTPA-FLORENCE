@@ -38,7 +38,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    // Use a post-frame callback to ensure the widget is built before calling
+    // methods that will trigger a rebuild or state change. This avoids the
+    // "setState() or markNeedsBuild() called during build" error and ensures
+    // the auth token is available from the navigation event.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<HealthDataProvider>().initialize();
+        _loadUserData();
+      }
+    });
   }
 
   @override

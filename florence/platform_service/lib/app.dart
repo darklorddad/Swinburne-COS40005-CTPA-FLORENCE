@@ -126,9 +126,9 @@ class _AppState extends State<App> {
     debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
 
     if (session != null) {
-      // Store the token for ApiService to use
-      SessionManager.currentToken = session.accessToken;
-      debugPrint('[App Listener] Session token stored in SessionManager.');
+      // The ApiService now gets the token directly from the Supabase client.
+      // No need to manually manage the token in SessionManager.
+      debugPrint('[App Listener] Session found. Token is available via supabase.auth.currentSession.');
 
       final user = session.user;
 
@@ -204,7 +204,7 @@ class _AppState extends State<App> {
     } else {
       // Handle sign out, session expiration, or no initial session
       debugPrint('[App Listener] No session found. Navigating to login.');
-      SessionManager.currentToken = null; // Clear the token on sign out
+      // No need to clear SessionManager token as it's removed.
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
   }
@@ -215,7 +215,7 @@ class _AppState extends State<App> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => HealthDataProvider()..initialize()),
+        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
