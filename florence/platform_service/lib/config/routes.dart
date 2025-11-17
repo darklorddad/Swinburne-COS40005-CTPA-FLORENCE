@@ -1,3 +1,5 @@
+import 'package:florence_app/features/clinician/screens/clinician_profile_screen.dart';
+import 'package:florence_app/features/clinician/screens/patient_detail_screen.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';
@@ -18,6 +20,7 @@ import '../features/patient/trends/screens/activity_impact_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
 import '../features/patient/summaries/screens/weekly_summaries_screen.dart';
+import '../features/clinician/screens/clinician_home_screen.dart';
 
 /// Application routing configuration
 /// Centralized navigation management
@@ -59,6 +62,8 @@ class AppRoutes {
 
   // Clinician/Admin routes
   static const String clinicianDashboard = '/clinician-dashboard';
+  static const String clinicianPatientDetail = '/clinician/patient-detail';
+  static const String clinicianProfile = '/clinician/profile';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -133,7 +138,13 @@ class AppRoutes {
         return _buildRoute(const LogBmiScreen(), settings);
 
       case clinicianDashboard:
-        return _buildRoute(const _PlaceholderScreen(title: 'Clinician Dashboard'));
+        return _buildRoute(const ClinicianHomeScreen(), settings);
+
+      case clinicianPatientDetail:
+        return _buildRoute(const PatientDetailScreen(patientId:   ''), settings);
+
+      case clinicianProfile:
+        return _buildRoute(const ClinicianProfileScreen(), settings);
 
       default:
         return _buildRoute(
