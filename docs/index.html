@@ -400,7 +400,7 @@
     "components": [
       "florence.data_service.client._SupabaseClientProxy",
       "florence.data_service.routers.authentication.UserRegistration",
-      "florece.data_service.routers.authentication.UserLogin",
+      "florence.data_service.routers.authentication.UserLogin",
       "florence.data_service.routers.authentication.AdminRegistration",
       "florence.data_service.routers.patients.PatientProfileUpdate",
       "florence.data_service.routers.patients.MonitorDataCreate",
@@ -427,9 +427,9 @@
     ],
     "children": {}
   },
-  "Stale_Patient_Data_Simulation_Generator": {
+  "stale_patient_data_simulation_generator": {
     "components": [
-      "Stale_Patient_Data_Simulation_Generator.PatientDataGUI"
+      "stale_patient_data_simulation_generator.PatientDataGUI"
     ],
     "children": {}
   }
@@ -447,7 +447,7 @@
     "data_service.md",
     "llm_engine_service.md",
     "platform_service.md",
-    "Stale_Patient_Data_Simulation_Generator.md"
+    "stale_patient_data_simulation_generator.md"
   ]
 };
         const DOCS_BASE_PATH = '';
@@ -544,7 +544,12 @@
             return key
                 .replace(/_/g, ' ')
                 .split(' ')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .map(word => {
+                    if (word.toLowerCase() === 'llm') {
+                        return 'LLM';
+                    }
+                    return word.charAt(0).toUpperCase() + word.slice(1);
+                })
                 .join(' ');
         }
         

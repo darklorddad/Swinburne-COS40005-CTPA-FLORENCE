@@ -55,4 +55,4 @@ Detailed documentation for each sub-module can be found in the following files:
 - [Data Service](data_service.md)
 - [Platform Service](platform_service.md)
 - [LLM Engine Service](llm_engine_service.md)
-- [Stale Patient Data Simulation Generator](Stale_Patient_Data_Simulation_Generator.md)
+- [Stale Patient Data Simulation Generator](stale_patient_data_simulation_generator.md)
