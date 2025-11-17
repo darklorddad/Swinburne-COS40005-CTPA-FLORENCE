@@ -1,0 +1,23 @@
+{
+    "generation_info": {
+        "timestamp": "2025-11-18T01:49:10.657601",
+        "main_model": "google/gemini-2.5-pro",
+        "generator_version": "1.0.0",
+        "repo_path": "C:\\Users\\darklorddad\\Downloads\\Year 3 Semester 1\\COS40005 Computing Technology Project A\\Project\\Swinburne-COS40005-CTPA-FLORENCE",
+        "commit_id": null
+    },
+    "statistics": {
+        "total_components": 116,
+        "leaf_nodes": 23,
+        "max_depth": 2
+    },
+    "files_generated": [
+        "overview.md",
+        "module_tree.json",
+        "first_module_tree.json",
+        "data_service.md",
+        "llm_engine_service.md",
+        "platform_service.md",
+        "Stale_Patient_Data_Simulation_Generator.md"
+    ]
+}
