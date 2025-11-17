@@ -16,5 +16,24 @@
             "florence.data_service.routers.admin.AssignClinician"
         ],
         "children": {}
+    },
+    "llm_engine_service": {
+        "components": [
+            "llm_engine_service.OpenRouterLAM"
+        ],
+        "children": {}
+    },
+    "platform_service": {
+        "components": [
+            "platform_service.GeneratedPluginRegistrant",
+            "platform_service.win32_window"
+        ],
+        "children": {}
+    },
+    "Stale_Patient_Data_Simulation_Generator": {
+        "components": [
+            "Stale_Patient_Data_Simulation_Generator.PatientDataGUI"
+        ],
+        "children": {}
     }
 }
