@@ -16,7 +16,7 @@ class AdminAuthService {
   AdminUser? get currentUser => _currentUser;
 
   // Session state
-  bool get isAuthenticated => _currentUser != null;
+  bool get isAuthenticated => currentUser != null;
 
   // ============================================
   // MOCK DATA - Organizations
