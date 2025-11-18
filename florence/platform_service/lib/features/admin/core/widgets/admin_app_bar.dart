@@ -311,7 +311,7 @@ class _UserMenu extends StatelessWidget {
             // User Avatar
             CircleAvatar(
               radius: 16,
-              backgroundColor: AdminTheme.getRoleColor(currentUser.role.name),
+              backgroundColor: AdminTheme.getRoleColor(currentUser.role.displayName),
               child: Text(
                 currentUser.initials,
                 style: const TextStyle(
