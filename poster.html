@@ -37,166 +37,142 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+
+        .a1-poster {
+            width: calc(95vh * (594 / 841));
+            height: 95vh;
+            max-width: 95vw;
+            max-height: calc(95vw * (841 / 594));
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
     </style>
 </head>
-<body class="font-display bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200">
-<div class="relative flex min-h-screen w-full flex-col">
-<!-- Header -->
-<header class="sticky top-0 z-50 flex items-center justify-center border-b border-slate-200/80 bg-background-light/80 backdrop-blur-sm dark:border-slate-800/80 dark:bg-background-dark/80">
-<div class="flex h-16 w-full max-w-5xl items-center justify-between px-6">
+<body class="font-display flex min-h-screen items-center justify-center bg-gray-200 text-slate-800 dark:bg-gray-900 dark:text-slate-200">
+<div class="a1-poster rounded-lg bg-background-dark shadow-2xl @container/poster">
+<!-- Main Content -->
+<main class="flex flex-1 flex-col p-4 @[480px]/poster:p-6 @[768px]/poster:p-8">
+<!-- Hero Section -->
+<section class="flex flex-col items-center gap-2 text-center">
 <div class="flex items-center gap-3">
-<div class="size-6 text-primary">
+<div class="size-8 text-primary">
 <svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
 <path d="M39.5563 34.1455V13.8546C39.5563 15.708 36.8773 17.3437 32.7927 18.3189C30.2914 18.916 27.263 19.2655 24 19.2655C20.737 19.2655 17.7086 18.916 15.2073 18.3189C11.1227 17.3437 8.44365 15.708 8.44365 13.8546V34.1455C8.44365 35.9988 11.1227 37.6346 15.2073 38.6098C17.7086 39.2069 20.737 39.5564 24 39.5564C27.263 39.5564 30.2914 39.2069 32.7927 38.6098C36.8773 37.6346 39.5563 35.9988 39.5563 34.1455Z" fill="currentColor"></path>
 <path clip-rule="evenodd" d="M10.4485 13.8519C10.4749 13.9271 10.6203 14.246 11.379 14.7361C12.298 15.3298 13.7492 15.9145 15.6717 16.3735C18.0007 16.9296 20.8712 17.2655 24 17.2655C27.1288 17.2655 29.9993 16.9296 32.3283 16.3735C34.2508 15.9145 35.702 15.3298 36.621 14.7361C37.3796 14.246 37.5251 13.9271 37.5515 13.8519C37.5287 13.7876 37.4333 13.5973 37.0635 13.2931C36.5266 12.8516 35.6288 12.3647 34.343 11.9175C31.79 11.0295 28.1333 10.4437 24 10.4437C19.8667 10.4437 16.2099 11.0295 13.657 11.9175C12.3712 12.3647 11.4734 12.8516 10.9365 13.2931C10.5667 13.5973 10.4713 13.7876 10.4485 13.8519ZM37.5563 18.7877C36.3176 19.3925 34.8502 19.8839 33.2571 20.2642C30.5836 20.9025 27.3973 21.2655 24 21.2655C20.6027 21.2655 17.4164 20.9025 14.7429 20.2642C13.1498 19.8839 11.6824 19.3925 10.4436 18.7877V34.1275C10.4515 34.1545 10.5427 34.4867 11.379 35.027C12.298 35.6207 13.7492 36.2054 15.6717 36.6644C18.0007 37.2205 20.8712 37.5564 24 37.5564C27.1288 37.5564 29.9993 37.2205 32.3283 36.6644C34.2508 36.2054 35.702 35.6207 36.621 35.027C37.4573 34.4867 37.5485 34.1546 37.5563 34.1275V18.7877ZM41.5563 13.8546V34.1455C41.5563 36.1078 40.158 37.5042 38.7915 38.3869C37.3498 39.3182 35.4192 40.0389 33.2571 40.5551C30.5836 41.1934 27.3973 41.5564 24 41.5564C20.6027 41.5564 17.4164 41.1934 14.7429 40.5551C12.5808 40.0389 10.6502 39.3182 9.20848 38.3869C7.84205 37.5042 6.44365 36.1078 6.44365 34.1455L6.44365 13.8546C6.44365 12.2684 7.37223 11.0454 8.39581 10.2036C9.43325 9.3505 10.8137 8.67141 12.343 8.13948C15.4203 7.06909 19.5418 6.44366 24 6.44366C28.4582 6.44366 32.5797 7.06909 35.657 8.13948C37.1863 8.67141 38.5667 9.3505 39.6042 10.2036C40.6278 11.0454 41.5563 12.2684 41.5563 13.8546Z" fill="currentColor" fill-rule="evenodd"></path>
 </svg>
 </div>
-<h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">BioTective</h2>
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-3xl">BioTective</h1>
 </div>
-<nav class="hidden items-center gap-6 text-sm md:flex">
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#introduction">Introduction</a>
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#problem">Problem</a>
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#literature-review">Literature Review</a>
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#methodology">Methodology</a>
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#conclusion">Conclusion</a>
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#future-works">Future Works</a>
-<a class="font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#references">References</a>
-</nav>
-</div>
-</header>
-<!-- Main Content -->
-<main class="flex flex-1 justify-center py-10 sm:py-16">
-<div class="flex w-full max-w-3xl flex-col gap-16 px-6 sm:gap-24">
-<!-- Hero Section -->
-<section class="flex flex-col items-center gap-6 text-center">
-<div class="flex flex-col gap-4">
-<h1 class="text-4xl font-black tracking-tighter text-slate-900 dark:text-white sm:text-6xl">BioTective: AI-Powered Chronic Disease Monitoring</h1>
-<p class="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-400 sm:text-xl">A predictive platform for proactive digital healthcare.</p>
-</div>
-<div class="mt-4 flex flex-wrap justify-center gap-4">
-<button class="flex h-12 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-5 text-base font-bold text-white transition-colors hover:bg-primary/90">
-<span class="truncate">View The Project</span>
-</button>
-<button class="flex h-12 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-slate-200 px-5 text-base font-bold text-slate-800 transition-colors hover:bg-slate-300 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
-<span class="truncate">Read The Paper</span>
-</button>
+<div class="flex flex-col">
+<h2 class="text-3xl font-black tracking-tighter text-slate-900 dark:text-white @[480px]/poster:text-4xl @[768px]/poster:text-5xl">AI-Powered Chronic Disease Monitoring</h2>
+<p class="mx-auto max-w-2xl text-sm text-slate-600 dark:text-slate-400 @[480px]/poster:text-base">A predictive platform for proactive digital healthcare.</p>
 </div>
 </section>
+<div class="grid flex-1 grid-cols-2 gap-x-4 gap-y-3 @[480px]/poster:gap-x-6 @[480px]/poster:gap-y-4 @[768px]/poster:gap-x-8 @[768px]/poster:gap-y-6">
+<!-- LEFT COLUMN -->
+<div class="flex flex-col gap-3 @[480px]/poster:gap-4 @[768px]/poster:gap-6">
 <!-- Introduction Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="introduction">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Introduction</h2>
-<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">This project, undertaken for BioTective Sdn Bhd, involves the prototype development of an AI-enabled digital health platform for chronic disease monitoring. In Malaysia, chronic, non-communicable diseases (NCDs) are the leading cause of death and disability, placing an immense strain on a healthcare system primarily designed for acute, episodic care [1]. Patients often struggle with fragmented health information and a lack of real-time monitoring. This project aims to create a prototype that integrates multi-source health data (e.g., glucose levels, diet, activity) and uses Artificial Intelligence to provide actionable insights. The platform is designed to facilitate timely interventions by both patients and clinicians, transforming chronic disease management from a reactive process into a proactive, data-driven partnership.</p>
+<section class="flex flex-col gap-1 @[480px]/poster:gap-2" id="introduction">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">Introduction</h3>
+<p class="text-xs leading-relaxed text-slate-600 dark:text-slate-400 @[480px]/poster:text-sm">This project, for BioTective Sdn Bhd, is a prototype AI-enabled digital health platform for chronic disease monitoring. In Malaysia, NCDs are the leading cause of death, straining a healthcare system designed for acute care [1]. The platform integrates multi-source health data (glucose, diet, activity) and uses AI to provide actionable insights, transforming chronic disease management into a proactive, data-driven partnership.</p>
 </section>
 <!-- The Problem Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="problem">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">The Problem</h2>
-<div class="space-y-4 text-base leading-relaxed text-slate-600 dark:text-slate-400">
-<p>The core problem is that chronic disease patients lack a unified platform that integrates their fragmented health data and provides real-time, actionable, and personalised guidance. Existing digital health solutions often act as simple data repositories and do not fully leverage AI to detect early warning signs or provide context-aware recommendations.</p>
-<p>This leads to significant pain points for both patients and clinicians:</p>
-<ul class="space-y-2 pl-5">
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined mt-0.5 text-primary">arrow_right</span>
-<span><strong>Patient Pain Points:</strong> Fragmented care records, difficulty with self-management, low health literacy, and the financial and psychological burden of long-term illness [3].</span>
+<section class="flex flex-col gap-1 @[480px]/poster:gap-2" id="problem">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">The Problem</h3>
+<div class="space-y-2 text-xs leading-relaxed text-slate-600 dark:text-slate-400 @[480px]/poster:text-sm">
+<p>Patients lack a unified platform for fragmented health data that provides real-time, personalised guidance. This leads to:</p>
+<ul class="space-y-1 pl-4">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined mt-0.5 text-primary text-sm">personal_injury</span>
+<span class="flex-1"><strong>Patient Pain:</strong> Fragmented records, difficulty with self-management, and the burden of long-term illness [3].</span>
 </li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined mt-0.5 text-primary">arrow_right</span>
-<span><strong>Clinician Pain Points:</strong> Systemic overload due to high patient-to-doctor ratios, lack of integrated data for decision-making, and the inefficiency of managing chronic conditions within an acute care model [1].</span>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined mt-0.5 text-primary text-sm">medical_services</span>
+<span class="flex-1"><strong>Clinician Pain:</strong> High patient ratios, lack of integrated data, and inefficient management in an acute care model [1].</span>
 </li>
 </ul>
-<p>The project's primary goal is to design, develop, and deliver a high-fidelity prototype of an AI-Enabled Digital Health Platform that addresses these issues by the end of the semester.</p>
+<p><strong>Goal:</strong> A high-fidelity prototype of an AI-Enabled Digital Health Platform.</p>
 </div>
 </section>
 <!-- Literature Review Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="literature-review">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Literature Review</h2>
-<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">The Malaysian digital health market is expanding rapidly, yet a competitive analysis reveals a significant market gap [2, 4]. Existing platforms like <strong>DoctorOnCall</strong> and <strong>Doc2Us</strong> excel at transactional, on-demand services such as teleconsultations and e-prescriptions but are fundamentally reactive. They serve patients who actively seek care but do not offer continuous, proactive monitoring. Other platforms like <strong>BookDoc</strong> focus on general wellness and gamified activity tracking rather than clinical disease management. The closest competitor, <strong>Naluri Health</strong>, offers structured programmes for chronic disease management but relies on a human-coaching model. While effective, this approach is resource-intensive and faces challenges in scalability. The analysis concludes that there is an unmet need for a scalable, automated platform that fosters a continuous, proactive care relationship with the patient, moving beyond the episodic interactions that currently dominate the market [4].</p>
+<section class="flex flex-col gap-1 @[480px]/poster:gap-2" id="literature-review">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">Literature Review</h3>
+<p class="text-xs leading-relaxed text-slate-600 dark:text-slate-400 @[480px]/poster:text-sm">A competitive analysis of the Malaysian digital health market reveals a gap [2, 4]. Existing platforms are reactive (<strong>DoctorOnCall</strong>), focus on wellness (<strong>BookDoc</strong>), or use human coaching (<strong>Naluri Health</strong>). There is an unmet need for a scalable, automated platform for proactive, continuous chronic disease management [4].</p>
 </section>
+</div>
+<!-- RIGHT COLUMN -->
+<div class="flex flex-col gap-3 @[480px]/poster:gap-4 @[768px]/poster:gap-6">
 <!-- Methodology Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="methodology">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Methodology</h2>
-<div class="space-y-4 text-base leading-relaxed text-slate-600 dark:text-slate-400">
-<p>The solution is a high-fidelity prototype built on a modern, decoupled system architecture designed for scalability, security, and rapid development.</p>
-<ul class="space-y-3 pl-5">
-<li class="flex flex-col items-start gap-2">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-primary">architecture</span>
-<span class="font-bold text-slate-800 dark:text-slate-200">System Architecture:</span>
+<section class="flex flex-col gap-1 @[480px]/poster:gap-2" id="methodology">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">Methodology</h3>
+<div class="flex flex-col gap-2 pt-1">
+<div class="flex flex-col gap-1 rounded-lg border border-slate-700 bg-slate-800/50 p-2 @[480px]/poster:p-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base @[480px]/poster:text-lg">architecture</span>
+<h4 class="font-bold text-white @[480px]/poster:text-base">System Architecture</h4>
 </div>
-<p class="pl-9">The solution is built on a microservices-style architecture to separate concerns. This includes a <strong>Platform Service</strong> which comprises the frontend application. A dedicated <strong>Data Service</strong> acts as the sole gateway to the Supabase backend, managing all authentication and secure data storage operations. The <strong>LLM Chatbot Service</strong> handles conversational logic, communicating with the frontend to manage user interaction and with the Data Service to retrieve patient-specific information for context.</p>
-</li>
-<li class="flex flex-col items-start gap-2">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-primary">layers</span>
-<span class="font-bold text-slate-800 dark:text-slate-200">Technology Stack:</span>
+<p class="pl-6 text-xs text-slate-400 @[480px]/poster:text-sm">Microservices: Platform Service (UI), Data Service (Gateway), and LLM Chatbot Service.</p>
 </div>
-<ul class="list-disc space-y-2 pl-14">
-<li><strong>Frontend:</strong> <strong>Flutter</strong> is used for its ability to create a high-performance, consistent user interface across mobile and web from a single codebase.</li>
-<li><strong>Backend:</strong> <strong>Python</strong> with the <strong>FastAPI</strong> framework was chosen for its high performance and unrivalled ecosystem of AI/ML libraries.</li>
-<li><strong>Database:</strong> <strong>Supabase</strong> is used as the Backend-as-a-Service (BaaS) platform, leveraging its underlying <strong>PostgreSQL</strong> database with Row-Level Security (RLS) to ensure strict data segregation.</li>
+<div class="flex flex-col gap-1 rounded-lg border border-slate-700 bg-slate-800/50 p-2 @[480px]/poster:p-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base @[480px]/poster:text-lg">layers</span>
+<h4 class="font-bold text-white @[480px]/poster:text-base">Technology Stack</h4>
+</div>
+<ul class="list-inside list-disc pl-6 text-xs text-slate-400 @[480px]/poster:text-sm">
+<li><strong>Frontend:</strong> Flutter</li>
+<li><strong>Backend:</strong> Python (FastAPI)</li>
+<li><strong>Database:</strong> Supabase (Postgres)</li>
 </ul>
-</li>
-<li class="flex flex-col items-start gap-2">
-<div class="flex items-center gap-3">
-<span class="material-symbols-outlined text-primary">psychology</span>
-<span class="font-bold text-slate-800 dark:text-slate-200">AI Core:</span>
 </div>
-<p class="pl-9">The AI core is implemented as an autonomous agent using the <strong>LangChain</strong> framework. The system leverages the LLM's <strong>tool-calling</strong> capabilities. The agent is provided with a set of 'tools'—custom Python functions—that allow it to interact with the Data Service to fetch live patient data, such as recent glucose readings or diet history. While the initial prompt is constructed with relevant context to streamline the process, the agent retains the ability to autonomously use these tools to gather more information as needed to form its reasoning and generate a personalised response.</p>
-</li>
-</ul>
+<div class="flex flex-col gap-1 rounded-lg border border-slate-700 bg-slate-800/50 p-2 @[480px]/poster:p-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-base @[480px]/poster:text-lg">psychology</span>
+<h4 class="font-bold text-white @[480px]/poster:text-base">AI Core</h4>
+</div>
+<p class="pl-6 text-xs text-slate-400 @[480px]/poster:text-sm">LangChain autonomous agent with tool-calling to fetch live patient data for personalised responses.</p>
+</div>
 </div>
 </section>
 <!-- Conclusion Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="conclusion">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Conclusion</h2>
-<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">This project addresses a critical gap in the Malaysian digital health ecosystem by developing a prototype for an AI-powered platform focused on proactive and continuous chronic disease management. By integrating patient data, providing personalised AI-driven insights, and automating engagement, the platform aims to empower patients in their self-management journey. Simultaneously, it provides clinicians with an intelligent "attention funnel" that prioritises high-risk individuals, enhancing efficiency and enabling timely interventions. The successful delivery of this prototype will validate the technical feasibility and strategic value of this approach, laying the groundwork for a commercially viable product that can significantly improve health outcomes for millions living with chronic disease.</p>
+<section class="flex flex-col gap-1 @[480px]/poster:gap-2" id="conclusion">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">Conclusion</h3>
+<p class="text-xs leading-relaxed text-slate-600 dark:text-slate-400 @[480px]/poster:text-sm">This project addresses a critical gap by prototyping an AI-powered platform for proactive chronic disease management. It empowers patients and provides clinicians with an "attention funnel" to prioritise high-risk individuals. The prototype validates the technical feasibility and strategic value, laying the groundwork for a commercially viable product to improve health outcomes.</p>
 </section>
 <!-- Future Works Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="future-works">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Future Works</h2>
-<div class="space-y-4 text-base leading-relaxed text-slate-600 dark:text-slate-400">
-<p>Upon successful completion of the prototype, future development could focus on:</p>
-<ul class="space-y-3 pl-5">
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined mt-0.5 text-primary">integration_instructions</span>
-<span><strong>Clinical Integration:</strong> Pursue integration with existing Hospital Information Systems (HIS) and Electronic Health Records (EHRs) using interoperability standards like HL7 FHIR.</span>
+<section class="flex flex-col gap-1 @[480px]/poster:gap-2" id="future-works">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">Future Works</h3>
+<ul class="space-y-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400 @[480px]/poster:text-sm">
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined mt-0.5 text-primary text-sm">integration_instructions</span>
+<span><strong>Clinical Integration:</strong> HIS/EHR integration via HL7 FHIR.</span>
 </li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined mt-0.5 text-primary">expand_content</span>
-<span><strong>Expansion to Other Chronic Diseases:</strong> Adapt the modular architecture to support other conditions such as hypertension, COPD, and chronic kidney disease.</span>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined mt-0.5 text-primary text-sm">expand_content</span>
+<span><strong>Disease Expansion:</strong> Adapt for hypertension, COPD, etc.</span>
 </li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined mt-0.5 text-primary">analytics</span>
-<span><strong>Advanced Predictive Analytics:</strong> Incorporate predictive machine learning models to forecast future health risks, such as hypoglycaemic events or hospital readmissions, enabling preventative interventions.</span>
+li class="flex items-start gap-2">
+<span class="material-symbols-outlined mt-0.5 text-primary text-sm">analytics</span>
+<span><strong>Predictive Analytics:</strong> Forecast risks like hypoglycaemic events.</span>
 </li>
-<li class="flex items-start gap-3">
-<span class="material-symbols-outlined mt-0.5 text-primary">video_chat</span>
-<span><strong>Telemedicine Integration:</strong> Integrate secure video consultation capabilities to allow clinicians to initiate a virtual visit directly from the dashboard upon receiving a high-risk alert.</span>
+<li class="flex items-start gap-2">
+<span class="material-symbols-outlined mt-0.5 text-primary text-sm">video_chat</span>
+<span><strong>Telemedicine:</strong> Integrate secure video consultations.</span>
 </li>
 </ul>
-</div>
 </section>
+</div>
 <!-- References Section -->
-<section class="flex scroll-mt-20 flex-col gap-4" id="references">
-<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">References</h2>
-<div class="space-y-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+<section class="col-span-2 flex flex-col gap-1 @[480px]/poster:gap-2" id="references">
+<h3 class="text-base font-bold tracking-tight text-slate-900 dark:text-white @[480px]/poster:text-lg @[768px]/poster:text-xl">References</h3>
+<div class="grid grid-cols-2 gap-x-4 text-[10px] leading-tight text-slate-500 @[480px]/poster:text-xs">
 <p>[1] A. S. Ramli and Y. S. Taher, "Managing Chronic Diseases in the Malaysian Primary Health Care – A Need for Change," <em>Malaysian Family Physician</em>, vol. 3, no. 1, pp. 6-13, 2008.</p>
-<p>[2] Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report By Technology (Tele-healthcare, mHealth), By Component (Software, Hardware, Services), By Region, And Segment Forecasts, 2025 - 2033," 2024.</p>
-<p>[3] CodeBlue, "Over Two Million Adults In Malaysia Live With Three NCDs: NHMS 2023," May 28, 2024. [Online]. Available: <a href="https://codeblue.galencentre.org/2024/05/over-two-million-adults-in-malaysia-live-with-three-ncds-nhms-2023/" class="text-primary hover:underline">https://codeblue.galencentre.org/2024/05/over-two-million-adults-in-malaysia-live-with-three-ncds-nhms-2023/</a></p>
+<p>[2] Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report...," 2024.</p>
+<p>[3] CodeBlue, "Over Two Million Adults In Malaysia Live With Three NCDs: NHMS 2023," May 28, 2024. [Online]. Available: <a href="https://codeblue.galencentre.org/2024/05/over-two-million-adults-in-malaysia-live-with-three-ncds-nhms-2023/" class="text-primary hover:underline">URL</a></p>
 <p>[4] PwC Malaysia, "Healthcare in a Digital Economy: Reimagining the future of HealthTech in Malaysia," 2021.</p>
 </div>
 </section>
 </div>
 </main>
-<!-- Footer -->
-<footer class="flex justify-center border-t border-slate-200 dark:border-slate-800">
-<div class="flex w-full max-w-5xl flex-col items-center justify-between gap-6 px-6 py-8 sm:flex-row">
-<p class="text-sm text-slate-500 dark:text-slate-400">© 2024 BioTective Project. All Rights Reserved.</p>
-<div class="flex items-center gap-6">
-<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#">Read the Paper</a>
-<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#">View on GitHub</a>
-<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#">Contact Us</a>
-</div>
-</div>
-</footer>
 </div>
 </body></html>
