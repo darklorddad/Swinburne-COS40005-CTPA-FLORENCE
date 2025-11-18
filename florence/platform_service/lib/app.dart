@@ -180,14 +180,14 @@ class _AppState extends State<App> {
         }
       }
 
-      // The user object from the backend is now the source of truth for the role.
-      final role = backendUser?['role'];
-      debugPrint('[App Listener] Session found. Role: $role. Navigating...');
+      // Determine user role from Supabase auth metadata
+      final userRole = session?.user?.appMetadata['role'] as String? ?? 'PATIENT';
+      debugPrint('[App Listener] Session found. Role: $userRole. Navigating...');
 
       String destinationRoute;
-      if (role == 'PATIENT') {
+      if (userRole.toUpperCase() == 'PATIENT') {
         destinationRoute = AppRoutes.dashboard;
-      } else if (role == 'CLINICIAN' || role == 'ADMIN') {
+      } else if (userRole.toUpperCase() == 'CLINICIAN' || userRole.toUpperCase() == 'ADMIN') {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
