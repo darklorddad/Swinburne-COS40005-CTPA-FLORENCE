@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>BioTective Project Poster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              "primary": "#137fec",
+              "background-light": "#f6f7f8",
+              "poster-light": "#ffffff",
+              "text-light": "#0d141b",
+              "text-muted-light": "#4c739a",
+              "accent-green": "#7ED321",
+              "accent-orange": "#F5A623",
+              "accent-red": "#EF4444",
+            },
+            fontFamily: {
+              "display": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* A1 paper aspect ratio (portrait) */
+        @media (min-width: 768px) {
+            .poster-aspect {
+                aspect-ratio: 594 / 841;
+                width: auto;
+                height: 90vh;
+                max-height: 1200px;
+            }
+        }
+        .mermaid svg {
+            font-size: 12px; /* Adjust font size in diagrams */
+        }
+    </style>
+</head>
+<body class="bg-background-light font-display text-text-light flex items-center justify-center p-4 sm:p-8">
+
+<div class="w-full max-w-5xl bg-poster-light rounded-xl shadow-2xl overflow-hidden poster-aspect flex flex-col">
+    <main class="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto">
+        <div class="text-center border-b border-slate-200 pb-6 mb-6">
+            <p class="text-primary text-base font-bold leading-normal mb-2">AI-ENABLED DIGITAL HEALTH PLATFORM FOR CHRONIC DISEASE MONITORING</p>
+            <h1 class="text-text-light text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em]">BioTective: A Proactive Approach to Chronic Disease</h1>
+            <p class="text-text-muted-light text-lg font-normal leading-normal mt-4">Daniel Tiong, Alif Harriz, Ashley Jong, Basil Agas, Edison Ho</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Column 1 -->
+            <div class="flex flex-col gap-6">
+                <div class="bg-background-light p-5 rounded-lg">
+                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Introduction</h2>
+                    <p class="text-text-light text-sm font-normal leading-relaxed">
+                        This project, for BioTective Sdn Bhd, involves prototyping an AI-enabled digital health platform for chronic disease monitoring. In Malaysia, non-communicable diseases (NCDs) are the leading cause of death, straining a healthcare system designed for acute care [1]. Patients struggle with fragmented health data and lack real-time monitoring. This project aims to build a prototype that integrates health data (glucose, diet, activity) and uses AI to provide actionable insights, facilitating timely interventions by patients and clinicians and shifting care from reactive to proactive.
+                    </p>
+                </div>
+
+                <div class="bg-background-light p-5 rounded-lg">
+                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Problem</h2>
+                    <p class="text-text-light text-sm font-normal leading-relaxed mb-4">
+                        Chronic disease patients lack a unified platform that integrates their fragmented health data to provide real-time, personalised guidance. Existing digital solutions often act as simple data logs and fail to leverage AI for early warnings or context-aware recommendations.
+                    </p>
+                    <div class="space-y-3">
+                        <h3 class="font-semibold text-base">Patient Pain Points:</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center size-8 rounded-full bg-red-100 text-accent-red">
+                                <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
+                            </div>
+                            <p class="text-text-muted-light text-sm">Fragmented records & difficulty with self-management [3].</p>
+                        </div>
+                        <h3 class="font-semibold text-base mt-2">Clinician Pain Points:</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center justify-center size-8 rounded-full bg-orange-100 text-accent-orange">
+                                <span class="material-symbols-outlined text-lg">workload</span>
+                            </div>
+                            <p class="text-text-muted-light text-sm">System overload & lack of integrated data for decisions [1].</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-background-light p-5 rounded-lg">
+                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Literature Review</h2>
+                    <p class="text-text-light text-sm font-normal leading-relaxed mb-3">
+                        The Malaysian digital health market is expanding, yet a competitive analysis reveals a gap for a proactive, automated solution [2, 4].
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-200">
+                                <tr>
+                                    <th class="p-2">Feature</th>
+                                    <th class="p-2 text-center">BioTective</th>
+                                    <th class="p-2 text-center">DoctorOnCall</th>
+                                    <th class="p-2 text-center">Naluri Health</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-2 font-medium">Proactive Monitoring</td>
+                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                    <td class="p-2 text-center">✓ <span class="text-xs">(Human)</span></td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-2 font-medium">AI Recommendations</td>
+                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-2 font-medium">Teleconsultation</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2 font-medium">Scalable Automation</td>
+                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2 (Methodology) -->
+            <div class="lg:col-span-2 flex flex-col gap-6">
+                <div class="bg-background-light p-5 rounded-lg h-full">
+                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Methodology</h2>
+                    <div class="grid grid-cols-1 @container md:grid-cols-2 gap-6">
+                        <div class="flex flex-col gap-6">
+                            <div>
+                                <h3 class="font-bold text-primary mb-2">System Architecture</h3>
+                                <div class="w-full bg-white rounded-lg p-2 border border-slate-200">
+                                    <pre class="mermaid" style="font-size: 10px;">
+graph TD
+    subgraph User Interface
+        A["Platform Service <br> (Flutter Frontend)"]
+    end
+
+    subgraph Backend Services
+        B["LLM Chatbot Service <br> (Python/FastAPI)"]
+        C["Data Service <br> (Python/FastAPI)"]
+    end
+
+    subgraph Database
+        D["Supabase <br> (PostgreSQL + BaaS)"]
+    end
+
+    A <--> B
+    A <--> C
+    B --> C
+    C <--> D
+                                    </pre>
+                                </div>
+                            </div>
+                             <div>
+                                <h3 class="font-bold text-primary mb-2">Technology Stack</h3>
+                                <div class="grid grid-cols-3 gap-4 text-center">
+                                    <div class="p-2 bg-white rounded border border-slate-200">
+                                        <p class="font-bold text-sm">Flutter</p>
+                                        <p class="text-xs text-text-muted-light">Frontend</p>
+                                    </div>
+                                    <div class="p-2 bg-white rounded border border-slate-200">
+                                        <p class="font-bold text-sm">Python</p>
+                                        <p class="text-xs text-text-muted-light">Backend</p>
+                                    </div>
+                                    <div class="p-2 bg-white rounded border border-slate-200">
+                                        <p class="font-bold text-sm">Supabase</p>
+                                        <p class="text-xs text-text-muted-light">Database</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-primary mb-2">AI Core: Tool-Calling Flow</h3>
+                            <div class="w-full bg-white rounded-lg p-2 border border-slate-200">
+                                <pre class="mermaid" style="font-size: 10px;">
+graph TD
+    Start((User Query)) --> A[LLM Agent receives query];
+    A --> B{Needs more info?};
+    B -- Yes --> C[Selects & Calls 'Tool' <br> (e.g., get_glucose_history)];
+    C --> D[Tool queries Data Service];
+    D --> E[Data Service returns data];
+    E --> F[Agent receives data from Tool];
+    F --> G[Agent synthesises info];
+    B -- No --> G;
+    G --> H[Generate Personalised Response];
+    H --> End((Display to User));
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="bg-white p-5 rounded-lg border border-slate-200">
+                            <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Conclusion</h2>
+                            <p class="text-text-light text-sm font-normal leading-relaxed">
+                                This project addresses a critical gap in Malaysian digital health by prototyping an AI-powered platform for proactive chronic disease management. By integrating data, providing personalised AI insights, and automating engagement, the platform empowers patients in self-management. It also provides clinicians an "attention funnel" to prioritise high-risk individuals, enhancing efficiency. This prototype validates the approach, laying the groundwork for a product to improve health outcomes.
+                            </p>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg border border-slate-200">
+                            <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Future Works</h2>
+                            <ul class="space-y-2 list-disc list-inside text-text-light text-sm">
+                                <li>Integration with EHR/HIS systems via HL7 FHIR.</li>
+                                <li>Expansion to other chronic conditions (e.g., Hypertension, COPD).</li>
+                                <li>Incorporate predictive analytics for events like hypoglycemia.</li>
+                                <li>Integrate telemedicine for real-time clinician intervention.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-6 pt-4 border-t border-slate-200">
+            <h2 class="text-text-light text-lg font-bold leading-tight tracking-[-0.015em] mb-2">References</h2>
+            <ol class="list-decimal list-inside text-xs text-text-muted-light space-y-1">
+                <li>A. S. Ramli and Y. S. Taher, "Managing Chronic Diseases in the Malaysian Primary Health Care – A Need for Change," <em>Malaysian Family Physician</em>, vol. 3, no. 1, pp. 6–13, 2008.</li>
+                <li>Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report By Technology (Tele-healthcare, mHealth), By Component (Software, Hardware, Services), By Region, And Segment Forecasts, 2025 - 2033," 2024.</li>
+                <li>CodeBlue, "Over Two Million Adults In Malaysia Live With Three NCDs: NHMS 2023," May 28, 2024. [Online].</li>
+                <li>PwC Malaysia, "Healthcare in a Digital Economy: Reimagining the future of HealthTech in Malaysia," 2021.</li>
+            </ol>
+        </footer>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: {
+        'primaryColor': '#f6f7f8',
+        'primaryTextColor': '#0d141b',
+        'primaryBorderColor': '#a2b6c9',
+        'lineColor': '#4c739a',
+        'secondaryColor': '#ffffff',
+        'tertiaryColor': '#f6f7f8'
+    }});
+</script>
+
+</body>
+</html>
