@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/api_service.dart';
 import '../../../core/utils/validators.dart';
 import '../../../core/utils/helpers.dart';
@@ -143,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withOpacity(0.1),
+                          color: AppTheme.errorColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
@@ -227,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withOpacity(0.1),
+            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(

@@ -17,7 +17,7 @@ import 'main.dart';
 /// This sets up the MaterialApp with theme, routing, and providers
 
 class App extends StatefulWidget {
-  App({super.key});
+  const App({super.key});
 
   @override
   State<App> createState() => _AppState();
