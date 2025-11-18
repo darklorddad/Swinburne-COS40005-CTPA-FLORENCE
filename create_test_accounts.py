@@ -15,6 +15,7 @@ def create_test_accounts():
 
     # Set up headers for Admin API access
     headers = {
+        "apikey": SUPABASE_SERVICE_ROLE_KEY,
         "Authorization": f"Bearer {SUPABASE_SERVICE_ROLE_KEY}",
         "Content-Type": "application/json"
     }
