@@ -1,253 +1,184 @@
 <!DOCTYPE html>
-<html class="light" lang="en">
-<head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>BioTective Project Poster</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              "primary": "#137fec",
-              "background-light": "#f6f7f8",
-              "poster-light": "#ffffff",
-              "text-light": "#0d141b",
-              "text-muted-light": "#4c739a",
-              "accent-green": "#7ED321",
-              "accent-orange": "#F5A623",
-              "accent-red": "#EF4444",
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>BioTective: AI-Powered Chronic Disease Monitoring</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
             },
-            fontFamily: {
-              "display": ["Inter", "sans-serif"]
-            },
-            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
-          },
-        },
-      }
+        }
     </script>
-    <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        /* A1 paper aspect ratio (portrait) */
-        @media (min-width: 768px) {
-            .poster-aspect {
-                aspect-ratio: 594 / 841;
-                width: auto;
-                height: 90vh;
-                max-height: 1200px;
-            }
-        }
-        .mermaid svg {
-            font-size: 12px; /* Adjust font size in diagrams */
+<style>
+        body {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
     </style>
 </head>
-<body class="bg-background-light font-display text-text-light flex items-center justify-center p-4 sm:p-8">
-
-<div class="w-full max-w-5xl bg-poster-light rounded-xl shadow-2xl overflow-hidden poster-aspect flex flex-col">
-    <main class="flex-1 p-6 sm:p-8 md:p-10 overflow-y-auto">
-        <div class="text-center border-b border-slate-200 pb-6 mb-6">
-            <p class="text-primary text-base font-bold leading-normal mb-2">AI-ENABLED DIGITAL HEALTH PLATFORM FOR CHRONIC DISEASE MONITORING</p>
-            <h1 class="text-text-light text-4xl md:text-5xl font-black leading-tight tracking-[-0.033em]">BioTective: A Proactive Approach to Chronic Disease</h1>
-            <p class="text-text-muted-light text-lg font-normal leading-normal mt-4">Daniel Tiong, Alif Harriz, Ashley Jong, Basil Agas, Edison Ho</p>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <!-- Column 1 -->
-            <div class="flex flex-col gap-6">
-                <div class="bg-background-light p-5 rounded-lg">
-                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Introduction</h2>
-                    <p class="text-text-light text-sm font-normal leading-relaxed">
-                        This project, for BioTective Sdn Bhd, involves prototyping an AI-enabled digital health platform for chronic disease monitoring. In Malaysia, non-communicable diseases (NCDs) are the leading cause of death, straining a healthcare system designed for acute care [1]. Patients struggle with fragmented health data and lack real-time monitoring. This project aims to build a prototype that integrates health data (glucose, diet, activity) and uses AI to provide actionable insights, facilitating timely interventions by patients and clinicians and shifting care from reactive to proactive.
-                    </p>
-                </div>
-
-                <div class="bg-background-light p-5 rounded-lg">
-                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Problem</h2>
-                    <p class="text-text-light text-sm font-normal leading-relaxed mb-4">
-                        Chronic disease patients lack a unified platform that integrates their fragmented health data to provide real-time, personalised guidance. Existing digital solutions often act as simple data logs and fail to leverage AI for early warnings or context-aware recommendations.
-                    </p>
-                    <div class="space-y-3">
-                        <h3 class="font-semibold text-base">Patient Pain Points:</h3>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center size-8 rounded-full bg-red-100 text-accent-red">
-                                <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
-                            </div>
-                            <p class="text-text-muted-light text-sm">Fragmented records & difficulty with self-management [1].</p>
-                        </div>
-                        <h3 class="font-semibold text-base mt-2">Clinician Pain Points:</h3>
-                        <div class="flex items-center gap-3">
-                            <div class="flex items-center justify-center size-8 rounded-full bg-orange-100 text-accent-orange">
-                                <span class="material-symbols-outlined text-lg">workload</span>
-                            </div>
-                            <p class="text-text-muted-light text-sm">System overload & lack of integrated data for decisions [1].</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-background-light p-5 rounded-lg">
-                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Literature Review</h2>
-                    <p class="text-text-light text-sm font-normal leading-relaxed mb-3">
-                        The Malaysian digital health market is expanding, yet a competitive analysis reveals a gap for a proactive, automated solution [2, 4].
-                    </p>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm text-left">
-                            <thead class="bg-slate-200">
-                                <tr>
-                                    <th class="p-2">Feature</th>
-                                    <th class="p-2 text-center">BioTective</th>
-                                    <th class="p-2 text-center">DoctorOnCall</th>
-                                    <th class="p-2 text-center">Naluri Health</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b">
-                                    <td class="p-2 font-medium">Proactive Monitoring</td>
-                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                    <td class="p-2 text-center">✓ <span class="text-xs">(Human)</span></td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-2 font-medium">AI Recommendations</td>
-                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-2 font-medium">Teleconsultation</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-2 font-medium">Scalable Automation</td>
-                                    <td class="p-2 text-center text-accent-green font-bold">✓</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                    <td class="p-2 text-center text-accent-red font-bold">✗</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Column 2 (Methodology) -->
-            <div class="lg:col-span-2 flex flex-col gap-6">
-                <div class="bg-background-light p-5 rounded-lg h-full">
-                    <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Methodology</h2>
-                    <div class="grid grid-cols-1 @container md:grid-cols-2 gap-6">
-                        <div class="flex flex-col gap-6">
-                            <div>
-                                <h3 class="font-bold text-primary mb-2">System Architecture</h3>
-                                <div class="w-full bg-white rounded-lg p-2 border border-slate-200">
-                                    <pre class="mermaid" style="font-size: 10px;">
-graph TD
-    subgraph User Interface
-        A["Platform Service <br> (Flutter Frontend)"]
-    end
-
-    subgraph Backend Services
-        B["LLM Chatbot Service <br> (Python/FastAPI)"]
-        C["Data Service <br> (Python/FastAPI)"]
-    end
-
-    subgraph Database
-        D["Supabase <br> (PostgreSQL + BaaS)"]
-    end
-
-    A <--> B
-    A <--> C
-    C <--> D
-                                    </pre>
-                                </div>
-                            </div>
-                             <div>
-                                <h3 class="font-bold text-primary mb-2">Technology Stack</h3>
-                                <div class="grid grid-cols-3 gap-4 text-center">
-                                    <div class="p-2 bg-white rounded border border-slate-200">
-                                        <p class="font-bold text-sm">Flutter</p>
-                                        <p class="text-xs text-text-muted-light">Frontend</p>
-                                    </div>
-                                    <div class="p-2 bg-white rounded border border-slate-200">
-                                        <p class="font-bold text-sm">Python</p>
-                                        <p class="text-xs text-text-muted-light">Backend</p>
-                                    </div>
-                                    <div class="p-2 bg-white rounded border border-slate-200">
-                                        <p class="font-bold text-sm">Supabase</p>
-                                        <p class="text-xs text-text-muted-light">Database</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-primary mb-2">AI Core: Tool-Calling Flow</h3>
-                            <div class="w-full bg-white rounded-lg p-2 border border-slate-200">
-                                <pre class="mermaid" style="font-size: 10px;">
-graph TD
-    Start((User Query)) --> Gather[Gather Initial Context];
-    Gather --> A[LLM Agent receives query & context];
-    A --> B{Needs *more* info?};
-    B -- Yes --> C[Selects & Calls 'Tool' <br> (e.g., get_glucose_history)];
-    C --> D[Tool queries Data Service];
-    D --> E[Data Service returns data];
-    E --> F[Agent receives data from Tool];
-    F --> G[Agent synthesises information];
-    B -- No --> G;
-    G --> H[Generate Personalised Response];
-    H --> End((Display to User));
-                                </pre>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                        <div class="bg-white p-5 rounded-lg border border-slate-200">
-                            <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Conclusion</h2>
-                            <p class="text-text-light text-sm font-normal leading-relaxed">
-                                This project addresses a critical gap in Malaysian digital health by prototyping an AI-powered platform for proactive chronic disease management. By integrating data, providing personalised AI insights, and automating engagement, the platform empowers patients in self-management. It also provides clinicians an "attention funnel" to prioritise high-risk individuals, enhancing efficiency. This prototype validates the approach, laying the groundwork for a product to improve health outcomes.
-                            </p>
-                        </div>
-                        <div class="bg-white p-5 rounded-lg border border-slate-200">
-                            <h2 class="text-text-light text-xl font-bold leading-tight tracking-[-0.015em] pb-3 border-b border-slate-200 mb-4">Future Works</h2>
-                            <ul class="space-y-2 list-disc list-inside text-text-light text-sm">
-                                <li>Integration with EHR/HIS systems via HL7 FHIR.</li>
-                                <li>Expansion to other chronic conditions (e.g., Hypertension, COPD).</li>
-                                <li>Incorporate predictive analytics for events like hypoglycemia.</li>
-                                <li>Integrate telemedicine for real-time clinician intervention.</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <footer class="mt-6 pt-4 border-t border-slate-200">
-            <h2 class="text-text-light text-lg font-bold leading-tight tracking-[-0.015em] mb-2">References</h2>
-            <ol class="list-decimal list-inside text-xs text-text-muted-light space-y-1">
-                <li>A. S. Ramli and Y. S. Taher, "Managing Chronic Diseases in the Malaysian Primary Health Care – A Need for Change," <em>Malaysian Family Physician</em>, vol. 3, no. 1, pp. 6–13, 2008.</li>
-                <li>Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report," 2024.</li>
-                <li>CodeBlue, "Over Two Million Adults In Malaysia Live With Three NCDs: NHMS 2023," May 28, 2024. [Online].</li>
-                <li>PwC Malaysia, "Healthcare in a Digital Economy: Reimagining the future of HealthTech in Malaysia," 2021.</li>
-            </ol>
-        </footer>
-    </main>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-800 dark:text-slate-200">
+<div class="relative flex min-h-screen w-full flex-col">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex items-center justify-center border-b border-slate-200/80 bg-background-light/80 backdrop-blur-sm dark:border-slate-800/80 dark:bg-background-dark/80">
+<div class="flex h-16 w-full max-w-5xl items-center justify-between px-6">
+<div class="flex items-center gap-3">
+<div class="size-6 text-primary">
+<svg fill="none" viewbox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+<path d="M39.5563 34.1455V13.8546C39.5563 15.708 36.8773 17.3437 32.7927 18.3189C30.2914 18.916 27.263 19.2655 24 19.2655C20.737 19.2655 17.7086 18.916 15.2073 18.3189C11.1227 17.3437 8.44365 15.708 8.44365 13.8546V34.1455C8.44365 35.9988 11.1227 37.6346 15.2073 38.6098C17.7086 39.2069 20.737 39.5564 24 39.5564C27.263 39.5564 30.2914 39.2069 32.7927 38.6098C36.8773 37.6346 39.5563 35.9988 39.5563 34.1455Z" fill="currentColor"></path>
+<path clip-rule="evenodd" d="M10.4485 13.8519C10.4749 13.9271 10.6203 14.246 11.379 14.7361C12.298 15.3298 13.7492 15.9145 15.6717 16.3735C18.0007 16.9296 20.8712 17.2655 24 17.2655C27.1288 17.2655 29.9993 16.9296 32.3283 16.3735C34.2508 15.9145 35.702 15.3298 36.621 14.7361C37.3796 14.246 37.5251 13.9271 37.5515 13.8519C37.5287 13.7876 37.4333 13.5973 37.0635 13.2931C36.5266 12.8516 35.6288 12.3647 34.343 11.9175C31.79 11.0295 28.1333 10.4437 24 10.4437C19.8667 10.4437 16.2099 11.0295 13.657 11.9175C12.3712 12.3647 11.4734 12.8516 10.9365 13.2931C10.5667 13.5973 10.4713 13.7876 10.4485 13.8519ZM37.5563 18.7877C36.3176 19.3925 34.8502 19.8839 33.2571 20.2642C30.5836 20.9025 27.3973 21.2655 24 21.2655C20.6027 21.2655 17.4164 20.9025 14.7429 20.2642C13.1498 19.8839 11.6824 19.3925 10.4436 18.7877V34.1275C10.4515 34.1545 10.5427 34.4867 11.379 35.027C12.298 35.6207 13.7492 36.2054 15.6717 36.6644C18.0007 37.2205 20.8712 37.5564 24 37.5564C27.1288 37.5564 29.9993 37.2205 32.3283 36.6644C34.2508 36.2054 35.702 35.6207 36.621 35.027C37.4573 34.4867 37.5485 34.1546 37.5563 34.1275V18.7877ZM41.5563 13.8546V34.1455C41.5563 36.1078 40.158 37.5042 38.7915 38.3869C37.3498 39.3182 35.4192 40.0389 33.2571 40.5551C30.5836 41.1934 27.3973 41.5564 24 41.5564C20.6027 41.5564 17.4164 41.1934 14.7429 40.5551C12.5808 40.0389 10.6502 39.3182 9.20848 38.3869C7.84205 37.5042 6.44365 36.1078 6.44365 34.1455L6.44365 13.8546C6.44365 12.2684 7.37223 11.0454 8.39581 10.2036C9.43325 9.3505 10.8137 8.67141 12.343 8.13948C15.4203 7.06909 19.5418 6.44366 24 6.44366C28.4582 6.44366 32.5797 7.06909 35.657 8.13948C37.1863 8.67141 38.5667 9.3505 39.6042 10.2036C40.6278 11.0454 41.5563 12.2684 41.5563 13.8546Z" fill="currentColor" fill-rule="evenodd"></path>
+</svg>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<script>
-    mermaid.initialize({ startOnLoad: true, theme: 'base', themeVariables: {
-        'primaryColor': '#f6f7f8',
-        'primaryTextColor': '#0d141b',
-        'primaryBorderColor': '#a2b6c9',
-        'lineColor': '#4c739a',
-        'secondaryColor': '#ffffff',
-        'tertiaryColor': '#f6f7f8'
-    }});
-</script>
-
-</body>
-</html>
+<h2 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white">BioTective</h2>
+</div>
+<nav class="hidden items-center gap-8 md:flex">
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#introduction">Introduction</a>
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#methodology">Methodology</a>
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#conclusion">Conclusion</a>
+</nav>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex flex-1 justify-center py-10 sm:py-16">
+<div class="flex w-full max-w-3xl flex-col gap-16 px-6 sm:gap-24">
+<!-- Hero Section -->
+<section class="flex flex-col items-center gap-6 text-center">
+<div class="flex flex-col gap-4">
+<h1 class="text-4xl font-black tracking-tighter text-slate-900 dark:text-white sm:text-6xl">BioTective: AI-Powered Chronic Disease Monitoring</h1>
+<p class="mx-auto max-w-2xl text-lg text-slate-600 dark:text-slate-400 sm:text-xl">A predictive platform for proactive digital healthcare.</p>
+</div>
+<div class="mt-4 flex flex-wrap justify-center gap-4">
+<button class="flex h-12 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-5 text-base font-bold text-white transition-colors hover:bg-primary/90">
+<span class="truncate">View The Project</span>
+</button>
+<button class="flex h-12 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-slate-200 px-5 text-base font-bold text-slate-800 transition-colors hover:bg-slate-300 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700">
+<span class="truncate">Read The Paper</span>
+</button>
+</div>
+</section>
+<!-- Introduction Section -->
+<section class="flex scroll-mt-20 flex-col gap-4" id="introduction">
+<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Introduction</h2>
+<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">A brief overview of the BioTective project's purpose and its significance in the evolving landscape of digital health, focusing on leveraging artificial intelligence for proactive chronic disease management. Our platform aims to shift the paradigm from reactive to predictive healthcare, providing clinicians and patients with actionable insights to prevent adverse health events.</p>
+</section>
+<!-- The Problem Section -->
+<section class="flex scroll-mt-20 flex-col gap-8">
+<div class="flex flex-col gap-4">
+<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">The Problem</h2>
+<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">Chronic diseases are a leading cause of death and disability worldwide, yet current monitoring systems are often reactive and fragmented. This section highlights the challenges in traditional healthcare and the urgent need for innovative, data-driven solutions.</p>
+</div>
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+<div class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined">monitoring</span>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Reactive Monitoring</h3>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-400">Traditional methods often rely on periodic check-ups, missing critical data points between visits and delaying intervention.</p>
+</div>
+<div class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900">
+<div class="flex items-center gap-3">
+<div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/20 text-primary">
+<span class="material-symbols-outlined">data_thresholding</span>
+</div>
+<h3 class="text-lg font-bold text-slate-900 dark:text-white">Data Overload</h3>
+</div>
+<p class="text-sm text-slate-600 dark:text-slate-400">Clinicians are overwhelmed with raw data from wearables and sensors, lacking the tools to extract meaningful, actionable insights efficiently.</p>
+</div>
+</div>
+</section>
+<!-- Methodology Section -->
+<section class="flex scroll-mt-20 flex-col gap-8" id="methodology">
+<div class="flex flex-col gap-4">
+<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Methodology</h2>
+<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">Our approach integrates real-time data from various sources, processes it through a sophisticated pipeline, and applies advanced machine learning models to generate predictive health alerts. The diagram below outlines this high-level workflow.</p>
+</div>
+<div class="flex flex-col items-center justify-center gap-4 rounded-xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 sm:p-8">
+<div class="flex w-full flex-col items-center justify-between gap-4 sm:flex-row">
+<div class="flex flex-col items-center gap-2 text-center">
+<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary"><span class="material-symbols-outlined">device_hub</span></div>
+<span class="font-semibold text-slate-800 dark:text-slate-200">Data Ingestion</span>
+<p class="text-xs text-slate-500 dark:text-slate-400">Wearables, EHR</p>
+</div>
+<div class="h-6 w-px rotate-90 bg-slate-300 dark:bg-slate-700 sm:h-px sm:w-full sm:rotate-0"></div>
+<div class="flex flex-col items-center gap-2 text-center">
+<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary"><span class="material-symbols-outlined">process_chart</span></div>
+<span class="font-semibold text-slate-800 dark:text-slate-200">Preprocessing</span>
+<p class="text-xs text-slate-500 dark:text-slate-400">Cleaning &amp; Normalization</p>
+</div>
+<div class="h-6 w-px rotate-90 bg-slate-300 dark:bg-slate-700 sm:h-px sm:w-full sm:rotate-0"></div>
+<div class="flex flex-col items-center gap-2 text-center">
+<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary"><span class="material-symbols-outlined">model_training</span></div>
+<span class="font-semibold text-slate-800 dark:text-slate-200">AI Model</span>
+<p class="text-xs text-slate-500 dark:text-slate-400">LSTM, Transformer</p>
+</div>
+<div class="h-6 w-px rotate-90 bg-slate-300 dark:bg-slate-700 sm:h-px sm:w-full sm:rotate-0"></div>
+<div class="flex flex-col items-center gap-2 text-center">
+<div class="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 text-primary"><span class="material-symbols-outlined">insights</span></div>
+<span class="font-semibold text-slate-800 dark:text-slate-200">Predictive Output</span>
+<p class="text-xs text-slate-500 dark:text-slate-400">Risk Scores, Alerts</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Conclusion Section -->
+<section class="flex scroll-mt-20 flex-col gap-4" id="conclusion">
+<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Conclusion</h2>
+<ul class="space-y-3 pl-5">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined mt-0.5 text-primary">check_circle</span>
+<span class="text-slate-600 dark:text-slate-400">BioTective demonstrates a significant potential to improve chronic disease management by providing timely and predictive insights.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined mt-0.5 text-primary">check_circle</span>
+<span class="text-slate-600 dark:text-slate-400">Our AI-driven approach successfully identifies high-risk patients earlier than traditional methods, enabling proactive interventions.</span>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined mt-0.5 text-primary">check_circle</span>
+<span class="text-slate-600 dark:text-slate-400">The platform is designed to be scalable and integrable with existing healthcare IT systems, facilitating wider adoption.</span>
+</li>
+</ul>
+</section>
+<!-- Future Works Section -->
+<section class="flex scroll-mt-20 flex-col gap-4">
+<h2 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">Future Works</h2>
+<p class="text-base leading-relaxed text-slate-600 dark:text-slate-400">Our roadmap includes expanding the platform to cover a broader range of chronic conditions, enhancing model personalization using federated learning, and conducting large-scale clinical trials to validate long-term patient outcomes and cost-effectiveness. We also aim to develop a patient-facing application to empower individuals in their own health management journey.</p>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="flex justify-center border-t border-slate-200 dark:border-slate-800">
+<div class="flex w-full max-w-5xl flex-col items-center justify-between gap-6 px-6 py-8 sm:flex-row">
+<p class="text-sm text-slate-500 dark:text-slate-400">© 2024 BioTective Project. All Rights Reserved.</p>
+<div class="flex items-center gap-6">
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#">Read the Paper</a>
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#">View on GitHub</a>
+<a class="text-sm font-medium text-slate-600 hover:text-primary dark:text-slate-300 dark:hover:text-primary" href="#">Contact Us</a>
+</div>
+</div>
+</footer>
+</div>
+</body></html>
