@@ -187,7 +187,10 @@ class _AppState extends State<App> {
       String destinationRoute;
       if (userRole.toUpperCase() == 'PATIENT') {
         destinationRoute = AppRoutes.dashboard;
-      } else if (userRole.toUpperCase() == 'CLINICIAN' || userRole.toUpperCase() == 'ADMIN') {
+      } else if (userRole.toUpperCase() == 'CLINICIAN') {
+        destinationRoute = AppRoutes.clinicianDashboard;
+      } else if (userRole.toUpperCase() == 'ADMIN') {
+        // Temporary: Redirect admin to clinician dashboard until admin dashboard is implemented
         destinationRoute = AppRoutes.clinicianDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
