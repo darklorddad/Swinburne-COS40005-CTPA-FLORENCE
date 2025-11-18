@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 500">
+  <defs>
+    <style>
+      .layer-box { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; }
+      .tech-card { fill: white; stroke: #3b82f6; stroke-width: 2; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+      .frontend-card { stroke: #0ea5e9; }
+      .backend-card { stroke: #10b981; }
+      .ai-card { stroke: #8b5cf6; }
+      .db-card { stroke: #f59e0b; }
+      .text { font-family: 'Inter', Arial, sans-serif; font-size: 13px; fill: #1e293b; text-anchor: middle; }
+      .title { font-family: 'Inter', Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #0f172a; }
+      .subtitle { font-size: 11px; fill: #64748b; }
+      .tech-name { font-size: 16px; font-weight: 700; }
+      .layer-label { font-size: 14px; font-weight: 600; fill: #475569; }
+      .benefit { font-size: 10px; fill: #059669; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="450" y="35" text-anchor="middle" class="title" style="font-size: 24px;">Technology Stack</text>
+  <text x="450" y="55" text-anchor="middle" class="subtitle" style="font-size: 13px;">Modern, Scalable Architecture for Healthcare AI</text>
+
+  <!-- Layer 1: Frontend -->
+  <g>
+    <rect x="50" y="80" width="800" height="90" rx="10" class="layer-box" fill="#e0f2fe" />
+    <text x="80" y="105" class="layer-label" text-anchor="start">Frontend Layer</text>
+
+    <!-- Flutter -->
+    <g>
+      <rect x="150" y="110" width="180" height="50" rx="8" class="tech-card frontend-card" />
+      <text x="240" y="133" class="tech-name" style="fill: #0284c7;">Flutter</text>
+      <text x="240" y="153" class="subtitle">Cross-platform framework (Dart)</text>
+    </g>
+
+    <!-- Benefits -->
+    <g>
+      <text x="450" y="125" class="benefit" text-anchor="start">✓ Single codebase</text>
+      <text x="450" y="142" class="benefit" text-anchor="start">✓ iOS + Android + Web</text>
+      <text x="620" y="125" class="benefit" text-anchor="start">✓ Fast development</text>
+      <text x="620" y="142" class="benefit" text-anchor="start">✓ Native performance</text>
+    </g>
+  </g>
+
+  <!-- Layer 2: Backend/API -->
+  <g>
+    <rect x="50" y="190" width="800" height="90" rx="10" class="layer-box" fill="#d1fae5" />
+    <text x="80" y="215" class="layer-label" text-anchor="start">Backend Layer</text>
+
+    <!-- Python -->
+    <g>
+      <rect x="100" y="220" width="140" height="50" rx="8" class="tech-card backend-card" />
+      <text x="170" y="243" class="tech-name" style="fill: #059669;">Python</text>
+      <text x="170" y="263" class="subtitle">Programming language</text>
+    </g>
+
+    <!-- FastAPI -->
+    <g>
+      <rect x="260" y="220" width="140" height="50" rx="8" class="tech-card backend-card" />
+      <text x="330" y="243" class="tech-name" style="fill: #059669;">FastAPI</text>
+      <text x="330" y="263" class="subtitle">Web framework</text>
+    </g>
+
+    <!-- Benefits -->
+    <g>
+      <text x="450" y="235" class="benefit" text-anchor="start">✓ High performance (async)</text>
+      <text x="450" y="252" class="benefit" text-anchor="start">✓ Best AI/ML ecosystem</text>
+      <text x="650" y="235" class="benefit" text-anchor="start">✓ Auto API docs</text>
+      <text x="650" y="252" class="benefit" text-anchor="start">✓ Type safety</text>
+    </g>
+  </g>
+
+  <!-- Layer 3: AI/ML -->
+  <g>
+    <rect x="50" y="300" width="800" height="90" rx="10" class="layer-box" fill="#f3e8ff" />
+    <text x="80" y="325" class="layer-label" text-anchor="start">AI/ML Layer</text>
+
+    <!-- LangChain -->
+    <g>
+      <rect x="100" y="330" width="150" height="50" rx="8" class="tech-card ai-card" />
+      <text x="175" y="353" class="tech-name" style="fill: #7c3aed;">LangChain</text>
+      <text x="175" y="373" class="subtitle">AI agent framework</text>
+    </g>
+
+    <!-- OpenAI GPT-4 -->
+    <g>
+      <rect x="270" y="330" width="150" height="50" rx="8" class="tech-card ai-card" />
+      <text x="345" y="353" class="tech-name" style="fill: #7c3aed;">GPT-4</text>
+      <text x="345" y="373" class="subtitle">Large language model</text>
+    </g>
+
+    <!-- Benefits -->
+    <g>
+      <text x="460" y="345" class="benefit" text-anchor="start">✓ Autonomous agent capabilities</text>
+      <text x="460" y="362" class="benefit" text-anchor="start">✓ Tool-calling for data retrieval</text>
+      <text x="680" y="345" class="benefit" text-anchor="start">✓ Context-aware</text>
+      <text x="680" y="362" class="benefit" text-anchor="start">✓ Personalized</text>
+    </g>
+  </g>
+
+  <!-- Layer 4: Database/Backend Services -->
+  <g>
+    <rect x="50" y="410" width="800" height="90" rx="10" class="layer-box" fill="#fef3c7" />
+    <text x="80" y="435" class="layer-label" text-anchor="start">Data Layer</text>
+
+    <!-- Supabase -->
+    <g>
+      <rect x="100" y="440" width="150" height="50" rx="8" class="tech-card db-card" />
+      <text x="175" y="463" class="tech-name" style="fill: #d97706;">Supabase</text>
+      <text x="175" y="483" class="subtitle">Backend-as-a-Service</text>
+    </g>
+
+    <!-- PostgreSQL -->
+    <g>
+      <rect x="270" y="440" width="150" height="50" rx="8" class="tech-card db-card" />
+      <text x="345" y="463" class="tech-name" style="fill: #d97706;">PostgreSQL</text>
+      <text x="345" y="483" class="subtitle">Relational database</text>
+    </g>
+
+    <!-- Benefits -->
+    <g>
+      <text x="460" y="455" class="benefit" text-anchor="start">✓ Row-Level Security (RLS)</text>
+      <text x="460" y="472" class="benefit" text-anchor="start">✓ Real-time subscriptions</text>
+      <text x="680" y="455" class="benefit" text-anchor="start">✓ Built-in auth</text>
+      <text x="680" y="472" class="benefit" text-anchor="start">✓ Scalable</text>
+    </g>
+  </g>
+</svg>
