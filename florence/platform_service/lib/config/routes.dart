@@ -1,5 +1,5 @@
-import 'package:florence_app/features/clinician/screens/clinician_profile_screen.dart';
-import 'package:florence_app/features/clinician/screens/patient_detail_screen.dart';
+import '../features/clinician/screens/clinician_profile_screen.dart';
+import '../features/clinician/screens/patient_detail_screen.dart';
 import 'package:flutter/material.dart';
 import '../features/auth/screens/splash_screen.dart';
 import '../features/auth/screens/login_screen.dart';

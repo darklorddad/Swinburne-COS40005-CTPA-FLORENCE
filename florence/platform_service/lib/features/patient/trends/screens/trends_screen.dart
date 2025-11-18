@@ -419,11 +419,7 @@ class _TrendsScreenState extends State<TrendsScreen>
                 ),
                 lineTouchData: LineTouchData(
                   touchTooltipData: LineTouchTooltipData(
-                    // This is the correct property from the documentation.
-                    // It requires a function that returns a color.
-                    getTooltipColor: (LineBarSpot touchedSpot) {
-                      return AppTheme.primaryBlue.withValues(alpha: 0.8);
-                    },
+                    tooltipBgColor: AppTheme.primaryBlue.withOpacity(0.8),
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         return LineTooltipItem(

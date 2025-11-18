@@ -32,13 +32,13 @@ class HealthSummaryCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: [
               glucoseColor,
-              glucoseColor.withValues(alpha: 0.8),
+              glucoseColor.withOpacity(0.8),
             ],
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: glucoseColor.withValues(alpha: 0.3),
+              color: glucoseColor.withOpacity(0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -54,7 +54,7 @@ class HealthSummaryCard extends StatelessWidget {
                 Text(
                   'Latest Glucose',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                 ),
                 Container(
@@ -63,7 +63,7 @@ class HealthSummaryCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
+                    color: Colors.white.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -95,7 +95,7 @@ class HealthSummaryCard extends StatelessWidget {
                 Text(
                   'mg/dL',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                 ),
               ],
@@ -108,13 +108,13 @@ class HealthSummaryCard extends StatelessWidget {
                 Icon(
                   Icons.access_time,
                   size: 16,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: Colors.white.withOpacity(0.8),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   Formatters.timeAgo(timestamp),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: Colors.white.withOpacity(0.9),
                       ),
                 ),
               ],

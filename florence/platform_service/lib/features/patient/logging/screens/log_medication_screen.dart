@@ -223,7 +223,7 @@ class _LogMedicationScreenState extends State<LogMedicationScreen> {
       label: 'Medication Name',
       hint: 'e.g., Metformin, Insulin',
       controller: _medicationNameController,
-      validator: (value) => Validators.required(value, fieldName: 'Medication name'),
+      validator: (value) => Validators.name(value, fieldName: 'Medication name'),
       textCapitalization: TextCapitalization.words,
       prefixIcon: const Icon(Icons.medical_services),
     );
@@ -315,7 +315,8 @@ class _LogMedicationScreenState extends State<LogMedicationScreen> {
       label: 'Dosage',
       hint: 'e.g., 500mg, 10 units',
       controller: _dosageController,
-      validator: (value) => Validators.required(value, fieldName: 'Dosage'),
+      validator: (value) =>
+          Validators.minLength(value, 1, fieldName: 'Dosage'),
       prefixIcon: const Icon(Icons.numbers),
     );
   }

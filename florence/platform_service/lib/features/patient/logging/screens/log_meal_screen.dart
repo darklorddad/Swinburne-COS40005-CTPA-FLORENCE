@@ -291,7 +291,7 @@ class _LogMealScreenState extends State<LogMealScreen> {
       label: 'Meal Name',
       hint: 'e.g., Chicken rice, Oatmeal with fruits',
       controller: _mealNameController,
-      validator: (value) => Validators.required(value, fieldName: 'Meal name'),
+      validator: (value) => Validators.name(value, fieldName: 'Meal name'),
       textCapitalization: TextCapitalization.sentences,
       prefixIcon: const Icon(Icons.restaurant_menu),
     );

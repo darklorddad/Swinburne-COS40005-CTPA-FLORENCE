@@ -303,7 +303,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
+                            color: Colors.purple.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -553,7 +553,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                          color: AppTheme.secondaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 20),
@@ -629,7 +629,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                            color: AppTheme.primaryColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -735,7 +735,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
+                            color: Colors.purple.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -892,7 +892,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    color: AppTheme.primaryColor.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
@@ -1039,10 +1039,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.1),
+            color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: color.withValues(alpha: 0.5),
+              color: color.withOpacity(0.5),
               width: 1,
             ),
           ),
@@ -1093,7 +1093,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(

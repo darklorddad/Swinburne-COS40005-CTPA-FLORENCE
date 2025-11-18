@@ -47,7 +47,7 @@ class RiskIndicator extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withValues(alpha: 0.5),
+              color: color.withOpacity(0.5),
               blurRadius: 4,
               spreadRadius: 1,
             )

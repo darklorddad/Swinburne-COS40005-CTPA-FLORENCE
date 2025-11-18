@@ -172,7 +172,8 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
                   label: 'Systolic',
                   hint: 'e.g., 120',
                   controller: _systolicController,
-                  validator: Validators.required,
+                  validator: (value) =>
+                      Validators.minLength(value, 1, fieldName: 'Systolic'),
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.arrow_upward),
                 ),
@@ -183,7 +184,8 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
                   label: 'Diastolic',
                   hint: 'e.g., 80',
                   controller: _diastolicController,
-                  validator: Validators.required,
+                  validator: (value) =>
+                      Validators.minLength(value, 1, fieldName: 'Diastolic'),
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.arrow_downward),
                 ),

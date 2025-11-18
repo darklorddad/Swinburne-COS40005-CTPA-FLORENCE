@@ -22,7 +22,7 @@ class PatientFilterChip extends StatelessWidget {
       label: Text(label),
       selected: isSelected,
       onSelected: (_) => onSelected(),
-      selectedColor: color?.withValues(alpha: 0.2) ?? AppTheme.primaryColor.withValues(alpha: 0.2),
+      selectedColor: color?.withOpacity(0.2) ?? AppTheme.primaryColor.withOpacity(0.2),
       checkmarkColor: color ?? AppTheme.primaryColor,
     );
   }

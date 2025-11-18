@@ -46,8 +46,8 @@ class GlucoseChart extends StatelessWidget {
           if (value == highThreshold || value == lowThreshold) {
             return FlLine(
               color: value == highThreshold
-                  ? AppTheme.highRiskColor.withValues(alpha: 0.3)
-                  : Colors.blue.withValues(alpha: 0.3),
+                  ? AppTheme.highRiskColor.withOpacity(0.3)
+                  : Colors.blue.withOpacity(0.3),
               strokeWidth: 1,
               dashArray: [5, 5],
             );
@@ -176,7 +176,7 @@ class GlucoseChart extends StatelessWidget {
           }),
           isCurved: true,
           gradient: LinearGradient(
-            colors: [Colors.green.withValues(alpha: 0.5), Colors.green],
+            colors: [Colors.green.withOpacity(0.5), Colors.green],
           ),
           barWidth: 3,
           isStrokeCapRound: true,
@@ -205,8 +205,8 @@ class GlucoseChart extends StatelessWidget {
             show: true,
             gradient: LinearGradient(
               colors: [
-                Colors.green.withValues(alpha: 0.2),
-                Colors.green.withValues(alpha: 0.0),
+                Colors.green.withOpacity(0.2),
+                Colors.green.withOpacity(0.0),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -227,7 +227,7 @@ class GlucoseChart extends StatelessWidget {
               getDotPainter: (spot, percent, barData, index) {
                 return FlDotSquarePainter(
                   size: 8,
-                  color: Colors.red.withValues(alpha: 0.8),
+                  color: Colors.red.withOpacity(0.8),
                 );
               },
             ),

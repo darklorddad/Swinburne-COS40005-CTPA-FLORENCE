@@ -140,7 +140,8 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
         label: 'Total Cholesterol (mg/dL)',
         hint: 'e.g., 190',
         controller: _cholesterolController,
-        validator: Validators.required,
+        validator: (value) =>
+            Validators.minLength(value, 1, fieldName: 'Total Cholesterol'),
         keyboardType: TextInputType.number,
         prefixIcon: const Icon(Icons.bloodtype_outlined),
       ),

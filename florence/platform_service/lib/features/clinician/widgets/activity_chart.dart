@@ -133,7 +133,7 @@ class ActivityChart extends StatelessWidget {
         getDrawingHorizontalLine: (value) {
           if (value == targetSteps.toDouble()) {
             return FlLine(
-              color: AppTheme.accentColor.withValues(alpha: 0.5),
+              color: AppTheme.accentColor.withOpacity(0.5),
               strokeWidth: 1,
               dashArray: [5, 5],
             );

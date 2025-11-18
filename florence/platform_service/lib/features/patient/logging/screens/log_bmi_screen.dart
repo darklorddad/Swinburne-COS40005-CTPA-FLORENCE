@@ -189,7 +189,8 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
                   label: 'Height (cm)',
                   hint: 'e.g., 175',
                   controller: _heightController,
-                  validator: Validators.required,
+                  validator: (value) =>
+                      Validators.minLength(value, 1, fieldName: 'Height'),
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.height),
                 ),
@@ -200,7 +201,8 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
                   label: 'Weight (kg)',
                   hint: 'e.g., 70',
                   controller: _weightController,
-                  validator: Validators.required,
+                  validator: (value) =>
+                      Validators.minLength(value, 1, fieldName: 'Weight'),
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.scale),
                 ),
