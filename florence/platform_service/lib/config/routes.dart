@@ -21,6 +21,7 @@ import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
 import '../features/patient/summaries/screens/weekly_summaries_screen.dart';
 import '../features/clinician/screens/clinician_home_screen.dart';
+import '../features/admin/dashboard/screens/super_admin_dashboard_screen.dart';
 
 /// Application routing configuration
 /// Centralized navigation management
@@ -148,7 +149,7 @@ class AppRoutes {
         return _buildRoute(const ClinicianProfileScreen(), settings);
 
       case adminDashboard:
-        return _buildRoute(const _PlaceholderScreen(title: 'Admin Dashboard'), settings);
+        return _buildRoute(const SuperAdminDashboardScreen(), settings);
 
       default:
         return _buildRoute(

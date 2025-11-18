@@ -7,8 +7,8 @@
       .backend-card { stroke: #10b981; }
       .ai-card { stroke: #8b5cf6; }
       .db-card { stroke: #f59e0b; }
-      .text { font-family: 'Inter', Arial, sans-serif; font-size: 13px; fill: #1e293b; text-anchor: middle; }
-      .title { font-family: 'Inter', Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #0f172a; }
+      .text { font-family: 'Bahnschrift', Arial, sans-serif; font-size: 13px; fill: #1e293b; text-anchor: middle; }
+      .title { font-family: 'Bahnschrift', Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #0f172a; }
       .subtitle { font-size: 11px; fill: #64748b; }
       .tech-name { font-size: 16px; font-weight: 700; }
       .layer-label { font-size: 14px; font-weight: 600; fill: #475569; }
