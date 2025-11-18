@@ -10,23 +10,26 @@
             padding: 0;
             box-sizing: border-box;
         }
-                                                                                                                                                                    
+
         html, body {
             height: 100%;
             overflow: hidden;
         }
-                                                                                                                                                                    
+
         body {
             background-color: black;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-                                                                                                                                                                    
+
         canvas {
             background-color: white;
-            width: 594mm;
-            height: 841mm;
+            max-width: 100vw;
+            max-height: 100vh;
+            width: auto;
+            height: auto;
+            aspect-ratio: 594 / 841;
         }
     </style>
 </head>
