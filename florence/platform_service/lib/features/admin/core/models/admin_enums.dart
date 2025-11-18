@@ -27,6 +27,7 @@ enum AdminRole {
   /// Get role from string
   static AdminRole fromString(String role) {
     switch (role.toLowerCase().replaceAll(' ', '')) {
+      case 'admin':
       case 'superadmin':
         return AdminRole.superAdmin;
       case 'hospitaladmin':
