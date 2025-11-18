@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Enabled Digital Health Platform - Visual Poster</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Slab:wght@600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* A1 Poster Dimensions: 594mm × 841mm (portrait) */
+        @page {
+            size: A1 portrait;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #1a1a1a;
+        }
+
+        .poster {
+            width: 594mm;
+            height: 841mm;
+            background: white;
+            margin: 0 auto;
+            padding: 35mm;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Section */
+        .header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 25mm 25mm;
+            margin: -35mm -35mm 20mm -35mm;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .header h1 {
+            font-family: 'Roboto Slab', serif;
+            font-size: 52pt;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 10mm;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header .subtitle {
+            font-size: 22pt;
+            font-weight: 300;
+            margin-bottom: 8mm;
+            opacity: 0.95;
+        }
+
+        .header .meta {
+            font-size: 14pt;
+            opacity: 0.9;
+            display: flex;
+            gap: 20mm;
+            margin-top: 8mm;
+            padding-top: 8mm;
+            border-top: 2px solid rgba(255,255,255,0.3);
+        }
+
+        /* Content Grid */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15mm;
+            flex: 1;
+        }
+
+        .section {
+            background: #ffffff;
+            padding: 12mm;
+            border-radius: 10px;
+            border-left: 5px solid #3b82f6;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .section.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .section h2 {
+            font-family: 'Roboto Slab', serif;
+            font-size: 28pt;
+            color: #1e3a8a;
+            margin-bottom: 8mm;
+            display: flex;
+            align-items: center;
+            gap: 6mm;
+        }
+
+        .section h2::before {
+            content: '';
+            display: inline-block;
+            width: 7mm;
+            height: 7mm;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+        }
+
+        .section h3 {
+            font-size: 18pt;
+            color: #1e40af;
+            margin: 6mm 0 3mm 0;
+            font-weight: 600;
+        }
+
+        .section p {
+            font-size: 13pt;
+            line-height: 1.6;
+            text-align: justify;
+            margin-bottom: 6mm;
+            color: #374151;
+        }
+
+        .section ul {
+            margin-left: 20px;
+            margin-bottom: 6mm;
+        }
+
+        .section li {
+            font-size: 13pt;
+            line-height: 1.6;
+            margin-bottom: 3mm;
+            color: #374151;
+        }
+
+        .section strong {
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        /* Diagram Container */
+        .diagram {
+            margin: 8mm 0;
+            text-align: center;
+        }
+
+        .diagram img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Highlight Boxes */
+        .highlight {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            padding: 8mm;
+            border-radius: 8px;
+            margin: 6mm 0;
+            border: 2px solid #93c5fd;
+        }
+
+        .highlight h3 {
+            color: #1e40af;
+            margin-top: 0;
+        }
+
+        .highlight p {
+            margin-bottom: 0;
+        }
+
+        /* References */
+        .references {
+            background: #f9fafb;
+            padding: 8mm;
+            border-radius: 8px;
+            margin-top: 6mm;
+        }
+
+        .references h3 {
+            font-size: 16pt;
+            margin-bottom: 4mm;
+        }
+
+        .references p {
+            font-size: 10pt;
+            line-height: 1.4;
+            margin-bottom: 2mm;
+            text-align: left;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 12mm;
+            padding-top: 8mm;
+            border-top: 3px solid #3b82f6;
+            text-align: center;
+        }
+
+        .footer p {
+            font-size: 14pt;
+            color: #64748b;
+            text-align: center;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .poster {
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="poster">
+        <!-- Header -->
+        <header class="header">
+            <h1>AI-Enabled Digital Health Platform<br>for Chronic Disease Monitoring</h1>
+            <div class="subtitle">Transforming Chronic Disease Management from Reactive to Proactive Care</div>
+            <div class="meta">
+                <div class="meta-item">
+                    <strong>Client:</strong> BioTective Sdn Bhd
+                </div>
+                <div class="meta-item">
+                    <strong>University:</strong> Swinburne University of Technology
+                </div>
+                <div class="meta-item">
+                    <strong>Unit:</strong> COS40005 - Computing Technology Project A
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Grid -->
+        <div class="content">
+            <!-- Introduction with User Journey -->
+            <div class="section full-width">
+                <h2>Introduction: How It Works</h2>
+                <p>In Malaysia, chronic non-communicable diseases (NCDs) are the leading cause of death and disability, placing immense strain on a healthcare system primarily designed for acute, episodic care [1]. This project develops a prototype AI-enabled digital health platform that integrates multi-source health data to provide actionable insights, facilitating timely interventions by both patients and clinicians.</p>
+
+                <div class="diagram">
+                    <img src="diagrams/user_journey.svg" alt="Patient Journey Diagram">
+                </div>
+
+                <div class="highlight">
+                    <h3>Project Vision</h3>
+                    <p>Transform chronic disease management from a <strong>reactive process</strong> into a <strong>proactive, data-driven partnership</strong> between patients and healthcare providers.</p>
+                </div>
+            </div>
+
+            <!-- Problem with Before/After -->
+            <div class="section full-width">
+                <h2>Problem Statement</h2>
+                <p>Chronic disease patients lack a unified platform that integrates fragmented health data and provides real-time, actionable, and personalised guidance. Existing digital health solutions act as simple data repositories and don't fully leverage AI to detect early warning signs.</p>
+
+                <div class="diagram">
+                    <img src="diagrams/before_after.svg" alt="Before and After Comparison">
+                </div>
+
+                <div class="highlight">
+                    <h3>Primary Goal</h3>
+                    <p>Design, develop, and deliver a high-fidelity prototype that addresses these critical gaps by the end of the semester.</p>
+                </div>
+            </div>
+
+            <!-- Literature Review -->
+            <div class="section">
+                <h2>Literature Review</h2>
+                <p>The Malaysian digital health market is expanding rapidly, yet competitive analysis reveals a significant market gap [2, 4]:</p>
+
+                <p><strong>DoctorOnCall & Doc2Us:</strong> Reactive transactional teleconsultations. Serve patients who actively seek care but lack continuous monitoring.</p>
+
+                <p><strong>BookDoc:</strong> General wellness and gamified activity tracking, not clinical disease management.</p>
+
+                <p><strong>Naluri Health:</strong> Human-coaching model. Effective but resource-intensive with scalability challenges.</p>
+
+                <div class="highlight">
+                    <h3>Market Gap</h3>
+                    <p>Unmet need for a <strong>scalable, automated platform</strong> that fosters continuous, proactive care relationships [4].</p>
+                </div>
+            </div>
+
+            <!-- Conclusion -->
+            <div class="section">
+                <h2>Conclusion</h2>
+                <p>This project addresses a critical gap in the Malaysian digital health ecosystem by developing a prototype for an AI-powered platform focused on proactive and continuous chronic disease management.</p>
+
+                <p><strong>Patient Empowerment:</strong> By integrating data and providing personalised AI-driven insights, the platform empowers patients in their self-management journey.</p>
+
+                <p><strong>Clinician Efficiency:</strong> Provides an intelligent "attention funnel" that prioritises high-risk individuals, enhancing efficiency and enabling timely interventions.</p>
+
+                <p>The successful delivery of this prototype validates the technical feasibility and strategic value, laying the groundwork for a commercially viable product.</p>
+            </div>
+
+            <!-- Methodology - System Architecture -->
+            <div class="section full-width">
+                <h2>Methodology: System Architecture</h2>
+                <p>The solution is a high-fidelity prototype built on a modern, decoupled system architecture designed for scalability, security, and rapid development.</p>
+
+                <div class="diagram">
+                    <img src="diagrams/system_architecture.svg" alt="System Architecture Diagram">
+                </div>
+
+                <p><strong>Platform Service:</strong> Flutter frontend for consistent UI across mobile and web. <strong>Data Service:</strong> Python + FastAPI gateway to Supabase with authentication. <strong>LLM Chatbot Service:</strong> Conversational logic and patient context management.</p>
+            </div>
+
+            <!-- Methodology - AI Workflow -->
+            <div class="section full-width">
+                <h2>AI Core: Autonomous Agent</h2>
+                <p>Implemented using the <strong>LangChain framework</strong> with LLM tool-calling capabilities. The agent is provided with custom Python functions ('tools') to interact with the Data Service, fetch live patient data (glucose readings, diet history), and autonomously gather information to generate personalised responses.</p>
+
+                <div class="diagram">
+                    <img src="diagrams/ai_workflow.svg" alt="AI Agent Workflow">
+                </div>
+            </div>
+
+            <!-- Technology Stack -->
+            <div class="section full-width">
+                <h2>Technology Stack</h2>
+
+                <div class="diagram">
+                    <img src="diagrams/tech_stack.svg" alt="Technology Stack">
+                </div>
+            </div>
+
+            <!-- Future Works -->
+            <div class="section">
+                <h2>Future Works</h2>
+                <ul>
+                    <li><strong>Clinical Integration:</strong> Integration with Hospital Information Systems (HIS) and Electronic Health Records (EHRs) using HL7 FHIR standards.</li>
+                    <li><strong>Expansion to Other NCDs:</strong> Adapt modular architecture to support hypertension, COPD, and chronic kidney disease.</li>
+                    <li><strong>Advanced Predictive Analytics:</strong> Incorporate predictive ML models to forecast health risks enabling preventative interventions.</li>
+                    <li><strong>Telemedicine Integration:</strong> Secure video consultation capabilities for clinicians to initiate virtual visits upon high-risk alerts.</li>
+                </ul>
+            </div>
+
+            <!-- References -->
+            <div class="section full-width references">
+                <h3>References</h3>
+                <p>[1] A. S. Ramli and Y. S. Taher, "Managing Chronic Diseases in the Malaysian Primary Health Care – A Need for Change," <em>Malaysian Family Physician</em>, vol. 3, no. 1, pp. 6–13, 2008.</p>
+                <p>[2] Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report By Technology (Tele-healthcare, mHealth), By Component (Software, Hardware, Services), By Region, And Segment Forecasts, 2025 - 2033," 2024.</p>
+                <p>[3] CodeBlue, "Over Two Million Adults In Malaysia Live With Three NCDs: NHMS 2023," May 28, 2024.</p>
+                <p>[4] PwC Malaysia, "Healthcare in a Digital Economy: Reimagining the future of HealthTech in Malaysia," 2021.</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p><strong>Swinburne University of Technology Sarawak Campus | COS40005 Computing Technology Project A</strong></p>
+        </footer>
+    </div>
+</body>
+</html>
