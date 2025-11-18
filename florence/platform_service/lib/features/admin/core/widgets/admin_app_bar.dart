@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../../../../config/admin_theme.dart';
 import '../services/admin_auth_service.dart';
 import '../services/permission_service.dart';
+import '../../../../config/routes.dart';
+import '../../../../main.dart';
 
 /// Admin App Bar
 /// Top app bar with search, notifications, and user menu
@@ -471,15 +473,12 @@ class _UserMenu extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              // Logout
-              await AdminAuthService().logout();
-
-              // Navigate to login
+              // This will trigger the onAuthStateChange listener in app.dart,
+              // which will then handle navigating the user back to the main login screen.
+              await supabase.auth.signOut();
               if (context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/admin/login',
-                  (route) => false,
-                );
+                // We just need to pop the dialog. The auth listener handles the rest.
+                Navigator.of(context).pop();
               }
             },
             style: ElevatedButton.styleFrom(
