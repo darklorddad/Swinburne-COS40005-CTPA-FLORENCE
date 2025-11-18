@@ -1,7 +1,11 @@
 import os
 import requests
+from dotenv import load_dotenv
 
 def create_test_accounts():
+    # Load environment variables from .env file
+    load_dotenv()
+    
     # Get Supabase configuration from environment variables
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
     SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -17,8 +21,8 @@ def create_test_accounts():
 
     # Create admin user
     admin_user_data = {
-        "email": "admin@test.com",
-        "password": "test1234",
+        "email": "testa@test.com",
+        "password": "test",
         "email_confirm": True,
         "user_metadata": {
             "role": "admin",
@@ -41,8 +45,8 @@ def create_test_accounts():
 
     # Create clinician user
     clinician_user_data = {
-        "email": "clinician@test.com",
-        "password": "test1234",
+        "email": "testc@test.com",
+        "password": "test",
         "email_confirm": True,
         "user_metadata": {
             "role": "clinician",
@@ -65,8 +69,8 @@ def create_test_accounts():
 
     print("\nTest accounts created!")
     print("Login credentials:")
-    print("Admin - Email: admin@test.com, Password: test1234")
-    print("Clinician - Email: clinician@test.com, Password: test1234")
+    print("Admin - Email: testa@test.com, Password: test")
+    print("Clinician - Email: testc@test.com, Password: test")
 
 if __name__ == "__main__":
     create_test_accounts()
