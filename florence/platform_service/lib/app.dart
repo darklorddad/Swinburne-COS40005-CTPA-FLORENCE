@@ -11,6 +11,7 @@ import 'core/utils/helpers.dart';
 import 'core/providers/theme_provider.dart';
 import 'core/providers/settings_provider.dart';
 import 'features/patient/core/providers/health_data_provider.dart';
+import 'features/admin/core/services/admin_auth_service.dart';
 import 'main.dart';
 
 /// Main application widget
@@ -186,10 +187,14 @@ class _AppState extends State<App> {
 
       String destinationRoute;
       if (userRole.toUpperCase() == 'PATIENT') {
+        AdminAuthService().logout(); // Ensure admin state is cleared
         destinationRoute = AppRoutes.dashboard;
       } else if (userRole.toUpperCase() == 'CLINICIAN') {
+        AdminAuthService().logout(); // Ensure admin state is cleared
         destinationRoute = AppRoutes.clinicianDashboard;
       } else if (userRole.toUpperCase() == 'ADMIN') {
+        // Set the current admin user in the mock service
+        AdminAuthService().setCurrentUserFromSupabase(session.user);
         destinationRoute = AppRoutes.adminDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
@@ -206,7 +211,8 @@ class _AppState extends State<App> {
     } else {
       // Handle sign out, session expiration, or no initial session
       debugPrint('[App Listener] No session found. Navigating to login.');
-      // No need to clear SessionManager token as it's removed.
+      // Clear admin session state as well
+      AdminAuthService().logout();
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
     }
   }
