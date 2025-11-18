@@ -78,7 +78,7 @@
                             <div class="flex items-center justify-center size-8 rounded-full bg-red-100 text-accent-red">
                                 <span class="material-symbols-outlined text-lg">sentiment_dissatisfied</span>
                             </div>
-                            <p class="text-text-muted-light text-sm">Fragmented records & difficulty with self-management [3].</p>
+                            <p class="text-text-muted-light text-sm">Fragmented records & difficulty with self-management [1].</p>
                         </div>
                         <h3 class="font-semibold text-base mt-2">Clinician Pain Points:</h3>
                         <div class="flex items-center gap-3">
@@ -162,7 +162,6 @@ graph TD
 
     A <--> B
     A <--> C
-    B --> C
     C <--> D
                                     </pre>
                                 </div>
@@ -190,13 +189,14 @@ graph TD
                             <div class="w-full bg-white rounded-lg p-2 border border-slate-200">
                                 <pre class="mermaid" style="font-size: 10px;">
 graph TD
-    Start((User Query)) --> A[LLM Agent receives query];
-    A --> B{Needs more info?};
+    Start((User Query)) --> Gather[Gather Initial Context];
+    Gather --> A[LLM Agent receives query & context];
+    A --> B{Needs *more* info?};
     B -- Yes --> C[Selects & Calls 'Tool' <br> (e.g., get_glucose_history)];
     C --> D[Tool queries Data Service];
     D --> E[Data Service returns data];
     E --> F[Agent receives data from Tool];
-    F --> G[Agent synthesises info];
+    F --> G[Agent synthesises information];
     B -- No --> G;
     G --> H[Generate Personalised Response];
     H --> End((Display to User));
@@ -229,7 +229,7 @@ graph TD
             <h2 class="text-text-light text-lg font-bold leading-tight tracking-[-0.015em] mb-2">References</h2>
             <ol class="list-decimal list-inside text-xs text-text-muted-light space-y-1">
                 <li>A. S. Ramli and Y. S. Taher, "Managing Chronic Diseases in the Malaysian Primary Health Care – A Need for Change," <em>Malaysian Family Physician</em>, vol. 3, no. 1, pp. 6–13, 2008.</li>
-                <li>Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report By Technology (Tele-healthcare, mHealth), By Component (Software, Hardware, Services), By Region, And Segment Forecasts, 2025 - 2033," 2024.</li>
+                <li>Grand View Research, "Asia Pacific Digital Health Market Size, Share & Trends Analysis Report," 2024.</li>
                 <li>CodeBlue, "Over Two Million Adults In Malaysia Live With Three NCDs: NHMS 2023," May 28, 2024. [Online].</li>
                 <li>PwC Malaysia, "Healthcare in a Digital Economy: Reimagining the future of HealthTech in Malaysia," 2021.</li>
             </ol>
