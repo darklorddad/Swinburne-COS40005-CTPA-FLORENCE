@@ -190,8 +190,7 @@ class _AppState extends State<App> {
       } else if (userRole.toUpperCase() == 'CLINICIAN') {
         destinationRoute = AppRoutes.clinicianDashboard;
       } else if (userRole.toUpperCase() == 'ADMIN') {
-        // Temporary: Redirect admin to clinician dashboard until admin dashboard is implemented
-        destinationRoute = AppRoutes.clinicianDashboard;
+        destinationRoute = AppRoutes.adminDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
             arguments: {'message': 'Login failed: Unsupported user role'});

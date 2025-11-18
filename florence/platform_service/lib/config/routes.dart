@@ -64,6 +64,7 @@ class AppRoutes {
   static const String clinicianDashboard = '/clinician-dashboard';
   static const String clinicianPatientDetail = '/clinician/patient-detail';
   static const String clinicianProfile = '/clinician/profile';
+  static const String adminDashboard = '/admin-dashboard';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -145,6 +146,9 @@ class AppRoutes {
 
       case clinicianProfile:
         return _buildRoute(const ClinicianProfileScreen(), settings);
+
+      case adminDashboard:
+        return _buildRoute(const _PlaceholderScreen(title: 'Admin Dashboard'), settings);
 
       default:
         return _buildRoute(
