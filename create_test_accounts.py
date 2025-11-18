@@ -8,10 +8,10 @@ def create_test_accounts():
     
     # Get Supabase configuration from environment variables
     SUPABASE_URL = os.environ.get('SUPABASE_URL')
-    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_ROLE_KEY')
+    SUPABASE_SERVICE_ROLE_KEY = os.environ.get('SUPABASE_SERVICE_KEY')
 
     if not SUPABASE_URL or not SUPABASE_SERVICE_ROLE_KEY:
-        raise ValueError("Please set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY environment variables")
+        raise ValueError("Please set SUPABASE_URL and SUPABASE_SERVICE_KEY environment variables")
 
     # Set up headers for Admin API access
     headers = {
