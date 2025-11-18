@@ -1,6 +1,7 @@
 import '../models/admin_user.dart';
 import '../models/admin_enums.dart';
 import '../models/organization.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Admin Authentication Service
 /// Handles login, logout, and session management for admin users
@@ -17,6 +18,37 @@ class AdminAuthService {
 
   // Session state
   bool get isAuthenticated => currentUser != null;
+
+  /// Called from app.dart to sync the real Supabase user with the mock admin system.
+  void setCurrentUserFromSupabase(User supabaseUser) {
+    try {
+      // Find a matching user in our mock list to get their detailed permissions
+      final matchedUser = _mockUsers.firstWhere(
+        (u) => u.email.toLowerCase() == supabaseUser.email!.toLowerCase(),
+      );
+      _currentUser = matchedUser.copyWith(id: supabaseUser.id); // Update ID from live session
+    } catch (e) {
+      // If not found in mocks (e.g., a newly registered admin), create a default one
+      final userRole = AdminRole.fromString(supabaseUser.appMetadata['role'] ?? 'Doctor');
+      _currentUser = AdminUser(
+          id: supabaseUser.id,
+          email: supabaseUser.email!,
+          firstName: supabaseUser.userMetadata?['name']?.split(' ').first ?? 'Admin',
+          lastName: supabaseUser.userMetadata?['name']?.split(' ').last ?? 'User',
+          role: userRole,
+          permissions: _getPermissionsForRole(userRole), // Assign default permissions for the role
+          createdAt: DateTime.parse(supabaseUser.createdAt!));
+    }
+  }
+
+  // Helper to get default permissions for a role when creating a fallback user
+  List<AdminPermission> _getPermissionsForRole(AdminRole role) {
+    try {
+      return _mockUsers.firstWhere((user) => user.role == role).permissions;
+    } catch (e) {
+      return [AdminPermission.viewOrgPatients, AdminPermission.viewPatientHealthData];
+    }
+  }
 
   // ============================================
   // MOCK DATA - Organizations
