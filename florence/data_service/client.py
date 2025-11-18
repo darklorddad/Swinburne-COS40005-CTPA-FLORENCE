@@ -32,8 +32,8 @@ class _SupabaseClientProxy:
             # After creation, give the auth and postgrest clients their own copies
             # of the headers dictionary to prevent state pollution in a concurrent environment.
             if hasattr(self._client, 'auth') and hasattr(self._client, 'postgrest'):
-                if self._client.auth.headers is self._client.postgrest.headers:
-                    self._client.postgrest.headers = self._client.auth.headers.copy()
+                if self._client.auth._headers is self._client.postgrest._headers:
+                    self._client.postgrest._headers = self._client.auth._headers.copy()
         
         return self._client
 
