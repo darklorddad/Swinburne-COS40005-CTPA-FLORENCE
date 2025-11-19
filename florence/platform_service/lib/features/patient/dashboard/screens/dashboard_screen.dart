@@ -15,6 +15,8 @@ import '../widgets/health_metric_card.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
+import '../widgets/health_metric_card.dart';
+import '../../trends/screens/trends_screen.dart';
 
 import '../../core/providers/health_data_provider.dart';
 
@@ -180,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // Biometrics Section (Health Monitor)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: BiometricsSection(healthData: healthData),
+                        child: _buildBiometricsSection(context, healthData),
                       ),
                       const SizedBox(height: 24),
 
