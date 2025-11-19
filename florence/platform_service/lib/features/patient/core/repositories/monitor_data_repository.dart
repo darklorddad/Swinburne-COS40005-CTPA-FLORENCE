@@ -1,89 +1,23 @@
 import '../../../../core/services/api_service.dart';
 import '../models/health_data_models.dart';
-import '../services/data_ingestion_service.dart';
 
 /// Repository to fetch and map health data to MonitorData
 class MonitorDataRepository {
-  final DataIngestionService _dataService = DataIngestionService();
   final ApiService _apiService = ApiService();
 
-  /// Get all monitor data for all available types
+  /// Get all monitor data for all available types directly from API
   Future<List<MonitorData>> getAllMonitorData() async {
-    // Try to fetch real data first
-    if (_dataService.allGlucoseReadings.isEmpty) {
-      await _dataService.fetchRealData();
+    try {
+      final response = await _apiService.get('/patients/me/monitor-data');
+      if (response is List) {
+        return response.map((json) => MonitorData.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching monitor data: $e');
+      // Return empty list on error instead of mock data
+      return [];
     }
-
-    final data = <MonitorData>[];
-
-    // Glucose
-    final glucoseReadings = _dataService.allGlucoseReadings;
-    for (var reading in glucoseReadings) {
-      data.add(MonitorData(
-        id: int.tryParse(reading.id) ?? 0,
-        patientId: 1, // Default patient ID
-        dataType: MonitorDataType.GLUCOSE,
-        value: reading.value,
-        measuredAt: reading.timestamp,
-      ));
-    }
-
-    // Blood Pressure
-    final bpReadings = _dataService.allBloodPressureReadings;
-    for (var reading in bpReadings) {
-      data.add(MonitorData(
-        id: int.tryParse(reading.id) ?? 0,
-        patientId: 1,
-        dataType: MonitorDataType.BLOOD_PRESSURE_SYSTOLIC,
-        value: reading.systolic,
-        measuredAt: reading.timestamp,
-      ));
-      data.add(MonitorData(
-        id: int.tryParse(reading.id) ?? 0,
-        patientId: 1,
-        dataType: MonitorDataType.BLOOD_PRESSURE_DIASTOLIC,
-        value: reading.diastolic,
-        measuredAt: reading.timestamp,
-      ));
-    }
-
-    // HbA1c
-    final hba1cResults = _dataService.allHbA1cResults;
-    for (var result in hba1cResults) {
-      data.add(MonitorData(
-        id: int.tryParse(result.id) ?? 0,
-        patientId: 1,
-        dataType: MonitorDataType.HBA1C,
-        value: result.value,
-        measuredAt: result.testDate,
-      ));
-    }
-
-    // Cholesterol
-    final cholesterolResults = _dataService.allCholesterolResults;
-    for (var result in cholesterolResults) {
-      data.add(MonitorData(
-        id: int.tryParse(result.id) ?? 0,
-        patientId: 1,
-        dataType: MonitorDataType.CHOLESTEROL_TOTAL,
-        value: result.value,
-        measuredAt: result.testDate,
-      ));
-    }
-
-    // BMI
-    final bmiResults = _dataService.allBmiResults;
-    for (var result in bmiResults) {
-      data.add(MonitorData(
-        id: int.tryParse(result.id) ?? 0,
-        patientId: 1,
-        dataType: MonitorDataType.BMI,
-        value: result.value,
-        measuredAt: result.testDate,
-      ));
-    }
-
-    return data;
   }
 
   /// Get daily patient logs (meals) for overlay
@@ -100,12 +34,20 @@ class MonitorDataRepository {
     }
   }
 
-  /// Get health thresholds
+  /// Get health thresholds directly from API
   Future<List<HealthThreshold>> getHealthThresholds() async {
-    // Ensure thresholds are fetched if empty (though fetchRealData should have done it)
-    if (_dataService.allHealthThresholds.isEmpty) {
-      await _dataService.fetchThresholds();
+    try {
+      final response = await _apiService.get('/patients/me/thresholds');
+      if (response is List) {
+        return response.map((json) => HealthThreshold.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching thresholds: $e');
+      // Return basic defaults if API fails, or empty
+      return [
+        const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180),
+      ];
     }
-    return _dataService.allHealthThresholds;
   }
 }
