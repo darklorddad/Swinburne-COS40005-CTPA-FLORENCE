@@ -101,7 +101,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: latestBP?.timestamp,
       icon: Icons.monitor_heart_outlined,
       color: _getBPColor(latestBP?.systolic, latestBP?.diastolic),
-      onTap: () => AppRoutes.push(context, AppRoutes.trends),
+      onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
     ));
 
     // HbA1c
@@ -113,7 +113,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: latestHba1c?.testDate,
       icon: Icons.pie_chart_outline,
       color: _getHba1cColor(latestHba1c?.value),
-      onTap: () => AppRoutes.push(context, AppRoutes.trends),
+      onTap: () => Helpers.showInfo(context, 'HbA1c details coming soon'),
     ));
 
     // Cholesterol
@@ -125,7 +125,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: latestCholesterol?.testDate,
       icon: Icons.bloodtype_outlined,
       color: _getCholesterolColor(latestCholesterol?.value),
-      onTap: () => AppRoutes.push(context, AppRoutes.trends),
+      onTap: () => Helpers.showInfo(context, 'Cholesterol details coming soon'),
     ));
 
     // BMI
@@ -137,7 +137,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: latestBmi?.testDate,
       icon: Icons.height_outlined,
       color: _getBmiColor(latestBmi?.value),
-      onTap: () => AppRoutes.push(context, AppRoutes.trends),
+      onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
     ));
 
     // Activity
@@ -150,7 +150,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: latestActivity?.timestamp,
       icon: Icons.directions_run_outlined,
       color: latestActivity != null ? AppTheme.activityColor : AppTheme.textSecondaryColor,
-      onTap: () => AppRoutes.push(context, AppRoutes.trends),
+      onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
     ));
 
     return cards;
