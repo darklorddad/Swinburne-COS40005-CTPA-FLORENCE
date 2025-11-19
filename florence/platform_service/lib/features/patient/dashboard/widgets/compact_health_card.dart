@@ -30,7 +30,7 @@ class CompactHealthCard extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget content = InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -42,7 +42,7 @@ class CompactHealthCard extends StatelessWidget {
               Helpers.darken(color, 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.2),
