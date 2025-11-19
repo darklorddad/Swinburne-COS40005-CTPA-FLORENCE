@@ -182,7 +182,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       // Biometrics Section (Health Monitor)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildBiometricsSection(context, healthData),
+                        child: BiometricsSection(healthData: healthData),
                       ),
                       const SizedBox(height: 24),
 
