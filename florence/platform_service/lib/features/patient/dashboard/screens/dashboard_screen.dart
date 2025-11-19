@@ -161,13 +161,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Welcome header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildWelcomeHeader(),
-                      ),
-                      const SizedBox(height: 24),
-
                       // AI Insight (Main Card)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -269,30 +262,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icon: const Icon(Icons.person_outline),
           onPressed: () => AppRoutes.push(context, AppRoutes.profile),
           tooltip: 'Profile',
-        ),
-      ],
-    );
-  }
-
-  /// Build welcome header
-  Widget _buildWelcomeHeader() {
-    final greeting = _getGreeting();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          greeting,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(color: AppTheme.textSecondaryColor),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          _userName ?? 'Welcome',
-          style: Theme.of(
-            context,
-          ).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
         ),
       ],
     );
