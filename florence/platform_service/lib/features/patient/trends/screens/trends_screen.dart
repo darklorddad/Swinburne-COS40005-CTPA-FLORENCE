@@ -211,10 +211,6 @@ class _TrendsScreenState extends State<TrendsScreen>
                         _buildStatisticsSection(averageGlucose, estimatedA1c, highestGlucose, lowestGlucose, standardDeviation, totalReadings),
                         const SizedBox(height: 24),
 
-                        // Insights card
-                        _buildInsightsCard(),
-                        const SizedBox(height: 24),
-
                         // Advanced Analysis Section
                         _buildAdvancedAnalysisSection(),
                         const SizedBox(height: 24),
@@ -704,57 +700,7 @@ class _TrendsScreenState extends State<TrendsScreen>
     );
   }
   
-  /// Build insights card
-  Widget _buildInsightsCard() {
-    return BaseCard(
-      // backgroundColor: AppTheme.infoColor.withOpacity(0.1),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.lightbulb_outline,
-                color: AppTheme.infoColor,
-                size: 24,
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'AI Insights',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.infoColor,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          Text(
-            '• Your glucose is most stable on weekdays\n'
-            '• Morning readings are consistently in range\n'
-            '• Consider reducing carbs at dinner to improve overnight levels',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.infoColor,
-                  height: 1.5,
-                ),
-          ),
-          const SizedBox(height: 12),
-          
-          TextButton(
-            onPressed: () {
-              AppRoutes.push(context, AppRoutes.recommendations);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.infoColor,
-              padding: EdgeInsets.zero,
-            ),
-            child: const Text('View All Recommendations →'),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   /// Build advanced analysis section with navigation cards
   Widget _buildAdvancedAnalysisSection() {

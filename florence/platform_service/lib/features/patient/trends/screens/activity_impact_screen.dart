@@ -273,10 +273,6 @@ class _ActivityImpactScreenState extends State<ActivityImpactScreen> {
                     // Complete activity ranking
                     _buildCompleteRanking(),
                     const SizedBox(height: 24),
-
-                    // Recommendations
-                    _buildRecommendationsSection(),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -923,104 +919,6 @@ class _ActivityImpactScreenState extends State<ActivityImpactScreen> {
     );
   }
 
-  /// Build recommendations section
-  Widget _buildRecommendationsSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.infoColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.lightbulb_outline,
-                  color: AppTheme.infoColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Activity Recommendations',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildRecommendationItem(
-            'Optimal timing',
-            'Activities are most effective 30-60 minutes after meals',
-            Icons.schedule,
-          ),
-          const SizedBox(height: 12),
-          _buildRecommendationItem(
-            'Consistency is key',
-            'Regular moderate activity (30 min/day) is better than occasional intense workouts',
-            Icons.repeat,
-          ),
-          const SizedBox(height: 12),
-          _buildRecommendationItem(
-            'Mix intensity levels',
-            'Combine light activities (walking) with vigorous ones (running) throughout the week',
-            Icons.shuffle,
-          ),
-          const SizedBox(height: 12),
-          _buildRecommendationItem(
-            'Track your progress',
-            'Your top activity is ${_filteredActivities.isNotEmpty ? _filteredActivities.first.activityName : 'Unknown'}. Keep it up!',
-            Icons.trending_up,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecommendationItem(
-    String title,
-    String description,
-    IconData icon,
-  ) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(icon, size: 18, color: AppTheme.primaryBlue),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildLegendItem(String label, Color color) {
     return Row(

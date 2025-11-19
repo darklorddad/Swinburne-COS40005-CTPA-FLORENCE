@@ -289,10 +289,6 @@ class _MealImpactScreenState extends State<MealImpactScreen> {
                     // Complete food ranking
                     _buildCompleteRanking(),
                     const SizedBox(height: 24),
-
-                    // AI recommendations
-                    _buildRecommendationsSection(),
-                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -825,94 +821,6 @@ class _MealImpactScreenState extends State<MealImpactScreen> {
     );
   }
 
-  /// Build recommendations section
-  Widget _buildRecommendationsSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppTheme.infoColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.lightbulb_outline,
-                  color: AppTheme.infoColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Smart Recommendations',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildRecommendationItem(
-            'Substitute high-impact foods',
-            'Try replacing "Pancakes with Syrup" with "Greek Yogurt with Nuts" for breakfast',
-            Icons.swap_horiz,
-          ),
-          const SizedBox(height: 12),
-          _buildRecommendationItem(
-            'Add protein to meals',
-            'Pairing carbs with protein can reduce glucose spikes by 20-30%',
-            Icons.add_circle_outline,
-          ),
-          const SizedBox(height: 12),
-          _buildRecommendationItem(
-            'Post-meal activity',
-            'A 15-minute walk after lunch can help manage glucose levels',
-            Icons.directions_walk,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecommendationItem(String title, String description, IconData icon) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: Icon(icon, size: 18, color: AppTheme.primaryBlue),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                description,
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
 
   Widget _buildLegendItem(String label, Color color) {
     return Row(
