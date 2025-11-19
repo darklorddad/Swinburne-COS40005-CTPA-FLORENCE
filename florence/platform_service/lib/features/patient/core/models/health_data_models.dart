@@ -3,7 +3,230 @@
 
 import 'package:flutter/foundation.dart';
 
+// ============================================================================
+// NEW MODELS (MATCHING PYTHON BACKEND)
+// ============================================================================
+
+/// Monitor Data Type Enum (Strictly matching Supabase)
+enum MonitorDataType {
+  BLOOD_PRESSURE_SYSTOLIC,
+  BLOOD_PRESSURE_DIASTOLIC,
+  GLUCOSE,
+  BMI,
+  HBA1C,
+  CHOLESTEROL_TOTAL,
+  CHOLESTEROL_LDL,
+  CHOLESTEROL_HDL,
+  CHOLESTEROL_TRIGLYCERIDES,
+}
+
+/// Health Status Enum
+enum HealthStatus {
+  safe,
+  warning,
+  critical,
+  unknown,
+}
+
+/// Monitor Data Model
+@immutable
+class MonitorData {
+  final int id;
+  final int patientId;
+  final MonitorDataType dataType;
+  final double value;
+  final DateTime measuredAt;
+
+  const MonitorData({
+    required this.id,
+    required this.patientId,
+    required this.dataType,
+    required this.value,
+    required this.measuredAt,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'patient_id': patientId,
+      'data_type': dataType.name,
+      'value': value,
+      'measured_at': measuredAt.toIso8601String(),
+    };
+  }
+
+  factory MonitorData.fromJson(Map<String, dynamic> json) {
+    return MonitorData(
+      id: json['id'] as int,
+      patientId: json['patient_id'] as int,
+      dataType: MonitorDataType.values.firstWhere(
+        (e) => e.name == json['data_type'],
+        orElse: () => throw Exception('Unknown MonitorDataType: ${json['data_type']}'),
+      ),
+      value: (json['value'] as num).toDouble(),
+      measuredAt: DateTime.parse(json['measured_at'] as String),
+    );
+  }
+}
+
+/// Patient Activity Log Model
+@immutable
+class PatientActivityLog {
+  final int id;
+  final String activityDescription;
+  final int durationMinutes;
+  final DateTime performedAt;
+
+  const PatientActivityLog({
+    required this.id,
+    required this.activityDescription,
+    required this.durationMinutes,
+    required this.performedAt,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'activity_description': activityDescription,
+      'duration_minutes': durationMinutes,
+      'performed_at': performedAt.toIso8601String(),
+    };
+  }
+
+  factory PatientActivityLog.fromJson(Map<String, dynamic> json) {
+    return PatientActivityLog(
+      id: json['id'] as int,
+      activityDescription: json['activity_description'] as String,
+      durationMinutes: json['duration_minutes'] as int,
+      performedAt: DateTime.parse(json['performed_at'] as String),
+    );
+  }
+}
+
+/// Daily Patient Log Model (For Diet Overlay)
+@immutable
+class DailyPatientLog {
+  final int id;
+  final String? mealDesc;
+  final double? glucoseBeforeMeal;
+  final double? glucoseAfterMeal;
+  final DateTime logDate;
+  final String mealTime; // 'BREAKFAST', 'LUNCH', 'DINNER'
+
+  const DailyPatientLog({
+    required this.id,
+    required this.logDate,
+    required this.mealTime,
+    this.mealDesc,
+    this.glucoseBeforeMeal,
+    this.glucoseAfterMeal,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'meal_desc': mealDesc,
+      'glucose_before_meal': glucoseBeforeMeal,
+      'glucose_after_meal': glucoseAfterMeal,
+      'log_date': logDate.toIso8601String(),
+      'meal_time': mealTime,
+    };
+  }
+
+  factory DailyPatientLog.fromJson(Map<String, dynamic> json) {
+    return DailyPatientLog(
+      id: json['id'] as int,
+      logDate: DateTime.parse(json['log_date'] as String),
+      mealTime: json['meal_time'] as String,
+      mealDesc: json['meal_desc'] as String?,
+      glucoseBeforeMeal: json['glucose_before_meal'] != null ? (json['glucose_before_meal'] as num).toDouble() : null,
+      glucoseAfterMeal: json['glucose_after_meal'] != null ? (json['glucose_after_meal'] as num).toDouble() : null,
+    );
+  }
+}
+
+/// Health Threshold Model
+@immutable
+class HealthThreshold {
+  final MonitorDataType dataType;
+  final double minValue;
+  final double maxValue;
+
+  const HealthThreshold({
+    required this.dataType,
+    required this.minValue,
+    required this.maxValue,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data_type': dataType.name,
+      'min_value': minValue,
+      'max_value': maxValue,
+    };
+  }
+
+  factory HealthThreshold.fromJson(Map<String, dynamic> json) {
+    return HealthThreshold(
+      dataType: MonitorDataType.values.firstWhere(
+        (e) => e.name == json['data_type'],
+        orElse: () => throw Exception('Unknown MonitorDataType: ${json['data_type']}'),
+      ),
+      minValue: (json['min_value'] as num).toDouble(),
+      maxValue: (json['max_value'] as num).toDouble(),
+    );
+  }
+}
+
+/// Health Status Evaluator Helper
+class HealthStatusEvaluator {
+  static HealthStatus evaluate(
+    double value,
+    MonitorDataType type,
+    List<HealthThreshold> thresholds,
+  ) {
+    // BMI Specific Logic
+    if (type == MonitorDataType.BMI) {
+      if (value < 18.5) return HealthStatus.warning; // Underweight
+      if (value >= 18.5 && value <= 24.9) return HealthStatus.safe; // Normal
+      if (value >= 25.0 && value <= 29.9) return HealthStatus.warning; // Overweight
+      if (value >= 30.0) return HealthStatus.critical; // Obese
+      return HealthStatus.unknown;
+    }
+
+    // Find specific threshold
+    try {
+      final threshold = thresholds.firstWhere((t) => t.dataType == type);
+      
+      // Cholesterol Logic (Prioritize LDL if passed as type, but here we evaluate per type)
+      // If type is LDL, we just check against LDL threshold.
+      
+      if (value < threshold.minValue) return HealthStatus.warning; // Too low
+      if (value > threshold.maxValue) return HealthStatus.critical; // Too high (or warning depending on context, but usually critical for max)
+      
+      // Refined logic: usually min/max define the SAFE range.
+      // So if within [min, max], it is safe.
+      if (value >= threshold.minValue && value <= threshold.maxValue) {
+        return HealthStatus.safe;
+      }
+      
+      // If outside, determine severity. 
+      // For simplicity and based on "min_value, max_value" usually defining the normal range:
+      return HealthStatus.warning; 
+      
+    } catch (e) {
+      // No threshold found
+      return HealthStatus.unknown;
+    }
+  }
+}
+
+// ============================================================================
+// DEPRECATED MODELS (LEGACY)
+// ============================================================================
+
 /// Glucose Reading Model
+@Deprecated('Use MonitorData instead')
 @immutable
 class GlucoseReading {
   final String id;
@@ -167,6 +390,7 @@ class MealLog {
 }
 
 /// Activity Log Model
+@Deprecated('Use PatientActivityLog instead')
 @immutable
 class ActivityLog {
   final String id;
@@ -384,6 +608,7 @@ class MedicationDose {
 }
 
 /// Blood Pressure Reading Model
+@Deprecated('Use MonitorData instead')
 @immutable
 class BloodPressureReading {
   final String id;
@@ -440,6 +665,7 @@ class BloodPressureReading {
 }
 
 /// Cholesterol Test Result Model
+@Deprecated('Use MonitorData instead')
 @immutable
 class CholesterolResult {
   final String id;
@@ -488,6 +714,7 @@ class CholesterolResult {
 }
 
 /// BMI Result Model
+@Deprecated('Use MonitorData instead')
 @immutable
 class BmiResult {
   final String id;
@@ -536,6 +763,7 @@ class BmiResult {
 }
 
 /// HbA1c Test Result Model
+@Deprecated('Use MonitorData instead')
 @immutable
 class HbA1cResult {
   final String id;
