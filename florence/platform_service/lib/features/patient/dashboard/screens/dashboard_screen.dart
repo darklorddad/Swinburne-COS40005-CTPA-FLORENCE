@@ -122,70 +122,53 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
     
     final isLoading = ref.watch(monitorDataProvider).isLoading;
+    
+    // Define consistent spacing
+    const double spacing = 20.0;
 
     return Scaffold(
-      appBar: _buildAppBar(),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: _handleRefresh,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // AI Insight (Main Card)
-                  const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: AIInsightCard(
-                  insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                  onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-                ),
+      appBar: _buildAppBar(context, isLoading),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(spacing),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI Insight (Main Card)
+              AIInsightCard(
+                insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: spacing),
 
               // Biometrics Section (Loaded via Riverpod)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: BiometricsSection(
-                  monitorData: monitorData,
-                  latestActivity: activity,
-                  thresholds: thresholds,
-                ),
+              BiometricsSection(
+                monitorData: monitorData,
+                latestActivity: activity,
+                thresholds: thresholds,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: spacing),
 
               // Quick actions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: QuickActionsGrid(
-                  onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-                  onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-                  onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
-                  onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
-                ),
+              QuickActionsGrid(
+                onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
+                onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+                onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+                onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: spacing),
             ],
           ),
         ),
-      ),
-          if (isLoading)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(minHeight: 2),
-            ),
-        ],
       ),
     );
   }
 
 
   /// Build app bar
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(BuildContext context, bool isLoading) {
     return AppBar(
       title: InkWell(
         onTap: _handleRefresh,
@@ -213,6 +196,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           tooltip: 'Profile',
         ),
       ],
+      shape: Border(
+        bottom: BorderSide(
+          color: AppTheme.getBorderColor(context),
+          width: 1,
+        ),
+      ),
+      bottom: isLoading
+          ? const PreferredSize(
+              preferredSize: Size.fromHeight(2),
+              child: LinearProgressIndicator(minHeight: 2),
+            )
+          : null,
     );
   }
 

@@ -16,11 +16,13 @@ class AIInsightCard extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    const double borderRadius = 24.0;
+
     return AspectRatio(
-      aspectRatio: 1.586, // Credit card aspect ratio
+      aspectRatio: 2.0,
       child: InkWell(
         onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(borderRadius),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -32,12 +34,12 @@ class AIInsightCard extends StatelessWidget {
                 AppTheme.primaryBlue,
               ],
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(borderRadius),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryBlue.withOpacity(0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: AppTheme.primaryBlue.withOpacity(0.3),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -73,7 +75,6 @@ class AIInsightCard extends StatelessWidget {
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     // Header
                     Row(
@@ -86,7 +87,7 @@ class AIInsightCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(100),
                             border: Border.all(
                               color: Colors.white.withOpacity(0.3),
                               width: 1,
@@ -101,7 +102,7 @@ class AIInsightCard extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                'AI Insights',
+                                'Insights',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -119,30 +120,19 @@ class AIInsightCard extends StatelessWidget {
                       ],
                     ),
                     
+                    const Spacer(),
+
                     // Insight Content
                     Text(
                       insight,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             color: Colors.white,
-                            height: 1.4,
+                            height: 1.3,
                             fontWeight: FontWeight.w600,
-                            fontSize: 20,
+                            fontSize: 18,
                           ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                    ),
-                    
-                    // Footer
-                    Row(
-                      children: [
-                        Text(
-                          'Tap for details',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w500,
-                              ),
-                        ),
-                      ],
                     ),
                   ],
                 ),

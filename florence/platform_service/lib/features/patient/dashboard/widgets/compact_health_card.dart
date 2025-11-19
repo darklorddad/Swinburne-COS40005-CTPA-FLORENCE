@@ -28,11 +28,13 @@ class CompactHealthCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double borderRadius = 16.0;
+
     Widget content = InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(borderRadius),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -42,11 +44,11 @@ class CompactHealthCard extends StatelessWidget {
               Helpers.darken(color, 0.1),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.2),
-              blurRadius: 10,
+              blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],

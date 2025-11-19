@@ -40,6 +40,11 @@ class AppTheme {
   static const Color accentPurple = Color(0xFF9C27B0);
   static const Color accentGold = Color(0xFFFFB300);
 
+  // Add Midnight Colors
+  static const Color midnightBackground = Color(0xFF121212);
+  static const Color midnightSurface = Color(0xFF1E1E1E);
+  static const Color midnightBorder = Color(0xFF333333);
+
   // ============================================
   // LIGHT THEME
   // ============================================
@@ -276,6 +281,7 @@ class AppTheme {
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
+    primaryColor: primaryBlue,
 
     // Dark Color Scheme
     colorScheme: const ColorScheme.dark(
@@ -283,24 +289,25 @@ class AppTheme {
       secondary: primaryGreen,
       tertiary: primaryRed,
       error: errorColor,
-      surface: Color(0xFF1F2937),
+      surface: midnightSurface,
+      background: midnightBackground,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onError: Colors.white,
-      onSurface: Color(0xFFF3F4F6),
+      onSurface: Colors.white,
     ),
 
     // Scaffold
-    scaffoldBackgroundColor: const Color(0xFF111827),
+    scaffoldBackgroundColor: midnightBackground,
 
     // AppBar Theme
     appBarTheme: const AppBarTheme(
-      backgroundColor: Color(0xFF1F2937),
-      foregroundColor: Color(0xFFF3F4F6),
+      backgroundColor: midnightSurface,
+      foregroundColor: Colors.white,
       elevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(
-        color: Color(0xFFF3F4F6),
+        color: Colors.white,
         fontSize: 20,
         fontWeight: FontWeight.w600,
       ),
@@ -308,7 +315,7 @@ class AppTheme {
 
     // Card Theme
     cardTheme: CardThemeData(
-      color: const Color(0xFF1F2937),
+      color: midnightSurface,
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       shadowColor: Colors.black.withValues(alpha: 0.2),
@@ -394,7 +401,7 @@ class AppTheme {
 
     // Divider Theme
     dividerTheme: const DividerThemeData(
-      color: Color(0xFF4B5563),
+      color: midnightBorder,
       thickness: 1,
       space: 1,
     ),
@@ -501,6 +508,13 @@ class AppTheme {
   // ============================================
   // HELPER METHODS
   // ============================================
+
+  /// Get border color based on theme context
+  static Color getBorderColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? midnightBorder
+        : borderColor;
+  }
 
   /// Get color based on glucose level
   static Color getGlucoseColor(double value, double min, double max) {
