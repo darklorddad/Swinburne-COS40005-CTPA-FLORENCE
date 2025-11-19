@@ -67,14 +67,11 @@ class BiometricsSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.5,
-            children: cards,
+          Column(
+            children: cards.map((card) => Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: card,
+            )).toList(),
           ),
         ],
       ),

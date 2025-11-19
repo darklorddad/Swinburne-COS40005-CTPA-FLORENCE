@@ -117,9 +117,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     // Watch Riverpod providers
-    final monitorDataAsync = ref.watch(monitorDataProvider);
-    final activityAsync = ref.watch(latestActivityProvider);
-    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    final monitorData = ref.watch(monitorDataProvider).valueOrNull ?? [];
+    final activity = ref.watch(latestActivityProvider).valueOrNull;
+    final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
+    
+    final isLoading = ref.watch(monitorDataProvider).isLoading;
 
     return Scaffold(
       appBar: _buildAppBar(),
@@ -130,6 +132,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (isLoading)
+                const LinearProgressIndicator(minHeight: 2),
+
               // AI Insight (Main Card)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -148,29 +153,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               // Biometrics Section (Loaded via Riverpod)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: monitorDataAsync.when(
-                  data: (monitorData) {
-                    return activityAsync.when(
-                      data: (activity) {
-                        return thresholdsAsync.when(
-                          data: (thresholds) => BiometricsSection(
-                            monitorData: monitorData,
-                            latestActivity: activity,
-                            thresholds: thresholds,
-                          ),
-                          loading: () => const Center(child: CircularProgressIndicator()),
-                          error: (_, __) => const Text('Error loading thresholds'),
-                        );
-                      },
-                      loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (_, __) => const Text('Error loading activity'),
-                    );
-                  },
-                  loading: () => const Center(child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: CircularProgressIndicator(),
-                  )),
-                  error: (err, stack) => Center(child: Text('Error: $err')),
+                child: BiometricsSection(
+                  monitorData: monitorData,
+                  latestActivity: activity,
+                  thresholds: thresholds,
                 ),
               ),
               const SizedBox(height: 24),
