@@ -372,28 +372,67 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   maxY: maxY,
                   gridData: FlGridData(
                     show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.3), strokeWidth: 1),
+                    drawVerticalLine: true,
+                    getDrawingHorizontalLine: (_) => FlLine(
+                      color: AppTheme.getBorderColor(context).withOpacity(0.2),
+                      strokeWidth: 1,
+                    ),
+                    getDrawingVerticalLine: (_) => FlLine(
+                      color: AppTheme.getBorderColor(context).withOpacity(0.2),
+                      strokeWidth: 1,
+                    ),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 50, getTitlesWidget: (val, _) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 9)))),
-                    bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: (maxX - minX) / 4, getTitlesWidget: (val, _) {
-                      final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                      final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
-                      return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 9)));
-                    })),
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Text('Glucose (mg/dL)', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        reservedSize: 35, 
+                        interval: 50, 
+                        getTitlesWidget: (val, _) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 9)),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                      ),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        interval: (maxX - minX) / 4, 
+                        getTitlesWidget: (val, _) {
+                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                          final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(fmt.format(date), style: const TextStyle(fontSize: 9)),
+                          );
+                        },
+                      ),
+                    ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: false),
-                  // Safe Zone
+                  borderData: FlBorderData(
+                    show: true, 
+                    border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5)),
+                  ),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1)),
+                      HorizontalRangeAnnotation(
+                        y1: threshold.minValue, 
+                        y2: threshold.maxValue, 
+                        color: AppTheme.primaryGreen.withOpacity(0.1),
+                      ),
                     ],
                   ),
-                  // Meal Lines
                   extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                    ],
                     verticalLines: relevantMeals.map((m) => VerticalLine(
                       x: m.logDate.millisecondsSinceEpoch.toDouble(),
                       color: _getMealColor(m.mealTime).withOpacity(0.5),
@@ -407,8 +446,16 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
                       isCurved: true,
                       color: AppTheme.primaryBlue,
-                      barWidth: 3,
-                      dotData: const FlDotData(show: false),
+                      barWidth: 2,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                          radius: 2.5,
+                          color: AppTheme.primaryBlue,
+                          strokeWidth: 1,
+                          strokeColor: Colors.white,
+                        ),
+                      ),
                       belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withOpacity(0.1), AppTheme.primaryBlue.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                     ),
                   ],
@@ -416,14 +463,13 @@ class _GlucoseTrendsSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Legend
             Wrap(
               spacing: 12,
               runSpacing: 8,
               alignment: WrapAlignment.center,
               children: [
                 _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
-                _buildLegendItem('Brkfst', Colors.orange, isDashed: true),
+                _buildLegendItem('Breakfast', Colors.orange, isDashed: true),
                 _buildLegendItem('Lunch', Colors.blue, isDashed: true),
                 _buildLegendItem('Dinner', Colors.purple, isDashed: true),
               ],
