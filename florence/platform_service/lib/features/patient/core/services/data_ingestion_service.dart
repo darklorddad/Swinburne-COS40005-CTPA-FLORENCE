@@ -99,7 +99,24 @@ class DataIngestionService {
         }
       });
       
-      // TODO: Fetch other data types (meals, activities, sleep, medications) from their respective endpoints if they exist.
+      // Fetch Activities
+      try {
+        final activityData = await _apiService.get('/patients/me/activity-logs');
+        if (activityData is List) {
+          for (var item in activityData) {
+            _activities.add(ActivityLog(
+              id: item['id'].toString(),
+              timestamp: DateTime.parse(item['performed_at']),
+              type: item['activity_description'] ?? 'Activity',
+              duration: item['duration_minutes'] ?? 0,
+              intensity: 'Moderate', // Default as backend doesn't store intensity yet
+            ));
+          }
+          _activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        }
+      } catch (e) {
+        print("Error fetching activities: $e");
+      }
 
       // Sort data after fetching
       _glucoseReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));

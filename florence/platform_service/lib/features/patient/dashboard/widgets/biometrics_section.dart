@@ -70,10 +70,10 @@ class BiometricsSection extends StatelessWidget {
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 1,
+            crossAxisCount: 2,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 3.2,
+            childAspectRatio: 1.5,
             children: cards,
           ),
         ],
@@ -84,7 +84,6 @@ class BiometricsSection extends StatelessWidget {
   List<Widget> _buildHealthCards(BuildContext context) {
     final cards = <Widget>[];
     
-    // Helper to find latest data
     MonitorData? getData(MonitorDataType type) {
       try {
         return monitorData.firstWhere((d) => d.dataType == type);
@@ -102,44 +101,57 @@ class BiometricsSection extends StatelessWidget {
 
     // Glucose
     if (glucose != null) {
-      cards.add(_buildCard(
-        context,
-        'Glucose',
-        glucose.value.toStringAsFixed(0),
-        'mg/dL',
-        glucose,
-        Icons.water_drop_outlined,
-        // Ensure this route points to GlucoseDetailScreen in routes.dart
+      cards.add(CompactHealthCard(
+        label: 'Glucose',
+        value: glucose.value.toStringAsFixed(0),
+        unit: 'mg/dL',
+        status: _getGlucoseStatus(glucose.value), // Custom Status
+        timestamp: glucose.measuredAt,
+        icon: Icons.water_drop_outlined,
+        color: _getGlucoseColor(glucose.value),
         onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
       ));
     }
 
     // Blood Pressure
     if (bpSystolic != null && bpDiastolic != null) {
-      cards.add(_buildBPCard(context, bpSystolic, bpDiastolic));
+      cards.add(CompactHealthCard(
+        label: 'Blood Pressure',
+        value: '${bpSystolic.value.toInt()}/${bpDiastolic.value.toInt()}',
+        unit: 'mmHg',
+        status: _getBPStatus(bpSystolic.value, bpDiastolic.value), // Custom Status
+        timestamp: bpSystolic.measuredAt,
+        icon: Icons.monitor_heart_outlined,
+        color: _getBPColor(bpSystolic.value, bpDiastolic.value),
+        onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
+      ));
     }
 
     // HbA1c
     if (hba1c != null) {
-      cards.add(_buildCard(
-        context,
-        'HbA1c',
-        hba1c.value.toStringAsFixed(1),
-        '%',
-        hba1c,
-        Icons.pie_chart_outline,
+      cards.add(CompactHealthCard(
+        label: 'HbA1c',
+        value: hba1c.value.toStringAsFixed(1),
+        unit: '%',
+        status: _getHba1cStatus(hba1c.value), // Custom Status
+        timestamp: hba1c.measuredAt,
+        icon: Icons.pie_chart_outline,
+        color: _getHba1cColor(hba1c.value),
+        onTap: () => Helpers.showInfo(context, 'HbA1c details coming soon'),
       ));
     }
 
     // Cholesterol
     if (cholesterol != null) {
-      cards.add(_buildCard(
-        context,
-        'Cholesterol',
-        cholesterol.value.toStringAsFixed(0),
-        'mg/dL',
-        cholesterol,
-        Icons.bloodtype_outlined,
+      cards.add(CompactHealthCard(
+        label: 'Cholesterol',
+        value: cholesterol.value.toStringAsFixed(0),
+        unit: 'mg/dL',
+        status: _getCholesterolStatus(cholesterol.value), // Custom Status
+        timestamp: cholesterol.measuredAt,
+        icon: Icons.bloodtype_outlined,
+        color: _getCholesterolColor(cholesterol.value),
+        onTap: () => Helpers.showInfo(context, 'Cholesterol details coming soon'),
       ));
     }
 
@@ -149,7 +161,7 @@ class BiometricsSection extends StatelessWidget {
         label: 'Activity',
         value: '${latestActivity!.duration}',
         unit: 'min',
-        status: 'Recorded',
+        status: 'Latest Log', // Custom Status
         timestamp: latestActivity!.timestamp,
         icon: Icons.directions_run_outlined,
         color: AppTheme.activityColor,
@@ -159,79 +171,74 @@ class BiometricsSection extends StatelessWidget {
 
     // BMI
     if (bmi != null) {
-      cards.add(_buildCard(
-        context,
-        'BMI',
-        bmi.value.toStringAsFixed(1),
-        '',
-        bmi,
-        Icons.height_outlined,
+      cards.add(CompactHealthCard(
+        label: 'BMI',
+        value: bmi.value.toStringAsFixed(1),
+        unit: '',
+        status: Helpers.getBMICategory(bmi.value), // Use Helper for unique status
+        timestamp: bmi.measuredAt,
+        icon: Icons.height_outlined,
+        color: _getBmiColor(bmi.value),
+        onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
       ));
     }
 
     return cards;
   }
 
-  Widget _buildCard(
-    BuildContext context,
-    String label,
-    String value,
-    String unit,
-    MonitorData data,
-    IconData icon, {
-    VoidCallback? onTap,
-  }) {
-    final status = HealthStatusEvaluator.evaluate(data.value, data.dataType, thresholds);
-    return CompactHealthCard(
-      label: label,
-      value: value,
-      unit: unit,
-      status: _getStatusLabel(status),
-      timestamp: data.measuredAt,
-      icon: icon,
-      color: _getStatusColor(status),
-      onTap: onTap ?? () => Helpers.showInfo(context, '$label details coming soon'),
-    );
+  // --- Unique Status Logics ---
+
+  String _getGlucoseStatus(double value) {
+    if (value < 70) return 'Low';
+    if (value > 180) return 'High';
+    return 'Normal';
+  }
+  
+  Color _getGlucoseColor(double value) {
+    if (value < 70) return AppTheme.glucoseLow;
+    if (value > 180) return AppTheme.glucoseHigh;
+    return AppTheme.glucoseNormal;
   }
 
-  Widget _buildBPCard(BuildContext context, MonitorData sys, MonitorData dia) {
-    final sysStatus = HealthStatusEvaluator.evaluate(sys.value, sys.dataType, thresholds);
-    final diaStatus = HealthStatusEvaluator.evaluate(dia.value, dia.dataType, thresholds);
-    
-    HealthStatus status = HealthStatus.safe;
-    if (sysStatus == HealthStatus.critical || diaStatus == HealthStatus.critical) {
-      status = HealthStatus.critical;
-    } else if (sysStatus == HealthStatus.warning || diaStatus == HealthStatus.warning) {
-      status = HealthStatus.warning;
-    }
-
-    return CompactHealthCard(
-      label: 'Blood Pressure',
-      value: '${sys.value.toInt()}/${dia.value.toInt()}',
-      unit: 'mmHg',
-      status: _getStatusLabel(status),
-      timestamp: sys.measuredAt,
-      icon: Icons.monitor_heart_outlined,
-      color: _getStatusColor(status),
-      onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
-    );
+  String _getBPStatus(double sys, double dia) {
+    if (sys > 140 || dia > 90) return 'High';
+    if (sys > 120 || dia > 80) return 'Elevated';
+    return 'Normal';
   }
 
-  String _getStatusLabel(HealthStatus status) {
-    switch (status) {
-      case HealthStatus.safe: return 'Normal';
-      case HealthStatus.warning: return 'Warning';
-      case HealthStatus.critical: return 'Critical';
-      default: return 'No Data';
-    }
+  Color _getBPColor(double sys, double dia) {
+    if (sys > 140 || dia > 90) return AppTheme.errorColor;
+    if (sys > 120 || dia > 80) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
   }
 
-  Color _getStatusColor(HealthStatus status) {
-    switch (status) {
-      case HealthStatus.safe: return AppTheme.primaryGreen;
-      case HealthStatus.warning: return AppTheme.warningColor;
-      case HealthStatus.critical: return AppTheme.errorColor;
-      default: return AppTheme.textSecondaryColor;
-    }
+  String _getHba1cStatus(double value) {
+    if (value < 5.7) return 'Normal';
+    if (value < 6.5) return 'Pre-diabetes';
+    return 'Diabetes';
+  }
+
+  Color _getHba1cColor(double value) {
+    if (value >= 6.5) return AppTheme.errorColor;
+    if (value >= 5.7) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
+  }
+
+  String _getCholesterolStatus(double value) {
+    if (value >= 240) return 'High';
+    if (value >= 200) return 'Borderline';
+    return 'Desirable';
+  }
+
+  Color _getCholesterolColor(double value) {
+    if (value >= 240) return AppTheme.errorColor;
+    if (value >= 200) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
+  }
+
+  Color _getBmiColor(double value) {
+    if (value < 18.5 || value >= 30) return AppTheme.errorColor;
+    if (value >= 25) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
   }
 }
