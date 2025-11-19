@@ -20,43 +20,94 @@ class QuickActionsGrid extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.3,
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        ActionCard(
-          title: 'Log Glucose',
-          subtitle: 'Track blood sugar',
-          icon: Icons.water_drop,
-          iconColor: AppTheme.primaryRed,
-          onTap: onLogGlucose,
+        _buildActionButton(
+          context,
+          'Glucose',
+          Icons.water_drop_rounded,
+          AppTheme.primaryRed,
+          onLogGlucose,
         ),
-        ActionCard(
-          title: 'Log Meal',
-          subtitle: 'Record what you ate',
-          icon: Icons.restaurant,
-          iconColor: AppTheme.mealColor,
-          onTap: onLogMeal,
+        _buildActionButton(
+          context,
+          'Meal',
+          Icons.restaurant_rounded,
+          AppTheme.mealColor,
+          onLogMeal,
         ),
-        ActionCard(
-          title: 'Log Activity',
-          subtitle: 'Track exercise',
-          icon: Icons.directions_run,
-          iconColor: AppTheme.activityColor,
-          onTap: onLogActivity,
+        _buildActionButton(
+          context,
+          'Activity',
+          Icons.directions_run_rounded,
+          AppTheme.activityColor,
+          onLogActivity,
         ),
-        ActionCard(
-          title: 'Log Medication',
-          subtitle: 'Record medicines',
-          icon: Icons.medication,
-          iconColor: AppTheme.medicationColor,
-          onTap: onLogMedication,
+        _buildActionButton(
+          context,
+          'Meds',
+          Icons.medication_rounded,
+          AppTheme.medicationColor,
+          onLogMedication,
         ),
       ],
+    );
+  }
+
+  Widget _buildActionButton(
+    BuildContext context,
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: (MediaQuery.of(context).size.width - 64) / 4, // Distribute space
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: AppTheme.borderColor.withOpacity(0.5),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimaryColor,
+                  ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
