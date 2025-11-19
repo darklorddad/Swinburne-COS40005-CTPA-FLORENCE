@@ -20,7 +20,7 @@ class AIInsightCard extends StatelessWidget {
       aspectRatio: 1.586, // Credit card aspect ratio
       child: InkWell(
         onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -32,7 +32,7 @@ class AIInsightCard extends StatelessWidget {
                 AppTheme.primaryBlue,
               ],
             ),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
                 color: AppTheme.primaryBlue.withOpacity(0.4),
@@ -86,7 +86,7 @@ class AIInsightCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: Colors.white.withOpacity(0.3),
                               width: 1,
