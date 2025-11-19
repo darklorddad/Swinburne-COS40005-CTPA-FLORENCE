@@ -113,59 +113,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final activity = ref.watch(latestActivityProvider).valueOrNull;
     final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
     
-    final monitorDataAsync = ref.watch(monitorDataProvider);
-    final activityAsync = ref.watch(latestActivityProvider);
-    
-    final isLoading = monitorDataAsync.isLoading || activityAsync.isLoading;
-    
     // Define consistent spacing
     const double spacing = 20.0;
 
     return Scaffold(
       appBar: _buildAppBar(context),
-      body: Stack(
-        children: [
-          RefreshIndicator(
-            onRefresh: _handleRefresh,
-            edgeOffset: 0,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(spacing),
-              children: [
-                // AI Insight (Main Card)
-                AIInsightCard(
-                  insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                  onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-                ),
-                const SizedBox(height: spacing),
-
-                // Biometrics Section (Loaded via Riverpod)
-                BiometricsSection(
-                  monitorData: monitorData,
-                  latestActivity: activity,
-                  thresholds: thresholds,
-                ),
-                const SizedBox(height: spacing),
-
-                // Quick actions
-                QuickActionsGrid(
-                  onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-                  onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-                  onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
-                  onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
-                ),
-                const SizedBox(height: spacing),
-              ],
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        edgeOffset: 0,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(spacing),
+          children: [
+            // AI Insight (Main Card)
+            AIInsightCard(
+              insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+              onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
             ),
-          ),
-          if (isLoading)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(minHeight: 3),
+            const SizedBox(height: spacing),
+
+            // Biometrics Section (Loaded via Riverpod)
+            BiometricsSection(
+              monitorData: monitorData,
+              latestActivity: activity,
+              thresholds: thresholds,
             ),
-        ],
+            const SizedBox(height: spacing),
+
+            // Quick actions
+            QuickActionsGrid(
+              onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
+              onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+              onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+              onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
+            ),
+            const SizedBox(height: spacing),
+          ],
+        ),
       ),
     );
   }
@@ -173,6 +157,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Build app bar
   AppBar _buildAppBar(BuildContext context) {
+    final monitorDataAsync = ref.watch(monitorDataProvider);
+    final activityAsync = ref.watch(latestActivityProvider);
+    final isLoading = monitorDataAsync.isLoading || activityAsync.isLoading;
+    final borderColor = AppTheme.getBorderColor(context);
+
     return AppBar(
       title: InkWell(
         onTap: _handleRefresh,
@@ -200,11 +189,15 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           tooltip: 'Profile',
         ),
       ],
-      shape: Border(
-        bottom: BorderSide(
-          color: AppTheme.getBorderColor(context),
-          width: 1,
-        ),
+      elevation: 0,
+      bottom: PreferredSize(
+        preferredSize: const Size.fromHeight(2.0),
+        child: isLoading
+            ? const LinearProgressIndicator(minHeight: 2.0)
+            : Container(
+                color: borderColor,
+                height: 1.0,
+              ),
       ),
     );
   }

@@ -43,9 +43,11 @@ class AIInsightCard extends StatelessWidget {
               ),
             ],
           ),
-          child: Stack(
-            children: [
-              // Decorative circles
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(borderRadius),
+            child: Stack(
+              children: [
+                // Decorative circles
               Positioned(
                 top: -50,
                 right: -50,
@@ -138,6 +140,7 @@ class AIInsightCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

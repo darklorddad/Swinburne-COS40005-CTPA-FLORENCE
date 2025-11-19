@@ -27,14 +27,17 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
     final thresholdsAsync = ref.watch(patientThresholdsProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Glucose Analytics'),
-        backgroundColor: AppTheme.surfaceColor,
         elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: AppTheme.textPrimaryColor),
-        titleTextStyle: AppTheme.lightTheme.textTheme.titleLarge,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: AppTheme.getBorderColor(context),
+            height: 1.0,
+          ),
+        ),
       ),
       body: glucoseAsync.when(
         data: (dataList) {
@@ -61,7 +64,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
           final analytics = _calculateAnalytics(allReadings, glucoseThreshold);
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -194,8 +197,9 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -209,8 +213,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
         children: [
           Text(
             title,
-            style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-              color: AppTheme.textSecondaryColor,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               fontSize: 11,
             ),
             maxLines: 1,
@@ -223,7 +226,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
             children: [
               Text(
                 value,
-                style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
                 ),
@@ -231,7 +234,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
               const SizedBox(width: 2),
               Text(
                 unit,
-                style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontSize: 10,
                 ),
               ),
@@ -249,8 +252,9 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -266,7 +270,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
             children: [
               Text(
                 'Time In Range',
-                style: AppTheme.lightTheme.textTheme.titleMedium,
+                style: Theme.of(context).textTheme.titleMedium,
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -294,7 +298,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
                   ),
                   Expanded(
                     flex: 100 - tir.toInt(),
-                    child: Container(color: AppTheme.surfaceColor.withOpacity(0.5)), // Placeholder for non-range
+                    child: Container(color: Theme.of(context).cardColor.withOpacity(0.5)), // Placeholder for non-range
                   ),
                 ],
               ),
@@ -326,7 +330,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
           const SizedBox(height: 8),
           Text(
             '${tir.toStringAsFixed(0)}% of readings in target',
-            style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.textSecondaryColor,
             ),
           ),
@@ -349,9 +353,9 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.borderColor),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -370,7 +374,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
                 child: Text(
                   range,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
+                    color: isSelected ? Colors.white : Theme.of(context).textTheme.bodySmall?.color,
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
                   ),
@@ -413,8 +417,9 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
         height: 300,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceColor,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.getBorderColor(context)),
         ),
         alignment: Alignment.center,
         child: const Text('No data for selected period'),
@@ -437,8 +442,9 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
       height: 350,
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -460,7 +466,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
               horizontalInterval: 40,
               getDrawingHorizontalLine: (value) {
                 return FlLine(
-                  color: AppTheme.borderColor.withOpacity(0.3), // Fix: Lighter lines
+                  color: AppTheme.getBorderColor(context).withOpacity(0.5), // Dynamic grid color
                   strokeWidth: 1,
                   dashArray: [5, 5],
                 );
@@ -487,7 +493,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
                         text,
-                        style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
                       ),
                     );
                   },
@@ -501,7 +507,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
                   getTitlesWidget: (value, meta) {
                     return Text(
                       value.toInt().toString(),
-                      style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(fontSize: 10),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
                     );
                   },
                 ),
@@ -593,7 +599,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceColor,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
@@ -614,14 +620,14 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
               children: [
                 Text(
                   title,
-                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   message,
-                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppTheme.textSecondaryColor,
                   ),
                 ),
@@ -653,11 +659,11 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
           children: [
             Text(
               'History',
-              style: AppTheme.lightTheme.textTheme.titleLarge,
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             Text(
               'Page ${_currentPage + 1} of ${totalPages == 0 ? 1 : totalPages}',
-              style: AppTheme.lightTheme.textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
         ),
@@ -674,9 +680,9 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
             return Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppTheme.surfaceColor,
+                color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppTheme.borderColor),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
               child: Row(
                 children: [
@@ -695,13 +701,13 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
                       children: [
                         Text(
                           DateFormat('MMM d, yyyy').format(item.measuredAt),
-                          style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                         Text(
                           DateFormat('h:mm a').format(item.measuredAt),
-                          style: AppTheme.lightTheme.textTheme.bodySmall,
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
                     ),
@@ -711,7 +717,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
                     children: [
                       Text(
                         '${item.value.toInt()} mg/dL',
-                        style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -752,7 +758,7 @@ class _GlucoseDetailScreenState extends ConsumerState<GlucoseDetailScreen> {
             const SizedBox(width: 16),
             Text(
               '${_currentPage + 1} / ${totalPages == 0 ? 1 : totalPages}',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 16),
             IconButton(
