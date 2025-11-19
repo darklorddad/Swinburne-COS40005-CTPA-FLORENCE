@@ -19,6 +19,7 @@ enum MonitorDataType {
   CHOLESTEROL_LDL,
   CHOLESTEROL_HDL,
   CHOLESTEROL_TRIGLYCERIDES,
+  UNKNOWN, // Safety fallback
 }
 
 /// Health Status Enum
@@ -62,7 +63,7 @@ class MonitorData {
       patientId: json['patient_id'] as int,
       dataType: MonitorDataType.values.firstWhere(
         (e) => e.name == json['data_type'],
-        orElse: () => throw Exception('Unknown MonitorDataType: ${json['data_type']}'),
+        orElse: () => MonitorDataType.UNKNOWN, // Fixes crash if type not found
       ),
       value: (json['value'] as num).toDouble(),
       measuredAt: DateTime.parse(json['measured_at'] as String),
@@ -171,7 +172,7 @@ class HealthThreshold {
     return HealthThreshold(
       dataType: MonitorDataType.values.firstWhere(
         (e) => e.name == json['data_type'],
-        orElse: () => throw Exception('Unknown MonitorDataType: ${json['data_type']}'),
+        orElse: () => MonitorDataType.UNKNOWN, // Fixes crash here too
       ),
       minValue: (json['min_value'] as num).toDouble(),
       maxValue: (json['max_value'] as num).toDouble(),

@@ -68,7 +68,8 @@ class DataIngestionService {
           case 'BLOOD_PRESSURE_DIASTOLIC':
             diastolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
             break;
-          case 'CHOLESTEROL':
+          case 'CHOLESTEROL': // Legacy
+          case 'CHOLESTEROL_TOTAL': // New Backend format
             _cholesterolResults.add(CholesterolResult(
               id: id,
               testDate: timestamp,
