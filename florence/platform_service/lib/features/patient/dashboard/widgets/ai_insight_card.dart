@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
-import '../../../../core/utils/helpers.dart';
+import '../../../../config/routes.dart';
 
 /// AI Insight Card
 /// Displays AI-generated health insights and recommendations
@@ -16,111 +16,139 @@ class AIInsightCard extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(28),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppTheme.primaryBlue,
-              Helpers.darken(AppTheme.primaryBlue, 0.1),
+    return AspectRatio(
+      aspectRatio: 1.586, // Credit card aspect ratio
+      child: InkWell(
+        onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1A237E), // Deep Indigo
+                const Color(0xFF3949AB), // Indigo
+                AppTheme.primaryBlue,
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryBlue.withOpacity(0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryBlue.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Icon and badge
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
+          child: Stack(
+            children: [
+              // Decorative circles
+              Positioned(
+                top: -50,
+                right: -50,
+                child: Container(
+                  width: 150,
+                  height: 150,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.lightbulb,
-                    color: Colors.white,
-                    size: 32,
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.1),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 4,
-                  ),
+              ),
+              Positioned(
+                bottom: -30,
+                left: -30,
+                child: Container(
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.05),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.auto_awesome,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'AI Powered',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
                             ),
-                      ),
-                    ],
-                  ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.auto_awesome,
+                                color: Colors.white,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'AI Insights',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward,
+                          color: Colors.white70,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                    
+                    // Insight Content
+                    Text(
+                      insight,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            height: 1.4,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 20,
+                          ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    
+                    // Footer
+                    Row(
+                      children: [
+                        Text(
+                          'Tap for details',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Colors.white70,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            
-            // Insight text
-            Text(
-              insight,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Colors.white,
-                    height: 1.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 16),
-            
-            // Action
-            Row(
-              children: [
-                Text(
-                  'View more insights',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
