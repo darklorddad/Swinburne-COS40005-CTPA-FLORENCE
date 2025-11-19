@@ -136,11 +136,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const LinearProgressIndicator(minHeight: 2),
 
               // AI Insight (Main Card)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildSectionHeader('Today\'s Insight'),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: AIInsightCard(
@@ -162,11 +158,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               const SizedBox(height: 24),
 
               // Quick actions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildSectionHeader('Quick Actions'),
-              ),
-              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: QuickActionsGrid(

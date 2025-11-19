@@ -56,6 +56,7 @@ class CompactHealthCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _buildHeader(context),
+            const SizedBox(height: 12),
             _buildValue(context),
           ],
         ),
@@ -66,10 +67,7 @@ class CompactHealthCard extends StatelessWidget {
       return SizedBox(height: height, child: content);
     }
 
-    return AspectRatio(
-      aspectRatio: 2.5,
-      child: content,
-    );
+    return content;
   }
 
   Widget _buildHeader(BuildContext context) {
