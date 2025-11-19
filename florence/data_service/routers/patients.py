@@ -82,6 +82,8 @@ class DailyLogCreate(BaseModel):
     meal_time: MealTime
     glucose_before_meal: Optional[float] = None
     glucose_after_meal: Optional[float] = None
+    glucose_before_meal_time: Optional[datetime] = None
+    glucose_after_meal_time: Optional[datetime] = None
     meal_desc: Optional[str] = None
 
     @model_validator(mode='before')

@@ -36,9 +36,35 @@ class GlucoseDetailScreen extends ConsumerWidget {
           return dailyLogsAsync.when(
             data: (mealLogs) {
               // 1. Global Data Prep
-              final allReadings = dataList
+              final directReadings = dataList
                   .where((d) => d.dataType == MonitorDataType.GLUCOSE)
                   .toList();
+
+              // Convert meal log glucose entries to MonitorData ONLY if time exists
+              final mealReadings = <MonitorData>[];
+              for (var meal in mealLogs) {
+                if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
+                  mealReadings.add(MonitorData(
+                    id: -1 * meal.id, // Negative ID to differentiate
+                    patientId: 0,
+                    dataType: MonitorDataType.GLUCOSE,
+                    value: meal.glucoseBeforeMeal!,
+                    measuredAt: meal.glucoseBeforeMealTime!,
+                  ));
+                }
+                
+                if (meal.glucoseAfterMeal != null && meal.glucoseAfterMealTime != null) {
+                  mealReadings.add(MonitorData(
+                    id: (-1 * meal.id) - 1,
+                    patientId: 0,
+                    dataType: MonitorDataType.GLUCOSE,
+                    value: meal.glucoseAfterMeal!,
+                    measuredAt: meal.glucoseAfterMealTime!,
+                  ));
+                }
+              }
+
+              final allReadings = [...directReadings, ...mealReadings];
 
               if (allReadings.isEmpty) {
                 return const Center(child: Text('No glucose data available'));
@@ -70,7 +96,6 @@ class GlucoseDetailScreen extends ConsumerWidget {
                     // 2. Annotated Line Chart
                     _GlucoseTrendsSection(
                       allReadings: allReadings,
-                      allMeals: mealLogs,
                       threshold: glucoseThreshold,
                     ),
                     const SizedBox(height: 20),
@@ -377,12 +402,10 @@ class _StatisticsSection extends StatelessWidget {
 
 class _GlucoseTrendsSection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final List<DailyPatientLog> allMeals;
   final HealthThreshold threshold;
 
   const _GlucoseTrendsSection({
     required this.allReadings,
-    required this.allMeals,
     required this.threshold,
   });
 
@@ -392,14 +415,10 @@ class _GlucoseTrendsSection extends StatelessWidget {
       title: 'Glucose Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your glucose readings.\n\n'
-                '• Green Band: Your target range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).\n'
-                '• Vertical Dashed Lines: Logged Meals.',
+                '• Green Band: Your target range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).',
       allData: allReadings,
       builder: (range, data) {
         if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
-
-        final minDate = data.first.measuredAt;
-        final relevantMeals = allMeals.where((m) => m.logDate.isAfter(minDate)).toList();
 
         double minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
         double maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
@@ -469,13 +488,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
                       HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
-                    verticalLines: relevantMeals.map((m) => VerticalLine(
-                      x: m.logDate.millisecondsSinceEpoch.toDouble(),
-                      color: _getMealColor(m.mealTime).withOpacity(0.8),
-                      strokeWidth: 2, // Thicker line
-                      dashArray: [4, 4],
-                      label: VerticalLineLabel(show: true, labelResolver: (_) => m.mealTime[0], style: TextStyle(color: _getMealColor(m.mealTime), fontSize: 9, fontWeight: FontWeight.bold)),
-                    )).toList(),
                   ),
                   lineBarsData: [
                     LineChartBarData(
@@ -524,9 +536,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
               spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
               children: [
                 _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
-                _buildLegendItem('Breakfast', Colors.orange, isDashed: true),
-                _buildLegendItem('Lunch', Colors.blue, isDashed: true),
-                _buildLegendItem('Dinner', Colors.purple, isDashed: true),
               ],
             ),
           ],
@@ -536,14 +545,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
   }
 
   static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
-
-  Color _getMealColor(String meal) {
-    final m = meal.toUpperCase();
-    if (m.contains('BREAKFAST')) return Colors.orange;
-    if (m.contains('LUNCH')) return Colors.blue;
-    if (m.contains('DINNER')) return Colors.purple;
-    return Colors.grey;
-  }
 }
 
 // ============================================================================

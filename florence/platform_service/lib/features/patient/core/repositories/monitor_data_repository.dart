@@ -1,9 +1,11 @@
+import '../../../../core/services/api_service.dart';
 import '../models/health_data_models.dart';
 import '../services/data_ingestion_service.dart';
 
 /// Repository to fetch and map health data to MonitorData
 class MonitorDataRepository {
   final DataIngestionService _dataService = DataIngestionService();
+  final ApiService _apiService = ApiService();
 
   /// Get all monitor data for all available types
   Future<List<MonitorData>> getAllMonitorData() async {
@@ -86,24 +88,16 @@ class MonitorDataRepository {
 
   /// Get daily patient logs (meals) for overlay
   Future<List<DailyPatientLog>> getDailyPatientLogs() async {
-    final meals = _dataService.allMeals;
-    return meals.map((meal) {
-      // Map MealLog to DailyPatientLog
-      // Determine meal time based on type or hour if needed, but MealLog has 'type'
-      String mealTime = 'SNACK';
-      final typeUpper = meal.type.toUpperCase();
-      if (typeUpper.contains('BREAKFAST')) mealTime = 'BREAKFAST';
-      else if (typeUpper.contains('LUNCH')) mealTime = 'LUNCH';
-      else if (typeUpper.contains('DINNER')) mealTime = 'DINNER';
-
-      return DailyPatientLog(
-        id: meal.id.hashCode, // Use hash code as int ID for now
-        logDate: meal.timestamp,
-        mealTime: mealTime,
-        mealDesc: meal.description,
-        // We don't have glucose before/after in MealLog, so leave null for now
-      );
-    }).toList();
+    try {
+      final response = await _apiService.get('/patients/me/daily-logs');
+      if (response is List) {
+        return response.map((json) => DailyPatientLog.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching daily logs: $e');
+      return [];
+    }
   }
 
   /// Get health thresholds
