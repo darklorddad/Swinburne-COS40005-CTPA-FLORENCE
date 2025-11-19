@@ -12,9 +12,10 @@ import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../../../main.dart';
 import '../widgets/health_metric_card.dart';
+import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
-import '../widgets/upcoming_reminders_card.dart';
+
 import '../../core/providers/health_data_provider.dart';
 
 /// Home Dashboard Screen
@@ -167,7 +168,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // AI Insight
+                      // AI Insight (Main Card)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: _buildSectionHeader('Today\'s Insight'),
@@ -183,108 +184,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Health Cards
+                      // Biometrics Section (Health Monitor)
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildSectionHeader('Your Health Metrics'),
+                        child: BiometricsSection(healthData: healthData),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Quick actions
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildSectionHeader('Quick Actions'),
                       ),
                       const SizedBox(height: 12),
-                      if (healthData.allGlucoseReadings.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: NoGlucoseReadingsWidget(onAddReading: () => AppRoutes.push(context, AppRoutes.logGlucose)),
-                        )
-                      else
-                        _buildHealthCards(healthData),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: QuickActionsGrid(
+                          onLogGlucose:
+                              () => AppRoutes.push(context, AppRoutes.logGlucose),
+                          onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+                          onLogActivity:
+                              () => AppRoutes.push(context, AppRoutes.logActivity),
+                          onLogMedication:
+                              () => AppRoutes.push(context, AppRoutes.logMedication),
+                        ),
+                      ),
                       const SizedBox(height: 24),
-              
-              // Quick actions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildSectionHeader('Quick Actions'),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: QuickActionsGrid(
-                  onLogGlucose:
-                      () => AppRoutes.push(context, AppRoutes.logGlucose),
-                  onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-                  onLogActivity:
-                      () => AppRoutes.push(context, AppRoutes.logActivity),
-                  onLogMedication:
-                      () => AppRoutes.push(context, AppRoutes.logMedication),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Weekly Summary
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildSectionHeader('Weekly Summary'),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildWeeklySummaryCard(healthData),
-              ),
-              const SizedBox(height: 24),
-
-              // Upcoming reminders
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildSectionHeader('Upcoming Reminders'),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: UpcomingRemindersCard(
-                  reminders: [
-                    {
-                      'title': 'Log Glucose',
-                      'time': '2:00 PM',
-                      'icon': Icons.water_drop,
-                    },
-                    {
-                      'title': 'Take Medication',
-                      'time': '4:00 PM',
-                      'icon': Icons.medication,
-                    },
-                    {
-                      'title': 'Evening Walk',
-                      'time': '6:00 PM',
-                      'icon': Icons.directions_walk,
-                    },
-                  ],
-                  onViewAll:
-                      () => AppRoutes.push(context, AppRoutes.notifications),
-                ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-            ),
-          ),
-          // Loading overlay
-          if (_isRefreshing)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(
-                child: Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Refreshing data...'),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ),
+              // Loading overlay
+              if (_isRefreshing)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: Card(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text('Refreshing data...'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );
@@ -359,98 +308,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  /// Build weekly summary card
-  Widget _buildWeeklySummaryCard(HealthDataProvider healthData) {
-    final summary = healthData.last7DaysSummary;
-    final timeInRange = summary.timeInRange;
-    final avgGlucose = summary.averageGlucose;
 
-    return Card(
-      child: InkWell(
-        onTap: () => AppRoutes.push(context, AppRoutes.weeklyReport),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentPurple.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.summarize,
-                      color: AppTheme.accentPurple,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'This Week\'s Progress',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 2),
-                        Text(
-                          'Tap to view detailed report',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildSummaryMetric(
-                      'Time in Range',
-                      '${timeInRange.toStringAsFixed(0)}%',
-                      timeInRange >= 70
-                          ? AppTheme.primaryGreen
-                          : timeInRange >= 50
-                              ? AppTheme.warningColor
-                              : AppTheme.errorColor,
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40,
-                    color: Colors.grey.shade300,
-                  ),
-                  Expanded(
-                    child: _buildSummaryMetric(
-                      'Avg Glucose',
-                      '${avgGlucose.toStringAsFixed(0)} mg/dL',
-                      AppTheme.primaryBlue,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
 
   /// Build summary metric
@@ -491,88 +349,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  /// Build Health Cards
-  Widget _buildHealthCards(HealthDataProvider healthData) {
-    final cards = <Widget>[];
-    final latestGlucose = healthData.latestGlucose;
-    final latestBP = healthData.latestBloodPressure;
-    final latestHba1c = healthData.latestHbA1c;
-    final latestCholesterol = healthData.latestCholesterol;
-    final latestBmi = healthData.latestBmi;
 
-    if (latestGlucose != null) {
-      cards.add(HealthMetricCard(
-        label: 'Glucose',
-        value: latestGlucose.value.toStringAsFixed(0),
-        unit: 'mg/dL',
-        status: _getGlucoseStatus(latestGlucose.value),
-        timestamp: latestGlucose.timestamp,
-        icon: Icons.water_drop_outlined,
-        color: _getGlucoseColor(latestGlucose.value),
-        onTap: () => AppRoutes.push(context, AppRoutes.trends),
-      ));
-    }
-    if (latestBP != null) {
-      cards.add(HealthMetricCard(
-        label: 'Blood Pressure',
-        value: latestBP.value,
-        unit: 'mmHg',
-        status: _getBPStatus(latestBP.systolic, latestBP.diastolic),
-        timestamp: latestBP.timestamp,
-        icon: Icons.monitor_heart_outlined,
-        color: _getBPColor(latestBP.systolic, latestBP.diastolic),
-        onTap: () => AppRoutes.push(context, AppRoutes.trends),
-      ));
-    }
-    if (latestHba1c != null) {
-      cards.add(HealthMetricCard(
-        label: 'HbA1c',
-        value: latestHba1c.value.toStringAsFixed(1),
-        unit: '%',
-        status: latestHba1c.interpretation,
-        timestamp: latestHba1c.testDate,
-        icon: Icons.pie_chart_outline,
-        color: _getHba1cColor(latestHba1c.value),
-        onTap: () => AppRoutes.push(context, AppRoutes.trends),
-      ));
-    }
-    if (latestCholesterol != null) {
-      cards.add(HealthMetricCard(
-        label: 'Cholesterol',
-        value: latestCholesterol.value.toStringAsFixed(0),
-        unit: 'mg/dL',
-        status: _getCholesterolStatus(latestCholesterol.value),
-        timestamp: latestCholesterol.testDate,
-        icon: Icons.bloodtype_outlined,
-        color: _getCholesterolColor(latestCholesterol.value),
-        onTap: () => AppRoutes.push(context, AppRoutes.trends),
-      ));
-    }
-    if (latestBmi != null) {
-      cards.add(HealthMetricCard(
-        label: 'BMI',
-        value: latestBmi.value.toStringAsFixed(1),
-        unit: '',
-        status: Helpers.getBMICategory(latestBmi.value),
-        timestamp: latestBmi.testDate,
-        icon: Icons.height_outlined,
-        color: _getBmiColor(latestBmi.value),
-        onTap: () => AppRoutes.push(context, AppRoutes.trends),
-      ));
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          for (int i = 0; i < cards.length; i++) ...[
-            cards[i],
-            if (i < cards.length - 1) const SizedBox(height: 12),
-          ],
-        ],
-      ),
-    );
-  }
 
   // --- Health Metric Helpers ---
 
