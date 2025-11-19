@@ -60,8 +60,11 @@ class GlucoseDetailScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // 1. Statistics Summary (Has its own timeline)
-                    _StatisticsSection(readings: allReadings),
+                    // 1. Statistics
+                    _StatisticsSection(
+                      readings: allReadings, 
+                      threshold: glucoseThreshold
+                    ),
                     const SizedBox(height: 20),
 
                     // 2. Annotated Line Chart
@@ -109,15 +112,14 @@ class GlucoseDetailScreen extends ConsumerWidget {
   }
 }
 
-/// Reusable Wrapper that matches Dashboard Design
-/// Handles Title, Timeline Selector, and Containment
+/// Reusable Wrapper with Styled Info
 class _ChartSection extends StatefulWidget {
   final String title;
   final IconData icon;
-  final String infoText; // Added info text
+  final String infoText;
   final Widget Function(String range, List<MonitorData> filteredData) builder;
   final List<MonitorData> allData;
-  final List<String> ranges;
+  final List<String> ranges; // Internal keys: 1D, 7D, 14D, 30D
 
   const _ChartSection({
     required this.title,
@@ -157,13 +159,37 @@ class _ChartSectionState extends State<_ChartSection> {
     return widget.allData.where((d) => d.measuredAt.isAfter(cutoff)).toList();
   }
 
+  String _getRangeLabel(String key) {
+    switch (key) {
+      case '1D': return 'Daily';
+      case '7D': return 'Weekly';
+      case '14D': return 'Bi-Weekly';
+      case '30D': return 'Monthly';
+      default: return key;
+    }
+  }
+
   void _showInfoDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(widget.title),
-        content: Text(widget.infoText),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(widget.icon, color: AppTheme.primaryBlue),
+            const SizedBox(width: 12),
+            Expanded(child: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Text(widget.infoText, style: Theme.of(context).textTheme.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
+          )
+        ],
       ),
     );
   }
@@ -192,7 +218,7 @@ class _ChartSectionState extends State<_ChartSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Title + Timeline Selector
+          // Header
           Row(
             children: [
               Container(
@@ -207,9 +233,7 @@ class _ChartSectionState extends State<_ChartSection> {
               Expanded(
                 child: Text(
                   widget.title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
               IconButton(
@@ -224,11 +248,12 @@ class _ChartSectionState extends State<_ChartSection> {
           
           // Timeline Tabs
           Container(
-            height: 32,
+            height: 36,
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
+            padding: const EdgeInsets.all(4),
             child: Row(
               children: widget.ranges.map((range) {
                 final isSelected = _selectedRange == range;
@@ -242,14 +267,17 @@ class _ChartSectionState extends State<_ChartSection> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        range,
+                        _getRangeLabel(range),
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11, // Smaller text to fit words
                           fontWeight: FontWeight.w600,
                           color: isSelected 
                             ? Colors.white 
                             : Theme.of(context).textTheme.bodyMedium?.color,
                         ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
@@ -259,7 +287,7 @@ class _ChartSectionState extends State<_ChartSection> {
           ),
           const SizedBox(height: 20),
 
-          // Chart Content
+          // Content
           widget.builder(_selectedRange, filteredData),
         ],
       ),
@@ -273,19 +301,18 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _StatisticsSection extends StatelessWidget {
   final List<MonitorData> readings;
+  final HealthThreshold threshold;
 
-  const _StatisticsSection({required this.readings});
+  const _StatisticsSection({required this.readings, required this.threshold});
 
   Map<String, dynamic> _calculateStats(List<MonitorData> data) {
     if (data.isEmpty) return {'avg': 0.0, 'gmi': 0.0, 'cv': 0.0};
     final values = data.map((e) => e.value).toList();
     final avg = values.reduce((a, b) => a + b) / values.length;
-    
     final variance = values.map((v) => math.pow(v - avg, 2)).reduce((a, b) => a + b) / values.length;
     final stdDev = math.sqrt(variance);
     final cv = (stdDev / avg) * 100;
     final gmi = 3.31 + (0.02392 * avg);
-
     return {'avg': avg, 'gmi': gmi, 'cv': cv};
   }
 
@@ -294,9 +321,12 @@ class _StatisticsSection extends StatelessWidget {
     return _ChartSection(
       title: 'Overview',
       icon: Icons.analytics_outlined,
-      infoText: 'Key statistics derived from your glucose readings over the selected period.\n\nGMI: Estimated A1c based on average glucose.\nCV: Coefficient of Variation measures glucose variability (Target < 36%).',
+      infoText: 'Key statistics derived from your glucose readings.\n\n'
+                '• Average: Mean glucose level.\n'
+                '• GMI: Glucose Management Indicator (Estimated A1c).\n'
+                '• CV: Coefficient of Variation. Target < 36% for stable control.\n\n'
+                'Your Target Range: ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.',
       allData: readings,
-      ranges: const ['1D', '7D', '14D', '30D'],
       builder: (range, data) {
         final stats = _calculateStats(data);
         return Row(
@@ -361,14 +391,16 @@ class _GlucoseTrendsSection extends StatelessWidget {
     return _ChartSection(
       title: 'Glucose Trends',
       icon: Icons.show_chart,
-      infoText: 'Visualizes your glucose readings over time.\n\n• Green Band: Target Range\n• Vertical Dashed Lines: Logged Meals (B=Breakfast, L=Lunch, D=Dinner)',
+      infoText: 'Visualizes your glucose readings.\n\n'
+                '• Green Band: Your target range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).\n'
+                '• Vertical Dashed Lines: Logged Meals.',
       allData: allReadings,
       builder: (range, data) {
         if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
 
-        // Data preparation
         final minDate = data.first.measuredAt;
         final relevantMeals = allMeals.where((m) => m.logDate.isAfter(minDate)).toList();
+
         double minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
         double maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
         if (minX == maxX) { minX -= 3600000; maxX += 3600000; }
@@ -380,91 +412,108 @@ class _GlucoseTrendsSection extends StatelessWidget {
         minY = math.min(minY, dataMin - 10);
         maxY = math.max(maxY, dataMax + 10);
 
+        // Centering Logic: Ensure leftTitles reservedSize matches a hidden rightTitles
+        const double yAxisWidth = 35.0;
+
         return Column(
           children: [
             SizedBox(
               height: 250,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16.0, left: 8.0), // Ensure even spacing
-                child: LineChart(
-                  LineChartData(
-                    minX: minX,
-                    maxX: maxX,
-                    minY: minY,
-                    maxY: maxY,
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: true,
-                      getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                      getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    ),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        axisNameWidget: Text('Glucose (mg/dL)', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                        axisNameSize: 22,
-                        sideTitles: SideTitles(showTitles: true, reservedSize: 40, interval: 50, getTitlesWidget: (val, _) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 9))),
+              child: LineChart(
+                LineChartData(
+                  minX: minX, maxX: maxX, minY: minY, maxY: maxY,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                  ),
+                  titlesData: FlTitlesData(
+                    // Left Titles
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Text('Glucose (mg/dL)', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        reservedSize: yAxisWidth, 
+                        interval: 50, 
+                        getTitlesWidget: (val, _) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 9)),
                       ),
-                      bottomTitles: AxisTitles(
-                        axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
-                        axisNameSize: 22,
-                        sideTitles: SideTitles(showTitles: true, interval: (maxX - minX) / 4, getTitlesWidget: (val, _) {
+                    ),
+                    // Bottom Titles
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        interval: (maxX - minX) / 4, 
+                        getTitlesWidget: (val, _) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
                           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 9)));
-                        }),
-                      ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    ),
-                    borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
-                    rangeAnnotations: RangeAnnotations(
-                      horizontalRangeAnnotations: [
-                        HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1)),
-                      ],
-                    ),
-                    extraLinesData: ExtraLinesData(
-                      horizontalLines: [
-                        HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.6), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.6), strokeWidth: 1, dashArray: [4, 4]),
-                      ],
-                      verticalLines: relevantMeals.map((m) => VerticalLine(
-                        x: m.logDate.millisecondsSinceEpoch.toDouble(),
-                        color: _getMealColor(m.mealTime).withOpacity(0.8), // Increased opacity
-                        strokeWidth: 1.5, // Thicker line for visibility
-                        dashArray: [4, 4],
-                        label: VerticalLineLabel(show: true, labelResolver: (_) => m.mealTime[0], style: TextStyle(color: _getMealColor(m.mealTime), fontSize: 9, fontWeight: FontWeight.bold)),
-                      )).toList(),
-                    ),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
-                        isCurved: true,
-                        color: AppTheme.primaryBlue,
-                        barWidth: 2, // Thinner line
-                        dotData: FlDotData(
-                          show: true,
-                          getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                            radius: 2.5,
-                            color: AppTheme.primaryBlue,
-                            strokeWidth: 1,
-                            strokeColor: Colors.white,
-                          ),
-                        ),
-                        belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withOpacity(0.1), AppTheme.primaryBlue.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-                      ),
-                    ],
-                    lineTouchData: LineTouchData(
-                      touchTooltipData: LineTouchTooltipData(
-                        getTooltipColor: (LineBarSpot touchedSpot) => AppTheme.primaryBlue, // High contrast background
-                        getTooltipItems: (touchedSpots) {
-                          return touchedSpots.map((spot) {
-                            return LineTooltipItem(
-                              '${spot.y.toInt()}',
-                              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold), // White text
-                            );
-                          }).toList();
                         },
                       ),
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    // Right Titles (Invisible but reserved space to center graph)
+                    rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _emptyTitle),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  rangeAnnotations: RangeAnnotations(
+                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                  ),
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                    ],
+                    verticalLines: relevantMeals.map((m) => VerticalLine(
+                      x: m.logDate.millisecondsSinceEpoch.toDouble(),
+                      color: _getMealColor(m.mealTime).withOpacity(0.8),
+                      strokeWidth: 2, // Thicker line
+                      dashArray: [4, 4],
+                      label: VerticalLineLabel(show: true, labelResolver: (_) => m.mealTime[0], style: TextStyle(color: _getMealColor(m.mealTime), fontSize: 9, fontWeight: FontWeight.bold)),
+                    )).toList(),
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
+                      isCurved: true,
+                      color: AppTheme.primaryBlue,
+                      barWidth: 2,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
+                          radius: 2.5,
+                          color: AppTheme.primaryBlue,
+                          strokeWidth: 1,
+                          strokeColor: Colors.white,
+                        ),
+                      ),
+                      belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withOpacity(0.1), AppTheme.primaryBlue.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1), // Thinner line
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
+                        );
+                      }).toList();
+                    },
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8), // Black transparent background
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          return LineTooltipItem(
+                            '${spot.y.toInt()}',
+                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          );
+                        }).toList();
+                      },
                     ),
                   ),
                 ),
@@ -472,9 +521,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
+              spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
               children: [
                 _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
                 _buildLegendItem('Breakfast', Colors.orange, isDashed: true),
@@ -488,13 +535,14 @@ class _GlucoseTrendsSection extends StatelessWidget {
     );
   }
 
+  static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
+
   Color _getMealColor(String meal) {
-    switch(meal) {
-      case 'BREAKFAST': return Colors.orange;
-      case 'LUNCH': return Colors.blue;
-      case 'DINNER': return Colors.purple;
-      default: return Colors.grey;
-    }
+    final m = meal.toUpperCase();
+    if (m.contains('BREAKFAST')) return Colors.orange;
+    if (m.contains('LUNCH')) return Colors.blue;
+    if (m.contains('DINNER')) return Colors.purple;
+    return Colors.grey;
   }
 }
 
@@ -513,7 +561,8 @@ class _TimeInRangeSection extends StatelessWidget {
     return _ChartSection(
       title: 'Time in Range',
       icon: Icons.track_changes_outlined,
-      infoText: 'Percentage of time your glucose levels were within target (Green), below target (Red), or above target (Orange).\n\nClinical Goal: >70% in range.',
+      infoText: 'Your Target Range: ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.\n\n'
+                'Goal: Keep "In Range" (Green) above 70%.',
       allData: allReadings,
       builder: (range, data) {
         if (data.isEmpty) return const SizedBox(height: 100, child: Center(child: Text('No data')));
@@ -585,10 +634,12 @@ class _ModalDaySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double yAxisWidth = 35.0;
+    
     return _ChartSection(
       title: 'Daily Patterns',
       icon: Icons.auto_graph_outlined,
-      infoText: 'Overlays glucose readings from multiple days onto a single 24-hour period to identify recurring daily patterns.',
+      infoText: 'Overlays multiple days onto a single 24h axis to spot recurring patterns.',
       allData: allReadings,
       builder: (range, data) {
         if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
@@ -599,66 +650,56 @@ class _ModalDaySection extends StatelessWidget {
           final x = r.measuredAt.hour + (r.measuredAt.minute / 60.0);
           lines.putIfAbsent(key, () => []).add(FlSpot(x, r.value));
         }
-
         List<LineChartBarData> chartLines = [];
         lines.forEach((_, spots) {
           spots.sort((a, b) => a.x.compareTo(b.x));
-          chartLines.add(LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: AppTheme.textSecondaryColor.withOpacity(0.3),
-            barWidth: 1.5,
-            dotData: const FlDotData(show: false),
-          ));
+          chartLines.add(LineChartBarData(spots: spots, isCurved: true, color: AppTheme.textSecondaryColor.withOpacity(0.3), barWidth: 1.5, dotData: const FlDotData(show: false)));
         });
 
         return Column(
           children: [
             SizedBox(
               height: 250,
-              child: Padding(
-                padding: const EdgeInsets.only(right: 16.0, left: 8.0),
-                child: LineChart(
-                  LineChartData(
-                    minX: 0, maxX: 24, minY: 40, maxY: 250,
-                    gridData: FlGridData(
-                      show: true,
-                      drawVerticalLine: true,
-                      getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                      getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    ),
-                    titlesData: FlTitlesData(
-                      leftTitles: AxisTitles(
-                        axisNameWidget: Text('Glucose (mg/dL)', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                        axisNameSize: 22,
-                        sideTitles: SideTitles(showTitles: true, reservedSize: 40, interval: 50, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 9))),
-                      ),
-                      bottomTitles: AxisTitles(
-                        axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Hour of Day', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
-                        axisNameSize: 22,
-                        sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) => Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9))),
-                      ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    ),
-                    borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
-                    rangeAnnotations: RangeAnnotations(
-                      horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
-                    ),
-                    lineBarsData: chartLines,
+              child: LineChart(
+                LineChartData(
+                  minX: 0, maxX: 24, minY: 40, maxY: 250,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: true, // Enabled vertical grid
+                    horizontalInterval: 50,
+                    verticalInterval: 6,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Text('Glucose', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, interval: 50, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 9))),
+                    ),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Hour', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) => Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9))),
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _GlucoseTrendsSection._emptyTitle)),
+                  ),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  rangeAnnotations: RangeAnnotations(
+                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                  ),
+                  lineBarsData: chartLines,
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
-                const SizedBox(width: 12),
-                _buildLegendItem('Daily Traces', AppTheme.textSecondaryColor, isDashed: false),
-              ],
-            ),
+            // Legend
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+              const SizedBox(width: 12),
+              _buildLegendItem('Daily Traces', AppTheme.textSecondaryColor, isDashed: false),
+            ]),
           ],
         );
       },
@@ -690,8 +731,8 @@ class _HistorySectionState extends State<_HistorySection> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
 
-    // Sort Descending for history list (Newest first)
-    final sortedReadings = List<MonitorData>.from(widget.allReadings.reversed);
+    // Data is passed sorted ASC by parent. Reverse it here for Latest First.
+    final sortedReadings = widget.allReadings.reversed.toList();
 
     final totalItems = sortedReadings.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
@@ -716,23 +757,17 @@ class _HistorySectionState extends State<_HistorySection> {
             children: [
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
-                  ),
+                  Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)),
                   const SizedBox(width: 12),
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
-              IconButton(
-                icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
-                onPressed: () {
-                   showDialog(context: context, builder: (_) => const AlertDialog(title: Text("History"), content: Text("A chronological list of all recorded glucose readings.\n\nColored bars indicate status: Green (Normal), Orange (Low/High), Red (Critical)."), actions: [CloseButton()]));
-                },
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
+              // Navigation arrows
+              Row(children: [
+                IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
+                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
+              ]),
             ],
           ),
           const SizedBox(height: 16),
@@ -750,13 +785,7 @@ class _HistorySectionState extends State<_HistorySection> {
               ),
               child: Row(
                 children: [
-                   // Color Strip
-                   Container(
-                     width: 4, 
-                     height: 40, 
-                     decoration: BoxDecoration(color: statusColor, borderRadius: BorderRadius.circular(2)),
-                   ),
-                   const SizedBox(width: 16),
+                   // No vertical bar
                    Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -781,28 +810,6 @@ class _HistorySectionState extends State<_HistorySection> {
               ),
             );
           }),
-          const SizedBox(height: 8),
-          // Pagination Controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              IconButton(
-                onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
-                icon: const Icon(Icons.arrow_back_ios_rounded, size: 18),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-              const SizedBox(width: 16),
-              Text('${_currentPage + 1} / ${totalPages == 0 ? 1 : totalPages}', style: const TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(width: 16),
-              IconButton(
-                onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
-                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 18),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
         ],
       ),
     );

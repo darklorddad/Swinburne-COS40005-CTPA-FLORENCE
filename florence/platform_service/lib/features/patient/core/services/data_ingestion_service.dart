@@ -118,6 +118,27 @@ class DataIngestionService {
         print("Error fetching activities: $e");
       }
 
+      // Fetch Daily Logs (Meals)
+      try {
+        final mealData = await _apiService.get('/patients/me/daily-logs');
+        if (mealData is List) {
+          for (var item in mealData) {
+            _meals.add(MealLog(
+              id: item['id'].toString(),
+              timestamp: DateTime.parse(item['log_date']),
+              // Map 'BREAKFAST' to 'Breakfast', etc.
+              type: item['meal_time']?.toString().split('.').last ?? 'Snack', 
+              description: item['meal_desc'] ?? 'Logged Meal',
+              carbs: 0, // Placeholder as backend might not send this yet
+              calories: 0,
+            ));
+          }
+          _meals.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+        }
+      } catch (e) {
+        print("Error fetching meal logs: $e");
+      }
+
       // Sort data after fetching
       _glucoseReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
       _hba1cResults.sort((a, b) => b.testDate.compareTo(a.testDate));
