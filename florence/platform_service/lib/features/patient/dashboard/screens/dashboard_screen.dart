@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../../core/providers/settings_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -17,22 +16,20 @@ import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../widgets/health_metric_card.dart';
 import '../../trends/screens/trends_screen.dart';
-
-import '../../core/providers/health_data_provider.dart';
+import '../providers/dashboard_providers.dart'; // Added
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
-class DashboardScreen extends StatefulWidget {
+class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  ConsumerState<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  bool _isRefreshing = false;
+class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   String? _userName;
-  bool _hasShownWelcomeMessage = false; // Add this flag
+  bool _hasShownWelcomeMessage = false;
   int _loadUserRetries = 0;
 
   // Services
@@ -41,13 +38,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Use a post-frame callback to ensure the widget is built before calling
-    // methods that will trigger a rebuild or state change. This avoids the
-    // "setState() or markNeedsBuild() called during build" error and ensures
-    // the auth token is available from the navigation event.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<HealthDataProvider>().initialize();
         _loadUserData();
       }
     });
@@ -111,35 +103,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    setState(() => _isRefreshing = true);
-    final healthDataProvider = context.read<HealthDataProvider>();
-    await healthDataProvider.refreshData();
-    if (mounted) {
-      setState(() => _isRefreshing = false);
-    }
-  }
-
-
-  /// Handle logout
-  Future<void> _handleLogout() async {
-    final confirmed = await Helpers.showConfirmDialog(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out?',
-    );
-
-    if (confirmed) {
-      try {
-        await supabase.auth.signOut();
-        if (mounted) {
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      } catch (e) {
-        if (mounted) {
-          Helpers.showError(context, 'Failed to sign out');
-        }
-      }
-    }
+    // Refresh Riverpod providers
+    ref.refresh(monitorDataProvider);
+    ref.refresh(latestActivityProvider);
+    ref.refresh(patientThresholdsProvider);
   }
 
   /// Show quick log modal
@@ -149,90 +116,85 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = context.watch<SettingsProvider>();
-    return Consumer<HealthDataProvider>(
-      builder: (context, healthData, child) {
-        return Scaffold(
-          appBar: _buildAppBar(),
-          body: Stack(
+    // Watch Riverpod providers
+    final monitorDataAsync = ref.watch(monitorDataProvider);
+    final activityAsync = ref.watch(latestActivityProvider);
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    return Scaffold(
+      appBar: _buildAppBar(),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              RefreshIndicator(
-                onRefresh: _handleRefresh,
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // AI Insight (Main Card)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildSectionHeader('Today\'s Insight'),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: AIInsightCard(
-                          insight:
-                              'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                          onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Biometrics Section (Health Monitor)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: BiometricsSection(healthData: healthData),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Quick actions
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildSectionHeader('Quick Actions'),
-                      ),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: QuickActionsGrid(
-                          onLogGlucose:
-                              () => AppRoutes.push(context, AppRoutes.logGlucose),
-                          onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-                          onLogActivity:
-                              () => AppRoutes.push(context, AppRoutes.logActivity),
-                          onLogMedication:
-                              () => AppRoutes.push(context, AppRoutes.logMedication),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+              // AI Insight (Main Card)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildSectionHeader('Today\'s Insight'),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: AIInsightCard(
+                  insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                  onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
                 ),
               ),
-              // Loading overlay
-              if (_isRefreshing)
-                Container(
-                  color: Colors.black.withOpacity(0.3),
-                  child: const Center(
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text('Refreshing data...'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+              const SizedBox(height: 24),
+
+              // Biometrics Section (Loaded via Riverpod)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: monitorDataAsync.when(
+                  data: (monitorData) {
+                    return activityAsync.when(
+                      data: (activity) {
+                        return thresholdsAsync.when(
+                          data: (thresholds) => BiometricsSection(
+                            monitorData: monitorData,
+                            latestActivity: activity,
+                            thresholds: thresholds,
+                          ),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (_, __) => const Text('Error loading thresholds'),
+                        );
+                      },
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (_, __) => const Text('Error loading activity'),
+                    );
+                  },
+                  loading: () => const Center(child: Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: CircularProgressIndicator(),
+                  )),
+                  error: (err, stack) => Center(child: Text('Error: $err')),
                 ),
+              ),
+              const SizedBox(height: 24),
+
+              // Quick actions
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _buildSectionHeader('Quick Actions'),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: QuickActionsGrid(
+                  onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
+                  onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+                  onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+                  onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
+                ),
+              ),
+              const SizedBox(height: 24),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -282,82 +244,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 
 
-  /// Build summary metric
-  Widget _buildSummaryMetric(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppTheme.textSecondaryColor,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  // --- Health Metric Helpers ---
-
-  Color _getGlucoseColor(double? value) {
-    if (value == null) return AppTheme.textSecondaryColor;
-    if (value < 70) return AppTheme.glucoseLow;
-    if (value > 180) return AppTheme.glucoseHigh;
-    return AppTheme.glucoseNormal;
-  }
-
-  String _getGlucoseStatus(double? value) {
-    if (value == null) return 'N/A';
-    if (value < 70) return 'Low';
-    if (value > 180) return 'High';
-    return 'Normal';
-  }
-
-  Color _getBPColor(double systolic, double diastolic) {
-    if (systolic > 140 || diastolic > 90) return AppTheme.errorColor;
-    if (systolic > 120 || diastolic > 80) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
-
-  String _getBPStatus(double systolic, double diastolic) {
-    if (systolic > 140 || diastolic > 90) return 'High';
-    if (systolic > 120 || diastolic > 80) return 'Elevated';
-    return 'Normal';
-  }
-
-  Color _getHba1cColor(double value) {
-    if (value >= 7.0) return AppTheme.errorColor;
-    if (value >= 6.5) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
-
-  Color _getCholesterolColor(double value) {
-    if (value >= 240) return AppTheme.errorColor;
-    if (value >= 200) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
-
-  String _getCholesterolStatus(double value) {
-    if (value >= 240) return 'High';
-    if (value >= 200) return 'Borderline';
-    return 'Desirable';
-  }
-
-  Color _getBmiColor(double value) {
-    if (value < 18.5 || value >= 30) return AppTheme.errorColor;
-    if (value >= 25) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
 }
 
 

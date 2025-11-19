@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/utils/helpers.dart';
-import '../../core/providers/health_data_provider.dart';
+import '../../core/models/health_data_models.dart'; // Updated import
 import '../../../../config/routes.dart';
 import 'compact_health_card.dart';
 
 /// Biometrics Section
 /// A container widget that groups all health metric cards
 class BiometricsSection extends StatelessWidget {
-  final HealthDataProvider healthData;
+  final List<MonitorData> monitorData;
+  final ActivityLog? latestActivity;
+  final List<HealthThreshold> thresholds;
 
   const BiometricsSection({
     super.key,
-    required this.healthData,
+    required this.monitorData,
+    this.latestActivity,
+    required this.thresholds,
   });
 
   @override
@@ -79,143 +83,155 @@ class BiometricsSection extends StatelessWidget {
 
   List<Widget> _buildHealthCards(BuildContext context) {
     final cards = <Widget>[];
-    final latestGlucose = healthData.latestGlucose;
-    final latestBP = healthData.latestBloodPressure;
-    final latestHba1c = healthData.latestHbA1c;
-    final latestCholesterol = healthData.latestCholesterol;
-    final latestBmi = healthData.latestBmi;
+    
+    // Helper to find latest data
+    MonitorData? getData(MonitorDataType type) {
+      try {
+        return monitorData.firstWhere((d) => d.dataType == type);
+      } catch (_) {
+        return null;
+      }
+    }
+
+    final glucose = getData(MonitorDataType.GLUCOSE);
+    final bpSystolic = getData(MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
+    final bpDiastolic = getData(MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
+    final hba1c = getData(MonitorDataType.HBA1C);
+    final cholesterol = getData(MonitorDataType.CHOLESTEROL_TOTAL);
+    final bmi = getData(MonitorDataType.BMI);
 
     // Glucose
-    cards.add(CompactHealthCard(
-      label: 'Glucose',
-      value: latestGlucose?.value.toStringAsFixed(0) ?? '--',
-      unit: 'mg/dL',
-      status: _getGlucoseStatus(latestGlucose?.value),
-      timestamp: latestGlucose?.timestamp,
-      icon: Icons.water_drop_outlined,
-      color: _getGlucoseColor(latestGlucose?.value),
-      onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
-    ));
+    if (glucose != null) {
+      cards.add(_buildCard(
+        context,
+        'Glucose',
+        glucose.value.toStringAsFixed(0),
+        'mg/dL',
+        glucose,
+        Icons.water_drop_outlined,
+        // Ensure this route points to GlucoseDetailScreen in routes.dart
+        onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
+      ));
+    }
 
     // Blood Pressure
-    cards.add(CompactHealthCard(
-      label: 'Blood Pressure',
-      value: latestBP != null ? '${latestBP.value}' : '--/--',
-      unit: 'mmHg',
-      status: _getBPStatus(latestBP?.systolic, latestBP?.diastolic),
-      timestamp: latestBP?.timestamp,
-      icon: Icons.monitor_heart_outlined,
-      color: _getBPColor(latestBP?.systolic, latestBP?.diastolic),
-      onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
-    ));
+    if (bpSystolic != null && bpDiastolic != null) {
+      cards.add(_buildBPCard(context, bpSystolic, bpDiastolic));
+    }
 
     // HbA1c
-    cards.add(CompactHealthCard(
-      label: 'HbA1c',
-      value: latestHba1c?.value.toStringAsFixed(1) ?? '--',
-      unit: '%',
-      status: latestHba1c?.interpretation ?? 'No Data',
-      timestamp: latestHba1c?.testDate,
-      icon: Icons.pie_chart_outline,
-      color: _getHba1cColor(latestHba1c?.value),
-      onTap: () => Helpers.showInfo(context, 'HbA1c details coming soon'),
-    ));
+    if (hba1c != null) {
+      cards.add(_buildCard(
+        context,
+        'HbA1c',
+        hba1c.value.toStringAsFixed(1),
+        '%',
+        hba1c,
+        Icons.pie_chart_outline,
+      ));
+    }
 
     // Cholesterol
-    cards.add(CompactHealthCard(
-      label: 'Cholesterol',
-      value: latestCholesterol?.value.toStringAsFixed(0) ?? '--',
-      unit: 'mg/dL',
-      status: _getCholesterolStatus(latestCholesterol?.value),
-      timestamp: latestCholesterol?.testDate,
-      icon: Icons.bloodtype_outlined,
-      color: _getCholesterolColor(latestCholesterol?.value),
-      onTap: () => Helpers.showInfo(context, 'Cholesterol details coming soon'),
-    ));
-
-    // BMI
-    cards.add(CompactHealthCard(
-      label: 'BMI',
-      value: latestBmi?.value.toStringAsFixed(1) ?? '--',
-      unit: '',
-      status: latestBmi != null ? Helpers.getBMICategory(latestBmi.value) : 'No Data',
-      timestamp: latestBmi?.testDate,
-      icon: Icons.height_outlined,
-      color: _getBmiColor(latestBmi?.value),
-      onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
-    ));
+    if (cholesterol != null) {
+      cards.add(_buildCard(
+        context,
+        'Cholesterol',
+        cholesterol.value.toStringAsFixed(0),
+        'mg/dL',
+        cholesterol,
+        Icons.bloodtype_outlined,
+      ));
+    }
 
     // Activity
-    final latestActivity = healthData.latestActivity;
-    cards.add(CompactHealthCard(
-      label: 'Activity',
-      value: latestActivity != null ? '${latestActivity.duration}' : '--',
-      unit: 'min',
-      status: latestActivity != null ? 'Recorded' : 'No Data',
-      timestamp: latestActivity?.timestamp,
-      icon: Icons.directions_run_outlined,
-      color: latestActivity != null ? AppTheme.activityColor : AppTheme.textSecondaryColor,
-      onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
-    ));
+    if (latestActivity != null) {
+      cards.add(CompactHealthCard(
+        label: 'Activity',
+        value: '${latestActivity!.duration}',
+        unit: 'min',
+        status: 'Recorded',
+        timestamp: latestActivity!.timestamp,
+        icon: Icons.directions_run_outlined,
+        color: AppTheme.activityColor,
+        onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
+      ));
+    }
+
+    // BMI
+    if (bmi != null) {
+      cards.add(_buildCard(
+        context,
+        'BMI',
+        bmi.value.toStringAsFixed(1),
+        '',
+        bmi,
+        Icons.height_outlined,
+      ));
+    }
 
     return cards;
   }
 
-  // --- Health Metric Helpers ---
-
-  Color _getGlucoseColor(double? value) {
-    if (value == null) return AppTheme.textSecondaryColor;
-    if (value < 70) return AppTheme.glucoseLow;
-    if (value > 180) return AppTheme.glucoseHigh;
-    return AppTheme.glucoseNormal;
+  Widget _buildCard(
+    BuildContext context,
+    String label,
+    String value,
+    String unit,
+    MonitorData data,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
+    final status = HealthStatusEvaluator.evaluate(data.value, data.dataType, thresholds);
+    return CompactHealthCard(
+      label: label,
+      value: value,
+      unit: unit,
+      status: _getStatusLabel(status),
+      timestamp: data.measuredAt,
+      icon: icon,
+      color: _getStatusColor(status),
+      onTap: onTap ?? () => Helpers.showInfo(context, '$label details coming soon'),
+    );
   }
 
-  String _getGlucoseStatus(double? value) {
-    if (value == null) return 'No Data';
-    if (value < 70) return 'Low';
-    if (value > 180) return 'High';
-    return 'Normal';
+  Widget _buildBPCard(BuildContext context, MonitorData sys, MonitorData dia) {
+    final sysStatus = HealthStatusEvaluator.evaluate(sys.value, sys.dataType, thresholds);
+    final diaStatus = HealthStatusEvaluator.evaluate(dia.value, dia.dataType, thresholds);
+    
+    HealthStatus status = HealthStatus.safe;
+    if (sysStatus == HealthStatus.critical || diaStatus == HealthStatus.critical) {
+      status = HealthStatus.critical;
+    } else if (sysStatus == HealthStatus.warning || diaStatus == HealthStatus.warning) {
+      status = HealthStatus.warning;
+    }
+
+    return CompactHealthCard(
+      label: 'Blood Pressure',
+      value: '${sys.value.toInt()}/${dia.value.toInt()}',
+      unit: 'mmHg',
+      status: _getStatusLabel(status),
+      timestamp: sys.measuredAt,
+      icon: Icons.monitor_heart_outlined,
+      color: _getStatusColor(status),
+      onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
+    );
   }
 
-  Color _getBPColor(double? systolic, double? diastolic) {
-    if (systolic == null || diastolic == null) return AppTheme.textSecondaryColor;
-    if (systolic > 140 || diastolic > 90) return AppTheme.errorColor;
-    if (systolic > 120 || diastolic > 80) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
+  String _getStatusLabel(HealthStatus status) {
+    switch (status) {
+      case HealthStatus.safe: return 'Normal';
+      case HealthStatus.warning: return 'Warning';
+      case HealthStatus.critical: return 'Critical';
+      default: return 'No Data';
+    }
   }
 
-  String _getBPStatus(double? systolic, double? diastolic) {
-    if (systolic == null || diastolic == null) return 'No Data';
-    if (systolic > 140 || diastolic > 90) return 'High';
-    if (systolic > 120 || diastolic > 80) return 'Elevated';
-    return 'Normal';
-  }
-
-  Color _getHba1cColor(double? value) {
-    if (value == null) return AppTheme.textSecondaryColor;
-    if (value >= 7.0) return AppTheme.errorColor;
-    if (value >= 6.5) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
-
-  Color _getCholesterolColor(double? value) {
-    if (value == null) return AppTheme.textSecondaryColor;
-    if (value >= 240) return AppTheme.errorColor;
-    if (value >= 200) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
-
-  String _getCholesterolStatus(double? value) {
-    if (value == null) return 'No Data';
-    if (value >= 240) return 'High';
-    if (value >= 200) return 'Borderline';
-    return 'Desirable';
-  }
-
-  Color _getBmiColor(double? value) {
-    if (value == null) return AppTheme.textSecondaryColor;
-    if (value < 18.5 || value >= 30) return AppTheme.errorColor;
-    if (value >= 25) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
+  Color _getStatusColor(HealthStatus status) {
+    switch (status) {
+      case HealthStatus.safe: return AppTheme.primaryGreen;
+      case HealthStatus.warning: return AppTheme.warningColor;
+      case HealthStatus.critical: return AppTheme.errorColor;
+      default: return AppTheme.textSecondaryColor;
+    }
   }
 }
