@@ -93,13 +93,17 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         daily_logs = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_id).execute().data
         thresholds = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_id).execute().data
         notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
+        
+        # ADD THIS LINE to fetch activity
+        activity_logs = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_id).order('performed_at', desc=True).execute().data
 
         return {
             "profile": patient_profile,
             "monitor_data": monitor_data,
             "daily_logs": daily_logs,
             "thresholds": thresholds,
-            "notes": notes
+            "notes": notes,
+            "activity_logs": activity_logs # Add this
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):

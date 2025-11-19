@@ -56,7 +56,12 @@ class MonitorDataType(str, Enum):
     GLUCOSE = 'GLUCOSE'
     BMI = 'BMI'
     HBA1C = 'HBA1C'
-    CHOLESTEROL = 'CHOLESTEROL'
+    ECG = 'ECG'
+    # Detailed Cholesterol
+    CHOLESTEROL_TOTAL = 'CHOLESTEROL_TOTAL'
+    CHOLESTEROL_LDL = 'CHOLESTEROL_LDL'
+    CHOLESTEROL_HDL = 'CHOLESTEROL_HDL'
+    CHOLESTEROL_TRIGLYCERIDES = 'CHOLESTEROL_TRIGLYCERIDES'
 
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
@@ -77,14 +82,23 @@ class DailyLogCreate(BaseModel):
     meal_time: MealTime
     glucose_before_meal: Optional[float] = None
     glucose_after_meal: Optional[float] = None
+    meal_desc: Optional[str] = None
 
     @model_validator(mode='before')
     @classmethod
-    def check_at_least_one_glucose_reading(cls, values):
-        before, after = values.get('glucose_before_meal'), values.get('glucose_after_meal')
-        if before is None and after is None:
-            raise ValueError('At least one of glucose_before_meal or glucose_after_meal must be provided.')
+    def check_at_least_one_entry(cls, values):
+        before = values.get('glucose_before_meal')
+        after = values.get('glucose_after_meal')
+        desc = values.get('meal_desc')
+        
+        if before is None and after is None and desc is None:
+            raise ValueError('You must provide at least a glucose reading OR a meal description.')
         return values
+
+class ActivityLogCreate(BaseModel):
+    activity_description: str
+    duration_minutes: int
+    performed_at: datetime
 
 # --- Router Definition ---
 
@@ -221,3 +235,28 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
         return thresholds_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+
+
+@router.get("/me/activity-logs", summary="Get my activity logs")
+async def get_own_activity_logs(patient_profile: dict = Depends(get_current_patient_profile)):
+    """Retrieves all activity logs."""
+    try:
+        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('performed_at', desc=True).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve activity logs: {str(e)}")
+
+@router.post("/me/activity-logs", summary="Log an activity")
+async def add_own_activity_log(
+    log_data: ActivityLogCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Logs an activity."""
+    try:
+        insert_dict = log_data.model_dump(mode='json')
+        insert_dict['patient_id'] = patient_profile['id']
+        
+        response = supabase.table('patient_activity_logs').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to log activity: {str(e)}")
