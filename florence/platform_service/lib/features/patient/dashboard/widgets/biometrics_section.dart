@@ -99,144 +99,143 @@ class BiometricsSection extends StatelessWidget {
     final cholesterol = getData(MonitorDataType.CHOLESTEROL_TOTAL);
     final bmi = getData(MonitorDataType.BMI);
 
-    // Glucose
-    if (glucose != null) {
-      cards.add(CompactHealthCard(
-        label: 'Glucose',
-        value: glucose.value.toStringAsFixed(0),
-        unit: 'mg/dL',
-        status: _getGlucoseStatus(glucose.value), // Custom Status
-        timestamp: glucose.measuredAt,
-        icon: Icons.water_drop_outlined,
-        color: _getGlucoseColor(glucose.value),
-        onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
-      ));
-    }
+    // Glucose (Always show)
+    cards.add(CompactHealthCard(
+      label: 'Glucose',
+      value: glucose?.value.toStringAsFixed(0) ?? '--',
+      unit: 'mg/dL',
+      status: _getGlucoseStatus(glucose?.value),
+      timestamp: glucose?.measuredAt,
+      icon: Icons.water_drop_outlined,
+      color: _getGlucoseColor(glucose?.value),
+      onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
+    ));
 
-    // Blood Pressure
-    if (bpSystolic != null && bpDiastolic != null) {
-      cards.add(CompactHealthCard(
-        label: 'Blood Pressure',
-        value: '${bpSystolic.value.toInt()}/${bpDiastolic.value.toInt()}',
-        unit: 'mmHg',
-        status: _getBPStatus(bpSystolic.value, bpDiastolic.value), // Custom Status
-        timestamp: bpSystolic.measuredAt,
-        icon: Icons.monitor_heart_outlined,
-        color: _getBPColor(bpSystolic.value, bpDiastolic.value),
-        onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
-      ));
-    }
+    // Blood Pressure (Always show)
+    cards.add(CompactHealthCard(
+      label: 'Blood Pressure',
+      value: (bpSystolic != null && bpDiastolic != null)
+          ? '${bpSystolic.value.toInt()}/${bpDiastolic.value.toInt()}'
+          : '--/--',
+      unit: 'mmHg',
+      status: _getBPStatus(bpSystolic?.value, bpDiastolic?.value),
+      timestamp: bpSystolic?.measuredAt,
+      icon: Icons.monitor_heart_outlined,
+      color: _getBPColor(bpSystolic?.value, bpDiastolic?.value),
+      onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
+    ));
 
-    // HbA1c
-    if (hba1c != null) {
-      cards.add(CompactHealthCard(
-        label: 'HbA1c',
-        value: hba1c.value.toStringAsFixed(1),
-        unit: '%',
-        status: _getHba1cStatus(hba1c.value), // Custom Status
-        timestamp: hba1c.measuredAt,
-        icon: Icons.pie_chart_outline,
-        color: _getHba1cColor(hba1c.value),
-        onTap: () => Helpers.showInfo(context, 'HbA1c details coming soon'),
-      ));
-    }
+    // HbA1c (Always show)
+    cards.add(CompactHealthCard(
+      label: 'HbA1c',
+      value: hba1c?.value.toStringAsFixed(1) ?? '--',
+      unit: '%',
+      status: _getHba1cStatus(hba1c?.value),
+      timestamp: hba1c?.measuredAt,
+      icon: Icons.pie_chart_outline,
+      color: _getHba1cColor(hba1c?.value),
+      onTap: () => Helpers.showInfo(context, 'HbA1c details coming soon'),
+    ));
 
-    // Cholesterol
-    if (cholesterol != null) {
-      cards.add(CompactHealthCard(
-        label: 'Cholesterol',
-        value: cholesterol.value.toStringAsFixed(0),
-        unit: 'mg/dL',
-        status: _getCholesterolStatus(cholesterol.value), // Custom Status
-        timestamp: cholesterol.measuredAt,
-        icon: Icons.bloodtype_outlined,
-        color: _getCholesterolColor(cholesterol.value),
-        onTap: () => Helpers.showInfo(context, 'Cholesterol details coming soon'),
-      ));
-    }
+    // Cholesterol (Always show)
+    cards.add(CompactHealthCard(
+      label: 'Cholesterol',
+      value: cholesterol?.value.toStringAsFixed(0) ?? '--',
+      unit: 'mg/dL',
+      status: _getCholesterolStatus(cholesterol?.value),
+      timestamp: cholesterol?.measuredAt,
+      icon: Icons.bloodtype_outlined,
+      color: _getCholesterolColor(cholesterol?.value),
+      onTap: () => Helpers.showInfo(context, 'Cholesterol details coming soon'),
+    ));
 
-    // Activity
-    if (latestActivity != null) {
-      cards.add(CompactHealthCard(
-        label: 'Activity',
-        value: '${latestActivity!.duration}',
-        unit: 'min',
-        status: 'Latest Log', // Custom Status
-        timestamp: latestActivity!.timestamp,
-        icon: Icons.directions_run_outlined,
-        color: AppTheme.activityColor,
-        onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
-      ));
-    }
+    // Activity (Always show)
+    cards.add(CompactHealthCard(
+      label: 'Activity',
+      value: latestActivity != null ? '${latestActivity!.duration}' : '--',
+      unit: 'min',
+      status: latestActivity != null ? 'Latest Log' : 'No Data',
+      timestamp: latestActivity?.timestamp,
+      icon: Icons.directions_run_outlined,
+      color: latestActivity != null ? AppTheme.activityColor : AppTheme.textSecondaryColor,
+      onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
+    ));
 
-    // BMI
-    if (bmi != null) {
-      cards.add(CompactHealthCard(
-        label: 'BMI',
-        value: bmi.value.toStringAsFixed(1),
-        unit: '',
-        status: Helpers.getBMICategory(bmi.value), // Use Helper for unique status
-        timestamp: bmi.measuredAt,
-        icon: Icons.height_outlined,
-        color: _getBmiColor(bmi.value),
-        onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
-      ));
-    }
+    // BMI (Always show)
+    cards.add(CompactHealthCard(
+      label: 'BMI',
+      value: bmi?.value.toStringAsFixed(1) ?? '--',
+      unit: '',
+      status: bmi != null ? Helpers.getBMICategory(bmi.value) : 'No Data',
+      timestamp: bmi?.measuredAt,
+      icon: Icons.height_outlined,
+      color: _getBmiColor(bmi?.value),
+      onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
+    ));
 
     return cards;
   }
 
-  // --- Unique Status Logics ---
+  // --- Helper Methods (Updated to handle nulls) ---
 
-  String _getGlucoseStatus(double value) {
+  String _getGlucoseStatus(double? value) {
+    if (value == null) return 'No Data';
     if (value < 70) return 'Low';
     if (value > 180) return 'High';
     return 'Normal';
   }
   
-  Color _getGlucoseColor(double value) {
+  Color _getGlucoseColor(double? value) {
+    if (value == null) return AppTheme.textSecondaryColor;
     if (value < 70) return AppTheme.glucoseLow;
     if (value > 180) return AppTheme.glucoseHigh;
     return AppTheme.glucoseNormal;
   }
 
-  String _getBPStatus(double sys, double dia) {
+  String _getBPStatus(double? sys, double? dia) {
+    if (sys == null || dia == null) return 'No Data';
     if (sys > 140 || dia > 90) return 'High';
     if (sys > 120 || dia > 80) return 'Elevated';
     return 'Normal';
   }
 
-  Color _getBPColor(double sys, double dia) {
+  Color _getBPColor(double? sys, double? dia) {
+    if (sys == null || dia == null) return AppTheme.textSecondaryColor;
     if (sys > 140 || dia > 90) return AppTheme.errorColor;
     if (sys > 120 || dia > 80) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
   }
 
-  String _getHba1cStatus(double value) {
+  String _getHba1cStatus(double? value) {
+    if (value == null) return 'No Data';
     if (value < 5.7) return 'Normal';
     if (value < 6.5) return 'Pre-diabetes';
     return 'Diabetes';
   }
 
-  Color _getHba1cColor(double value) {
+  Color _getHba1cColor(double? value) {
+    if (value == null) return AppTheme.textSecondaryColor;
     if (value >= 6.5) return AppTheme.errorColor;
     if (value >= 5.7) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
   }
 
-  String _getCholesterolStatus(double value) {
+  String _getCholesterolStatus(double? value) {
+    if (value == null) return 'No Data';
     if (value >= 240) return 'High';
     if (value >= 200) return 'Borderline';
     return 'Desirable';
   }
 
-  Color _getCholesterolColor(double value) {
+  Color _getCholesterolColor(double? value) {
+    if (value == null) return AppTheme.textSecondaryColor;
     if (value >= 240) return AppTheme.errorColor;
     if (value >= 200) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
   }
 
-  Color _getBmiColor(double value) {
+  Color _getBmiColor(double? value) {
+    if (value == null) return AppTheme.textSecondaryColor;
     if (value < 18.5 || value >= 30) return AppTheme.errorColor;
     if (value >= 25) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
