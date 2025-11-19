@@ -29,6 +29,22 @@ class CompactHealthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const double borderRadius = 16.0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // In dark mode, use a much darker version of the color (lower opacity or mixed with black)
+    final bgColors = isDark
+        ? [
+            color.withOpacity(0.15), // Very subtle in dark mode
+            color.withOpacity(0.05),
+          ]
+        : [
+            color,
+            Helpers.darken(color, 0.1),
+          ];
+
+    final textColor = isDark ? color.withOpacity(0.9) : Colors.white.withOpacity(0.9);
+    final valueColor = isDark ? Colors.white : Colors.white;
+    final shadowColor = isDark ? Colors.transparent : color.withOpacity(0.2);
 
     Widget content = InkWell(
       onTap: onTap,
@@ -39,27 +55,26 @@ class CompactHealthCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              color,
-              Helpers.darken(color, 0.1),
-            ],
+            colors: bgColors,
           ),
           borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: shadowColor,
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
           ],
+          // Optional: Add border in dark mode for definition
+          border: isDark ? Border.all(color: color.withOpacity(0.3)) : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildHeader(context),
+            _buildHeader(context, textColor, isDark),
             const SizedBox(height: 12),
-            _buildValue(context),
+            _buildValue(context, valueColor, textColor),
           ],
         ),
       ),
@@ -72,20 +87,21 @@ class CompactHealthCard extends StatelessWidget {
     return content;
   }
 
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildHeader(BuildContext context, Color textColor, bool isDark) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
           child: Row(
             children: [
-              Icon(icon, color: Colors.white.withOpacity(0.9), size: 18),
+              Icon(icon, color: textColor, size: 18),
               const SizedBox(width: 6),
               Flexible(
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: textColor,
+                        fontWeight: isDark ? FontWeight.bold : FontWeight.normal,
                       ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -97,13 +113,14 @@ class CompactHealthCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(100), // Stadium border effect
+            color: isDark ? color.withOpacity(0.2) : Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(100),
+            border: isDark ? Border.all(color: color.withOpacity(0.5)) : null,
           ),
           child: Text(
             status,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white,
+                  color: isDark ? color : Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -112,7 +129,7 @@ class CompactHealthCard extends StatelessWidget {
     );
   }
 
-  Widget _buildValue(BuildContext context) {
+  Widget _buildValue(BuildContext context, Color valueColor, Color unitColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -123,7 +140,7 @@ class CompactHealthCard extends StatelessWidget {
             Text(
               value,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.white,
+                    color: valueColor,
                     fontWeight: FontWeight.bold,
                   ),
             ),
@@ -134,7 +151,7 @@ class CompactHealthCard extends StatelessWidget {
                 child: Text(
                   unit,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: unitColor,
                       ),
                 ),
               ),
@@ -146,7 +163,7 @@ class CompactHealthCard extends StatelessWidget {
               ? 'Last updated: ${Formatters.timeAgo(timestamp!)}'
               : 'No history',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withOpacity(0.8),
+                color: unitColor.withOpacity(0.7),
               ),
         ),
       ],

@@ -9,6 +9,7 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../../../config/theme.dart';
 import '../../../../main.dart';
 import '../widgets/health_metric_card.dart';
 import '../widgets/biometrics_section.dart';
@@ -43,21 +44,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         _loadUserData();
       }
     });
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Show a welcome message if passed via arguments from auth flow
-    if (!_hasShownWelcomeMessage) {
-      final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
-      if (args != null && args['message'] != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Helpers.showSuccess(context, args['message']!);
-        });
-        _hasShownWelcomeMessage = true;
-      }
-    }
   }
 
   @override
@@ -103,10 +89,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    // Refresh Riverpod providers
-    ref.refresh(monitorDataProvider);
-    ref.refresh(latestActivityProvider);
-    ref.refresh(patientThresholdsProvider);
+    // This invalidates the state, forcing a re-fetch from the repositories
+    ref.invalidate(monitorDataProvider);
+    ref.invalidate(latestActivityProvider);
+    ref.invalidate(patientThresholdsProvider);
+    // Wait for them to rebuild
+    await Future.wait([
+       ref.read(monitorDataProvider.future),
+       ref.read(latestActivityProvider.future),
+       ref.read(patientThresholdsProvider.future),
+    ]);
   }
 
   /// Show quick log modal
@@ -121,54 +113,66 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final activity = ref.watch(latestActivityProvider).valueOrNull;
     final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
     
-    final isLoading = ref.watch(monitorDataProvider).isLoading;
+    final monitorDataAsync = ref.watch(monitorDataProvider);
+    final activityAsync = ref.watch(latestActivityProvider);
+    
+    final isLoading = monitorDataAsync.isLoading || activityAsync.isLoading;
     
     // Define consistent spacing
     const double spacing = 20.0;
 
     return Scaffold(
-      appBar: _buildAppBar(context, isLoading),
-      body: RefreshIndicator(
-        onRefresh: _handleRefresh,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(spacing),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // AI Insight (Main Card)
-              AIInsightCard(
-                insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-              ),
-              const SizedBox(height: spacing),
+      appBar: _buildAppBar(context),
+      body: Stack(
+        children: [
+          RefreshIndicator(
+            onRefresh: _handleRefresh,
+            edgeOffset: 0,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(spacing),
+              children: [
+                // AI Insight (Main Card)
+                AIInsightCard(
+                  insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                  onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
+                ),
+                const SizedBox(height: spacing),
 
-              // Biometrics Section (Loaded via Riverpod)
-              BiometricsSection(
-                monitorData: monitorData,
-                latestActivity: activity,
-                thresholds: thresholds,
-              ),
-              const SizedBox(height: spacing),
+                // Biometrics Section (Loaded via Riverpod)
+                BiometricsSection(
+                  monitorData: monitorData,
+                  latestActivity: activity,
+                  thresholds: thresholds,
+                ),
+                const SizedBox(height: spacing),
 
-              // Quick actions
-              QuickActionsGrid(
-                onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-                onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-                onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
-                onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
-              ),
-              const SizedBox(height: spacing),
-            ],
+                // Quick actions
+                QuickActionsGrid(
+                  onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
+                  onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+                  onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+                  onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
+                ),
+                const SizedBox(height: spacing),
+              ],
+            ),
           ),
-        ),
+          if (isLoading)
+            const Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: LinearProgressIndicator(minHeight: 3),
+            ),
+        ],
       ),
     );
   }
 
 
   /// Build app bar
-  AppBar _buildAppBar(BuildContext context, bool isLoading) {
+  AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       title: InkWell(
         onTap: _handleRefresh,
@@ -202,12 +206,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           width: 1,
         ),
       ),
-      bottom: isLoading
-          ? const PreferredSize(
-              preferredSize: Size.fromHeight(2),
-              child: LinearProgressIndicator(minHeight: 2),
-            )
-          : null,
     );
   }
 

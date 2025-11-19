@@ -20,10 +20,14 @@ class QuickActionsGrid extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: AppTheme.getBorderColor(context),
@@ -44,12 +48,12 @@ class QuickActionsGrid extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: titleIconColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.flash_on_outlined,
-                  color: AppTheme.primaryBlue,
+                  color: titleIconColor,
                   size: 24,
                 ),
               ),
@@ -111,6 +115,10 @@ class QuickActionsGrid extends StatelessWidget {
     Color color,
     VoidCallback onTap,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final buttonColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
+    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor.withOpacity(0.5);
+
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -118,7 +126,7 @@ class QuickActionsGrid extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: buttonColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
@@ -128,7 +136,7 @@ class QuickActionsGrid extends StatelessWidget {
               ),
             ],
             border: Border.all(
-              color: AppTheme.borderColor.withOpacity(0.5),
+              color: borderColor,
             ),
           ),
           child: Column(
@@ -151,7 +159,7 @@ class QuickActionsGrid extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor,
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontSize: 10,
                     ),
                 maxLines: 1,

@@ -19,7 +19,7 @@ class AIInsightCard extends StatelessWidget {
     const double borderRadius = 24.0;
 
     return AspectRatio(
-      aspectRatio: 2.0,
+      aspectRatio: 1.586,
       child: InkWell(
         onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
         borderRadius: BorderRadius.circular(borderRadius),
@@ -129,7 +129,7 @@ class AIInsightCard extends StatelessWidget {
                             color: Colors.white,
                             height: 1.3,
                             fontWeight: FontWeight.w600,
-                            fontSize: 18,
+                            fontSize: 20,
                           ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,

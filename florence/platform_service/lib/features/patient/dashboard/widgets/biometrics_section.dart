@@ -22,6 +22,9 @@ class BiometricsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = _buildHealthCards(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     if (cards.isEmpty) {
       return const SizedBox.shrink();
@@ -30,7 +33,7 @@ class BiometricsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: AppTheme.getBorderColor(context),
@@ -51,12 +54,12 @@ class BiometricsSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: titleIconColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.monitor_heart_outlined,
-                  color: AppTheme.primaryBlue,
+                  color: titleIconColor,
                   size: 24,
                 ),
               ),
