@@ -143,39 +143,36 @@ class _GaugeSection extends StatelessWidget {
         child: Column(
           children: [
             // 1. The Gauge (Half Circle)
-          SizedBox(
-            height: chartRadius + 10, // Slight padding bottom
-            width: chartRadius * 2,
-            child: Stack(
-              children: [
-                // Background Arc
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  height: chartRadius * 2,
-                  child: PieChart(
-                    PieChartData(
-                      startDegreeOffset: 180,
-                      sectionsSpace: 0,
-                      centerSpaceRadius: centerRadius,
-                      sections: [
-                        PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                        PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                        PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                        PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
-                      ],
+            SizedBox(
+              height: chartRadius + 20, // Increased height to prevent clipping of pivot
+              width: chartRadius * 2,
+              child: Stack(
+                alignment: Alignment.topCenter,
+                children: [
+                  // Background Arc
+                  Positioned(
+                    top: 0,
+                    width: chartRadius * 2,
+                    height: chartRadius * 2,
+                    child: PieChart(
+                      PieChartData(
+                        startDegreeOffset: 180,
+                        sectionsSpace: 0,
+                        centerSpaceRadius: centerRadius,
+                        sections: [
+                          PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-                
-                // Needle
-                if (val > 0)
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Transform.translate(
-                      // Move needle pivot up slightly so it rotates from true center of the bottom edge
-                      offset: const Offset(0, 0), 
+                  
+                  // Needle
+                  if (val > 0)
+                    Positioned(
+                      top: chartRadius - needleLength, // Position based on needle length to align pivot at chartRadius
                       child: Transform.rotate(
                         angle: rotationAngle,
                         alignment: Alignment.bottomCenter,
@@ -187,7 +184,7 @@ class _GaugeSection extends StatelessWidget {
                             children: [
                               // Needle Body
                               Container(
-                                width: 6, // Slightly thicker base
+                                width: 6, 
                                 height: needleLength, 
                                 margin: const EdgeInsets.only(bottom: 0),
                                 decoration: BoxDecoration(
@@ -210,37 +207,36 @@ class _GaugeSection extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-              ],
-            ),
-          ),
-
-          // 2. Scale Labels
-          const SizedBox(
-            width: 220,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('4.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                Text('12.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
-            ),
-          ),
-          
-          const SizedBox(height: 16),
-
-          // 3. Value & Status (Moved below gauge)
-          Column(
-            children: [
-              Text(
-                val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.textPrimaryColor,
-                  height: 1.0,
-                ),
+                ],
               ),
+            ),
+
+            // 2. Scale Labels (Slightly wider to center text under tips)
+            const SizedBox(
+              width: 230, 
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('4.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('12.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 16),
+
+            // 3. Value & Status
+            Column(
+              children: [
+                Text(
+                  val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimaryColor,
+                    height: 1.0,
+                  ),
+                ),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -407,11 +403,11 @@ class _TrendsSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.2)),
+              _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.08)),
               const SizedBox(width: 16),
-              _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.2)),
+              _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.08)),
               const SizedBox(width: 16),
-              _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.2)),
+              _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.08)),
             ],
           )
         ],
