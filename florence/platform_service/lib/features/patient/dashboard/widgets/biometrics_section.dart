@@ -91,11 +91,11 @@ class BiometricsSection extends StatelessWidget {
     final cards = <Widget>[];
     
     MonitorData? getData(MonitorDataType type) {
-      try {
-        return monitorData.firstWhere((d) => d.dataType == type);
-      } catch (_) {
-        return null;
-      }
+      final data = monitorData.where((d) => d.dataType == type).toList();
+      if (data.isEmpty) return null;
+      // Return the reading with the latest timestamp
+      return data.reduce((curr, next) => 
+        curr.measuredAt.isAfter(next.measuredAt) ? curr : next);
     }
 
     final glucose = getData(MonitorDataType.GLUCOSE);
