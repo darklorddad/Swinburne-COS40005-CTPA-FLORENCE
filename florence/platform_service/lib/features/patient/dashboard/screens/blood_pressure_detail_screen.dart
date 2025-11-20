@@ -471,8 +471,6 @@ class _DualTrendSection extends StatelessWidget {
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      axisNameWidget: Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(
                         showTitles: true, 
                         reservedSize: yAxisWidth, 
@@ -484,8 +482,6 @@ class _DualTrendSection extends StatelessWidget {
                       ),
                     ),
                     bottomTitles: AxisTitles(
-                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
@@ -601,12 +597,8 @@ class _FloatingBarSection extends StatelessWidget {
                   maxY: 200, minY: 40,
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      axisNameWidget: Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(showTitles: true, reservedSize: 35, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
                     bottomTitles: AxisTitles(
-                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
                         if (v.toInt() >= data.length) return const SizedBox();
                         // Skip every other label if too many points
@@ -703,11 +695,11 @@ class _ScatterSection extends StatelessWidget {
                   minY: 80, maxY: 200,
                   gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
                   titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(axisNameWidget: const Text('Diastolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (v, _) {
+                    bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (v, _) {
                       if (v == 40 || v == 130) return const SizedBox();
                       return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
                     })),
-                    leftTitles: AxisTitles(axisNameWidget: const Text('Systolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20, reservedSize: 35, getTitlesWidget: (v, _) {
+                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, reservedSize: 35, getTitlesWidget: (v, _) {
                       if (v == 80 || v == 200) return const SizedBox();
                       return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
                     })),
