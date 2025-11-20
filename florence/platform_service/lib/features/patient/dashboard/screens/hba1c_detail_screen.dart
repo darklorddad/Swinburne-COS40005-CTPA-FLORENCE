@@ -89,7 +89,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
 }
 
 // ============================================================================
-// 1. GAUGE CHART (Speedometer) - FIXED
+// 1. GAUGE CHART (Speedometer) - ALIGNMENT FIXED
 // ============================================================================
 
 class _GaugeSection extends StatelessWidget {
@@ -101,19 +101,13 @@ class _GaugeSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final val = latestReading?.value ?? 0.0;
     
-    // Ranges for the gauge visual
     const double minScale = 4.0;
     const double maxScale = 12.0;
     
-    // Clamp value for visual display only
-    final double displayVal = val.clamp(minScale, maxScale);
-    // Normalize 0.0 to 1.0
-    final double normalized = (displayVal - minScale) / (maxScale - minScale);
+    // Normalized 0.0 (left) to 1.0 (right)
+    final double normalized = ((val.clamp(minScale, maxScale)) - minScale) / (maxScale - minScale);
     
-    // Rotation: 
-    // -90 degrees (Left/Start) to +90 degrees (Right/End)
-    // Normalized 0.0 -> -90 deg ( -pi/2 )
-    // Normalized 1.0 -> +90 deg ( +pi/2 )
+    // Angle: -90 deg to +90 deg
     final double rotationAngle = -math.pi / 2 + (normalized * math.pi);
 
     Color statusColor;
@@ -132,66 +126,55 @@ class _GaugeSection extends StatelessWidget {
       statusText = "Diabetes";
     }
 
+    // Radius configuration
+    const double chartRadius = 110.0; 
+    const double sectionRadius = 20.0;
+    const double centerRadius = chartRadius - sectionRadius; 
+
     return _ChartContainer(
       title: 'Current Status',
       icon: Icons.speed,
       child: Column(
         children: [
+          // This container clips the bottom half of the full circle pie chart
           SizedBox(
-            height: 150,
-            width: 300,
+            height: chartRadius, 
+            width: chartRadius * 2,
             child: Stack(
-              alignment: Alignment.bottomCenter,
               children: [
-                // 1. The Gauge Background (Pie Chart)
-                PieChart(
-                  PieChartData(
-                    startDegreeOffset: 180,
-                    sectionsSpace: 0,
-                    centerSpaceRadius: 90, // Makes it a ring
-                    sections: [
-                      // Normal (4.0 - 5.7) -> 1.7 range
-                      PieChartSectionData(
-                        value: 1.7,
-                        color: AppTheme.primaryGreen.withOpacity(0.8),
-                        radius: 20,
-                        showTitle: false,
-                      ),
-                      // Pre-diabetes (5.7 - 6.5) -> 0.8 range
-                      PieChartSectionData(
-                        value: 0.8,
-                        color: AppTheme.warningColor.withOpacity(0.8),
-                        radius: 20,
-                        showTitle: false,
-                      ),
-                      // Diabetes (6.5 - 12.0) -> 5.5 range
-                      PieChartSectionData(
-                        value: 5.5,
-                        color: AppTheme.errorColor.withOpacity(0.8),
-                        radius: 20,
-                        showTitle: false,
-                      ),
-                      // Invisible bottom half
-                      PieChartSectionData(
-                        value: 8.0,
-                        color: Colors.transparent,
-                        radius: 20,
-                        showTitle: false,
-                      ),
-                    ],
+                // Position the full circle PieChart so its center aligns with the bottom of this container
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: chartRadius * 2, // Full diameter
+                  child: PieChart(
+                    PieChartData(
+                      startDegreeOffset: 180,
+                      sectionsSpace: 0,
+                      centerSpaceRadius: centerRadius,
+                      sections: [
+                        PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionRadius, showTitle: false),
+                        PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionRadius, showTitle: false),
+                        PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionRadius, showTitle: false),
+                        PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionRadius, showTitle: false),
+                      ],
+                    ),
                   ),
                 ),
                 
-                // 2. The Text Value (Centered inside the ring)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 20), // Push up slightly
+                // Text Value
+                Positioned(
+                  bottom: 0,
+                  left: 0, 
+                  right: 0,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                        Text(
                         val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
                         style: TextStyle(
-                          fontSize: 36,
+                          fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimaryColor,
                         ),
@@ -217,31 +200,30 @@ class _GaugeSection extends StatelessWidget {
                   ),
                 ),
 
-                // 3. The Needle (Rotated based on value)
-                // We use a Container that is full height, aligned bottomCenter
-                // Rotating it rotates the "top" of the container to the correct angle
+                // Needle - Pivot is perfectly bottom center of this container
                 if (val > 0)
-                  Positioned(
-                    bottom: 0,
+                  Align(
+                    alignment: Alignment.bottomCenter,
                     child: Transform.rotate(
                       angle: rotationAngle,
-                      alignment: Alignment.bottomCenter, // Pivot at bottom
+                      alignment: Alignment.bottomCenter,
                       child: SizedBox(
-                        height: 110, // Radius of needle tip
-                        width: 20, // Width of pivot area
+                        height: chartRadius, // Needle length matches radius
+                        width: 16, // Pivot width
                         child: Stack(
                           alignment: Alignment.bottomCenter,
                           children: [
-                            // The Needle Body
+                            // Needle Body
                             Container(
                               width: 4,
-                              height: 110, 
+                              height: chartRadius, 
+                              margin: const EdgeInsets.only(bottom: 8), // Lift slightly from pivot center
                               decoration: BoxDecoration(
                                 color: AppTheme.textPrimaryColor,
                                 borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                               ),
                             ),
-                            // The Pivot Circle
+                            // Pivot Point
                             Container(
                               width: 16,
                               height: 16,
@@ -277,7 +259,7 @@ class _GaugeSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 2. TRENDS (Line Chart with Reference Bands) - FIXED ALIGNMENT
+// 2. TRENDS - FIXED CLIPPING & OVERLAP
 // ============================================================================
 
 class _TrendsSection extends StatelessWidget {
@@ -288,13 +270,12 @@ class _TrendsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // X-Axis logic
     double minX = 0, maxX = 1;
     if (readings.isNotEmpty) {
       minX = readings.first.measuredAt.millisecondsSinceEpoch.toDouble();
       maxX = readings.last.measuredAt.millisecondsSinceEpoch.toDouble();
       if (minX == maxX) {
-        minX -= 2629743000; // -1 month approx
+        minX -= 2629743000;
         maxX += 2629743000; 
       }
     } else {
@@ -312,6 +293,8 @@ class _TrendsSection extends StatelessWidget {
             height: 220,
             child: LineChart(
               LineChartData(
+                // Enable clipping to prevent zones from drawing over axes/border
+                clipData: const FlClipData.all(), 
                 minX: minX, maxX: maxX, minY: 4, maxY: 10,
                 gridData: FlGridData(
                   show: true,
@@ -331,9 +314,10 @@ class _TrendsSection extends StatelessWidget {
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: (maxX - minX) / 3, // Show ~3 dates
+                      interval: (maxX - minX) / 3,
                       getTitlesWidget: (val, _) {
-                        if (val == minX || val == maxX) return const SizedBox();
+                        // Avoid edge labels that might clip
+                        if (val <= minX + ((maxX - minX)*0.05) || val >= maxX - ((maxX - minX)*0.05)) return const SizedBox();
                         final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
@@ -408,7 +392,7 @@ class _TrendsSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 3. ACTUAL VS GOAL (Bar Chart) - FIXED ALIGNMENT
+// 3. ACTUAL VS GOAL - FIXED TEXT CLIPPING
 // ============================================================================
 
 class _GoalComparisonSection extends StatelessWidget {
@@ -422,8 +406,6 @@ class _GoalComparisonSection extends StatelessWidget {
     final current = latestReading?.value ?? 0.0;
     final isGood = current <= targetMax && current > 0;
     final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
-    
-    // Calculate Y max to give headroom
     final maxY = math.max(current, targetMax) * 1.2;
 
     return _ChartContainer(
@@ -462,6 +444,7 @@ class _GoalComparisonSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        reservedSize: 40, // Increased reserved size to prevent clipping
                         getTitlesWidget: (val, _) {
                            switch(val.toInt()) {
                              case 0: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('You', style: TextStyle(fontWeight: FontWeight.bold)));
@@ -561,19 +544,37 @@ class _GoalComparisonSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 4. HISTORY LIST - MATCHING DESIGN
+// 4. HISTORY LIST - WITH PAGINATION
 // ============================================================================
 
-class _HistorySection extends StatelessWidget {
+class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
 
   const _HistorySection({required this.readings});
 
   @override
+  State<_HistorySection> createState() => _HistorySectionState();
+}
+
+class _HistorySectionState extends State<_HistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
+
+  @override
   Widget build(BuildContext context) {
-    final reversed = readings.reversed.toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final reversed = widget.readings.reversed.toList();
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+
+    final totalItems = reversed.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    // Reset page if data changed and page is out of bounds
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+    if (totalPages == 0) _currentPage = 0;
+    
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = totalItems > 0 ? reversed.sublist(start, end) : <MonitorData>[];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -585,25 +586,52 @@ class _HistorySection extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // Header with Pagination
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              if (totalPages > 1)
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                      icon: const Icon(Icons.chevron_left),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    IconButton(
+                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                      icon: const Icon(Icons.chevron_right),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 20),
-          if (readings.isEmpty)
+          if (currentItems.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16), 
               child: Text('No records found', style: TextStyle(color: AppTheme.textSecondaryColor))
             ),
           
-          ...reversed.map((r) {
+          ...currentItems.map((r) {
              Color color = r.value < 5.7 ? AppTheme.primaryGreen : (r.value < 6.5 ? AppTheme.warningColor : AppTheme.errorColor);
              return Container(
                margin: const EdgeInsets.only(bottom: 12),
