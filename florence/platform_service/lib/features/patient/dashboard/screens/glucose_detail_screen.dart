@@ -501,7 +501,9 @@ class _GlucoseTrendsSection extends StatelessWidget {
     return _ChartSection(
       title: 'Glucose Trends',
       icon: Icons.show_chart,
-      infoText: 'Visualizes your glucose readings.\n\n'
+      infoText: 'Visualizes your glucose readings over time.\n\n'
+                '• Y-Axis: Glucose (mg/dL)\n'
+                '• X-Axis: Time\n'
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
@@ -552,8 +554,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      axisNameWidget: Text('Glucose (mg/dL)', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(
                         showTitles: true, 
                         reservedSize: yAxisWidth, 
@@ -565,8 +565,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       ),
                     ),
                     bottomTitles: AxisTitles(
-                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(
                         showTitles: true, 
                         interval: (maxX - minX) / 4, 
@@ -756,7 +754,9 @@ class _ModalDaySection extends StatelessWidget {
     return _ChartSection(
       title: 'Daily Patterns',
       icon: Icons.auto_graph_outlined,
-      infoText: 'Overlays multiple days onto a single 24h axis to spot recurring patterns.',
+      infoText: 'Overlays multiple days onto a single 24h axis to spot recurring patterns.\n\n'
+                '• Y-Axis: Glucose (mg/dL)\n'
+                '• X-Axis: Hour of day (0-24)',
       allData: allReadings,
       builder: (range, data) {
         final Map<int, List<FlSpot>> lines = {};
@@ -788,13 +788,9 @@ class _ModalDaySection extends StatelessWidget {
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      axisNameWidget: Text('Glucose', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, interval: 50, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 9))),
                     ),
                     bottomTitles: AxisTitles(
-                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Hour', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
-                      axisNameSize: 20,
                       sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) => Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9))),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
