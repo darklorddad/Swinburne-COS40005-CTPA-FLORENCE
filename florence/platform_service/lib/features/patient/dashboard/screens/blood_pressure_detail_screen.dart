@@ -92,7 +92,11 @@ class BloodPressureDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
 
                 // 5. History List
-                _HistorySection(readings: readings),
+                _HistorySection(
+                  readings: readings,
+                  sysThreshold: sysThreshold,
+                  diaThreshold: diaThreshold,
+                ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -714,7 +718,14 @@ class _ScatterSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<_BpReading> readings;
-  const _HistorySection({required this.readings});
+  final HealthThreshold sysThreshold;
+  final HealthThreshold diaThreshold;
+
+  const _HistorySection({
+    required this.readings,
+    required this.sysThreshold,
+    required this.diaThreshold,
+  });
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();
@@ -744,15 +755,23 @@ class _HistorySectionState extends State<_HistorySection> {
         children: [
           if (currentItems.isEmpty) const Text('No History available'),
           ...currentItems.map((r) {
-             // Unique Status Logic
+             // Dynamic Status Logic using Thresholds
              String status;
              Color statusColor;
-             if (r.systolic > 140 || r.diastolic > 90) {
+             
+             final sysMax = widget.sysThreshold.maxValue;
+             final diaMax = widget.diaThreshold.maxValue;
+
+             // Logic: Critical if significantly above max, Warning if just above max
+             if (r.systolic > (sysMax + 20) || r.diastolic > (diaMax + 10)) {
                status = 'HIGH';
                statusColor = AppTheme.errorColor;
-             } else if (r.systolic > 120 || r.diastolic > 80) {
+             } else if (r.systolic > sysMax || r.diastolic > diaMax) {
                status = 'ELEVATED';
                statusColor = AppTheme.warningColor;
+             } else if (r.systolic < widget.sysThreshold.minValue || r.diastolic < widget.diaThreshold.minValue) {
+               status = 'LOW';
+               statusColor = AppTheme.infoColor;
              } else {
                status = 'NORMAL';
                statusColor = AppTheme.primaryGreen;
