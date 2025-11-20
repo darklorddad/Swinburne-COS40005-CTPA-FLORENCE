@@ -30,9 +30,9 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL
-  static const String apiUrl = 'http://127.0.0.1:8000';
+  // static const String apiUrl = 'http://127.0.0.1:8000';
   // static const String apiUrl = 'http://10.115.143.105:8000';
-  //static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
+  static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
   
