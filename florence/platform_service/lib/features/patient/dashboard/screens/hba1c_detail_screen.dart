@@ -214,8 +214,8 @@ class _GaugeSection extends StatelessWidget {
           ),
 
           // 2. Scale Labels
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40),
+          const SizedBox(
+            width: 220,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -234,7 +234,7 @@ class _GaugeSection extends StatelessWidget {
                 val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
                 style: TextStyle(
                   fontSize: 32,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.normal,
                   color: AppTheme.textPrimaryColor,
                   height: 1.0,
                 ),
@@ -373,6 +373,29 @@ class _TrendsSection extends StatelessWidget {
                       ),
                     ),
                   ],
+                  lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
+                        );
+                      }).toList();
+                    },
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          return LineTooltipItem(
+                            '${spot.y.toStringAsFixed(1)}%',
+                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -409,7 +432,7 @@ class _GoalComparisonSection extends StatelessWidget {
     final current = latestReading?.value ?? 0.0;
     final isGood = current <= targetMax && current > 0;
     final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
-    final maxY = math.max(current, targetMax) * 1.2;
+    final maxY = math.max(current, targetMax) * 1.4;
 
     return _HbA1cCard(
       title: 'Actual vs. Goal',
@@ -843,8 +866,6 @@ class _HbA1cCard extends StatelessWidget {
               IconButton(
                 icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
                 onPressed: () => _showInfoDialog(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
             ],
           ),
