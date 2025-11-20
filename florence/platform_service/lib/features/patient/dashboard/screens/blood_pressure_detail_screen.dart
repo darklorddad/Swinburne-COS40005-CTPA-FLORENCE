@@ -312,20 +312,15 @@ class _StatisticsSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
-                      const SizedBox(width: 8),
-                      Text(
-                        isDefault ? 'Default Target' : 'Your Target',
-                        style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
-                      ),
-                    ],
+                  Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                  const SizedBox(width: 8),
+                  Text(
+                    isDefault ? 'Default Target: ' : 'Your Target: ',
+                    style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
                   ),
-                  const SizedBox(height: 4),
                   Text(
                     '<${sysThreshold.maxValue.toInt()} / <${diaThreshold.maxValue.toInt()} mmHg',
                     style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 16),
