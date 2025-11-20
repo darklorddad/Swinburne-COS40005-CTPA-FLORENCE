@@ -10,12 +10,14 @@ import 'compact_health_card.dart';
 class BiometricsSection extends StatelessWidget {
   final List<MonitorData> monitorData;
   final ActivityLog? latestActivity;
+  final DailyPatientLog? latestMeal;
   final List<HealthThreshold> thresholds;
 
   const BiometricsSection({
     super.key,
     required this.monitorData,
     this.latestActivity,
+    this.latestMeal,
     required this.thresholds,
   });
 
@@ -164,6 +166,18 @@ class BiometricsSection extends StatelessWidget {
       onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
     ));
 
+    // Meal (Always show)
+    cards.add(CompactHealthCard(
+      label: 'Last Meal',
+      value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
+      unit: '',
+      status: latestMeal?.mealDesc ?? 'No Data',
+      timestamp: latestMeal?.logDate,
+      icon: Icons.restaurant_menu,
+      color: latestMeal != null ? AppTheme.mealColor : AppTheme.textSecondaryColor,
+      onTap: () => AppRoutes.push(context, AppRoutes.mealImpact),
+    ));
+
     // BMI (Always show)
     cards.add(CompactHealthCard(
       label: 'BMI',
@@ -177,6 +191,11 @@ class BiometricsSection extends StatelessWidget {
     ));
 
     return cards;
+  }
+
+  String _formatMealTime(String mealTime) {
+    if (mealTime.isEmpty) return '';
+    return mealTime[0].toUpperCase() + mealTime.substring(1).toLowerCase();
   }
 
   // --- Helper Methods (Updated to handle nulls) ---

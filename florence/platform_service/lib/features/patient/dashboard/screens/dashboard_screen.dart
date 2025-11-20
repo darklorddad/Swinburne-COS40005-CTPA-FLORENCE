@@ -93,11 +93,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(monitorDataProvider);
     ref.invalidate(latestActivityProvider);
     ref.invalidate(patientThresholdsProvider);
+    ref.invalidate(dailyPatientLogsProvider);
     // Wait for them to rebuild
     await Future.wait([
        ref.read(monitorDataProvider.future),
        ref.read(latestActivityProvider.future),
        ref.read(patientThresholdsProvider.future),
+       ref.read(dailyPatientLogsProvider.future),
     ]);
   }
 
@@ -112,6 +114,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final monitorData = ref.watch(monitorDataProvider).valueOrNull ?? [];
     final activity = ref.watch(latestActivityProvider).valueOrNull;
     final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
+    final mealLogs = ref.watch(dailyPatientLogsProvider).valueOrNull ?? [];
+
+    // Determine latest meal
+    DailyPatientLog? latestMeal;
+    if (mealLogs.isNotEmpty) {
+      final sortedMeals = List<DailyPatientLog>.from(mealLogs);
+      sortedMeals.sort((a, b) {
+        final dateComp = a.logDate.compareTo(b.logDate);
+        if (dateComp != 0) return dateComp;
+        return _getMealTimePriority(a.mealTime).compareTo(_getMealTimePriority(b.mealTime));
+      });
+      latestMeal = sortedMeals.last;
+    }
     
     // Define consistent spacing
     const double spacing = 20.0;
@@ -136,6 +151,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             BiometricsSection(
               monitorData: monitorData,
               latestActivity: activity,
+              latestMeal: latestMeal,
               thresholds: thresholds,
             ),
             const SizedBox(height: spacing),
@@ -212,9 +228,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-
-
-
+  int _getMealTimePriority(String time) {
+    switch (time.toUpperCase()) {
+      case 'BREAKFAST': return 1;
+      case 'LUNCH': return 2;
+      case 'DINNER': return 3;
+      default: return 0;
+    }
+  }
 }
 
 
