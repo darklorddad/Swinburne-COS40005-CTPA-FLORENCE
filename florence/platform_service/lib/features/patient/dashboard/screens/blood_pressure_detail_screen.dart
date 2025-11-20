@@ -312,29 +312,47 @@ class _StatisticsSection extends StatelessWidget {
         return Column(
           children: [
              // Target Range Display
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
-                  const SizedBox(width: 8),
-                  Text(
-                    isDefault ? 'Default Target: ' : 'Your Target: ',
-                    style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
-                  ),
-                  Text(
-                    '<${sysThreshold.maxValue.toInt()} / <${diaThreshold.maxValue.toInt()} mmHg',
-                    style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
+            InkWell(
+              onTap: () => Navigator.of(context).pushNamed('/profile'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                        const SizedBox(width: 8),
+                        Text(
+                          isDefault ? 'Default Target' : 'Your Target',
+                          style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          '<${sysThreshold.maxValue.toInt()} / <${diaThreshold.maxValue.toInt()} mmHg',
+                          style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             // Stats Grid
