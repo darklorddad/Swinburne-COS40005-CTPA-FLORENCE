@@ -138,9 +138,11 @@ class _GaugeSection extends StatelessWidget {
                 '• Normal: Below 5.7%\n'
                 '• Pre-diabetes: 5.7% - 6.4%\n'
                 '• Diabetes: 6.5% or higher',
-      child: Column(
-        children: [
-          // 1. The Gauge (Half Circle)
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          children: [
+            // 1. The Gauge (Half Circle)
           SizedBox(
             height: chartRadius + 10, // Slight padding bottom
             width: chartRadius * 2,
@@ -234,7 +236,7 @@ class _GaugeSection extends StatelessWidget {
                 val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
                 style: TextStyle(
                   fontSize: 32,
-                  fontWeight: FontWeight.normal,
+                  fontWeight: FontWeight.w800,
                   color: AppTheme.textPrimaryColor,
                   height: 1.0,
                 ),
@@ -258,7 +260,7 @@ class _GaugeSection extends StatelessWidget {
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -404,11 +406,11 @@ class _TrendsSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendItem('Normal', AppTheme.primaryGreen),
+              _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.2)),
               const SizedBox(width: 16),
-              _LegendItem('Pre-diabetes', AppTheme.warningColor),
+              _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.2)),
               const SizedBox(width: 16),
-              _LegendItem('Diabetes', AppTheme.errorColor),
+              _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.2)),
             ],
           )
         ],
@@ -449,7 +451,7 @@ class _GoalComparisonSection extends StatelessWidget {
             )
           else
             SizedBox(
-              height: 180,
+              height: 220,
               child: BarChart(
                 BarChartData(
                   maxY: maxY,
