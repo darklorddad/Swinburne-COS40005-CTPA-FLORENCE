@@ -89,12 +89,21 @@ class GlucoseDetailScreen extends ConsumerWidget {
                 maxValue: 180,
               );
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(20.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 1. Statistics
+              return RefreshIndicator(
+                onRefresh: () async {
+                  await Future.wait([
+                    ref.refresh(monitorDataProvider.future),
+                    ref.refresh(patientThresholdsProvider.future),
+                    ref.refresh(dailyPatientLogsProvider.future),
+                  ]);
+                },
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 1. Statistics
                     _StatisticsSection(
                       readings: allReadings, 
                       threshold: effectiveThreshold,
@@ -136,7 +145,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                   ],
                 ),
-              );
+              ));
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => Center(child: Text('Error loading logs: $err')),
@@ -378,42 +387,60 @@ class _StatisticsSection extends StatelessWidget {
         return Column(
           children: [
             // Target Range Display
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+            InkWell(
+              onTap: () => Navigator.of(context).pushNamed('/profile'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                  ),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.track_changes,
-                    size: 18,
-                    color: AppTheme.primaryGreen,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    isDefault ? 'Default Target: ' : 'Target Range: ',
-                    style: TextStyle(
-                      color: AppTheme.primaryGreen.withOpacity(0.8),
-                      fontWeight: FontWeight.w600,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.track_changes,
+                          size: 18,
+                          color: AppTheme.primaryGreen,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          isDefault ? 'Default Target' : 'Target Range',
+                          style: TextStyle(
+                            color: AppTheme.primaryGreen.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
-                    style: TextStyle(
-                      color: AppTheme.primaryGreen,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                    Row(
+                      children: [
+                        Text(
+                          '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
+                          style: TextStyle(
+                            color: AppTheme.primaryGreen,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             // Statistics Row
