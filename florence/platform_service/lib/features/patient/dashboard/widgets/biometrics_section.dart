@@ -172,10 +172,10 @@ class BiometricsSection extends StatelessWidget {
 
     // Meal (Always show)
     cards.add(CompactHealthCard(
-      label: 'Last Meal',
+      label: 'Meal',
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
-      status: latestMeal?.mealDesc ?? 'No Data',
+      status: _getMealStatus(latestMeal),
       timestamp: latestMeal?.logDate,
       icon: Icons.restaurant_menu,
       color: latestMeal != null ? AppTheme.mealColor : AppTheme.textSecondaryColor,
@@ -200,6 +200,23 @@ class BiometricsSection extends StatelessWidget {
   String _formatMealTime(String mealTime) {
     if (mealTime.isEmpty) return '';
     return mealTime[0].toUpperCase() + mealTime.substring(1).toLowerCase();
+  }
+
+  String _getMealStatus(DailyPatientLog? meal) {
+    if (meal == null) return 'No Data';
+
+    // 1. If there is a text description, show it
+    if (meal.mealDesc != null && meal.mealDesc!.isNotEmpty) {
+      return meal.mealDesc!;
+    }
+
+    // 2. If no description but glucose was logged, show that
+    if (meal.glucoseBeforeMeal != null || meal.glucoseAfterMeal != null) {
+      return 'Glucose Tracked';
+    }
+
+    // 3. Fallback if it exists but has no details
+    return 'Logged';
   }
 
   // --- Helper Methods (Updated to handle nulls) ---
