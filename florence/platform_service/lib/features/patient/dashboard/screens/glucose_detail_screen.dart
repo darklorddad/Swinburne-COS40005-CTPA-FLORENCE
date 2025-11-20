@@ -366,18 +366,14 @@ class _StatisticsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rangeLabel = isDefault 
-        ? 'Default Target Range (Not set):' 
-        : 'Your Target Range:';
-
     return _ChartSection(
       title: 'Overview',
       icon: Icons.analytics_outlined,
       infoText: 'Key statistics derived from your glucose readings.\n\n'
                 '• Average: Mean glucose level.\n'
                 '• GMI: Glucose Management Indicator (Estimated A1c).\n'
-                '• CV: Coefficient of Variation. Target < 36% for stable control.\n\n'
-                '$rangeLabel ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.',
+                '• CV: Coefficient of Variation. Target < 36% for stable control.\n'
+                '• Target: Your configured safe range.',
       allData: readings,
       builder: (range, data) {
         final stats = _calculateStats(data);
@@ -502,13 +498,11 @@ class _GlucoseTrendsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final targetLabel = isDefault ? 'Safe Default' : 'Your Target';
-
     return _ChartSection(
       title: 'Glucose Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your glucose readings.\n\n'
-                '• Green Band: $targetLabel range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).',
+                '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
         // Determine X-Axis range
@@ -676,14 +670,10 @@ class _TimeInRangeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rangeLabel = isDefault 
-        ? 'Default Range (No personal threshold set)' 
-        : 'Your Target Range';
-
     return _ChartSection(
       title: 'Time in Range',
       icon: Icons.track_changes_outlined,
-      infoText: '$rangeLabel: ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.\n\n'
+      infoText: 'Percentage of time your glucose is within target.\n\n'
                 'Goal: Keep "In Range" (Green) above 70%.',
       allData: allReadings,
       builder: (range, data) {
