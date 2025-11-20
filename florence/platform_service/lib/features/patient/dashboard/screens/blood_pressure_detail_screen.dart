@@ -774,7 +774,9 @@ class _HistorySectionState extends State<_HistorySection> {
   }
 }
 
-static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
+Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
+
+class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
   final bool isCircle;
