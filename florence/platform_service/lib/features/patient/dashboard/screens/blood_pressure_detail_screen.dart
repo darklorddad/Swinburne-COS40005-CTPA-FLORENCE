@@ -508,7 +508,6 @@ class _DualTrendSection extends StatelessWidget {
       },
     );
   }
-  static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
 }
 
 class _FloatingBarSection extends StatelessWidget {
@@ -775,6 +774,46 @@ class _HistorySectionState extends State<_HistorySection> {
 }
 
 Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
+
+class _ChartContainer extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  final Widget child;
+
+  const _ChartContainer({super.key, required this.title, required this.icon, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? AppTheme.midnightSurface : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
+      ),
+    );
+  }
+}
 
 class _LegendItem extends StatelessWidget {
   final String label;
