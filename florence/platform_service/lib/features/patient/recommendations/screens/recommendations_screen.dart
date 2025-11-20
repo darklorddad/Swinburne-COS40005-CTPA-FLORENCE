@@ -8,8 +8,8 @@ import 'recommendation_detail_screen.dart';
 import '../services/recommendation_engine.dart';
 import '../models/recommendation_models.dart';
 
-/// Recommendations Feed Screen
-/// Displays list of AI-generated health recommendations
+/// Health Insights Screen
+/// Displays AI-generated health insights with explainability
 class RecommendationsScreen extends StatefulWidget {
   const RecommendationsScreen({super.key});
 
@@ -17,9 +17,7 @@ class RecommendationsScreen extends StatefulWidget {
   State<RecommendationsScreen> createState() => _RecommendationsScreenState();
 }
 
-class _RecommendationsScreenState extends State<RecommendationsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _RecommendationsScreenState extends State<RecommendationsScreen> {
   bool _isLoading = false;
   bool _isGenerating = false;
 
@@ -27,43 +25,33 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   final RecommendationEngine _engine = RecommendationEngine();
 
   // Recommendations data
-  List<HealthRecommendation> _allRecommendations = [];
-  List<HealthRecommendation> _activeRecommendations = [];
-  List<HealthRecommendation> _completedRecommendations = [];
-  List<HealthRecommendation> _dismissedRecommendations = [];
+  List<HealthRecommendation> _insights = [];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
-    _loadRecommendations();
+    _loadInsights();
   }
 
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  /// Load recommendations
-  Future<void> _loadRecommendations() async {
+  /// Load insights
+  Future<void> _loadInsights() async {
     setState(() => _isLoading = true);
 
     try {
       // Get all cached recommendations from engine
-      _allRecommendations = _engine.allRecommendations;
-
-      // If no recommendations, generate them
-      if (_allRecommendations.isEmpty) {
-        await _generateNewRecommendations();
+      // For the insights view, we might want to show all active ones, or even history if relevant.
+      // For now, let's show active ones as "Current Insights".
+      final allRecs = _engine.allRecommendations;
+      
+      if (allRecs.isEmpty) {
+        await _generateNewInsights();
+      } else {
+        _insights = allRecs.where((r) => r.isActive).toList();
       }
-
-      // Filter by status
-      _filterRecommendations();
     } catch (e) {
-      debugPrint('Error loading recommendations: $e');
+      debugPrint('Error loading insights: $e');
       if (mounted) {
-        Helpers.showError(context, 'Failed to load recommendations');
+        Helpers.showError(context, 'Failed to load insights');
       }
     } finally {
       if (mounted) {
@@ -72,8 +60,8 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     }
   }
 
-  /// Generate new AI recommendations
-  Future<void> _generateNewRecommendations() async {
+  /// Generate new AI insights
+  Future<void> _generateNewInsights() async {
     setState(() => _isGenerating = true);
 
     try {
@@ -81,20 +69,20 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
 
       if (mounted) {
         setState(() {
-          _allRecommendations = _engine.allRecommendations;
+          _insights = _engine.allRecommendations.where((r) => r.isActive).toList();
         });
 
         if (newRecs.isNotEmpty) {
           Helpers.showSuccess(
             context,
-            'Generated ${newRecs.length} new recommendations',
+            'Found ${newRecs.length} new insights',
           );
         }
       }
     } catch (e) {
-      debugPrint('Error generating recommendations: $e');
+      debugPrint('Error generating insights: $e');
       if (mounted) {
-        Helpers.showError(context, 'Failed to generate recommendations');
+        Helpers.showError(context, 'Failed to generate insights');
       }
     } finally {
       if (mounted) {
@@ -103,80 +91,12 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
     }
   }
 
-  /// Filter recommendations by status
-  void _filterRecommendations() {
-    _activeRecommendations = _allRecommendations
-        .where((r) => r.isActive)
-        .toList();
-
-    _completedRecommendations = _allRecommendations
-        .where((r) => r.status == RecommendationStatus.completed)
-        .toList();
-
-    _dismissedRecommendations = _allRecommendations
-        .where((r) => r.status == RecommendationStatus.dismissed)
-        .toList();
-  }
-
-  /// Mark recommendation as done
-  Future<void> _markAsDone(HealthRecommendation recommendation) async {
-    try {
-      _engine.completeRecommendation(recommendation.id);
-
-      setState(() {
-        _allRecommendations = _engine.allRecommendations;
-        _filterRecommendations();
-      });
-
-      Helpers.showSuccess(context, 'Marked as done! Great job!');
-    } catch (e) {
-      Helpers.showError(context, 'Failed to update recommendation');
-    }
-  }
-
-  /// Dismiss recommendation
-  Future<void> _dismissRecommendation(HealthRecommendation recommendation) async {
-    final confirmed = await Helpers.showConfirmDialog(
-      context,
-      title: 'Dismiss Recommendation',
-      message: 'Are you sure you want to dismiss this recommendation?',
-    );
-
-    if (confirmed) {
-      try {
-        _engine.dismissRecommendation(recommendation.id);
-
-        setState(() {
-          _allRecommendations = _engine.allRecommendations;
-          _filterRecommendations();
-        });
-
-        Helpers.showInfo(context, 'Recommendation dismissed');
-      } catch (e) {
-        Helpers.showError(context, 'Failed to dismiss recommendation');
-      }
-    }
-  }
-
-  /// View recommendation details
-  void _viewDetails(HealthRecommendation recommendation) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RecommendationDetailScreen(
-          recommendation: recommendation,
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Recommendations'),
+        title: const Text('Health Insights'),
         actions: [
-          // Generate new recommendations button
           IconButton(
             icon: _isGenerating
                 ? const SizedBox(
@@ -187,157 +107,30 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
-                : const Icon(Icons.auto_awesome),
+                : const Icon(Icons.refresh),
             onPressed: _isGenerating
                 ? null
                 : () async {
-                    await _generateNewRecommendations();
-                    _filterRecommendations();
-                    setState(() {});
+                    await _generateNewInsights();
                   },
-            tooltip: 'Generate New Recommendations',
+            tooltip: 'Refresh Insights',
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Active'),
-                  if (_activeRecommendations.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    _buildCountBadge(_activeRecommendations.length),
-                  ],
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Completed'),
-                  if (_completedRecommendations.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    _buildCountBadge(_completedRecommendations.length),
-                  ],
-                ],
-              ),
-            ),
-            Tab(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('Dismissed'),
-                  if (_dismissedRecommendations.isNotEmpty) ...[
-                    const SizedBox(width: 8),
-                    _buildCountBadge(_dismissedRecommendations.length),
-                  ],
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : TabBarView(
-              controller: _tabController,
-              children: [
-                // Active tab
-                _buildRecommendationsList(_activeRecommendations, true),
-
-                // Completed tab
-                _buildRecommendationsList(_completedRecommendations, false),
-
-                // Dismissed tab
-                _buildRecommendationsList(_dismissedRecommendations, false),
-              ],
-            ),
-    );
-  }
-
-  /// Build count badge
-  Widget _buildCountBadge(int count) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryBlue,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        count.toString(),
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  /// Build recommendations list
-  Widget _buildRecommendationsList(
-    List<HealthRecommendation> recommendations,
-    bool showActions,
-  ) {
-    return Column(
-      children: [
-        // ALWAYS VISIBLE: Generate New Recommendations Button at the top
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-          child: ElevatedButton.icon(
-            onPressed: _isGenerating
-                ? null
-                : () async {
-                    await _generateNewRecommendations();
-                    _filterRecommendations();
-                    setState(() {});
-                  },
-            icon: _isGenerating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(Icons.auto_awesome),
-            label: Text(_isGenerating
-                ? 'Generating Recommendations...'
-                : 'Generate New Recommendations'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryBlue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-          ),
-        ),
-
-        // Recommendations List
-        Expanded(
-          child: recommendations.isEmpty
+          : _insights.isEmpty
               ? _buildEmptyState()
               : RefreshIndicator(
-                  onRefresh: _loadRecommendations,
+                  onRefresh: _generateNewInsights,
                   child: ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    itemCount: recommendations.length,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _insights.length,
                     itemBuilder: (context, index) {
-                      final recommendation = recommendations[index];
-                      return _buildRecommendationCard(recommendation, showActions);
+                      return _buildInsightCard(_insights[index]);
                     },
                   ),
                 ),
-        ),
-      ],
     );
   }
 
@@ -350,232 +143,143 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+              color: AppTheme.primaryBlue.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.check_circle_outline,
+            child: const Icon(
+              Icons.lightbulb_outline,
               size: 64,
-              color: AppTheme.primaryGreen,
+              color: AppTheme.primaryBlue,
             ),
           ),
           const SizedBox(height: 24),
           Text(
-            'All caught up!',
+            'No insights yet',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 8),
           Text(
-            'No recommendations here',
+            'We need more data to generate insights for you.',
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.textSecondaryColor,
                 ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: _generateNewInsights,
+            child: const Text('Analyze Now'),
           ),
         ],
       ),
     );
   }
 
-  /// Build single recommendation card
-  Widget _buildRecommendationCard(
-    HealthRecommendation recommendation,
-    bool showActions,
-  ) {
-    return Dismissible(
-      key: Key(recommendation.id),
-      // enabled: showActions,
-      background: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: AppTheme.primaryGreen,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerLeft,
-        child: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text(
-              'Mark Done',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+  /// Build insight card
+  Widget _buildInsightCard(HealthRecommendation insight) {
+    return BaseCard(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => RecommendationDetailScreen(recommendation: insight),
         ),
       ),
-      secondaryBackground: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        decoration: BoxDecoration(
-          color: AppTheme.errorColor,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        alignment: Alignment.centerRight,
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              'Dismiss',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            SizedBox(width: 8),
-            Icon(Icons.close, color: Colors.white),
-          ],
-        ),
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          _markAsDone(recommendation);
-          return false;
-        } else {
-          return true; // Will trigger dismiss
-        }
-      },
-      onDismissed: (direction) {
-        if (direction == DismissDirection.endToStart) {
-          _dismissRecommendation(recommendation);
-        }
-      },
-      child: BaseCard(
-        onTap: () => _viewDetails(recommendation),
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header row
-            Row(
-              children: [
-                // Category icon
-                _buildCategoryIcon(recommendation.category),
-                const SizedBox(width: 12),
-
-                // Title and priority
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              recommendation.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                            ),
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              _buildCategoryIcon(insight.category),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      insight.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
                           ),
-                          _buildPriorityBadge(recommendation.priority),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
+                    ),
+                    Text(
+                      _formatTime(insight.generatedAt),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              if (insight.priority == RecommendationPriority.high || 
+                  insight.priority == RecommendationPriority.urgent)
+                _buildPriorityBadge(insight.priority),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Main Description
+          Text(
+            insight.description,
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 16),
+
+          // Explainability Section (Why this matters)
+          if (insight.explanation != null) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 16, color: AppTheme.primaryBlue),
+                      const SizedBox(width: 8),
                       Text(
-                        _formatTime(recommendation.generatedAt),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondaryColor,
+                        'Why this insight?',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppTheme.primaryBlue,
+                              fontWeight: FontWeight.bold,
                             ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            // Description
-            Text(
-              recommendation.description,
-              style: Theme.of(context).textTheme.bodyMedium,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-
-            // Action buttons (only for active)
-            if (showActions) ...[
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _markAsDone(recommendation),
-                      icon: const Icon(Icons.check, size: 18),
-                      label: const Text('Mark Done'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.primaryGreen,
-                        side: BorderSide(color: AppTheme.primaryGreen),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => _dismissRecommendation(recommendation),
-                      icon: const Icon(Icons.close, size: 18),
-                      label: const Text('Dismiss'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.textSecondaryColor,
-                        side: BorderSide(color: AppTheme.borderColor),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-
-            // Completed/Dismissed info
-            if (recommendation.status == RecommendationStatus.completed) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    size: 16,
-                    color: AppTheme.primaryGreen,
-                  ),
-                  const SizedBox(width: 6),
+                  const SizedBox(height: 8),
                   Text(
-                    'Completed',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.primaryGreen,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    insight.explanation!.rationale,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
+                  if (insight.explanation!.expectedImpact.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(Icons.trending_up, size: 16, color: AppTheme.primaryGreen),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            insight.explanation!.expectedImpact,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: AppTheme.textPrimaryColor,
+                                ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
-            ],
-
-            if (recommendation.status == RecommendationStatus.dismissed) ...[
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    size: 16,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Dismissed',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -583,7 +287,6 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   /// Build category icon
   Widget _buildCategoryIcon(RecommendationCategory category) {
     final config = _getCategoryConfig(category);
-
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
@@ -601,16 +304,12 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   /// Build priority badge
   Widget _buildPriorityBadge(RecommendationPriority priority) {
     final config = _getPriorityConfig(priority);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: config['color'].withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: config['color'],
-          width: 1,
-        ),
+        border: Border.all(color: config['color']),
       ),
       child: Text(
         config['label'],
@@ -627,35 +326,17 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   Map<String, dynamic> _getCategoryConfig(RecommendationCategory category) {
     switch (category) {
       case RecommendationCategory.meal:
-        return {
-          'icon': Icons.restaurant,
-          'color': AppTheme.mealColor,
-        };
+        return {'icon': Icons.restaurant, 'color': AppTheme.mealColor};
       case RecommendationCategory.activity:
-        return {
-          'icon': Icons.directions_run,
-          'color': AppTheme.activityColor,
-        };
+        return {'icon': Icons.directions_run, 'color': AppTheme.activityColor};
       case RecommendationCategory.sleep:
-        return {
-          'icon': Icons.bedtime,
-          'color': const Color(0xFF9C27B0),
-        };
+        return {'icon': Icons.bedtime, 'color': const Color(0xFF9C27B0)};
       case RecommendationCategory.timing:
-        return {
-          'icon': Icons.access_time,
-          'color': AppTheme.primaryBlue,
-        };
+        return {'icon': Icons.access_time, 'color': AppTheme.primaryBlue};
       case RecommendationCategory.lifestyle:
-        return {
-          'icon': Icons.self_improvement,
-          'color': const Color(0xFF00BCD4),
-        };
+        return {'icon': Icons.self_improvement, 'color': const Color(0xFF00BCD4)};
       case RecommendationCategory.medication:
-        return {
-          'icon': Icons.medication,
-          'color': AppTheme.medicationColor,
-        };
+        return {'icon': Icons.medication, 'color': AppTheme.medicationColor};
     }
   }
 
@@ -663,25 +344,13 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   Map<String, dynamic> _getPriorityConfig(RecommendationPriority priority) {
     switch (priority) {
       case RecommendationPriority.urgent:
-        return {
-          'label': 'URGENT',
-          'color': const Color(0xFFD32F2F),
-        };
+        return {'label': 'URGENT', 'color': const Color(0xFFD32F2F)};
       case RecommendationPriority.high:
-        return {
-          'label': 'HIGH',
-          'color': AppTheme.warningColor,
-        };
+        return {'label': 'IMPORTANT', 'color': AppTheme.warningColor};
       case RecommendationPriority.medium:
-        return {
-          'label': 'MEDIUM',
-          'color': AppTheme.infoColor,
-        };
+        return {'label': 'MEDIUM', 'color': AppTheme.infoColor};
       case RecommendationPriority.low:
-        return {
-          'label': 'LOW',
-          'color': AppTheme.textSecondaryColor,
-        };
+        return {'label': 'LOW', 'color': AppTheme.textSecondaryColor};
     }
   }
 
@@ -689,15 +358,9 @@ class _RecommendationsScreenState extends State<RecommendationsScreen>
   String _formatTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
-
-    if (diff.inMinutes < 60) {
-      return '${diff.inMinutes}m ago';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours}h ago';
-    } else if (diff.inDays < 7) {
-      return '${diff.inDays}d ago';
-    } else {
-      return Formatters.date(time);
-    }
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return Formatters.date(time);
   }
 }

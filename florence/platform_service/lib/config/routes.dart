@@ -14,7 +14,7 @@ import '../features/patient/logging/screens/log_medication_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
 import '../features/patient/trends/screens/trends_screen.dart';
-import '../features/patient/trends/screens/glucose_trends_detail_screen.dart';
+import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
 import '../features/patient/trends/screens/meal_impact_screen.dart';
 import '../features/patient/trends/screens/activity_impact_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
@@ -98,7 +98,7 @@ class AppRoutes {
         return _buildRoute(const TrendsScreen(), settings);
 
       case trendsDetail:
-        return _buildRoute(const GlucoseTrendsDetailScreen());
+        return _buildRoute(const GlucoseDetailScreen(patientId: 1)); // Mock ID for now
 
       case mealImpact:
         return _buildRoute(const MealImpactScreen());
