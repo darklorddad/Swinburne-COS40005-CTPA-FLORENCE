@@ -470,17 +470,7 @@ class _DualTrendSection extends StatelessWidget {
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        reservedSize: yAxisWidth, 
-                        interval: 40, 
-                        getTitlesWidget: (v, _) {
-                          if (v == 40 || v == 180) return const SizedBox(); // Hide overlap
-                          return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
-                        },
-                      ),
-                    ),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -596,8 +586,7 @@ class _FloatingBarSection extends StatelessWidget {
                   alignment: BarChartAlignment.spaceAround,
                   maxY: 200, minY: 40,
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, reservedSize: 35, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
                         if (v.toInt() >= data.length) return const SizedBox();
@@ -699,10 +688,7 @@ class _ScatterSection extends StatelessWidget {
                       if (v == 40 || v == 130) return const SizedBox();
                       return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
                     })),
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, reservedSize: 35, getTitlesWidget: (v, _) {
-                      if (v == 80 || v == 200) return const SizedBox();
-                      return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
-                    })),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35, getTitlesWidget: _emptyTitle)), // Center chart
                   ),
