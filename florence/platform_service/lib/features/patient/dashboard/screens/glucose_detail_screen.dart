@@ -223,7 +223,7 @@ class _ChartSectionState extends State<_ChartSection> {
           children: [
             Icon(widget.icon, color: AppTheme.primaryBlue),
             const SizedBox(width: 12),
-            Expanded(child: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold))),
+            Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
           ],
         ),
         content: Text(widget.infoText, style: Theme.of(context).textTheme.bodyMedium),
