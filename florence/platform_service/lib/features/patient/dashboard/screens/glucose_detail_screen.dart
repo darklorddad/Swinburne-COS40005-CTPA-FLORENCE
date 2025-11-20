@@ -961,7 +961,7 @@ class _HistorySectionState extends State<_HistorySection> {
                       Text(
                         item.value.toStringAsFixed(0),
                         style: TextStyle(
-                          fontWeight: FontWeight.bold, 
+                          fontWeight: FontWeight.w600, 
                           fontSize: 20,
                           color: AppTheme.textPrimaryColor
                         ),
