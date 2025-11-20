@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'dart:math' as math;
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -35,30 +36,38 @@ class BloodPressureDetailScreen extends ConsumerWidget {
             return const Center(child: Text('No blood pressure data available'));
           }
 
-          // Sort by date ascending
+          // Sort by date ascending for charts
           readings.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-          // Get Thresholds (Default to standard medical guidelines if not set)
+          // Get Thresholds
           final thresholds = thresholdsAsync.value ?? [];
-          final sysThreshold = thresholds.firstWhere(
-            (t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC,
-            orElse: () => const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_SYSTOLIC, minValue: 90, maxValue: 120),
-          );
-          final diaThreshold = thresholds.firstWhere(
-            (t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC,
-            orElse: () => const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_DIASTOLIC, minValue: 60, maxValue: 80),
-          );
+          
+          // Check for user-defined thresholds
+          HealthThreshold? userSys;
+          HealthThreshold? userDia;
+          try { userSys = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC); } catch (_) {}
+          try { userDia = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC); } catch (_) {}
+
+          final isDefault = userSys == null || userDia == null;
+
+          final sysThreshold = userSys ?? const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_SYSTOLIC, minValue: 90, maxValue: 120);
+          final diaThreshold = userDia ?? const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_DIASTOLIC, minValue: 60, maxValue: 80);
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               children: [
                 // 1. Statistics
-                _StatisticsSection(readings: readings),
+                _StatisticsSection(
+                  readings: readings, 
+                  sysThreshold: sysThreshold, 
+                  diaThreshold: diaThreshold,
+                  isDefault: isDefault,
+                ),
                 const SizedBox(height: 20),
 
                 // 2. Dual Trend Chart
-                _DualTrendChart(
+                _DualTrendSection(
                   readings: readings,
                   sysThreshold: sysThreshold,
                   diaThreshold: diaThreshold,
@@ -66,11 +75,11 @@ class BloodPressureDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 20),
 
                 // 3. Floating Bar (Pulse Pressure / Daily Range)
-                _FloatingBarChart(readings: readings),
+                _FloatingBarSection(readings: readings),
                 const SizedBox(height: 20),
 
                 // 4. Scatter Plot
-                _ScatterBPChart(
+                _ScatterSection(
                   readings: readings,
                   sysThreshold: sysThreshold,
                   diaThreshold: diaThreshold,
@@ -129,32 +138,217 @@ class _BpReading {
 }
 
 // ============================================================================
+// REUSABLE WRAPPER
+// ============================================================================
+
+class _ChartSection extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final String infoText;
+  final Widget Function(String range, List<_BpReading> filteredData) builder;
+  final List<_BpReading> allData;
+  final List<String> ranges;
+
+  const _ChartSection({
+    required this.title,
+    required this.icon,
+    required this.infoText,
+    required this.builder,
+    required this.allData,
+    this.ranges = const ['1D', '7D', '14D', '30D'],
+  });
+
+  @override
+  State<_ChartSection> createState() => _ChartSectionState();
+}
+
+class _ChartSectionState extends State<_ChartSection> {
+  late String _selectedRange;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRange = widget.ranges.contains('7D') ? '7D' : widget.ranges.first;
+  }
+
+  List<_BpReading> _filterData() {
+    if (widget.allData.isEmpty) return [];
+    final now = DateTime.now();
+    Duration duration;
+    switch (_selectedRange) {
+      case '7D': duration = const Duration(days: 7); break;
+      case '14D': duration = const Duration(days: 14); break;
+      case '30D': duration = const Duration(days: 30); break;
+      case '1D':
+      default: duration = const Duration(hours: 24); break;
+    }
+    final cutoff = now.subtract(duration);
+    return widget.allData.where((d) => d.timestamp.isAfter(cutoff)).toList();
+  }
+
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(children: [Icon(widget.icon, color: AppTheme.primaryBlue), const SizedBox(width: 12), Expanded(child: Text(widget.title))]),
+        content: Text(widget.infoText),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it'))],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final filteredData = _filterData();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+              IconButton(icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor), onPressed: () => _showInfoDialog(context)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Tabs
+          Container(
+            height: 36,
+            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: widget.ranges.map((range) {
+                final isSelected = _selectedRange == range;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedRange = range),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: isSelected ? AppTheme.primaryBlue : Colors.transparent, borderRadius: BorderRadius.circular(8)),
+                      child: Text(_getRangeLabel(range), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color)),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          widget.builder(_selectedRange, filteredData),
+        ],
+      ),
+    );
+  }
+
+  String _getRangeLabel(String key) {
+    switch (key) {
+      case '1D': return 'Daily';
+      case '7D': return 'Weekly';
+      case '14D': return 'Bi-Weekly';
+      case '30D': return 'Monthly';
+      default: return key;
+    }
+  }
+}
+
+// ============================================================================
 // SECTIONS
 // ============================================================================
 
 class _StatisticsSection extends StatelessWidget {
   final List<_BpReading> readings;
+  final HealthThreshold sysThreshold;
+  final HealthThreshold diaThreshold;
+  final bool isDefault;
 
-  const _StatisticsSection({required this.readings});
+  const _StatisticsSection({
+    required this.readings, 
+    required this.sysThreshold, 
+    required this.diaThreshold,
+    this.isDefault = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final avgSys = readings.map((e) => e.systolic).reduce((a, b) => a + b) / readings.length;
-    final avgDia = readings.map((e) => e.diastolic).reduce((a, b) => a + b) / readings.length;
-    final avgPulse = readings.map((e) => e.pulsePressure).reduce((a, b) => a + b) / readings.length;
-
-    return _ChartContainer(
+    return _ChartSection(
       title: 'Overview',
       icon: Icons.analytics_outlined,
-      child: Row(
-        children: [
-          Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys.toStringAsFixed(0), 'mmHg', AppTheme.primaryRed)),
-          const SizedBox(width: 12),
-          Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia.toStringAsFixed(0), 'mmHg', AppTheme.primaryBlue)),
-          const SizedBox(width: 12),
-          Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse.toStringAsFixed(0), 'mmHg', AppTheme.textSecondaryColor)),
-        ],
-      ),
+      infoText: 'Key statistics for blood pressure.\n\n'
+                '• Average: Mean systolic/diastolic levels.\n'
+                '• Pulse Pressure: Difference between systolic and diastolic (Sys - Dia).\n'
+                '• Target: Your configured safe range.',
+      allData: readings,
+      builder: (range, data) {
+        if (data.isEmpty) return const SizedBox(height: 50, child: Center(child: Text('No data for this period')));
+
+        final avgSys = data.map((e) => e.systolic).reduce((a, b) => a + b) / data.length;
+        final avgDia = data.map((e) => e.diastolic).reduce((a, b) => a + b) / data.length;
+        final avgPulse = data.map((e) => e.pulsePressure).reduce((a, b) => a + b) / data.length;
+
+        return Column(
+          children: [
+             // Target Range Display
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                      const SizedBox(width: 8),
+                      Text(
+                        isDefault ? 'Default Target' : 'Your Target',
+                        style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '<${sysThreshold.maxValue.toInt()} / <${diaThreshold.maxValue.toInt()} mmHg',
+                    style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+            // Stats Grid
+            Row(
+              children: [
+                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys.toStringAsFixed(0), 'mmHg', AppTheme.primaryRed)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia.toStringAsFixed(0), 'mmHg', AppTheme.primaryBlue)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse.toStringAsFixed(0), 'mmHg', AppTheme.textSecondaryColor)),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -187,242 +381,293 @@ class _StatisticsSection extends StatelessWidget {
   }
 }
 
-class _DualTrendChart extends StatelessWidget {
+class _DualTrendSection extends StatelessWidget {
   final List<_BpReading> readings;
   final HealthThreshold sysThreshold;
   final HealthThreshold diaThreshold;
 
-  const _DualTrendChart({required this.readings, required this.sysThreshold, required this.diaThreshold});
+  const _DualTrendSection({required this.readings, required this.sysThreshold, required this.diaThreshold});
 
   @override
   Widget build(BuildContext context) {
-    double minX = readings.first.timestamp.millisecondsSinceEpoch.toDouble();
-    double maxX = readings.last.timestamp.millisecondsSinceEpoch.toDouble();
-    if (minX == maxX) { minX -= 3600000; maxX += 3600000; } 
+    const double yAxisWidth = 35.0;
 
-    return _ChartContainer(
+    return _ChartSection(
       title: 'Pressure Trends',
       icon: Icons.show_chart,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 250,
-            child: LineChart(
-              LineChartData(
-                minX: minX, maxX: maxX, minY: 40, maxY: 180,
-                gridData: FlGridData(
-                  show: true, 
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                ),
-                titlesData: FlTitlesData(
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
-                  bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: (maxX - minX) / 4, getTitlesWidget: (v, _) {
-                    final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
-                    return Padding(padding: const EdgeInsets.only(top: 8), child: Text(DateFormat('MM/dd').format(date), style: const TextStyle(fontSize: 10)));
-                  })),
-                ),
-                borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
-                // Safe Zones
-                rangeAnnotations: RangeAnnotations(
-                  horizontalRangeAnnotations: [
-                    HorizontalRangeAnnotation(y1: sysThreshold.minValue, y2: sysThreshold.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
-                    HorizontalRangeAnnotation(y1: diaThreshold.minValue, y2: diaThreshold.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
-                  ]
-                ),
-                lineBarsData: [
-                  // Systolic Line
-                  LineChartBarData(
-                    spots: readings.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.systolic)).toList(),
-                    color: AppTheme.primaryRed, barWidth: 2, isCurved: true,
-                    dotData: const FlDotData(show: false),
+      infoText: 'Shows your Systolic (Top) and Diastolic (Bottom) trends over time.\n\n'
+                '• Shaded areas indicate readings within your target safe zone.',
+      allData: readings,
+      builder: (range, data) {
+        if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
+
+        double minX = data.first.timestamp.millisecondsSinceEpoch.toDouble();
+        double maxX = data.last.timestamp.millisecondsSinceEpoch.toDouble();
+        if (minX == maxX) { minX -= 3600000; maxX += 3600000; } 
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: LineChart(
+                LineChartData(
+                  minX: minX, maxX: maxX, minY: 40, maxY: 180,
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10))),
+                    ),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(showTitles: true, interval: (maxX - minX) / 4, getTitlesWidget: (v, _) {
+                        final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
+                        final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
+                        return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 10)));
+                      }),
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _emptyTitle)),
                   ),
-                  // Diastolic Line
-                  LineChartBarData(
-                    spots: readings.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.diastolic)).toList(),
-                    color: AppTheme.primaryBlue, barWidth: 2, isCurved: true,
-                    dotData: const FlDotData(show: false),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  rangeAnnotations: RangeAnnotations(
+                    horizontalRangeAnnotations: [
+                      HorizontalRangeAnnotation(y1: sysThreshold.minValue, y2: sysThreshold.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
+                      HorizontalRangeAnnotation(y1: diaThreshold.minValue, y2: diaThreshold.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
+                    ]
                   ),
-                ],
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: data.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.systolic)).toList(),
+                      color: AppTheme.primaryRed, barWidth: 2, isCurved: true,
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                    ),
+                    LineChartBarData(
+                      spots: data.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.diastolic)).toList(),
+                      color: AppTheme.primaryBlue, barWidth: 2, isCurved: true,
+                      dotData: const FlDotData(show: false),
+                      belowBarData: BarAreaData(show: false),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                           // Identify line by color or bar index, but simply showing value is enough with context
+                           final isSys = spot.barIndex == 0;
+                           return LineTooltipItem(
+                             '${isSys ? "Sys" : "Dia"}: ${spot.y.toInt()}',
+                             TextStyle(color: isSys ? AppTheme.primaryRedAccent : Colors.blueAccent, fontWeight: FontWeight.bold),
+                           );
+                        }).toList();
+                      }
+                    )
+                  )
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-             _LegendItem('Systolic', AppTheme.primaryRed),
-             const SizedBox(width: 16),
-             _LegendItem('Diastolic', AppTheme.primaryBlue),
-          ]),
-        ],
-      ),
+            const SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+               _LegendItem('Systolic', AppTheme.primaryRed),
+               const SizedBox(width: 16),
+               _LegendItem('Diastolic', AppTheme.primaryBlue),
+               const SizedBox(width: 16),
+               _LegendItem('Safe Zone', Colors.grey.withOpacity(0.3), isBox: true),
+            ]),
+          ],
+        );
+      },
     );
   }
+  static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
 }
 
-class _FloatingBarChart extends StatelessWidget {
+class _FloatingBarSection extends StatelessWidget {
   final List<_BpReading> readings;
 
-  const _FloatingBarChart({required this.readings});
+  const _FloatingBarSection({required this.readings});
 
   @override
   Widget build(BuildContext context) {
-    final recent = readings.length > 10 ? readings.sublist(readings.length - 10) : readings;
-
-    return _ChartContainer(
-      title: 'Pressure Range (Sys-Dia)',
+    return _ChartSection(
+      title: 'Daily Range (Pulse Pressure)',
       icon: Icons.bar_chart,
-      child: SizedBox(
-        height: 200,
-        child: BarChart(
-          BarChartData(
-            alignment: BarChartAlignment.spaceAround,
-            maxY: 180, minY: 40,
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
-              bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
-                if (v.toInt() >= recent.length) return const SizedBox();
-                return Padding(padding: const EdgeInsets.only(top: 8), child: Text(DateFormat('d/M').format(recent[v.toInt()].timestamp), style: const TextStyle(fontSize: 10)));
-              })),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      infoText: 'Visualizes the gap between your systolic and diastolic numbers.\n\n'
+                'A wider gap (Pulse Pressure) can indicate stiffness in arteries.',
+      allData: readings,
+      builder: (range, data) {
+        if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
+
+        // For bar chart, too many points look bad. Limit or aggregate if needed.
+        // Here we simply show the data points available in range.
+        // If 1D, show actual points. If 30D, we might want to sample, but filtering is done by wrapper.
+        
+        return Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: BarChart(
+                BarChartData(
+                  alignment: BarChartAlignment.spaceAround,
+                  maxY: 200, minY: 40,
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      axisNameWidget: Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
+                    bottomTitles: AxisTitles(
+                      axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
+                      axisNameSize: 20,
+                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
+                        if (v.toInt() >= data.length) return const SizedBox();
+                        // Skip some labels to avoid crowding
+                        if (data.length > 10 && v.toInt() % 2 != 0) return const SizedBox();
+                        return Padding(padding: const EdgeInsets.only(top: 8), child: Text(DateFormat('d/M').format(data[v.toInt()].timestamp), style: const TextStyle(fontSize: 10)));
+                      })),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  borderData: FlBorderData(show: false),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                         final r = data[group.x.toInt()];
+                         return BarTooltipItem(
+                           '${r.systolic.toInt()}/${r.diastolic.toInt()}',
+                           const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                           children: [TextSpan(text: '\nPulse: ${r.pulsePressure.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.white70))],
+                         );
+                      }
+                    )
+                  ),
+                  barGroups: data.asMap().entries.map((entry) {
+                    final r = entry.value;
+                    return BarChartGroupData(
+                      x: entry.key,
+                      barRods: [
+                        BarChartRodData(
+                          toY: r.systolic,
+                          fromY: r.diastolic,
+                          color: AppTheme.primaryBlue.withOpacity(0.6),
+                          width: 12,
+                          borderRadius: BorderRadius.circular(4),
+                        )
+                      ],
+                    );
+                  }).toList(),
+                ),
+              ),
             ),
-            gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
-            borderData: FlBorderData(show: false),
-            barGroups: recent.asMap().entries.map((entry) {
-              final r = entry.value;
-              return BarChartGroupData(
-                x: entry.key,
-                barRods: [
-                  BarChartRodData(
-                    toY: r.systolic,
-                    fromY: r.diastolic,
-                    color: AppTheme.primaryBlue.withOpacity(0.6),
-                    width: 12,
-                    borderRadius: BorderRadius.circular(4),
-                  )
-                ],
-              );
-            }).toList(),
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
 }
 
-class _ScatterBPChart extends StatelessWidget {
+class _ScatterSection extends StatelessWidget {
   final List<_BpReading> readings;
   final HealthThreshold sysThreshold;
   final HealthThreshold diaThreshold;
 
-  const _ScatterBPChart({required this.readings, required this.sysThreshold, required this.diaThreshold});
+  const _ScatterSection({required this.readings, required this.sysThreshold, required this.diaThreshold});
 
   @override
   Widget build(BuildContext context) {
-    return _ChartContainer(
+    return _ChartSection(
       title: 'Systolic vs. Diastolic',
       icon: Icons.bubble_chart_outlined,
-      child: Column(
-        children: [
-          SizedBox(
-            height: 250,
-            child: ScatterChart(
-              ScatterChartData(
-                scatterSpots: readings.map((r) {
-                  bool isHigh = r.systolic > sysThreshold.maxValue || r.diastolic > diaThreshold.maxValue;
-                  return ScatterSpot(
-                    r.diastolic, 
-                    r.systolic,
-                    dotPainter: FlDotCirclePainter(
-                      color: isHigh ? AppTheme.errorColor : AppTheme.primaryGreen,
-                      radius: 6,
-                      strokeWidth: 0,
-                    ),
-                  );
-                }).toList(),
-                minX: 40, maxX: 130,
-                minY: 80, maxY: 200,
-                gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
-                titlesData: FlTitlesData(
-                  bottomTitles: AxisTitles(axisNameWidget: const Text('Diastolic', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20)),
-                  leftTitles: AxisTitles(axisNameWidget: const Text('Systolic', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      infoText: 'Correlates your top number vs bottom number.\n\n'
+                '• Green dots: Within target range.\n'
+                '• Red dots: Exceeding target range.',
+      allData: readings,
+      builder: (range, data) {
+        return Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: ScatterChart(
+                ScatterChartData(
+                  scatterSpots: data.map((r) {
+                    bool isHigh = r.systolic > sysThreshold.maxValue || r.diastolic > diaThreshold.maxValue;
+                    return ScatterSpot(
+                      r.diastolic, 
+                      r.systolic,
+                      dotPainter: FlDotCirclePainter(
+                        color: isHigh ? AppTheme.errorColor : AppTheme.primaryGreen,
+                        radius: 6,
+                        strokeWidth: 0,
+                      ),
+                    );
+                  }).toList(),
+                  minX: 40, maxX: 130,
+                  minY: 80, maxY: 200,
+                  gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  titlesData: FlTitlesData(
+                    bottomTitles: AxisTitles(axisNameWidget: const Text('Diastolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20)),
+                    leftTitles: AxisTitles(axisNameWidget: const Text('Systolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  ),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  scatterTouchData: ScatterTouchData(
+                    touchTooltipData: ScatterTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipItems: (spot) {
+                        return ScatterTooltipItem(
+                          'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',
+                          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        );
+                      }
+                    )
+                  )
                 ),
-                borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-             _LegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
-             const SizedBox(width: 16),
-             _LegendItem('High', AppTheme.errorColor, isCircle: true),
-          ]),
-        ],
-      ),
+            const SizedBox(height: 8),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+               _LegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
+               const SizedBox(width: 16),
+               _LegendItem('High', AppTheme.errorColor, isCircle: true),
+            ]),
+          ],
+        );
+      },
     );
   }
 }
 
-class _HistorySection extends StatelessWidget {
+class _HistorySection extends StatefulWidget {
   final List<_BpReading> readings;
   const _HistorySection({required this.readings});
 
   @override
-  Widget build(BuildContext context) {
-    final reversed = readings.reversed.toList();
-    
-    return _ChartContainer(
-      title: 'History',
-      icon: Icons.history,
-      child: Column(
-        children: reversed.take(10).map((r) {
-           final isHigh = r.systolic > 130 || r.diastolic > 85;
-           return Container(
-             margin: const EdgeInsets.only(bottom: 12),
-             padding: const EdgeInsets.symmetric(vertical: 8),
-             decoration: BoxDecoration(
-               border: Border(bottom: BorderSide(color: AppTheme.getBorderColor(context).withOpacity(0.5)))
-             ),
-             child: Row(
-               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-               children: [
-                 Text(DateFormat('MMM d, h:mm a').format(r.timestamp), style: const TextStyle(fontSize: 12)),
-                 Row(
-                   children: [
-                     Text('${r.systolic.toInt()}/${r.diastolic.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                     const SizedBox(width: 4),
-                     Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                     if (isHigh) ...[
-                       const SizedBox(width: 8),
-                       const Icon(Icons.warning_amber, color: AppTheme.warningColor, size: 16)
-                     ]
-                   ],
-                 )
-               ],
-             ),
-           );
-        }).toList(),
-      ),
-    );
-  }
+  State<_HistorySection> createState() => _HistorySectionState();
 }
 
-// --- Shared UI Components ---
-
-class _ChartContainer extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  const _ChartContainer({required this.title, required this.icon, required this.child});
+class _HistorySectionState extends State<_HistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final reversed = widget.readings.reversed.toList();
+
+    final totalItems = reversed.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+    
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = reversed.sublist(start, end);
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -432,21 +677,75 @@ class _ChartContainer extends StatelessWidget {
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                ],
               ),
-              const SizedBox(width: 12),
-              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              // Pagination Controls
+              Row(children: [
+                IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
+                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
+              ]),
             ],
           ),
-          const SizedBox(height: 20),
-          child,
+          const SizedBox(height: 16),
+          if (currentItems.isEmpty) const Text('No History available'),
+          ...currentItems.map((r) {
+             final isHigh = r.systolic > 130 || r.diastolic > 85; // Simplified visual logic
+             return Container(
+               margin: const EdgeInsets.only(bottom: 12),
+               padding: const EdgeInsets.all(16),
+               decoration: BoxDecoration(
+                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+                 borderRadius: BorderRadius.circular(16),
+                 border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+               ),
+               child: Row(
+                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                 children: [
+                   Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       Text(DateFormat('MMM d, yyyy').format(r.timestamp), style: const TextStyle(fontWeight: FontWeight.w600)),
+                       Text(DateFormat('h:mm a').format(r.timestamp), style: Theme.of(context).textTheme.bodySmall),
+                     ],
+                   ),
+                   Row(
+                     children: [
+                       Text('${r.systolic.toInt()}/${r.diastolic.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                       const SizedBox(width: 4),
+                       Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
+                       const SizedBox(width: 8),
+                       if (isHigh)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: AppTheme.errorColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                            child: Text('HIGH', style: TextStyle(color: AppTheme.errorColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                          )
+                        else
+                           Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                            child: Text('NORMAL', style: TextStyle(color: AppTheme.primaryGreen, fontSize: 9, fontWeight: FontWeight.bold)),
+                          )
+                     ],
+                   )
+                 ],
+               ),
+             );
+          }),
         ],
       ),
     );
@@ -457,7 +756,8 @@ class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
   final bool isCircle;
-  const _LegendItem(this.label, this.color, {this.isCircle = false});
+  final bool isBox;
+  const _LegendItem(this.label, this.color, {this.isCircle = false, this.isBox = false});
 
   @override
   Widget build(BuildContext context) {
@@ -465,7 +765,7 @@ class _LegendItem extends StatelessWidget {
       children: [
         Container(
           width: 10, height: 10,
-          decoration: BoxDecoration(color: color, shape: isCircle ? BoxShape.circle : BoxShape.rectangle, borderRadius: isCircle ? null : BorderRadius.circular(2)),
+          decoration: BoxDecoration(color: color, shape: isCircle ? BoxShape.circle : BoxShape.rectangle, borderRadius: (isCircle || isBox) ? null : BorderRadius.circular(2)),
         ),
         const SizedBox(width: 4),
         Text(label, style: const TextStyle(fontSize: 11)),
