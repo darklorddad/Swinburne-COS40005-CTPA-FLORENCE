@@ -762,6 +762,15 @@ class _ModalDaySection extends StatelessWidget {
           chartLines.add(LineChartBarData(spots: spots, isCurved: true, color: AppTheme.textSecondaryColor.withOpacity(0.3), barWidth: 1.5, dotData: const FlDotData(show: false)));
         });
 
+        // FIX: Add invisible dummy line if empty to force rendering of grid/lines
+        if (chartLines.isEmpty) {
+          chartLines.add(LineChartBarData(
+            spots: [const FlSpot(0, 100)], // Arbitrary point within Y range
+            color: Colors.transparent,
+            dotData: const FlDotData(show: false),
+          ));
+        }
+
         return Column(
           children: [
             SizedBox(
@@ -889,18 +898,18 @@ class _HistorySectionState extends State<_HistorySection> {
             String statusText;
             Color statusColor;
             
-            // Find threshold or use default
             final t = widget.thresholds.firstWhere(
               (t) => t.dataType == MonitorDataType.GLUCOSE, 
               orElse: () => const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180)
             );
 
+            // Glucose-Specific Status Logic
             if (item.value < t.minValue) {
               statusText = 'LOW';
-              statusColor = AppTheme.errorColor;
+              statusColor = AppTheme.errorColor; // Hypo is critical
             } else if (item.value > t.maxValue) {
               statusText = 'HIGH';
-              statusColor = AppTheme.warningColor;
+              statusColor = AppTheme.warningColor; // Hyper is warning
             } else {
               statusText = 'NORMAL';
               statusColor = AppTheme.primaryGreen;
@@ -908,35 +917,75 @@ class _HistorySectionState extends State<_HistorySection> {
             
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                // BP Screen Style Color (White/Midnight)
                 color: isDark ? AppTheme.midnightSurface : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5)),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03), 
+                    blurRadius: 8, 
+                    offset: const Offset(0, 2)
+                  )
+                ],
+                border: Border.all(
+                  color: statusColor.withOpacity(0.3), 
+                  width: 1
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Glucose Layout (Left: Date/Time)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  // Left: Value and Unit
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(DateFormat('MMM d, yyyy').format(item.measuredAt), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                      const SizedBox(height: 2),
-                      Text(DateFormat('h:mm a').format(item.measuredAt), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                      Text(
+                        item.value.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800, 
+                          fontSize: 24,
+                          color: AppTheme.textPrimaryColor
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'mg/dL', 
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 12
+                        )
+                      ),
                     ],
                   ),
-                  // Glucose Layout (Right: Value/Status)
+                  
+                  // Right: Date and Status Badge
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('${item.value.toInt()} mg/dL', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      const SizedBox(height: 2),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                        child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1), 
+                          borderRadius: BorderRadius.circular(8)
+                        ),
+                        child: Text(
+                          statusText, 
+                          style: TextStyle(
+                            color: statusColor, 
+                            fontSize: 10, 
+                            fontWeight: FontWeight.bold
+                          )
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('MMM d, h:mm a').format(item.measuredAt), 
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: AppTheme.textSecondaryColor
+                        )
                       ),
                     ],
                   ),
