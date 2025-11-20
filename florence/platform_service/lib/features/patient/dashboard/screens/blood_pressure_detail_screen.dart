@@ -489,7 +489,7 @@ class _DualTrendSection extends StatelessWidget {
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _emptyTitle)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   // Safe Zones
@@ -553,8 +553,8 @@ class _DualTrendSection extends StatelessWidget {
               children: [
                _buildLegendItem('Systolic', AppTheme.primaryRed, isCircle: true),
                _buildLegendItem('Diastolic', AppTheme.primaryBlue, isCircle: true),
-               _buildLegendItem('Sys Limit', AppTheme.primaryRed.withOpacity(0.5), isDashed: true),
-               _buildLegendItem('Dia Limit', AppTheme.primaryBlue.withOpacity(0.5), isDashed: true),
+               _buildLegendItem('Sys Limit', AppTheme.primaryRed.withOpacity(0.5), isBox: true),
+               _buildLegendItem('Dia Limit', AppTheme.primaryBlue.withOpacity(0.5), isBox: true),
             ]),
           ],
         );
@@ -606,8 +606,7 @@ class _FloatingBarSection extends StatelessWidget {
                         return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
                       })),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    // Use empty right titles to center axis
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35, getTitlesWidget: _emptyTitle)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
@@ -695,7 +694,7 @@ class _ScatterSection extends StatelessWidget {
                     })),
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35, getTitlesWidget: _emptyTitle)), // Center chart
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   scatterTouchData: ScatterTouchData(
