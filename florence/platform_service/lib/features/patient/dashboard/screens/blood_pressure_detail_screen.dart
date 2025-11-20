@@ -756,7 +756,17 @@ class _HistorySectionState extends State<_HistorySection> {
                  // BP Screen Style Color (White/Midnight)
                  color: isDark ? AppTheme.midnightSurface : Colors.white,
                  borderRadius: BorderRadius.circular(12),
-                 border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5)),
+                 boxShadow: [
+                   BoxShadow(
+                     color: Colors.black.withOpacity(0.03),
+                     blurRadius: 8,
+                     offset: const Offset(0, 2)
+                   )
+                 ],
+                 border: Border.all(
+                   color: statusColor.withOpacity(0.3),
+                   width: 1,
+                 ),
                ),
                child: Row(
                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
