@@ -471,13 +471,16 @@ class _DualTrendSection extends StatelessWidget {
                       axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
                       axisNameSize: 20,
                       sideTitles: SideTitles(
-                        showTitles: true, 
-                        interval: (maxX - minX) / 4, 
+                        showTitles: true,
+                        interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
                         getTitlesWidget: (v, _) {
-                          if (v == minX || v == maxX) return const SizedBox(); // Hide overlap
+                          if (v == minX || v == maxX) return const SizedBox();
                           final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
-                          final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
-                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 10)));
+                          // 1D shows Time (HH:mm), others show Date (d/M)
+                          final text = range == '1D' 
+                              ? DateFormat('HH:mm').format(date) 
+                              : DateFormat('d/M').format(date);
+                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
                         },
                       ),
                     ),
@@ -590,8 +593,15 @@ class _FloatingBarSection extends StatelessWidget {
                       axisNameSize: 20,
                       sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
                         if (v.toInt() >= data.length) return const SizedBox();
+                        // Skip every other label if too many points
                         if (data.length > 10 && v.toInt() % 2 != 0) return const SizedBox();
-                        return Padding(padding: const EdgeInsets.only(top: 8), child: Text(DateFormat('d/M').format(data[v.toInt()].timestamp), style: const TextStyle(fontSize: 10)));
+                        
+                        final date = data[v.toInt()].timestamp;
+                        final text = range == '1D' 
+                            ? DateFormat('HH:mm').format(date) 
+                            : DateFormat('d/M').format(date);
+                            
+                        return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
                       })),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     // Use empty right titles to center axis
