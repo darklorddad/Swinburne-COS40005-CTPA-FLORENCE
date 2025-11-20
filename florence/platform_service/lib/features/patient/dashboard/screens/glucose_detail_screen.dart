@@ -535,6 +535,11 @@ class _GlucoseTrendsSection extends StatelessWidget {
           maxY = math.max(maxY, dataMax + 10);
         }
 
+        // Snap to grid (50) to ensure equal spacing
+        minY = (minY / 50).floor() * 50.0;
+        maxY = (maxY / 50).ceil() * 50.0;
+        if (maxY == minY) maxY += 50;
+
         // Centering Logic
         const double yAxisWidth = 35.0;
 
@@ -756,7 +761,8 @@ class _ModalDaySection extends StatelessWidget {
       icon: Icons.auto_graph_outlined,
       infoText: 'Overlays multiple days onto a single 24h axis to spot recurring patterns.\n\n'
                 '• Y-Axis: Glucose (mg/dL)\n'
-                '• X-Axis: Hour of day (0-24)',
+                '• X-Axis: Hour of day (0-24)\n'
+                '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
         final Map<int, List<FlSpot>> lines = {};
