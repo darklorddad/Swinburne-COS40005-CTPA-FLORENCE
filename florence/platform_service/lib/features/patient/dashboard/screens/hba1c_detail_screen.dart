@@ -74,7 +74,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   
-                  _HistorySection(readings: readings),
+                  _HistorySection(readings: readings, targetMax: targetMax),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -131,9 +131,13 @@ class _GaugeSection extends StatelessWidget {
     const double sectionRadius = 20.0;
     const double centerRadius = chartRadius - sectionRadius; 
 
-    return _ChartContainer(
+    return _HbA1cCard(
       title: 'Current Status',
       icon: Icons.speed,
+      infoText: 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
+                '• Normal: Below 5.7%\n'
+                '• Pre-diabetes: 5.7% - 6.4%\n'
+                '• Diabetes: 6.5% or higher',
       child: Column(
         children: [
           // This container clips the bottom half of the full circle pie chart
@@ -284,9 +288,12 @@ class _TrendsSection extends StatelessWidget {
        maxX = now.millisecondsSinceEpoch.toDouble();
     }
 
-    return _ChartContainer(
+    return _HbA1cCard(
       title: 'HbA1c Trends',
       icon: Icons.show_chart,
+      infoText: 'Visualizes your HbA1c levels over time.\n\n'
+                '• Green Band: Normal Range\n'
+                '• Dotted Line: Your personal target',
       child: Column(
         children: [
           SizedBox(
@@ -412,9 +419,12 @@ class _GoalComparisonSection extends StatelessWidget {
     final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
     final maxY = math.max(current, targetMax) * 1.2;
 
-    return _ChartContainer(
+    return _HbA1cCard(
       title: 'Actual vs. Goal',
       icon: Icons.flag_outlined,
+      infoText: 'Compares your latest reading against your set target.\n\n'
+                'Left Bar: Your latest HbA1c\n'
+                'Right Bar: Your Goal',
       child: Column(
         children: [
           if (latestReading == null)
@@ -553,8 +563,9 @@ class _GoalComparisonSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
+  final double targetMax;
 
-  const _HistorySection({required this.readings});
+  const _HistorySection({required this.readings, required this.targetMax});
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();
@@ -567,12 +578,12 @@ class _HistorySectionState extends State<_HistorySection> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final reversed = widget.readings.reversed.toList();
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
 
+    final reversed = widget.readings.reversed.toList();
     final totalItems = reversed.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
-    // Reset page if data changed and page is out of bounds
     if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
     if (totalPages == 0) _currentPage = 0;
     
@@ -585,8 +596,14 @@ class _HistorySectionState extends State<_HistorySection> {
       decoration: BoxDecoration(
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -598,11 +615,19 @@ class _HistorySectionState extends State<_HistorySection> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
                   ),
                   const SizedBox(width: 12),
-                  Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'History',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
                 ],
               ),
               if (totalPages > 1)
@@ -616,7 +641,10 @@ class _HistorySectionState extends State<_HistorySection> {
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      child: Text(
+                        '${_currentPage + 1}/$totalPages',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     IconButton(
                       onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
@@ -629,34 +657,103 @@ class _HistorySectionState extends State<_HistorySection> {
             ],
           ),
           const SizedBox(height: 20),
+
           if (currentItems.isEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16), 
-              child: Text('No records found', style: TextStyle(color: AppTheme.textSecondaryColor))
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Text(
+                'No records found',
+                style: TextStyle(color: AppTheme.textSecondaryColor),
+              ),
             ),
           
           ...currentItems.map((r) {
-             Color color = r.value < 5.7 ? AppTheme.primaryGreen : (r.value < 6.5 ? AppTheme.warningColor : AppTheme.errorColor);
+             // Determine status color
+             String statusText;
+             Color statusColor;
+             if (r.value < 5.7) {
+               statusText = 'NORMAL';
+               statusColor = AppTheme.primaryGreen;
+             } else if (r.value < 6.5) {
+               statusText = 'ELEVATED';
+               statusColor = AppTheme.warningColor;
+             } else {
+               statusText = 'HIGH';
+               statusColor = AppTheme.errorColor;
+             }
+
              return Container(
                margin: const EdgeInsets.only(bottom: 12),
                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                decoration: BoxDecoration(
-                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+                 color: isDark ? AppTheme.midnightSurface : Colors.white,
                  borderRadius: BorderRadius.circular(12),
-                 border: Border.all(color: color.withOpacity(0.3)),
+                 boxShadow: [
+                   BoxShadow(
+                     color: Colors.black.withOpacity(0.03),
+                     blurRadius: 8,
+                     offset: const Offset(0, 2),
+                   )
+                 ],
+                 border: Border.all(
+                   color: statusColor.withOpacity(0.3),
+                   width: 1,
+                 ),
                ),
                child: Row(
                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                  children: [
-                   Text(DateFormat('MMM d, yyyy').format(r.measuredAt), style: const TextStyle(fontWeight: FontWeight.w600)),
+                   // Left: Value
                    Row(
+                     crossAxisAlignment: CrossAxisAlignment.baseline,
+                     textBaseline: TextBaseline.alphabetic,
                      children: [
-                        Text('${r.value.toStringAsFixed(1)}%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryColor)),
-                        const SizedBox(width: 8),
-                        Container(
-                          width: 12, height: 12,
-                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                        )
+                       Text(
+                         r.value.toStringAsFixed(1),
+                         style: TextStyle(
+                           fontWeight: FontWeight.w800,
+                           fontSize: 20,
+                           color: AppTheme.textPrimaryColor,
+                         ),
+                       ),
+                       const SizedBox(width: 4),
+                       Text(
+                         '%',
+                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                               color: AppTheme.textSecondaryColor,
+                               fontSize: 12,
+                             ),
+                       ),
+                     ],
+                   ),
+                   
+                   // Right: Date and Status Badge
+                   Column(
+                     crossAxisAlignment: CrossAxisAlignment.end,
+                     children: [
+                       Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: statusColor.withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(8),
+                         ),
+                         child: Text(
+                           statusText,
+                           style: TextStyle(
+                             color: statusColor,
+                             fontSize: 10,
+                             fontWeight: FontWeight.bold,
+                           ),
+                         ),
+                       ),
+                       const SizedBox(height: 6),
+                       Text(
+                         DateFormat('MMM d, yyyy').format(r.measuredAt),
+                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                               fontSize: 11,
+                               color: AppTheme.textSecondaryColor,
+                             ),
+                       ),
                      ],
                    ),
                  ],
@@ -669,35 +766,101 @@ class _HistorySectionState extends State<_HistorySection> {
   }
 }
 
-// Helpers
-class _ChartContainer extends StatelessWidget {
+// ============================================================================
+// HELPERS
+// ============================================================================
+
+class _HbA1cCard extends StatelessWidget {
   final String title;
   final IconData icon;
+  final String infoText;
   final Widget child;
-  const _ChartContainer({required this.title, required this.icon, required this.child});
+
+  const _HbA1cCard({
+    required this.title,
+    required this.icon,
+    required this.infoText,
+    required this.child,
+  });
+
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(icon, color: AppTheme.primaryBlue),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title, 
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Text(infoText, style: Theme.of(context).textTheme.bodyMedium),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it', style: TextStyle(fontWeight: FontWeight.bold)),
+          )
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row matching GlucoseDetailScreen
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: AppTheme.primaryBlue, size: 20),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
+                onPressed: () => _showInfoDialog(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
           const SizedBox(height: 24),
