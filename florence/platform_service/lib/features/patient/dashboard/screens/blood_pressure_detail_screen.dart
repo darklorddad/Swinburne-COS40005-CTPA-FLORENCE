@@ -425,15 +425,26 @@ class _DualTrendSection extends StatelessWidget {
       allData: readings,
       builder: (range, data) {
         double minX, maxX;
-        if (data.isNotEmpty) {
+        if (range == '1D') {
+          // For Daily view, always show full 24h of the specific day (or last 24h)
+          final now = DateTime.now();
+          // Align to start of day if data exists, otherwise last 24h
+          if (data.isNotEmpty) {
+             final day = data.last.timestamp;
+             minX = DateTime(day.year, day.month, day.day).millisecondsSinceEpoch.toDouble();
+             maxX = DateTime(day.year, day.month, day.day, 23, 59, 59).millisecondsSinceEpoch.toDouble();
+          } else {
+             minX = now.subtract(const Duration(hours: 24)).millisecondsSinceEpoch.toDouble();
+             maxX = now.millisecondsSinceEpoch.toDouble();
+          }
+        } else if (data.isNotEmpty) {
            minX = data.first.timestamp.millisecondsSinceEpoch.toDouble();
            maxX = data.last.timestamp.millisecondsSinceEpoch.toDouble();
            if (minX == maxX) { minX -= 3600000; maxX += 3600000; } 
         } else {
            final now = DateTime.now();
-           Duration d = const Duration(hours: 24);
-           if (range == '7D') d = const Duration(days: 7);
-           else if (range == '14D') d = const Duration(days: 14);
+           Duration d = const Duration(days: 7);
+           if (range == '14D') d = const Duration(days: 14);
            else if (range == '30D') d = const Duration(days: 30);
            minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
            maxX = now.millisecondsSinceEpoch.toDouble();
