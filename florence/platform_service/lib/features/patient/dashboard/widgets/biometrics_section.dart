@@ -178,7 +178,7 @@ class BiometricsSection extends StatelessWidget {
       status: _getMealStatus(latestMeal),
       timestamp: latestMeal?.logDate,
       icon: Icons.restaurant_menu,
-      color: latestMeal != null ? AppTheme.mealColor : AppTheme.textSecondaryColor,
+      color: _getMealColor(latestMeal),
       onTap: () => AppRoutes.push(context, AppRoutes.mealImpact),
     ));
 
@@ -217,6 +217,22 @@ class BiometricsSection extends StatelessWidget {
 
     // 3. Fallback if it exists but has no details
     return 'Logged';
+  }
+
+  Color _getMealColor(DailyPatientLog? meal) {
+    if (meal == null) return AppTheme.textSecondaryColor; // Grey (Empty)
+
+    // If we have BOTH readings, check for high spikes
+    if (meal.glucoseBeforeMeal != null && meal.glucoseAfterMeal != null) {
+      final spike = meal.glucoseAfterMeal! - meal.glucoseBeforeMeal!;
+      
+      if (spike > 50) return AppTheme.errorColor;    // Red: High Spike (>50)
+      if (spike > 30) return AppTheme.warningColor;  // Orange: Elevated Spike (30-50)
+    }
+
+    // Default: Green
+    // Used for stable spikes (<=30) OR if just the meal is logged (No glucose data yet)
+    return AppTheme.primaryGreen; 
   }
 
   // --- Helper Methods (Updated to handle nulls) ---
