@@ -49,11 +49,19 @@ class BloodPressureDetailScreen extends ConsumerWidget {
           final sysThreshold = userSys ?? const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_SYSTOLIC, minValue: 90, maxValue: 120);
           final diaThreshold = userDia ?? const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_DIASTOLIC, minValue: 60, maxValue: 80);
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              children: [
-                // 1. Statistics
+          return RefreshIndicator(
+            onRefresh: () async {
+              await Future.wait([
+                ref.refresh(monitorDataProvider.future),
+                ref.refresh(patientThresholdsProvider.future),
+              ]);
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: [
+                  // 1. Statistics
                 _StatisticsSection(
                   readings: readings, 
                   sysThreshold: sysThreshold, 
@@ -415,9 +423,10 @@ class _DualTrendSection extends StatelessWidget {
                 LineChartData(
                   minX: minX, maxX: maxX, minY: 40, maxY: 180,
                   gridData: FlGridData(
-                    show: true, 
-                    drawVerticalLine: false, 
+                    show: true,
+                    drawVerticalLine: true,
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
@@ -731,25 +740,55 @@ class _HistorySectionState extends State<_HistorySection> {
                child: Row(
                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                  children: [
-                   // Glucose Layout (Left: Date/Time)
-                   Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
+                   // Left: Value
+                   Row(
+                     crossAxisAlignment: CrossAxisAlignment.baseline,
+                     textBaseline: TextBaseline.alphabetic,
                      children: [
-                       Text(DateFormat('MMM d, yyyy').format(r.timestamp), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                       const SizedBox(height: 2),
-                       Text(DateFormat('h:mm a').format(r.timestamp), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                       Text(
+                         '${r.systolic.toInt()}/${r.diastolic.toInt()}',
+                         style: TextStyle(
+                           fontWeight: FontWeight.w800,
+                           fontSize: 24,
+                           color: AppTheme.textPrimaryColor,
+                         ),
+                       ),
+                       const SizedBox(width: 4),
+                       Text(
+                         'mmHg',
+                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                               color: AppTheme.textSecondaryColor,
+                               fontSize: 12,
+                             ),
+                       ),
                      ],
                    ),
-                   // Glucose Layout (Right: Value/Status)
+                   // Right: Date and Status Badge
                    Column(
                      crossAxisAlignment: CrossAxisAlignment.end,
                      children: [
-                       Text('${r.systolic.toInt()}/${r.diastolic.toInt()} mmHg', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                       const SizedBox(height: 2),
                        Container(
-                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                         decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                         child: Text(status, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: statusColor.withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(8),
+                         ),
+                         child: Text(
+                           status,
+                           style: TextStyle(
+                             color: statusColor,
+                             fontSize: 10,
+                             fontWeight: FontWeight.bold,
+                           ),
+                         ),
+                       ),
+                       const SizedBox(height: 6),
+                       Text(
+                         DateFormat('MMM d, h:mm a').format(r.timestamp),
+                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                               fontSize: 11,
+                               color: AppTheme.textSecondaryColor,
+                             ),
                        ),
                      ],
                    ),
@@ -767,6 +806,8 @@ class _HistorySectionState extends State<_HistorySection> {
                 IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
               ],
             ),
+          // Bottom spacing
+          const SizedBox(height: 24),
         ],
       ),
     );
