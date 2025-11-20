@@ -425,8 +425,10 @@ class _DualTrendSection extends StatelessWidget {
     return _ChartSection(
       title: 'Pressure Trends',
       icon: Icons.show_chart,
-      infoText: 'Shows your Systolic (Top) and Diastolic (Bottom) trends over time.\n\n'
-                '• Shaded areas indicate readings within your target safe zone.',
+      infoText: 'Visualizes your blood pressure trends over time.\n\n'
+                '• Y-Axis: Pressure (mmHg)\n'
+                '• X-Axis: Time\n'
+                '• Shaded Band: Readings within your target safe zone.',
       allData: readings,
       builder: (range, data) {
         double minX, maxX;
@@ -579,7 +581,9 @@ class _FloatingBarSection extends StatelessWidget {
       title: 'Daily Range (Pulse Pressure)',
       icon: Icons.bar_chart,
       infoText: 'Visualizes the gap between your systolic and diastolic numbers.\n\n'
-                'A wider gap (Pulse Pressure) can indicate stiffness in arteries.',
+                '• Y-Axis: Pressure (mmHg)\n'
+                '• X-Axis: Time\n'
+                '• Bar Height: Difference between Systolic and Diastolic.',
       allData: readings,
       builder: (range, data) {
         // For bar chart, too many points look bad. Limit or aggregate if needed.
@@ -669,9 +673,10 @@ class _ScatterSection extends StatelessWidget {
     return _ChartSection(
       title: 'Systolic vs. Diastolic',
       icon: Icons.bubble_chart_outlined,
-      infoText: 'Correlates your top number vs bottom number.\n\n'
-                '• Green dots: Within target range.\n'
-                '• Red dots: Exceeding target range.',
+      infoText: 'Correlates your Systolic vs Diastolic pressure.\n\n'
+                '• Y-Axis: Systolic (mmHg)\n'
+                '• X-Axis: Diastolic (mmHg)\n'
+                '• Color: Green (In Range), Red (Out of Range).',
       allData: readings,
       builder: (range, data) {
         return Column(
@@ -765,12 +770,72 @@ class _HistorySectionState extends State<_HistorySection> {
     final end = math.min(start + _itemsPerPage, totalItems);
     final currentItems = reversed.sublist(start, end);
 
-    return _ChartContainer(
-      title: 'History',
-      icon: Icons.history,
+    // Manually build container to allow Paginator in header (same layout as GlucoseDetailScreen)
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
       child: Column(
         children: [
-          if (currentItems.isEmpty) const Text('No History available'),
+          // Header Row with Paginator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)
+                  ),
+                  const SizedBox(width: 12),
+                  Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                ],
+              ),
+              // Pagination Controls (Top Right)
+              if (totalPages > 1)
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                      icon: const Icon(Icons.chevron_left),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    IconButton(
+                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                      icon: const Icon(Icons.chevron_right),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          
+          if (currentItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            ),
+            
           ...currentItems.map((r) {
              // Dynamic Status Logic using Thresholds
              String status;
@@ -798,7 +863,6 @@ class _HistorySectionState extends State<_HistorySection> {
                margin: const EdgeInsets.only(bottom: 12),
                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                decoration: BoxDecoration(
-                 // BP Screen Style Color (White/Midnight)
                  color: isDark ? AppTheme.midnightSurface : Colors.white,
                  borderRadius: BorderRadius.circular(12),
                  boxShadow: [
@@ -825,7 +889,7 @@ class _HistorySectionState extends State<_HistorySection> {
                          '${r.systolic.toInt()}/${r.diastolic.toInt()}',
                          style: TextStyle(
                            fontWeight: FontWeight.w800,
-                           fontSize: 24,
+                           fontSize: 20, // Reduced font size
                            color: AppTheme.textPrimaryColor,
                          ),
                        ),
@@ -872,18 +936,6 @@ class _HistorySectionState extends State<_HistorySection> {
                ),
              );
           }),
-          // Pagination Controls
-          if (totalPages > 1)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
-                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
-              ],
-            ),
-          // Bottom spacing
-          const SizedBox(height: 24),
         ],
       ),
     );
