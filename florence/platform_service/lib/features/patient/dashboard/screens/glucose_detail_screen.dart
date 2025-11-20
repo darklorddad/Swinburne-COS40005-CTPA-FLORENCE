@@ -794,10 +794,25 @@ class _ModalDaySection extends StatelessWidget {
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, interval: 50, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 9))),
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        reservedSize: yAxisWidth, 
+                        interval: 50, 
+                        getTitlesWidget: (v, _) {
+                          if (v == 40 || v == 250) return const SizedBox(); // Hide first & last
+                          return Text(v.toInt().toString(), style: const TextStyle(fontSize: 9));
+                        }
+                      ),
                     ),
                     bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) => Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9))),
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        interval: 6, 
+                        getTitlesWidget: (v, _) {
+                          if (v == 0 || v == 24) return const SizedBox(); // Hide first & last
+                          return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
+                        }
+                      ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _GlucoseTrendsSection._emptyTitle)),
@@ -805,6 +820,12 @@ class _ModalDaySection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                  ),
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                    ],
                   ),
                   lineBarsData: chartLines,
                 ),
@@ -889,8 +910,26 @@ class _HistorySectionState extends State<_HistorySection> {
           ),
           const SizedBox(height: 16),
           ...currentItems.map((item) {
-            final status = HealthStatusEvaluator.evaluate(item.value, item.dataType, widget.thresholds);
-            final statusColor = AppTheme.getStatusColor(status.name);
+            // Determine status and color specifically for Glucose
+            String statusText;
+            Color statusColor;
+            
+            // Find threshold or use default
+            final t = widget.thresholds.firstWhere(
+              (t) => t.dataType == MonitorDataType.GLUCOSE, 
+              orElse: () => const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180)
+            );
+
+            if (item.value < t.minValue) {
+              statusText = 'LOW';
+              statusColor = AppTheme.errorColor;
+            } else if (item.value > t.maxValue) {
+              statusText = 'HIGH';
+              statusColor = AppTheme.warningColor;
+            } else {
+              statusText = 'NORMAL';
+              statusColor = AppTheme.primaryGreen;
+            }
             
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
@@ -922,7 +961,7 @@ class _HistorySectionState extends State<_HistorySection> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                        child: Text(status.name.toUpperCase(), style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                        child: Text(statusText, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
