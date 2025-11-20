@@ -541,7 +541,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
         if (maxY == minY) maxY += 50;
 
         // Centering Logic
-        const double yAxisWidth = 35.0;
 
         return Column(
           children: [
@@ -558,17 +557,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        reservedSize: yAxisWidth, 
-                        interval: 50, 
-                        getTitlesWidget: (val, _) {
-                          if (val == minY || val == maxY) return const SizedBox(); // Hide start/end
-                          return Text(val.toInt().toString(), style: const TextStyle(fontSize: 9));
-                        },
-                      ),
-                    ),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true, 
@@ -582,9 +571,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _emptyTitle),
-                    ),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
@@ -754,8 +741,6 @@ class _ModalDaySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const double yAxisWidth = 35.0;
-    
     return _ChartSection(
       title: 'Daily Patterns',
       icon: Icons.auto_graph_outlined,
@@ -793,17 +778,7 @@ class _ModalDaySection extends StatelessWidget {
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        reservedSize: yAxisWidth, 
-                        interval: 50, 
-                        getTitlesWidget: (v, _) {
-                          if (v == 40 || v == 250) return const SizedBox(); // Hide first & last
-                          return Text(v.toInt().toString(), style: const TextStyle(fontSize: 9));
-                        }
-                      ),
-                    ),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true, 
@@ -815,7 +790,7 @@ class _ModalDaySection extends StatelessWidget {
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _GlucoseTrendsSection._emptyTitle)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
