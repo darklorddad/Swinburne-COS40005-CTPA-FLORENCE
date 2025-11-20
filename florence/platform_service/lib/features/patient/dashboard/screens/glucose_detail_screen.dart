@@ -539,7 +539,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
           maxY = math.max(maxY, dataMax + 10);
         }
 
-        // Centering Logic: Ensure leftTitles reservedSize matches a hidden rightTitles
+        // Centering Logic
         const double yAxisWidth = 35.0;
 
         return Column(
@@ -547,6 +547,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: LineChart(
+                duration: Duration.zero, // Fix janky animation
                 LineChartData(
                   minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
@@ -556,7 +557,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    // Left Titles
                     leftTitles: AxisTitles(
                       axisNameWidget: Text('Glucose (mg/dL)', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
                       axisNameSize: 20,
@@ -564,10 +564,12 @@ class _GlucoseTrendsSection extends StatelessWidget {
                         showTitles: true, 
                         reservedSize: yAxisWidth, 
                         interval: 50, 
-                        getTitlesWidget: (val, _) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 9)),
+                        getTitlesWidget: (val, _) {
+                          if (val == minY || val == maxY) return const SizedBox(); // Hide start/end
+                          return Text(val.toInt().toString(), style: const TextStyle(fontSize: 9));
+                        },
                       ),
                     ),
-                    // Bottom Titles
                     bottomTitles: AxisTitles(
                       axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
                       axisNameSize: 20,
@@ -575,6 +577,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                         showTitles: true, 
                         interval: (maxX - minX) / 4, 
                         getTitlesWidget: (val, _) {
+                          if (val == minX || val == maxX) return const SizedBox(); // Hide start/end
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
                           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 9)));
@@ -582,7 +585,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    // Right Titles (Invisible but reserved space to center graph)
                     rightTitles: const AxisTitles(
                       sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _emptyTitle),
                     ),
@@ -606,9 +608,9 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                          radius: 2.5,
+                          radius: 3, // Visible dots
                           color: AppTheme.primaryBlue,
-                          strokeWidth: 1,
+                          strokeWidth: 1.5,
                           strokeColor: Colors.white,
                         ),
                       ),
@@ -619,18 +621,20 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     getTouchedSpotIndicator: (barData, spotIndexes) {
                       return spotIndexes.map((index) {
                         return TouchedSpotIndicatorData(
-                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1), // Thinner line
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
                           FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
                         );
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8), // Black transparent background
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           return LineTooltipItem(
                             '${spot.y.toInt()}',
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                           );
                         }).toList();
                       },
@@ -898,28 +902,31 @@ class _HistorySectionState extends State<_HistorySection> {
             
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                // BP Screen Style Color (White/Midnight)
+                color: isDark ? AppTheme.midnightSurface : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5)),
               ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                   // No vertical bar
-                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(DateFormat('MMM d, yyyy').format(item.measuredAt), style: const TextStyle(fontWeight: FontWeight.w600)),
-                        Text(DateFormat('h:mm a').format(item.measuredAt), style: Theme.of(context).textTheme.bodySmall),
-                      ],
-                    ),
+                  // Glucose Layout (Left: Date/Time)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(DateFormat('MMM d, yyyy').format(item.measuredAt), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      const SizedBox(height: 2),
+                      Text(DateFormat('h:mm a').format(item.measuredAt), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+                    ],
                   ),
+                  // Glucose Layout (Right: Value/Status)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text('${item.value.toInt()} mg/dL', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      const SizedBox(height: 2),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),

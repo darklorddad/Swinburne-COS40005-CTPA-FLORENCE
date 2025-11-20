@@ -515,6 +515,7 @@ class _FloatingBarSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: BarChart(
+                duration: Duration.zero, // Fix animation
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: 200, minY: 40,
@@ -522,21 +523,21 @@ class _FloatingBarSection extends StatelessWidget {
                     leftTitles: AxisTitles(
                       axisNameWidget: Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
                       axisNameSize: 20,
-                      sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
+                      sideTitles: SideTitles(showTitles: true, reservedSize: 35, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10)))),
                     bottomTitles: AxisTitles(
                       axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
                       axisNameSize: 20,
                       sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
                         if (v.toInt() >= data.length) return const SizedBox();
-                        // Skip some labels to avoid crowding
                         if (data.length > 10 && v.toInt() % 2 != 0) return const SizedBox();
                         return Padding(padding: const EdgeInsets.only(top: 8), child: Text(DateFormat('d/M').format(data[v.toInt()].timestamp), style: const TextStyle(fontSize: 10)));
                       })),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    // Use empty right titles to center axis
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35, getTitlesWidget: _emptyTitle)),
                   ),
                   gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
-                  borderData: FlBorderData(show: false),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
                       getTooltipColor: (_) => Colors.black.withOpacity(0.8),
@@ -544,7 +545,7 @@ class _FloatingBarSection extends StatelessWidget {
                          final r = data[group.x.toInt()];
                          return BarTooltipItem(
                            '${r.systolic.toInt()}/${r.diastolic.toInt()}',
-                           const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                           const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                            children: [TextSpan(text: '\nPulse: ${r.pulsePressure.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.white70))],
                          );
                       }
@@ -597,6 +598,7 @@ class _ScatterSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: ScatterChart(
+                duration: Duration.zero, // Fix animation
                 ScatterChartData(
                   scatterSpots: data.map((r) {
                     bool isHigh = r.systolic > sysThreshold.maxValue || r.diastolic > diaThreshold.maxValue;
@@ -605,7 +607,7 @@ class _ScatterSection extends StatelessWidget {
                       r.systolic,
                       dotPainter: FlDotCirclePainter(
                         color: isHigh ? AppTheme.errorColor : AppTheme.primaryGreen,
-                        radius: 6,
+                        radius: 4, // Thinner dots
                         strokeWidth: 0,
                       ),
                     );
@@ -614,10 +616,16 @@ class _ScatterSection extends StatelessWidget {
                   minY: 80, maxY: 200,
                   gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
                   titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(axisNameWidget: const Text('Diastolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20)),
-                    leftTitles: AxisTitles(axisNameWidget: const Text('Systolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20)),
+                    bottomTitles: AxisTitles(axisNameWidget: const Text('Diastolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (v, _) {
+                      if (v == 40 || v == 130) return const SizedBox();
+                      return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
+                    })),
+                    leftTitles: AxisTitles(axisNameWidget: const Text('Systolic (mmHg)', style: TextStyle(fontSize: 10)), axisNameSize: 20, sideTitles: SideTitles(showTitles: true, interval: 20, reservedSize: 35, getTitlesWidget: (v, _) {
+                      if (v == 80 || v == 200) return const SizedBox();
+                      return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
+                    })),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 35, getTitlesWidget: _emptyTitle)), // Center chart
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   scatterTouchData: ScatterTouchData(
@@ -626,7 +634,7 @@ class _ScatterSection extends StatelessWidget {
                       getTooltipItems: (spot) {
                         return ScatterTooltipItem(
                           'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',
-                          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          textStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                         );
                       }
                     )
@@ -671,92 +679,83 @@ class _HistorySectionState extends State<_HistorySection> {
     final start = _currentPage * _itemsPerPage;
     final end = math.min(start + _itemsPerPage, totalItems);
     final currentItems = reversed.sublist(start, end);
-    
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
+
+    return _ChartContainer(
+      title: 'History',
+      icon: Icons.history,
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
-                  ),
-                  const SizedBox(width: 12),
-                  Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                ],
-              ),
-              // Pagination Controls
-              Row(children: [
-                IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
-                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
-                IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
-              ]),
-            ],
-          ),
-          const SizedBox(height: 16),
           if (currentItems.isEmpty) const Text('No History available'),
           ...currentItems.map((r) {
-             final isHigh = r.systolic > 130 || r.diastolic > 85; // Simplified visual logic
+             // Unique Status Logic
+             String status;
+             Color statusColor;
+             if (r.systolic > 140 || r.diastolic > 90) {
+               status = 'HIGH';
+               statusColor = AppTheme.errorColor;
+             } else if (r.systolic > 120 || r.diastolic > 80) {
+               status = 'ELEVATED';
+               statusColor = AppTheme.warningColor;
+             } else {
+               status = 'NORMAL';
+               statusColor = AppTheme.primaryGreen;
+             }
+
              return Container(
                margin: const EdgeInsets.only(bottom: 12),
-               padding: const EdgeInsets.all(16),
+               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                decoration: BoxDecoration(
-                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
-                 borderRadius: BorderRadius.circular(16),
-                 border: Border.all(color: isDark ? Colors.white10 : Colors.grey.shade200),
+                 // BP Screen Style Color (White/Midnight)
+                 color: isDark ? AppTheme.midnightSurface : Colors.white,
+                 borderRadius: BorderRadius.circular(12),
+                 border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5)),
                ),
                child: Row(
                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                  children: [
+                   // Glucose Layout (Left: Date/Time)
                    Column(
                      crossAxisAlignment: CrossAxisAlignment.start,
                      children: [
-                       Text(DateFormat('MMM d, yyyy').format(r.timestamp), style: const TextStyle(fontWeight: FontWeight.w600)),
-                       Text(DateFormat('h:mm a').format(r.timestamp), style: Theme.of(context).textTheme.bodySmall),
+                       Text(DateFormat('MMM d, yyyy').format(r.timestamp), style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                       const SizedBox(height: 2),
+                       Text(DateFormat('h:mm a').format(r.timestamp), style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
                      ],
                    ),
-                   Row(
+                   // Glucose Layout (Right: Value/Status)
+                   Column(
+                     crossAxisAlignment: CrossAxisAlignment.end,
                      children: [
-                       Text('${r.systolic.toInt()}/${r.diastolic.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                       const SizedBox(width: 4),
-                       Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
-                       const SizedBox(width: 8),
-                       if (isHigh)
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppTheme.errorColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                            child: Text('HIGH', style: TextStyle(color: AppTheme.errorColor, fontSize: 9, fontWeight: FontWeight.bold)),
-                          )
-                        else
-                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: AppTheme.primaryGreen.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                            child: Text('NORMAL', style: TextStyle(color: AppTheme.primaryGreen, fontSize: 9, fontWeight: FontWeight.bold)),
-                          )
+                       Text('${r.systolic.toInt()}/${r.diastolic.toInt()} mmHg', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                       const SizedBox(height: 2),
+                       Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                         decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                         child: Text(status, style: TextStyle(color: statusColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                       ),
                      ],
-                   )
+                   ),
                  ],
                ),
              );
           }),
+          // Pagination Controls
+          if (totalPages > 1)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
+                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
+              ],
+            ),
         ],
       ),
     );
   }
 }
 
-class _LegendItem extends StatelessWidget {
+static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
   final String label;
   final Color color;
   final bool isCircle;
