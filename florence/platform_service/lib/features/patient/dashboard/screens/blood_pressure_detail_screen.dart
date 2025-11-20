@@ -95,6 +95,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
                 const SizedBox(height: 24),
               ],
             ),
+          ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
