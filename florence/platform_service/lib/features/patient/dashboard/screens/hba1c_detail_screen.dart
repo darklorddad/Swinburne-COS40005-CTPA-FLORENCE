@@ -128,8 +128,8 @@ class _GaugeSection extends StatelessWidget {
     const double chartRadius = 110.0; 
     const double sectionWidth = 20.0;
     const double centerRadius = chartRadius - sectionWidth; 
-    // Needle length: reach halfway into the bar (90 + 10 = 100)
-    const double needleLength = centerRadius + (sectionWidth / 2); 
+    // Needle length: reach almost to the end of the bar
+    const double needleLength = centerRadius + sectionWidth - 2;
 
     return _HbA1cCard(
       title: 'Current Status',
@@ -233,7 +233,7 @@ class _GaugeSection extends StatelessWidget {
               Text(
                 val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
                 style: TextStyle(
-                  fontSize: 42,
+                  fontSize: 32,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.textPrimaryColor,
                   height: 1.0,
@@ -252,7 +252,7 @@ class _GaugeSection extends StatelessWidget {
                   style: TextStyle(
                     color: statusColor,
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -314,17 +314,7 @@ class _TrendsSection extends StatelessWidget {
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        reservedSize: 35, // Increased slightly for text space
-                        interval: 2,
-                        getTitlesWidget: (val, _) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: Text('${val.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                        ),
-                      )
-                    ),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -393,9 +383,9 @@ class _TrendsSection extends StatelessWidget {
             children: [
               _LegendItem('Normal', AppTheme.primaryGreen),
               const SizedBox(width: 16),
-              _LegendItem('Elevated', AppTheme.warningColor),
+              _LegendItem('Pre-diabetes', AppTheme.warningColor),
               const SizedBox(width: 16),
-              _LegendItem('High', AppTheme.errorColor),
+              _LegendItem('Diabetes', AppTheme.errorColor),
             ],
           )
         ],
@@ -448,13 +438,7 @@ class _GoalComparisonSection extends StatelessWidget {
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 30,
-                        getTitlesWidget: (val, _) => Text('${val.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                      )
-                    ),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
@@ -632,30 +616,29 @@ class _HistorySectionState extends State<_HistorySection> {
                   ),
                 ],
               ),
-              if (totalPages > 1)
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
-                      icon: const Icon(Icons.chevron_left),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                    icon: const Icon(Icons.chevron_left),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/$totalPages',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${_currentPage + 1}/$totalPages',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
-                      icon: const Icon(Icons.chevron_right),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                    icon: const Icon(Icons.chevron_right),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -677,10 +660,10 @@ class _HistorySectionState extends State<_HistorySection> {
                statusText = 'NORMAL';
                statusColor = AppTheme.primaryGreen;
              } else if (r.value < 6.5) {
-               statusText = 'ELEVATED';
+               statusText = 'PRE-DIABETES';
                statusColor = AppTheme.warningColor;
              } else {
-               statusText = 'HIGH';
+               statusText = 'DIABETES';
                statusColor = AppTheme.errorColor;
              }
 
@@ -713,7 +696,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        Text(
                          r.value.toStringAsFixed(1),
                          style: TextStyle(
-                           fontWeight: FontWeight.w800,
+                           fontWeight: FontWeight.normal,
                            fontSize: 20,
                            color: AppTheme.textPrimaryColor,
                          ),
@@ -882,7 +865,14 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        Container(
+          width: 12, 
+          height: 12, 
+          decoration: BoxDecoration(
+            color: color, 
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
       ],
