@@ -437,7 +437,8 @@ class _DualTrendSection extends StatelessWidget {
           if (data.isNotEmpty) {
              final day = data.last.timestamp;
              minX = DateTime(day.year, day.month, day.day).millisecondsSinceEpoch.toDouble();
-             maxX = DateTime(day.year, day.month, day.day, 23, 59, 59).millisecondsSinceEpoch.toDouble();
+             // Use next midnight for cleaner 24h axis division
+             maxX = DateTime(day.year, day.month, day.day).add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
           } else {
              minX = now.subtract(const Duration(hours: 24)).millisecondsSinceEpoch.toDouble();
              maxX = now.millisecondsSinceEpoch.toDouble();
@@ -476,8 +477,8 @@ class _DualTrendSection extends StatelessWidget {
                         showTitles: true,
                         interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
                         getTitlesWidget: (v, meta) {
-                          // Hide start and end values
-                          if (v <= minX || v >= maxX) return const SizedBox();
+                          // Hide start and end values (with epsilon tolerance)
+                          if (v <= minX + 100 || v >= maxX - 100) return const SizedBox();
                           
                           final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
                           // 1D shows Time (HH:mm), others show Date (d/M)
