@@ -247,8 +247,6 @@ class _ChartSectionState extends State<_ChartSection> {
               IconButton(
                 icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
                 onPressed: () => _showInfoDialog(context),
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
               ),
             ],
           ),
@@ -901,7 +899,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        Text(
                          '${r.systolic.toInt()}/${r.diastolic.toInt()}',
                          style: TextStyle(
-                           fontWeight: FontWeight.w800,
+                           fontWeight: FontWeight.normal,
                            fontSize: 20, // Reduced font size
                            color: AppTheme.textPrimaryColor,
                          ),
