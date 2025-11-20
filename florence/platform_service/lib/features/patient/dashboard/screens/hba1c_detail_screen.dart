@@ -259,7 +259,7 @@ class _GaugeSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 2. TRENDS - FIXED CLIPPING & OVERLAP
+// 2. TRENDS - FIXED OVERLAPPING / OUT OF BOUNDS
 // ============================================================================
 
 class _TrendsSection extends StatelessWidget {
@@ -291,86 +291,90 @@ class _TrendsSection extends StatelessWidget {
         children: [
           SizedBox(
             height: 220,
-            child: LineChart(
-              LineChartData(
-                // Enable clipping to prevent zones from drawing over axes/border
-                clipData: const FlClipData.all(), 
-                minX: minX, maxX: maxX, minY: 4, maxY: 10,
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  horizontalInterval: 1,
-                  getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                ),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true, 
-                      reservedSize: 30,
-                      interval: 2,
-                      getTitlesWidget: (val, _) => Text('${val.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                    )
+            // FIX: ClipRect prevents the RangeAnnotations from drawing outside the container
+            child: ClipRect(
+              child: LineChart(
+                LineChartData(
+                  // FIX: Ensure FLChart knows to clip content to the border
+                  clipData: const FlClipData.all(), 
+                  minX: minX, maxX: maxX, minY: 4, maxY: 10,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 1,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      interval: (maxX - minX) / 3,
-                      getTitlesWidget: (val, _) {
-                        // Avoid edge labels that might clip
-                        if (val <= minX + ((maxX - minX)*0.05) || val >= maxX - ((maxX - minX)*0.05)) return const SizedBox();
-                        final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(DateFormat('MMM y').format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                        );
-                      },
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        reservedSize: 35, // Increased slightly for text space
+                        interval: 2,
+                        getTitlesWidget: (val, _) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: Text('${val.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        ),
+                      )
                     ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: (maxX - minX) / 3,
+                        getTitlesWidget: (val, _) {
+                          // Padding to prevent first/last label clipping
+                          if (val <= minX + ((maxX - minX)*0.05) || val >= maxX - ((maxX - minX)*0.05)) return const SizedBox();
+                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(DateFormat('MMM y').format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          );
+                        },
+                      ),
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
-                // Reference Bands
-                rangeAnnotations: RangeAnnotations(
-                  horizontalRangeAnnotations: [
-                    // Healthy Zone (< 5.7)
-                    HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
-                    // Pre-Diabetes Zone (5.7 - 6.5)
-                    HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
-                    // Diabetes Zone (> 6.5)
-                    HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
+                  borderData: FlBorderData(
+                    show: true, 
+                    border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))
+                  ),
+                  rangeAnnotations: RangeAnnotations(
+                    horizontalRangeAnnotations: [
+                      HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
+                      HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
+                      HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
+                    ],
+                  ),
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                       HorizontalLine(
+                         y: targetMax, 
+                         color: AppTheme.primaryBlue.withOpacity(0.8), 
+                         strokeWidth: 1, 
+                         dashArray: [5,5], 
+                         label: HorizontalLineLabel(
+                           show: true, 
+                           alignment: Alignment.topRight, 
+                           padding: const EdgeInsets.only(right: 5, bottom: 2), 
+                           style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
+                           labelResolver: (line) => 'Target' // Shortened text to prevent overflow
+                         )
+                       )
+                    ]
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: readings.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
+                      isCurved: true,
+                      color: AppTheme.primaryBlue,
+                      barWidth: 3,
+                      dotData: FlDotData(
+                        show: true, 
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 2)
+                      ),
+                    ),
                   ],
                 ),
-                extraLinesData: ExtraLinesData(
-                  horizontalLines: [
-                     HorizontalLine(
-                       y: targetMax, 
-                       color: AppTheme.primaryBlue.withOpacity(0.8), 
-                       strokeWidth: 1, 
-                       dashArray: [5,5], 
-                       label: HorizontalLineLabel(
-                         show: true, 
-                         alignment: Alignment.topRight, 
-                         padding: const EdgeInsets.only(right: 5, bottom: 2), 
-                         style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
-                         labelResolver: (line) => 'Target < $targetMax%'
-                       )
-                     )
-                  ]
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: readings.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
-                    isCurved: true,
-                    color: AppTheme.primaryBlue,
-                    barWidth: 3,
-                    dotData: FlDotData(
-                      show: true, 
-                      getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 2)
-                    ),
-                    belowBarData: BarAreaData(show: false), // No fill below line for cleaner look against bands
-                  ),
-                ],
               ),
             ),
           ),
