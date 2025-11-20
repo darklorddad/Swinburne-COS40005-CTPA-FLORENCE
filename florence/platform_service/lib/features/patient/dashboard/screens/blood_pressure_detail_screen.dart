@@ -201,8 +201,16 @@ class _ChartSectionState extends State<_ChartSection> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(children: [Icon(widget.icon, color: AppTheme.primaryBlue), const SizedBox(width: 12), Expanded(child: Text(widget.title))]),
-        content: Text(widget.infoText),
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(widget.icon, color: AppTheme.primaryBlue),
+            const SizedBox(width: 12),
+            Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Text(widget.infoText, style: Theme.of(context).textTheme.bodyMedium),
         actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it'))],
       ),
     );
@@ -536,6 +544,15 @@ class _DualTrendSection extends StatelessWidget {
                     ),
                   ],
                   lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          // Thinner line (0.5)
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 0.5),
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
+                        );
+                      }).toList();
+                    },
                     touchTooltipData: LineTouchTooltipData(
                       getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
@@ -806,8 +823,6 @@ class _HistorySectionState extends State<_HistorySection> {
                     IconButton(
                       onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
                       icon: const Icon(Icons.chevron_left),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -816,8 +831,6 @@ class _HistorySectionState extends State<_HistorySection> {
                     IconButton(
                       onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
                       icon: const Icon(Icons.chevron_right),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
                     ),
                   ],
                 ),
