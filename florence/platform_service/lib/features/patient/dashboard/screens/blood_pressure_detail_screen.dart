@@ -19,6 +19,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Blood Pressure Analytics'),
         elevation: 0,
+        centerTitle: false,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -174,6 +175,7 @@ class _ChartSectionState extends State<_ChartSection> {
   void initState() {
     super.initState();
     _selectedRange = widget.ranges.contains('7D') ? '7D' : widget.ranges.first;
+    if (widget.ranges.contains('1D')) _selectedRange = '1D';
   }
 
   List<_BpReading> _filterData() {
