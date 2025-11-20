@@ -66,9 +66,6 @@ class GlucoseDetailScreen extends ConsumerWidget {
 
               final allReadings = [...directReadings, ...mealReadings];
 
-              if (allReadings.isEmpty) {
-                return const Center(child: Text('No glucose data available'));
-              }
               // Sort ascending for charts logic (Timeline needs X-axis increasing)
               allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
@@ -514,18 +511,33 @@ class _GlucoseTrendsSection extends StatelessWidget {
                 '• Green Band: $targetLabel range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).',
       allData: allReadings,
       builder: (range, data) {
-        if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
+        // Determine X-Axis range
+        double minX, maxX;
+        if (data.isNotEmpty) {
+          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+          if (minX == maxX) { minX -= 3600000; maxX += 3600000; }
+        } else {
+          // Default X range if no data
+          final now = DateTime.now();
+          Duration d = const Duration(hours: 24);
+          if (range == '7D') d = const Duration(days: 7);
+          else if (range == '14D') d = const Duration(days: 14);
+          else if (range == '30D') d = const Duration(days: 30);
+          minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
+          maxX = now.millisecondsSinceEpoch.toDouble();
+        }
 
-        double minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-        double maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-        if (minX == maxX) { minX -= 3600000; maxX += 3600000; }
-
+        // Determine Y-Axis range
         double minY = (threshold.minValue - 20).clamp(0, double.infinity);
         double maxY = threshold.maxValue + 40;
-        double dataMin = data.map((e) => e.value).reduce(math.min);
-        double dataMax = data.map((e) => e.value).reduce(math.max);
-        minY = math.min(minY, dataMin - 10);
-        maxY = math.max(maxY, dataMax + 10);
+        
+        if (data.isNotEmpty) {
+          double dataMin = data.map((e) => e.value).reduce(math.min);
+          double dataMax = data.map((e) => e.value).reduce(math.max);
+          minY = math.min(minY, dataMin - 10);
+          maxY = math.max(maxY, dataMax + 10);
+        }
 
         // Centering Logic: Ensure leftTitles reservedSize matches a hidden rightTitles
         const double yAxisWidth = 35.0;
@@ -671,16 +683,14 @@ class _TimeInRangeSection extends StatelessWidget {
                 'Goal: Keep "In Range" (Green) above 70%.',
       allData: allReadings,
       builder: (range, data) {
-        if (data.isEmpty) return const SizedBox(height: 100, child: Center(child: Text('No data')));
-
         final total = data.length;
         final lows = data.where((r) => r.value < threshold.minValue).length;
         final highs = data.where((r) => r.value > threshold.maxValue).length;
         final inRange = total - lows - highs;
         
-        final lowPct = (lows / total) * 100;
-        final highPct = (highs / total) * 100;
-        final inPct = (inRange / total) * 100;
+        final lowPct = total > 0 ? (lows / total) * 100 : 0.0;
+        final highPct = total > 0 ? (highs / total) * 100 : 0.0;
+        final inPct = total > 0 ? (inRange / total) * 100 : 0.0;
 
         return Column(
           children: [
@@ -688,13 +698,15 @@ class _TimeInRangeSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: SizedBox(
                 height: 36,
-                child: Row(
-                  children: [
-                    if (lowPct > 0) Expanded(flex: (lowPct * 10).toInt(), child: Container(color: AppTheme.errorColor)),
-                    if (inPct > 0) Expanded(flex: (inPct * 10).toInt(), child: Container(color: AppTheme.primaryGreen)),
-                    if (highPct > 0) Expanded(flex: (highPct * 10).toInt(), child: Container(color: AppTheme.warningColor)),
-                  ],
-                ),
+                child: total == 0 
+                  ? Container(color: Colors.grey.shade200) // Empty state
+                  : Row(
+                      children: [
+                        if (lowPct > 0) Expanded(flex: (lowPct * 10).toInt(), child: Container(color: AppTheme.errorColor)),
+                        if (inPct > 0) Expanded(flex: (inPct * 10).toInt(), child: Container(color: AppTheme.primaryGreen)),
+                        if (highPct > 0) Expanded(flex: (highPct * 10).toInt(), child: Container(color: AppTheme.warningColor)),
+                      ],
+                    ),
               ),
             ),
             const SizedBox(height: 16),
@@ -753,8 +765,6 @@ class _ModalDaySection extends StatelessWidget {
       infoText: 'Overlays multiple days onto a single 24h axis to spot recurring patterns.',
       allData: allReadings,
       builder: (range, data) {
-        if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
-
         final Map<int, List<FlSpot>> lines = {};
         for (var r in data) {
           final key = r.measuredAt.day;

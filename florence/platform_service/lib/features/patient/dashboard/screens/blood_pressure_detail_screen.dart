@@ -31,10 +31,6 @@ class BloodPressureDetailScreen extends ConsumerWidget {
         data: (dataList) {
           // 1. Pair Systolic and Diastolic readings based on timestamp
           final readings = _pairReadings(dataList);
-          
-          if (readings.isEmpty) {
-            return const Center(child: Text('No blood pressure data available'));
-          }
 
           // Sort by date ascending for charts
           readings.sort((a, b) => a.timestamp.compareTo(b.timestamp));
@@ -297,11 +293,12 @@ class _StatisticsSection extends StatelessWidget {
                 '• Target: Your configured safe range.',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) return const SizedBox(height: 50, child: Center(child: Text('No data for this period')));
-
-        final avgSys = data.map((e) => e.systolic).reduce((a, b) => a + b) / data.length;
-        final avgDia = data.map((e) => e.diastolic).reduce((a, b) => a + b) / data.length;
-        final avgPulse = data.map((e) => e.pulsePressure).reduce((a, b) => a + b) / data.length;
+        double avgSys = 0, avgDia = 0, avgPulse = 0;
+        if (data.isNotEmpty) {
+          avgSys = data.map((e) => e.systolic).reduce((a, b) => a + b) / data.length;
+          avgDia = data.map((e) => e.diastolic).reduce((a, b) => a + b) / data.length;
+          avgPulse = data.map((e) => e.pulsePressure).reduce((a, b) => a + b) / data.length;
+        }
 
         return Column(
           children: [
@@ -399,11 +396,20 @@ class _DualTrendSection extends StatelessWidget {
                 '• Shaded areas indicate readings within your target safe zone.',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
-
-        double minX = data.first.timestamp.millisecondsSinceEpoch.toDouble();
-        double maxX = data.last.timestamp.millisecondsSinceEpoch.toDouble();
-        if (minX == maxX) { minX -= 3600000; maxX += 3600000; } 
+        double minX, maxX;
+        if (data.isNotEmpty) {
+           minX = data.first.timestamp.millisecondsSinceEpoch.toDouble();
+           maxX = data.last.timestamp.millisecondsSinceEpoch.toDouble();
+           if (minX == maxX) { minX -= 3600000; maxX += 3600000; } 
+        } else {
+           final now = DateTime.now();
+           Duration d = const Duration(hours: 24);
+           if (range == '7D') d = const Duration(days: 7);
+           else if (range == '14D') d = const Duration(days: 14);
+           else if (range == '30D') d = const Duration(days: 30);
+           minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
+           maxX = now.millisecondsSinceEpoch.toDouble();
+        }
 
         return Column(
           children: [
@@ -500,8 +506,6 @@ class _FloatingBarSection extends StatelessWidget {
                 'A wider gap (Pulse Pressure) can indicate stiffness in arteries.',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
-
         // For bar chart, too many points look bad. Limit or aggregate if needed.
         // Here we simply show the data points available in range.
         // If 1D, show actual points. If 30D, we might want to sample, but filtering is done by wrapper.
