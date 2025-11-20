@@ -16,7 +16,6 @@ import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../widgets/health_metric_card.dart';
-import '../../trends/screens/trends_screen.dart';
 import '../providers/dashboard_providers.dart'; // Added
 import '../../core/models/health_data_models.dart';
 
