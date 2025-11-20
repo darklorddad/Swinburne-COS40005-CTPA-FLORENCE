@@ -43,7 +43,6 @@ class HbA1cDetailScreen extends ConsumerWidget {
             userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.HBA1C);
           } catch (_) {}
 
-          // Default: Target < 6.5% or 7.0% depending on profile, defaulting to 6.5 for visualization
           final targetMax = userThreshold?.maxValue ?? 6.5;
 
           return RefreshIndicator(
@@ -58,27 +57,23 @@ class HbA1cDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // 1. Gauge Chart (Speedometer)
                   _GaugeSection(
                     latestReading: readings.isNotEmpty ? readings.last : null,
                   ),
                   const SizedBox(height: 20),
                   
-                  // 2. Trends (Line Chart with Reference Bands)
                   _TrendsSection(
                     readings: readings,
                     targetMax: targetMax,
                   ),
                   const SizedBox(height: 20),
 
-                  // 3. Actual vs. Goal Bar Chart
                   _GoalComparisonSection(
                     latestReading: readings.isNotEmpty ? readings.last : null,
                     targetMax: targetMax,
                   ),
                   const SizedBox(height: 20),
                   
-                  // 4. History List
                   _HistorySection(readings: readings),
                   const SizedBox(height: 24),
                 ],
@@ -94,7 +89,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
 }
 
 // ============================================================================
-// 1. GAUGE CHART (Speedometer)
+// 1. GAUGE CHART (Speedometer) - FIXED
 // ============================================================================
 
 class _GaugeSection extends StatelessWidget {
@@ -106,20 +101,27 @@ class _GaugeSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final val = latestReading?.value ?? 0.0;
     
-    // Define Ranges
+    // Ranges for the gauge visual
     const double minScale = 4.0;
     const double maxScale = 12.0;
     
-    // Normalize value for needle position (0 to 1)
-    double normalized = (val - minScale) / (maxScale - minScale);
-    normalized = normalized.clamp(0.0, 1.0);
+    // Clamp value for visual display only
+    final double displayVal = val.clamp(minScale, maxScale);
+    // Normalize 0.0 to 1.0
+    final double normalized = (displayVal - minScale) / (maxScale - minScale);
     
-    // Angle mapping: 0.0 -> 180 deg, 1.0 -> 0 deg (Semi-circle)
-    final double angle = 180 - (normalized * 180);
+    // Rotation: 
+    // -90 degrees (Left/Start) to +90 degrees (Right/End)
+    // Normalized 0.0 -> -90 deg ( -pi/2 )
+    // Normalized 1.0 -> +90 deg ( +pi/2 )
+    final double rotationAngle = -math.pi / 2 + (normalized * math.pi);
 
     Color statusColor;
     String statusText;
-    if (val < 5.7) {
+    if (val == 0) {
+      statusText = "No Data";
+      statusColor = AppTheme.textSecondaryColor;
+    } else if (val < 5.7) {
       statusColor = AppTheme.primaryGreen;
       statusText = "Normal";
     } else if (val < 6.5) {
@@ -130,114 +132,142 @@ class _GaugeSection extends StatelessWidget {
       statusText = "Diabetes";
     }
 
-    if (latestReading == null) {
-      statusText = "No Data";
-      statusColor = AppTheme.textSecondaryColor;
-    }
-
     return _ChartContainer(
       title: 'Current Status',
       icon: Icons.speed,
       child: Column(
         children: [
           SizedBox(
-            height: 150, // Half circle height
+            height: 150,
+            width: 300,
             child: Stack(
               alignment: Alignment.bottomCenter,
               children: [
+                // 1. The Gauge Background (Pie Chart)
                 PieChart(
                   PieChartData(
                     startDegreeOffset: 180,
-                    sectionsSpace: 2,
-                    centerSpaceRadius: 0, // Full pie
+                    sectionsSpace: 0,
+                    centerSpaceRadius: 90, // Makes it a ring
                     sections: [
-                      // Normal (4.0 - 5.7) -> 1.7 units
+                      // Normal (4.0 - 5.7) -> 1.7 range
                       PieChartSectionData(
                         value: 1.7,
                         color: AppTheme.primaryGreen.withOpacity(0.8),
-                        radius: 80,
+                        radius: 20,
                         showTitle: false,
                       ),
-                      // Pre-diabetes (5.7 - 6.5) -> 0.8 units
+                      // Pre-diabetes (5.7 - 6.5) -> 0.8 range
                       PieChartSectionData(
                         value: 0.8,
                         color: AppTheme.warningColor.withOpacity(0.8),
-                        radius: 80,
+                        radius: 20,
                         showTitle: false,
                       ),
-                      // Diabetes (6.5 - 12.0) -> 5.5 units
+                      // Diabetes (6.5 - 12.0) -> 5.5 range
                       PieChartSectionData(
                         value: 5.5,
                         color: AppTheme.errorColor.withOpacity(0.8),
-                        radius: 80,
+                        radius: 20,
                         showTitle: false,
                       ),
-                      // Transparent bottom half to make it a semi-circle
+                      // Invisible bottom half
                       PieChartSectionData(
-                        value: 8.0, // Sum of top parts
+                        value: 8.0,
                         color: Colors.transparent,
-                        radius: 80,
+                        radius: 20,
                         showTitle: false,
                       ),
                     ],
                   ),
                 ),
-                // Needle
-                if (latestReading != null)
-                  Transform.translate(
-                    offset: const Offset(0, 15), // Adjust pivot
+                
+                // 2. The Text Value (Centered inside the ring)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20), // Push up slightly
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                       Text(
+                        val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textPrimaryColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: statusColor.withOpacity(0.2)),
+                        ),
+                        child: Text(
+                          statusText.toUpperCase(),
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // 3. The Needle (Rotated based on value)
+                // We use a Container that is full height, aligned bottomCenter
+                // Rotating it rotates the "top" of the container to the correct angle
+                if (val > 0)
+                  Positioned(
+                    bottom: 0,
                     child: Transform.rotate(
-                      angle: -math.pi * (normalized), // Radians
-                      alignment: Alignment.bottomCenter,
-                      child: Container(
-                         width: 4,
-                         height: 90,
-                         alignment: Alignment.topCenter,
-                         child: Container(
-                           width: 4,
-                           height: 90, // Needle length
-                           decoration: BoxDecoration(
-                             color: AppTheme.textPrimaryColor,
-                             borderRadius: BorderRadius.circular(2),
-                           ),
-                         ),
+                      angle: rotationAngle,
+                      alignment: Alignment.bottomCenter, // Pivot at bottom
+                      child: SizedBox(
+                        height: 110, // Radius of needle tip
+                        width: 20, // Width of pivot area
+                        child: Stack(
+                          alignment: Alignment.bottomCenter,
+                          children: [
+                            // The Needle Body
+                            Container(
+                              width: 4,
+                              height: 110, 
+                              decoration: BoxDecoration(
+                                color: AppTheme.textPrimaryColor,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                              ),
+                            ),
+                            // The Pivot Circle
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: AppTheme.textPrimaryColor,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 3),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                // Center Knob
-                Container(
-                  width: 20,
-                  height: 20,
-                  decoration: BoxDecoration(
-                    color: AppTheme.textPrimaryColor,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              statusText.toUpperCase(),
-              style: TextStyle(
-                color: statusColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
+          // Scale Labels
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('4.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                Text('12.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
             ),
           ),
         ],
@@ -247,7 +277,7 @@ class _GaugeSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 2. TRENDS (Line Chart with Reference Bands)
+// 2. TRENDS (Line Chart with Reference Bands) - FIXED ALIGNMENT
 // ============================================================================
 
 class _TrendsSection extends StatelessWidget {
@@ -263,10 +293,9 @@ class _TrendsSection extends StatelessWidget {
     if (readings.isNotEmpty) {
       minX = readings.first.measuredAt.millisecondsSinceEpoch.toDouble();
       maxX = readings.last.measuredAt.millisecondsSinceEpoch.toDouble();
-      // Add padding if only one point
       if (minX == maxX) {
         minX -= 2629743000; // -1 month approx
-        maxX += 2629743000; // +1 month approx
+        maxX += 2629743000; 
       }
     } else {
        final now = DateTime.now();
@@ -280,10 +309,10 @@ class _TrendsSection extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 200,
+            height: 220,
             child: LineChart(
               LineChartData(
-                minX: minX, maxX: maxX, minY: 4, maxY: 10, // Standard HbA1c range
+                minX: minX, maxX: maxX, minY: 4, maxY: 10,
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
@@ -291,17 +320,24 @@ class _TrendsSection extends StatelessWidget {
                   getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                 ),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true, 
+                      reservedSize: 30,
+                      interval: 2,
+                      getTitlesWidget: (val, _) => Text('${val.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    )
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      interval: (maxX - minX) / 3,
+                      interval: (maxX - minX) / 3, // Show ~3 dates
                       getTitlesWidget: (val, _) {
                         if (val == minX || val == maxX) return const SizedBox();
                         final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                         return Padding(
                           padding: const EdgeInsets.only(top: 8),
-                          child: Text(DateFormat('MMM y').format(date), style: const TextStyle(fontSize: 10)),
+                          child: Text(DateFormat('MMM y').format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                         );
                       },
                     ),
@@ -314,16 +350,28 @@ class _TrendsSection extends StatelessWidget {
                 rangeAnnotations: RangeAnnotations(
                   horizontalRangeAnnotations: [
                     // Healthy Zone (< 5.7)
-                    HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.1)),
+                    HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
                     // Pre-Diabetes Zone (5.7 - 6.5)
-                    HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.05)),
-                    // Diabetes Zone (> 6.5) - visually up to 10
-                    HorizontalRangeAnnotation(y1: 6.5, y2: 12, color: AppTheme.errorColor.withOpacity(0.05)),
+                    HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
+                    // Diabetes Zone (> 6.5)
+                    HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
                   ],
                 ),
                 extraLinesData: ExtraLinesData(
                   horizontalLines: [
-                     HorizontalLine(y: targetMax, color: AppTheme.primaryBlue, strokeWidth: 1, dashArray: [5,5], label: HorizontalLineLabel(show: true, alignment: Alignment.topRight, padding: const EdgeInsets.only(right: 5, bottom: 2), style: TextStyle(color: AppTheme.primaryBlue, fontSize: 9, fontWeight: FontWeight.bold), labelResolver: (line) => 'Target'))
+                     HorizontalLine(
+                       y: targetMax, 
+                       color: AppTheme.primaryBlue.withOpacity(0.8), 
+                       strokeWidth: 1, 
+                       dashArray: [5,5], 
+                       label: HorizontalLineLabel(
+                         show: true, 
+                         alignment: Alignment.topRight, 
+                         padding: const EdgeInsets.only(right: 5, bottom: 2), 
+                         style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
+                         labelResolver: (line) => 'Target < $targetMax%'
+                       )
+                     )
                   ]
                 ),
                 lineBarsData: [
@@ -332,18 +380,24 @@ class _TrendsSection extends StatelessWidget {
                     isCurved: true,
                     color: AppTheme.primaryBlue,
                     barWidth: 3,
-                    dotData: FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 2)),
+                    dotData: FlDotData(
+                      show: true, 
+                      getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 2)
+                    ),
+                    belowBarData: BarAreaData(show: false), // No fill below line for cleaner look against bands
                   ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 12,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _LegendItem('Normal', AppTheme.primaryGreen),
+              const SizedBox(width: 16),
               _LegendItem('Elevated', AppTheme.warningColor),
+              const SizedBox(width: 16),
               _LegendItem('High', AppTheme.errorColor),
             ],
           )
@@ -354,7 +408,7 @@ class _TrendsSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 3. ACTUAL VS GOAL (Bar Chart)
+// 3. ACTUAL VS GOAL (Bar Chart) - FIXED ALIGNMENT
 // ============================================================================
 
 class _GoalComparisonSection extends StatelessWidget {
@@ -366,98 +420,138 @@ class _GoalComparisonSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final current = latestReading?.value ?? 0.0;
-    final isGood = current <= targetMax;
+    final isGood = current <= targetMax && current > 0;
     final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
+    
+    // Calculate Y max to give headroom
+    final maxY = math.max(current, targetMax) * 1.2;
 
     return _ChartContainer(
       title: 'Actual vs. Goal',
       icon: Icons.flag_outlined,
       child: Column(
         children: [
-          SizedBox(
-            height: 150,
-            child: BarChart(
-              BarChartData(
-                maxY: math.max(current, targetMax) + 2,
-                minY: 0,
-                gridData: const FlGridData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      getTitlesWidget: (val, _) {
-                         switch(val.toInt()) {
-                           case 0: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('You', style: TextStyle(fontWeight: FontWeight.bold)));
-                           case 1: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('Target', style: TextStyle(fontWeight: FontWeight.bold)));
-                           default: return const SizedBox();
-                         }
-                      }
+          if (latestReading == null)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Text('No HbA1c data recorded yet.'),
+            )
+          else
+            SizedBox(
+              height: 180,
+              child: BarChart(
+                BarChartData(
+                  maxY: maxY,
+                  minY: 0,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: 2,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 30,
+                        getTitlesWidget: (val, _) => Text('${val.toInt()}%', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      )
+                    ),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (val, _) {
+                           switch(val.toInt()) {
+                             case 0: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('You', style: TextStyle(fontWeight: FontWeight.bold)));
+                             case 1: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('Target', style: TextStyle(fontWeight: FontWeight.bold)));
+                             default: return const SizedBox();
+                           }
+                        }
+                      )
                     )
-                  )
-                ),
-                borderData: FlBorderData(show: false),
-                barGroups: [
-                  // Actual
-                  BarChartGroupData(
-                    x: 0,
-                    barRods: [
-                      BarChartRodData(
-                        toY: current,
-                        color: barColor,
-                        width: 40,
-                        borderRadius: BorderRadius.circular(4),
-                        backDrawRodData: BackgroundBarChartRodData(show: true, toY: 10, color: AppTheme.backgroundColor),
-                      ),
-                    ],
-                    showingTooltipIndicators: [0],
                   ),
-                  // Goal
-                  BarChartGroupData(
-                    x: 1,
-                    barRods: [
-                      BarChartRodData(
-                        toY: targetMax,
-                        color: AppTheme.textSecondaryColor.withOpacity(0.5),
-                        width: 40,
-                        borderRadius: BorderRadius.circular(4),
-                        backDrawRodData: BackgroundBarChartRodData(show: true, toY: 10, color: AppTheme.backgroundColor),
-                      ),
-                    ],
-                    showingTooltipIndicators: [0],
-                  ),
-                ],
-                barTouchData: BarTouchData(
-                  enabled: false,
-                  touchTooltipData: BarTouchTooltipData(
-                    getTooltipColor: (_) => Colors.transparent,
-                    tooltipPadding: EdgeInsets.zero,
-                    tooltipMargin: 4,
-                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                      return BarTooltipItem(
-                        rod.toY.toStringAsFixed(1),
-                        TextStyle(
-                          color: group.x == 0 ? barColor : AppTheme.textSecondaryColor,
-                          fontWeight: FontWeight.bold,
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  barGroups: [
+                    // Actual Bar
+                    BarChartGroupData(
+                      x: 0,
+                      barRods: [
+                        BarChartRodData(
+                          toY: current,
+                          color: barColor,
+                          width: 30,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
                         ),
-                      );
-                    },
+                      ],
+                      showingTooltipIndicators: [0],
+                    ),
+                    // Goal Bar
+                    BarChartGroupData(
+                      x: 1,
+                      barRods: [
+                        BarChartRodData(
+                          toY: targetMax,
+                          color: AppTheme.primaryBlue.withOpacity(0.3),
+                          width: 30,
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                        ),
+                      ],
+                      showingTooltipIndicators: [0],
+                    ),
+                  ],
+                  barTouchData: BarTouchData(
+                    enabled: false, // Disable touch interaction, just show tooltip
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (_) => Colors.transparent,
+                      tooltipPadding: EdgeInsets.zero,
+                      tooltipMargin: 4,
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        return BarTooltipItem(
+                          '${rod.toY.toStringAsFixed(1)}%',
+                          TextStyle(
+                            color: group.x == 0 ? barColor : AppTheme.textSecondaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           if (latestReading != null)
-            Text(
-              isGood 
-                ? "Great! You're under your target of ${targetMax.toStringAsFixed(1)}%"
-                : "You're ${(current - targetMax).toStringAsFixed(1)}% above target",
-              style: TextStyle(
-                color: barColor,
-                fontWeight: FontWeight.w600,
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: (isGood ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: (isGood ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isGood ? Icons.check_circle : Icons.warning,
+                    color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      isGood 
+                        ? "You are within your target of <${targetMax.toStringAsFixed(1)}%"
+                        : "You are ${(current - targetMax).toStringAsFixed(1)}% above your target",
+                      style: TextStyle(
+                        color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
@@ -467,7 +561,7 @@ class _GoalComparisonSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 4. HISTORY LIST
+// 4. HISTORY LIST - MATCHING DESIGN
 // ============================================================================
 
 class _HistorySection extends StatelessWidget {
@@ -502,9 +596,12 @@ class _HistorySection extends StatelessWidget {
               Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           if (readings.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('No records found')),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16), 
+              child: Text('No records found', style: TextStyle(color: AppTheme.textSecondaryColor))
+            ),
           
           ...reversed.map((r) {
              Color color = r.value < 5.7 ? AppTheme.primaryGreen : (r.value < 6.5 ? AppTheme.warningColor : AppTheme.errorColor);
@@ -519,14 +616,16 @@ class _HistorySection extends StatelessWidget {
                child: Row(
                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                  children: [
-                   Text(DateFormat('MMM d, yyyy').format(r.measuredAt), style: const TextStyle(fontWeight: FontWeight.w500)),
-                   Container(
-                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                     decoration: BoxDecoration(
-                       color: color.withOpacity(0.1),
-                       borderRadius: BorderRadius.circular(12),
-                     ),
-                     child: Text('${r.value.toStringAsFixed(1)}%', style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+                   Text(DateFormat('MMM d, yyyy').format(r.measuredAt), style: const TextStyle(fontWeight: FontWeight.w600)),
+                   Row(
+                     children: [
+                        Text('${r.value.toStringAsFixed(1)}%', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimaryColor)),
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 12, height: 12,
+                          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+                        )
+                     ],
                    ),
                  ],
                ),
@@ -560,12 +659,16 @@ class _ChartContainer extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, color: AppTheme.textSecondaryColor),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, color: AppTheme.primaryBlue, size: 20),
+              ),
+              const SizedBox(width: 12),
               Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           child,
         ],
       ),
@@ -582,9 +685,9 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
       ],
     );
   }
