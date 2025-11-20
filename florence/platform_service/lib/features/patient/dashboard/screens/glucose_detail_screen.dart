@@ -762,15 +762,6 @@ class _ModalDaySection extends StatelessWidget {
           chartLines.add(LineChartBarData(spots: spots, isCurved: true, color: AppTheme.textSecondaryColor.withOpacity(0.3), barWidth: 1.5, dotData: const FlDotData(show: false)));
         });
 
-        // FIX: Add invisible dummy line if empty to force rendering of grid/lines
-        if (chartLines.isEmpty) {
-          chartLines.add(LineChartBarData(
-            spots: [const FlSpot(0, 100)], // Arbitrary point within Y range
-            color: Colors.transparent,
-            dotData: const FlDotData(show: false),
-          ));
-        }
-
         return Column(
           children: [
             SizedBox(
@@ -894,7 +885,11 @@ class _HistorySectionState extends State<_HistorySection> {
           ),
           const SizedBox(height: 16),
           ...currentItems.map((item) {
-            // Determine status and color specifically for Glucose
+            // Unique Status Logic for Glucose
+            // LOW (< Min) = Critical/Red
+            // HIGH (> Max) = Warning/Amber
+            // NORMAL = Green
+            
             String statusText;
             Color statusColor;
             
@@ -903,13 +898,12 @@ class _HistorySectionState extends State<_HistorySection> {
               orElse: () => const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180)
             );
 
-            // Glucose-Specific Status Logic
             if (item.value < t.minValue) {
               statusText = 'LOW';
-              statusColor = AppTheme.errorColor; // Hypo is critical
+              statusColor = AppTheme.errorColor;
             } else if (item.value > t.maxValue) {
               statusText = 'HIGH';
-              statusColor = AppTheme.warningColor; // Hyper is warning
+              statusColor = AppTheme.warningColor;
             } else {
               statusText = 'NORMAL';
               statusColor = AppTheme.primaryGreen;
@@ -936,7 +930,7 @@ class _HistorySectionState extends State<_HistorySection> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Left: Value and Unit
+                  // Left: Value
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
