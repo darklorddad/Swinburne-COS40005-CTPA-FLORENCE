@@ -236,7 +236,12 @@ class _ChartSectionState extends State<_ChartSection> {
               ),
               const SizedBox(width: 12),
               Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
-              IconButton(icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor), onPressed: () => _showInfoDialog(context)),
+              IconButton(
+                icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
+                onPressed: () => _showInfoDialog(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -554,11 +559,11 @@ class _DualTrendSection extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-               _LegendItem('Systolic', AppTheme.primaryRed),
+               _buildLegendItem('Systolic', AppTheme.primaryRed),
                const SizedBox(width: 16),
-               _LegendItem('Diastolic', AppTheme.primaryBlue),
+               _buildLegendItem('Diastolic', AppTheme.primaryBlue),
                const SizedBox(width: 16),
-               _LegendItem('Safe Zone', Colors.grey.withOpacity(0.3), isBox: true),
+               _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
             ]),
           ],
         );
@@ -726,9 +731,9 @@ class _ScatterSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-               _LegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
+               _buildLegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
                const SizedBox(width: 16),
-               _LegendItem('High', AppTheme.errorColor, isCircle: true),
+               _buildLegendItem('High', AppTheme.errorColor, isCircle: true),
             ]),
           ],
         );
@@ -936,24 +941,20 @@ class _ChartContainer extends StatelessWidget {
   }
 }
 
-class _LegendItem extends StatelessWidget {
-  final String label;
-  final Color color;
-  final bool isCircle;
-  final bool isBox;
-  const _LegendItem(this.label, this.color, {this.isCircle = false, this.isBox = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 10, height: 10,
-          decoration: BoxDecoration(color: color, shape: isCircle ? BoxShape.circle : BoxShape.rectangle, borderRadius: (isCircle || isBox) ? null : BorderRadius.circular(2)),
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: const TextStyle(fontSize: 11)),
-      ],
-    );
-  }
+Widget _buildLegendItem(String label, Color color, {bool isBox = false, bool isCircle = false, bool isDashed = false}) {
+  return Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (isBox)
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
+      else if (isCircle)
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+      else if (isDashed)
+        Container(width: 2, height: 12, color: color)
+      else
+        Container(width: 12, height: 2, color: color),
+      const SizedBox(width: 4),
+      Text(label, style: const TextStyle(fontSize: 11)),
+    ],
+  );
 }
