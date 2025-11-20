@@ -461,7 +461,7 @@ class _DualTrendSection extends StatelessWidget {
                            final isSys = spot.barIndex == 0;
                            return LineTooltipItem(
                              '${isSys ? "Sys" : "Dia"}: ${spot.y.toInt()}',
-                             TextStyle(color: isSys ? AppTheme.primaryRedAccent : Colors.blueAccent, fontWeight: FontWeight.bold),
+                             TextStyle(color: isSys ? AppTheme.primaryRed : Colors.blueAccent, fontWeight: FontWeight.bold),
                            );
                         }).toList();
                       }
