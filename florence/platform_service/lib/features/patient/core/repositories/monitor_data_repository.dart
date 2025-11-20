@@ -34,6 +34,29 @@ class MonitorDataRepository {
     }
   }
 
+  /// Get activity logs directly from API
+  Future<List<ActivityLog>> getActivityLogs() async {
+    try {
+      final response = await _apiService.get('/patients/me/activity-logs');
+      if (response is List) {
+        // Map backend fields to UI model
+        return response.map((json) {
+          return ActivityLog(
+            id: json['id'].toString(),
+            timestamp: DateTime.parse(json['performed_at']),
+            type: json['activity_description'] ?? 'Activity',
+            duration: json['duration_minutes'] ?? 0,
+            intensity: 'Moderate', // Default as backend doesn't store this yet
+          );
+        }).toList();
+      }
+      return [];
+    } catch (e) {
+      print('Error fetching activity logs: $e');
+      return [];
+    }
+  }
+
   /// Get health thresholds directly from API
   Future<List<HealthThreshold>> getHealthThresholds() async {
     try {
