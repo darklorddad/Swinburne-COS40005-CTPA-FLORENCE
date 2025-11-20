@@ -30,8 +30,9 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL
-  static const String apiUrl = 'http://127.0.0.1:8000';
-  // static const String apiUrl = 'http://10.115.143.105:8000';
+  /// USE 127.0.0.1 for Chrome/Desktop, USE network IP for Android
+  static const String apiUrl = 'http://127.0.0.1:8000';  // FOR CHROME
+  // static const String apiUrl = 'http://10.115.143.105:8000';  // FOR ANDROID
   //static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
@@ -39,7 +40,7 @@ class Environment {
   // IMPORTANT: Replace these with your actual Supabase project URL and Anon Key
   // You can find these in your Supabase project settings under "API"
   static const String supabaseUrl = String.fromEnvironment(
-    'SUPABASE_URL',
+    'SUPABASE_URL', 
     defaultValue: 'https://opltjtmmiuwbaikvlive.supabase.co',
   );
   
