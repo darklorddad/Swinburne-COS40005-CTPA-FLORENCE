@@ -477,9 +477,12 @@ class _DualTrendSection extends StatelessWidget {
                         showTitles: true,
                         interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
                         getTitlesWidget: (value, meta) {
-                          // Robust check: Hide labels near the start/end using a tolerance
-                          // Tolerance of 30 mins (1800000ms) catches float imprecision
-                          if (value <= minX + 1800000 || value >= maxX - 1800000) return const SizedBox();
+                          // Aggressively hide labels near the start and end
+                          // Using meta.min/max ensures we match the chart's actual viewport
+                          final tolerance = (meta.max - meta.min) * 0.05; // 5% margin
+                          if (value <= meta.min + tolerance || value >= meta.max - tolerance) {
+                            return const SizedBox();
+                          }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
                           // 1D shows Time (HH:mm), others show Date (d/M)
@@ -595,8 +598,12 @@ class _FloatingBarSection extends StatelessWidget {
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, _) {
+                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, meta) {
                         if (v.toInt() >= data.length) return const SizedBox();
+                        
+                        // Hide first and last labels
+                        if (v == 0 || v.toInt() == data.length - 1) return const SizedBox();
+
                         // Skip every other label if too many points
                         if (data.length > 10 && v.toInt() % 2 != 0) return const SizedBox();
                         
