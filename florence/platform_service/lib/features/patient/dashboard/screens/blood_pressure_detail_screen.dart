@@ -411,28 +411,47 @@ class _DualTrendSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: LineChart(
+                duration: Duration.zero, // Fix janky animation
                 LineChartData(
                   minX: minX, maxX: maxX, minY: 40, maxY: 180,
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  gridData: FlGridData(
+                    show: true, 
+                    drawVerticalLine: false, 
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                  ),
                   titlesData: FlTitlesData(
                     leftTitles: AxisTitles(
                       axisNameWidget: Text('mmHg', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
                       axisNameSize: 20,
-                      sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, interval: 40, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10))),
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        reservedSize: yAxisWidth, 
+                        interval: 40, 
+                        getTitlesWidget: (v, _) {
+                          if (v == 40 || v == 180) return const SizedBox(); // Hide overlap
+                          return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
+                        },
+                      ),
                     ),
                     bottomTitles: AxisTitles(
                       axisNameWidget: Padding(padding: const EdgeInsets.only(top: 4), child: Text('Time', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10))),
                       axisNameSize: 20,
-                      sideTitles: SideTitles(showTitles: true, interval: (maxX - minX) / 4, getTitlesWidget: (v, _) {
-                        final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
-                        final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
-                        return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 10)));
-                      }),
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        interval: (maxX - minX) / 4, 
+                        getTitlesWidget: (v, _) {
+                          if (v == minX || v == maxX) return const SizedBox(); // Hide overlap
+                          final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
+                          final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
+                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 10)));
+                        },
+                      ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: yAxisWidth, getTitlesWidget: _emptyTitle)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  // Safe Zones
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
                       HorizontalRangeAnnotation(y1: sysThreshold.minValue, y2: sysThreshold.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
@@ -440,17 +459,23 @@ class _DualTrendSection extends StatelessWidget {
                     ]
                   ),
                   lineBarsData: [
+                    // Systolic Line
                     LineChartBarData(
                       spots: data.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.systolic)).toList(),
                       color: AppTheme.primaryRed, barWidth: 2, isCurved: true,
-                      dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(show: false),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryRed, strokeWidth: 1.5, strokeColor: Colors.white),
+                      ),
                     ),
+                    // Diastolic Line
                     LineChartBarData(
                       spots: data.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.diastolic)).toList(),
                       color: AppTheme.primaryBlue, barWidth: 2, isCurved: true,
-                      dotData: const FlDotData(show: false),
-                      belowBarData: BarAreaData(show: false),
+                      dotData: FlDotData(
+                         show: true,
+                         getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeWidth: 1.5, strokeColor: Colors.white),
+                      ),
                     ),
                   ],
                   lineTouchData: LineTouchData(
@@ -458,11 +483,10 @@ class _DualTrendSection extends StatelessWidget {
                       getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
-                           // Identify line by color or bar index, but simply showing value is enough with context
                            final isSys = spot.barIndex == 0;
                            return LineTooltipItem(
                              '${isSys ? "Sys" : "Dia"}: ${spot.y.toInt()}',
-                             TextStyle(color: isSys ? AppTheme.primaryRed : Colors.blueAccent, fontWeight: FontWeight.bold),
+                             const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
                            );
                         }).toList();
                       }
