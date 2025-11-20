@@ -73,12 +73,20 @@ class GlucoseDetailScreen extends ConsumerWidget {
               allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
               final thresholds = thresholdsAsync.value ?? [];
-              final glucoseThreshold = thresholds.firstWhere(
-                (t) => t.dataType == MonitorDataType.GLUCOSE,
-                orElse: () => const HealthThreshold(
-                    dataType: MonitorDataType.GLUCOSE,
-                    minValue: 70,
-                    maxValue: 180),
+              
+              // Check if user actually has a set threshold
+              HealthThreshold? userThreshold;
+              try {
+                userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+              } catch (_) {}
+
+              final isDefault = userThreshold == null;
+              
+              // Use user's threshold or safe default
+              final effectiveThreshold = userThreshold ?? const HealthThreshold(
+                dataType: MonitorDataType.GLUCOSE,
+                minValue: 70,
+                maxValue: 180,
               );
 
               return SingleChildScrollView(
@@ -89,28 +97,32 @@ class GlucoseDetailScreen extends ConsumerWidget {
                     // 1. Statistics
                     _StatisticsSection(
                       readings: allReadings, 
-                      threshold: glucoseThreshold
+                      threshold: effectiveThreshold,
+                      isDefault: isDefault,
                     ),
                     const SizedBox(height: 20),
 
                     // 2. Annotated Line Chart
                     _GlucoseTrendsSection(
                       allReadings: allReadings,
-                      threshold: glucoseThreshold,
+                      threshold: effectiveThreshold,
+                      isDefault: isDefault,
                     ),
                     const SizedBox(height: 20),
 
                     // 3. Time in Range
                     _TimeInRangeSection(
                       allReadings: allReadings,
-                      threshold: glucoseThreshold,
+                      threshold: effectiveThreshold,
+                      isDefault: isDefault,
                     ),
                     const SizedBox(height: 20),
 
                     // 4. Modal Day
                     _ModalDaySection(
                       allReadings: allReadings,
-                      threshold: glucoseThreshold,
+                      threshold: effectiveThreshold,
+                      isDefault: isDefault,
                     ),
                     const SizedBox(height: 20),
 
@@ -327,8 +339,13 @@ class _ChartSectionState extends State<_ChartSection> {
 class _StatisticsSection extends StatelessWidget {
   final List<MonitorData> readings;
   final HealthThreshold threshold;
+  final bool isDefault;
 
-  const _StatisticsSection({required this.readings, required this.threshold});
+  const _StatisticsSection({
+    required this.readings, 
+    required this.threshold,
+    this.isDefault = false,
+  });
 
   Map<String, dynamic> _calculateStats(List<MonitorData> data) {
     if (data.isEmpty) return {'avg': 0.0, 'gmi': 0.0, 'cv': 0.0};
@@ -343,6 +360,10 @@ class _StatisticsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final rangeLabel = isDefault 
+        ? 'Default Target Range (Not set):' 
+        : 'Your Target Range:';
+
     return _ChartSection(
       title: 'Overview',
       icon: Icons.analytics_outlined,
@@ -350,7 +371,7 @@ class _StatisticsSection extends StatelessWidget {
                 '• Average: Mean glucose level.\n'
                 '• GMI: Glucose Management Indicator (Estimated A1c).\n'
                 '• CV: Coefficient of Variation. Target < 36% for stable control.\n\n'
-                'Your Target Range: ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.',
+                '$rangeLabel ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.',
       allData: readings,
       builder: (range, data) {
         final stats = _calculateStats(data);
@@ -403,19 +424,23 @@ class _StatisticsSection extends StatelessWidget {
 class _GlucoseTrendsSection extends StatelessWidget {
   final List<MonitorData> allReadings;
   final HealthThreshold threshold;
+  final bool isDefault;
 
   const _GlucoseTrendsSection({
     required this.allReadings,
     required this.threshold,
+    this.isDefault = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final targetLabel = isDefault ? 'Safe Default' : 'Your Target';
+
     return _ChartSection(
       title: 'Glucose Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your glucose readings.\n\n'
-                '• Green Band: Your target range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).',
+                '• Green Band: $targetLabel range (${threshold.minValue.toInt()}-${threshold.maxValue.toInt()} mg/dL).',
       allData: allReadings,
       builder: (range, data) {
         if (data.isEmpty) return const SizedBox(height: 200, child: Center(child: Text('No data')));
@@ -554,15 +579,24 @@ class _GlucoseTrendsSection extends StatelessWidget {
 class _TimeInRangeSection extends StatelessWidget {
   final List<MonitorData> allReadings;
   final HealthThreshold threshold;
+  final bool isDefault;
 
-  const _TimeInRangeSection({required this.allReadings, required this.threshold});
+  const _TimeInRangeSection({
+    required this.allReadings, 
+    required this.threshold,
+    this.isDefault = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final rangeLabel = isDefault 
+        ? 'Default Range (No personal threshold set)' 
+        : 'Your Target Range';
+
     return _ChartSection(
       title: 'Time in Range',
       icon: Icons.track_changes_outlined,
-      infoText: 'Your Target Range: ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.\n\n'
+      infoText: '$rangeLabel: ${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL.\n\n'
                 'Goal: Keep "In Range" (Green) above 70%.',
       allData: allReadings,
       builder: (range, data) {
@@ -630,8 +664,13 @@ class _TimeInRangeSection extends StatelessWidget {
 class _ModalDaySection extends StatelessWidget {
   final List<MonitorData> allReadings;
   final HealthThreshold threshold;
+  final bool isDefault;
 
-  const _ModalDaySection({required this.allReadings, required this.threshold});
+  const _ModalDaySection({
+    required this.allReadings, 
+    required this.threshold,
+    this.isDefault = false,
+  });
 
   @override
   Widget build(BuildContext context) {
