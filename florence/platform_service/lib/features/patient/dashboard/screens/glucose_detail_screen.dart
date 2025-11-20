@@ -759,8 +759,16 @@ class _ModalDaySection extends StatelessWidget {
         List<LineChartBarData> chartLines = [];
         lines.forEach((_, spots) {
           spots.sort((a, b) => a.x.compareTo(b.x));
-          chartLines.add(LineChartBarData(spots: spots, isCurved: true, color: AppTheme.textSecondaryColor.withOpacity(0.3), barWidth: 1.5, dotData: const FlDotData(show: false)));
+          chartLines.add(LineChartBarData(
+            spots: spots, 
+            isCurved: true, 
+            color: AppTheme.textSecondaryColor.withOpacity(0.3), 
+            barWidth: 1.5, 
+            dotData: const FlDotData(show: false)
+          ));
         });
+
+        // NO DUMMY DATA HERE. If chartLines is empty, the chart renders empty with just the grid/zones.
 
         return Column(
           children: [
@@ -778,18 +786,16 @@ class _ModalDaySection extends StatelessWidget {
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
+                    // Hide Y Axis Labels
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        interval: 6, 
-                        getTitlesWidget: (v, _) {
-                          if (v == 0 || v == 24) return const SizedBox(); // Hide first & last
-                          return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
-                        }
-                      ),
+                      sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) {
+                        if (v == 0 || v == 24) return const SizedBox(); // Hide first & last
+                        return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
+                      }),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    // Hide Right Axis Labels
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
@@ -893,11 +899,15 @@ class _HistorySectionState extends State<_HistorySection> {
             String statusText;
             Color statusColor;
             
+            // Get threshold from backend data
             final t = widget.thresholds.firstWhere(
               (t) => t.dataType == MonitorDataType.GLUCOSE, 
               orElse: () => const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180)
             );
 
+            // Unique Glucose Logic:
+            // Low (< 70) is CRITICAL (Red)
+            // High (> 180) is WARNING (Amber)
             if (item.value < t.minValue) {
               statusText = 'LOW';
               statusColor = AppTheme.errorColor;
