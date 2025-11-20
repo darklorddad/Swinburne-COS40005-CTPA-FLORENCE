@@ -127,7 +127,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: bpSystolic?.measuredAt,
       icon: Icons.monitor_heart_outlined,
       color: _getBPColor(bpSystolic?.value, bpDiastolic?.value),
-      onTap: () => Helpers.showInfo(context, 'Blood Pressure details coming soon'),
+      onTap: () => AppRoutes.push(context, AppRoutes.bloodPressureDetail),
     ));
 
     // HbA1c (Always show)

@@ -15,6 +15,7 @@ import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
 import '../features/patient/trends/screens/trends_screen.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
+import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
 import '../features/patient/trends/screens/meal_impact_screen.dart';
 import '../features/patient/trends/screens/activity_impact_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
@@ -36,6 +37,7 @@ class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String trends = '/trends';
   static const String trendsDetail = '/trends/detail';
+  static const String bloodPressureDetail = '/trends/blood-pressure';
   static const String mealImpact = '/trends/meal-impact';
   static const String activityImpact = '/trends/activity-impact';
   static const String weeklyReport = '/trends/weekly-report';
@@ -99,6 +101,9 @@ class AppRoutes {
 
       case trendsDetail:
         return _buildRoute(const GlucoseDetailScreen(patientId: 1)); // Mock ID for now
+
+      case bloodPressureDetail:
+        return _buildRoute(const BloodPressureDetailScreen());
 
       case mealImpact:
         return _buildRoute(const MealImpactScreen());
