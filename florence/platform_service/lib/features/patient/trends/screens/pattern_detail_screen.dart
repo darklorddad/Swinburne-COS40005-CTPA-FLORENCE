@@ -352,8 +352,12 @@ class _PatternDetailScreenState extends State<PatternDetailScreen> {
                 topTitles: const AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
-                rightTitles: const AxisTitles(
-                  sideTitles: SideTitles(showTitles: false),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 40,
+                    getTitlesWidget: (value, meta) => const SizedBox.shrink(),
+                  ),
                 ),
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
