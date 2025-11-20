@@ -475,8 +475,10 @@ class _DualTrendSection extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
-                        getTitlesWidget: (v, _) {
-                          if (v == minX || v == maxX) return const SizedBox();
+                        getTitlesWidget: (v, meta) {
+                          // Hide start and end values
+                          if (v <= minX || v >= maxX) return const SizedBox();
+                          
                           final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
                           // 1D shows Time (HH:mm), others show Date (d/M)
                           final text = range == '1D' 
@@ -544,12 +546,15 @@ class _DualTrendSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-               _buildLegendItem('Systolic', AppTheme.primaryRed),
-               const SizedBox(width: 16),
-               _buildLegendItem('Diastolic', AppTheme.primaryBlue),
-               const SizedBox(width: 16),
-               _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+               _buildLegendItem('Systolic', AppTheme.primaryRed, isCircle: true),
+               _buildLegendItem('Diastolic', AppTheme.primaryBlue, isCircle: true),
+               _buildLegendItem('Sys Limit', AppTheme.primaryRed.withOpacity(0.5), isDashed: true),
+               _buildLegendItem('Dia Limit', AppTheme.primaryBlue.withOpacity(0.5), isDashed: true),
             ]),
           ],
         );
