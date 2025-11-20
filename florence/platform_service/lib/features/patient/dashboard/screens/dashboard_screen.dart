@@ -18,6 +18,7 @@ import '../widgets/ai_insight_card.dart';
 import '../widgets/health_metric_card.dart';
 import '../../trends/screens/trends_screen.dart';
 import '../providers/dashboard_providers.dart'; // Added
+import '../../core/models/health_data_models.dart';
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
