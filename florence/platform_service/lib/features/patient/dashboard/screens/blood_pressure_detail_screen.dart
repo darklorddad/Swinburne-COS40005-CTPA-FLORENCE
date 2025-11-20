@@ -488,6 +488,15 @@ class _DualTrendSection extends StatelessWidget {
                       HorizontalRangeAnnotation(y1: diaThreshold.minValue, y2: diaThreshold.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
                     ]
                   ),
+                  // Dotted Threshold Lines
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(y: sysThreshold.minValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: sysThreshold.maxValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: diaThreshold.minValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: diaThreshold.maxValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                    ],
+                  ),
                   lineBarsData: [
                     // Systolic Line
                     LineChartBarData(
