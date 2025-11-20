@@ -394,7 +394,7 @@ class _StatisticsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10), maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(title, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -402,7 +402,7 @@ class _StatisticsSection extends StatelessWidget {
             children: [
               Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
               const SizedBox(width: 2),
-              Text(unit, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 9)),
+              Text(unit, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10)),
             ],
           ),
         ],
