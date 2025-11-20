@@ -89,7 +89,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
 }
 
 // ============================================================================
-// 1. GAUGE CHART (Speedometer) - ALIGNMENT FIXED
+// 1. GAUGE CHART (Speedometer) - REFINED DESIGN
 // ============================================================================
 
 class _GaugeSection extends StatelessWidget {
@@ -104,10 +104,8 @@ class _GaugeSection extends StatelessWidget {
     const double minScale = 4.0;
     const double maxScale = 12.0;
     
-    // Normalized 0.0 (left) to 1.0 (right)
     final double normalized = ((val.clamp(minScale, maxScale)) - minScale) / (maxScale - minScale);
-    
-    // Angle: -90 deg to +90 deg
+    // -90 deg (left) to +90 deg (right)
     final double rotationAngle = -math.pi / 2 + (normalized * math.pi);
 
     Color statusColor;
@@ -126,10 +124,12 @@ class _GaugeSection extends StatelessWidget {
       statusText = "Diabetes";
     }
 
-    // Radius configuration
+    // Chart Dimensions
     const double chartRadius = 110.0; 
-    const double sectionRadius = 20.0;
-    const double centerRadius = chartRadius - sectionRadius; 
+    const double sectionWidth = 20.0;
+    const double centerRadius = chartRadius - sectionWidth; 
+    // Needle length: reach halfway into the bar (90 + 10 = 100)
+    const double needleLength = centerRadius + (sectionWidth / 2); 
 
     return _HbA1cCard(
       title: 'Current Status',
@@ -140,104 +140,71 @@ class _GaugeSection extends StatelessWidget {
                 '• Diabetes: 6.5% or higher',
       child: Column(
         children: [
-          // This container clips the bottom half of the full circle pie chart
+          // 1. The Gauge (Half Circle)
           SizedBox(
-            height: chartRadius, 
+            height: chartRadius + 10, // Slight padding bottom
             width: chartRadius * 2,
             child: Stack(
               children: [
-                // Position the full circle PieChart so its center aligns with the bottom of this container
+                // Background Arc
                 Positioned(
                   top: 0,
                   left: 0,
                   right: 0,
-                  height: chartRadius * 2, // Full diameter
+                  height: chartRadius * 2,
                   child: PieChart(
                     PieChartData(
                       startDegreeOffset: 180,
                       sectionsSpace: 0,
                       centerSpaceRadius: centerRadius,
                       sections: [
-                        PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionRadius, showTitle: false),
-                        PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionRadius, showTitle: false),
-                        PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionRadius, showTitle: false),
-                        PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionRadius, showTitle: false),
+                        PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                        PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                        PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                        PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                       ],
                     ),
                   ),
                 ),
                 
-                // Text Value
-                Positioned(
-                  bottom: 0,
-                  left: 0, 
-                  right: 0,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                       Text(
-                        val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimaryColor,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: statusColor.withOpacity(0.2)),
-                        ),
-                        child: Text(
-                          statusText.toUpperCase(),
-                          style: TextStyle(
-                            color: statusColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Needle - Pivot is perfectly bottom center of this container
+                // Needle
                 if (val > 0)
                   Align(
                     alignment: Alignment.bottomCenter,
-                    child: Transform.rotate(
-                      angle: rotationAngle,
-                      alignment: Alignment.bottomCenter,
-                      child: SizedBox(
-                        height: chartRadius, // Needle length matches radius
-                        width: 16, // Pivot width
-                        child: Stack(
-                          alignment: Alignment.bottomCenter,
-                          children: [
-                            // Needle Body
-                            Container(
-                              width: 4,
-                              height: chartRadius, 
-                              margin: const EdgeInsets.only(bottom: 8), // Lift slightly from pivot center
-                              decoration: BoxDecoration(
-                                color: AppTheme.textPrimaryColor,
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    child: Transform.translate(
+                      // Move needle pivot up slightly so it rotates from true center of the bottom edge
+                      offset: const Offset(0, 0), 
+                      child: Transform.rotate(
+                        angle: rotationAngle,
+                        alignment: Alignment.bottomCenter,
+                        child: SizedBox(
+                          height: needleLength, 
+                          width: 16,
+                          child: Stack(
+                            alignment: Alignment.bottomCenter,
+                            children: [
+                              // Needle Body
+                              Container(
+                                width: 6, // Slightly thicker base
+                                height: needleLength, 
+                                margin: const EdgeInsets.only(bottom: 0),
+                                decoration: BoxDecoration(
+                                  color: AppTheme.textPrimaryColor,
+                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                ),
                               ),
-                            ),
-                            // Pivot Point
-                            Container(
-                              width: 16,
-                              height: 16,
-                              decoration: BoxDecoration(
-                                color: AppTheme.textPrimaryColor,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
+                              // Pivot Point (Knob)
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: AppTheme.textPrimaryColor,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white, width: 3),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -245,9 +212,10 @@ class _GaugeSection extends StatelessWidget {
               ],
             ),
           ),
-          // Scale Labels
+
+          // 2. Scale Labels
           const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 0),
+            padding: EdgeInsets.symmetric(horizontal: 40),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -255,6 +223,40 @@ class _GaugeSection extends StatelessWidget {
                 Text('12.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
+          ),
+          
+          const SizedBox(height: 16),
+
+          // 3. Value & Status (Moved below gauge)
+          Column(
+            children: [
+              Text(
+                val > 0 ? '${val.toStringAsFixed(1)}%' : '--',
+                style: TextStyle(
+                  fontSize: 42,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.textPrimaryColor,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withOpacity(0.2)),
+                ),
+                child: Text(
+                  statusText.toUpperCase(),
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
