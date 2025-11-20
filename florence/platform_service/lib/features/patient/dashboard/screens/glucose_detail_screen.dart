@@ -777,7 +777,13 @@ class _ModalDaySection extends StatelessWidget {
           ));
         });
 
-        // NO DUMMY DATA HERE. If chartLines is empty, the chart renders empty with just the grid/zones.
+        // CRITICAL FIX: If no data, add an empty series to force chart lines/grid to render
+        if (chartLines.isEmpty) {
+          chartLines.add(LineChartBarData(
+            spots: [], // No dummy points, just an empty series
+            color: Colors.transparent,
+          ));
+        }
 
         return Column(
           children: [
