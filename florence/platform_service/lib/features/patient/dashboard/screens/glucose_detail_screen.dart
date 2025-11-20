@@ -574,9 +574,18 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  // 1. Safe Zone Background (Green Band)
                   rangeAnnotations: RangeAnnotations(
-                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                    horizontalRangeAnnotations: [
+                      HorizontalRangeAnnotation(
+                        y1: threshold.minValue, 
+                        y2: threshold.maxValue, 
+                        color: AppTheme.primaryGreen.withOpacity(0.1)
+                      )
+                    ],
                   ),
+                  
+                  // 2. Dotted Lines for Thresholds (Matches Trends)
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
                       HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
