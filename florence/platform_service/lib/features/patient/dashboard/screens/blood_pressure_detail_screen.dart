@@ -689,9 +689,9 @@ class _ScatterSection extends StatelessWidget {
                   minY: 80, maxY: 200,
                   gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
                   titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (v, _) {
-                      if (v == 40 || v == 130) return const SizedBox();
-                      return Text(v.toInt().toString(), style: const TextStyle(fontSize: 10));
+                    bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (value, meta) {
+                      if (value <= meta.min || value >= meta.max) return const SizedBox();
+                      return Text(value.toInt().toString(), style: const TextStyle(fontSize: 10));
                     })),
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
