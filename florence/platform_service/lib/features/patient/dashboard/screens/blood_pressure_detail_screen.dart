@@ -477,8 +477,9 @@ class _DualTrendSection extends StatelessWidget {
                         showTitles: true,
                         interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
                         getTitlesWidget: (v, meta) {
-                          // Hide start and end values (with epsilon tolerance)
-                          if (v <= minX + 100 || v >= maxX - 100) return const SizedBox();
+                          // Hide start and end labels aggressively (tolerance of ~30 mins)
+                          // This ensures 00:00 and 24:00 are always hidden
+                          if (v < minX + 1800000 || v > maxX - 1800000) return const SizedBox();
                           
                           final date = DateTime.fromMillisecondsSinceEpoch(v.toInt());
                           // 1D shows Time (HH:mm), others show Date (d/M)
