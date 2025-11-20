@@ -226,10 +226,7 @@ class _ChartSectionState extends State<_ChartSection> {
             Expanded(child: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold))),
           ],
         ),
-        content: Text(
-          widget.infoText, 
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 14),
-        ),
+        content: Text(widget.infoText, style: Theme.of(context).textTheme.bodyMedium),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
