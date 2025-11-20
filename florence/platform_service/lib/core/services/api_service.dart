@@ -23,10 +23,23 @@ class ApiService {
 
   Future<dynamic> get(String endpoint) async {
     try {
-      final response = await http.get(
+      var response = await http.get(
         Uri.parse('${Environment.apiUrl}$endpoint'),
         headers: await _getHeaders(),
       );
+
+      if (response.statusCode == 401) {
+        try {
+          await supabase.auth.refreshSession();
+          response = await http.get(
+            Uri.parse('${Environment.apiUrl}$endpoint'),
+            headers: await _getHeaders(),
+          );
+        } catch (refreshError) {
+          debugPrint('Session refresh failed: $refreshError');
+        }
+      }
+
       return _processResponse(response);
     } catch (e) {
       debugPrint('API GET Error ($endpoint): $e');
@@ -36,11 +49,25 @@ class ApiService {
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
     try {
-      final response = await http.post(
+      var response = await http.post(
         Uri.parse('${Environment.apiUrl}$endpoint'),
         headers: await _getHeaders(),
         body: jsonEncode(data),
       );
+
+      if (response.statusCode == 401) {
+        try {
+          await supabase.auth.refreshSession();
+          response = await http.post(
+            Uri.parse('${Environment.apiUrl}$endpoint'),
+            headers: await _getHeaders(),
+            body: jsonEncode(data),
+          );
+        } catch (refreshError) {
+          debugPrint('Session refresh failed: $refreshError');
+        }
+      }
+
       return _processResponse(response);
     } catch (e) {
       debugPrint('API POST Error ($endpoint): $e');
@@ -50,11 +77,25 @@ class ApiService {
 
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
     try {
-      final response = await http.put(
+      var response = await http.put(
         Uri.parse('${Environment.apiUrl}$endpoint'),
         headers: await _getHeaders(),
         body: jsonEncode(data),
       );
+
+      if (response.statusCode == 401) {
+        try {
+          await supabase.auth.refreshSession();
+          response = await http.put(
+            Uri.parse('${Environment.apiUrl}$endpoint'),
+            headers: await _getHeaders(),
+            body: jsonEncode(data),
+          );
+        } catch (refreshError) {
+          debugPrint('Session refresh failed: $refreshError');
+        }
+      }
+
       return _processResponse(response);
     } catch (e) {
       debugPrint('API PUT Error ($endpoint): $e');
