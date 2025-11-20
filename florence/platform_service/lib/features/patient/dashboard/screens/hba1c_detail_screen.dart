@@ -260,6 +260,7 @@ class _GaugeSection extends StatelessWidget {
               ),
             ],
           ),
+          ],
         ),
       ),
     );
