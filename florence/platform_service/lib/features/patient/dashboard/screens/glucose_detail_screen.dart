@@ -375,13 +375,57 @@ class _StatisticsSection extends StatelessWidget {
       allData: readings,
       builder: (range, data) {
         final stats = _calculateStats(data);
-        return Row(
+        return Column(
           children: [
-            Expanded(child: _buildStatBox(context, 'Average', '${(stats['avg'] as double).toStringAsFixed(0)}', 'mg/dL', Colors.blue)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildStatBox(context, 'GMI', '${(stats['gmi'] as double).toStringAsFixed(1)}', '%', Colors.purple)),
-            const SizedBox(width: 12),
-            Expanded(child: _buildStatBox(context, 'Variability', '${(stats['cv'] as double).toStringAsFixed(1)}', '%', (stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor)),
+            // Target Range Display
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.track_changes,
+                    size: 18,
+                    color: AppTheme.primaryGreen,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    isDefault ? 'Default Target: ' : 'Target Range: ',
+                    style: TextStyle(
+                      color: AppTheme.primaryGreen.withOpacity(0.8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
+                    style: TextStyle(
+                      color: AppTheme.primaryGreen,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Statistics Row
+            Row(
+              children: [
+                Expanded(child: _buildStatBox(context, 'Average', '${(stats['avg'] as double).toStringAsFixed(0)}', 'mg/dL', Colors.blue)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildStatBox(context, 'GMI', '${(stats['gmi'] as double).toStringAsFixed(1)}', '%', Colors.purple)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildStatBox(context, 'Variability', '${(stats['cv'] as double).toStringAsFixed(1)}', '%', (stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor)),
+              ],
+            ),
           ],
         );
       },
