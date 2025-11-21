@@ -902,7 +902,7 @@ class _HistorySectionState extends State<_HistorySection> {
                  statusColor = AppTheme.warningColor;
                } else if (r.systolic < widget.sysThreshold!.minValue || r.diastolic < widget.diaThreshold!.minValue) {
                  status = 'LOW';
-                 statusColor = AppTheme.infoColor;
+                 statusColor = AppTheme.warningColor;
                } else {
                  status = 'NORMAL';
                  statusColor = AppTheme.primaryGreen;

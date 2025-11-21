@@ -425,7 +425,11 @@ class _StatisticsSection extends StatelessWidget {
                         AppTheme.primaryGreen,
                       )
                     else
-                      const Text('No target set', style: TextStyle(color: AppTheme.textSecondaryColor)),
+                      _buildMiniTargetRow(
+                        'Glucose',
+                        'Not Set',
+                        AppTheme.textSecondaryColor,
+                      ),
                   ],
                 ),
               ),

@@ -316,9 +316,8 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
     if (t == null) return 'Recorded';
 
-    if (value > t.maxValue + 40) return 'High';
-    if (value > t.maxValue) return 'Elevated';
-    return 'Desirable';
+    if (value > t.maxValue) return 'High';
+    return 'Normal';
   }
 
   Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds) {
@@ -326,8 +325,7 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
     if (t == null) return AppTheme.primaryBlue;
 
-    if (value > t.maxValue + 40) return AppTheme.errorColor;
-    if (value > t.maxValue) return AppTheme.warningColor;
+    if (value > t.maxValue) return AppTheme.errorColor;
     return AppTheme.primaryGreen;
   }
 
