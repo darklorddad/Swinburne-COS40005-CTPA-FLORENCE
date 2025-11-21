@@ -15,8 +15,8 @@ class ActivityDetailScreen extends ConsumerWidget {
     final activityAsync = ref.watch(activityLogsProvider);
     final monitorAsync = ref.watch(monitorDataProvider);
 
-    // CHANGED: Use Primary Blue to match the rest of the app's analytics theme
-    final Color dataColor = AppTheme.primaryBlue;
+    // Data Color: Green (Movement as Medicine)
+    final Color dataColor = AppTheme.primaryGreen;
 
     return Scaffold(
       appBar: AppBar(
