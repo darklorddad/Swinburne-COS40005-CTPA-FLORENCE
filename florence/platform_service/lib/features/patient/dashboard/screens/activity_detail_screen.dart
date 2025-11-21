@@ -311,8 +311,8 @@ class _ActivityTimingChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter last 30 days
-    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    // Filter last 28 days
+    final cutoff = DateTime.now().subtract(const Duration(days: 28));
     final recentLogs = logs.where((l) => l.timestamp.isAfter(cutoff)).toList();
 
     double morning = 0; // 5-11
@@ -336,7 +336,7 @@ class _ActivityTimingChart extends StatelessWidget {
         infoText: 'When you are most active.',
         child: const Padding(
           padding: EdgeInsets.all(20), 
-          child: Center(child: Text('No activity in the last 30 days'))
+          child: Center(child: Text('No activity in the last 28 days'))
         ),
       );
     }
@@ -354,7 +354,7 @@ class _ActivityTimingChart extends StatelessWidget {
     return _ActivityCard(
       title: 'Activity Timing',
       icon: Icons.schedule,
-      infoText: 'Distribution of your activity by time of day (Last 30 Days).\n\n'
+      infoText: 'Distribution of your activity by time of day (Last 28 Days).\n\n'
                 '• Morning: Great for setting daily glucose trend.\n'
                 '• Evening: Helps lower post-dinner spikes.',
       child: SizedBox(
@@ -573,16 +573,8 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
         border: Border.all(color: widget.dataColor.withOpacity(0.2)),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: widget.dataColor.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.directions_run, color: widget.dataColor, size: 20),
-          ),
-          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
