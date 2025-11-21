@@ -18,7 +18,6 @@ dependencies:
   # Backend & API
   supabase_flutter:
   http:
-  flutter_markdown:
 
   # Data Visualization
   fl_chart:
