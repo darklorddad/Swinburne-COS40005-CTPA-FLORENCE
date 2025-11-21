@@ -909,9 +909,14 @@ class _HistorySectionState extends State<_HistorySection> {
               final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
 
               // Determine status based on priority (LDL > Total > Tri > HDL)
-              // If any threshold is missing, we won't flag it (neutral)
-              String statusText = 'DESIRABLE';
-              Color statusColor = AppTheme.primaryGreen;
+              String statusText = 'RECORDED';
+              Color statusColor = AppTheme.primaryBlue;
+
+              // Only apply "Good" status if we actually have thresholds to compare against
+              if (maxLdl != null || maxTotal != null || maxTri != null || minHdl != null) {
+                 statusText = 'DESIRABLE';
+                 statusColor = AppTheme.primaryGreen;
+              }
 
               if (maxLdl != null && r.ldl != null && r.ldl! > maxLdl) {
                 statusText = 'HIGH LDL';
