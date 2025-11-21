@@ -851,7 +851,7 @@ class _HistorySectionState extends State<_HistorySection> {
                 ],
               ),
               // Pagination Controls
-              if (totalPages > 1)
+              if (totalPages > 0)
                 Row(
                   children: [
                     IconButton(
