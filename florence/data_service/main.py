@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Dict, Any
 
 # Import the router from your new authentication file
-from .routers import authentication, patients, clinicians, admin
+from .routers import authentication, patients, clinicians, admin, chat_history
 # Import the Supabase client from its dedicated file
 from .client import supabase
 
@@ -25,6 +25,7 @@ app.include_router(authentication.router)
 app.include_router(patients.router)
 app.include_router(clinicians.router)
 app.include_router(admin.router)
+app.include_router(chat_history.router)
 
 @app.get("/all-data")
 def get_all_database_info():
@@ -187,4 +188,3 @@ async def insert_table(table_name: str, request: Request):
         # Catch potential errors, like table not found, or constraint violation.
         error_message = str(e)
         raise HTTPException(status_code=500, detail=f"An error occurred: {error_message}")
-

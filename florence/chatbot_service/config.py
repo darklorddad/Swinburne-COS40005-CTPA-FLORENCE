@@ -8,10 +8,8 @@ from typing import Optional
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    # Supabase Configuration
-    supabase_url: str
-    supabase_service_key: str
-    supabase_anon_key: str
+    # Data Service Configuration
+    data_service_url: str = "https://ds-florence-dhp.vercel.app"
 
     # DeepSeek AI Configuration
     deepseek_api_key: str

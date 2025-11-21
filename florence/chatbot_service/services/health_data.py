@@ -1,10 +1,10 @@
 """
-Health data aggregation service for fetching and processing patient health metrics.
+Health data aggregation service for fetching and processing patient health metrics via Data Service.
 """
 from datetime import datetime, timedelta
 from typing import Optional, List
 import statistics
-from supabase import create_client, Client
+import httpx
 from config import settings
 from models.health import (
     MonitorData,
@@ -16,126 +16,107 @@ from models.health import (
 
 
 class HealthDataService:
-    """Service for fetching and aggregating patient health data."""
+    """Service for fetching and aggregating patient health data via Data Service."""
 
-    def __init__(self):
-        """Initialize the health data service with Supabase client."""
-        self.supabase: Client = create_client(
-            settings.supabase_url,
-            settings.supabase_service_key
-        )
+    async def _fetch_data(self, endpoint: str, token: str) -> List[dict]:
+        """Helper to fetch data from Data Service."""
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                f"{settings.data_service_url}{endpoint}",
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=10.0
+            )
+            response.raise_for_status()
+            return response.json()
 
     async def get_monitor_data(
         self,
-        patient_id: int,
+        token: str,
         start_date: datetime,
         end_date: datetime,
         data_type: Optional[str] = None
     ) -> List[MonitorData]:
         """
         Fetch monitor data for a patient within a date range.
-
-        Args:
-            patient_id: Patient ID
-            start_date: Start of date range
-            end_date: End of date range
-            data_type: Optional filter by data type (e.g., 'GLUCOSE')
-
-        Returns:
-            List of MonitorData objects
         """
-        query = (
-            self.supabase.table("patient_monitor_data")
-            .select("*")
-            .eq("patient_id", patient_id)
-            .gte("measured_at", start_date.isoformat())
-            .lte("measured_at", end_date.isoformat())
-            .order("measured_at", desc=True)
-        )
-
-        if data_type:
-            query = query.eq("data_type", data_type)
-
-        response = query.execute()
-        return [MonitorData(**item) for item in response.data]
+        raw_data = await self._fetch_data("/patients/me/monitor-data", token)
+        
+        # Filter in memory since Data Service returns all data
+        filtered_data = []
+        for item in raw_data:
+            measured_at = datetime.fromisoformat(item["measured_at"].replace('Z', '+00:00'))
+            # Naive comparison or timezone aware comparison depending on data
+            # Assuming data service returns ISO strings
+            if start_date.timestamp() <= measured_at.timestamp() <= end_date.timestamp():
+                if data_type and item["data_type"] != data_type:
+                    continue
+                filtered_data.append(MonitorData(**item))
+                
+        # Sort descending
+        filtered_data.sort(key=lambda x: x.measured_at, reverse=True)
+        return filtered_data
 
     async def get_activity_logs(
         self,
-        patient_id: int,
+        token: str,
         start_date: datetime,
         end_date: datetime
     ) -> List[ActivityLog]:
         """
         Fetch activity logs for a patient within a date range.
-
-        Args:
-            patient_id: Patient ID
-            start_date: Start of date range
-            end_date: End of date range
-
-        Returns:
-            List of ActivityLog objects
         """
-        response = (
-            self.supabase.table("patient_activity_log")
-            .select("*")
-            .eq("patient_id", patient_id)
-            .gte("performed_at", start_date.isoformat())
-            .lte("performed_at", end_date.isoformat())
-            .order("performed_at", desc=True)
-            .execute()
-        )
-
-        return [ActivityLog(**item) for item in response.data]
+        raw_data = await self._fetch_data("/patients/me/activity-logs", token)
+        
+        filtered_data = []
+        for item in raw_data:
+            performed_at = datetime.fromisoformat(item["performed_at"].replace('Z', '+00:00'))
+            if start_date.timestamp() <= performed_at.timestamp() <= end_date.timestamp():
+                filtered_data.append(ActivityLog(**item))
+        
+        filtered_data.sort(key=lambda x: x.performed_at, reverse=True)
+        return filtered_data
 
     async def get_daily_logs(
         self,
-        patient_id: int,
+        token: str,
         start_date: datetime,
         end_date: datetime
     ) -> List[DailyLog]:
         """
         Fetch daily meal logs for a patient within a date range.
-
-        Args:
-            patient_id: Patient ID
-            start_date: Start of date range
-            end_date: End of date range
-
-        Returns:
-            List of DailyLog objects
         """
-        response = (
-            self.supabase.table("daily_patient_log")
-            .select("*")
-            .eq("patient_id", patient_id)
-            .gte("log_date", start_date.date().isoformat())
-            .lte("log_date", end_date.date().isoformat())
-            .order("log_date", desc=True)
-            .execute()
-        )
-
-        return [DailyLog(**item) for item in response.data]
+        raw_data = await self._fetch_data("/patients/me/daily-logs", token)
+        
+        filtered_data = []
+        for item in raw_data:
+            # log_date is usually YYYY-MM-DD, but model expects datetime
+            # We'll parse it carefully
+            log_date_str = item["log_date"]
+            if "T" in log_date_str:
+                log_date = datetime.fromisoformat(log_date_str.replace('Z', '+00:00'))
+            else:
+                log_date = datetime.strptime(log_date_str, "%Y-%m-%d")
+                
+            if start_date.date() <= log_date.date() <= end_date.date():
+                # Ensure item matches model (convert date string to datetime if needed)
+                item_copy = item.copy()
+                item_copy["log_date"] = log_date
+                filtered_data.append(DailyLog(**item_copy))
+        
+        filtered_data.sort(key=lambda x: x.log_date, reverse=True)
+        return filtered_data
 
     async def get_health_summary(
         self,
-        patient_id: int,
+        token: str,
         start_date: datetime,
         end_date: datetime
     ) -> HealthSummary:
         """
         Generate comprehensive health summary for a patient.
-
-        Args:
-            patient_id: Patient ID
-            start_date: Start of date range
-            end_date: End of date range
-
-        Returns:
-            HealthSummary object with aggregated metrics
         """
         # Fetch all monitor data
-        monitor_data = await self.get_monitor_data(patient_id, start_date, end_date)
+        monitor_data = await self.get_monitor_data(token, start_date, end_date)
 
         # Separate by type
         glucose_readings = [m for m in monitor_data if m.data_type == "GLUCOSE"]
@@ -175,11 +156,11 @@ class HealthDataService:
         latest_hba1c = hba1c_readings[0].value if hba1c_readings else None
 
         # Fetch activity data
-        activity_logs = await self.get_activity_logs(patient_id, start_date, end_date)
+        activity_logs = await self.get_activity_logs(token, start_date, end_date)
         total_activity_minutes = sum(a.duration_minutes for a in activity_logs)
 
         # Fetch meal data
-        daily_logs = await self.get_daily_logs(patient_id, start_date, end_date)
+        daily_logs = await self.get_daily_logs(token, start_date, end_date)
         total_meals = len(daily_logs)
 
         return HealthSummary(
@@ -207,20 +188,14 @@ class HealthDataService:
             latest_hba1c=latest_hba1c,
         )
 
-    async def get_health_context(self, patient_id: int) -> HealthContext:
+    async def get_health_context(self, token: str) -> HealthContext:
         """
         Get formatted health context for LLM prompt.
-
-        Args:
-            patient_id: Patient ID
-
-        Returns:
-            HealthContext object ready for LLM prompt formatting
         """
         end_date = datetime.now()
         start_date = end_date - timedelta(days=settings.health_context_days)
 
-        summary = await self.get_health_summary(patient_id, start_date, end_date)
+        summary = await self.get_health_summary(token, start_date, end_date)
 
         return HealthContext(
             latest_glucose=summary.latest_glucose,

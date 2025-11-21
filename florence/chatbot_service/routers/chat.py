@@ -34,29 +34,9 @@ async def send_message(
 ):
     """
     Send a message to the chatbot and get an AI-powered response.
-
-    This endpoint:
-    1. Authenticates the patient via JWT
-    2. Fetches the patient's health context
-    3. Retrieves conversation history (if requested)
-    4. Sends the message to DeepSeek LLM with context
-    5. Stores both user message and assistant response
-    6. Returns the assistant's response
-
-    Args:
-        request: ChatMessageRequest containing the user's message
-        patient: Authenticated patient information (injected by dependency)
-
-    Returns:
-        ChatMessageResponse with the assistant's reply
-
-    Raises:
-        HTTPException:
-            - 401: If authentication fails
-            - 403: If user is not a patient
-            - 500: If AI service fails
     """
     patient_id = patient["patient_id"]
+    token = patient["token"]
 
     try:
         # Get service instances
@@ -66,7 +46,7 @@ async def send_message(
 
         # Save user message
         user_message = await conversation_service.save_message(
-            patient_id=patient_id,
+            token=token,
             role="user",
             content=request.message
         )
@@ -74,7 +54,7 @@ async def send_message(
         logger.info(f"Patient {patient_id} sent message: {request.message[:50]}...")
 
         # Get health context
-        health_context = await health_service.get_health_context(patient_id)
+        health_context = await health_service.get_health_context(token)
         health_context_formatted = health_context.format_for_prompt()
 
         # Build system prompt with health context
@@ -85,7 +65,7 @@ async def send_message(
 
         # Add conversation history if requested
         if request.include_history:
-            history = await conversation_service.get_recent_messages(patient_id, count=10)
+            history = await conversation_service.get_recent_messages(token, count=10)
             # Convert to DeepSeek format (excludes system messages)
             history_messages = conversation_service.convert_to_deepseek_messages(history)
             messages.extend(history_messages)
@@ -105,7 +85,7 @@ async def send_message(
 
         # Save assistant response with health context
         assistant_message = await conversation_service.save_message(
-            patient_id=patient_id,
+            token=token,
             role="assistant",
             content=assistant_content,
             context=health_context.model_dump()
@@ -136,21 +116,9 @@ async def get_chat_history(
 ):
     """
     Retrieve conversation history for the authenticated patient.
-
-    Args:
-        limit: Maximum number of messages to retrieve (default: 50, max: 100)
-        patient: Authenticated patient information (injected by dependency)
-
-    Returns:
-        ChatHistoryResponse with list of messages and total count
-
-    Raises:
-        HTTPException:
-            - 401: If authentication fails
-            - 403: If user is not a patient
-            - 400: If limit is invalid
     """
     patient_id = patient["patient_id"]
+    token = patient["token"]
 
     # Validate limit
     if limit <= 0 or limit > 100:
@@ -164,12 +132,12 @@ async def get_chat_history(
 
         # Get conversation history
         messages = await conversation_service.get_conversation_history(
-            patient_id=patient_id,
+            token=token,
             limit=limit
         )
 
         # Get total count
-        total_count = await conversation_service.get_conversation_count(patient_id)
+        total_count = await conversation_service.get_conversation_count(token)
 
         logger.info(f"Retrieved {len(messages)} messages for patient {patient_id}")
 
@@ -190,30 +158,17 @@ async def get_chat_history(
 async def clear_chat_history(patient: dict = Depends(get_current_patient)):
     """
     Clear all conversation history for the authenticated patient.
-
-    This permanently deletes all chat messages. This action cannot be undone.
-
-    Args:
-        patient: Authenticated patient information (injected by dependency)
-
-    Returns:
-        ClearHistoryResponse with confirmation message and count of deleted messages
-
-    Raises:
-        HTTPException:
-            - 401: If authentication fails
-            - 403: If user is not a patient
-            - 500: If deletion fails
     """
     patient_id = patient["patient_id"]
+    token = patient["token"]
 
     try:
         conversation_service = get_conversation_service()
 
         # Clear conversation history
-        cleared_count = await conversation_service.clear_conversation_history(patient_id)
+        cleared_count = await conversation_service.clear_conversation_history(token)
 
-        logger.info(f"Cleared {cleared_count} messages for patient {patient_id}")
+        logger.info(f"Cleared history for patient {patient_id}")
 
         return ClearHistoryResponse(
             message="Chat history cleared successfully",
@@ -226,14 +181,3 @@ async def clear_chat_history(patient: dict = Depends(get_current_patient)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error clearing chat history: {str(e)}"
         )
-
-
-@router.get("/health")
-async def health_check():
-    """
-    Health check endpoint for the chat service.
-
-    Returns:
-        Simple status message
-    """
-    return {"status": "healthy", "service": "florence-chatbot"}
