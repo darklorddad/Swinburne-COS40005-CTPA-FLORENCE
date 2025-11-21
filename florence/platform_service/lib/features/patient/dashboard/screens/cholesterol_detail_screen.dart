@@ -242,7 +242,7 @@ class _RatioSection extends StatelessWidget {
     }
 
     return _CholesterolCard(
-      title: 'Overview',
+      title: 'Cholesterol Ratio',
       icon: Icons.pie_chart,
       infoText: 'The ratio of Total Cholesterol to HDL.\n\n'
                 '• Formula: Total / HDL\n'
