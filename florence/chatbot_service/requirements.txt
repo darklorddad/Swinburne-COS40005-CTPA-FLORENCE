@@ -5,10 +5,6 @@ uvicorn[standard]==0.34.0
 # HTTP Client for API calls
 httpx==0.28.1
 
-# JWT Token Validation
-python-jose[cryptography]==3.3.0
-cryptography==44.0.0
-
 # Environment Configuration
 pydantic-settings==2.7.0
 
