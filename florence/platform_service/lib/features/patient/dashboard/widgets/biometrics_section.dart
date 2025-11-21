@@ -152,10 +152,10 @@ class BiometricsSection extends StatelessWidget {
       label: 'Cholesterol',
       value: cholesterol?.value.toStringAsFixed(0) ?? '--',
       unit: 'mg/dL',
-      status: _getCholesterolStatus(cholesterol?.value),
+      status: _getCholesterolStatus(cholesterol?.value, thresholds),
       timestamp: cholesterol?.measuredAt,
       icon: Icons.bloodtype_outlined,
-      color: _getCholesterolColor(cholesterol?.value),
+      color: _getCholesterolColor(cholesterol?.value, thresholds),
       onTap: () => Navigator.push(
         context, 
         MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
@@ -283,17 +283,31 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  String _getCholesterolStatus(double? value) {
+  String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return 'No Data';
-    if (value >= 240) return 'High';
-    if (value >= 200) return 'Borderline';
+    
+    double max = 200;
+    try {
+      final t = thresholds.firstWhere((t) => t.dataType == MonitorDataType.CHOLESTEROL_TOTAL);
+      max = t.maxValue;
+    } catch (_) {}
+
+    if (value > max + 40) return 'High';
+    if (value > max) return 'Borderline';
     return 'Desirable';
   }
 
-  Color _getCholesterolColor(double? value) {
+  Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
-    if (value >= 240) return AppTheme.errorColor;
-    if (value >= 200) return AppTheme.warningColor;
+    
+    double max = 200;
+    try {
+      final t = thresholds.firstWhere((t) => t.dataType == MonitorDataType.CHOLESTEROL_TOTAL);
+      max = t.maxValue;
+    } catch (_) {}
+
+    if (value > max + 40) return AppTheme.errorColor;
+    if (value > max) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
   }
 
