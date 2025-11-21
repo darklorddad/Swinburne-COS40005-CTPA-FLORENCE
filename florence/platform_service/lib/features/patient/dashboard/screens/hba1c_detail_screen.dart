@@ -150,13 +150,22 @@ class _GaugeSection extends StatelessWidget {
     // Needle length: reach almost to the end of the bar
     const double needleLength = centerRadius + sectionWidth - 2;
 
+    String infoText;
+    if (threshold != null) {
+      infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
+                 '• Your Target: Below ${threshold!.maxValue.toStringAsFixed(1)}%\n'
+                 '• Above Target: ${threshold!.maxValue.toStringAsFixed(1)}% or higher';
+    } else {
+      infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
+                 '• Normal: Below 5.7%\n'
+                 '• Pre-diabetes: 5.7% - 6.4%\n'
+                 '• Diabetes: 6.5% or higher';
+    }
+
     return _HbA1cCard(
       title: 'Current Status',
       icon: Icons.speed,
-      infoText: 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
-                '• Normal: Below 5.7%\n'
-                '• Pre-diabetes: 5.7% - 6.4%\n'
-                '• Diabetes: 6.5% or higher',
+      infoText: infoText,
       child: SizedBox(
         width: double.infinity,
         child: Column(
