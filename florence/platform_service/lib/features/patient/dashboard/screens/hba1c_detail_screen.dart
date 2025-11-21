@@ -103,6 +103,16 @@ class _GaugeSection extends StatelessWidget {
 
   const _GaugeSection({this.latestReading, this.threshold});
 
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final val = latestReading?.value ?? 0.0;
@@ -170,7 +180,7 @@ class _GaugeSection extends StatelessWidget {
         width: double.infinity,
         child: Column(
           children: [
-            // Target Range Display (Similar to Glucose)
+            // Target Range Display
             InkWell(
               onTap: () => Navigator.of(context).pushNamed('/profile'),
               borderRadius: BorderRadius.circular(12),
@@ -185,45 +195,42 @@ class _GaugeSection extends StatelessWidget {
                     color: AppTheme.primaryGreen.withOpacity(0.3),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.track_changes,
-                          size: 18,
-                          color: AppTheme.primaryGreen,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.track_changes,
+                              size: 18,
+                              color: AppTheme.primaryGreen,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              threshold != null ? 'Target Range' : 'Default Target',
+                              style: TextStyle(
+                                color: AppTheme.primaryGreen.withOpacity(0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          threshold != null ? 'Target Range' : 'Default Target',
-                          style: TextStyle(
-                            color: AppTheme.primaryGreen.withOpacity(0.8),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          threshold != null 
-                              ? '${threshold!.minValue.toStringAsFixed(1)} - ${threshold!.maxValue.toStringAsFixed(1)}%' 
-                              : '4.0 - 6.5%',
-                          style: TextStyle(
-                            color: AppTheme.primaryGreen,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Icon(
                           Icons.chevron_right,
                           size: 20,
                           color: AppTheme.primaryGreen.withOpacity(0.5),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMiniTargetRow(
+                      'HbA1c',
+                      threshold != null 
+                          ? '${threshold!.minValue.toStringAsFixed(1)} - ${threshold!.maxValue.toStringAsFixed(1)}%' 
+                          : '4.0 - 6.5%',
+                      AppTheme.primaryGreen,
                     ),
                   ],
                 ),

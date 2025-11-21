@@ -392,43 +392,40 @@ class _StatisticsSection extends StatelessWidget {
                     color: AppTheme.primaryGreen.withOpacity(0.3),
                   ),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(
-                          Icons.track_changes,
-                          size: 18,
-                          color: AppTheme.primaryGreen,
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.track_changes,
+                              size: 18,
+                              color: AppTheme.primaryGreen,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isDefault ? 'Default Target' : 'Target Range',
+                              style: TextStyle(
+                                color: AppTheme.primaryGreen.withOpacity(0.8),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isDefault ? 'Default Target' : 'Target Range',
-                          style: TextStyle(
-                            color: AppTheme.primaryGreen.withOpacity(0.8),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
-                          style: TextStyle(
-                            color: AppTheme.primaryGreen,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
                         Icon(
                           Icons.chevron_right,
                           size: 20,
                           color: AppTheme.primaryGreen.withOpacity(0.5),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMiniTargetRow(
+                      'Safe Range',
+                      '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
+                      AppTheme.primaryGreen,
                     ),
                   ],
                 ),
@@ -447,6 +444,16 @@ class _StatisticsSection extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 
