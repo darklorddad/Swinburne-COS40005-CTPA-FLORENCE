@@ -203,83 +203,144 @@ class _RatioSection extends StatelessWidget {
                 '• Formula: Total / HDL\n'
                 '• Target: Below 5.0 (Lower is better)\n'
                 '• Ideal: Below 3.5',
-      child: SizedBox(
-        height: 220,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            if (hasData)
-              PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 60,
-                  sections: [
-                    // HDL (Good)
-                    PieChartSectionData(
-                      value: hdl,
-                      color: AppTheme.primaryGreen,
-                      radius: 25,
-                      showTitle: false,
-                    ),
-                    // LDL (Bad) - Using LDL as the main "bad" component for visual balance
-                    PieChartSectionData(
-                      value: ldl > 0 ? ldl : 1, // Ensure at least small slice if 0 but HDL exists
-                      color: AppTheme.errorColor,
-                      radius: 25,
-                      showTitle: false,
-                    ),
-                  ],
-                ),
-              )
-            else
-              PieChart(
-                PieChartData(
-                  sectionsSpace: 0,
-                  centerSpaceRadius: 60,
-                  sections: [
-                    PieChartSectionData(
-                      value: 1,
-                      color: Colors.grey.shade200,
-                      radius: 25,
-                      showTitle: false,
-                    ),
-                  ],
+      child: Column(
+        children: [
+          // Target Range Display
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed('/profile'),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
                 ),
               ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Ratio',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                Text(
-                  ratio > 0 ? ratio.toStringAsFixed(1) : '--',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryColor,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.track_changes,
+                        size: 18,
+                        color: AppTheme.primaryGreen,
                       ),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Target Ratio',
+                        style: TextStyle(
+                          color: AppTheme.primaryGreen.withOpacity(0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: Text(
-                    statusText,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                  Row(
+                    children: [
+                      Text(
+                        '< 5.0',
+                        style: TextStyle(
+                          color: AppTheme.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 220,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (hasData)
+                  PieChart(
+                    PieChartData(
+                      sectionsSpace: 2,
+                      centerSpaceRadius: 60,
+                      sections: [
+                        // HDL (Good)
+                        PieChartSectionData(
+                          value: hdl,
+                          color: AppTheme.primaryGreen,
+                          radius: 25,
+                          showTitle: false,
+                        ),
+                        // LDL (Bad) - Using LDL as the main "bad" component for visual balance
+                        PieChartSectionData(
+                          value: ldl > 0 ? ldl : 1, // Ensure at least small slice if 0 but HDL exists
+                          color: AppTheme.errorColor,
+                          radius: 25,
+                          showTitle: false,
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  PieChart(
+                    PieChartData(
+                      sectionsSpace: 0,
+                      centerSpaceRadius: 60,
+                      sections: [
+                        PieChartSectionData(
+                          value: 1,
+                          color: Colors.grey.shade200,
+                          radius: 25,
+                          showTitle: false,
+                        ),
+                      ],
                     ),
                   ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Ratio',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    Text(
+                      ratio > 0 ? ratio.toStringAsFixed(1) : '--',
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimaryColor,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        statusText,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
