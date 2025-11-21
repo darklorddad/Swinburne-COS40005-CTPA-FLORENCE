@@ -124,6 +124,14 @@ class CholesterolDetailScreen extends ConsumerWidget {
     final Map<String, _CholesterolReading> grouped = {};
 
     for (var d in data) {
+      // Filter relevant types
+      if (d.dataType != MonitorDataType.CHOLESTEROL_TOTAL &&
+          d.dataType != MonitorDataType.CHOLESTEROL_LDL &&
+          d.dataType != MonitorDataType.CHOLESTEROL_HDL &&
+          d.dataType != MonitorDataType.CHOLESTEROL_TRIGLYCERIDES) {
+        continue;
+      }
+
       // Group by day
       final key = DateFormat('yyyy-MM-dd').format(d.measuredAt);
       
