@@ -17,12 +17,22 @@ class ChatbotService extends ChangeNotifier {
   // In-memory cache
   final List<ChatMessage> _messages = [];
   bool _hasLoadedHistory = false;
+  
+  // Operation states
+  bool _isLoadingHistory = false;
+  bool _isClearingHistory = false;
 
   /// Get read-only view of cached messages
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   
   /// Check if history has been fetched in this session
   bool get hasLoadedHistory => _hasLoadedHistory;
+  
+  /// Check if history is currently loading
+  bool get isLoadingHistory => _isLoadingHistory;
+  
+  /// Check if history is currently being cleared
+  bool get isClearingHistory => _isClearingHistory;
 
   /// Get headers with the current user's JWT
   Map<String, String> _getHeaders() {
@@ -86,6 +96,12 @@ class ChatbotService extends ChangeNotifier {
       notifyListeners();
       return;
     }
+    
+    // Prevent concurrent loads
+    if (_isLoadingHistory) return;
+
+    _isLoadingHistory = true;
+    notifyListeners();
 
     try {
       final response = await http.get(
@@ -103,17 +119,24 @@ class ChatbotService extends ChangeNotifier {
         );
         
         _hasLoadedHistory = true;
-        notifyListeners();
       } else {
         throw Exception('Failed to load history: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error loading chat history: $e');
+    } finally {
+      _isLoadingHistory = false;
+      notifyListeners();
     }
   }
 
   /// Clear conversation history
   Future<void> clearHistory() async {
+    if (_isClearingHistory) return;
+
+    _isClearingHistory = true;
+    notifyListeners();
+
     try {
       final response = await http.delete(
         Uri.parse('$_baseUrl/chat/history'),
@@ -122,12 +145,14 @@ class ChatbotService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         _messages.clear();
-        notifyListeners();
       } else {
         throw Exception('Failed to clear history: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error clearing history: $e');
+    } finally {
+      _isClearingHistory = false;
+      notifyListeners();
     }
   }
 }

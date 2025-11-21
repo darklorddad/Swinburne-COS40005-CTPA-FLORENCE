@@ -21,8 +21,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final _chatbotService = ChatbotService(); // Uses the singleton instance
   
   bool _isTyping = false;
-  bool _isLoadingHistory = true;
-  String _loadingText = 'Syncing conversation history...';
 
   // Suggested questions
   final List<String> _suggestedQuestions = [
@@ -68,8 +66,10 @@ class _ChatScreenState extends State<ChatScreen> {
         }
       });
       
-      // Scroll to bottom on new messages
-      if (_chatbotService.messages.isNotEmpty) {
+      // Scroll to bottom on new messages if not loading
+      if (_chatbotService.messages.isNotEmpty && 
+          !_chatbotService.isLoadingHistory && 
+          !_chatbotService.isClearingHistory) {
         _scrollToBottom();
       }
     }
@@ -77,29 +77,20 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Initialize chat: check cache or fetch history
   Future<void> _initializeChat() async {
-    if (_chatbotService.hasLoadedHistory) {
-      setState(() => _isLoadingHistory = false);
-      if (_chatbotService.messages.isNotEmpty) _scrollToBottom();
-    } else {
+    // If not loaded and not currently loading, trigger load
+    if (!_chatbotService.hasLoadedHistory && !_chatbotService.isLoadingHistory) {
       await _loadHistory();
+    } else if (_chatbotService.messages.isNotEmpty) {
+      _scrollToBottom();
     }
   }
 
   /// Load chat history from service
   Future<void> _loadHistory() async {
-    setState(() {
-      _isLoadingHistory = true;
-      _loadingText = 'Syncing conversation history...';
-    });
-    
     try {
       await _chatbotService.loadHistory();
-      if (mounted) {
-        setState(() => _isLoadingHistory = false);
-      }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoadingHistory = false);
         Helpers.showError(context, 'Failed to sync chat history');
       }
     }
@@ -129,11 +120,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     if (confirmed == true) {
-      setState(() {
-        _isLoadingHistory = true;
-        _loadingText = 'Clearing conversation history...';
-      });
-
       try {
         await _chatbotService.clearHistory();
         if (mounted) {
@@ -142,10 +128,6 @@ class _ChatScreenState extends State<ChatScreen> {
       } catch (e) {
         if (mounted) {
           Helpers.showError(context, 'Failed to clear history');
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoadingHistory = false);
         }
       }
     }
@@ -235,6 +217,13 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final messages = _chatbotService.messages;
+    final isLoading = _chatbotService.isLoadingHistory;
+    final isClearing = _chatbotService.isClearingHistory;
+    
+    final showLoading = isLoading || isClearing;
+    final loadingText = isClearing 
+        ? 'Clearing conversation history...' 
+        : 'Syncing conversation history...';
 
     return Scaffold(
       appBar: AppBar(
@@ -242,7 +231,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: _isLoadingHistory ? null : _confirmClearHistory,
+            onPressed: showLoading ? null : _confirmClearHistory,
             tooltip: 'Clear History',
           ),
           IconButton(
@@ -254,31 +243,31 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Suggested questions (only show if history is empty)
-          if (!_isLoadingHistory && messages.isEmpty) 
+          // Suggested questions (only show if history is empty and not loading)
+          if (!showLoading && messages.isEmpty) 
             _buildSuggestedQuestions(),
           
           // Chat messages area
           Expanded(
-            child: _isLoadingHistory
-                ? _buildLoadingState()
+            child: showLoading
+                ? _buildLoadingState(loadingText)
                 : messages.isEmpty
                     ? _buildEmptyState()
                     : _buildMessagesList(messages),
           ),
           
           // Typing indicator
-          if (_isTyping) _buildTypingIndicator(),
+          if (_isTyping && !showLoading) _buildTypingIndicator(),
           
           // Input area
-          _buildInputArea(),
+          _buildInputArea(isEnabled: !showLoading),
         ],
       ),
     );
   }
 
   /// Build loading state
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(String text) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -286,7 +275,7 @@ class _ChatScreenState extends State<ChatScreen> {
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
           Text(
-            _loadingText,
+            text,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.textSecondaryColor,
             ),
@@ -503,10 +492,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
   
   /// Build input area
-  Widget _buildInputArea() {
-    // Disable input while loading history
-    final isEnabled = !_isLoadingHistory;
-
+  Widget _buildInputArea({required bool isEnabled}) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
