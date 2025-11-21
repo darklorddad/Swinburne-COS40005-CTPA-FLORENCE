@@ -40,3 +40,9 @@ final dailyPatientLogsProvider = FutureProvider<List<DailyPatientLog>>((ref) asy
   final repository = ref.watch(monitorDataRepositoryProvider);
   return repository.getDailyPatientLogs();
 });
+
+// Activity Logs Provider
+final activityLogsProvider = FutureProvider<List<ActivityLog>>((ref) async {
+  final repository = ref.watch(monitorDataRepositoryProvider);
+  return repository.getActivityLogs();
+});

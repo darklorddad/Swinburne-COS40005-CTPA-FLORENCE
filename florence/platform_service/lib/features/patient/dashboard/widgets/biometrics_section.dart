@@ -171,7 +171,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: latestActivity?.timestamp,
       icon: Icons.directions_run_outlined,
       color: latestActivity != null ? AppTheme.activityColor : AppTheme.textSecondaryColor,
-      onTap: () => Helpers.showInfo(context, 'Activity details coming soon'),
+      onTap: () => AppRoutes.push(context, AppRoutes.activityDetail),
     ));
 
     // Meal (Always show)
