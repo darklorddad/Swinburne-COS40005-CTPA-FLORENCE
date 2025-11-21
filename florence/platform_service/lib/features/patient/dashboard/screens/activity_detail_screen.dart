@@ -15,8 +15,8 @@ class ActivityDetailScreen extends ConsumerWidget {
     final activityAsync = ref.watch(activityLogsProvider);
     final monitorAsync = ref.watch(monitorDataProvider);
 
-    // Activity Theme Color: Amber/Orange
-    const Color activityColor = Color(0xFFF59E0B);
+    // Data Color: Orange/Amber (Specific to Activity Data)
+    const Color dataColor = Color(0xFFF59E0B);
 
     return Scaffold(
       appBar: AppBar(
@@ -59,22 +59,21 @@ class ActivityDetailScreen extends ConsumerWidget {
                       // 1. Daily Volume
                       _DailyVolumeCard(
                         logs: sortedLogs, 
-                        themeColor: activityColor
+                        dataColor: dataColor
                       ),
                       const SizedBox(height: 20),
 
                       // 2. Weekly Consistency
                       _WeeklyConsistencyChart(
                         logs: sortedLogs, 
-                        themeColor: activityColor
+                        dataColor: dataColor
                       ),
                       const SizedBox(height: 20),
 
-                      // 3. Activity Timing (Morning vs Evening)
-                      // Replaces "Type Breakdown" to avoid string parsing issues
+                      // 3. Activity Timing
                       _ActivityTimingChart(
                         logs: sortedLogs, 
-                        themeColor: activityColor
+                        dataColor: dataColor
                       ),
                       const SizedBox(height: 20),
 
@@ -82,7 +81,7 @@ class ActivityDetailScreen extends ConsumerWidget {
                       _ActivityHistoryList(
                         logs: sortedLogs,
                         glucoseReadings: glucoseReadings,
-                        themeColor: activityColor,
+                        dataColor: dataColor,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -107,9 +106,9 @@ class ActivityDetailScreen extends ConsumerWidget {
 
 class _DailyVolumeCard extends StatelessWidget {
   final List<ActivityLog> logs;
-  final Color themeColor;
+  final Color dataColor;
 
-  const _DailyVolumeCard({required this.logs, required this.themeColor});
+  const _DailyVolumeCard({required this.logs, required this.dataColor});
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +125,6 @@ class _DailyVolumeCard extends StatelessWidget {
     return _ActivityCard(
       title: 'Today\'s Movement',
       icon: Icons.timer,
-      themeColor: themeColor,
       infoText: 'Total duration of physical activity recorded today.\n\n'
                 'Consistent daily movement helps regulate blood pressure and glucose levels.',
       child: Row(
@@ -138,7 +136,7 @@ class _DailyVolumeCard extends StatelessWidget {
             '$totalMinutes',
             style: Theme.of(context).textTheme.displayLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: themeColor,
+              color: dataColor,
               fontSize: 64,
             ),
           ),
@@ -173,9 +171,9 @@ class _DailyVolumeCard extends StatelessWidget {
 
 class _WeeklyConsistencyChart extends StatelessWidget {
   final List<ActivityLog> logs;
-  final Color themeColor;
+  final Color dataColor;
 
-  const _WeeklyConsistencyChart({required this.logs, required this.themeColor});
+  const _WeeklyConsistencyChart({required this.logs, required this.dataColor});
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +210,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
         barRods: [
           BarChartRodData(
             toY: minutes.toDouble(),
-            color: themeColor,
+            color: dataColor,
             width: 16,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             backDrawRodData: BackgroundBarChartRodData(
@@ -222,13 +220,13 @@ class _WeeklyConsistencyChart extends StatelessWidget {
             ),
           ),
         ],
+        showingTooltipIndicators: minutes > 0 ? [0] : [],
       );
     }).toList();
 
     return _ActivityCard(
       title: 'Weekly Consistency',
       icon: Icons.bar_chart,
-      themeColor: themeColor,
       infoText: 'Total active minutes per day for the last 7 days.',
       child: SizedBox(
         height: 220,
@@ -293,9 +291,9 @@ class _WeeklyConsistencyChart extends StatelessWidget {
 
 class _ActivityTimingChart extends StatelessWidget {
   final List<ActivityLog> logs;
-  final Color themeColor;
+  final Color dataColor;
 
-  const _ActivityTimingChart({required this.logs, required this.themeColor});
+  const _ActivityTimingChart({required this.logs, required this.dataColor});
 
   @override
   Widget build(BuildContext context) {
@@ -303,11 +301,10 @@ class _ActivityTimingChart extends StatelessWidget {
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
     final recentLogs = logs.where((l) => l.timestamp.isAfter(cutoff)).toList();
 
-    // Buckets: Morning (5-11), Midday (11-17), Evening (17-22), Night (22-5)
-    double morning = 0;
-    double midday = 0;
-    double evening = 0;
-    double night = 0;
+    double morning = 0; // 5-11
+    double midday = 0;  // 11-17
+    double evening = 0; // 17-22
+    double night = 0;   // 22-5
 
     for (var log in recentLogs) {
       final h = log.timestamp.hour;
@@ -322,7 +319,6 @@ class _ActivityTimingChart extends StatelessWidget {
       return _ActivityCard(
         title: 'Activity Timing',
         icon: Icons.schedule,
-        themeColor: themeColor,
         infoText: 'When you are most active.',
         child: const Padding(
           padding: EdgeInsets.all(20), 
@@ -335,16 +331,15 @@ class _ActivityTimingChart extends StatelessWidget {
     final maxY = maxVal > 0 ? (maxVal / 10).ceil() * 10.0 + 10 : 60.0;
 
     final dataPoints = [
-      _TimingPoint('Morning', '5-11AM', morning, 0),
-      _TimingPoint('Midday', '11-5PM', midday, 1),
-      _TimingPoint('Evening', '5-10PM', evening, 2),
-      _TimingPoint('Night', '10PM+', night, 3),
+      _TimingPoint('Morning', morning, 0),
+      _TimingPoint('Midday', midday, 1),
+      _TimingPoint('Evening', evening, 2),
+      _TimingPoint('Night', night, 3),
     ];
 
     return _ActivityCard(
       title: 'Activity Timing',
       icon: Icons.schedule,
-      themeColor: themeColor,
       infoText: 'Distribution of your activity by time of day (Last 30 Days).\n\n'
                 '• Morning: Great for setting daily glucose trend.\n'
                 '• Evening: Helps lower post-dinner spikes.',
@@ -391,7 +386,7 @@ class _ActivityTimingChart extends StatelessWidget {
                 barRods: [
                   BarChartRodData(
                     toY: point.value,
-                    color: themeColor,
+                    color: dataColor,
                     width: 24,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                     backDrawRodData: BackgroundBarChartRodData(
@@ -428,10 +423,9 @@ class _ActivityTimingChart extends StatelessWidget {
 
 class _TimingPoint {
   final String label;
-  final String subLabel;
   final double value;
   final int index;
-  _TimingPoint(this.label, this.subLabel, this.value, this.index);
+  _TimingPoint(this.label, this.value, this.index);
 }
 
 // ============================================================================
@@ -441,12 +435,12 @@ class _TimingPoint {
 class _ActivityHistoryList extends StatefulWidget {
   final List<ActivityLog> logs;
   final List<MonitorData> glucoseReadings;
-  final Color themeColor;
+  final Color dataColor;
 
   const _ActivityHistoryList({
     required this.logs,
     required this.glucoseReadings,
-    required this.themeColor,
+    required this.dataColor,
   });
 
   @override
@@ -491,10 +485,10 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: widget.themeColor.withOpacity(0.1), 
+                      color: AppTheme.primaryBlue.withOpacity(0.1), 
                       borderRadius: BorderRadius.circular(12)
                     ),
-                    child: Icon(Icons.history, color: widget.themeColor, size: 24),
+                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
@@ -561,17 +555,17 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: widget.themeColor.withOpacity(0.2)),
+        border: Border.all(color: widget.dataColor.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: widget.themeColor.withOpacity(0.1),
+              color: widget.dataColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.directions_run, color: widget.themeColor, size: 20),
+            child: Icon(Icons.directions_run, color: widget.dataColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -652,14 +646,15 @@ class _ActivityCard extends StatelessWidget {
   final IconData icon;
   final String infoText;
   final Widget child;
-  final Color themeColor;
 
+  // We ignore passing themeColor here to enforce Blue Headers (Consistency)
+  // But we can use a default if needed.
+  
   const _ActivityCard({
     required this.title, 
     required this.icon, 
     required this.infoText, 
     required this.child,
-    required this.themeColor,
   });
 
   void _showInfoDialog(BuildContext context) {
@@ -670,7 +665,8 @@ class _ActivityCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(icon, color: themeColor),
+            // Info dialog also uses Primary Blue for consistency
+            Icon(icon, color: AppTheme.primaryBlue),
             const SizedBox(width: 12),
             Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
           ],
@@ -702,17 +698,17 @@ class _ActivityCard extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: themeColor.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: themeColor, size: 24),
+                // Always use Primary Blue for the Header Icon to match other screens
+                child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
