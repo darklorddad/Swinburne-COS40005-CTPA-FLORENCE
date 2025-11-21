@@ -47,8 +47,8 @@ class BloodPressureDetailScreen extends ConsumerWidget {
 
           final isDefault = userSys == null || userDia == null;
 
-          final sysThreshold = userSys ?? const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_SYSTOLIC, minValue: 90, maxValue: 120);
-          final diaThreshold = userDia ?? const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_DIASTOLIC, minValue: 60, maxValue: 80);
+          final sysThreshold = userSys;
+          final diaThreshold = userDia;
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -297,14 +297,14 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _StatisticsSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold sysThreshold;
-  final HealthThreshold diaThreshold;
+  final HealthThreshold? sysThreshold;
+  final HealthThreshold? diaThreshold;
   final bool isDefault;
 
   const _StatisticsSection({
     required this.readings, 
-    required this.sysThreshold, 
-    required this.diaThreshold,
+    this.sysThreshold, 
+    this.diaThreshold,
     this.isDefault = false,
   });
 
@@ -349,7 +349,7 @@ class _StatisticsSection extends StatelessWidget {
                         Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
                         const SizedBox(width: 8),
                         Text(
-                          isDefault ? 'Default Target' : 'Target Range',
+                          'Target Range',
                           style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -357,7 +357,9 @@ class _StatisticsSection extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          '<${sysThreshold.maxValue.toInt()} / <${diaThreshold.maxValue.toInt()} mmHg',
+                          (sysThreshold != null && diaThreshold != null)
+                              ? '<${sysThreshold!.maxValue.toInt()} / <${diaThreshold!.maxValue.toInt()} mmHg'
+                              : 'Not Set',
                           style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
                         const SizedBox(width: 8),
@@ -419,15 +421,13 @@ class _StatisticsSection extends StatelessWidget {
 
 class _DualTrendSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold sysThreshold;
-  final HealthThreshold diaThreshold;
+  final HealthThreshold? sysThreshold;
+  final HealthThreshold? diaThreshold;
 
-  const _DualTrendSection({required this.readings, required this.sysThreshold, required this.diaThreshold});
+  const _DualTrendSection({required this.readings, this.sysThreshold, this.diaThreshold});
 
   @override
   Widget build(BuildContext context) {
-    const double yAxisWidth = 35.0;
-
     return _ChartSection(
       title: 'Pressure Trends',
       icon: Icons.show_chart,
@@ -508,17 +508,23 @@ class _DualTrendSection extends StatelessWidget {
                   // Safe Zones
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: sysThreshold.minValue, y2: sysThreshold.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
-                      HorizontalRangeAnnotation(y1: diaThreshold.minValue, y2: diaThreshold.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
+                      if (sysThreshold != null)
+                        HorizontalRangeAnnotation(y1: sysThreshold!.minValue, y2: sysThreshold!.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
+                      if (diaThreshold != null)
+                        HorizontalRangeAnnotation(y1: diaThreshold!.minValue, y2: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
                     ]
                   ),
                   // Dotted Threshold Lines
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: sysThreshold.minValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: sysThreshold.maxValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: diaThreshold.minValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: diaThreshold.maxValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                      if (sysThreshold != null) ...[
+                        HorizontalLine(y: sysThreshold!.minValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: sysThreshold!.maxValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                      ],
+                      if (diaThreshold != null) ...[
+                        HorizontalLine(y: diaThreshold!.minValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                      ],
                     ],
                   ),
                   lineBarsData: [
@@ -678,10 +684,10 @@ class _FloatingBarSection extends StatelessWidget {
 
 class _ScatterSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold sysThreshold;
-  final HealthThreshold diaThreshold;
+  final HealthThreshold? sysThreshold;
+  final HealthThreshold? diaThreshold;
 
-  const _ScatterSection({required this.readings, required this.sysThreshold, required this.diaThreshold});
+  const _ScatterSection({required this.readings, this.sysThreshold, this.diaThreshold});
 
   @override
   Widget build(BuildContext context) {
@@ -702,7 +708,10 @@ class _ScatterSection extends StatelessWidget {
                 duration: Duration.zero, // Fix animation
                 ScatterChartData(
                   scatterSpots: data.map((r) {
-                    bool isHigh = r.systolic > sysThreshold.maxValue || r.diastolic > diaThreshold.maxValue;
+                    bool isHigh = false;
+                    if (sysThreshold != null && diaThreshold != null) {
+                      isHigh = r.systolic > sysThreshold!.maxValue || r.diastolic > diaThreshold!.maxValue;
+                    }
                     return ScatterSpot(
                       r.diastolic, 
                       r.systolic,
@@ -755,13 +764,13 @@ class _ScatterSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<_BpReading> readings;
-  final HealthThreshold sysThreshold;
-  final HealthThreshold diaThreshold;
+  final HealthThreshold? sysThreshold;
+  final HealthThreshold? diaThreshold;
 
   const _HistorySection({
     required this.readings,
-    required this.sysThreshold,
-    required this.diaThreshold,
+    this.sysThreshold,
+    this.diaThreshold,
   });
 
   @override
@@ -852,22 +861,27 @@ class _HistorySectionState extends State<_HistorySection> {
              String status;
              Color statusColor;
              
-             final sysMax = widget.sysThreshold.maxValue;
-             final diaMax = widget.diaThreshold.maxValue;
+             if (widget.sysThreshold != null && widget.diaThreshold != null) {
+               final sysMax = widget.sysThreshold!.maxValue;
+               final diaMax = widget.diaThreshold!.maxValue;
 
-             // Logic: Critical if significantly above max, Warning if just above max
-             if (r.systolic > (sysMax + 20) || r.diastolic > (diaMax + 10)) {
-               status = 'HIGH';
-               statusColor = AppTheme.errorColor;
-             } else if (r.systolic > sysMax || r.diastolic > diaMax) {
-               status = 'ELEVATED';
-               statusColor = AppTheme.warningColor;
-             } else if (r.systolic < widget.sysThreshold.minValue || r.diastolic < widget.diaThreshold.minValue) {
-               status = 'LOW';
-               statusColor = AppTheme.infoColor;
+               // Logic: Critical if significantly above max, Warning if just above max
+               if (r.systolic > (sysMax + 20) || r.diastolic > (diaMax + 10)) {
+                 status = 'HIGH';
+                 statusColor = AppTheme.errorColor;
+               } else if (r.systolic > sysMax || r.diastolic > diaMax) {
+                 status = 'ELEVATED';
+                 statusColor = AppTheme.warningColor;
+               } else if (r.systolic < widget.sysThreshold!.minValue || r.diastolic < widget.diaThreshold!.minValue) {
+                 status = 'LOW';
+                 statusColor = AppTheme.infoColor;
+               } else {
+                 status = 'NORMAL';
+                 statusColor = AppTheme.primaryGreen;
+               }
              } else {
-               status = 'NORMAL';
-               statusColor = AppTheme.primaryGreen;
+               status = '';
+               statusColor = AppTheme.textSecondaryColor;
              }
 
              return Container(
