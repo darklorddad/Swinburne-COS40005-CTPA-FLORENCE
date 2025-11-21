@@ -28,7 +28,7 @@ class Environment {
   static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
 
   /// Chatbot Service URL (Port 8001)
-  static const String chatbotServiceUrl = 'http://127.0.0.1:8001';
+ static const String chatbotServiceUrl = 'https://llmcs-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
   
