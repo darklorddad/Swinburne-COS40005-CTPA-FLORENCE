@@ -430,22 +430,21 @@ class _LdlTargetSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ldl = reading?.ldl ?? 0.0;
-    // Define scale max (e.g., 200 mg/dL or 2x target)
     final double maxScale = math.max(200.0, target * 1.5);
     
     return _CholesterolCard(
       title: 'LDL Performance',
       icon: Icons.track_changes,
       infoText: 'Your "Bad" Cholesterol (LDL) compared to the target limit.\n\n'
-                '• Bar: Your Level\n'
+                '• Indicator: Your Level\n'
                 '• Vertical Line: Target Limit (< ${target.toInt()})\n'
-                '• Goal: Keep the bar to the left of the line.',
+                '• Goal: Keep the indicator in the green zone.',
       child: Column(
         children: [
-          const SizedBox(height: 10),
-          // Bullet Graph Container
+          const SizedBox(height: 20),
+          // Custom Gauge
           SizedBox(
-            height: 60,
+            height: 80,
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
@@ -454,95 +453,107 @@ class _LdlTargetSection extends StatelessWidget {
                 
                 return Stack(
                   alignment: Alignment.centerLeft,
+                  clipBehavior: Clip.none,
                   children: [
-                    // 1. Background Ranges
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
+                    // 1. Background Track (Ranges)
+                    Positioned(
+                      top: 20,
+                      left: 0,
+                      right: 0,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 16,
+                          child: Row(
+                            children: [
+                              // Green Zone
+                              Container(
+                                width: targetPos,
+                                color: AppTheme.primaryGreen.withOpacity(0.2),
+                              ),
+                              // Yellow Zone (Next 30mg/dL)
+                              Container(
+                                width: (30 / maxScale) * width,
+                                color: AppTheme.warningColor.withOpacity(0.2),
+                              ),
+                              // Red Zone
+                              Expanded(
+                                child: Container(
+                                  color: AppTheme.errorColor.withOpacity(0.2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    // 2. Target Line
+                    Positioned(
+                      left: targetPos - 1, 
+                      top: 12, 
+                      child: Column(
                         children: [
-                          // Green Zone (0 to Target)
                           Container(
-                            width: targetPos,
-                            height: 30,
-                            color: AppTheme.primaryGreen.withOpacity(0.15),
+                            width: 2,
+                            height: 32,
+                            color: AppTheme.textSecondaryColor,
                           ),
-                          // Yellow Zone (Target to Target + 30)
-                          Container(
-                            width: (30 / maxScale) * width,
-                            height: 30,
-                            color: AppTheme.warningColor.withOpacity(0.15),
-                          ),
-                          // Red Zone (Rest)
-                          Expanded(
-                            child: Container(
-                              height: 30,
-                              color: AppTheme.errorColor.withOpacity(0.15),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Max\n${target.toInt()}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppTheme.textSecondaryColor,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    
-                    // 2. Actual Value Bar
+
+                    // 3. User Value Marker
                     if (ldl > 0)
-                      Container(
-                        width: actualPos.clamp(0, width),
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: AppTheme.textPrimaryColor,
-                          borderRadius: BorderRadius.circular(2),
+                      Positioned(
+                        left: (actualPos - 20).clamp(0, width - 40),
+                        top: -10,
+                        child: Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: (ldl > target) ? AppTheme.errorColor : AppTheme.primaryGreen,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  )
+                                ]
+                              ),
+                              child: Text(
+                                '${ldl.toInt()}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              color: (ldl > target) ? AppTheme.errorColor : AppTheme.primaryGreen,
+                              size: 24,
+                            ),
+                          ],
                         ),
                       ),
-                      
-                    // 3. Target Marker
-                    Positioned(
-                      left: targetPos,
-                      child: Container(
-                        width: 4,
-                        height: 40,
-                        color: AppTheme.primaryBlue,
-                      ),
-                    ),
                   ],
                 );
               },
             ),
-          ),
-          const SizedBox(height: 8),
-          // Labels
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('0', style: Theme.of(context).textTheme.bodySmall),
-              Text(
-                'Target: ${target.toInt()}', 
-                style: TextStyle(
-                  color: AppTheme.primaryBlue, 
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12
-                )
-              ),
-              Text('${maxScale.toInt()}+', style: Theme.of(context).textTheme.bodySmall),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Current Value Text
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Current LDL: ',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              Text(
-                ldl > 0 ? '${ldl.toInt()} mg/dL' : '--',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: (ldl > target) ? AppTheme.errorColor : AppTheme.primaryGreen,
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -570,9 +581,9 @@ class _CompositionSectionState extends State<_CompositionSection> {
   String _getRangeLabel(String range) {
     switch (range) {
       case '6M':
-        return '6 Months';
+        return 'Half Year';
       case '1Y':
-        return '1 Year';
+        return 'Yearly';
       case 'ALL':
         return 'All Time';
       default:

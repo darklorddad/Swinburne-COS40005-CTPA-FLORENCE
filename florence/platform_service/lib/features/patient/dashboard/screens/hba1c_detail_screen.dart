@@ -383,9 +383,9 @@ class _TrendsSectionState extends State<_TrendsSection> {
   String _getRangeLabel(String range) {
     switch (range) {
       case '6M':
-        return '6 Months';
+        return 'Half Year';
       case '1Y':
-        return '1 Year';
+        return 'Yearly';
       case 'ALL':
         return 'All Time';
       default:
