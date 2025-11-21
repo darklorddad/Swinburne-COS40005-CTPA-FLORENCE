@@ -244,7 +244,9 @@ class _RatioSection extends StatelessWidget {
     return _CholesterolCard(
       title: 'Cholesterol Ratio',
       icon: Icons.pie_chart,
-      infoText: 'Your cholesterol balance.\n\n'
+      infoText: 'Ratio = Total Cholesterol / HDL.\n\n'
+                '• Chart: Comparing HDL (Good) vs Non-HDL (Bad).\n'
+                '• Goal: A lower ratio is better (Target < 5.0).\n\n'
                 '• Total Target: ${total.minValue.toInt()}-${total.maxValue.toInt()}\n'
                 '• LDL Target: ${ldl.minValue.toInt()}-${ldl.maxValue.toInt()}\n'
                 '• HDL Target: ${hdl.minValue.toInt()}-${hdl.maxValue.toInt()}\n'
@@ -463,7 +465,7 @@ class _LdlTargetSection extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: SizedBox(
-                          height: 16,
+                          height: 30,
                           child: Row(
                             children: [
                               // Green Zone
@@ -491,12 +493,12 @@ class _LdlTargetSection extends StatelessWidget {
                     // 2. Target Line
                     Positioned(
                       left: targetPos - 1, 
-                      top: 12, 
+                      top: 15, 
                       child: Column(
                         children: [
                           Container(
                             width: 2,
-                            height: 32,
+                            height: 40,
                             color: AppTheme.textSecondaryColor,
                           ),
                           const SizedBox(height: 4),
