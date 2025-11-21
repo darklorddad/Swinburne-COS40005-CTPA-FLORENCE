@@ -243,10 +243,19 @@ class _GaugeSection extends StatelessWidget {
                         startDegreeOffset: 180,
                         sectionsSpace: 0,
                         centerSpaceRadius: centerRadius,
-                        sections: [
+                        sections: threshold != null 
+                        ? [
+                          // Clinical Ranges (Only show if threshold exists, implying user cares about status)
+                          // Note: Mapping exact user thresholds to a fixed gauge is complex, 
+                          // so we stick to clinical backgrounds BUT only if a threshold is set.
                           PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionWidth, showTitle: false),
                           PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
                           PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
+                        ]
+                        : [
+                          // Neutral Blue Arc (4.0 to 12.0 range = 8 units)
+                          PieChartSectionData(value: 8.0, color: AppTheme.primaryBlue.withOpacity(0.2), radius: sectionWidth, showTitle: false),
                           PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ],
                       ),

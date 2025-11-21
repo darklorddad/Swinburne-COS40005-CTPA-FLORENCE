@@ -191,10 +191,10 @@ class BiometricsSection extends StatelessWidget {
       label: 'BMI',
       value: bmi?.value.toStringAsFixed(1) ?? '--',
       unit: '',
-      status: bmi != null ? Helpers.getBMICategory(bmi.value) : 'No Data',
+      status: _getBmiStatus(bmi?.value, thresholds),
       timestamp: bmi?.measuredAt,
       icon: Icons.height_outlined,
-      color: _getBmiColor(bmi?.value),
+      color: _getBmiColor(bmi?.value, thresholds),
       onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
     ));
 
@@ -331,10 +331,23 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  Color _getBmiColor(double? value) {
+  String _getBmiStatus(double? value, List<HealthThreshold> thresholds) {
+    if (value == null) return 'No Data';
+    final t = _getThreshold(thresholds, MonitorDataType.BMI);
+    if (t == null) return 'Recorded';
+
+    if (value < t.minValue) return 'Low';
+    if (value > t.maxValue) return 'High';
+    return 'Normal';
+  }
+
+  Color _getBmiColor(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
-    if (value < 18.5 || value >= 30) return AppTheme.errorColor;
-    if (value >= 25) return AppTheme.warningColor;
+    final t = _getThreshold(thresholds, MonitorDataType.BMI);
+    if (t == null) return AppTheme.primaryBlue;
+
+    if (value < t.minValue) return AppTheme.warningColor; // Underweight
+    if (value > t.maxValue) return AppTheme.errorColor; // Overweight/Obese
     return AppTheme.primaryGreen;
   }
 }
