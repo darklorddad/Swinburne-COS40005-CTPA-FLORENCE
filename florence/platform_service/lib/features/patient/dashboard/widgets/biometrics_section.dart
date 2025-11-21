@@ -182,7 +182,7 @@ class BiometricsSection extends StatelessWidget {
       status: _getMealStatus(latestMeal),
       timestamp: latestMeal?.logDate,
       icon: Icons.restaurant_menu,
-      color: _getMealColor(latestMeal),
+      color: _getMealColor(latestMeal, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.mealImpact),
     ));
 
@@ -223,8 +223,12 @@ class BiometricsSection extends StatelessWidget {
     return 'Logged';
   }
 
-  Color _getMealColor(DailyPatientLog? meal) {
+  Color _getMealColor(DailyPatientLog? meal, List<HealthThreshold> thresholds) {
     if (meal == null) return AppTheme.textSecondaryColor; // Grey (Empty)
+
+    // Check if glucose tracking is configured
+    final t = _getThreshold(thresholds, MonitorDataType.GLUCOSE);
+    if (t == null) return AppTheme.primaryBlue; // Neutral if no glucose target
 
     // If we have BOTH readings, check for high spikes
     if (meal.glucoseBeforeMeal != null && meal.glucoseAfterMeal != null) {
@@ -234,8 +238,7 @@ class BiometricsSection extends StatelessWidget {
       if (spike > 30) return AppTheme.warningColor;  // Orange: Elevated Spike (30-50)
     }
 
-    // Default: Green
-    // Used for stable spikes (<=30) OR if just the meal is logged (No glucose data yet)
+    // Default: Green (Stable spike or just logged)
     return AppTheme.primaryGreen; 
   }
 
