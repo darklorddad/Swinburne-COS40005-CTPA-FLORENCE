@@ -46,7 +46,7 @@ async def startup_event():
     logger.info("Florence Chatbot Service Starting")
     logger.info("=" * 60)
     logger.info(f"Service URL: http://{settings.service_host}:{settings.service_port}")
-    logger.info(f"Supabase URL: {settings.supabase_url}")
+    logger.info(f"Data Service URL: {settings.data_service_url}")
     logger.info(f"DeepSeek Model: {settings.deepseek_model}")
     logger.info(f"Health Context Days: {settings.health_context_days}")
     logger.info("=" * 60)
