@@ -59,6 +59,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
                 children: [
                   _GaugeSection(
                     latestReading: readings.isNotEmpty ? readings.last : null,
+                    threshold: userThreshold,
                   ),
                   const SizedBox(height: 20),
                   
@@ -74,7 +75,11 @@ class HbA1cDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
                   
-                  _HistorySection(readings: readings, targetMax: targetMax),
+                  _HistorySection(
+                    readings: readings, 
+                    targetMax: targetMax,
+                    threshold: userThreshold,
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -94,8 +99,9 @@ class HbA1cDetailScreen extends ConsumerWidget {
 
 class _GaugeSection extends StatelessWidget {
   final MonitorData? latestReading;
+  final HealthThreshold? threshold;
 
-  const _GaugeSection({this.latestReading});
+  const _GaugeSection({this.latestReading, this.threshold});
 
   @override
   Widget build(BuildContext context) {
@@ -110,18 +116,31 @@ class _GaugeSection extends StatelessWidget {
 
     Color statusColor;
     String statusText;
+    
+    // Use threshold if available, otherwise standard clinical ranges
     if (val == 0) {
       statusText = "No Data";
       statusColor = AppTheme.textSecondaryColor;
-    } else if (val < 5.7) {
-      statusColor = AppTheme.primaryGreen;
-      statusText = "Normal";
-    } else if (val < 6.5) {
-      statusColor = AppTheme.warningColor;
-      statusText = "Pre-diabetes";
+    } else if (threshold != null) {
+      if (val <= threshold!.maxValue) {
+        statusColor = AppTheme.primaryGreen;
+        statusText = "Within Target";
+      } else {
+        statusColor = AppTheme.errorColor;
+        statusText = "Above Target";
+      }
     } else {
-      statusColor = AppTheme.errorColor;
-      statusText = "Diabetes";
+      // Default clinical ranges
+      if (val < 5.7) {
+        statusColor = AppTheme.primaryGreen;
+        statusText = "Normal";
+      } else if (val < 6.5) {
+        statusColor = AppTheme.warningColor;
+        statusText = "Pre-diabetes";
+      } else {
+        statusColor = AppTheme.errorColor;
+        statusText = "Diabetes";
+      }
     }
 
     // Chart Dimensions
@@ -142,6 +161,66 @@ class _GaugeSection extends StatelessWidget {
         width: double.infinity,
         child: Column(
           children: [
+            // Target Range Display (Similar to Glucose)
+            InkWell(
+              onTap: () => Navigator.of(context).pushNamed('/profile'),
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.track_changes,
+                          size: 18,
+                          color: AppTheme.primaryGreen,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          threshold != null ? 'Target Range' : 'Default Target',
+                          style: TextStyle(
+                            color: AppTheme.primaryGreen.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          threshold != null 
+                              ? '< ${threshold!.maxValue.toStringAsFixed(1)}%' 
+                              : '< 6.5%',
+                          style: TextStyle(
+                            color: AppTheme.primaryGreen,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.chevron_right,
+                          size: 20,
+                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
             // 1. The Gauge (Half Circle)
             SizedBox(
               height: chartRadius + 20, // Increased height to prevent clipping of pivot
@@ -173,36 +252,40 @@ class _GaugeSection extends StatelessWidget {
                   if (val > 0)
                     Positioned(
                       top: chartRadius - needleLength, // Position based on needle length to align pivot at chartRadius
-                      child: Transform.rotate(
-                        angle: rotationAngle,
-                        alignment: Alignment.bottomCenter,
-                        child: SizedBox(
-                          height: needleLength, 
-                          width: 16,
-                          child: Stack(
-                            alignment: Alignment.bottomCenter,
-                            children: [
-                              // Needle Body
-                              Container(
-                                width: 6, 
-                                height: needleLength, 
-                                margin: const EdgeInsets.only(bottom: 0),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.textPrimaryColor,
-                                  borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Transform.rotate(
+                          angle: rotationAngle,
+                          alignment: Alignment.bottomCenter,
+                          child: SizedBox(
+                            height: needleLength, 
+                            width: 16,
+                            child: Stack(
+                              alignment: Alignment.bottomCenter,
+                              children: [
+                                // Needle Body
+                                Container(
+                                  width: 6, 
+                                  height: needleLength, 
+                                  margin: const EdgeInsets.only(bottom: 0),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.textPrimaryColor,
+                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                                  ),
                                 ),
-                              ),
-                              // Pivot Point (Knob)
-                              Container(
-                                width: 16,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: AppTheme.textPrimaryColor,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white, width: 3),
+                                // Pivot Point (Knob)
+                                Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.textPrimaryColor,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 3),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -572,8 +655,9 @@ class _GoalComparisonSection extends StatelessWidget {
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
   final double targetMax;
+  final HealthThreshold? threshold;
 
-  const _HistorySection({required this.readings, required this.targetMax});
+  const _HistorySection({required this.readings, required this.targetMax, this.threshold});
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();
@@ -678,15 +762,26 @@ class _HistorySectionState extends State<_HistorySection> {
              // Determine status color
              String statusText;
              Color statusColor;
-             if (r.value < 5.7) {
-               statusText = 'NORMAL';
-               statusColor = AppTheme.primaryGreen;
-             } else if (r.value < 6.5) {
-               statusText = 'PRE-DIABETES';
-               statusColor = AppTheme.warningColor;
+             
+             if (widget.threshold != null) {
+               if (r.value <= widget.threshold!.maxValue) {
+                 statusText = 'WITHIN TARGET';
+                 statusColor = AppTheme.primaryGreen;
+               } else {
+                 statusText = 'ABOVE TARGET';
+                 statusColor = AppTheme.errorColor;
+               }
              } else {
-               statusText = 'DIABETES';
-               statusColor = AppTheme.errorColor;
+               if (r.value < 5.7) {
+                 statusText = 'NORMAL';
+                 statusColor = AppTheme.primaryGreen;
+               } else if (r.value < 6.5) {
+                 statusText = 'PRE-DIABETES';
+                 statusColor = AppTheme.warningColor;
+               } else {
+                 statusText = 'DIABETES';
+                 statusColor = AppTheme.errorColor;
+               }
              }
 
              return Container(
