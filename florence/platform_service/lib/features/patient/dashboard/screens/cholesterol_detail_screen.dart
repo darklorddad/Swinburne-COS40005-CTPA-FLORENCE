@@ -132,8 +132,8 @@ class CholesterolDetailScreen extends ConsumerWidget {
         continue;
       }
 
-      // Group by day
-      final key = DateFormat('yyyy-MM-dd').format(d.measuredAt);
+      // Group by exact timestamp to split different times on same day
+      final key = d.measuredAt.toIso8601String();
       
       if (!grouped.containsKey(key)) {
         grouped[key] = _CholesterolReading(timestamp: d.measuredAt);
@@ -885,53 +885,113 @@ class _HistorySectionState extends State<_HistorySection> {
             )
           else
             ...currentItems.map((r) {
+              // Determine status based on worst metric
+              String statusText = 'NORMAL';
+              Color statusColor = AppTheme.primaryGreen;
+            
+              if ((r.total ?? 0) > 200 || (r.ldl ?? 0) > 100 || (r.triglycerides ?? 0) > 150 || ((r.hdl ?? 100) < 40)) {
+                statusText = 'HIGH RISK';
+                statusColor = AppTheme.errorColor;
+              }
+
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: isDark ? AppTheme.midnightSurface : Colors.white,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                  border: Border.all(
+                    color: statusColor.withOpacity(0.3),
+                    width: 1,
+                  ),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Top Row: Total Value + Status
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          DateFormat('MMM d, yyyy').format(r.timestamp),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        // Left: Total Value
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.baseline,
+                          textBaseline: TextBaseline.alphabetic,
+                          children: [
+                            Text(
+                              r.total != null ? r.total!.toInt().toString() : (r.ldl != null ? r.ldl!.toInt().toString() : '--'),
+                              style: TextStyle(
+                                fontWeight: FontWeight.normal,
+                                fontSize: 20,
+                                color: AppTheme.textPrimaryColor,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              r.total != null ? 'Total mg/dL' : 'LDL mg/dL',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textSecondaryColor,
+                                    fontSize: 12,
+                                  ),
+                            ),
+                          ],
                         ),
-                        Text(
-                          DateFormat('h:mm a').format(r.timestamp),
-                          style: TextStyle(
-                            color: AppTheme.textSecondaryColor,
-                            fontSize: 12,
-                          ),
+                        // Right: Status & Date
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: statusColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                statusText,
+                                style: TextStyle(
+                                  color: statusColor,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              DateFormat('MMM d, h:mm a').format(r.timestamp),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontSize: 11,
+                                    color: AppTheme.textSecondaryColor,
+                                  ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  
                     const SizedBox(height: 12),
-                    Divider(color: AppTheme.borderColor.withOpacity(0.5), height: 1),
-                    const SizedBox(height: 12),
-                    // 2x2 Grid for values
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _MiniValue('Total', r.total, _getStatusColor(r.total, MonitorDataType.CHOLESTEROL_TOTAL))),
-                        const SizedBox(width: 8),
-                        Expanded(child: _MiniValue('Triglycerides', r.triglycerides, _getStatusColor(r.triglycerides, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES))),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: _MiniValue('LDL (Bad)', r.ldl, _getStatusColor(r.ldl, MonitorDataType.CHOLESTEROL_LDL))),
-                        const SizedBox(width: 8),
-                        Expanded(child: _MiniValue('HDL (Good)', r.hdl, _getStatusColor(r.hdl, MonitorDataType.CHOLESTEROL_HDL))),
-                      ],
+                  
+                    // Bottom Row: Detailed Breakdown
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.black12 : Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _MiniValue('LDL', r.ldl, _getStatusColor(r.ldl, MonitorDataType.CHOLESTEROL_LDL)),
+                          _ContainerDivider(),
+                          _MiniValue('HDL', r.hdl, _getStatusColor(r.hdl, MonitorDataType.CHOLESTEROL_HDL)),
+                          _ContainerDivider(),
+                          _MiniValue('Tri', r.triglycerides, _getStatusColor(r.triglycerides, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -953,15 +1013,25 @@ class _MiniValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
+        Text(label, style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
         const SizedBox(height: 2),
         Text(
-          value != null ? '${value!.toInt()} mg/dL' : '--',
+          value != null ? '${value!.toInt()}' : '--',
           style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
         ),
       ],
+    );
+  }
+}
+
+class _ContainerDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 20, 
+      width: 1, 
+      color: AppTheme.getBorderColor(context).withOpacity(0.5)
     );
   }
 }
