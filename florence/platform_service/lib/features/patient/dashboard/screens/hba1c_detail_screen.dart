@@ -495,11 +495,11 @@ class _TrendsSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.08)),
+              _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.5)),
               const SizedBox(width: 16),
-              _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.08)),
+              _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.5)),
               const SizedBox(width: 16),
-              _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.08)),
+              _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.5)),
             ],
           )
         ],
