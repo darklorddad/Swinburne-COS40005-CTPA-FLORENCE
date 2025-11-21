@@ -21,14 +21,15 @@ class Environment {
 
   // ==================== API CONFIGURATION ====================
 
-  /// Backend API URL (Data Service - Port 8000)
-  /// USE 127.0.0.1 for Chrome/Desktop, USE network IP for Android
-  // static const String apiUrl = 'http://127.0.0.1:8000';  // FOR CHROME
-  // static const String apiUrl = 'http://192.168.0.47:8000';  // FOR ANDROID
-  static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
+  /// Backend API URL (Data Service)
+  // static const String apiUrl = 'http://127.0.0.1:8000';       // Local (Chrome)
+  // static const String apiUrl = 'http://10.0.2.2:8000';        // Local (Android Emulator)
+  static const String apiUrl = 'https://ds-florence-dhp.vercel.app'; // Production
 
-  /// Chatbot Service URL (Port 8001)
- static const String chatbotServiceUrl = 'https://llmcs-florence-dhp.vercel.app';
+  /// Chatbot Service URL
+  // static const String chatbotServiceUrl = 'http://127.0.0.1:8001';      // Local (Chrome)
+  // static const String chatbotServiceUrl = 'http://10.0.2.2:8001';       // Local (Android Emulator)
+  static const String chatbotServiceUrl = 'https://llmcs-florence-dhp.vercel.app'; // Production
 
   // ==================== SUPABASE CONFIGURATION ====================
   
