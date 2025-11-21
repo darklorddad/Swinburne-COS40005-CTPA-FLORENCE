@@ -402,7 +402,7 @@ class _StatisticsSection extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              isDefault ? 'Default Target' : 'Target Range',
+                              'Target Range',
                               style: TextStyle(
                                 color: AppTheme.primaryGreen.withOpacity(0.8),
                                 fontWeight: FontWeight.w600,

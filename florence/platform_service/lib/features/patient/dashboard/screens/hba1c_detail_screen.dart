@@ -198,7 +198,7 @@ class _GaugeSection extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              threshold != null ? 'Target Range' : 'Default Target',
+                              'Target Range',
                               style: TextStyle(
                                 color: AppTheme.primaryGreen.withOpacity(0.8),
                                 fontWeight: FontWeight.w600,
@@ -504,13 +504,13 @@ class _TrendsSectionState extends State<_TrendsSection> {
                     show: true, 
                     border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))
                   ),
-                  rangeAnnotations: RangeAnnotations(
+                  rangeAnnotations: widget.targetMax != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
                       HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
                       HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
                       HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
                     ],
-                  ),
+                  ) : null,
                   extraLinesData: widget.targetMax != null ? ExtraLinesData(
                     horizontalLines: [
                        HorizontalLine(
@@ -567,17 +567,19 @@ class _TrendsSectionState extends State<_TrendsSection> {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.5)),
-              const SizedBox(width: 16),
-              _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.5)),
-              const SizedBox(width: 16),
-              _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.5)),
-            ],
-          )
+          if (widget.targetMax != null) ...[
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.5)),
+                const SizedBox(width: 16),
+                _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.5)),
+                const SizedBox(width: 16),
+                _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.5)),
+              ],
+            )
+          ]
         ],
       ),
     );
