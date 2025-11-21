@@ -74,14 +74,8 @@ async def send_message(
         messages.append(DeepSeekMessage(role="user", content=request.message))
 
         # Call DeepSeek API
-        try:
-            assistant_content = await deepseek_service.chat_completion(messages)
-            logger.info(f"DeepSeek responded to patient {patient_id}")
-
-        except Exception as ai_error:
-            logger.error(f"DeepSeek API error for patient {patient_id}: {str(ai_error)}")
-            # Use fallback response
-            assistant_content = deepseek_service.get_fallback_response(str(ai_error))
+        assistant_content = await deepseek_service.chat_completion(messages)
+        logger.info(f"DeepSeek responded to patient {patient_id}")
 
         # Save assistant response with health context
         assistant_message = await conversation_service.save_message(

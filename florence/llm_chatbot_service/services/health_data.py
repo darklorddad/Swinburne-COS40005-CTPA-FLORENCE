@@ -106,6 +106,21 @@ class HealthDataService:
         filtered_data.sort(key=lambda x: x.log_date, reverse=True)
         return filtered_data
 
+    async def get_patient_thresholds(self, token: str) -> dict:
+        """
+        Fetch patient-specific health thresholds.
+        """
+        raw_data = await self._fetch_data("/patients/me/thresholds", token)
+        
+        # Convert list of thresholds to a dict for easier lookup
+        thresholds = {}
+        for t in raw_data:
+            thresholds[t["data_type"]] = {
+                "min": t["min_value"],
+                "max": t["max_value"]
+            }
+        return thresholds
+
     async def get_health_summary(
         self,
         token: str,
@@ -115,6 +130,17 @@ class HealthDataService:
         """
         Generate comprehensive health summary for a patient.
         """
+        # Fetch thresholds
+        thresholds = await self.get_patient_thresholds(token)
+        
+        # Get glucose thresholds
+        glucose_min = settings.glucose_low_threshold
+        glucose_max = settings.glucose_high_threshold
+        
+        if "GLUCOSE" in thresholds:
+            glucose_min = thresholds["GLUCOSE"]["min"]
+            glucose_max = thresholds["GLUCOSE"]["max"]
+
         # Fetch all monitor data
         monitor_data = await self.get_monitor_data(token, start_date, end_date)
 
@@ -131,13 +157,13 @@ class HealthDataService:
         glucose_std_dev = statistics.stdev(glucose_values) if len(glucose_values) > 1 else None
 
         # Count hyper/hypo events
-        hyper_events = sum(1 for v in glucose_values if v > settings.glucose_high_threshold)
-        hypo_events = sum(1 for v in glucose_values if v < settings.glucose_low_threshold)
+        hyper_events = sum(1 for v in glucose_values if v > glucose_max)
+        hypo_events = sum(1 for v in glucose_values if v < glucose_min)
 
         # Calculate time in range
         in_range_count = sum(
             1 for v in glucose_values
-            if settings.glucose_low_threshold <= v <= settings.glucose_high_threshold
+            if glucose_min <= v <= glucose_max
         )
         time_in_range = (in_range_count / len(glucose_values) * 100) if glucose_values else 0.0
 

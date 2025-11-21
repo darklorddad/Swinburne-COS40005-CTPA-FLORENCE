@@ -113,25 +113,6 @@ Important:
 - Keep responses concise and clear
 - Be empathetic and supportive"""
 
-    def get_fallback_response(self, error_message: Optional[str] = None) -> str:
-        """
-        Get a fallback response when AI fails.
-
-        Args:
-            error_message: Optional error message for logging
-
-        Returns:
-            Friendly fallback response
-        """
-        fallback_responses = [
-            "I'm here to help! Could you tell me more about what you'd like to know?",
-            "I want to help you with your diabetes management. What would you like to discuss?",
-            "Let's talk about your health. What questions do you have?",
-            "I'm having trouble connecting right now, but I'm here to help. Could you rephrase your question?",
-        ]
-
-        # For now, return the first fallback (can add logic to rotate or choose based on context)
-        return fallback_responses[0]
 
 
 # Singleton instance
