@@ -26,18 +26,21 @@ async def get_current_patient_profile(authorization: str = Header(...)):
             raise HTTPException(status_code=401, detail="Invalid token.")
         
         # Fetch the patient profile using the user's ID. This now serves as the role check.
-        profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).single().execute()
+        # We avoid .single() to handle "0 rows" or "multiple rows" manually and safely.
+        profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
+        
+        if not profile_response.data:
+            raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
+        
+        if len(profile_response.data) > 1:
+            raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
             
-        return profile_response.data
+        return profile_response.data[0]
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except HTTPException as e:
+        raise e
     except Exception as e:
-        # This will catch the .single() error if more than one profile is found
-        if "Multiple rows returned" in str(e):
-             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
-        # If no rows are found, .single() raises an error. We treat this as an access denied case.
-        if "Expected 1 row, got 0" in str(e):
-            raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Pydantic Models ---

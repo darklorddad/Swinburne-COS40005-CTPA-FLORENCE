@@ -25,14 +25,21 @@ async def get_current_clinician_profile(authorization: str = Header(...)):
             raise HTTPException(status_code=401, detail="Invalid token.")
         
         # Fetch the clinician profile using the user's ID. This serves as the role check.
-        profile_response = supabase.table('clinician_profiles').select('*').eq('user_id', user.id).single().execute()
+        # We avoid .single() to handle "0 rows" or "multiple rows" manually and safely.
+        profile_response = supabase.table('clinician_profiles').select('*').eq('user_id', user.id).execute()
         
-        return profile_response.data
+        if not profile_response.data:
+            raise HTTPException(status_code=403, detail="Access denied: User is not a clinician.")
+            
+        if len(profile_response.data) > 1:
+            raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
+        
+        return profile_response.data[0]
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
+    except HTTPException as e:
+        raise e
     except Exception as e:
-        if "Expected 1 row, got 0" in str(e):
-            raise HTTPException(status_code=403, detail="Access denied: User is not a clinician.")
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Pydantic Models ---
