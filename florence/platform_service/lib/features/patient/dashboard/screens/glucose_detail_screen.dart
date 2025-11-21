@@ -711,7 +711,7 @@ class _TimeInRangeSection extends StatelessWidget {
                       children: [
                         if (lowPct > 0) Expanded(flex: (lowPct * 10).toInt(), child: Container(color: AppTheme.errorColor)),
                         if (inPct > 0) Expanded(flex: (inPct * 10).toInt(), child: Container(color: AppTheme.primaryGreen)),
-                        if (highPct > 0) Expanded(flex: (highPct * 10).toInt(), child: Container(color: AppTheme.warningColor)),
+                        if (highPct > 0) Expanded(flex: (highPct * 10).toInt(), child: Container(color: AppTheme.errorColor)),
                       ],
                     ),
               ),
@@ -722,7 +722,7 @@ class _TimeInRangeSection extends StatelessWidget {
               children: [
                 _buildTIRLegend(context, 'Low', lowPct, AppTheme.errorColor),
                 _buildTIRLegend(context, 'In Range', inPct, AppTheme.primaryGreen, isBig: true),
-                _buildTIRLegend(context, 'High', highPct, AppTheme.warningColor),
+                _buildTIRLegend(context, 'High', highPct, AppTheme.errorColor),
               ],
             ),
           ],

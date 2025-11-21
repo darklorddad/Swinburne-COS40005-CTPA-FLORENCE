@@ -734,8 +734,13 @@ class _ScatterSection extends StatelessWidget {
                   scatterSpots: data.map((r) {
                     Color dotColor;
                     if (sysThreshold != null && diaThreshold != null) {
-                      final isHigh = r.systolic > sysThreshold!.maxValue || r.diastolic > diaThreshold!.maxValue;
-                      dotColor = isHigh ? AppTheme.errorColor : AppTheme.primaryGreen;
+                      if (r.systolic > sysThreshold!.maxValue || r.diastolic > diaThreshold!.maxValue) {
+                        dotColor = AppTheme.errorColor;
+                      } else if (r.systolic < sysThreshold!.minValue || r.diastolic < diaThreshold!.minValue) {
+                        dotColor = AppTheme.warningColor;
+                      } else {
+                        dotColor = AppTheme.primaryGreen;
+                      }
                     } else {
                       dotColor = AppTheme.primaryBlue;
                     }
@@ -780,9 +785,11 @@ class _ScatterSection extends StatelessWidget {
             const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                if (sysThreshold != null && diaThreshold != null) ...[
+                 _buildLegendItem('Low', AppTheme.warningColor, isCircle: true),
+                 const SizedBox(width: 16),
                  _buildLegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
                  const SizedBox(width: 16),
-                 _buildLegendItem('High', AppTheme.errorColor, isCircle: true),
+                 _buildLegendItem('Elevated', AppTheme.errorColor, isCircle: true),
                ] else
                  _buildLegendItem('Recorded', AppTheme.primaryBlue, isCircle: true),
             ]),
