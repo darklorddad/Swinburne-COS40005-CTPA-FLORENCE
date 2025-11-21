@@ -773,31 +773,19 @@ class _HistorySectionState extends State<_HistorySection> {
   Color _getStatusColor(double? value, MonitorDataType type) {
     if (value == null) return AppTheme.textSecondaryColor;
     
-    // Default thresholds if not found
-    double min = 0;
-    double max = 200;
-    
-    if (type == MonitorDataType.CHOLESTEROL_HDL) {
-      min = 40;
-      max = 100;
-    } else if (type == MonitorDataType.CHOLESTEROL_LDL) {
-      max = 100;
-    } else if (type == MonitorDataType.CHOLESTEROL_TRIGLYCERIDES) {
-      max = 150;
-    }
-
     try {
       final t = widget.thresholds.firstWhere((t) => t.dataType == type);
-      min = t.minValue;
-      max = t.maxValue;
-    } catch (_) {}
-
-    if (type == MonitorDataType.CHOLESTEROL_HDL) {
-      // HDL: Higher is better. Low is bad.
-      return value < min ? AppTheme.errorColor : AppTheme.primaryGreen;
-    } else {
-      // LDL/Total/Tri: Lower is better. High is bad.
-      return value > max ? AppTheme.errorColor : AppTheme.primaryGreen;
+      
+      if (type == MonitorDataType.CHOLESTEROL_HDL) {
+        // HDL: Higher is better. Low is bad.
+        return value < t.minValue ? AppTheme.errorColor : AppTheme.primaryGreen;
+      } else {
+        // LDL/Total/Tri: Lower is better. High is bad.
+        return value > t.maxValue ? AppTheme.errorColor : AppTheme.primaryGreen;
+      }
+    } catch (_) {
+      // No threshold found: Return neutral color
+      return AppTheme.textPrimaryColor;
     }
   }
 
