@@ -32,8 +32,8 @@ class Environment {
   /// Backend API URL
   /// USE 127.0.0.1 for Chrome/Desktop, USE network IP for Android
   // static const String apiUrl = 'http://127.0.0.1:8000';  // FOR CHROME
-  static const String apiUrl = 'http://192.168.0.47:8000';  // FOR ANDROID
-  //static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
+  // static const String apiUrl = 'http://192.168.0.47:8000';  // FOR ANDROID
+  static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
 
   // ==================== SUPABASE CONFIGURATION ====================
   
