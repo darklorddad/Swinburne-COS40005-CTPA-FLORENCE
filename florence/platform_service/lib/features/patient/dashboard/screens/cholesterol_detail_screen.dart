@@ -259,7 +259,7 @@ class _RatioSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Container(
               width: double.infinity,
-              margin: EdgeInsets.zero,
+              margin: const EdgeInsets.only(bottom: 10),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
                 color: AppTheme.primaryGreen.withOpacity(0.1),
@@ -314,7 +314,7 @@ class _RatioSection extends StatelessWidget {
 
           // Ratio Chart
           SizedBox(
-            height: 180,
+            height: 200,
             child: Stack(
               alignment: Alignment.center,
               children: [
@@ -393,7 +393,7 @@ class _RatioSection extends StatelessWidget {
           ),
           if (hasData)
             Padding(
-              padding: EdgeInsets.zero,
+              padding: const EdgeInsets.only(top: 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
