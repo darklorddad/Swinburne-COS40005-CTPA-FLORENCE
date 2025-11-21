@@ -48,7 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
         _messages = List.from(_chatbotService.messages);
         _isLoadingHistory = false;
       });
-      _scrollToBottom();
+      if (_messages.isNotEmpty) _scrollToBottom();
     } else {
       // Otherwise fetch from API
       await _loadHistory();
@@ -64,22 +64,14 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() {
           _messages = List.from(history);
-          // Add welcome message if history is empty
-          if (_messages.isEmpty) {
-            _addWelcomeMessage();
-          }
           _isLoadingHistory = false;
         });
-        _scrollToBottom();
+        if (_messages.isNotEmpty) _scrollToBottom();
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingHistory = false;
-          // Fallback to welcome message on error if empty
-          if (_messages.isEmpty) {
-            _addWelcomeMessage();
-          }
         });
         Helpers.showError(context, 'Failed to sync chat history');
       }
@@ -91,18 +83,6 @@ class _ChatScreenState extends State<ChatScreen> {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-  
-  /// Add welcome message (local only, not saved to DB until user replies)
-  void _addWelcomeMessage() {
-    // We don't add this to the service cache, just the local UI list
-    _messages.add(
-      ChatMessage(
-        content: "Hi! I'm your AI Health Assistant 👋\n\nI can help you understand your glucose patterns, suggest meal ideas, answer health questions, and provide personalized recommendations.\n\nWhat would you like to know?",
-        role: 'assistant',
-        timestamp: DateTime.now(),
-      ),
-    );
   }
   
   /// Send message
@@ -228,7 +208,6 @@ class _ChatScreenState extends State<ChatScreen> {
               await _chatbotService.clearHistory();
               setState(() {
                 _messages.clear();
-                _addWelcomeMessage();
               });
             },
             tooltip: 'Clear History',
@@ -242,8 +221,8 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Suggested questions (only show if history is empty or just welcome msg)
-          if (!_isLoadingHistory && _messages.length <= 1) 
+          // Suggested questions (only show if history is empty)
+          if (!_isLoadingHistory && _messages.isEmpty) 
             _buildSuggestedQuestions(),
           
           // Chat messages area
