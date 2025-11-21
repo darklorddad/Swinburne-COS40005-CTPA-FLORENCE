@@ -371,7 +371,9 @@ class _StatisticsSection extends StatelessWidget {
                       _buildMiniTargetRow('Diastolic', '${diaThreshold!.minValue.toInt()} - ${diaThreshold!.maxValue.toInt()} mmHg', AppTheme.primaryGreen),
                     ] else ...[
                       const SizedBox(height: 12),
-                      const Text('Targets not configured', style: TextStyle(color: AppTheme.textSecondaryColor)),
+                      _buildMiniTargetRow('Systolic', 'Not Set', AppTheme.textSecondaryColor),
+                      const SizedBox(height: 4),
+                      _buildMiniTargetRow('Diastolic', 'Not Set', AppTheme.textSecondaryColor),
                     ],
                   ],
                 ),

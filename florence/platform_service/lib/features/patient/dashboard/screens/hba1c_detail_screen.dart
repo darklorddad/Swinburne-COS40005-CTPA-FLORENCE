@@ -218,8 +218,8 @@ class _GaugeSection extends StatelessWidget {
                       'HbA1c',
                       threshold != null 
                           ? '${threshold!.minValue.toStringAsFixed(1)} - ${threshold!.maxValue.toStringAsFixed(1)}%' 
-                          : '4.0 - 6.5%',
-                      AppTheme.primaryGreen,
+                          : 'Not Set',
+                      threshold != null ? AppTheme.primaryGreen : AppTheme.textSecondaryColor,
                     ),
                   ],
                 ),
