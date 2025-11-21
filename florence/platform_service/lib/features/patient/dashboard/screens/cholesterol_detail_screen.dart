@@ -234,15 +234,21 @@ class _RatioSection extends StatelessWidget {
     if (ratio == 0) {
       statusText = "No Data";
       statusColor = AppTheme.textSecondaryColor;
-    } else if (ratio < 3.5) {
-      statusText = "Excellent";
-      statusColor = AppTheme.primaryGreen;
-    } else if (ratio < 5.0) {
-      statusText = "Good";
-      statusColor = AppTheme.primaryBlue;
+    } else if (total != null && hdl != null) {
+      // Only evaluate if we have targets
+      if (ratio < 3.5) {
+        statusText = "Excellent";
+        statusColor = AppTheme.primaryGreen;
+      } else if (ratio < 5.0) {
+        statusText = "Good";
+        statusColor = AppTheme.primaryBlue;
+      } else {
+        statusText = "High Risk";
+        statusColor = AppTheme.errorColor;
+      }
     } else {
-      statusText = "High Risk";
-      statusColor = AppTheme.errorColor;
+      statusText = "Recorded";
+      statusColor = AppTheme.primaryBlue;
     }
 
     return _CholesterolCard(

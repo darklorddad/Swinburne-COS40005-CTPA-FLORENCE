@@ -441,7 +441,7 @@ class _StatisticsSection extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(child: _buildStatBox(context, 'GMI', '${(stats['gmi'] as double).toStringAsFixed(1)}', '%', Colors.purple)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Variability', '${(stats['cv'] as double).toStringAsFixed(1)}', '%', (stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor)),
+                Expanded(child: _buildStatBox(context, 'Variability', '${(stats['cv'] as double).toStringAsFixed(1)}', '%', threshold != null ? ((stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor) : AppTheme.textSecondaryColor)),
               ],
             ),
           ],
