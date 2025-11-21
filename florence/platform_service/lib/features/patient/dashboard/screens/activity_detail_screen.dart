@@ -70,14 +70,14 @@ class ActivityDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // 3. Activity Timing
+                      // 3. Activity Timing (Last 28 Days)
                       _ActivityTimingChart(
                         logs: sortedLogs, 
                         dataColor: dataColor
                       ),
                       const SizedBox(height: 20),
 
-                      // 4. History List
+                      // 4. History List (Consistent Design)
                       _ActivityHistoryList(
                         logs: sortedLogs,
                         glucoseReadings: glucoseReadings,
@@ -450,7 +450,7 @@ class _TimingPoint {
 }
 
 // ============================================================================
-// 4. HISTORY & GLUCOSE IMPACT
+// 4. HISTORY & GLUCOSE IMPACT (CONSISTENT LAYOUT)
 // ============================================================================
 
 class _ActivityHistoryList extends StatefulWidget {
