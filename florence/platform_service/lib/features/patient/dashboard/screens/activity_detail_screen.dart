@@ -122,6 +122,9 @@ class _DailyVolumeCard extends StatelessWidget {
     final totalMinutes = todayLogs.fold(0, (sum, log) => sum + log.duration);
     final sessionCount = todayLogs.length;
 
+    // Use Grey if 0, otherwise Green
+    final displayColor = totalMinutes > 0 ? dataColor : AppTheme.textSecondaryColor;
+
     return _ActivityCard(
       title: 'Today\'s Movement',
       icon: Icons.timer,
@@ -136,7 +139,7 @@ class _DailyVolumeCard extends StatelessWidget {
             '$totalMinutes',
             style: Theme.of(context).textTheme.displayLarge?.copyWith(
               fontWeight: FontWeight.bold,
-              color: dataColor,
+              color: displayColor,
               fontSize: 64,
             ),
           ),
@@ -205,9 +208,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
       final index = entry.key;
       final minutes = dailyTotals[entry.value]!;
       
-      // Visual Logic:
-      // - Active days: Primary Blue
-      // - Inactive days: Visible Grey (previously too light)
+      // Visual Logic: Green if > 0, Grey if 0
       final barColor = minutes > 0 
           ? dataColor 
           : AppTheme.textSecondaryColor.withOpacity(0.3);
@@ -395,18 +396,22 @@ class _ActivityTimingChart extends StatelessWidget {
             ),
             borderData: FlBorderData(show: false),
             barGroups: dataPoints.map((point) {
+              // Visual Logic: Green if > 0, Grey if 0
+              final barColor = point.value > 0 
+                  ? dataColor 
+                  : AppTheme.textSecondaryColor.withOpacity(0.3);
+
               return BarChartGroupData(
                 x: point.index,
                 barRods: [
                   BarChartRodData(
-                    toY: point.value,
-                    color: dataColor,
+                    toY: point.value > 0 ? point.value : (maxY * 0.05),
+                    color: barColor,
                     width: 24,
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
                       toY: maxY,
-                      // Increased opacity for better visibility
                       color: AppTheme.textSecondaryColor.withOpacity(0.15),
                     ),
                   ),
@@ -418,6 +423,7 @@ class _ActivityTimingChart extends StatelessWidget {
                 getTooltipColor: (_) => Colors.black87,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  if (dataPoints[group.x.toInt()].value == 0) return null;
                   return BarTooltipItem(
                     '${rod.toY.toInt()}m',
                     const TextStyle(
