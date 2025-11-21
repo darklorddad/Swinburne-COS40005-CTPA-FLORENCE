@@ -341,28 +341,21 @@ class _StatisticsSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
                   children: [
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Target Range',
-                          style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
+                        Row(
+                          children: [
+                            Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Target Ranges',
+                              style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          (sysThreshold != null && diaThreshold != null)
-                              ? 'Sys: ${sysThreshold!.minValue.toInt()}-${sysThreshold!.maxValue.toInt()} / Dia: ${diaThreshold!.minValue.toInt()}-${diaThreshold!.maxValue.toInt()} mmHg'
-                              : 'Not Set',
-                          style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12),
-                        ),
-                        const SizedBox(width: 8),
                         Icon(
                           Icons.chevron_right,
                           size: 20,
@@ -370,6 +363,15 @@ class _StatisticsSection extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (sysThreshold != null && diaThreshold != null) ...[
+                      const SizedBox(height: 12),
+                      _buildMiniTargetRow('Systolic', '${sysThreshold!.minValue.toInt()} - ${sysThreshold!.maxValue.toInt()} mmHg', AppTheme.primaryGreen),
+                      const SizedBox(height: 4),
+                      _buildMiniTargetRow('Diastolic', '${diaThreshold!.minValue.toInt()} - ${diaThreshold!.maxValue.toInt()} mmHg', AppTheme.primaryGreen),
+                    ] else ...[
+                      const SizedBox(height: 12),
+                      const Text('Targets not configured', style: TextStyle(color: AppTheme.textSecondaryColor)),
+                    ],
                   ],
                 ),
               ),
@@ -387,6 +389,16 @@ class _StatisticsSection extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 
