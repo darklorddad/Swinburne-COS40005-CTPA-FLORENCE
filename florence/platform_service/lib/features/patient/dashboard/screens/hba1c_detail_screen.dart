@@ -860,16 +860,8 @@ class _HistorySectionState extends State<_HistorySection> {
                  statusColor = AppTheme.errorColor;
                }
              } else {
-               if (r.value < 5.7) {
-                 statusText = 'NORMAL';
-                 statusColor = AppTheme.primaryGreen;
-               } else if (r.value < 6.5) {
-                 statusText = 'PRE-DIABETES';
-                 statusColor = AppTheme.warningColor;
-               } else {
-                 statusText = 'DIABETES';
-                 statusColor = AppTheme.errorColor;
-               }
+               statusText = 'RECORDED';
+               statusColor = AppTheme.primaryBlue;
              }
 
              return Container(
