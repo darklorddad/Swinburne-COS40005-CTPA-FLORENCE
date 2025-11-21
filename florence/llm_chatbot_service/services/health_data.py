@@ -1,7 +1,7 @@
 """
 Health data aggregation service for fetching and processing patient health metrics via Data Service.
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List
 import statistics
 import httpx
@@ -37,20 +37,15 @@ class HealthDataService:
         data_type: Optional[str] = None
     ) -> List[MonitorData]:
         """
-        Fetch monitor data for a patient within a date range.
+        Fetch monitor data for a patient.
         """
         raw_data = await self._fetch_data("/patients/me/monitor-data", token)
         
-        # Filter in memory since Data Service returns all data
         filtered_data = []
         for item in raw_data:
-            measured_at = datetime.fromisoformat(item["measured_at"].replace('Z', '+00:00'))
-            # Naive comparison or timezone aware comparison depending on data
-            # Assuming data service returns ISO strings
-            if start_date.timestamp() <= measured_at.timestamp() <= end_date.timestamp():
-                if data_type and item["data_type"] != data_type:
-                    continue
-                filtered_data.append(MonitorData(**item))
+            if data_type and item["data_type"] != data_type:
+                continue
+            filtered_data.append(MonitorData(**item))
                 
         # Sort descending
         filtered_data.sort(key=lambda x: x.measured_at, reverse=True)
@@ -63,15 +58,13 @@ class HealthDataService:
         end_date: datetime
     ) -> List[ActivityLog]:
         """
-        Fetch activity logs for a patient within a date range.
+        Fetch activity logs for a patient.
         """
         raw_data = await self._fetch_data("/patients/me/activity-logs", token)
         
         filtered_data = []
         for item in raw_data:
-            performed_at = datetime.fromisoformat(item["performed_at"].replace('Z', '+00:00'))
-            if start_date.timestamp() <= performed_at.timestamp() <= end_date.timestamp():
-                filtered_data.append(ActivityLog(**item))
+            filtered_data.append(ActivityLog(**item))
         
         filtered_data.sort(key=lambda x: x.performed_at, reverse=True)
         return filtered_data
@@ -83,25 +76,13 @@ class HealthDataService:
         end_date: datetime
     ) -> List[DailyLog]:
         """
-        Fetch daily meal logs for a patient within a date range.
+        Fetch daily meal logs for a patient.
         """
         raw_data = await self._fetch_data("/patients/me/daily-logs", token)
         
         filtered_data = []
         for item in raw_data:
-            # log_date is usually YYYY-MM-DD, but model expects datetime
-            # We'll parse it carefully
-            log_date_str = item["log_date"]
-            if "T" in log_date_str:
-                log_date = datetime.fromisoformat(log_date_str.replace('Z', '+00:00'))
-            else:
-                log_date = datetime.strptime(log_date_str, "%Y-%m-%d")
-                
-            if start_date.date() <= log_date.date() <= end_date.date():
-                # Ensure item matches model (convert date string to datetime if needed)
-                item_copy = item.copy()
-                item_copy["log_date"] = log_date
-                filtered_data.append(DailyLog(**item_copy))
+            filtered_data.append(DailyLog(**item))
         
         filtered_data.sort(key=lambda x: x.log_date, reverse=True)
         return filtered_data
@@ -237,7 +218,7 @@ class HealthDataService:
             total_activity_minutes_7d=summary.total_activity_minutes,
             average_systolic_7d=summary.average_systolic,
             average_diastolic_7d=summary.average_diastolic,
-            data_timestamp=datetime.now().strftime("%Y-%m-%d %H:%M"),
+            data_timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         )
 
 

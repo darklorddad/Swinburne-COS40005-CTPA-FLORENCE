@@ -96,7 +96,7 @@ class HealthContext(BaseModel):
                 lines.append(f"  Context: {self.latest_glucose_context}")
 
         if self.average_glucose_7d:
-            lines.append(f"7-Day Average Glucose: {self.average_glucose_7d:.1f} mg/dL")
+            lines.append(f"Average Glucose: {self.average_glucose_7d:.1f} mg/dL")
 
         lines.append(f"Time in Range (70-180): {self.time_in_range_7d:.1f}%")
 
@@ -107,10 +107,10 @@ class HealthContext(BaseModel):
             lines.append(f"Low Glucose Events (<70): {self.hypo_events_7d}")
 
         if self.average_systolic_7d and self.average_diastolic_7d:
-            lines.append(f"7-Day Average BP: {self.average_systolic_7d:.0f}/{self.average_diastolic_7d:.0f} mmHg")
+            lines.append(f"Average BP: {self.average_systolic_7d:.0f}/{self.average_diastolic_7d:.0f} mmHg")
 
         if self.total_activity_minutes_7d > 0:
-            lines.append(f"7-Day Total Activity: {self.total_activity_minutes_7d} minutes")
+            lines.append(f"Total Activity: {self.total_activity_minutes_7d} minutes")
 
         lines.append(f"Data as of: {self.data_timestamp}")
 
