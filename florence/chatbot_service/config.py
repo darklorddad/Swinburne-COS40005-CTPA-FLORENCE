@@ -1,6 +1,7 @@
 """
 Configuration settings for the Florence Chatbot Microservice.
 """
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from typing import Optional
 
@@ -40,7 +41,10 @@ class Settings(BaseSettings):
     glucose_target_max: float = 140.0
 
     class Config:
-        env_file = ".env"
+        # Resolve the path to the .env file in the project root
+        # Current file: florence/chatbot_service/config.py
+        # Root .env:    ../../.env (relative to florence folder)
+        env_file = Path(__file__).resolve().parent.parent.parent / ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
 
