@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Import the routers
-from routers import authentication, patients, clinicians, admin, chat_history
+from .routers import authentication, patients, clinicians, admin, chat_history
 
 app = FastAPI(
     title="Florence Data Service",
