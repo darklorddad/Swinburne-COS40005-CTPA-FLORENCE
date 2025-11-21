@@ -164,20 +164,7 @@ class DataIngestionService {
       }
     } catch (e) {
       print("Error fetching thresholds: $e");
-      // Fallback to standard medical defaults if API fails (NOT mock data, but standard guidelines)
-      _loadDefaultThresholds();
     }
-  }
-
-  void _loadDefaultThresholds() {
-    _healthThresholds.addAll([
-      const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180),
-      const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_SYSTOLIC, minValue: 90, maxValue: 120),
-      const HealthThreshold(dataType: MonitorDataType.BLOOD_PRESSURE_DIASTOLIC, minValue: 60, maxValue: 80),
-      const HealthThreshold(dataType: MonitorDataType.HBA1C, minValue: 0, maxValue: 6.5),
-      const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_TOTAL, minValue: 0, maxValue: 200),
-      const HealthThreshold(dataType: MonitorDataType.BMI, minValue: 18.5, maxValue: 24.9),
-    ]);
   }
 
   /// Initialize with realistic mock data

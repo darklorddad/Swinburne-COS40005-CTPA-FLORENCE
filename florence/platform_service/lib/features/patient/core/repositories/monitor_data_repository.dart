@@ -67,10 +67,7 @@ class MonitorDataRepository {
       return [];
     } catch (e) {
       print('Error fetching thresholds: $e');
-      // Return basic defaults if API fails, or empty
-      return [
-        const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180),
-      ];
+      return [];
     }
   }
 }
