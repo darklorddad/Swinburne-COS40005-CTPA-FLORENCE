@@ -1,7 +1,6 @@
 /// Health Summary Service for FLORENCE Digital Health Platform
 /// Generates AI-powered health summaries
 
-import '../../../../core/services/ai/deepseek_service.dart';
 import '../../../../core/config/environment.dart';
 import '../../../patient/core/services/data_ingestion_service.dart';
 import '../../../patient/core/models/health_data_models.dart';
@@ -56,7 +55,6 @@ class AISummary {
 
 /// Service for generating health summaries
 class HealthSummaryService {
-  final DeepSeekService _deepseek = DeepSeekService();
   final DataIngestionService _dataService = DataIngestionService();
 
   // Singleton pattern
@@ -83,20 +81,8 @@ class HealthSummaryService {
 
     String narrative;
 
-    if (Environment.enableAI) {
-      try {
-        // Generate AI narrative
-        narrative = await _generateAINarrative(
-          statistics: statistics,
-          period: period,
-        );
-      } catch (e) {
-        print('Error generating AI summary: $e');
-        narrative = _generateRuleBasedNarrative(statistics, period);
-      }
-    } else {
-      narrative = _generateRuleBasedNarrative(statistics, period);
-    }
+    // AI Summary generation temporarily disabled as DeepSeekService is removed
+    narrative = _generateRuleBasedNarrative(statistics, period);
 
     return AISummary(
       id: 'summary_${DateTime.now().millisecondsSinceEpoch}',
@@ -131,32 +117,6 @@ class HealthSummaryService {
       startDate: startDate,
       endDate: endDate,
       period: SummaryPeriod.monthly,
-    );
-  }
-
-  /// Generate AI narrative summary
-  Future<String> _generateAINarrative({
-    required HealthSummary statistics,
-    required SummaryPeriod period,
-  }) async {
-    final summaryData = {
-      'period': period.name,
-      'averageGlucose': statistics.averageGlucose,
-      'timeInRange': statistics.timeInRange,
-      'hyperEvents': statistics.hyperEvents,
-      'hypoEvents': statistics.hypoEvents,
-      'glucoseVariability': statistics.glucoseStdDev,
-      'estimatedA1c': statistics.estimatedA1c,
-      'totalMeals': statistics.totalMeals,
-      'averageCarbs': statistics.averageCarbs,
-      'totalActivityMinutes': statistics.totalActivityMinutes,
-      'medicationAdherence': statistics.medicationAdherence * 100,
-      'averageSleepHours': statistics.averageSleepHours,
-    };
-
-    return await _deepseek.generateHealthSummary(
-      summaryData: summaryData,
-      period: period.name,
     );
   }
 
