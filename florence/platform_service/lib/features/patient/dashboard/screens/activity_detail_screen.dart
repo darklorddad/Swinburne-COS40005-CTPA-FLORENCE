@@ -205,18 +205,26 @@ class _WeeklyConsistencyChart extends StatelessWidget {
       final index = entry.key;
       final minutes = dailyTotals[entry.value]!;
       
+      // Visual Logic:
+      // - Active days: Primary Blue
+      // - Inactive days: Visible Grey (previously too light)
+      final barColor = minutes > 0 
+          ? dataColor 
+          : AppTheme.textSecondaryColor.withOpacity(0.3);
+
       return BarChartGroupData(
         x: index,
         barRods: [
           BarChartRodData(
-            toY: minutes.toDouble(),
-            color: dataColor,
+            toY: minutes > 0 ? minutes.toDouble() : (maxY * 0.05), // Small bump for 0
+            color: barColor,
             width: 16,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
               toY: maxY,
-              color: AppTheme.getBorderColor(context).withOpacity(0.2),
+              // Increased opacity for better visibility against white background
+              color: AppTheme.textSecondaryColor.withOpacity(0.15),
             ),
           ),
         ],
@@ -269,6 +277,10 @@ class _WeeklyConsistencyChart extends StatelessWidget {
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  // Don't show tooltip for empty dummy bars
+                  final originalVal = dailyTotals.values.toList()[group.x.toInt()];
+                  if (originalVal == 0) return null;
+
                   return BarTooltipItem(
                     rod.toY.toInt().toString(),
                     TextStyle(
@@ -394,7 +406,8 @@ class _ActivityTimingChart extends StatelessWidget {
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
                       toY: maxY,
-                      color: AppTheme.getBorderColor(context).withOpacity(0.1),
+                      // Increased opacity for better visibility
+                      color: AppTheme.textSecondaryColor.withOpacity(0.15),
                     ),
                   ),
                 ],
