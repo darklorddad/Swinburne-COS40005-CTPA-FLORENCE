@@ -53,7 +53,7 @@ class DeepSeekRequest(BaseModel):
     model: str
     messages: list[DeepSeekMessage]
     temperature: float = 0.8
-    max_tokens: int = 1000
+    max_tokens: Optional[int] = None
     stream: bool = False
 
 

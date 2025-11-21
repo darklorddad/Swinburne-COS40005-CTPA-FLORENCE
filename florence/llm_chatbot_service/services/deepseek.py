@@ -63,7 +63,7 @@ class DeepSeekService:
                 response = await client.post(
                     f"{self.base_url}/chat/completions",
                     headers=self._get_headers(),
-                    json=request_data.model_dump(),
+                    json=request_data.model_dump(exclude_none=True),
                     timeout=30.0,
                 )
 

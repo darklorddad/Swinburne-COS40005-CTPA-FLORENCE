@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com/v1"
     deepseek_model: str = "deepseek-chat"
     deepseek_temperature: float = 0.8
-    deepseek_max_tokens: int = 1000
+    deepseek_max_tokens: Optional[int] = None
 
     # Service Configuration
     service_host: str = "0.0.0.0"
