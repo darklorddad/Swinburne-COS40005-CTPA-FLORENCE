@@ -1,0 +1,22 @@
+# FastAPI and ASGI Server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# HTTP Client for API calls
+httpx==0.28.1
+
+# Supabase Python Client
+supabase==2.24.0
+
+# JWT Token Validation
+python-jose[cryptography]==3.3.0
+cryptography==44.0.0
+
+# Environment Configuration
+pydantic-settings==2.7.0
+
+# Date/Time handling
+python-dateutil==2.9.0
+
+# Type hints (compatible version)
+typing-extensions>=4.14.0
