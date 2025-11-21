@@ -37,6 +37,13 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     // Listen to service updates (e.g. when background messages arrive)
     _chatbotService.addListener(_onServiceUpdate);
+    
+    // Initialize typing state based on current messages
+    // If the last message is from the user, it means we are waiting for AI response
+    if (_chatbotService.messages.isNotEmpty) {
+      _isTyping = _chatbotService.messages.last.isUser;
+    }
+    
     _initializeChat();
   }
 
@@ -130,9 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
       try {
         await _chatbotService.clearHistory();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Chat history cleared')),
-          );
+          Helpers.showInfo(context, 'Chat history cleared');
         }
       } catch (e) {
         if (mounted) {
