@@ -944,8 +944,8 @@ class _HistorySectionState extends State<_HistorySection> {
                 statusColor = AppTheme.primaryGreen;
               }
             } else {
-              statusText = '--';
-              statusColor = AppTheme.textSecondaryColor;
+              statusText = 'RECORDED';
+              statusColor = AppTheme.primaryBlue;
             }
             
             return Container(
