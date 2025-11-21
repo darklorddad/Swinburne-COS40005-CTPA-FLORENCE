@@ -15,8 +15,8 @@ class ActivityDetailScreen extends ConsumerWidget {
     final activityAsync = ref.watch(activityLogsProvider);
     final monitorAsync = ref.watch(monitorDataProvider);
 
-    // Data Color: Orange/Amber (Specific to Activity Data)
-    const Color dataColor = Color(0xFFF59E0B);
+    // CHANGED: Use Primary Blue to match the rest of the app's analytics theme
+    final Color dataColor = AppTheme.primaryBlue;
 
     return Scaffold(
       appBar: AppBar(
@@ -263,16 +263,18 @@ class _WeeklyConsistencyChart extends StatelessWidget {
             borderData: FlBorderData(show: false),
             barGroups: barGroups,
             barTouchData: BarTouchData(
+              enabled: false,
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => Colors.black87,
+                getTooltipColor: (_) => Colors.transparent,
+                tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                   return BarTooltipItem(
-                    '${rod.toY.toInt()}m',
-                    const TextStyle(
-                      color: Colors.white,
+                    rod.toY.toInt().toString(),
+                    TextStyle(
+                      color: dataColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 10,
                     ),
                   );
                 },
@@ -698,6 +700,7 @@ class _ActivityCard extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
