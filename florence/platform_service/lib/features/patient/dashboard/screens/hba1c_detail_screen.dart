@@ -380,6 +380,19 @@ class _TrendsSectionState extends State<_TrendsSection> {
   String _selectedRange = '1Y';
   final List<String> _ranges = ['6M', '1Y', 'ALL'];
 
+  String _getRangeLabel(String range) {
+    switch (range) {
+      case '6M':
+        return '6 Months';
+      case '1Y':
+        return '1 Year';
+      case 'ALL':
+        return 'All Time';
+      default:
+        return range;
+    }
+  }
+
   List<MonitorData> _filterData() {
     if (widget.readings.isEmpty || _selectedRange == 'ALL') return widget.readings;
     final now = DateTime.now();
@@ -438,7 +451,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        range,
+                        _getRangeLabel(range),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,

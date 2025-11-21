@@ -298,13 +298,13 @@ class _RatioSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   // Targets List
-                  _buildMiniTargetRow('Total', '${total.minValue.toInt()}-${total.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Total', '${total.minValue.toInt()} - ${total.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('LDL', '${ldl.minValue.toInt()}-${ldl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('LDL', '${ldl.minValue.toInt()} - ${ldl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('HDL', '${hdl.minValue.toInt()}-${hdl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('HDL', '${hdl.minValue.toInt()} - ${hdl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('Triglycerides', '${tri.minValue.toInt()}-${tri.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Triglycerides', '${tri.minValue.toInt()} - ${tri.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                 ],
               ),
             ),
@@ -456,28 +456,31 @@ class _LdlTargetSection extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   children: [
                     // 1. Background Ranges
-                    Row(
-                      children: [
-                        // Green Zone (0 to Target)
-                        Container(
-                          width: targetPos,
-                          height: 30,
-                          color: AppTheme.primaryGreen.withOpacity(0.15),
-                        ),
-                        // Yellow Zone (Target to Target + 30)
-                        Container(
-                          width: (30 / maxScale) * width,
-                          height: 30,
-                          color: AppTheme.warningColor.withOpacity(0.15),
-                        ),
-                        // Red Zone (Rest)
-                        Expanded(
-                          child: Container(
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Row(
+                        children: [
+                          // Green Zone (0 to Target)
+                          Container(
+                            width: targetPos,
                             height: 30,
-                            color: AppTheme.errorColor.withOpacity(0.15),
+                            color: AppTheme.primaryGreen.withOpacity(0.15),
                           ),
-                        ),
-                      ],
+                          // Yellow Zone (Target to Target + 30)
+                          Container(
+                            width: (30 / maxScale) * width,
+                            height: 30,
+                            color: AppTheme.warningColor.withOpacity(0.15),
+                          ),
+                          // Red Zone (Rest)
+                          Expanded(
+                            child: Container(
+                              height: 30,
+                              color: AppTheme.errorColor.withOpacity(0.15),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                     
                     // 2. Actual Value Bar
@@ -564,6 +567,19 @@ class _CompositionSectionState extends State<_CompositionSection> {
   String _selectedRange = '1Y';
   final List<String> _ranges = ['6M', '1Y', 'ALL'];
 
+  String _getRangeLabel(String range) {
+    switch (range) {
+      case '6M':
+        return '6 Months';
+      case '1Y':
+        return '1 Year';
+      case 'ALL':
+        return 'All Time';
+      default:
+        return range;
+    }
+  }
+
   List<_CholesterolReading> _filterData() {
     final validData = widget.readings.where((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + (r.triglycerides ?? 0) > 0).toList();
     if (validData.isEmpty || _selectedRange == 'ALL') return validData;
@@ -610,7 +626,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        range,
+                        _getRangeLabel(range),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -698,7 +714,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               const SizedBox(width: 16),
               _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('Tri', Colors.orange),
+              _LegendItem('Triglycerides', Colors.orange),
             ],
           ),
         ],
