@@ -80,17 +80,14 @@ class CholesterolDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // 1. Targets Card
-                  _TargetsSection(
+                  // 1. Ratio Donut & Targets (Overview)
+                  _RatioSection(
+                    reading: latest,
                     total: totalThreshold,
                     ldl: ldlThreshold,
                     hdl: hdlThreshold,
                     tri: triThreshold,
                   ),
-                  const SizedBox(height: 20),
-
-                  // 2. Ratio Donut (Good vs Bad Balance)
-                  _RatioSection(reading: latest),
                   const SizedBox(height: 20),
                   
                   // 3. Bullet Graph (LDL Target)
@@ -198,16 +195,18 @@ class _CholesterolReading {
 }
 
 // ============================================================================
-// 1. TARGETS SECTION
+// 1. RATIO DONUT & TARGETS (OVERVIEW)
 // ============================================================================
 
-class _TargetsSection extends StatelessWidget {
+class _RatioSection extends StatelessWidget {
+  final _CholesterolReading? reading;
   final HealthThreshold total;
   final HealthThreshold ldl;
   final HealthThreshold hdl;
   final HealthThreshold tri;
 
-  const _TargetsSection({
+  const _RatioSection({
+    this.reading,
     required this.total,
     required this.ldl,
     required this.hdl,
@@ -216,63 +215,12 @@ class _TargetsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _CholesterolCard(
-      title: 'Target Ranges',
-      icon: Icons.flag_outlined,
-      infoText: 'Your cholesterol targets (mg/dL).',
-      child: Column(
-        children: [
-          _buildTargetRow(context, 'Total', '${total.minValue.toInt()} - ${total.maxValue.toInt()}', AppTheme.primaryBlue),
-          const Divider(height: 24),
-          _buildTargetRow(context, 'LDL (Bad)', '< ${ldl.maxValue.toInt()}', AppTheme.errorColor),
-          const Divider(height: 24),
-          _buildTargetRow(context, 'HDL (Good)', '> ${hdl.minValue.toInt()}', AppTheme.primaryGreen),
-          const Divider(height: 24),
-          _buildTargetRow(context, 'Triglycerides', '< ${tri.maxValue.toInt()}', Colors.orange),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTargetRow(BuildContext context, String label, String value, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.3)),
-          ),
-          child: Text(
-            value, 
-            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ============================================================================
-// 2. RATIO DONUT CHART
-// ============================================================================
-
-class _RatioSection extends StatelessWidget {
-  final _CholesterolReading? reading;
-
-  const _RatioSection({this.reading});
-
-  @override
-  Widget build(BuildContext context) {
     final ratio = reading?.ratio ?? 0.0;
     // Use non-HDL cholesterol as the "bad" portion for the chart representation
     // Total = HDL + Non-HDL. So Non-HDL = Total - HDL.
-    final total = reading?.total ?? 0.0;
-    final hdl = reading?.hdl ?? 0.0;
-    final nonHdl = (total > hdl) ? total - hdl : 0.0;
+    final valTotal = reading?.total ?? 0.0;
+    final valHdl = reading?.hdl ?? 0.0;
+    final valNonHdl = (valTotal > valHdl) ? valTotal - valHdl : 0.0;
     
     final hasData = ratio > 0;
 
@@ -294,7 +242,7 @@ class _RatioSection extends StatelessWidget {
     }
 
     return _CholesterolCard(
-      title: 'Cholesterol Ratio',
+      title: 'Overview',
       icon: Icons.pie_chart,
       infoText: 'The ratio of Total Cholesterol to HDL.\n\n'
                 '• Formula: Total / HDL\n'
@@ -302,6 +250,66 @@ class _RatioSection extends StatelessWidget {
                 '• Ideal: Below 3.5',
       child: Column(
         children: [
+          // TARGET RANGES (Consistent with Glucose/BP style)
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed('/profile'),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // Header Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.track_changes,
+                            size: 18,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Target Ranges',
+                            style: TextStyle(
+                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Targets List
+                  _buildMiniTargetRow('Total', '${total.minValue.toInt()}-${total.maxValue.toInt()}', AppTheme.primaryGreen),
+                  const SizedBox(height: 4),
+                  _buildMiniTargetRow('LDL', '< ${ldl.maxValue.toInt()}', AppTheme.primaryGreen),
+                  const SizedBox(height: 4),
+                  _buildMiniTargetRow('HDL', '> ${hdl.minValue.toInt()}', AppTheme.primaryGreen),
+                  const SizedBox(height: 4),
+                  _buildMiniTargetRow('Triglycerides', '< ${tri.maxValue.toInt()}', AppTheme.primaryGreen),
+                ],
+              ),
+            ),
+          ),
+
+          // Ratio Chart
           SizedBox(
             height: 220,
             child: Stack(
@@ -315,14 +323,14 @@ class _RatioSection extends StatelessWidget {
                       sections: [
                         // HDL (Good)
                         PieChartSectionData(
-                          value: hdl,
+                          value: valHdl,
                           color: AppTheme.primaryGreen,
                           radius: 25,
                           showTitle: false,
                         ),
                         // Non-HDL (Bad)
                         PieChartSectionData(
-                          value: nonHdl > 0 ? nonHdl : 1,
+                          value: valNonHdl > 0 ? valNonHdl : 1,
                           color: AppTheme.errorColor,
                           radius: 25,
                           showTitle: false,
@@ -388,12 +396,22 @@ class _RatioSection extends StatelessWidget {
                 children: [
                   _LegendItem('HDL (Good)', AppTheme.primaryGreen),
                   const SizedBox(width: 16),
-                  _LegendItem('Non-HDL (Rest)', AppTheme.errorColor),
+                  _LegendItem('Non-HDL', AppTheme.errorColor),
                 ],
               ),
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 }
