@@ -942,7 +942,7 @@ class _HistorySectionState extends State<_HistorySection> {
                 statusColor = AppTheme.errorColor;
               } else if (item.value > t.maxValue) {
                 statusText = 'HIGH';
-                statusColor = AppTheme.warningColor;
+                statusColor = AppTheme.errorColor;
               } else {
                 statusText = 'NORMAL';
                 statusColor = AppTheme.primaryGreen;

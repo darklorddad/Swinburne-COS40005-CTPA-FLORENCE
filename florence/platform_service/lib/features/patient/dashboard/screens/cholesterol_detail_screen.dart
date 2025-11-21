@@ -914,10 +914,10 @@ class _HistorySectionState extends State<_HistorySection> {
                 statusColor = AppTheme.errorColor;
               } else if (maxTri != null && r.triglycerides != null && r.triglycerides! > maxTri) {
                 statusText = 'HIGH TRI';
-                statusColor = AppTheme.warningColor;
+                statusColor = AppTheme.errorColor;
               } else if (minHdl != null && r.hdl != null && r.hdl! < minHdl) {
-                statusText = 'LOW HDL';
-                statusColor = AppTheme.warningColor;
+                statusText = 'RISK HDL';
+                statusColor = AppTheme.errorColor;
               }
 
               return Container(

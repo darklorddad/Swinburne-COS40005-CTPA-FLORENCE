@@ -134,10 +134,10 @@ class _GaugeSection extends StatelessWidget {
     } else if (threshold != null) {
       if (val <= threshold!.maxValue) {
         statusColor = AppTheme.primaryGreen;
-        statusText = "Within Target";
+        statusText = "Normal";
       } else {
         statusColor = AppTheme.errorColor;
-        statusText = "Above Target";
+        statusText = "High";
       }
     } else {
       statusColor = AppTheme.primaryBlue;
@@ -862,10 +862,10 @@ class _HistorySectionState extends State<_HistorySection> {
              
              if (widget.threshold != null) {
                if (r.value <= widget.threshold!.maxValue) {
-                 statusText = 'WITHIN TARGET';
+                 statusText = 'NORMAL';
                  statusColor = AppTheme.primaryGreen;
                } else {
-                 statusText = 'ABOVE TARGET';
+                 statusText = 'HIGH';
                  statusColor = AppTheme.errorColor;
                }
              } else {

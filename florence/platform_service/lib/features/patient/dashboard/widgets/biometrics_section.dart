@@ -264,9 +264,9 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.GLUCOSE);
     if (t == null) return AppTheme.primaryBlue; // Neutral blue if no target
 
-    if (value < t.minValue) return AppTheme.glucoseLow;
-    if (value > t.maxValue) return AppTheme.glucoseHigh;
-    return AppTheme.glucoseNormal;
+    if (value < t.minValue) return AppTheme.errorColor;
+    if (value > t.maxValue) return AppTheme.errorColor;
+    return AppTheme.primaryGreen;
   }
 
   String _getBPStatus(double? sys, double? dia, List<HealthThreshold> thresholds) {
@@ -276,7 +276,7 @@ class BiometricsSection extends StatelessWidget {
     
     if (tSys == null || tDia == null) return 'Recorded';
 
-    if (sys > tSys.maxValue || dia > tDia.maxValue) return 'High';
+    if (sys > tSys.maxValue || dia > tDia.maxValue) return 'Elevated';
     if (sys < tSys.minValue || dia < tDia.minValue) return 'Low';
     return 'Normal';
   }
@@ -317,7 +317,7 @@ class BiometricsSection extends StatelessWidget {
     if (t == null) return 'Recorded';
 
     if (value > t.maxValue) return 'High';
-    return 'Normal';
+    return 'Desirable';
   }
 
   Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds) {

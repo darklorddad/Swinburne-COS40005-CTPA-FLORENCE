@@ -896,12 +896,9 @@ class _HistorySectionState extends State<_HistorySection> {
                final sysMax = widget.sysThreshold!.maxValue;
                final diaMax = widget.diaThreshold!.maxValue;
 
-               if (r.systolic > (sysMax + 20) || r.diastolic > (diaMax + 10)) {
-                 status = 'HIGH';
-                 statusColor = AppTheme.errorColor;
-               } else if (r.systolic > sysMax || r.diastolic > diaMax) {
+               if (r.systolic > sysMax || r.diastolic > diaMax) {
                  status = 'ELEVATED';
-                 statusColor = AppTheme.warningColor;
+                 statusColor = AppTheme.errorColor;
                } else if (r.systolic < widget.sysThreshold!.minValue || r.diastolic < widget.diaThreshold!.minValue) {
                  status = 'LOW';
                  statusColor = AppTheme.warningColor;
