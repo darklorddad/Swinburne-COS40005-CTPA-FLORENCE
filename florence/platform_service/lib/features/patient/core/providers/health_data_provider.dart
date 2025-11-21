@@ -5,13 +5,11 @@ import '../../../../core/providers/settings_provider.dart';
 import 'package:flutter/foundation.dart';
 import '../models/health_data_models.dart';
 import '../services/data_ingestion_service.dart';
-import '../../chat/services/chatbot_service.dart';
 
 /// Provider for managing all health-related data
 /// This provider now depends on SettingsProvider to determine which data source to use.
 class HealthDataProvider with ChangeNotifier {
   final DataIngestionService _dataService = DataIngestionService();
-  final ChatbotService _chatbotService = ChatbotService();
 
   bool _isLoading = false;
   String? _error;
@@ -463,10 +461,6 @@ class HealthDataProvider with ChangeNotifier {
       notifyListeners();
 
       await _dataService.fetchRealData();
-
-      // CRITICAL: Invalidate chatbot context so it fetches fresh data
-      _chatbotService.invalidateContext();
-      print('HealthDataProvider: Data refreshed, chatbot context invalidated');
 
       _isLoading = false;
       notifyListeners();

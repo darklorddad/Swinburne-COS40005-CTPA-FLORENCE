@@ -78,25 +78,4 @@ class ChatbotService {
       throw Exception('Error clearing history: $e');
     }
   }
-
-  // ===========================================================================
-  // BACKWARD COMPATIBILITY METHODS
-  // These methods exist to prevent compilation errors in legacy code.
-  // ===========================================================================
-
-  /// Invalidate cached health context.
-  /// This is now a no-op as context is managed by the backend service.
-  void invalidateContext() {
-    // No operation needed.
-  }
-
-  /// Get suggested questions for the user.
-  List<String> getSuggestedQuestions() {
-    return [
-      "How is my glucose trending?",
-      "Any insights on my sleep?",
-      "What should I eat for lunch?",
-      "Am I meeting my activity goals?",
-    ];
-  }
 }

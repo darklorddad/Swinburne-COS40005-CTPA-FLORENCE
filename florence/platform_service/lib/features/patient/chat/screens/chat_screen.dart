@@ -4,6 +4,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/config/environment.dart';
 import '../services/chatbot_service.dart';
+import '../models/chat_message.dart';
 
 /// Chat Screen - AI Health Assistant
 /// Conversational interface for health questions and guidance
@@ -23,21 +24,42 @@ class _ChatScreenState extends State<ChatScreen> {
   // Chat messages
   final List<ChatMessage> _messages = [];
 
-  // Suggested questions (will be updated from service)
-  List<String> _suggestedQuestions = [];
+  // Suggested questions
+  final List<String> _suggestedQuestions = [
+    "How is my glucose trending?",
+    "Any insights on my sleep?",
+    "What should I eat for lunch?",
+    "Am I meeting my activity goals?",
+  ];
   
   @override
   void initState() {
     super.initState();
-    _addWelcomeMessage();
-    _loadSuggestedQuestions();
+    _loadHistory();
   }
 
-  /// Load suggested questions from service
-  void _loadSuggestedQuestions() {
-    setState(() {
-      _suggestedQuestions = _chatbotService.getSuggestedQuestions();
-    });
+  /// Load chat history from service
+  Future<void> _loadHistory() async {
+    try {
+      final history = await _chatbotService.getHistory();
+      if (mounted) {
+        setState(() {
+          _messages.clear();
+          // Add welcome message if history is empty
+          if (history.isEmpty) {
+            _addWelcomeMessage();
+          } else {
+            _messages.addAll(history);
+          }
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      // Fallback to welcome message on error
+      if (mounted && _messages.isEmpty) {
+        _addWelcomeMessage();
+      }
+    }
   }
   
   @override
@@ -51,8 +73,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void _addWelcomeMessage() {
     _messages.add(
       ChatMessage(
-        text: "Hi! I'm your AI Health Assistant 👋\n\nI can help you understand your glucose patterns, suggest meal ideas, answer health questions, and provide personalized recommendations.\n\nWhat would you like to know?",
-        isUser: false,
+        content: "Hi! I'm your AI Health Assistant 👋\n\nI can help you understand your glucose patterns, suggest meal ideas, answer health questions, and provide personalized recommendations.\n\nWhat would you like to know?",
+        role: 'assistant',
         timestamp: DateTime.now(),
       ),
     );
@@ -66,8 +88,8 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _messages.add(
         ChatMessage(
-          text: text.trim(),
-          isUser: true,
+          content: text.trim(),
+          role: 'user',
           timestamp: DateTime.now(),
         ),
       );
@@ -85,19 +107,10 @@ class _ChatScreenState extends State<ChatScreen> {
       // Add AI response
       if (mounted) {
         setState(() {
-          _messages.add(
-            ChatMessage(
-              text: response.content,
-              isUser: false,
-              timestamp: DateTime.now(),
-            ),
-          );
+          _messages.add(response);
           _isTyping = false;
         });
         _scrollToBottom();
-
-        // Update suggested questions based on context
-        _loadSuggestedQuestions();
       }
     } catch (e) {
       // If AI fails, use fallback response
@@ -105,8 +118,8 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           _messages.add(
             ChatMessage(
-              text: "I'm having trouble connecting to the AI service right now. Please check your internet connection. In the meantime, you can:\n\n• View your trends and patterns\n• Check your recommendations\n• Log your health data\n\nError: ${e.toString()}",
-              isUser: false,
+              content: "I'm having trouble connecting to the AI service right now. Please check your internet connection. In the meantime, you can:\n\n• View your trends and patterns\n• Check your recommendations\n• Log your health data\n\nError: ${e.toString()}",
+              role: 'assistant',
               timestamp: DateTime.now(),
             ),
           );
@@ -184,6 +197,17 @@ class _ChatScreenState extends State<ChatScreen> {
       appBar: AppBar(
         title: const Text('AI Health Assistant'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: () async {
+              await _chatbotService.clearHistory();
+              setState(() {
+                _messages.clear();
+                _addWelcomeMessage();
+              });
+            },
+            tooltip: 'Clear History',
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showInfoDialog,
@@ -338,7 +362,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               child: Text(
-                message.text,
+                message.content,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: message.isUser
                           ? Colors.white
@@ -511,17 +535,4 @@ class _ChatScreenState extends State<ChatScreen> {
       return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
     }
   }
-}
-
-/// Chat message model
-class ChatMessage {
-  final String text;
-  final bool isUser;
-  final DateTime timestamp;
-  
-  ChatMessage({
-    required this.text,
-    required this.isUser,
-    required this.timestamp,
-  });
 }
