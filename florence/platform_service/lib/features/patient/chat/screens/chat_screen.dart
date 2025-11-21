@@ -18,11 +18,13 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
-  final _chatbotService = ChatbotService();
+  final _chatbotService = ChatbotService(); // Uses the singleton instance
+  
   bool _isTyping = false;
+  bool _isLoadingHistory = true;
 
-  // Chat messages
-  final List<ChatMessage> _messages = [];
+  // Chat messages (synced with service)
+  List<ChatMessage> _messages = [];
 
   // Suggested questions
   final List<String> _suggestedQuestions = [
@@ -35,29 +37,51 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    _initializeChat();
+  }
+
+  /// Initialize chat: check cache or fetch history
+  Future<void> _initializeChat() async {
+    // If service already has data, load it immediately
+    if (_chatbotService.hasLoadedHistory) {
+      setState(() {
+        _messages = List.from(_chatbotService.messages);
+        _isLoadingHistory = false;
+      });
+      _scrollToBottom();
+    } else {
+      // Otherwise fetch from API
+      await _loadHistory();
+    }
   }
 
   /// Load chat history from service
   Future<void> _loadHistory() async {
+    setState(() => _isLoadingHistory = true);
+    
     try {
-      final history = await _chatbotService.getHistory();
+      final history = await _chatbotService.loadHistory();
       if (mounted) {
         setState(() {
-          _messages.clear();
+          _messages = List.from(history);
           // Add welcome message if history is empty
-          if (history.isEmpty) {
+          if (_messages.isEmpty) {
             _addWelcomeMessage();
-          } else {
-            _messages.addAll(history);
           }
+          _isLoadingHistory = false;
         });
         _scrollToBottom();
       }
     } catch (e) {
-      // Fallback to welcome message on error
-      if (mounted && _messages.isEmpty) {
-        _addWelcomeMessage();
+      if (mounted) {
+        setState(() {
+          _isLoadingHistory = false;
+          // Fallback to welcome message on error if empty
+          if (_messages.isEmpty) {
+            _addWelcomeMessage();
+          }
+        });
+        Helpers.showError(context, 'Failed to sync chat history');
       }
     }
   }
@@ -69,8 +93,9 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
   
-  /// Add welcome message
+  /// Add welcome message (local only, not saved to DB until user replies)
   void _addWelcomeMessage() {
+    // We don't add this to the service cache, just the local UI list
     _messages.add(
       ChatMessage(
         content: "Hi! I'm your AI Health Assistant 👋\n\nI can help you understand your glucose patterns, suggest meal ideas, answer health questions, and provide personalized recommendations.\n\nWhat would you like to know?",
@@ -84,7 +109,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // Add user message
+    // 1. Update UI immediately (Optimistic update)
     setState(() {
       _messages.add(
         ChatMessage(
@@ -101,13 +126,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
 
     try {
-      // Get AI response from chatbot service
-      final response = await _chatbotService.sendMessage(text.trim());
+      // 2. Call service (which updates cache)
+      await _chatbotService.sendMessage(text.trim());
 
-      // Add AI response
+      // 3. Sync local list with service cache (gets the AI response)
       if (mounted) {
         setState(() {
-          _messages.add(response);
+          _messages = List.from(_chatbotService.messages);
           _isTyping = false;
         });
         _scrollToBottom();
@@ -199,7 +224,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: () async {
+            onPressed: _isLoadingHistory ? null : () async {
               await _chatbotService.clearHistory();
               setState(() {
                 _messages.clear();
@@ -217,14 +242,17 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Suggested questions
-          if (_messages.length <= 1) _buildSuggestedQuestions(),
+          // Suggested questions (only show if history is empty or just welcome msg)
+          if (!_isLoadingHistory && _messages.length <= 1) 
+            _buildSuggestedQuestions(),
           
-          // Chat messages
+          // Chat messages area
           Expanded(
-            child: _messages.isEmpty
-                ? _buildEmptyState()
-                : _buildMessagesList(),
+            child: _isLoadingHistory
+                ? _buildLoadingState()
+                : _messages.isEmpty
+                    ? _buildEmptyState()
+                    : _buildMessagesList(),
           ),
           
           // Typing indicator
@@ -232,6 +260,25 @@ class _ChatScreenState extends State<ChatScreen> {
           
           // Input area
           _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  /// Build loading state
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 16),
+          Text(
+            'Syncing conversation history...',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.textSecondaryColor,
+            ),
+          ),
         ],
       ),
     );
@@ -445,6 +492,9 @@ class _ChatScreenState extends State<ChatScreen> {
   
   /// Build input area
   Widget _buildInputArea() {
+    // Disable input while loading history
+    final isEnabled = !_isLoadingHistory;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -454,67 +504,73 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            // Text input
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.backgroundColor,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppTheme.borderColor),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: InputDecoration(
-                          hintText: 'Ask me anything...',
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
-                          ),
-                          hintStyle: TextStyle(
-                            color: AppTheme.textSecondaryColor,
+        child: Opacity(
+          opacity: isEnabled ? 1.0 : 0.5,
+          child: AbsorbPointer(
+            absorbing: !isEnabled,
+            child: Row(
+              children: [
+                // Text input
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundColor,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppTheme.borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            decoration: InputDecoration(
+                              hintText: isEnabled ? 'Ask me anything...' : 'Connecting...',
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 12,
+                              ),
+                              hintStyle: TextStyle(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                            ),
+                            maxLines: null,
+                            textCapitalization: TextCapitalization.sentences,
+                            onSubmitted: _sendMessage,
                           ),
                         ),
-                        maxLines: null,
-                        textCapitalization: TextCapitalization.sentences,
-                        onSubmitted: _sendMessage,
-                      ),
+                        // Microphone button (placeholder)
+                        IconButton(
+                          icon: Icon(
+                            Icons.mic_outlined,
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                          onPressed: () {
+                            Helpers.showInfo(context, 'Voice input coming soon');
+                          },
+                          tooltip: 'Voice input',
+                        ),
+                      ],
                     ),
-                    // Microphone button (placeholder)
-                    IconButton(
-                      icon: Icon(
-                        Icons.mic_outlined,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                      onPressed: () {
-                        Helpers.showInfo(context, 'Voice input coming soon');
-                      },
-                      tooltip: 'Voice input',
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                
+                // Send button
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue,
+                    shape: BoxShape.circle,
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: () => _sendMessage(_messageController.text),
+                    tooltip: 'Send',
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            
-            // Send button
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBlue,
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
-                onPressed: () => _sendMessage(_messageController.text),
-                tooltip: 'Send',
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
