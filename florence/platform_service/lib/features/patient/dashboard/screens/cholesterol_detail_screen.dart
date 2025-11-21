@@ -40,8 +40,33 @@ class CholesterolDetailScreen extends ConsumerWidget {
           // Get thresholds (Defaulting to standard mg/dL values if not set)
           final ldlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_LDL) ?? 
               const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_LDL, minValue: 0, maxValue: 100);
+          final hdlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_HDL) ?? 
+              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_HDL, minValue: 40, maxValue: 60);
+          final totalThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL) ?? 
+              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_TOTAL, minValue: 0, maxValue: 200);
+          final triThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES) ?? 
+              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_TRIGLYCERIDES, minValue: 0, maxValue: 150);
           
-          final latest = readings.isNotEmpty ? readings.last : null;
+          // Construct composite latest reading from most recent available data points
+          _CholesterolReading? latest;
+          if (readings.isNotEmpty) {
+            double? lastTotal, lastLdl, lastHdl, lastTri;
+            DateTime lastDate = readings.last.timestamp;
+            
+            for (var r in readings.reversed) {
+              if (lastTotal == null && r.total != null) lastTotal = r.total;
+              if (lastLdl == null && r.ldl != null) lastLdl = r.ldl;
+              if (lastHdl == null && r.hdl != null) lastHdl = r.hdl;
+              if (lastTri == null && r.triglycerides != null) lastTri = r.triglycerides;
+            }
+            latest = _CholesterolReading(
+              timestamp: lastDate,
+              total: lastTotal,
+              ldl: lastLdl,
+              hdl: lastHdl,
+              triglycerides: lastTri,
+            );
+          }
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -55,19 +80,28 @@ class CholesterolDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // 1. Ratio Donut (Good vs Bad Balance)
+                  // 1. Targets Card
+                  _TargetsSection(
+                    total: totalThreshold,
+                    ldl: ldlThreshold,
+                    hdl: hdlThreshold,
+                    tri: triThreshold,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 2. Ratio Donut (Good vs Bad Balance)
                   _RatioSection(reading: latest),
                   const SizedBox(height: 20),
                   
-                  // 2. Bullet Graph (LDL Target)
+                  // 3. Bullet Graph (LDL Target)
                   _LdlTargetSection(reading: latest, target: ldlThreshold.maxValue),
                   const SizedBox(height: 20),
 
-                  // 3. Stacked Bar (Composition)
+                  // 4. Stacked Bar (Composition)
                   _CompositionSection(readings: readings),
                   const SizedBox(height: 20),
                   
-                  // 4. History
+                  // 5. History
                   _HistorySection(readings: readings, thresholds: thresholds),
                   const SizedBox(height: 24),
                 ],
@@ -164,7 +198,66 @@ class _CholesterolReading {
 }
 
 // ============================================================================
-// 1. RATIO DONUT CHART
+// 1. TARGETS SECTION
+// ============================================================================
+
+class _TargetsSection extends StatelessWidget {
+  final HealthThreshold total;
+  final HealthThreshold ldl;
+  final HealthThreshold hdl;
+  final HealthThreshold tri;
+
+  const _TargetsSection({
+    required this.total,
+    required this.ldl,
+    required this.hdl,
+    required this.tri,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _CholesterolCard(
+      title: 'Target Ranges',
+      icon: Icons.flag_outlined,
+      infoText: 'Your cholesterol targets (mg/dL).',
+      child: Column(
+        children: [
+          _buildTargetRow(context, 'Total', '${total.minValue.toInt()} - ${total.maxValue.toInt()}', AppTheme.primaryBlue),
+          const Divider(height: 24),
+          _buildTargetRow(context, 'LDL (Bad)', '< ${ldl.maxValue.toInt()}', AppTheme.errorColor),
+          const Divider(height: 24),
+          _buildTargetRow(context, 'HDL (Good)', '> ${hdl.minValue.toInt()}', AppTheme.primaryGreen),
+          const Divider(height: 24),
+          _buildTargetRow(context, 'Triglycerides', '< ${tri.maxValue.toInt()}', Colors.orange),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetRow(BuildContext context, String label, String value, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
+          ),
+          child: Text(
+            value, 
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// 2. RATIO DONUT CHART
 // ============================================================================
 
 class _RatioSection extends StatelessWidget {
@@ -175,9 +268,13 @@ class _RatioSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = reading?.ratio ?? 0.0;
-    final ldl = reading?.ldl ?? 0.0;
+    // Use non-HDL cholesterol as the "bad" portion for the chart representation
+    // Total = HDL + Non-HDL. So Non-HDL = Total - HDL.
+    final total = reading?.total ?? 0.0;
     final hdl = reading?.hdl ?? 0.0;
-    final hasData = ldl > 0 || hdl > 0;
+    final nonHdl = (total > hdl) ? total - hdl : 0.0;
+    
+    final hasData = ratio > 0;
 
     String statusText;
     Color statusColor;
@@ -205,63 +302,6 @@ class _RatioSection extends StatelessWidget {
                 '• Ideal: Below 3.5',
       child: Column(
         children: [
-          // Target Range Display
-          InkWell(
-            onTap: () => Navigator.of(context).pushNamed('/profile'),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 20),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
-                ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.track_changes,
-                        size: 18,
-                        color: AppTheme.primaryGreen,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Target Range',
-                        style: TextStyle(
-                          color: AppTheme.primaryGreen.withOpacity(0.8),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      Text(
-                        '< 5.0',
-                        style: TextStyle(
-                          color: AppTheme.primaryGreen,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
           SizedBox(
             height: 220,
             child: Stack(
@@ -280,9 +320,9 @@ class _RatioSection extends StatelessWidget {
                           radius: 25,
                           showTitle: false,
                         ),
-                        // LDL (Bad) - Using LDL as the main "bad" component for visual balance
+                        // Non-HDL (Bad)
                         PieChartSectionData(
-                          value: ldl > 0 ? ldl : 1, // Ensure at least small slice if 0 but HDL exists
+                          value: nonHdl > 0 ? nonHdl : 1,
                           color: AppTheme.errorColor,
                           radius: 25,
                           showTitle: false,
@@ -340,6 +380,18 @@ class _RatioSection extends StatelessWidget {
               ],
             ),
           ),
+          if (hasData)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _LegendItem('HDL (Good)', AppTheme.primaryGreen),
+                  const SizedBox(width: 16),
+                  _LegendItem('Non-HDL (Rest)', AppTheme.errorColor),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -539,7 +591,7 @@ class _CompositionSection extends StatelessWidget {
                     drawVerticalLine: false,
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
-                  borderData: FlBorderData(show: false),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   barGroups: displayData.asMap().entries.map((entry) {
                     final index = entry.key;
                     final r = entry.value;
@@ -584,14 +636,22 @@ class _CompositionSection extends StatelessWidget {
 }
 
 // ============================================================================
-// 4. HISTORY LIST
+// 5. HISTORY LIST
 // ============================================================================
 
-class _HistorySection extends StatelessWidget {
+class _HistorySection extends StatefulWidget {
   final List<_CholesterolReading> readings;
   final List<HealthThreshold> thresholds;
 
   const _HistorySection({required this.readings, required this.thresholds});
+
+  @override
+  State<_HistorySection> createState() => _HistorySectionState();
+}
+
+class _HistorySectionState extends State<_HistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
 
   Color _getStatusColor(double? value, MonitorDataType type) {
     if (value == null) return AppTheme.textSecondaryColor;
@@ -610,7 +670,7 @@ class _HistorySection extends StatelessWidget {
     }
 
     try {
-      final t = thresholds.firstWhere((t) => t.dataType == type);
+      final t = widget.thresholds.firstWhere((t) => t.dataType == type);
       min = t.minValue;
       max = t.maxValue;
     } catch (_) {}
@@ -626,10 +686,21 @@ class _HistorySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final reversed = readings.reversed.toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
+
+    // Reverse data to show latest first
+    final reversed = widget.readings.reversed.toList();
+    
+    final totalItems = reversed.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+    if (totalPages == 0) _currentPage = 0;
+    
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = totalItems > 0 ? reversed.sublist(start, end) : <_CholesterolReading>[];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -647,33 +718,64 @@ class _HistorySection extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // Header with Pagination
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'History',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'History',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
               ),
+              // Pagination Controls
+              if (totalPages > 1)
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                      icon: const Icon(Icons.chevron_left),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        '${_currentPage + 1}/$totalPages',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                      icon: const Icon(Icons.chevron_right),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
             ],
           ),
           const SizedBox(height: 20),
-          if (reversed.isEmpty)
+          if (currentItems.isEmpty)
             const Padding(
               padding: EdgeInsets.all(20),
               child: Text('No records found'),
             )
           else
-            ...reversed.take(5).map((r) {
+            ...currentItems.map((r) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
