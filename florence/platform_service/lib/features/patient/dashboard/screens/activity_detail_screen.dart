@@ -570,78 +570,106 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
       impact = endGlucose - startGlucose; 
     }
 
+    // Determine Status Text & Color based on Impact
+    String statusText = 'COMPLETED';
+    Color statusColor = AppTheme.primaryGreen; // Default positive for activity
+
+    if (impact != null) {
+      if (impact < 0) {
+        statusText = 'GLUCOSE ⬇ ${impact.abs().toInt()}';
+        statusColor = AppTheme.primaryGreen;
+      } else if (impact > 0) {
+        statusText = 'GLUCOSE ⬆ ${impact.toInt()}';
+        statusColor = AppTheme.warningColor;
+      }
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey.shade50,
+        color: isDark ? AppTheme.midnightSurface : Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: widget.dataColor.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03), 
+            blurRadius: 8, 
+            offset: const Offset(0, 2)
+          )
+        ],
+        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  log.type, // Raw Description
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  DateFormat('MMM d, h:mm a').format(log.timestamp),
-                  style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 12),
-                ),
-              ],
-            ),
+          // LEFT: Value (Duration) + Unit + Type
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text(
+                    '${log.duration}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.normal,
+                      fontSize: 20,
+                      color: AppTheme.textPrimaryColor,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'min',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 12,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 2),
+              Text(
+                log.type, // Activity Description
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
+
+          // RIGHT: Status Badge + Date
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${log.duration} min',
-                style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimaryColor),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              // Conditional Glucose Impact Badge
-              if (impact != null)
-                Container(
-                  margin: const EdgeInsets.only(top: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: (impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        impact < 0 ? Icons.arrow_downward : Icons.arrow_upward,
-                        size: 12,
-                        color: impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        '${impact.abs().toStringAsFixed(0)}',
-                        style: TextStyle(
-                          color: impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor,
-                          fontSize: 11, 
-                          fontWeight: FontWeight.bold
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else if (startGlucose != null)
-                 Padding(
-                   padding: const EdgeInsets.only(top: 4),
-                   child: Text(
-                    'Start: ${startGlucose.toInt()}',
-                    style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 10),
-                   ),
-                 ),
+              const SizedBox(height: 6),
+              Text(
+                DateFormat('MMM d, h:mm a').format(log.timestamp),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
             ],
           ),
         ],
