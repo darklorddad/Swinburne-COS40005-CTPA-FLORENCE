@@ -4,6 +4,7 @@ import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../chat/services/chatbot_service.dart';
 import '../../core/providers/health_data_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../shared/widgets/button_widgets.dart';
@@ -99,6 +100,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     
     if (confirmed) {
       try {
+        // Clear chatbot session state
+        ChatbotService().resetSession();
+        
         await supabase.auth.signOut();
         if (mounted) {
           AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);

@@ -155,4 +155,18 @@ class ChatbotService extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Reset session state (clears local cache without API call)
+  void resetSession() {
+    _messages.clear();
+    _hasLoadedHistory = false;
+    _isLoadingHistory = false;
+    _isClearingHistory = false;
+    notifyListeners();
+  }
+
+  /// Invalidate context (used by PatientProfileService)
+  void invalidateContext() {
+    resetSession();
+  }
 }
