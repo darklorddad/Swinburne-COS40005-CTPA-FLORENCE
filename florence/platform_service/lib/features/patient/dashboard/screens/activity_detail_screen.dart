@@ -12,9 +12,11 @@ class ActivityDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // We need Activity logs AND Monitor data (for Glucose Impact calculation)
     final activityAsync = ref.watch(activityLogsProvider);
     final monitorAsync = ref.watch(monitorDataProvider);
+
+    // Activity Theme Color: Amber/Orange
+    const Color activityColor = Color(0xFFF59E0B);
 
     return Scaffold(
       appBar: AppBar(
@@ -33,11 +35,11 @@ class ActivityDetailScreen extends ConsumerWidget {
         data: (logs) {
           return monitorAsync.when(
             data: (monitorData) {
-              // Sort logs by date descending
+              // Sort logs: Newest first
               final sortedLogs = List<ActivityLog>.from(logs)
                 ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-              // Filter glucose readings for impact analysis
+              // Filter glucose for impact analysis
               final glucoseReadings = monitorData
                   .where((d) => d.dataType == MonitorDataType.GLUCOSE)
                   .toList();
@@ -54,22 +56,33 @@ class ActivityDetailScreen extends ConsumerWidget {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      // 1. Progress Ring (Active Minutes Today)
-                      _ActiveMinutesRing(logs: sortedLogs),
+                      // 1. Daily Volume
+                      _DailyVolumeCard(
+                        logs: sortedLogs, 
+                        themeColor: activityColor
+                      ),
                       const SizedBox(height: 20),
 
-                      // 2. Weekly Bar Chart (Consistency)
-                      _WeeklyConsistencyChart(logs: sortedLogs),
+                      // 2. Weekly Consistency
+                      _WeeklyConsistencyChart(
+                        logs: sortedLogs, 
+                        themeColor: activityColor
+                      ),
                       const SizedBox(height: 20),
 
-                      // 3. Type Breakdown (Cardio vs Resistance inference)
-                      _TypeBreakdownChart(logs: sortedLogs),
+                      // 3. Activity Timing (Morning vs Evening)
+                      // Replaces "Type Breakdown" to avoid string parsing issues
+                      _ActivityTimingChart(
+                        logs: sortedLogs, 
+                        themeColor: activityColor
+                      ),
                       const SizedBox(height: 20),
 
-                      // 4. History List with Glucose Impact
+                      // 4. History List
                       _ActivityHistoryList(
                         logs: sortedLogs,
                         glucoseReadings: glucoseReadings,
+                        themeColor: activityColor,
                       ),
                       const SizedBox(height: 24),
                     ],
@@ -89,18 +102,17 @@ class ActivityDetailScreen extends ConsumerWidget {
 }
 
 // ============================================================================
-// 1. ACTIVE MINUTES RING
+// 1. DAILY VOLUME (Big Number)
 // ============================================================================
 
-class _ActiveMinutesRing extends StatelessWidget {
+class _DailyVolumeCard extends StatelessWidget {
   final List<ActivityLog> logs;
-  static const int dailyGoal = 30; // 30 minutes goal
+  final Color themeColor;
 
-  const _ActiveMinutesRing({required this.logs});
+  const _DailyVolumeCard({required this.logs, required this.themeColor});
 
   @override
   Widget build(BuildContext context) {
-    // Calculate today's total
     final now = DateTime.now();
     final todayLogs = logs.where((log) => 
       log.timestamp.year == now.year && 
@@ -109,71 +121,47 @@ class _ActiveMinutesRing extends StatelessWidget {
     ).toList();
     
     final totalMinutes = todayLogs.fold(0, (sum, log) => sum + log.duration);
-    final progress = (totalMinutes / dailyGoal).clamp(0.0, 1.0);
-    final isGoalMet = totalMinutes >= dailyGoal;
+    final sessionCount = todayLogs.length;
 
     return _ActivityCard(
-      title: 'Active Minutes (Today)',
+      title: 'Today\'s Movement',
       icon: Icons.timer,
-      infoText: 'Your daily movement goal.\n\n'
-                '• Target: $dailyGoal minutes/day\n'
-                '• Clinical Goal: 150 mins/week to improve insulin sensitivity.',
-      child: Center(
-        child: SizedBox(
-          height: 200,
-          width: 200,
-          child: Stack(
-            alignment: Alignment.center,
+      themeColor: themeColor,
+      infoText: 'Total duration of physical activity recorded today.\n\n'
+                'Consistent daily movement helps regulate blood pressure and glucose levels.',
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Text(
+            '$totalMinutes',
+            style: Theme.of(context).textTheme.displayLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: themeColor,
+              fontSize: 64,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Background Ring
-              SizedBox(
-                height: 180,
-                width: 180,
-                child: CircularProgressIndicator(
-                  value: 1.0,
-                  strokeWidth: 15,
-                  color: AppTheme.getBorderColor(context).withOpacity(0.5),
+              Text(
+                'minutes',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
-              // Value Ring
-              SizedBox(
-                height: 180,
-                width: 180,
-                child: CircularProgressIndicator(
-                  value: progress,
-                  strokeWidth: 15,
-                  color: isGoalMet ? AppTheme.primaryGreen : AppTheme.activityColor,
-                  strokeCap: StrokeCap.round,
+              Text(
+                'across $sessionCount sessions',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
                 ),
-              ),
-              // Center Text
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$totalMinutes',
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimaryColor,
-                    ),
-                  ),
-                  Text(
-                    '/ $dailyGoal min',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (isGoalMet)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Icon(Icons.star, color: AppTheme.primaryGreen, size: 24),
-                    )
-                ],
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -185,19 +173,18 @@ class _ActiveMinutesRing extends StatelessWidget {
 
 class _WeeklyConsistencyChart extends StatelessWidget {
   final List<ActivityLog> logs;
+  final Color themeColor;
 
-  const _WeeklyConsistencyChart({required this.logs});
+  const _WeeklyConsistencyChart({required this.logs, required this.themeColor});
 
   @override
   Widget build(BuildContext context) {
-    // Group last 7 days
     final now = DateTime.now();
     final Map<int, int> dailyTotals = {};
     
-    // Initialize last 7 days with 0
     for (int i = 6; i >= 0; i--) {
       final d = now.subtract(Duration(days: i));
-      final dayKey = d.year * 10000 + d.month * 100 + d.day; // YYYYMMDD
+      final dayKey = d.year * 10000 + d.month * 100 + d.day;
       dailyTotals[dayKey] = 0;
     }
 
@@ -210,25 +197,27 @@ class _WeeklyConsistencyChart extends StatelessWidget {
     }
 
     final sortedKeys = dailyTotals.keys.toList()..sort();
+    final maxMinutes = dailyTotals.values.isNotEmpty 
+        ? dailyTotals.values.reduce(math.max).toDouble() 
+        : 60.0;
+    
+    final maxY = maxMinutes > 0 ? (maxMinutes / 10).ceil() * 10.0 + 10 : 60.0;
+
     final barGroups = sortedKeys.asMap().entries.map((entry) {
       final index = entry.key;
       final minutes = dailyTotals[entry.value]!;
-      // Color logic: Green if >= 30 mins, Blue if > 0, Grey if 0
-      final barColor = minutes >= 30 
-          ? AppTheme.primaryGreen 
-          : (minutes > 0 ? AppTheme.activityColor : Colors.grey.withOpacity(0.3));
-
+      
       return BarChartGroupData(
         x: index,
         barRods: [
           BarChartRodData(
             toY: minutes.toDouble(),
-            color: barColor,
+            color: themeColor,
             width: 16,
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             backDrawRodData: BackgroundBarChartRodData(
               show: true,
-              toY: 60, // Max scale reference (1 hour)
+              toY: maxY,
               color: AppTheme.getBorderColor(context).withOpacity(0.2),
             ),
           ),
@@ -239,15 +228,13 @@ class _WeeklyConsistencyChart extends StatelessWidget {
     return _ActivityCard(
       title: 'Weekly Consistency',
       icon: Icons.bar_chart,
-      infoText: 'Your activity duration over the last 7 days.\n\n'
-                '• Green: Goal met (30+ mins)\n'
-                '• Orange: Some activity\n'
-                '• Grey: No logged activity',
+      themeColor: themeColor,
+      infoText: 'Total active minutes per day for the last 7 days.',
       child: SizedBox(
-        height: 200,
+        height: 220,
         child: BarChart(
           BarChartData(
-            maxY: 70, // Just above 60 mins
+            maxY: maxY,
             gridData: FlGridData(show: false),
             titlesData: FlTitlesData(
               leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -256,16 +243,18 @@ class _WeeklyConsistencyChart extends StatelessWidget {
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
+                  reservedSize: 30,
                   getTitlesWidget: (val, meta) {
                     if (val < 0 || val >= 7) return const SizedBox();
                     final date = DateTime.now().subtract(Duration(days: 6 - val.toInt()));
                     return Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        DateFormat('E').format(date)[0], // First letter of day
+                        DateFormat('E').format(date)[0],
                         style: TextStyle(
                           color: AppTheme.textSecondaryColor,
                           fontWeight: FontWeight.bold,
+                          fontSize: 12,
                         ),
                       ),
                     );
@@ -275,6 +264,22 @@ class _WeeklyConsistencyChart extends StatelessWidget {
             ),
             borderData: FlBorderData(show: false),
             barGroups: barGroups,
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (_) => Colors.black87,
+                tooltipMargin: 4,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return BarTooltipItem(
+                    '${rod.toY.toInt()}m',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ),
       ),
@@ -283,13 +288,14 @@ class _WeeklyConsistencyChart extends StatelessWidget {
 }
 
 // ============================================================================
-// 3. TYPE BREAKDOWN (Inferred from Description)
+// 3. ACTIVITY TIMING (Time of Day Analysis)
 // ============================================================================
 
-class _TypeBreakdownChart extends StatelessWidget {
+class _ActivityTimingChart extends StatelessWidget {
   final List<ActivityLog> logs;
+  final Color themeColor;
 
-  const _TypeBreakdownChart({required this.logs});
+  const _ActivityTimingChart({required this.logs, required this.themeColor});
 
   @override
   Widget build(BuildContext context) {
@@ -297,34 +303,27 @@ class _TypeBreakdownChart extends StatelessWidget {
     final cutoff = DateTime.now().subtract(const Duration(days: 30));
     final recentLogs = logs.where((l) => l.timestamp.isAfter(cutoff)).toList();
 
-    double cardioMins = 0;
-    double resistanceMins = 0;
-    double otherMins = 0;
+    // Buckets: Morning (5-11), Midday (11-17), Evening (17-22), Night (22-5)
+    double morning = 0;
+    double midday = 0;
+    double evening = 0;
+    double night = 0;
 
-    // Keyword matching logic since 'type' isn't distinct in DB, usually in 'activity_description'
     for (var log in recentLogs) {
-      // Note: using 'type' property from model which maps to 'activity_description' in DB
-      final desc = log.type.toLowerCase(); 
-      
-      if (desc.contains('walk') || desc.contains('run') || desc.contains('cycl') || 
-          desc.contains('swim') || desc.contains('jog') || desc.contains('dance') || 
-          desc.contains('hike') || desc.contains('treadmill')) {
-        cardioMins += log.duration;
-      } else if (desc.contains('weight') || desc.contains('gym') || desc.contains('yoga') || 
-                 desc.contains('pilates') || desc.contains('strength') || desc.contains('lift')) {
-        resistanceMins += log.duration;
-      } else {
-        otherMins += log.duration;
-      }
+      final h = log.timestamp.hour;
+      if (h >= 5 && h < 11) morning += log.duration;
+      else if (h >= 11 && h < 17) midday += log.duration;
+      else if (h >= 17 && h < 22) evening += log.duration;
+      else night += log.duration;
     }
 
-    final total = cardioMins + resistanceMins + otherMins;
-    
+    final total = morning + midday + evening + night;
     if (total == 0) {
       return _ActivityCard(
-        title: 'Workout Balance',
-        icon: Icons.pie_chart,
-        infoText: 'Breakdown of Cardio vs Resistance training.',
+        title: 'Activity Timing',
+        icon: Icons.schedule,
+        themeColor: themeColor,
+        infoText: 'When you are most active.',
         child: const Padding(
           padding: EdgeInsets.all(20), 
           child: Center(child: Text('No activity in the last 30 days'))
@@ -332,71 +331,122 @@ class _TypeBreakdownChart extends StatelessWidget {
       );
     }
 
+    final maxVal = [morning, midday, evening, night].reduce(math.max);
+    final maxY = maxVal > 0 ? (maxVal / 10).ceil() * 10.0 + 10 : 60.0;
+
+    final dataPoints = [
+      _TimingPoint('Morning', '5-11AM', morning, 0),
+      _TimingPoint('Midday', '11-5PM', midday, 1),
+      _TimingPoint('Evening', '5-10PM', evening, 2),
+      _TimingPoint('Night', '10PM+', night, 3),
+    ];
+
     return _ActivityCard(
-      title: 'Workout Balance',
-      icon: Icons.pie_chart,
-      infoText: 'Distribution of your activity types (Last 30 Days).\n\n'
-                '• Cardio: Lowers glucose immediately.\n'
-                '• Resistance: Builds muscle for long-term metabolic health.',
-      child: Row(
-        children: [
-          SizedBox(
-            height: 140,
-            width: 140,
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 30,
-                sections: [
-                  if (cardioMins > 0) PieChartSectionData(color: AppTheme.primaryBlue, value: cardioMins, radius: 40, showTitle: false),
-                  if (resistanceMins > 0) PieChartSectionData(color: AppTheme.activityColor, value: resistanceMins, radius: 40, showTitle: false),
-                  if (otherMins > 0) PieChartSectionData(color: Colors.grey, value: otherMins, radius: 40, showTitle: false),
+      title: 'Activity Timing',
+      icon: Icons.schedule,
+      themeColor: themeColor,
+      infoText: 'Distribution of your activity by time of day (Last 30 Days).\n\n'
+                '• Morning: Great for setting daily glucose trend.\n'
+                '• Evening: Helps lower post-dinner spikes.',
+      child: SizedBox(
+        height: 220,
+        child: BarChart(
+          BarChartData(
+            maxY: maxY,
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              horizontalInterval: maxY / 4,
+              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.1), strokeWidth: 1),
+            ),
+            titlesData: FlTitlesData(
+              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  getTitlesWidget: (val, meta) {
+                    if (val < 0 || val >= 4) return const SizedBox();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        dataPoints[val.toInt()].label,
+                        style: TextStyle(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            borderData: FlBorderData(show: false),
+            barGroups: dataPoints.map((point) {
+              return BarChartGroupData(
+                x: point.index,
+                barRods: [
+                  BarChartRodData(
+                    toY: point.value,
+                    color: themeColor,
+                    width: 24,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    backDrawRodData: BackgroundBarChartRodData(
+                      show: true,
+                      toY: maxY,
+                      color: AppTheme.getBorderColor(context).withOpacity(0.1),
+                    ),
+                  ),
                 ],
+              );
+            }).toList(),
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (_) => Colors.black87,
+                tooltipMargin: 4,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return BarTooltipItem(
+                    '${rod.toY.toInt()}m',
+                    const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  );
+                },
               ),
             ),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (cardioMins > 0) _buildLegendItem('Cardio', '${((cardioMins/total)*100).toStringAsFixed(0)}%', AppTheme.primaryBlue),
-                if (cardioMins > 0) const SizedBox(height: 8),
-                if (resistanceMins > 0) _buildLegendItem('Resistance', '${((resistanceMins/total)*100).toStringAsFixed(0)}%', AppTheme.activityColor),
-                if (resistanceMins > 0) const SizedBox(height: 8),
-                if (otherMins > 0) _buildLegendItem('Other', '${((otherMins/total)*100).toStringAsFixed(0)}%', Colors.grey),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildLegendItem(String label, String percent, Color color) {
-    return Row(
-      children: [
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 8),
-        Expanded(child: Text(label, style: const TextStyle(fontSize: 14))),
-        Text(percent, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ],
     );
   }
 }
 
+class _TimingPoint {
+  final String label;
+  final String subLabel;
+  final double value;
+  final int index;
+  _TimingPoint(this.label, this.subLabel, this.value, this.index);
+}
+
 // ============================================================================
-// 4. HISTORY & IMPACT CARD
+// 4. HISTORY & GLUCOSE IMPACT
 // ============================================================================
 
 class _ActivityHistoryList extends StatefulWidget {
   final List<ActivityLog> logs;
   final List<MonitorData> glucoseReadings;
+  final Color themeColor;
 
   const _ActivityHistoryList({
     required this.logs,
     required this.glucoseReadings,
+    required this.themeColor,
   });
 
   @override
@@ -410,6 +460,9 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
     final totalItems = widget.logs.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
     
@@ -423,9 +476,9 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
+        border: Border.all(color: borderColor),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
@@ -437,8 +490,11 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.activityColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.history, color: AppTheme.activityColor, size: 24),
+                    decoration: BoxDecoration(
+                      color: widget.themeColor.withOpacity(0.1), 
+                      borderRadius: BorderRadius.circular(12)
+                    ),
+                    child: Icon(Icons.history, color: widget.themeColor, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
@@ -466,37 +522,37 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
 
   Widget _buildLogItem(BuildContext context, ActivityLog log) {
     // CALCULATE GLUCOSE IMPACT
-    // 1. Find reading closest to start time (within 1 hour before)
-    // 2. Find reading closest to end time + 2 hours
-    
     double? startGlucose;
     double? endGlucose;
-    
     final activityTime = log.timestamp;
     
-    // Look for reading in [Time - 60min, Time]
+    // 1. Start Reading: [Time - 60min] to [Time + 10min]
     final beforeReadings = widget.glucoseReadings.where((r) => 
-      r.measuredAt.isBefore(activityTime) && 
+      r.measuredAt.isBefore(activityTime.add(const Duration(minutes: 10))) && 
       r.measuredAt.isAfter(activityTime.subtract(const Duration(minutes: 60)))
     ).toList();
+    
     if (beforeReadings.isNotEmpty) {
-      beforeReadings.sort((a, b) => b.measuredAt.compareTo(a.measuredAt)); // Closest to start
+      beforeReadings.sort((a, b) => 
+        (a.measuredAt.difference(activityTime).abs()).compareTo(b.measuredAt.difference(activityTime).abs())
+      );
       startGlucose = beforeReadings.first.value;
     }
 
-    // Look for reading in [Time, Time + 120min]
+    // 2. End Reading: [Time + 30min] to [Time + 150min]
     final afterReadings = widget.glucoseReadings.where((r) => 
-      r.measuredAt.isAfter(activityTime) && 
-      r.measuredAt.isBefore(activityTime.add(const Duration(minutes: 120)))
+      r.measuredAt.isAfter(activityTime.add(const Duration(minutes: 30))) && 
+      r.measuredAt.isBefore(activityTime.add(const Duration(minutes: 150)))
     ).toList();
+    
     if (afterReadings.isNotEmpty) {
-      afterReadings.sort((a, b) => b.measuredAt.compareTo(a.measuredAt)); // Latest in window
-      endGlucose = afterReadings.first.value;
+      afterReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt)); 
+      endGlucose = afterReadings.last.value;
     }
 
     double? impact;
     if (startGlucose != null && endGlucose != null) {
-      impact = endGlucose - startGlucose; // Negative means drop (good)
+      impact = endGlucose - startGlucose; 
     }
 
     return Container(
@@ -505,17 +561,17 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark ? Colors.white10 : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.activityColor.withOpacity(0.2)),
+        border: Border.all(color: widget.themeColor.withOpacity(0.2)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.activityColor.withOpacity(0.1),
+              color: widget.themeColor.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.directions_run, color: AppTheme.activityColor, size: 20),
+            child: Icon(Icons.directions_run, color: widget.themeColor, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -523,8 +579,10 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  log.type,
+                  log.type, // Raw Description
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   DateFormat('MMM d, h:mm a').format(log.timestamp),
@@ -540,31 +598,43 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
                 '${log.duration} min',
                 style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimaryColor),
               ),
+              // Conditional Glucose Impact Badge
               if (impact != null)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      impact < 0 ? Icons.arrow_downward : Icons.arrow_upward,
-                      size: 12,
-                      color: impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor,
-                    ),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${impact.abs().toStringAsFixed(0)} mg/dL',
-                      style: TextStyle(
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: (impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        impact < 0 ? Icons.arrow_downward : Icons.arrow_upward,
+                        size: 12,
                         color: impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor,
-                        fontSize: 12, 
-                        fontWeight: FontWeight.w600
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 2),
+                      Text(
+                        '${impact.abs().toStringAsFixed(0)}',
+                        style: TextStyle(
+                          color: impact < 0 ? AppTheme.primaryGreen : AppTheme.errorColor,
+                          fontSize: 11, 
+                          fontWeight: FontWeight.bold
+                        ),
+                      ),
+                    ],
+                  ),
                 )
-              else
-                Text(
-                  '-- mg/dL',
-                  style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 10),
-                ),
+              else if (startGlucose != null)
+                 Padding(
+                   padding: const EdgeInsets.only(top: 4),
+                   child: Text(
+                    'Start: ${startGlucose.toInt()}',
+                    style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 10),
+                   ),
+                 ),
             ],
           ),
         ],
@@ -582,8 +652,15 @@ class _ActivityCard extends StatelessWidget {
   final IconData icon;
   final String infoText;
   final Widget child;
+  final Color themeColor;
 
-  const _ActivityCard({required this.title, required this.icon, required this.infoText, required this.child});
+  const _ActivityCard({
+    required this.title, 
+    required this.icon, 
+    required this.infoText, 
+    required this.child,
+    required this.themeColor,
+  });
 
   void _showInfoDialog(BuildContext context) {
     showDialog(
@@ -593,7 +670,7 @@ class _ActivityCard extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            Icon(icon, color: AppTheme.activityColor),
+            Icon(icon, color: themeColor),
             const SizedBox(width: 12),
             Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
           ],
@@ -607,29 +684,52 @@ class _ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.activityColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: AppTheme.activityColor, size: 24),
+                decoration: BoxDecoration(
+                  color: themeColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: themeColor, size: 24),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
-              IconButton(onPressed: () => _showInfoDialog(context), icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor)),
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+              IconButton(
+                icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
+                onPressed: () => _showInfoDialog(context),
+              ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           child,
         ],
       ),
