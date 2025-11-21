@@ -358,9 +358,9 @@ class _StatisticsSection extends StatelessWidget {
                       children: [
                         Text(
                           (sysThreshold != null && diaThreshold != null)
-                              ? '${sysThreshold!.minValue.toInt()}-${sysThreshold!.maxValue.toInt()} / ${diaThreshold!.minValue.toInt()}-${diaThreshold!.maxValue.toInt()}'
+                              ? 'Sys: ${sysThreshold!.minValue.toInt()}-${sysThreshold!.maxValue.toInt()} / Dia: ${diaThreshold!.minValue.toInt()}-${diaThreshold!.maxValue.toInt()} mmHg'
                               : 'Not Set',
-                          style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 14),
+                          style: TextStyle(color: AppTheme.primaryGreen, fontWeight: FontWeight.bold, fontSize: 12),
                         ),
                         const SizedBox(width: 8),
                         Icon(
