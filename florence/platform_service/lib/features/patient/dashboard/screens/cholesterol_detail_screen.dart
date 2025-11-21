@@ -856,33 +856,44 @@ class _HistorySectionState extends State<_HistorySection> {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppTheme.borderColor),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           DateFormat('MMM d, yyyy').format(r.timestamp),
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 4),
                         Text(
-                          'Total: ${r.total?.toInt() ?? "--"} mg/dL',
-                          style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 12),
+                          DateFormat('h:mm a').format(r.timestamp),
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryColor,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    const SizedBox(height: 12),
+                    Divider(color: AppTheme.borderColor.withOpacity(0.5), height: 1),
+                    const SizedBox(height: 12),
+                    // 2x2 Grid for values
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            _MiniValue('LDL', r.ldl, _getStatusColor(r.ldl, MonitorDataType.CHOLESTEROL_LDL)),
-                            const SizedBox(width: 12),
-                            _MiniValue('HDL', r.hdl, _getStatusColor(r.hdl, MonitorDataType.CHOLESTEROL_HDL)),
-                          ],
-                        ),
+                        Expanded(child: _MiniValue('Total', r.total, _getStatusColor(r.total, MonitorDataType.CHOLESTEROL_TOTAL))),
+                        const SizedBox(width: 8),
+                        Expanded(child: _MiniValue('Triglycerides', r.triglycerides, _getStatusColor(r.triglycerides, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES))),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: _MiniValue('LDL (Bad)', r.ldl, _getStatusColor(r.ldl, MonitorDataType.CHOLESTEROL_LDL))),
+                        const SizedBox(width: 8),
+                        Expanded(child: _MiniValue('HDL (Good)', r.hdl, _getStatusColor(r.hdl, MonitorDataType.CHOLESTEROL_HDL))),
                       ],
                     ),
                   ],
@@ -905,11 +916,13 @@ class _MiniValue extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
+        Text(label, style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
+        const SizedBox(height: 2),
         Text(
-          value?.toInt().toString() ?? '--',
-          style: TextStyle(fontWeight: FontWeight.bold, color: color),
+          value != null ? '${value!.toInt()} mg/dL' : '--',
+          style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
         ),
       ],
     );
