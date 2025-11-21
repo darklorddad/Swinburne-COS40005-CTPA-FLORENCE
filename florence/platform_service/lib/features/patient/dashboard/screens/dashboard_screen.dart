@@ -61,6 +61,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           _userName = profile['name'] as String? ?? 'Patient';
           _loadUserRetries = 0; // Reset on success
         });
+        // Refresh data providers to ensure we have the latest data
+        // and to recover if initial fetches failed due to profile race conditions.
+        _handleRefresh();
       }
     } catch (e) {
       debugPrint('Error loading user data for dashboard: $e');
