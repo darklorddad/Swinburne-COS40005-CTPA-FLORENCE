@@ -4,8 +4,8 @@ from typing import Optional
 from enum import Enum
 from datetime import date
 
-from ..client import supabase
-from .authentication import get_current_admin_user
+from client import supabase
+from routers.authentication import get_current_admin_user
 
 # --- Pydantic Models ---
 

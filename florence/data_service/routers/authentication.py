@@ -5,7 +5,7 @@ from datetime import date
 from supabase_auth.errors import AuthApiError
 
 # Import the shared Supabase client
-from ..client import supabase
+from client import supabase
 
 router = APIRouter(
     prefix="/auth",

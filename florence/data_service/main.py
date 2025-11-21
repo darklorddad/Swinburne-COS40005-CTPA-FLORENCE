@@ -5,9 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional, Dict, Any
 
 # Import the router from your new authentication file
-from .routers import authentication, patients, clinicians, admin, chat_history
+from routers import authentication, patients, clinicians, admin, chat_history
 # Import the Supabase client from its dedicated file
-from .client import supabase
+from client import supabase
 
 app = FastAPI()
 

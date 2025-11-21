@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from datetime import datetime
-from ..client import supabase
-from .patients import get_current_patient_profile
+from client import supabase
+from routers.patients import get_current_patient_profile
 
 router = APIRouter(
     prefix="/chat",

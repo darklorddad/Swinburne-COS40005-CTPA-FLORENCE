@@ -5,7 +5,7 @@ from supabase_auth.errors import AuthApiError
 from datetime import datetime, date
 from enum import Enum
 
-from ..client import supabase
+from client import supabase
 
 # --- Helper Functions / Dependencies ---
 
