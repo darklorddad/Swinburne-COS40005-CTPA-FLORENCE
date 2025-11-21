@@ -81,8 +81,6 @@ class _ChatScreenState extends State<ChatScreen> {
     // If not loaded and not currently loading, trigger load
     if (!_chatbotService.hasLoadedHistory && !_chatbotService.isLoadingHistory) {
       await _loadHistory();
-    } else if (_chatbotService.messages.isNotEmpty) {
-      _scrollToBottom();
     }
   }
 
@@ -159,7 +157,7 @@ class _ChatScreenState extends State<ChatScreen> {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
+          0.0,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
@@ -371,10 +369,11 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessagesList(List<ChatMessage> messages) {
     return ListView.builder(
       controller: _scrollController,
+      reverse: true,
       padding: const EdgeInsets.all(16),
       itemCount: messages.length,
       itemBuilder: (context, index) {
-        final message = messages[index];
+        final message = messages[messages.length - 1 - index];
         return _buildMessageBubble(message);
       },
     );
