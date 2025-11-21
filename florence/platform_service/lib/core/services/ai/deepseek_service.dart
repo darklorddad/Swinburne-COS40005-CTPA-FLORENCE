@@ -5,7 +5,7 @@
 /// that hasn't been refactored yet.
 /// 
 /// TODO: Remove this file once all references in HealthDataProvider are removed.
-library;
+library deepseek_service;
 
 class ChatMessage {
   final dynamic role;
