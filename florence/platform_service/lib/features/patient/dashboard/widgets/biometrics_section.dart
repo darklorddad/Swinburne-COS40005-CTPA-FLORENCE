@@ -111,10 +111,10 @@ class BiometricsSection extends StatelessWidget {
       label: 'Glucose',
       value: glucose?.value.toStringAsFixed(0) ?? '--',
       unit: 'mg/dL',
-      status: _getGlucoseStatus(glucose?.value),
+      status: _getGlucoseStatus(glucose?.value, thresholds),
       timestamp: glucose?.measuredAt,
       icon: Icons.water_drop_outlined,
-      color: _getGlucoseColor(glucose?.value),
+      color: _getGlucoseColor(glucose?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
     ));
 
@@ -125,10 +125,10 @@ class BiometricsSection extends StatelessWidget {
           ? '${bpSystolic.value.toInt()}/${bpDiastolic.value.toInt()}'
           : '--/--',
       unit: 'mmHg',
-      status: _getBPStatus(bpSystolic?.value, bpDiastolic?.value),
+      status: _getBPStatus(bpSystolic?.value, bpDiastolic?.value, thresholds),
       timestamp: bpSystolic?.measuredAt,
       icon: Icons.monitor_heart_outlined,
-      color: _getBPColor(bpSystolic?.value, bpDiastolic?.value),
+      color: _getBPColor(bpSystolic?.value, bpDiastolic?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.bloodPressureDetail),
     ));
 
@@ -137,10 +137,10 @@ class BiometricsSection extends StatelessWidget {
       label: 'HbA1c',
       value: hba1c?.value.toStringAsFixed(1) ?? '--',
       unit: '%',
-      status: _getHba1cStatus(hba1c?.value),
+      status: _getHba1cStatus(hba1c?.value, thresholds),
       timestamp: hba1c?.measuredAt,
       icon: Icons.pie_chart_outline,
-      color: _getHba1cColor(hba1c?.value),
+      color: _getHba1cColor(hba1c?.value, thresholds),
       onTap: () => Navigator.push(
         context, 
         MaterialPageRoute(builder: (context) => const HbA1cDetailScreen())
@@ -241,73 +241,93 @@ class BiometricsSection extends StatelessWidget {
 
   // --- Helper Methods (Updated to handle nulls) ---
 
-  String _getGlucoseStatus(double? value) {
+  HealthThreshold? _getThreshold(List<HealthThreshold> thresholds, MonitorDataType type) {
+    try {
+      return thresholds.firstWhere((t) => t.dataType == type);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _getGlucoseStatus(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return 'No Data';
-    if (value < 70) return 'Low';
-    if (value > 180) return 'High';
+    final t = _getThreshold(thresholds, MonitorDataType.GLUCOSE);
+    if (t == null) return 'Recorded';
+
+    if (value < t.minValue) return 'Low';
+    if (value > t.maxValue) return 'High';
     return 'Normal';
   }
   
-  Color _getGlucoseColor(double? value) {
+  Color _getGlucoseColor(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
-    if (value < 70) return AppTheme.glucoseLow;
-    if (value > 180) return AppTheme.glucoseHigh;
+    final t = _getThreshold(thresholds, MonitorDataType.GLUCOSE);
+    if (t == null) return AppTheme.primaryBlue; // Neutral blue if no target
+
+    if (value < t.minValue) return AppTheme.glucoseLow;
+    if (value > t.maxValue) return AppTheme.glucoseHigh;
     return AppTheme.glucoseNormal;
   }
 
-  String _getBPStatus(double? sys, double? dia) {
+  String _getBPStatus(double? sys, double? dia, List<HealthThreshold> thresholds) {
     if (sys == null || dia == null) return 'No Data';
-    if (sys > 140 || dia > 90) return 'High';
-    if (sys > 120 || dia > 80) return 'Elevated';
+    final tSys = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
+    final tDia = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
+    
+    if (tSys == null || tDia == null) return 'Recorded';
+
+    if (sys > tSys.maxValue || dia > tDia.maxValue) return 'High';
+    if (sys < tSys.minValue || dia < tDia.minValue) return 'Low';
     return 'Normal';
   }
 
-  Color _getBPColor(double? sys, double? dia) {
+  Color _getBPColor(double? sys, double? dia, List<HealthThreshold> thresholds) {
     if (sys == null || dia == null) return AppTheme.textSecondaryColor;
-    if (sys > 140 || dia > 90) return AppTheme.errorColor;
-    if (sys > 120 || dia > 80) return AppTheme.warningColor;
+    final tSys = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
+    final tDia = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
+
+    if (tSys == null || tDia == null) return AppTheme.primaryBlue;
+
+    if (sys > tSys.maxValue || dia > tDia.maxValue) return AppTheme.errorColor;
+    if (sys < tSys.minValue || dia < tDia.minValue) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
   }
 
-  String _getHba1cStatus(double? value) {
+  String _getHba1cStatus(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return 'No Data';
-    if (value < 5.7) return 'Normal';
-    if (value < 6.5) return 'Pre-diabetes';
-    return 'Diabetes';
+    final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
+    if (t == null) return 'Recorded';
+
+    if (value <= t.maxValue) return 'Normal';
+    return 'High';
   }
 
-  Color _getHba1cColor(double? value) {
+  Color _getHba1cColor(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
-    if (value >= 6.5) return AppTheme.errorColor;
-    if (value >= 5.7) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
+    final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
+    if (t == null) return AppTheme.primaryBlue;
+
+    if (value <= t.maxValue) return AppTheme.primaryGreen;
+    return AppTheme.errorColor;
   }
 
   String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return 'No Data';
-    
-    double max = 200;
-    try {
-      final t = thresholds.firstWhere((t) => t.dataType == MonitorDataType.CHOLESTEROL_TOTAL);
-      max = t.maxValue;
-    } catch (_) {}
+    final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+    if (t == null) return 'Recorded';
 
-    if (value > max + 40) return 'High';
-    if (value > max) return 'Borderline';
+    if (value > t.maxValue + 40) return 'High';
+    if (value > t.maxValue) return 'Elevated';
     return 'Desirable';
   }
 
   Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
-    
-    double max = 200;
-    try {
-      final t = thresholds.firstWhere((t) => t.dataType == MonitorDataType.CHOLESTEROL_TOTAL);
-      max = t.maxValue;
-    } catch (_) {}
+    final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+    if (t == null) return AppTheme.primaryBlue;
 
-    if (value > max + 40) return AppTheme.errorColor;
-    if (value > max) return AppTheme.warningColor;
+    if (value > t.maxValue + 40) return AppTheme.errorColor;
+    if (value > t.maxValue) return AppTheme.warningColor;
     return AppTheme.primaryGreen;
   }
 

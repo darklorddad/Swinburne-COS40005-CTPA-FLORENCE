@@ -47,6 +47,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
 
           final isDefault = userSys == null || userDia == null;
 
+          // Ensure we only pass thresholds if they exist, no defaults
           final sysThreshold = userSys;
           final diaThreshold = userDia;
 
@@ -886,7 +887,6 @@ class _HistorySectionState extends State<_HistorySection> {
                final sysMax = widget.sysThreshold!.maxValue;
                final diaMax = widget.diaThreshold!.maxValue;
 
-               // Logic: Critical if significantly above max, Warning if just above max
                if (r.systolic > (sysMax + 20) || r.diastolic > (diaMax + 10)) {
                  status = 'HIGH';
                  statusColor = AppTheme.errorColor;
@@ -901,7 +901,7 @@ class _HistorySectionState extends State<_HistorySection> {
                  statusColor = AppTheme.primaryGreen;
                }
              } else {
-               status = '';
+               status = '--';
                statusColor = AppTheme.textSecondaryColor;
              }
 

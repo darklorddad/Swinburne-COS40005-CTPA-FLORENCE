@@ -127,7 +127,7 @@ class _GaugeSection extends StatelessWidget {
     Color statusColor;
     String statusText;
     
-    // Use threshold if available, otherwise standard clinical ranges
+    // Use threshold if available, otherwise neutral
     if (val == 0) {
       statusText = "No Data";
       statusColor = AppTheme.textSecondaryColor;
@@ -140,17 +140,8 @@ class _GaugeSection extends StatelessWidget {
         statusText = "Above Target";
       }
     } else {
-      // Default clinical ranges
-      if (val < 5.7) {
-        statusColor = AppTheme.primaryGreen;
-        statusText = "Normal";
-      } else if (val < 6.5) {
-        statusColor = AppTheme.warningColor;
-        statusText = "Pre-diabetes";
-      } else {
-        statusColor = AppTheme.errorColor;
-        statusText = "Diabetes";
-      }
+      statusColor = AppTheme.primaryBlue;
+      statusText = "Recorded";
     }
 
     // Chart Dimensions
@@ -167,9 +158,7 @@ class _GaugeSection extends StatelessWidget {
                  '• Above Target: ${threshold!.maxValue.toStringAsFixed(1)}% or higher';
     } else {
       infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
-                 '• Normal: Below 5.7%\n'
-                 '• Pre-diabetes: 5.7% - 6.4%\n'
-                 '• Diabetes: 6.5% or higher';
+                 '• Set a target in your profile to see status.';
     }
 
     return _HbA1cCard(
