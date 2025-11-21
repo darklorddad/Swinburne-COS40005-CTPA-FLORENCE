@@ -4,7 +4,6 @@ library;
 
 import 'dart:math';
 import '../../config/environment.dart';
-import '../ai/deepseek_service.dart';
 import '../../../features/patient/core/models/health_data_models.dart';
 import '../../../features/patient/core/services/data_ingestion_service.dart';
 
@@ -85,7 +84,6 @@ class DetectedPattern {
 
 /// Service for detecting patterns in health data
 class PatternDetectionService {
-  final DeepSeekService _deepseek = DeepSeekService();
   final DataIngestionService _dataService = DataIngestionService();
 
   // Singleton pattern
@@ -347,54 +345,8 @@ class PatternDetectionService {
 
   /// Enrich patterns with AI insights
   Future<void> _enrichPatternsWithAI(List<DetectedPattern> patterns, int hours) async {
-    try {
-      // Gather context
-      final startTime = DateTime.now().subtract(Duration(hours: hours));
-      final summary = _dataService.getHealthSummary(
-        startDate: startTime,
-        endDate: DateTime.now(),
-      );
-
-      // Create pattern summary for AI
-      final patternsSummary = patterns.map((p) => {
-        'type': p.typeLabel,
-        'severity': p.severity.name,
-        'description': p.description,
-      }).toList();
-
-      final healthData = {
-        'patterns_detected': patternsSummary,
-        'analysis_period_hours': hours,
-        'average_glucose': summary.averageGlucose,
-        'time_in_range': summary.timeInRange,
-        'glucose_variability': summary.glucoseStdDev,
-        'hyper_events': summary.hyperEvents,
-        'hypo_events': summary.hypoEvents,
-      };
-
-      // Get AI analysis
-      final aiInsight = await _deepseek.analyzePatterns(
-        healthData: healthData,
-      );
-
-      // Add AI insight to the first (most severe) pattern
-      if (patterns.isNotEmpty) {
-        final firstPattern = patterns.first;
-        patterns[0] = DetectedPattern(
-          id: firstPattern.id,
-          type: firstPattern.type,
-          severity: firstPattern.severity,
-          description: firstPattern.description,
-          detectedAt: firstPattern.detectedAt,
-          dataPointIds: firstPattern.dataPointIds,
-          metadata: firstPattern.metadata,
-          aiInsight: aiInsight,
-        );
-      }
-    } catch (e) {
-      print('Failed to enrich patterns with AI: $e');
-      // Continue without AI insights
-    }
+    // AI enrichment temporarily disabled as DeepSeekService is removed
+    return;
   }
 
   /// Calculate standard deviation
