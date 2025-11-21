@@ -885,13 +885,37 @@ class _HistorySectionState extends State<_HistorySection> {
             )
           else
             ...currentItems.map((r) {
-              // Determine status based on worst metric
-              String statusText = 'NORMAL';
+              // Helper to safely get threshold values
+              double getLimit(MonitorDataType type, double defaultVal, {bool isMin = false}) {
+                try {
+                  final t = widget.thresholds.firstWhere((t) => t.dataType == type);
+                  return isMin ? t.minValue : t.maxValue;
+                } catch (_) {
+                  return defaultVal;
+                }
+              }
+
+              final maxTotal = getLimit(MonitorDataType.CHOLESTEROL_TOTAL, 200);
+              final maxLdl = getLimit(MonitorDataType.CHOLESTEROL_LDL, 100);
+              final minHdl = getLimit(MonitorDataType.CHOLESTEROL_HDL, 40, isMin: true);
+              final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES, 150);
+
+              // Determine status based on priority (LDL > Total > Tri > HDL)
+              String statusText = 'DESIRABLE';
               Color statusColor = AppTheme.primaryGreen;
-            
-              if ((r.total ?? 0) > 200 || (r.ldl ?? 0) > 100 || (r.triglycerides ?? 0) > 150 || ((r.hdl ?? 100) < 40)) {
-                statusText = 'HIGH RISK';
+
+              if (r.ldl != null && r.ldl! > maxLdl) {
+                statusText = 'HIGH LDL';
                 statusColor = AppTheme.errorColor;
+              } else if (r.total != null && r.total! > maxTotal) {
+                statusText = 'HIGH TOTAL';
+                statusColor = AppTheme.errorColor;
+              } else if (r.triglycerides != null && r.triglycerides! > maxTri) {
+                statusText = 'HIGH TRI';
+                statusColor = AppTheme.warningColor;
+              } else if (r.hdl != null && r.hdl! < minHdl) {
+                statusText = 'LOW HDL';
+                statusColor = AppTheme.warningColor;
               }
 
               return Container(
