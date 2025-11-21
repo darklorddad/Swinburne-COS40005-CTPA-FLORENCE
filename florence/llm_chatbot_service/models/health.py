@@ -70,6 +70,6 @@ class HealthContext(BaseModel):
         lines.append(self.raw_daily_logs)
         lines.append("")
 
-        lines.append(f"Data as of: {self.data_timestamp}")
+        lines.append(f"Data as of: {self.data_timestamp} (Note: This is UTC time, which may differ from the user's local time)")
 
         return "\n".join(lines)

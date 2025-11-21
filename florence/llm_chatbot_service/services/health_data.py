@@ -138,6 +138,8 @@ class HealthDataService:
             monitor_lines.append("No monitor data available.")
         else:
             for m in monitor_data:
+                if m.data_type == "ECG":
+                    continue
                 monitor_lines.append(f"- {m.measured_at.strftime('%Y-%m-%d %H:%M')}: {m.data_type} = {m.value}")
         
         # Format Activity Logs

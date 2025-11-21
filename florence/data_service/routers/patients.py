@@ -56,7 +56,6 @@ class MonitorDataType(str, Enum):
     GLUCOSE = 'GLUCOSE'
     BMI = 'BMI'
     HBA1C = 'HBA1C'
-    ECG = 'ECG'
     # Detailed Cholesterol
     CHOLESTEROL_TOTAL = 'CHOLESTEROL_TOTAL'
     CHOLESTEROL_LDL = 'CHOLESTEROL_LDL'

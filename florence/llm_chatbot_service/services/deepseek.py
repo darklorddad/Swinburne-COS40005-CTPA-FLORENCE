@@ -94,7 +94,7 @@ class DeepSeekService:
         Returns:
             Complete system prompt for the LLM
         """
-        return f"""You are FLORENCE, a friendly AI health assistant for diabetes management.
+        return f"""You are FLORENCE, a friendly AI health assistant for chronic disease management.
 
 Patient's recent health context:
 {health_context_formatted}
@@ -102,7 +102,7 @@ Patient's recent health context:
 Your role:
 - Answer questions about their health data
 - Provide guidance and support
-- Explain diabetes management concepts
+- Explain chronic disease management concepts
 - Offer personalized tips based on their data
 - Be warm, encouraging, and non-judgmental
 
