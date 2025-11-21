@@ -100,16 +100,37 @@ class HealthDataService:
             }
         return thresholds
 
+    async def get_patient_profile(self, token: str) -> dict:
+        """
+        Fetch patient profile.
+        """
+        return await self._fetch_data("/patients/me", token)
+
     async def get_health_context(self, token: str) -> HealthContext:
         """
         Get formatted health context for LLM prompt.
         """
         dummy_date = datetime.now()
         
+        profile = await self.get_patient_profile(token)
         monitor_data = await self.get_monitor_data(token, dummy_date, dummy_date)
         activity_logs = await self.get_activity_logs(token, dummy_date, dummy_date)
         daily_logs = await self.get_daily_logs(token, dummy_date, dummy_date)
         thresholds = await self.get_patient_thresholds(token)
+
+        # Format Profile
+        profile_lines = []
+        if not profile:
+            profile_lines.append("No profile data available.")
+        else:
+            if profile.get("name"):
+                profile_lines.append(f"Name: {profile.get('name')}")
+            if profile.get("gender"):
+                profile_lines.append(f"Gender: {profile.get('gender')}")
+            if profile.get("date_of_birth"):
+                profile_lines.append(f"Date of Birth: {profile.get('date_of_birth')}")
+            if profile.get("risk_level"):
+                profile_lines.append(f"Risk Level: {profile.get('risk_level')}")
 
         # Format Monitor Data
         monitor_lines = []
@@ -151,6 +172,7 @@ class HealthDataService:
                 threshold_lines.append(f"- {dtype}: Min {limits['min']}, Max {limits['max']}")
 
         return HealthContext(
+            patient_profile="\n".join(profile_lines),
             raw_monitor_data="\n".join(monitor_lines),
             raw_activity_logs="\n".join(activity_lines),
             raw_daily_logs="\n".join(daily_lines),

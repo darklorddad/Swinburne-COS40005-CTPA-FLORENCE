@@ -39,6 +39,7 @@ class DailyLog(BaseModel):
 
 class HealthContext(BaseModel):
     """Health context formatted for LLM prompt."""
+    patient_profile: str
     raw_monitor_data: str
     raw_activity_logs: str
     raw_daily_logs: str
@@ -49,6 +50,10 @@ class HealthContext(BaseModel):
         """Format health context for inclusion in LLM prompt."""
         lines = []
         
+        lines.append("=== PATIENT PROFILE ===")
+        lines.append(self.patient_profile)
+        lines.append("")
+
         lines.append("=== PATIENT THRESHOLDS ===")
         lines.append(self.patient_thresholds)
         lines.append("")
