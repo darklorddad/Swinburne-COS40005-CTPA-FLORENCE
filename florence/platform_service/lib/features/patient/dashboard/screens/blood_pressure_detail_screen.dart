@@ -730,16 +730,20 @@ class _ScatterSection extends StatelessWidget {
                 duration: Duration.zero, // Fix animation
                 ScatterChartData(
                   scatterSpots: data.map((r) {
-                    bool isHigh = false;
+                    Color dotColor;
                     if (sysThreshold != null && diaThreshold != null) {
-                      isHigh = r.systolic > sysThreshold!.maxValue || r.diastolic > diaThreshold!.maxValue;
+                      final isHigh = r.systolic > sysThreshold!.maxValue || r.diastolic > diaThreshold!.maxValue;
+                      dotColor = isHigh ? AppTheme.errorColor : AppTheme.primaryGreen;
+                    } else {
+                      dotColor = AppTheme.primaryBlue;
                     }
+                    
                     return ScatterSpot(
                       r.diastolic, 
                       r.systolic,
                       dotPainter: FlDotCirclePainter(
-                        color: isHigh ? AppTheme.errorColor : AppTheme.primaryGreen,
-                        radius: 4, // Thinner dots
+                        color: dotColor,
+                        radius: 4,
                         strokeWidth: 0,
                       ),
                     );
@@ -773,9 +777,12 @@ class _ScatterSection extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-               _buildLegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
-               const SizedBox(width: 16),
-               _buildLegendItem('High', AppTheme.errorColor, isCircle: true),
+               if (sysThreshold != null && diaThreshold != null) ...[
+                 _buildLegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
+                 const SizedBox(width: 16),
+                 _buildLegendItem('High', AppTheme.errorColor, isCircle: true),
+               ] else
+                 _buildLegendItem('Recorded', AppTheme.primaryBlue, isCircle: true),
             ]),
           ],
         );
