@@ -99,15 +99,12 @@ chatbot_service/
    DEEPSEEK_API_KEY="your-deepseek-api-key"
    DEEPSEEK_BASE_URL="https://api.deepseek.com/v1"
    DEEPSEEK_MODEL="deepseek-chat"
-   DEEPSEEK_TEMPERATURE=0.8
-   DEEPSEEK_MAX_TOKENS=1000
+   # DEEPSEEK_TEMPERATURE=0.8 (Optional)
+   # DEEPSEEK_MAX_TOKENS=1000 (Optional)
 
    # Service Configuration
    SERVICE_HOST="0.0.0.0"
    SERVICE_PORT=8001
-
-   # Health Context Configuration
-   HEALTH_CONTEXT_DAYS=7
    ```
 
 6. **Set up the database:**
@@ -162,8 +159,9 @@ Send a message to the chatbot and receive an AI-powered response.
   "content": "Based on your recent data showing an average of 145 mg/dL...",
   "timestamp": "2025-01-20T10:30:00Z",
   "context_used": {
-    "latest_glucose": 152.0,
-    "average_glucose_7d": 145.2,
+    "patient_profile": "Name: ...",
+    "raw_monitor_data": "- 2025-01-20...",
+    "patient_thresholds": "...",
     ...
   }
 }
@@ -237,14 +235,15 @@ The service:
 
 ## Health Data Context
 
-The chatbot automatically includes a 7-day health summary with each conversation:
+The chatbot automatically includes the patient's full health context with each conversation:
 
-- **Glucose Metrics**: Latest reading, 7-day average, time in range, hyper/hypo events
-- **Blood Pressure**: Average systolic/diastolic readings
-- **Activity**: Total activity minutes
-- **Meal Data**: Meal logs with glucose context
+- **Patient Profile**: Name, age, gender, risk level
+- **Thresholds**: Patient-specific targets for glucose, BP, etc.
+- **Raw Monitor Data**: Complete history of glucose, blood pressure, BMI, etc.
+- **Activity Logs**: Full history of physical activities
+- **Meal Logs**: Daily food logs with pre/post-meal glucose readings
 
-This context is fetched from Supabase and formatted for the LLM prompt.
+This raw data is fetched from Supabase and formatted for the LLM prompt, allowing the AI to perform its own analysis.
 
 ## LLM Integration
 

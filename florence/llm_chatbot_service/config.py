@@ -33,15 +33,6 @@ class Settings(BaseSettings):
         "*",  # Allow all origins for mobile app access
     ]
 
-    # Health Context Configuration
-    health_context_days: int = 28
-    health_context_cache_minutes: int = 5
-
-    # Glucose Thresholds (mg/dL)
-    glucose_low_threshold: float = 70.0
-    glucose_high_threshold: float = 180.0
-    glucose_target_min: float = 80.0
-    glucose_target_max: float = 140.0
 
     class Config:
         # Resolve the path to the .env file in the project root
