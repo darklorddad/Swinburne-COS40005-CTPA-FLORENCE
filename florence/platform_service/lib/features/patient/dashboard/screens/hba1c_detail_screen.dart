@@ -366,18 +366,36 @@ class _GaugeSection extends StatelessWidget {
 // 2. TRENDS - FIXED OVERLAPPING / OUT OF BOUNDS
 // ============================================================================
 
-class _TrendsSection extends StatelessWidget {
+class _TrendsSection extends StatefulWidget {
   final List<MonitorData> readings;
   final double targetMax;
 
   const _TrendsSection({required this.readings, required this.targetMax});
 
   @override
+  State<_TrendsSection> createState() => _TrendsSectionState();
+}
+
+class _TrendsSectionState extends State<_TrendsSection> {
+  String _selectedRange = '1Y';
+  final List<String> _ranges = ['6M', '1Y', 'ALL'];
+
+  List<MonitorData> _filterData() {
+    if (widget.readings.isEmpty || _selectedRange == 'ALL') return widget.readings;
+    final now = DateTime.now();
+    final duration = _selectedRange == '6M' ? const Duration(days: 180) : const Duration(days: 365);
+    final cutoff = now.subtract(duration);
+    return widget.readings.where((r) => r.measuredAt.isAfter(cutoff)).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final filtered = _filterData();
+    
     double minX = 0, maxX = 1;
-    if (readings.isNotEmpty) {
-      minX = readings.first.measuredAt.millisecondsSinceEpoch.toDouble();
-      maxX = readings.last.measuredAt.millisecondsSinceEpoch.toDouble();
+    if (filtered.isNotEmpty) {
+      minX = filtered.first.measuredAt.millisecondsSinceEpoch.toDouble();
+      maxX = filtered.last.measuredAt.millisecondsSinceEpoch.toDouble();
       if (minX == maxX) {
         minX -= 2629743000;
         maxX += 2629743000; 
@@ -388,6 +406,8 @@ class _TrendsSection extends StatelessWidget {
        maxX = now.millisecondsSinceEpoch.toDouble();
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return _HbA1cCard(
       title: 'HbA1c Trends',
       icon: Icons.show_chart,
@@ -396,6 +416,44 @@ class _TrendsSection extends StatelessWidget {
                 '• Dotted Line: Your personal target',
       child: Column(
         children: [
+          // Timeline Selector
+          Container(
+            height: 36,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: _ranges.map((range) {
+                final isSelected = _selectedRange == range;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedRange = range),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppTheme.primaryBlue : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        range,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected 
+                            ? Colors.white 
+                            : Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
           SizedBox(
             height: 220,
             // FIX: ClipRect prevents the RangeAnnotations from drawing outside the container
@@ -445,7 +503,7 @@ class _TrendsSection extends StatelessWidget {
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
                        HorizontalLine(
-                         y: targetMax, 
+                         y: widget.targetMax, 
                          color: AppTheme.primaryBlue.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
@@ -461,7 +519,7 @@ class _TrendsSection extends StatelessWidget {
                   ),
                   lineBarsData: [
                     LineChartBarData(
-                      spots: readings.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
+                      spots: filtered.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
                       isCurved: true,
                       color: AppTheme.primaryBlue,
                       barWidth: 3,
