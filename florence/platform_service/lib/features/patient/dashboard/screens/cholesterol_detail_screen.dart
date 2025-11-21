@@ -87,7 +87,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   
                   // 3. Bullet Graph (LDL Target)
-                  _LdlTargetSection(reading: latest, target: ldlThreshold.maxValue),
+                  _LdlTargetSection(reading: latest, target: ldlThreshold?.maxValue),
                   const SizedBox(height: 20),
 
                   // 4. Stacked Bar (Composition)
