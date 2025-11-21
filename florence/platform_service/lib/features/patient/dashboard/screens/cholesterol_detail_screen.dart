@@ -894,34 +894,35 @@ class _HistorySectionState extends State<_HistorySection> {
           else
             ...currentItems.map((r) {
               // Helper to safely get threshold values
-              double getLimit(MonitorDataType type, double defaultVal, {bool isMin = false}) {
+              double? getLimit(MonitorDataType type, {bool isMin = false}) {
                 try {
                   final t = widget.thresholds.firstWhere((t) => t.dataType == type);
                   return isMin ? t.minValue : t.maxValue;
                 } catch (_) {
-                  return defaultVal;
+                  return null;
                 }
               }
 
-              final maxTotal = getLimit(MonitorDataType.CHOLESTEROL_TOTAL, 200);
-              final maxLdl = getLimit(MonitorDataType.CHOLESTEROL_LDL, 100);
-              final minHdl = getLimit(MonitorDataType.CHOLESTEROL_HDL, 40, isMin: true);
-              final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES, 150);
+              final maxTotal = getLimit(MonitorDataType.CHOLESTEROL_TOTAL);
+              final maxLdl = getLimit(MonitorDataType.CHOLESTEROL_LDL);
+              final minHdl = getLimit(MonitorDataType.CHOLESTEROL_HDL, isMin: true);
+              final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
 
               // Determine status based on priority (LDL > Total > Tri > HDL)
+              // If any threshold is missing, we won't flag it (neutral)
               String statusText = 'DESIRABLE';
               Color statusColor = AppTheme.primaryGreen;
 
-              if (r.ldl != null && r.ldl! > maxLdl) {
+              if (maxLdl != null && r.ldl != null && r.ldl! > maxLdl) {
                 statusText = 'HIGH LDL';
                 statusColor = AppTheme.errorColor;
-              } else if (r.total != null && r.total! > maxTotal) {
+              } else if (maxTotal != null && r.total != null && r.total! > maxTotal) {
                 statusText = 'HIGH TOTAL';
                 statusColor = AppTheme.errorColor;
-              } else if (r.triglycerides != null && r.triglycerides! > maxTri) {
+              } else if (maxTri != null && r.triglycerides != null && r.triglycerides! > maxTri) {
                 statusText = 'HIGH TRI';
                 statusColor = AppTheme.warningColor;
-              } else if (r.hdl != null && r.hdl! < minHdl) {
+              } else if (minHdl != null && r.hdl != null && r.hdl! < minHdl) {
                 statusText = 'LOW HDL';
                 statusColor = AppTheme.warningColor;
               }
