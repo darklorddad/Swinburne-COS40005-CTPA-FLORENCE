@@ -1,14 +1,8 @@
 {
-  "builds": [
+  "rewrites": [
     {
-      "src": "florence/data_service/main.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "florence/data_service/main.py"
+      "source": "/(.*)",
+      "destination": "/main.py"
     }
   ]
 }
