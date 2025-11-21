@@ -80,11 +80,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
               final isDefault = userThreshold == null;
               
               // Use user's threshold or safe default
-              final effectiveThreshold = userThreshold ?? const HealthThreshold(
-                dataType: MonitorDataType.GLUCOSE,
-                minValue: 70,
-                maxValue: 180,
-              );
+              final effectiveThreshold = userThreshold;
 
               return RefreshIndicator(
                 onRefresh: () async {
@@ -342,12 +338,12 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _StatisticsSection extends StatelessWidget {
   final List<MonitorData> readings;
-  final HealthThreshold threshold;
+  final HealthThreshold? threshold;
   final bool isDefault;
 
   const _StatisticsSection({
     required this.readings, 
-    required this.threshold,
+    this.threshold,
     this.isDefault = false,
   });
 
@@ -422,11 +418,14 @@ class _StatisticsSection extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildMiniTargetRow(
-                      'Glucose',
-                      '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
-                      AppTheme.primaryGreen,
-                    ),
+                    if (threshold != null)
+                      _buildMiniTargetRow(
+                        'Glucose',
+                        '${threshold!.minValue.toInt()} - ${threshold!.maxValue.toInt()} mg/dL',
+                        AppTheme.primaryGreen,
+                      )
+                    else
+                      const Text('No target set', style: TextStyle(color: AppTheme.textSecondaryColor)),
                   ],
                 ),
               ),
@@ -492,12 +491,12 @@ class _StatisticsSection extends StatelessWidget {
 
 class _GlucoseTrendsSection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold threshold;
+  final HealthThreshold? threshold;
   final bool isDefault;
 
   const _GlucoseTrendsSection({
     required this.allReadings,
-    required this.threshold,
+    this.threshold,
     this.isDefault = false,
   });
 
@@ -530,8 +529,8 @@ class _GlucoseTrendsSection extends StatelessWidget {
         }
 
         // Determine Y-Axis range
-        double minY = (threshold.minValue - 20).clamp(0, double.infinity);
-        double maxY = threshold.maxValue + 40;
+        double minY = threshold != null ? (threshold!.minValue - 20).clamp(0, double.infinity) : 60;
+        double maxY = threshold != null ? threshold!.maxValue + 40 : 200;
         
         if (data.isNotEmpty) {
           double dataMin = data.map((e) => e.value).reduce(math.min);
@@ -580,23 +579,23 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   // 1. Safe Zone Background (Green Band)
-                  rangeAnnotations: RangeAnnotations(
+                  rangeAnnotations: threshold != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
                       HorizontalRangeAnnotation(
-                        y1: threshold.minValue, 
-                        y2: threshold.maxValue, 
+                        y1: threshold!.minValue, 
+                        y2: threshold!.maxValue, 
                         color: AppTheme.primaryGreen.withOpacity(0.1)
                       )
                     ],
-                  ),
+                  ) : null,
                   
                   // 2. Dotted Lines for Thresholds (Matches Trends)
-                  extraLinesData: ExtraLinesData(
+                  extraLinesData: threshold != null ? ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
-                  ),
+                  ) : null,
                   lineBarsData: [
                     LineChartBarData(
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
@@ -641,13 +640,15 @@ class _GlucoseTrendsSection extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
-              children: [
-                _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
-              ],
-            ),
+            if (threshold != null) ...[
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
+                children: [
+                  _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                ],
+              ),
+            ],
           ],
         );
       },
@@ -663,12 +664,12 @@ class _GlucoseTrendsSection extends StatelessWidget {
 
 class _TimeInRangeSection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold threshold;
+  final HealthThreshold? threshold;
   final bool isDefault;
 
   const _TimeInRangeSection({
     required this.allReadings, 
-    required this.threshold,
+    this.threshold,
     this.isDefault = false,
   });
 
@@ -681,9 +682,13 @@ class _TimeInRangeSection extends StatelessWidget {
                 'Goal: Keep "In Range" (Green) above 70%.',
       allData: allReadings,
       builder: (range, data) {
+        if (threshold == null) {
+          return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Set target to view time in range.')));
+        }
+
         final total = data.length;
-        final lows = data.where((r) => r.value < threshold.minValue).length;
-        final highs = data.where((r) => r.value > threshold.maxValue).length;
+        final lows = data.where((r) => r.value < threshold!.minValue).length;
+        final highs = data.where((r) => r.value > threshold!.maxValue).length;
         final inRange = total - lows - highs;
         
         final lowPct = total > 0 ? (lows / total) * 100 : 0.0;
@@ -744,12 +749,12 @@ class _TimeInRangeSection extends StatelessWidget {
 
 class _ModalDaySection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold threshold;
+  final HealthThreshold? threshold;
   final bool isDefault;
 
   const _ModalDaySection({
     required this.allReadings, 
-    required this.threshold,
+    this.threshold,
     this.isDefault = false,
   });
 
@@ -819,15 +824,15 @@ class _ModalDaySection extends StatelessWidget {
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
-                  rangeAnnotations: RangeAnnotations(
-                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold.minValue, y2: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
-                  ),
-                  extraLinesData: ExtraLinesData(
+                  rangeAnnotations: threshold != null ? RangeAnnotations(
+                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold!.minValue, y2: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                  ) : null,
+                  extraLinesData: threshold != null ? ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: threshold.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
-                  ),
+                  ) : null,
                   lineBarsData: chartLines,
                 ),
               ),
@@ -835,8 +840,10 @@ class _ModalDaySection extends StatelessWidget {
             const SizedBox(height: 8),
             // Legend
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
-              const SizedBox(width: 12),
+              if (threshold != null) ...[
+                _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                const SizedBox(width: 12),
+              ],
               _buildLegendItem('Daily Traces', AppTheme.textSecondaryColor, isDashed: false),
             ]),
           ],
@@ -919,24 +926,26 @@ class _HistorySectionState extends State<_HistorySection> {
             String statusText;
             Color statusColor;
             
-            // Get threshold from backend data
-            final t = widget.thresholds.firstWhere(
-              (t) => t.dataType == MonitorDataType.GLUCOSE, 
-              orElse: () => const HealthThreshold(dataType: MonitorDataType.GLUCOSE, minValue: 70, maxValue: 180)
-            );
+            // Get threshold from backend data (no fallback)
+            HealthThreshold? t;
+            try {
+              t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+            } catch (_) {}
 
-            // Unique Glucose Logic:
-            // Low (< 70) is CRITICAL (Red)
-            // High (> 180) is WARNING (Amber)
-            if (item.value < t.minValue) {
-              statusText = 'LOW';
-              statusColor = AppTheme.errorColor;
-            } else if (item.value > t.maxValue) {
-              statusText = 'HIGH';
-              statusColor = AppTheme.warningColor;
+            if (t != null) {
+              if (item.value < t.minValue) {
+                statusText = 'LOW';
+                statusColor = AppTheme.errorColor;
+              } else if (item.value > t.maxValue) {
+                statusText = 'HIGH';
+                statusColor = AppTheme.warningColor;
+              } else {
+                statusText = 'NORMAL';
+                statusColor = AppTheme.primaryGreen;
+              }
             } else {
-              statusText = 'NORMAL';
-              statusColor = AppTheme.primaryGreen;
+              statusText = '--';
+              statusColor = AppTheme.textSecondaryColor;
             }
             
             return Container(

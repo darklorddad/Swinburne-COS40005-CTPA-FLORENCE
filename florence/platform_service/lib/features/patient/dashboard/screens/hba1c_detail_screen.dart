@@ -43,7 +43,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
             userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.HBA1C);
           } catch (_) {}
 
-          final targetMax = userThreshold?.maxValue ?? 6.5;
+          final targetMax = userThreshold?.maxValue;
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -368,9 +368,9 @@ class _GaugeSection extends StatelessWidget {
 
 class _TrendsSection extends StatefulWidget {
   final List<MonitorData> readings;
-  final double targetMax;
+  final double? targetMax;
 
-  const _TrendsSection({required this.readings, required this.targetMax});
+  const _TrendsSection({required this.readings, this.targetMax});
 
   @override
   State<_TrendsSection> createState() => _TrendsSectionState();
@@ -513,10 +513,10 @@ class _TrendsSectionState extends State<_TrendsSection> {
                       HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
                     ],
                   ),
-                  extraLinesData: ExtraLinesData(
+                  extraLinesData: widget.targetMax != null ? ExtraLinesData(
                     horizontalLines: [
                        HorizontalLine(
-                         y: widget.targetMax, 
+                         y: widget.targetMax!, 
                          color: AppTheme.primaryBlue.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
@@ -525,11 +525,11 @@ class _TrendsSectionState extends State<_TrendsSection> {
                            alignment: Alignment.topRight, 
                            padding: const EdgeInsets.only(right: 5, bottom: 2), 
                            style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
-                           labelResolver: (line) => 'Target' // Shortened text to prevent overflow
+                           labelResolver: (line) => 'Target'
                          )
                        )
                     ]
-                  ),
+                  ) : null,
                   lineBarsData: [
                     LineChartBarData(
                       spots: filtered.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
@@ -592,16 +592,28 @@ class _TrendsSectionState extends State<_TrendsSection> {
 
 class _GoalComparisonSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final double targetMax;
+  final double? targetMax;
 
-  const _GoalComparisonSection({this.latestReading, required this.targetMax});
+  const _GoalComparisonSection({this.latestReading, this.targetMax});
 
   @override
   Widget build(BuildContext context) {
+    if (targetMax == null) {
+      return _HbA1cCard(
+        title: 'Actual vs. Goal',
+        icon: Icons.flag_outlined,
+        infoText: 'Set a target to see comparison.',
+        child: const Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: Text('No target set. Please configure your profile.')),
+        ),
+      );
+    }
+
     final current = latestReading?.value ?? 0.0;
-    final isGood = current <= targetMax && current > 0;
+    final isGood = current <= targetMax! && current > 0;
     final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
-    final maxY = math.max(current, targetMax) * 1.4;
+    final maxY = math.max(current, targetMax!) * 1.4;
 
     return _HbA1cCard(
       title: 'Actual vs. Goal',
@@ -667,7 +679,7 @@ class _GoalComparisonSection extends StatelessWidget {
                       x: 1,
                       barRods: [
                         BarChartRodData(
-                          toY: targetMax,
+                          toY: targetMax!,
                           color: AppTheme.primaryBlue.withOpacity(0.3),
                           width: 30,
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
@@ -717,8 +729,8 @@ class _GoalComparisonSection extends StatelessWidget {
                   Expanded(
                     child: Text(
                       isGood 
-                        ? "You are within your target of <${targetMax.toStringAsFixed(1)}%"
-                        : "You are ${(current - targetMax).toStringAsFixed(1)}% above your target",
+                        ? "You are within your target of <${targetMax!.toStringAsFixed(1)}%"
+                        : "You are ${(current - targetMax!).toStringAsFixed(1)}% above your target",
                       style: TextStyle(
                         color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
                         fontWeight: FontWeight.w600,
@@ -741,10 +753,10 @@ class _GoalComparisonSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final double targetMax;
+  final double? targetMax;
   final HealthThreshold? threshold;
 
-  const _HistorySection({required this.readings, required this.targetMax, this.threshold});
+  const _HistorySection({required this.readings, this.targetMax, this.threshold});
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();

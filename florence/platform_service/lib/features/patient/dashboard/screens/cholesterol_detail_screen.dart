@@ -37,15 +37,11 @@ class CholesterolDetailScreen extends ConsumerWidget {
 
           final thresholds = thresholdsAsync.value ?? [];
           
-          // Get thresholds (Defaulting to standard mg/dL values if not set)
-          final ldlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_LDL) ?? 
-              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_LDL, minValue: 0, maxValue: 100);
-          final hdlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_HDL) ?? 
-              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_HDL, minValue: 40, maxValue: 60);
-          final totalThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL) ?? 
-              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_TOTAL, minValue: 0, maxValue: 200);
-          final triThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES) ?? 
-              const HealthThreshold(dataType: MonitorDataType.CHOLESTEROL_TRIGLYCERIDES, minValue: 0, maxValue: 150);
+          // Get thresholds (Nullable)
+          final ldlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_LDL);
+          final hdlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_HDL);
+          final totalThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+          final triThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
           
           // Construct composite latest reading from most recent available data points
           _CholesterolReading? latest;
@@ -208,17 +204,17 @@ class _CholesterolReading {
 
 class _RatioSection extends StatelessWidget {
   final _CholesterolReading? reading;
-  final HealthThreshold total;
-  final HealthThreshold ldl;
-  final HealthThreshold hdl;
-  final HealthThreshold tri;
+  final HealthThreshold? total;
+  final HealthThreshold? ldl;
+  final HealthThreshold? hdl;
+  final HealthThreshold? tri;
 
   const _RatioSection({
     this.reading,
-    required this.total,
-    required this.ldl,
-    required this.hdl,
-    required this.tri,
+    this.total,
+    this.ldl,
+    this.hdl,
+    this.tri,
   });
 
   @override
@@ -255,10 +251,10 @@ class _RatioSection extends StatelessWidget {
       infoText: 'Ratio = Total Cholesterol / HDL.\n\n'
                 '• Chart: Comparing HDL (Good) vs Non-HDL (Bad).\n'
                 '• Goal: A lower ratio is better (Target < 5.0).\n\n'
-                '• Total Target: ${total.minValue.toInt()}-${total.maxValue.toInt()}\n'
-                '• LDL Target: ${ldl.minValue.toInt()}-${ldl.maxValue.toInt()}\n'
-                '• HDL Target: ${hdl.minValue.toInt()}-${hdl.maxValue.toInt()}\n'
-                '• Triglycerides: ${tri.minValue.toInt()}-${tri.maxValue.toInt()}',
+                '${total != null ? "• Total Target: ${total!.minValue.toInt()}-${total!.maxValue.toInt()}\n" : ""}'
+                '${ldl != null ? "• LDL Target: ${ldl!.minValue.toInt()}-${ldl!.maxValue.toInt()}\n" : ""}'
+                '${hdl != null ? "• HDL Target: ${hdl!.minValue.toInt()}-${hdl!.maxValue.toInt()}\n" : ""}'
+                '${tri != null ? "• Triglycerides: ${tri!.minValue.toInt()}-${tri!.maxValue.toInt()}" : ""}',
       child: Column(
         children: [
           // TARGET RANGES (Consistent with Glucose/BP style)
@@ -308,13 +304,13 @@ class _RatioSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   // Targets List
-                  _buildMiniTargetRow('Total', '${total.minValue.toInt()} - ${total.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Total', total != null ? '${total!.minValue.toInt()} - ${total!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('LDL', '${ldl.minValue.toInt()} - ${ldl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('LDL', ldl != null ? '${ldl!.minValue.toInt()} - ${ldl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('HDL', '${hdl.minValue.toInt()} - ${hdl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('HDL', hdl != null ? '${hdl!.minValue.toInt()} - ${hdl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('Triglycerides', '${tri.minValue.toInt()} - ${tri.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Triglycerides', tri != null ? '${tri!.minValue.toInt()} - ${tri!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                 ],
               ),
             ),
@@ -433,21 +429,33 @@ class _RatioSection extends StatelessWidget {
 
 class _LdlTargetSection extends StatelessWidget {
   final _CholesterolReading? reading;
-  final double target;
+  final double? target;
 
-  const _LdlTargetSection({this.reading, required this.target});
+  const _LdlTargetSection({this.reading, this.target});
 
   @override
   Widget build(BuildContext context) {
+    if (target == null) {
+      return _CholesterolCard(
+        title: 'LDL Performance',
+        icon: Icons.track_changes,
+        infoText: 'Set an LDL target to view performance.',
+        child: const Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: Text('No LDL target set')),
+        ),
+      );
+    }
+
     final ldl = reading?.ldl ?? 0.0;
-    final double maxScale = math.max(200.0, target * 1.5);
+    final double maxScale = math.max(200.0, target! * 1.5);
     
     return _CholesterolCard(
       title: 'LDL Performance',
       icon: Icons.track_changes,
       infoText: 'Your "Bad" Cholesterol (LDL) compared to the target limit.\n\n'
                 '• Indicator: Your Level\n'
-                '• Vertical Line: Target Limit (< ${target.toInt()})\n'
+                '• Vertical Line: Target Limit (< ${target!.toInt()})\n'
                 '• Goal: Keep the indicator in the green zone.',
       child: Column(
         children: [
@@ -458,7 +466,7 @@ class _LdlTargetSection extends StatelessWidget {
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final width = constraints.maxWidth;
-                final targetPos = (target / maxScale) * width;
+                final targetPos = (target! / maxScale) * width;
                 final actualPos = (ldl / maxScale) * width;
                 
                 return Stack(
@@ -511,7 +519,7 @@ class _LdlTargetSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Max\n${target.toInt()}',
+                            'Max\n${target!.toInt()}',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 10,
@@ -533,7 +541,7 @@ class _LdlTargetSection extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: (ldl > target) ? AppTheme.errorColor : AppTheme.primaryGreen,
+                                color: (ldl > target!) ? AppTheme.errorColor : AppTheme.primaryGreen,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
@@ -554,7 +562,7 @@ class _LdlTargetSection extends StatelessWidget {
                             ),
                             Icon(
                               Icons.arrow_drop_down,
-                              color: (ldl > target) ? AppTheme.errorColor : AppTheme.primaryGreen,
+                              color: (ldl > target!) ? AppTheme.errorColor : AppTheme.primaryGreen,
                               size: 24,
                             ),
                           ],
