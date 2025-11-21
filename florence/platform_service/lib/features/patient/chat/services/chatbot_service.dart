@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/environment.dart';
 import '../models/chat_message.dart';
 
-class ChatbotService {
+class ChatbotService extends ChangeNotifier {
   // Singleton pattern to persist state across screen rebuilds
   static final ChatbotService _instance = ChatbotService._internal();
   factory ChatbotService() => _instance;
@@ -37,9 +38,8 @@ class ChatbotService {
 
   /// Send a message to the Python Chatbot Service
   /// Updates the local cache with both the user's message and the AI's response
-  Future<ChatMessage> sendMessage(String message) async {
+  Future<void> sendMessage(String message) async {
     // 1. Optimistically add user message to cache
-    // We use a temporary ID; the DB will assign a real one, but for cache it's fine
     final userMsg = ChatMessage(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
       role: 'user',
@@ -47,6 +47,7 @@ class ChatbotService {
       timestamp: DateTime.now(),
     );
     _messages.add(userMsg);
+    notifyListeners(); // Update UI immediately
 
     try {
       final response = await http.post(
@@ -64,22 +65,26 @@ class ChatbotService {
         
         // 2. Add AI response to cache
         _messages.add(aiMsg);
-        return aiMsg;
+        notifyListeners(); // Update UI with response
       } else {
         throw Exception('Failed to send message: ${response.body}');
       }
     } catch (e) {
-      // Note: In a more complex app, we might want to mark the userMsg as "failed" in the cache
+      // On failure, remove the optimistic message so the user knows it failed
+      // (or in a more advanced app, mark it as 'error')
+      _messages.remove(userMsg);
+      notifyListeners(); // Update UI to remove failed message
       throw Exception('Error communicating with chatbot service: $e');
     }
   }
 
   /// Retrieve conversation history from the Python Chatbot Service
   /// Populates the local cache
-  Future<List<ChatMessage>> loadHistory({int limit = 50}) async {
-    // If we already loaded history, return the cache to avoid race conditions and redundant calls
+  Future<void> loadHistory({int limit = 50}) async {
+    // If we already loaded history, just notify listeners to ensure UI is synced
     if (_hasLoadedHistory) {
-      return messages;
+      notifyListeners();
+      return;
     }
 
     try {
@@ -98,7 +103,7 @@ class ChatbotService {
         );
         
         _hasLoadedHistory = true;
-        return messages;
+        notifyListeners();
       } else {
         throw Exception('Failed to load history: ${response.body}');
       }
@@ -117,7 +122,7 @@ class ChatbotService {
 
       if (response.statusCode == 200) {
         _messages.clear();
-        // We keep _hasLoadedHistory = true because we know the state is accurate (empty)
+        notifyListeners();
       } else {
         throw Exception('Failed to clear history: ${response.body}');
       }

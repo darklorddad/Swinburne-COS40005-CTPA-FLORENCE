@@ -23,9 +23,6 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _isTyping = false;
   bool _isLoadingHistory = true;
 
-  // Chat messages (synced with service)
-  List<ChatMessage> _messages = [];
-
   // Suggested questions
   final List<String> _suggestedQuestions = [
     "How is my glucose trending?",
@@ -37,20 +34,45 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    // Listen to service updates (e.g. when background messages arrive)
+    _chatbotService.addListener(_onServiceUpdate);
     _initializeChat();
+  }
+
+  @override
+  void dispose() {
+    _chatbotService.removeListener(_onServiceUpdate);
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// Called whenever the service notifies of changes
+  void _onServiceUpdate() {
+    if (mounted) {
+      setState(() {
+        // The UI rebuilds using _chatbotService.messages directly
+        // We check if the last message is from user to determine typing state
+        if (_chatbotService.messages.isNotEmpty) {
+          _isTyping = _chatbotService.messages.last.isUser;
+        } else {
+          _isTyping = false;
+        }
+      });
+      
+      // Scroll to bottom on new messages
+      if (_chatbotService.messages.isNotEmpty) {
+        _scrollToBottom();
+      }
+    }
   }
 
   /// Initialize chat: check cache or fetch history
   Future<void> _initializeChat() async {
-    // If service already has data, load it immediately
     if (_chatbotService.hasLoadedHistory) {
-      setState(() {
-        _messages = List.from(_chatbotService.messages);
-        _isLoadingHistory = false;
-      });
-      if (_messages.isNotEmpty) _scrollToBottom();
+      setState(() => _isLoadingHistory = false);
+      if (_chatbotService.messages.isNotEmpty) _scrollToBottom();
     } else {
-      // Otherwise fetch from API
       await _loadHistory();
     }
   }
@@ -60,77 +82,34 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoadingHistory = true);
     
     try {
-      final history = await _chatbotService.loadHistory();
+      await _chatbotService.loadHistory();
       if (mounted) {
-        setState(() {
-          _messages = List.from(history);
-          _isLoadingHistory = false;
-        });
-        if (_messages.isNotEmpty) _scrollToBottom();
+        setState(() => _isLoadingHistory = false);
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoadingHistory = false;
-        });
+        setState(() => _isLoadingHistory = false);
         Helpers.showError(context, 'Failed to sync chat history');
       }
     }
-  }
-  
-  @override
-  void dispose() {
-    _messageController.dispose();
-    _scrollController.dispose();
-    super.dispose();
   }
   
   /// Send message
   Future<void> _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    // 1. Update UI immediately (Optimistic update)
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          content: text.trim(),
-          role: 'user',
-          timestamp: DateTime.now(),
-        ),
-      );
-      _messageController.clear();
-      _isTyping = true;
-    });
+    final messageText = text.trim();
+    _messageController.clear();
 
-    // Scroll to bottom
-    _scrollToBottom();
-
+    // We don't manually add to a local list anymore.
+    // We call the service, which updates its list and notifies us.
+    
     try {
-      // 2. Call service (which updates cache)
-      await _chatbotService.sendMessage(text.trim());
-
-      // 3. Sync local list with service cache (gets the AI response)
-      if (mounted) {
-        setState(() {
-          _messages = List.from(_chatbotService.messages);
-          _isTyping = false;
-        });
-        _scrollToBottom();
-      }
+      await _chatbotService.sendMessage(messageText);
     } catch (e) {
-      // If AI fails, use fallback response
       if (mounted) {
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              content: "I'm having trouble connecting to the AI service right now. Please check your internet connection. In the meantime, you can:\n\n• View your trends and patterns\n• Check your recommendations\n• Log your health data\n\nError: ${e.toString()}",
-              role: 'assistant',
-              timestamp: DateTime.now(),
-            ),
-          );
-          _isTyping = false;
-        });
-        _scrollToBottom();
+        // The service has already removed the message from the list
+        Helpers.showError(context, "Failed to send message. Please try again.");
       }
     }
   }
@@ -198,6 +177,8 @@ class _ChatScreenState extends State<ChatScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final messages = _chatbotService.messages;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('AI Health Assistant'),
@@ -206,9 +187,6 @@ class _ChatScreenState extends State<ChatScreen> {
             icon: const Icon(Icons.delete_outline),
             onPressed: _isLoadingHistory ? null : () async {
               await _chatbotService.clearHistory();
-              setState(() {
-                _messages.clear();
-              });
             },
             tooltip: 'Clear History',
           ),
@@ -222,16 +200,16 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           // Suggested questions (only show if history is empty)
-          if (!_isLoadingHistory && _messages.isEmpty) 
+          if (!_isLoadingHistory && messages.isEmpty) 
             _buildSuggestedQuestions(),
           
           // Chat messages area
           Expanded(
             child: _isLoadingHistory
                 ? _buildLoadingState()
-                : _messages.isEmpty
+                : messages.isEmpty
                     ? _buildEmptyState()
-                    : _buildMessagesList(),
+                    : _buildMessagesList(messages),
           ),
           
           // Typing indicator
@@ -345,13 +323,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
   
   /// Build messages list
-  Widget _buildMessagesList() {
+  Widget _buildMessagesList(List<ChatMessage> messages) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: _messages.length,
+      itemCount: messages.length,
       itemBuilder: (context, index) {
-        final message = _messages[index];
+        final message = messages[index];
         return _buildMessageBubble(message);
       },
     );
