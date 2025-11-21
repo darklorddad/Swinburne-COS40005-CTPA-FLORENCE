@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header
 from pydantic import BaseModel, model_validator
 from typing import Optional
@@ -30,7 +31,13 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
         
         if not profile_response.data:
-            raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
+            # Retry once to handle potential race conditions in the client/connection
+            await asyncio.sleep(0.1)
+            profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
+            
+            if not profile_response.data:
+                print(f"DEBUG: Access denied for user_id: {user.id}. Profile not found.")
+                raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
         
         if len(profile_response.data) > 1:
             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
