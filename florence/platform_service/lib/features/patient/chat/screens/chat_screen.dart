@@ -22,6 +22,7 @@ class _ChatScreenState extends State<ChatScreen> {
   
   bool _isTyping = false;
   bool _isLoadingHistory = true;
+  String _loadingText = 'Syncing conversation history...';
 
   // Suggested questions
   final List<String> _suggestedQuestions = [
@@ -79,7 +80,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Load chat history from service
   Future<void> _loadHistory() async {
-    setState(() => _isLoadingHistory = true);
+    setState(() {
+      _isLoadingHistory = true;
+      _loadingText = 'Syncing conversation history...';
+    });
     
     try {
       await _chatbotService.loadHistory();
@@ -90,6 +94,54 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         setState(() => _isLoadingHistory = false);
         Helpers.showError(context, 'Failed to sync chat history');
+      }
+    }
+  }
+
+  /// Confirm and clear history
+  Future<void> _confirmClearHistory() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear History'),
+        content: const Text(
+          'Are you sure you want to delete all chat history? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      setState(() {
+        _isLoadingHistory = true;
+        _loadingText = 'Clearing conversation history...';
+      });
+
+      try {
+        await _chatbotService.clearHistory();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Chat history cleared')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          Helpers.showError(context, 'Failed to clear history');
+        }
+      } finally {
+        if (mounted) {
+          setState(() => _isLoadingHistory = false);
+        }
       }
     }
   }
@@ -185,9 +237,7 @@ class _ChatScreenState extends State<ChatScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            onPressed: _isLoadingHistory ? null : () async {
-              await _chatbotService.clearHistory();
-            },
+            onPressed: _isLoadingHistory ? null : _confirmClearHistory,
             tooltip: 'Clear History',
           ),
           IconButton(
@@ -231,7 +281,7 @@ class _ChatScreenState extends State<ChatScreen> {
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
           Text(
-            'Syncing conversation history...',
+            _loadingText,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: AppTheme.textSecondaryColor,
             ),
