@@ -68,7 +68,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
                   
                   // 4. History
-                  _HistorySection(readings: readings),
+                  _HistorySection(readings: readings, thresholds: thresholds),
                   const SizedBox(height: 24),
                 ],
               ),
@@ -232,7 +232,7 @@ class _RatioSection extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'Target Ratio',
+                        'Target Range',
                         style: TextStyle(
                           color: AppTheme.primaryGreen.withOpacity(0.8),
                           fontWeight: FontWeight.w600,
@@ -589,8 +589,40 @@ class _CompositionSection extends StatelessWidget {
 
 class _HistorySection extends StatelessWidget {
   final List<_CholesterolReading> readings;
+  final List<HealthThreshold> thresholds;
 
-  const _HistorySection({required this.readings});
+  const _HistorySection({required this.readings, required this.thresholds});
+
+  Color _getStatusColor(double? value, MonitorDataType type) {
+    if (value == null) return AppTheme.textSecondaryColor;
+    
+    // Default thresholds if not found
+    double min = 0;
+    double max = 200;
+    
+    if (type == MonitorDataType.CHOLESTEROL_HDL) {
+      min = 40;
+      max = 100;
+    } else if (type == MonitorDataType.CHOLESTEROL_LDL) {
+      max = 100;
+    } else if (type == MonitorDataType.CHOLESTEROL_TRIGLYCERIDES) {
+      max = 150;
+    }
+
+    try {
+      final t = thresholds.firstWhere((t) => t.dataType == type);
+      min = t.minValue;
+      max = t.maxValue;
+    } catch (_) {}
+
+    if (type == MonitorDataType.CHOLESTEROL_HDL) {
+      // HDL: Higher is better. Low is bad.
+      return value < min ? AppTheme.errorColor : AppTheme.primaryGreen;
+    } else {
+      // LDL/Total/Tri: Lower is better. High is bad.
+      return value > max ? AppTheme.errorColor : AppTheme.primaryGreen;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -672,9 +704,9 @@ class _HistorySection extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            _MiniValue('LDL', r.ldl, AppTheme.errorColor),
+                            _MiniValue('LDL', r.ldl, _getStatusColor(r.ldl, MonitorDataType.CHOLESTEROL_LDL)),
                             const SizedBox(width: 12),
-                            _MiniValue('HDL', r.hdl, AppTheme.primaryGreen),
+                            _MiniValue('HDL', r.hdl, _getStatusColor(r.hdl, MonitorDataType.CHOLESTEROL_HDL)),
                           ],
                         ),
                       ],
