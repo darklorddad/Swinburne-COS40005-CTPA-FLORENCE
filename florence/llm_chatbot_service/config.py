@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     ]
 
     # Health Context Configuration
-    health_context_days: int = 7
+    health_context_days: int = 28
     health_context_cache_minutes: int = 5
 
     # Glucose Thresholds (mg/dL)
