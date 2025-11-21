@@ -52,7 +52,7 @@ class DeepSeekRequest(BaseModel):
     """Request format for DeepSeek API."""
     model: str
     messages: list[DeepSeekMessage]
-    temperature: float = 0.8
+    temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     stream: bool = False
 

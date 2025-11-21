@@ -3,14 +3,12 @@ Health data aggregation service for fetching and processing patient health metri
 """
 from datetime import datetime, timedelta, timezone
 from typing import Optional, List
-import statistics
 import httpx
 from config import settings
 from models.health import (
     MonitorData,
     ActivityLog,
     DailyLog,
-    HealthSummary,
     HealthContext,
 )
 
@@ -102,122 +100,61 @@ class HealthDataService:
             }
         return thresholds
 
-    async def get_health_summary(
-        self,
-        token: str,
-        start_date: datetime,
-        end_date: datetime
-    ) -> HealthSummary:
-        """
-        Generate comprehensive health summary for a patient.
-        """
-        # Fetch thresholds
-        thresholds = await self.get_patient_thresholds(token)
-        
-        # Get glucose thresholds
-        glucose_min = settings.glucose_low_threshold
-        glucose_max = settings.glucose_high_threshold
-        
-        if "GLUCOSE" in thresholds:
-            glucose_min = thresholds["GLUCOSE"]["min"]
-            glucose_max = thresholds["GLUCOSE"]["max"]
-
-        # Fetch all monitor data
-        monitor_data = await self.get_monitor_data(token, start_date, end_date)
-
-        # Separate by type
-        glucose_readings = [m for m in monitor_data if m.data_type == "GLUCOSE"]
-        systolic_readings = [m for m in monitor_data if m.data_type == "BLOOD_PRESSURE_SYSTOLIC"]
-        diastolic_readings = [m for m in monitor_data if m.data_type == "BLOOD_PRESSURE_DIASTOLIC"]
-        bmi_readings = [m for m in monitor_data if m.data_type == "BMI"]
-        hba1c_readings = [m for m in monitor_data if m.data_type == "HBA1C"]
-
-        # Calculate glucose metrics
-        glucose_values = [g.value for g in glucose_readings]
-        average_glucose = statistics.mean(glucose_values) if glucose_values else None
-        glucose_std_dev = statistics.stdev(glucose_values) if len(glucose_values) > 1 else None
-
-        # Count hyper/hypo events
-        hyper_events = sum(1 for v in glucose_values if v > glucose_max)
-        hypo_events = sum(1 for v in glucose_values if v < glucose_min)
-
-        # Calculate time in range
-        in_range_count = sum(
-            1 for v in glucose_values
-            if glucose_min <= v <= glucose_max
-        )
-        time_in_range = (in_range_count / len(glucose_values) * 100) if glucose_values else 0.0
-
-        # Estimated A1C calculation: (avg_glucose + 46.7) / 28.7
-        estimated_a1c = ((average_glucose + 46.7) / 28.7) if average_glucose else None
-
-        # Latest glucose reading
-        latest_glucose = glucose_readings[0] if glucose_readings else None
-
-        # Blood pressure metrics
-        avg_systolic = statistics.mean([s.value for s in systolic_readings]) if systolic_readings else None
-        avg_diastolic = statistics.mean([d.value for d in diastolic_readings]) if diastolic_readings else None
-
-        # Latest BMI and HbA1c
-        latest_bmi = bmi_readings[0].value if bmi_readings else None
-        latest_hba1c = hba1c_readings[0].value if hba1c_readings else None
-
-        # Fetch activity data
-        activity_logs = await self.get_activity_logs(token, start_date, end_date)
-        total_activity_minutes = sum(a.duration_minutes for a in activity_logs)
-
-        # Fetch meal data
-        daily_logs = await self.get_daily_logs(token, start_date, end_date)
-        total_meals = len(daily_logs)
-
-        return HealthSummary(
-            start_date=start_date,
-            end_date=end_date,
-            latest_glucose=latest_glucose.value if latest_glucose else None,
-            latest_glucose_time=latest_glucose.measured_at if latest_glucose else None,
-            latest_glucose_context=None,  # Not stored in monitor_data
-            average_glucose=average_glucose,
-            glucose_std_dev=glucose_std_dev,
-            total_glucose_readings=len(glucose_readings),
-            hyper_events=hyper_events,
-            hypo_events=hypo_events,
-            time_in_range=time_in_range,
-            estimated_a1c=estimated_a1c,
-            average_systolic=avg_systolic,
-            average_diastolic=avg_diastolic,
-            total_activity_minutes=total_activity_minutes,
-            average_daily_activity=(
-                total_activity_minutes / ((end_date - start_date).days + 1)
-                if (end_date - start_date).days > 0 else 0
-            ),
-            total_meals=total_meals,
-            latest_bmi=latest_bmi,
-            latest_hba1c=latest_hba1c,
-        )
-
     async def get_health_context(self, token: str) -> HealthContext:
         """
         Get formatted health context for LLM prompt.
         """
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=settings.health_context_days)
+        dummy_date = datetime.now()
+        
+        monitor_data = await self.get_monitor_data(token, dummy_date, dummy_date)
+        activity_logs = await self.get_activity_logs(token, dummy_date, dummy_date)
+        daily_logs = await self.get_daily_logs(token, dummy_date, dummy_date)
+        thresholds = await self.get_patient_thresholds(token)
 
-        summary = await self.get_health_summary(token, start_date, end_date)
+        # Format Monitor Data
+        monitor_lines = []
+        if not monitor_data:
+            monitor_lines.append("No monitor data available.")
+        else:
+            for m in monitor_data:
+                monitor_lines.append(f"- {m.measured_at.strftime('%Y-%m-%d %H:%M')}: {m.data_type} = {m.value}")
+        
+        # Format Activity Logs
+        activity_lines = []
+        if not activity_logs:
+            activity_lines.append("No activity logs available.")
+        else:
+            for a in activity_logs:
+                activity_lines.append(f"- {a.performed_at.strftime('%Y-%m-%d %H:%M')}: {a.activity_description} ({a.duration_minutes} mins)")
+
+        # Format Daily Logs
+        daily_lines = []
+        if not daily_logs:
+            daily_lines.append("No meal logs available.")
+        else:
+            for d in daily_logs:
+                entry = f"- {d.log_date.strftime('%Y-%m-%d')} {d.meal_time}:"
+                if d.meal_desc:
+                    entry += f" {d.meal_desc}"
+                if d.glucose_before_meal:
+                    entry += f" (Before: {d.glucose_before_meal})"
+                if d.glucose_after_meal:
+                    entry += f" (After: {d.glucose_after_meal})"
+                daily_lines.append(entry)
+
+        # Format Thresholds
+        threshold_lines = []
+        if not thresholds:
+            threshold_lines.append("No specific thresholds set.")
+        else:
+            for dtype, limits in thresholds.items():
+                threshold_lines.append(f"- {dtype}: Min {limits['min']}, Max {limits['max']}")
 
         return HealthContext(
-            latest_glucose=summary.latest_glucose,
-            latest_glucose_time=(
-                summary.latest_glucose_time.strftime("%Y-%m-%d %H:%M")
-                if summary.latest_glucose_time else None
-            ),
-            latest_glucose_context=summary.latest_glucose_context,
-            average_glucose_7d=summary.average_glucose,
-            time_in_range_7d=summary.time_in_range,
-            hyper_events_7d=summary.hyper_events,
-            hypo_events_7d=summary.hypo_events,
-            total_activity_minutes_7d=summary.total_activity_minutes,
-            average_systolic_7d=summary.average_systolic,
-            average_diastolic_7d=summary.average_diastolic,
+            raw_monitor_data="\n".join(monitor_lines),
+            raw_activity_logs="\n".join(activity_lines),
+            raw_daily_logs="\n".join(daily_lines),
+            patient_thresholds="\n".join(threshold_lines),
             data_timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         )
 

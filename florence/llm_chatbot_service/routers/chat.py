@@ -65,7 +65,8 @@ async def send_message(
 
         # Add conversation history if requested
         if request.include_history:
-            history = await conversation_service.get_recent_messages(token, count=10)
+            # Fetch all history (using a large limit)
+            history = await conversation_service.get_conversation_history(token, limit=10000)
             # Convert to DeepSeek format (excludes system messages)
             history_messages = conversation_service.convert_to_deepseek_messages(history)
             messages.extend(history_messages)
