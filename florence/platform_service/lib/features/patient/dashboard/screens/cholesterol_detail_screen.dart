@@ -244,10 +244,11 @@ class _RatioSection extends StatelessWidget {
     return _CholesterolCard(
       title: 'Cholesterol Ratio',
       icon: Icons.pie_chart,
-      infoText: 'The ratio of Total Cholesterol to HDL.\n\n'
-                '• Formula: Total / HDL\n'
-                '• Target: Below 5.0 (Lower is better)\n'
-                '• Ideal: Below 3.5',
+      infoText: 'Your cholesterol balance.\n\n'
+                '• Total Target: ${total.minValue.toInt()}-${total.maxValue.toInt()}\n'
+                '• LDL Target: ${ldl.minValue.toInt()}-${ldl.maxValue.toInt()}\n'
+                '• HDL Target: ${hdl.minValue.toInt()}-${hdl.maxValue.toInt()}\n'
+                '• Triglycerides: ${tri.minValue.toInt()}-${tri.maxValue.toInt()}',
       child: Column(
         children: [
           // TARGET RANGES (Consistent with Glucose/BP style)
@@ -299,11 +300,11 @@ class _RatioSection extends StatelessWidget {
                   // Targets List
                   _buildMiniTargetRow('Total', '${total.minValue.toInt()}-${total.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('LDL', '< ${ldl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('LDL', '${ldl.minValue.toInt()}-${ldl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('HDL', '> ${hdl.minValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('HDL', '${hdl.minValue.toInt()}-${hdl.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('Triglycerides', '< ${tri.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Triglycerides', '${tri.minValue.toInt()}-${tri.maxValue.toInt()} mg/dL', AppTheme.primaryGreen),
                 ],
               ),
             ),
@@ -550,18 +551,33 @@ class _LdlTargetSection extends StatelessWidget {
 // 3. STACKED BAR CHART (COMPOSITION)
 // ============================================================================
 
-class _CompositionSection extends StatelessWidget {
+class _CompositionSection extends StatefulWidget {
   final List<_CholesterolReading> readings;
 
   const _CompositionSection({required this.readings});
 
   @override
-  Widget build(BuildContext context) {
-    // Filter out readings with no data
-    final data = readings.where((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + (r.triglycerides ?? 0) > 0).toList();
+  State<_CompositionSection> createState() => _CompositionSectionState();
+}
+
+class _CompositionSectionState extends State<_CompositionSection> {
+  String _selectedRange = '1Y';
+  final List<String> _ranges = ['6M', '1Y', 'ALL'];
+
+  List<_CholesterolReading> _filterData() {
+    final validData = widget.readings.where((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + (r.triglycerides ?? 0) > 0).toList();
+    if (validData.isEmpty || _selectedRange == 'ALL') return validData;
     
-    // Limit to last 7 readings for clarity
-    final displayData = data.length > 7 ? data.sublist(data.length - 7) : data;
+    final now = DateTime.now();
+    final duration = _selectedRange == '6M' ? const Duration(days: 180) : const Duration(days: 365);
+    final cutoff = now.subtract(duration);
+    return validData.where((r) => r.timestamp.isAfter(cutoff)).toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final displayData = _filterData();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return _CholesterolCard(
       title: 'Cholesterol Breakdown',
@@ -572,6 +588,44 @@ class _CompositionSection extends StatelessWidget {
                 '• Orange (Top): Triglycerides',
       child: Column(
         children: [
+          // Timeline Selector
+          Container(
+            height: 36,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: _ranges.map((range) {
+                final isSelected = _selectedRange == range;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedRange = range),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppTheme.primaryBlue : Colors.transparent,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        range,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected 
+                            ? Colors.white 
+                            : Theme.of(context).textTheme.bodyMedium?.color,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+
           if (displayData.isEmpty)
             const Padding(
               padding: EdgeInsets.all(32),
@@ -640,11 +694,11 @@ class _CompositionSection extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendItem('HDL (Good)', AppTheme.primaryGreen),
+              _LegendItem('HDL', AppTheme.primaryGreen),
               const SizedBox(width: 16),
-              _LegendItem('LDL (Bad)', AppTheme.errorColor),
+              _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('Triglycerides', Colors.orange),
+              _LegendItem('Tri', Colors.orange),
             ],
           ),
         ],

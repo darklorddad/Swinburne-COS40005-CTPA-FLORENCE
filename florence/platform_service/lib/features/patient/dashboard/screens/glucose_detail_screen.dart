@@ -423,7 +423,7 @@ class _StatisticsSection extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
                     _buildMiniTargetRow(
-                      'Safe Range',
+                      'Glucose',
                       '${threshold.minValue.toInt()} - ${threshold.maxValue.toInt()} mg/dL',
                       AppTheme.primaryGreen,
                     ),
