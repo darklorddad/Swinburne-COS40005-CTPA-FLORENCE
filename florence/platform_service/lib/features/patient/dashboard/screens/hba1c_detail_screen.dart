@@ -209,8 +209,8 @@ class _GaugeSection extends StatelessWidget {
                       children: [
                         Text(
                           threshold != null 
-                              ? '< ${threshold!.maxValue.toStringAsFixed(1)}%' 
-                              : '< 6.5%',
+                              ? '${threshold!.minValue.toStringAsFixed(1)} - ${threshold!.maxValue.toStringAsFixed(1)}%' 
+                              : '4.0 - 6.5%',
                           style: TextStyle(
                             color: AppTheme.primaryGreen,
                             fontWeight: FontWeight.bold,
