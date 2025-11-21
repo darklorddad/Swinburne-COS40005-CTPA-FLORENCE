@@ -8,7 +8,7 @@ class Environment {
   /// Set to true when ready to connect to Supabase
   static const bool enableSupabase = true;
 
-  /// Enable AI features (DeepSeek API)
+  /// Enable AI features (via Microservice)
   /// Set to true to use AI-powered recommendations and chatbot
   static const bool enableAI = true;
 
@@ -19,21 +19,16 @@ class Environment {
   /// Enable analytics and logging
   static const bool enableAnalytics = false;
 
-  // ==================== AI CONFIGURATION ====================
-
-  /// DeepSeek API Configuration
-  /// API Key is stored here for demo purposes
-  /// In production, use environment variables or secure storage
-  static const String deepSeekApiKey = 'sk-97bfbb146ad345d9acefbc5d6153fc2a';
-  static const String deepSeekBaseUrl = 'https://api.deepseek.com/v1';
-
   // ==================== API CONFIGURATION ====================
 
-  /// Backend API URL
+  /// Backend API URL (Data Service - Port 8000)
   /// USE 127.0.0.1 for Chrome/Desktop, USE network IP for Android
   // static const String apiUrl = 'http://127.0.0.1:8000';  // FOR CHROME
   // static const String apiUrl = 'http://192.168.0.47:8000';  // FOR ANDROID
   static const String apiUrl = 'https://ds-florence-dhp.vercel.app';
+
+  /// Chatbot Service URL (Port 8001)
+  static const String chatbotServiceUrl = 'http://127.0.0.1:8001';
 
   // ==================== SUPABASE CONFIGURATION ====================
   
@@ -94,23 +89,6 @@ class Environment {
 
   /// Max notifications per day
   static const int maxNotificationsPerDay = 10;
-
-  // ==================== AI SETTINGS ====================
-
-  /// AI model for recommendations
-  static const String aiModelRecommendations = 'deepseek-chat';
-
-  /// AI model for chatbot
-  static const String aiModelChatbot = 'deepseek-chat';
-
-  /// AI model for pattern analysis
-  static const String aiModelPatternAnalysis = 'deepseek-chat';
-
-  /// Max tokens for AI responses
-  static const int maxTokens = 1000;
-
-  /// Temperature for AI (0.0 - 1.0)
-  static const double aiTemperature = 0.7;
 
   // ==================== HELPER METHODS ====================
 
