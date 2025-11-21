@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
@@ -409,14 +410,27 @@ class _ChatScreenState extends State<ChatScreen> {
                   bottomRight: Radius.circular(message.isUser ? 4 : 16),
                 ),
               ),
-              child: Text(
-                message.content,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: message.isUser
-                          ? Colors.white
-                          : AppTheme.textPrimaryColor,
-                      height: 1.4,
-                    ),
+              child: MarkdownBody(
+                data: message.content,
+                styleSheet: MarkdownStyleSheet(
+                  p: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: message.isUser
+                            ? Colors.white
+                            : AppTheme.textPrimaryColor,
+                        height: 1.4,
+                      ),
+                  strong: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: message.isUser
+                        ? Colors.white
+                        : AppTheme.textPrimaryColor,
+                  ),
+                  listBullet: TextStyle(
+                    color: message.isUser
+                        ? Colors.white
+                        : AppTheme.textPrimaryColor,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 4),
