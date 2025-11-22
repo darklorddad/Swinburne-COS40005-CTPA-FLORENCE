@@ -125,10 +125,9 @@ class _StreakHeatmap extends StatelessWidget {
     // 1. Prepare Data: Map Date -> Total Minutes
     final Map<int, int> activityMap = {};
     
-    // We want to show the last ~3 months (12 weeks) to show streaks effectively
+    // We want to show the last 28 days (4 weeks)
     final now = DateTime.now();
     final endDate = now;
-    final startDate = now.subtract(const Duration(days: 84)); // 12 weeks
 
     for (var log in logs) {
       // Normalize to midnight for grouping
@@ -158,14 +157,15 @@ class _StreakHeatmap extends StatelessWidget {
     return _ActivityCard(
       title: 'Activity Streak',
       icon: Icons.local_fire_department,
-      infoText: 'Your consistency over the last 3 months.\n\n'
-                ' Current Streak: $currentStreak days\n\n'
+      infoText: 'Your consistency over the last 28 days.\n\n'
+                'Current Streak: $currentStreak days\n\n'
                 'Darker colors indicate longer duration.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Streak Header
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 '$currentStreak',
@@ -175,7 +175,7 @@ class _StreakHeatmap extends StatelessWidget {
                   color: currentStreak > 0 ? const Color(0xFFF59E0B) : AppTheme.textSecondaryColor,
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -185,9 +185,10 @@ class _StreakHeatmap extends StatelessWidget {
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textSecondaryColor,
-                      letterSpacing: 1.2,
+                      letterSpacing: 1.0,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     currentStreak > 0 ? 'Keep it up!' : 'Start moving today!',
                     style: TextStyle(
@@ -202,9 +203,9 @@ class _StreakHeatmap extends StatelessWidget {
           const SizedBox(height: 20),
 
           // The Heatmap Grid
-          // We manually build a grid of 7 rows (days) x 12 cols (weeks)
+          // We manually build a grid of 7 rows (days) x 4 cols (weeks)
           SizedBox(
-            height: 140, // Fixed height for the grid
+            height: 180, // Increased height for square cells
             child: Row(
               children: [
                 // Day Labels Column
@@ -220,16 +221,19 @@ class _StreakHeatmap extends StatelessWidget {
                     Text('Sun', style: TextStyle(fontSize: 10, color: Colors.grey)),
                   ],
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 // Weeks Row
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
                       // Calculate cell size to fit width
-                      final cols = 12; // 12 weeks
-                      final gap = 4.0;
+                      final cols = 4; // 4 weeks
+                      final gap = 8.0;
                       final availableWidth = constraints.maxWidth - ((cols - 1) * gap);
-                      final cellSize = availableWidth / cols;
+                      final calculatedSize = availableWidth / cols;
+                      
+                      // Cap the size so they don't become giant on wide screens, keep them square
+                      final cellSize = calculatedSize > 40 ? 40.0 : calculatedSize;
 
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
@@ -251,7 +255,7 @@ class _StreakHeatmap extends StatelessWidget {
                               if (cellDate.isAfter(now)) {
                                 return Container(
                                   width: cellSize,
-                                  height: cellSize > 20 ? 20 : cellSize, // Cap height
+                                  height: cellSize,
                                   color: Colors.transparent,
                                 );
                               }
@@ -274,10 +278,10 @@ class _StreakHeatmap extends StatelessWidget {
                                 message: '${DateFormat('MMM d').format(cellDate)}: ${minutes}m',
                                 child: Container(
                                   width: cellSize,
-                                  height: cellSize > 15 ? 15 : cellSize, // Cap height for aesthetics
+                                  height: cellSize,
                                   decoration: BoxDecoration(
                                     color: cellColor,
-                                    borderRadius: BorderRadius.circular(2),
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
                                 ),
                               );
