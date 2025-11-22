@@ -983,7 +983,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        ),
                        const SizedBox(height: 6),
                        Text(
-                         DateFormat('MMM d, h:mm a').format(r.timestamp),
+                         DateFormat('dd/MM/yy HH:mm').format(r.timestamp),
                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                fontSize: 11,
                                color: AppTheme.textSecondaryColor,

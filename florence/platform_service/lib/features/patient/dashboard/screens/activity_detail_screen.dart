@@ -664,7 +664,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('MMM d, h:mm a').format(log.timestamp),
+                DateFormat('dd/MM/yy HH:mm').format(log.timestamp),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,
