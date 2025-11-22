@@ -205,7 +205,7 @@ class _StreakHeatmap extends StatelessWidget {
           // The Heatmap Grid
           // We manually build a grid of 7 rows (days) x 4 cols (weeks)
           SizedBox(
-            height: 180, // Increased height for square cells
+            height: 160, // Fixed height for the grid
             child: Row(
               children: [
                 // Day Labels Column
@@ -226,20 +226,28 @@ class _StreakHeatmap extends StatelessWidget {
                 Expanded(
                   child: LayoutBuilder(
                     builder: (context, constraints) {
-                      // Calculate cell size to fit width
                       final cols = 4; // 4 weeks
-                      final gap = 8.0;
-                      final availableWidth = constraints.maxWidth - ((cols - 1) * gap);
-                      final calculatedSize = availableWidth / cols;
+                      final colGap = 8.0;
                       
-                      // Cap the size so they don't become giant on wide screens, keep them square
-                      final cellSize = calculatedSize > 40 ? 40.0 : calculatedSize;
+                      // 1. Constrain by Width
+                      final availableWidth = constraints.maxWidth - ((cols - 1) * colGap);
+                      final widthBasedSize = availableWidth / cols;
+                      
+                      // 2. Constrain by Height (7 rows)
+                      // Ensure 7 cells fit vertically in the available height
+                      final heightBasedSize = constraints.maxHeight / 7;
+
+                      // 3. Determine final square size (fit both constraints)
+                      double cellSize = math.min(widthBasedSize, heightBasedSize);
+                      
+                      // Cap max size for aesthetics
+                      if (cellSize > 30) cellSize = 30.0;
 
                       return ListView.separated(
                         scrollDirection: Axis.horizontal,
                         physics: const NeverScrollableScrollPhysics(), // Static view
                         itemCount: cols,
-                        separatorBuilder: (_, __) => SizedBox(width: gap),
+                        separatorBuilder: (_, __) => SizedBox(width: colGap),
                         itemBuilder: (context, colIndex) {
                           // Calculate the start date of this specific week column
                           // We align so the last column contains "Today"
