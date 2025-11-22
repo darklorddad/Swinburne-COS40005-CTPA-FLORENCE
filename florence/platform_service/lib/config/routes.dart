@@ -42,7 +42,7 @@ class AppRoutes {
   static const String mealImpact = '/trends/meal-impact';
   static const String activityImpact = '/trends/activity-impact';
   static const String activityDetail = '/trends/activity-detail';
-  static const String bmiDetail = '/trends/bmi-detail';
+  static const String bmiDetail = '/bmi-detail';
   static const String weeklyReport = '/trends/weekly-report';
 
   static const String chat = '/chat';

@@ -103,7 +103,7 @@ class _BmiGaugeSection extends StatelessWidget {
 
     if (bmi < 18.5) {
       category = "Underweight";
-      color = AppTheme.primaryBlue; // Using blue for underweight as per request
+      color = AppTheme.primaryBlue; // Blue for underweight
       advice = "Focus on nutrient-rich foods to reach a healthy weight.";
     } else if (bmi < 25) {
       category = "Normal";
@@ -188,7 +188,7 @@ class _BmiGaugeSection extends StatelessWidget {
                     ),
                     // Marker
                     Positioned(
-                      left: getPos(bmi) - 10, // Center the 20px icon
+                      left: getPos(bmi) - 12, // Center the 24px icon
                       top: -12,
                       child: Column(
                         children: [
@@ -246,8 +246,6 @@ class _BmiTrendSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     // Filter last 6 months for relevance
     final cutoff = DateTime.now().subtract(const Duration(days: 180));
     final recentReadings = readings.where((r) => r.measuredAt.isAfter(cutoff)).toList();
@@ -257,7 +255,7 @@ class _BmiTrendSection extends StatelessWidget {
         title: 'BMI Trend',
         icon: Icons.show_chart,
         infoText: 'Your BMI progress over time.',
-        child: const Padding(padding: EdgeInsets.all(20), child: Text("No recent data.")),
+        child: const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No recent data."))),
       );
     }
 
@@ -274,8 +272,8 @@ class _BmiTrendSection extends StatelessWidget {
     // Adjust Y based on actual data
     final vals = recentReadings.map((e) => e.value);
     if (vals.isNotEmpty) {
-      minY = vals.reduce(math.min) - 2;
-      maxY = vals.reduce(math.max) + 2;
+      minY = math.min(minY, vals.reduce(math.min) - 2);
+      maxY = math.max(maxY, vals.reduce(math.max) + 2);
     }
 
     return _BmiCard(
@@ -324,9 +322,7 @@ class _BmiTrendSection extends StatelessWidget {
             lineBarsData: [
               LineChartBarData(
                 spots: recentReadings.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
-                isCurved: true, // "Step" look requested, but curve often looks better for sparse data. 
-                // To make it "Step", set isCurved: false and isStepLineChart: true (if supported by version) or just linear.
-                // We will use monotonic curve for smooth progress.
+                isCurved: true, 
                 color: AppTheme.primaryBlue,
                 barWidth: 3,
                 dotData: FlDotData(show: true),
@@ -360,11 +356,11 @@ class _BmiCorrelationSection extends StatelessWidget {
         title: 'Health Correlation',
         icon: Icons.insights,
         infoText: 'Compare your BMI against other metrics like HbA1c.',
-        child: const Padding(padding: EdgeInsets.all(20), child: Text("Insufficient data for correlation.")),
+        child: const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("Insufficient data for correlation."))),
       );
     }
 
-    // We need to normalize time range
+    // Normalize time range
     final minTime = math.min(
       bmiReadings.first.measuredAt.millisecondsSinceEpoch,
       hba1cReadings.first.measuredAt.millisecondsSinceEpoch,
@@ -391,22 +387,6 @@ class _BmiCorrelationSection extends StatelessWidget {
         child: LineChart(
           LineChartData(
             minX: adjMin, maxX: adjMax,
-            // We will use 2 distinct Y ranges visually but map them to 0-1 internally? 
-            // FL Chart doesn't support dual Y-axis easily. 
-            // Instead, we show BMI on Left, and overlay HbA1c points roughly scaled or just as simple lines.
-            // BETTER APPROACH: Just plot them. Left Axis = BMI. We need to communicate HbA1c values via tooltips or normalized?
-            // Let's use standard Left Axis for BMI and simply overlay HbA1c as "dots" with labels, 
-            // acknowledging they are on different scales but visually checking trend.
-            
-            // Actually, let's use a simpler visual: BMI line, and HbA1c dots. 
-            // HbA1c range (5-10) is much lower than BMI (20-35). They won't overlap.
-            // We will enable Right Axis for HbA1c and scale the HbA1c points to match the visual height of BMI.
-            // Math: 
-            // BMI Range: [15, 35] -> Height 20.
-            // HbA1c Range: [4, 10] -> Height 6.
-            // We map HbA1c 4->15, 10->35? 
-            // formula: y_chart = ((hba1c - 4) / 6) * 20 + 15.
-            
             minY: 15, maxY: 40, // BMI Scale
             
             titlesData: FlTitlesData(
@@ -419,11 +399,9 @@ class _BmiCorrelationSection extends StatelessWidget {
                 sideTitles: SideTitles(
                   showTitles: true, 
                   reservedSize: 30, 
-                  interval: 5, // Map visual 5 units to HbA1c
+                  interval: 5, 
                   getTitlesWidget: (v, _) {
-                    // Reverse map the visual Y back to HbA1c
-                    // y_chart = ((val - 4) / 8) * 25 + 15
-                    // val = ((y_chart - 15)/25)*8 + 4
+                    // Reverse map visual 5 units to HbA1c
                     final hba1cVal = ((v - 15)/25)*8 + 4;
                     if (hba1cVal < 4 || hba1cVal > 12) return const SizedBox();
                     return Text(hba1cVal.toStringAsFixed(1), style: const TextStyle(fontSize: 10, color: Colors.purple));
@@ -459,25 +437,25 @@ class _BmiCorrelationSection extends StatelessWidget {
                   return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
                 }).toList(),
                 color: Colors.purple,
-                barWidth: 0, // Hide line, show dots? Or dash line.
+                barWidth: 0, // Hide line, show dots
                 isCurved: false,
                 dotData: FlDotData(
                   show: true, 
                   getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple)
                 ),
-                // show dashed line connecting observations
               ),
             ],
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                 getTooltipItems: (spots) {
                   return spots.map((spot) {
                     if (spot.barIndex == 0) {
-                      return LineTooltipItem("BMI: ${spot.y.toStringAsFixed(1)}", const TextStyle(color: Colors.white));
+                      return LineTooltipItem("BMI: ${spot.y.toStringAsFixed(1)}", const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12));
                     } else {
                       // Reverse math to show real HbA1c
                       final realVal = ((spot.y - 15)/25)*8 + 4;
-                      return LineTooltipItem("HbA1c: ${realVal.toStringAsFixed(1)}%", const TextStyle(color: Colors.white));
+                      return LineTooltipItem("HbA1c: ${realVal.toStringAsFixed(1)}%", const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12));
                     }
                   }).toList();
                 }
@@ -503,49 +481,65 @@ class _BmiHistorySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final reversed = readings.reversed.toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
 
     return _BmiCard(
       title: 'History',
       icon: Icons.history,
       infoText: 'Your recent BMI records.',
-      child: Column(
-        children: reversed.take(5).map((r) {
-          String label;
-          Color color;
-          if (r.value < 18.5) { label = "Underweight"; color = AppTheme.primaryBlue; }
-          else if (r.value < 25) { label = "Normal"; color = AppTheme.primaryGreen; }
-          else if (r.value < 30) { label = "Overweight"; color = AppTheme.warningColor; }
-          else { label = "Obese"; color = AppTheme.errorColor; }
+      child: Container(
+        decoration: BoxDecoration(
+          color: containerColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            if (reversed.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Center(child: Text("No history available")),
+              )
+            else
+              ...reversed.take(5).map((r) {
+                String label;
+                Color color;
+                if (r.value < 18.5) { label = "Underweight"; color = AppTheme.primaryBlue; }
+                else if (r.value < 25) { label = "Normal"; color = AppTheme.primaryGreen; }
+                else if (r.value < 30) { label = "Overweight"; color = AppTheme.warningColor; }
+                else { label = "Obese"; color = AppTheme.errorColor; }
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: isDark ? AppTheme.midnightSurface : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withOpacity(0.3)),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(r.value.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                      child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(DateFormat('dd/MM/yy').format(r.measuredAt), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
-                  ],
-                )
-              ],
-            ),
-          );
-        }).toList(),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: containerColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withOpacity(0.3)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(r.value.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                            child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(DateFormat('dd/MM/yy').format(r.measuredAt), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
+                        ],
+                      )
+                    ],
+                  ),
+                );
+              }).toList(),
+          ],
+        ),
       ),
     );
   }
@@ -562,12 +556,15 @@ class _BmiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
+        border: Border.all(color: borderColor),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
@@ -588,8 +585,16 @@ class _BmiCard extends StatelessWidget {
                   showDialog(
                     context: context,
                     builder: (ctx) => AlertDialog(
-                      title: Text(title),
-                      content: Text(infoText),
+                      backgroundColor: Theme.of(context).cardColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      title: Row(
+                        children: [
+                          Icon(icon, color: AppTheme.primaryBlue),
+                          const SizedBox(width: 12),
+                          Expanded(child: Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+                        ],
+                      ),
+                      content: Text(infoText, style: Theme.of(context).textTheme.bodyMedium),
                       actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Got it"))],
                     ),
                   );
