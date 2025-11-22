@@ -528,7 +528,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('MMM d').format(log.logDate),
+                DateFormat('dd/MM/yy HH:mm').format(log.logDate),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,
