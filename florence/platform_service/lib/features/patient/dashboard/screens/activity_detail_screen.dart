@@ -235,9 +235,32 @@ class _StreakHeatmap extends StatelessWidget {
                   childAspectRatio: 1,
                 ),
                 itemBuilder: (context, index) {
-                  // Calculate date: Show last 28 days
-                  // Index 27 is "Today" (or yesterday if we align to full weeks, but let's just do last 28 days)
-                  final date = now.subtract(Duration(days: 27 - index));
+                  // FIX: Align grid to Monday to match headers (M T W T F S S)
+                  // 1. Find the Monday of the current week
+                  final currentWeekday = now.weekday; // 1=Mon...7=Sun
+                  final startOfCurrentWeek = now.subtract(Duration(days: currentWeekday - 1));
+                  
+                  // 2. Go back 3 weeks to get the Monday of the first row
+                  final startDate = startOfCurrentWeek.subtract(const Duration(days: 21));
+                  
+                  // 3. Calculate specific date for this cell
+                  final date = startDate.add(Duration(days: index));
+                  
+                  // 4. Handle Future Dates (Empty cells)
+                  // Compare only dates (ignore time)
+                  final isFuture = date.isAfter(now) && 
+                      (date.year != now.year || date.month != now.month || date.day != now.day);
+
+                  if (isFuture) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.3)),
+                      ),
+                    );
+                  }
+
                   final key = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
                   final minutes = activityMap[key] ?? 0;
 
