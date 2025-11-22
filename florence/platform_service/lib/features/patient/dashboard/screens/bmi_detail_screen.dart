@@ -500,11 +500,10 @@ class _BmiTrendSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        fitInsideHorizontally: true,
                         interval: (maxX - minX) / 4,
                         getTitlesWidget: (val, _) {
-                          if (val <= minX || val >= maxX) return const SizedBox();
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
                           final fmt = durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M');
 
@@ -519,7 +518,7 @@ class _BmiTrendSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: 18.5, y2: 25, color: AppTheme.primaryGreen.withOpacity(0.1)),
+                      HorizontalRangeAnnotation(y1: 18.5, y2: 25, color: AppTheme.primaryGreen.withOpacity(0.2)),
                     ],
                   ),
                   lineBarsData: [
@@ -655,14 +654,17 @@ class _BmiCorrelationSection extends StatelessWidget {
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, _) {
-                         if (val <= minX || val >= maxX) return const SizedBox();
-                         final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                         return Padding(
-                           padding: const EdgeInsets.only(top: 8.0),
-                           child: Text(DateFormat('MM/yy').format(date), style: const TextStyle(fontSize: 9, color: Colors.grey)),
-                         );
-                      }),
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        fitInsideHorizontally: true,
+                        getTitlesWidget: (val, _) {
+                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                           return Padding(
+                             padding: const EdgeInsets.only(top: 8.0),
+                             child: Text(DateFormat('MM/yy').format(date), style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                           );
+                        }
+                      ),
                     ),
                   ),
                   gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
@@ -701,14 +703,26 @@ class _BmiCorrelationSection extends StatelessWidget {
                           
                           if (spot.barIndex == 0) {
                             return LineTooltipItem(
-                              "$dateStr\nBMI: ${spot.y.toStringAsFixed(1)}",
-                              const TextStyle(color: Colors.white, fontSize: 12),
+                              '$dateStr\n',
+                              const TextStyle(color: Colors.white70, fontSize: 10),
+                              children: [
+                                TextSpan(
+                                  text: "BMI: ${spot.y.toStringAsFixed(1)}",
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                              ],
                             );
                           } else {
                             final realVal = ((spot.y - 15)/25)*8 + 4;
                             return LineTooltipItem(
-                              "$dateStr\nHbA1c: ${realVal.toStringAsFixed(1)}%",
-                              const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                              '$dateStr\n',
+                              const TextStyle(color: Colors.white70, fontSize: 10),
+                              children: [
+                                TextSpan(
+                                  text: "HbA1c: ${realVal.toStringAsFixed(1)}%",
+                                  style: const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 14),
+                                ),
+                              ],
                             );
                           }
                         }).toList();
