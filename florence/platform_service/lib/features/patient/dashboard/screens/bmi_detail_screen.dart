@@ -535,7 +535,7 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                   ),
                 ],
               ),
-              if (totalPages > 1)
+              if (totalPages > 0)
                 Row(
                   children: [
                     IconButton(
@@ -589,7 +589,14 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(r.value.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Text(
+                      r.value.toStringAsFixed(1),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.normal,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                    ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
