@@ -47,11 +47,15 @@ class DietAnalyticsScreen extends ConsumerWidget {
                   _DietStatsSection(logs: sortedLogs),
                   const SizedBox(height: 20),
 
-                  // 2. Impact Chart
+                  // 2. Consistency Calendar
+                  _TrafficLightCalendar(logs: sortedLogs),
+                  const SizedBox(height: 20),
+
+                  // 3. Impact Chart
                   _DietImpactChart(logs: sortedLogs),
                   const SizedBox(height: 20),
 
-                  // 3. History List
+                  // 4. History List
                   _DietHistoryList(logs: sortedLogs),
                   const SizedBox(height: 24),
                 ],
@@ -665,6 +669,201 @@ class _DietCard extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+// ============================================================================
+// TRAFFIC LIGHT CALENDAR
+// ============================================================================
+
+class _TrafficLightCalendar extends StatelessWidget {
+  final List<DailyPatientLog> logs;
+
+  const _TrafficLightCalendar({required this.logs});
+
+  @override
+  Widget build(BuildContext context) {
+    // 1. Prepare Data: Map Date -> Max Spike for that day
+    final Map<int, double> dayMaxSpike = {};
+    final Map<int, int> dayLogCount = {};
+
+    for (var log in logs) {
+      // Normalize date to midnight
+      final dateKey = DateTime(log.logDate.year, log.logDate.month, log.logDate.day).millisecondsSinceEpoch;
+      
+      // Count logs
+      dayLogCount[dateKey] = (dayLogCount[dateKey] ?? 0) + 1;
+
+      // Calculate spike
+      if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
+        final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
+        
+        // Keep the HIGHEST spike of the day (worst case scenario dictates the color)
+        if (!dayMaxSpike.containsKey(dateKey) || spike > dayMaxSpike[dateKey]!) {
+          dayMaxSpike[dateKey] = spike;
+        }
+      } else {
+        // Logged but no glucose data? Treat as 0 spike (Green) if not already set
+        dayMaxSpike.putIfAbsent(dateKey, () => 0);
+      }
+    }
+
+    // 2. Generate Last 28 Days (4 Weeks)
+    final now = DateTime.now();
+    // Align to the start of the week (Monday) of 4 weeks ago
+    // Or just simple last 28 days? Let's do last 28 days ending today.
+    final days = List.generate(28, (index) {
+      return now.subtract(Duration(days: 27 - index));
+    });
+
+    return _DietCard(
+      title: 'Consistency Calendar',
+      icon: Icons.calendar_view_month,
+      infoText: 'A 4-week view of your diet control.\n\n'
+                '🟢 Green: Controlled (Max spike < 30)\n'
+                '🟡 Yellow: Moderate (Max spike 30-50)\n'
+                '🔴 Red: High Spike (Max spike > 50)\n'
+                '⚪ Grey: No meals logged',
+      child: Column(
+        children: [
+          // Days of Week Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                .map((d) => SizedBox(
+                      width: 30,
+                      child: Text(
+                        d,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+          const SizedBox(height: 12),
+          
+          // The Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: 28,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: 1,
+            ),
+            itemBuilder: (context, index) {
+              final date = days[index];
+              final dateKey = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+              
+              final hasLog = dayLogCount.containsKey(dateKey);
+              final maxSpike = dayMaxSpike[dateKey];
+
+              Color cellColor;
+              Color textColor;
+              String tooltip;
+
+              if (!hasLog) {
+                cellColor = Colors.transparent;
+                textColor = AppTheme.textSecondaryColor.withOpacity(0.5);
+                tooltip = 'No logs';
+              } else if (maxSpike == null) {
+                // Logged but no glucose data
+                cellColor = AppTheme.primaryBlue.withOpacity(0.2);
+                textColor = AppTheme.primaryBlue;
+                tooltip = 'Meal logged (No Glucose)';
+              } else if (maxSpike > 50) {
+                cellColor = AppTheme.errorColor;
+                textColor = Colors.white;
+                tooltip = 'High Spike: +${maxSpike.toInt()}';
+              } else if (maxSpike > 30) {
+                cellColor = AppTheme.warningColor;
+                textColor = Colors.white;
+                tooltip = 'Moderate: +${maxSpike.toInt()}';
+              } else {
+                cellColor = AppTheme.primaryGreen;
+                textColor = Colors.white;
+                tooltip = 'Stable: +${maxSpike.toInt()}';
+              }
+
+              // Highlight "Today"
+              final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
+
+              return Tooltip(
+                message: '${DateFormat('MMM d').format(date)}\n$tooltip',
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: cellColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: !hasLog 
+                      ? Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1)
+                      : (isToday ? Border.all(color: AppTheme.textPrimaryColor, width: 2) : null),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '${date.day}',
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 16),
+          
+          // Legend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _LegendDot(color: AppTheme.primaryGreen, label: 'Good'),
+              const SizedBox(width: 16),
+              _LegendDot(color: AppTheme.warningColor, label: 'Fair'),
+              const SizedBox(width: 16),
+              _LegendDot(color: AppTheme.errorColor, label: 'High Spike'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final Color color;
+  final String label;
+
+  const _LegendDot({required this.color, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            color: AppTheme.textSecondaryColor,
+          ),
+        ),
+      ],
     );
   }
 }
