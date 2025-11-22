@@ -604,22 +604,38 @@ class _BmiCorrelationSection extends StatelessWidget {
           return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No BMI data for correlation.")));
         }
 
-        // Filter HbA1c based on the same time range
-        final minTime = data.first.measuredAt;
-        final maxTime = data.last.measuredAt;
+        // Calculate X-Axis bounds based on selected range (Consistent with Trend Chart)
+        double minX, maxX;
+        final now = DateTime.now();
         
-        // Widen window slightly to catch HbA1c near the edges
-        final displayHba1c = hba1cReadings.where((r) => 
-          r.measuredAt.isAfter(minTime.subtract(const Duration(days: 30))) && 
-          r.measuredAt.isBefore(maxTime.add(const Duration(days: 30)))
-        ).toList();
-
-        double minX = minTime.millisecondsSinceEpoch.toDouble();
-        double maxX = maxTime.millisecondsSinceEpoch.toDouble();
-        if (minX == maxX) {
-          minX -= 2629743000; 
-          maxX += 2629743000;
+        if (range == 'ALL') {
+          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+          if (minX == maxX) {
+            minX -= 2629743000; // -1 Month
+            maxX += 2629743000; // +1 Month
+          }
+        } else {
+          maxX = now.millisecondsSinceEpoch.toDouble();
+          Duration duration;
+          switch (range) {
+            case '1M': duration = const Duration(days: 30); break;
+            case '3M': duration = const Duration(days: 90); break;
+            case '6M': duration = const Duration(days: 180); break;
+            case '1Y': duration = const Duration(days: 365); break;
+            default: duration = const Duration(days: 365); break;
+          }
+          minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
+
+        // Filter HbA1c based on the calculated time range
+        final startDt = DateTime.fromMillisecondsSinceEpoch(minX.toInt());
+        final endDt = DateTime.fromMillisecondsSinceEpoch(maxX.toInt());
+        
+        final displayHba1c = hba1cReadings.where((r) => 
+          r.measuredAt.isAfter(startDt.subtract(const Duration(days: 7))) && 
+          r.measuredAt.isBefore(endDt.add(const Duration(days: 7)))
+        ).toList();
 
         // Normalize Y-Axis: Map HbA1c (4-12) to fit visually within BMI range (15-40)
         // y_chart = ((hba1c - 4) / 8) * 25 + 15
