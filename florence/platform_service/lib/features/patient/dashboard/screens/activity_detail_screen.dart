@@ -181,10 +181,11 @@ class _WeeklyConsistencyChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1)); // Monday
     final Map<int, int> dailyTotals = {};
     
-    for (int i = 6; i >= 0; i--) {
-      final d = now.subtract(Duration(days: i));
+    for (int i = 0; i < 7; i++) {
+      final d = startOfWeek.add(Duration(days: i));
       final dayKey = d.year * 10000 + d.month * 100 + d.day;
       dailyTotals[dayKey] = 0;
     }
@@ -236,7 +237,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
     return _ActivityCard(
       title: 'Weekly Consistency',
       icon: Icons.bar_chart,
-      infoText: 'Total active minutes per day for the last 7 days.',
+      infoText: 'Total active minutes per day for the current week (Mon-Sun).',
       child: SizedBox(
         height: 220,
         child: BarChart(
@@ -253,7 +254,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
                   reservedSize: 30,
                   getTitlesWidget: (val, meta) {
                     if (val < 0 || val >= 7) return const SizedBox();
-                    final date = DateTime.now().subtract(Duration(days: 6 - val.toInt()));
+                    final date = startOfWeek.add(Duration(days: val.toInt()));
                     return Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
