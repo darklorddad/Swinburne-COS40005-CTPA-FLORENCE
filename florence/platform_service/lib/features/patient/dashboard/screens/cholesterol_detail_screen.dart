@@ -1021,7 +1021,7 @@ class _HistorySectionState extends State<_HistorySection> {
                           _ContainerDivider(),
                           _MiniValue('HDL', r.hdl, _getStatusColor(r.hdl, MonitorDataType.CHOLESTEROL_HDL)),
                           _ContainerDivider(),
-                          _MiniValue('Tri', r.triglycerides, _getStatusColor(r.triglycerides, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES)),
+                          _MiniValue('Triglycerides', r.triglycerides, _getStatusColor(r.triglycerides, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES)),
                         ],
                       ),
                     ),
