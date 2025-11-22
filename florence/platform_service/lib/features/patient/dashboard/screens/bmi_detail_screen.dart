@@ -101,9 +101,13 @@ class _BmiGaugeSection extends StatelessWidget {
     Color color;
     String advice;
 
-    if (bmi < 18.5) {
+    if (bmi == 0) {
+      category = "No Data";
+      color = AppTheme.textSecondaryColor;
+      advice = "Log your weight to calculate BMI.";
+    } else if (bmi < 18.5) {
       category = "Underweight";
-      color = AppTheme.primaryBlue; // Blue for underweight
+      color = AppTheme.primaryBlue;
       advice = "Focus on nutrient-rich foods to reach a healthy weight.";
     } else if (bmi < 25) {
       category = "Normal";
@@ -129,30 +133,94 @@ class _BmiGaugeSection extends StatelessWidget {
           '• Obese: 30+',
       child: Column(
         children: [
+          // 1. Target Range Display (Consistent with other screens)
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed('/profile'),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Target Range',
+                            style: TextStyle(
+                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(Icons.chevron_right, size: 20, color: AppTheme.primaryGreen.withOpacity(0.5)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Normal BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
+                      Text('18.5 - 24.9', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
           if (latestReading == null)
             const Padding(
               padding: EdgeInsets.all(20),
               child: Text("No BMI data recorded."),
             )
           else ...[
+            // 2. Big Value Text
             Text(
               bmi.toStringAsFixed(1),
-              style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontSize: 48,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
-            ),
-            Text(
-              category.toUpperCase(),
               style: TextStyle(
-                color: color,
+                fontSize: 48,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 1.0,
+                color: AppTheme.textPrimaryColor,
+                height: 1.0,
               ),
             ),
+            const SizedBox(height: 8),
+            
+            // 3. Status Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withOpacity(0.2)),
+              ),
+              child: Text(
+                category.toUpperCase(),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            
             const SizedBox(height: 24),
-            // The Linear Gauge
+            
+            // 4. Linear Gauge
             SizedBox(
               height: 40,
               child: LayoutBuilder(builder: (context, constraints) {
@@ -213,6 +281,8 @@ class _BmiGaugeSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            
+            // 5. Advice Box
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
