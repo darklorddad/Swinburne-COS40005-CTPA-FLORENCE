@@ -467,8 +467,8 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                 Text(
                   mealName,
                   style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
+                    fontWeight: FontWeight.normal,
+                    fontSize: 16,
                     color: AppTheme.textPrimaryColor,
                   ),
                   maxLines: 1,
@@ -483,7 +483,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                       DateFormat('MMM d').format(log.logDate), // Just date as log_date is DATE
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondaryColor,
-                            fontSize: 12,
+                            fontSize: 11,
                           ),
                     ),
                     const SizedBox(width: 8),
@@ -522,16 +522,19 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                   statusText,
                   style: TextStyle(
                     color: statusColor,
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               if (log.glucoseBeforeMeal != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
-                  '${log.glucoseBeforeMeal!.toInt()}  ${log.glucoseAfterMeal?.toInt() ?? "?"}',
-                  style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor),
+                  '${log.glucoseBeforeMeal!.toInt()} → ${log.glucoseAfterMeal?.toInt() ?? "?"}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                    color: AppTheme.textSecondaryColor,
+                  ),
                 )
               ]
             ],
