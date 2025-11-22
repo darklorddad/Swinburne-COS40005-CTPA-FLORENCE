@@ -121,7 +121,7 @@ class _DietStatsSection extends StatelessWidget {
               'Total Logs', 
               '$total', 
               'meals', 
-              AppTheme.mealColor
+              AppTheme.primaryBlue
             )
           ),
           const SizedBox(width: 12),
@@ -525,7 +525,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                     Text(
                       displayMealTime,
                       style: TextStyle(
-                        color: AppTheme.mealColor,
+                        color: AppTheme.primaryBlue,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
@@ -535,17 +535,17 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.1),
+                      color: (deltaText != null ? statusColor : AppTheme.primaryBlue).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.3), 
+                        color: (deltaText != null ? statusColor : AppTheme.primaryBlue).withOpacity(0.3), 
                         width: 1
                       ),
                     ),
                     child: Text(
                       deltaText ?? displayMealTime,
                       style: TextStyle(
-                        color: deltaText != null ? statusColor : AppTheme.mealColor,
+                        color: deltaText != null ? statusColor : AppTheme.primaryBlue,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
