@@ -297,7 +297,7 @@ class _BmiGaugeSection extends StatelessWidget {
                           Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
                           const SizedBox(width: 8),
                           Text(
-                            'Target Ranges',
+                            'Target Range',
                             style: TextStyle(
                               color: AppTheme.primaryGreen.withOpacity(0.8),
                               fontWeight: FontWeight.w600,
@@ -327,7 +327,20 @@ class _BmiGaugeSection extends StatelessWidget {
               child: Text("No BMI data recorded."),
             )
           else ...[
-            // 2. Linear Gauge (Middle)
+            // 2. Value (Moved Above Chart)
+            Text(
+              bmi.toStringAsFixed(1),
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimaryColor,
+                height: 1.0,
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+
+            // 3. Linear Gauge (Middle)
             SizedBox(
               height: 40,
               child: LayoutBuilder(builder: (context, constraints) {
@@ -385,17 +398,7 @@ class _BmiGaugeSection extends StatelessWidget {
             
             const SizedBox(height: 24),
 
-            // 3. Value and Status (Bottom)
-            Text(
-              bmi.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
-                height: 1.0,
-              ),
-            ),
-            const SizedBox(height: 8),
+            // 4. Status Badge (Below Chart)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
