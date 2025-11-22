@@ -419,19 +419,23 @@ class _DietHistoryListState extends State<_DietHistoryList> {
   }
 
   Widget _buildLogItem(BuildContext context, DailyPatientLog log) {
-    // Calculate spike if available
-    String statusText = 'LOGGED';
+    // Calculate spike and determine color/text
+    String valueText = 'Logged';
+    String unitText = '';
     Color statusColor = AppTheme.primaryBlue;
 
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
       final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
       if (spike > 0) {
-        statusText = '+${spike.toInt()} mg/dL';
+        valueText = '+${spike.toInt()}';
+        unitText = 'mg/dL';
+        
         if (spike > 50) statusColor = AppTheme.errorColor;
         else if (spike > 30) statusColor = AppTheme.warningColor;
         else statusColor = AppTheme.primaryGreen;
       } else {
-        statusText = '${spike.toInt()} mg/dL';
+        valueText = '${spike.toInt()}';
+        unitText = 'mg/dL';
         statusColor = AppTheme.primaryGreen;
       }
     }
@@ -459,84 +463,77 @@ class _DietHistoryListState extends State<_DietHistoryList> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // LEFT: Name & Time
+          // LEFT: Value & Name
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      valueText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 20,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                    ),
+                    if (unitText.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        unitText,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondaryColor,
+                              fontSize: 12,
+                            ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 2),
                 Text(
                   mealName,
-                  style: TextStyle(
-                    fontWeight: FontWeight.normal,
-                    fontSize: 16,
-                    color: AppTheme.textPrimaryColor,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondaryColor,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 12, color: AppTheme.textSecondaryColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      DateFormat('MMM d').format(log.logDate), // Just date as log_date is DATE
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                            fontSize: 11,
-                          ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppTheme.mealColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        log.mealTime,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.mealColor
-                        ),
-                      ),
-                    )
-                  ],
                 ),
               ],
             ),
           ),
 
-          // RIGHT: Status Badge
+          // RIGHT: Type & Time
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
+                  color: AppTheme.mealColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppTheme.mealColor.withOpacity(0.3), width: 1),
                 ),
                 child: Text(
-                  statusText,
+                  log.mealTime,
                   style: TextStyle(
-                    color: statusColor,
+                    color: AppTheme.mealColor,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-              if (log.glucoseBeforeMeal != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  '${log.glucoseBeforeMeal!.toInt()} → ${log.glucoseAfterMeal?.toInt() ?? "?"}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontSize: 11,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                )
-              ]
+              const SizedBox(height: 6),
+              Text(
+                DateFormat('MMM d').format(log.logDate),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 11,
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
             ],
           ),
         ],
