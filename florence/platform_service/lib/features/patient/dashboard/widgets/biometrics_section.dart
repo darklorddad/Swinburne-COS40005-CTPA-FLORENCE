@@ -199,7 +199,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: bmi?.measuredAt,
       icon: Icons.height_outlined,
       color: _getBmiColor(bmi?.value, thresholds),
-      onTap: () => Helpers.showInfo(context, 'BMI details coming soon'),
+      onTap: () => AppRoutes.push(context, AppRoutes.bmiDetail),
     ));
 
     return cards;
