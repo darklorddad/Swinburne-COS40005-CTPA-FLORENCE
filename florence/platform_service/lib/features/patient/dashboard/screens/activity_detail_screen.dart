@@ -63,21 +63,28 @@ class ActivityDetailScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
 
-                      // 2. Weekly Consistency
+                      // 2. Streak Heatmap
+                      _StreakHeatmap(
+                        logs: sortedLogs,
+                        dataColor: dataColor,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // 3. Weekly Consistency
                       _WeeklyConsistencyChart(
                         logs: sortedLogs, 
                         dataColor: dataColor
                       ),
                       const SizedBox(height: 20),
 
-                      // 3. Activity Timing (Last 28 Days)
+                      // 4. Activity Timing (Last 28 Days)
                       _ActivityTimingChart(
                         logs: sortedLogs, 
                         dataColor: dataColor
                       ),
                       const SizedBox(height: 20),
 
-                      // 4. History List (Consistent Design)
+                      // 5. History List (Consistent Design)
                       _ActivityHistoryList(
                         logs: sortedLogs,
                         glucoseReadings: glucoseReadings,
@@ -95,6 +102,233 @@ class ActivityDetailScreen extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading activity: $err')),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// STREAK HEATMAP (GitHub Style)
+// ============================================================================
+
+class _StreakHeatmap extends StatelessWidget {
+  final List<ActivityLog> logs;
+  final Color dataColor;
+
+  const _StreakHeatmap({
+    required this.logs,
+    required this.dataColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 1. Prepare Data: Map Date -> Total Minutes
+    final Map<int, int> activityMap = {};
+    
+    // We want to show the last ~3 months (12 weeks) to show streaks effectively
+    final now = DateTime.now();
+    final endDate = now;
+    final startDate = now.subtract(const Duration(days: 84)); // 12 weeks
+
+    for (var log in logs) {
+      // Normalize to midnight for grouping
+      final dateKey = DateTime(log.timestamp.year, log.timestamp.month, log.timestamp.day).millisecondsSinceEpoch;
+      activityMap[dateKey] = (activityMap[dateKey] ?? 0) + log.duration;
+    }
+
+    // 2. Calculate Current Streak
+    int currentStreak = 0;
+    DateTime checkDate = DateTime(now.year, now.month, now.day);
+    
+    // Check today
+    if ((activityMap[checkDate.millisecondsSinceEpoch] ?? 0) > 0) {
+      currentStreak++;
+    }
+    
+    // Check backwards
+    while (true) {
+      checkDate = checkDate.subtract(const Duration(days: 1));
+      if ((activityMap[checkDate.millisecondsSinceEpoch] ?? 0) > 0) {
+        currentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    return _ActivityCard(
+      title: 'Activity Streak',
+      icon: Icons.local_fire_department,
+      infoText: 'Your consistency over the last 3 months.\n\n'
+                ' Current Streak: $currentStreak days\n\n'
+                'Darker colors indicate longer duration.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Streak Header
+          Row(
+            children: [
+              Text(
+                '$currentStreak',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: currentStreak > 0 ? AppTheme.accentColor : AppTheme.textSecondaryColor,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DAY STREAK',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textSecondaryColor,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  Text(
+                    currentStreak > 0 ? 'Keep it up!' : 'Start moving today!',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppTheme.textPrimaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // The Heatmap Grid
+          // We manually build a grid of 7 rows (days) x 12 cols (weeks)
+          SizedBox(
+            height: 140, // Fixed height for the grid
+            child: Row(
+              children: [
+                // Day Labels Column
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text('Mon', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text('', style: TextStyle(fontSize: 10)),
+                    Text('Wed', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text('', style: TextStyle(fontSize: 10)),
+                    Text('Fri', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    Text('', style: TextStyle(fontSize: 10)),
+                    Text('Sun', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                  ],
+                ),
+                const SizedBox(width: 8),
+                // Weeks Row
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Calculate cell size to fit width
+                      final cols = 12; // 12 weeks
+                      final gap = 4.0;
+                      final availableWidth = constraints.maxWidth - ((cols - 1) * gap);
+                      final cellSize = availableWidth / cols;
+
+                      return ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        physics: const NeverScrollableScrollPhysics(), // Static view
+                        itemCount: cols,
+                        separatorBuilder: (_, __) => SizedBox(width: gap),
+                        itemBuilder: (context, colIndex) {
+                          // Calculate the start date of this specific week column
+                          // We align so the last column contains "Today"
+                          final weekEnd = endDate.subtract(Duration(days: (cols - 1 - colIndex) * 7));
+                          // Align to Monday of that week
+                          final weekStart = weekEnd.subtract(Duration(days: weekEnd.weekday - 1));
+
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: List.generate(7, (rowIndex) {
+                              final cellDate = weekStart.add(Duration(days: rowIndex));
+                              // Don't show future days
+                              if (cellDate.isAfter(now)) {
+                                return Container(
+                                  width: cellSize,
+                                  height: cellSize > 20 ? 20 : cellSize, // Cap height
+                                  color: Colors.transparent,
+                                );
+                              }
+
+                              final key = DateTime(cellDate.year, cellDate.month, cellDate.day).millisecondsSinceEpoch;
+                              final minutes = activityMap[key] ?? 0;
+
+                              Color cellColor;
+                              if (minutes == 0) {
+                                cellColor = AppTheme.textSecondaryColor.withOpacity(0.1);
+                              } else if (minutes < 20) {
+                                cellColor = dataColor.withOpacity(0.4);
+                              } else if (minutes < 45) {
+                                cellColor = dataColor.withOpacity(0.7);
+                              } else {
+                                cellColor = dataColor;
+                              }
+
+                              return Tooltip(
+                                message: '${DateFormat('MMM d').format(cellDate)}: ${minutes}m',
+                                child: Container(
+                                  width: cellSize,
+                                  height: cellSize > 15 ? 15 : cellSize, // Cap height for aesthetics
+                                  decoration: BoxDecoration(
+                                    color: cellColor,
+                                    borderRadius: BorderRadius.circular(2),
+                                  ),
+                                ),
+                              );
+                            }),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 12),
+          
+          // Legend
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text('Less', style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
+              const SizedBox(width: 4),
+              _LegendBox(color: AppTheme.textSecondaryColor.withOpacity(0.1)),
+              const SizedBox(width: 2),
+              _LegendBox(color: dataColor.withOpacity(0.4)),
+              const SizedBox(width: 2),
+              _LegendBox(color: dataColor.withOpacity(0.7)),
+              const SizedBox(width: 2),
+              _LegendBox(color: dataColor),
+              const SizedBox(width: 4),
+              Text('More', style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendBox extends StatelessWidget {
+  final Color color;
+  const _LegendBox({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
