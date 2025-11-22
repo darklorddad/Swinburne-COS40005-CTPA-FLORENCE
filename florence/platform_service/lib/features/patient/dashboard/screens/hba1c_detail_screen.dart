@@ -175,7 +175,7 @@ class _GaugeSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryGreen.withOpacity(0.1),
@@ -319,7 +319,7 @@ class _GaugeSection extends StatelessWidget {
               ),
             ),
             
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
             // 3. Value & Status
             Column(
@@ -1053,7 +1053,7 @@ class _HbA1cCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           child,
         ],
       ),
