@@ -500,7 +500,6 @@ class _BmiTrendSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        fitInsideHorizontally: true,
                         interval: (maxX - minX) / 4,
                         getTitlesWidget: (val, _) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
@@ -656,7 +655,6 @@ class _BmiCorrelationSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        fitInsideHorizontally: true,
                         getTitlesWidget: (val, _) {
                            final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                            return Padding(
