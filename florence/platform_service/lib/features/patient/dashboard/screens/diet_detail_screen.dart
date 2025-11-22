@@ -682,13 +682,17 @@ class _TrafficLightCalendar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
     // 1. Prepare Data: Map Date -> Max Spike for that day
     final Map<int, double> dayMaxSpike = {};
     final Map<int, int> dayLogCount = {};
 
     for (var log in logs) {
-      // Normalize date to midnight
-      final dateKey = DateTime(log.logDate.year, log.logDate.month, log.logDate.day).millisecondsSinceEpoch;
+      // FIX: Convert to Local Time to ensure alignment with UI
+      final localDate = log.logDate.toLocal();
+      final dateKey = DateTime(localDate.year, localDate.month, localDate.day).millisecondsSinceEpoch;
       
       // Count logs
       dayLogCount[dateKey] = (dayLogCount[dateKey] ?? 0) + 1;
@@ -707,11 +711,10 @@ class _TrafficLightCalendar extends StatelessWidget {
       }
     }
 
-    // 2. Generate Last 28 Days (4 Weeks)
-    final now = DateTime.now();
-    final days = List.generate(28, (index) {
-      return now.subtract(Duration(days: 27 - index));
-    });
+    // 2. Logic to Align Grid to Monday
+    final currentWeekday = today.weekday; // 1=Mon...7=Sun
+    final startOfCurrentWeek = today.subtract(Duration(days: currentWeekday - 1));
+    final startDate = startOfCurrentWeek.subtract(const Duration(days: 21)); // Go back 3 weeks
 
     return _DietCard(
       title: 'Consistency Calendar',
@@ -727,8 +730,7 @@ class _TrafficLightCalendar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-                .map((d) => SizedBox(
-                      width: 30,
+                .map((d) => Expanded(
                       child: Text(
                         d,
                         textAlign: TextAlign.center,
@@ -750,14 +752,25 @@ class _TrafficLightCalendar extends StatelessWidget {
             itemCount: 28,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
               childAspectRatio: 1,
             ),
             itemBuilder: (context, index) {
-              final date = days[index];
-              final dateKey = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+              final date = startDate.add(Duration(days: index));
               
+              // Handle Future Dates (Hide Cell)
+              if (date.isAfter(today)) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.3), width: 1),
+                  ),
+                );
+              }
+
+              final dateKey = date.millisecondsSinceEpoch;
               final hasLog = dayLogCount.containsKey(dateKey);
               final maxSpike = dayMaxSpike[dateKey];
 
@@ -802,11 +815,17 @@ class _TrafficLightCalendar extends StatelessWidget {
                       : (isToday ? Border.all(color: AppTheme.textPrimaryColor, width: 2) : null),
                   ),
                   alignment: Alignment.center,
-                  child: Text(
+                  child: hasLog ? Text(
                     '${date.day}',
                     style: TextStyle(
                       color: textColor,
                       fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ) : Text(
+                    '${date.day}',
+                    style: TextStyle(
+                      color: textColor,
                       fontSize: 12,
                     ),
                   ),
