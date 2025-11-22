@@ -269,7 +269,7 @@ class _RatioSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 10),
+              margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
                 color: AppTheme.primaryGreen.withOpacity(0.1),
@@ -599,7 +599,7 @@ class _CompositionSection extends StatefulWidget {
 }
 
 class _CompositionSectionState extends State<_CompositionSection> {
-  String _selectedRange = '1Y';
+  String _selectedRange = '6M';
   final List<String> _ranges = ['6M', '1Y', 'ALL'];
 
   String _getRangeLabel(String range) {
@@ -1048,9 +1048,22 @@ class _MiniValue extends StatelessWidget {
       children: [
         Text(label, style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
         const SizedBox(height: 2),
-        Text(
-          value != null ? '${value!.toInt()}' : '--',
-          style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value != null ? '${value!.toInt()}' : '--',
+              style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 14),
+            ),
+            if (value != null) ...[
+              const SizedBox(width: 2),
+              Text(
+                'mg/dL',
+                style: TextStyle(fontSize: 9, color: AppTheme.textSecondaryColor),
+              ),
+            ],
+          ],
         ),
       ],
     );
@@ -1162,7 +1175,7 @@ class _CholesterolCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           child,
         ],
       ),
