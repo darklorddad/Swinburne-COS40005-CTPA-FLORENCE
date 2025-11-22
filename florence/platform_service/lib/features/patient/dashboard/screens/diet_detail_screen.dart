@@ -661,7 +661,7 @@ class _DietCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           child,
         ],
       ),
