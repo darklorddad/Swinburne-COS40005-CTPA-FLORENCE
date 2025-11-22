@@ -213,14 +213,10 @@ class _DietImpactChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate date range for info text
-    int daysCount = 0;
-    if (logs.isNotEmpty) {
-      // logs are sorted desc by parent (newest first)
-      final newest = logs.first.logDate;
-      final oldest = logs.last.logDate;
-      daysCount = newest.difference(oldest).inDays + 1;
-    }
+    // Filter last 28 days
+    final now = DateTime.now();
+    final cutoff = now.subtract(const Duration(days: 28));
+    final recentLogs = logs.where((l) => l.logDate.isAfter(cutoff)).toList();
 
     // Calculate avg spike per meal type
     final dataMap = <String, List<double>>{
@@ -229,7 +225,7 @@ class _DietImpactChart extends StatelessWidget {
       'DINNER': []
     };
 
-    for (var log in logs) {
+    for (var log in recentLogs) {
       if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
         final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
         if (dataMap.containsKey(log.mealTime)) {
@@ -277,7 +273,7 @@ class _DietImpactChart extends StatelessWidget {
     return _DietCard(
       title: 'Glucose Impact',
       icon: Icons.bar_chart,
-      infoText: 'Average glucose spike by meal time ($daysCount days analyzed).\n\n'
+      infoText: 'Average glucose spike by meal time (Last 28 Days).\n\n'
                 ' Height represents the rise in glucose (mg/dL).\n'
                 ' Green: Stable (<30)\n'
                 ' Orange: Moderate (30-50)\n'
