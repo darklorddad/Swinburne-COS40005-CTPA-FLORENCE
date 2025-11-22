@@ -308,6 +308,7 @@ class _GaugeSection extends StatelessWidget {
             ),
 
             // 2. Scale Labels
+            const SizedBox(height: 8),
             const SizedBox(
               width: 230,
               child: Row(
