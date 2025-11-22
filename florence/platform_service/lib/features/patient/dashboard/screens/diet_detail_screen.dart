@@ -47,7 +47,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                   _DietStatsSection(logs: sortedLogs),
                   const SizedBox(height: 20),
 
-                  // 2. Consistency Calendar
+                  // 2. Traffic Light Calendar (New Section)
                   _TrafficLightCalendar(logs: sortedLogs),
                   const SizedBox(height: 20),
 
@@ -255,8 +255,6 @@ class _DietImpactChart extends StatelessWidget {
       Color barColor = AppTheme.primaryGreen;
       if (avg > 50) barColor = AppTheme.errorColor;
       else if (avg > 30) barColor = AppTheme.warningColor;
-      
-      // If avg is negative (drop), maybe show different color? Stick to green for now.
       
       barGroups.add(
         BarChartGroupData(
@@ -711,8 +709,6 @@ class _TrafficLightCalendar extends StatelessWidget {
 
     // 2. Generate Last 28 Days (4 Weeks)
     final now = DateTime.now();
-    // Align to the start of the week (Monday) of 4 weeks ago
-    // Or just simple last 28 days? Let's do last 28 days ending today.
     final days = List.generate(28, (index) {
       return now.subtract(Duration(days: 27 - index));
     });
@@ -721,10 +717,10 @@ class _TrafficLightCalendar extends StatelessWidget {
       title: 'Consistency Calendar',
       icon: Icons.calendar_view_month,
       infoText: 'A 4-week view of your diet control.\n\n'
-                '🟢 Green: Controlled (Max spike < 30)\n'
-                '🟡 Yellow: Moderate (Max spike 30-50)\n'
-                '🔴 Red: High Spike (Max spike > 50)\n'
-                '⚪ Grey: No meals logged',
+                '• Green: Controlled (Max spike < 30)\n'
+                '• Yellow: Moderate (Max spike 30-50)\n'
+                '• Red: High Spike (Max spike > 50)\n'
+                '• Grey: No meals logged',
       child: Column(
         children: [
           // Days of Week Header
