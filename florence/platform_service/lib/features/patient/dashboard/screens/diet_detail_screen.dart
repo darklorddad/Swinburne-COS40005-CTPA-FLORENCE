@@ -426,24 +426,23 @@ class _DietHistoryListState extends State<_DietHistoryList> {
 
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
       final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
-      if (spike > 0) {
-        valueText = '+${spike.toInt()}';
-        unitText = 'mg/dL';
-        
-        if (spike > 50) statusColor = AppTheme.errorColor;
-        else if (spike > 30) statusColor = AppTheme.warningColor;
-        else statusColor = AppTheme.primaryGreen;
-      } else {
-        valueText = '${spike.toInt()}';
-        unitText = 'mg/dL';
-        statusColor = AppTheme.primaryGreen;
-      }
+      
+      // Show range instead of just delta
+      valueText = '${log.glucoseBeforeMeal!.toInt()} → ${log.glucoseAfterMeal!.toInt()}';
+      unitText = 'mg/dL';
+
+      if (spike > 50) statusColor = AppTheme.errorColor;
+      else if (spike > 30) statusColor = AppTheme.warningColor;
+      else statusColor = AppTheme.primaryGreen;
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final mealName = log.mealDesc != null && log.mealDesc!.isNotEmpty 
         ? log.mealDesc! 
         : log.mealTime[0].toUpperCase() + log.mealTime.substring(1).toLowerCase();
+
+    // Use specific time if available, otherwise fallback to logDate
+    final displayDate = log.glucoseBeforeMealTime ?? log.logDate;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -476,7 +475,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                       valueText,
                       style: TextStyle(
                         fontWeight: FontWeight.normal,
-                        fontSize: 20,
+                        fontSize: 18,
                         color: AppTheme.textPrimaryColor,
                       ),
                     ),
@@ -528,7 +527,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(log.logDate),
+                DateFormat('dd/MM/yy HH:mm').format(displayDate),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,
