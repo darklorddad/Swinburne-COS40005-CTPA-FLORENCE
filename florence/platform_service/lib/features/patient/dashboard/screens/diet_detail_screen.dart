@@ -423,6 +423,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
     String valueText = 'Logged';
     String unitText = '';
     Color statusColor = AppTheme.primaryBlue;
+    String? deltaText;
 
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
       final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
@@ -430,6 +431,9 @@ class _DietHistoryListState extends State<_DietHistoryList> {
       // Show range instead of just delta
       valueText = '${log.glucoseBeforeMeal!.toInt()} → ${log.glucoseAfterMeal!.toInt()}';
       unitText = 'mg/dL';
+      
+      // Delta text
+      deltaText = (spike > 0 ? '+' : '') + '${spike.toInt()}';
 
       if (spike > 50) statusColor = AppTheme.errorColor;
       else if (spike > 30) statusColor = AppTheme.warningColor;
@@ -505,21 +509,24 @@ class _DietHistoryListState extends State<_DietHistoryList> {
             ),
           ),
 
-          // RIGHT: Type & Time
+          // RIGHT: Delta/Type & Time
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.mealColor.withOpacity(0.1),
+                  color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppTheme.mealColor.withOpacity(0.3), width: 1),
+                  border: Border.all(
+                    color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.3), 
+                    width: 1
+                  ),
                 ),
                 child: Text(
-                  log.mealTime,
+                  deltaText ?? log.mealTime,
                   style: TextStyle(
-                    color: AppTheme.mealColor,
+                    color: deltaText != null ? statusColor : AppTheme.mealColor,
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                   ),
