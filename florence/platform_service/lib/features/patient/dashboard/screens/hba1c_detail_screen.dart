@@ -228,7 +228,7 @@ class _GaugeSection extends StatelessWidget {
 
             // 1. The Gauge (Half Circle)
             SizedBox(
-              height: chartRadius,
+              height: chartRadius + 10,
               width: chartRadius * 2,
               child: Stack(
                 alignment: Alignment.topCenter,
