@@ -309,7 +309,7 @@ class _GaugeSection extends StatelessWidget {
 
             // 2. Scale Labels
             const SizedBox(
-              width: 220,
+              width: 230,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
