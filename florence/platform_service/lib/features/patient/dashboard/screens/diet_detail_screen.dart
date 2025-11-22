@@ -121,7 +121,7 @@ class _DietStatsSection extends StatelessWidget {
               'Total Logs', 
               '$total', 
               'meals', 
-              AppTheme.primaryBlue
+              AppTheme.primaryGreen
             )
           ),
           const SizedBox(width: 12),
@@ -141,7 +141,7 @@ class _DietStatsSection extends StatelessWidget {
               'Top Meal', 
               topType, 
               '', 
-              AppTheme.primaryBlue
+              AppTheme.primaryGreen
             )
           ),
         ],
