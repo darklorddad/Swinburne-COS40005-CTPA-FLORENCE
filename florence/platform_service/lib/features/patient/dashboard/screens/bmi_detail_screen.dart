@@ -86,6 +86,151 @@ class BmiDetailScreen extends ConsumerWidget {
 }
 
 // ============================================================================
+// REUSABLE CHART WRAPPER (Consistent Layout)
+// ============================================================================
+
+class _ChartSection extends StatefulWidget {
+  final String title;
+  final IconData icon;
+  final String infoText;
+  final Widget Function(String range, List<MonitorData> filteredData) builder;
+  final List<MonitorData> allData;
+  final List<String> ranges;
+
+  const _ChartSection({
+    required this.title,
+    required this.icon,
+    required this.infoText,
+    required this.builder,
+    required this.allData,
+    this.ranges = const ['6M', '1Y', 'ALL'], // Default for slow metrics like BMI
+  });
+
+  @override
+  State<_ChartSection> createState() => _ChartSectionState();
+}
+
+class _ChartSectionState extends State<_ChartSection> {
+  late String _selectedRange;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRange = widget.ranges.first;
+  }
+
+  List<MonitorData> _filterData() {
+    if (widget.allData.isEmpty) return [];
+    if (_selectedRange == 'ALL') return widget.allData;
+
+    final now = DateTime.now();
+    Duration duration;
+    switch (_selectedRange) {
+      case '1M': duration = const Duration(days: 30); break;
+      case '3M': duration = const Duration(days: 90); break;
+      case '6M': duration = const Duration(days: 180); break;
+      case '1Y': duration = const Duration(days: 365); break;
+      default: duration = const Duration(days: 365); break;
+    }
+    final cutoff = now.subtract(duration);
+    return widget.allData.where((d) => d.measuredAt.isAfter(cutoff)).toList();
+  }
+
+  void _showInfoDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(widget.icon, color: AppTheme.primaryBlue),
+            const SizedBox(width: 12),
+            Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+          ],
+        ),
+        content: Text(widget.infoText, style: Theme.of(context).textTheme.bodyMedium),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Got it'))],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final filteredData = _filterData();
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold))),
+              IconButton(
+                icon: Icon(Icons.info_outline, color: AppTheme.textSecondaryColor, size: 20),
+                onPressed: () => _showInfoDialog(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Tabs
+          Container(
+            height: 36,
+            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.all(4),
+            child: Row(
+              children: widget.ranges.map((range) {
+                final isSelected = _selectedRange == range;
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedRange = range),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: isSelected ? AppTheme.primaryBlue : Colors.transparent, borderRadius: BorderRadius.circular(8)),
+                      child: Text(_getRangeLabel(range), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyMedium?.color)),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 20),
+          widget.builder(_selectedRange, filteredData),
+        ],
+      ),
+    );
+  }
+
+  String _getRangeLabel(String key) {
+    switch (key) {
+      case '1M': return 'Monthly';
+      case '3M': return 'Quarterly';
+      case '6M': return 'Half Year';
+      case '1Y': return 'Yearly';
+      case 'ALL': return 'All Time';
+      default: return key;
+    }
+  }
+}
+
+// ============================================================================
 // 1. LINEAR GAUGE (CURRENT STATUS)
 // ============================================================================
 
@@ -99,28 +244,22 @@ class _BmiGaugeSection extends StatelessWidget {
     final bmi = latestReading?.value ?? 0.0;
     String category;
     Color color;
-    String advice;
 
     if (bmi == 0) {
       category = "No Data";
       color = AppTheme.textSecondaryColor;
-      advice = "Log your weight to calculate BMI.";
     } else if (bmi < 18.5) {
       category = "Underweight";
       color = AppTheme.primaryBlue;
-      advice = "Focus on nutrient-rich foods to reach a healthy weight.";
     } else if (bmi < 25) {
       category = "Normal";
       color = AppTheme.primaryGreen;
-      advice = "Great job! Maintain your current lifestyle.";
     } else if (bmi < 30) {
       category = "Overweight";
       color = AppTheme.warningColor;
-      advice = "Aim for gradual weight loss through diet and activity.";
     } else {
       category = "Obese";
       color = AppTheme.errorColor;
-      advice = "Consult your doctor for a personalized plan.";
     }
 
     return _BmiCard(
@@ -133,7 +272,7 @@ class _BmiGaugeSection extends StatelessWidget {
           '• Obese: 30+',
       child: Column(
         children: [
-          // 1. Target Range Display (Consistent with other screens)
+          // 1. Target Range Display (Top)
           InkWell(
             onTap: () => Navigator.of(context).pushNamed('/profile'),
             borderRadius: BorderRadius.circular(12),
@@ -158,7 +297,7 @@ class _BmiGaugeSection extends StatelessWidget {
                           Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
                           const SizedBox(width: 8),
                           Text(
-                            'Target Range',
+                            'Target Ranges',
                             style: TextStyle(
                               color: AppTheme.primaryGreen.withOpacity(0.8),
                               fontWeight: FontWeight.w600,
@@ -173,7 +312,7 @@ class _BmiGaugeSection extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Normal BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
+                      Text('BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text('18.5 - 24.9', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen)),
                     ],
                   ),
@@ -188,44 +327,11 @@ class _BmiGaugeSection extends StatelessWidget {
               child: Text("No BMI data recorded."),
             )
           else ...[
-            // 2. Big Value Text
-            Text(
-              bmi.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
-                height: 1.0,
-              ),
-            ),
-            const SizedBox(height: 8),
-            
-            // 3. Status Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withOpacity(0.2)),
-              ),
-              child: Text(
-                category.toUpperCase(),
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // 4. Linear Gauge
+            // 2. Linear Gauge (Middle)
             SizedBox(
               height: 40,
               child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
-                // Scale: 15 to 35 (Range of 20 units)
                 const minScale = 15.0;
                 const maxScale = 35.0;
                 final totalRange = maxScale - minScale;
@@ -243,20 +349,16 @@ class _BmiGaugeSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       child: Row(
                         children: [
-                          // Underweight (15 - 18.5) -> 3.5 units
-                          Container(width: (3.5 / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
-                          // Normal (18.5 - 25) -> 6.5 units
-                          Container(width: (6.5 / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
-                          // Overweight (25 - 30) -> 5 units
-                          Container(width: (5.0 / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
-                          // Obese (30 - 35) -> 5 units
-                          Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
+                          Container(width: (3.5 / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)), // Underweight
+                          Container(width: (6.5 / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)), // Normal
+                          Container(width: (5.0 / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)), // Overweight
+                          Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))), // Obese
                         ],
                       ),
                     ),
                     // Marker
                     Positioned(
-                      left: getPos(bmi) - 12, // Center the 24px icon
+                      left: getPos(bmi) - 12,
                       top: -12,
                       child: Column(
                         children: [
@@ -280,22 +382,34 @@ class _BmiGaugeSection extends StatelessWidget {
                 Text("35+", style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
-            const SizedBox(height: 16),
             
-            // 5. Advice Box
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppTheme.borderColor),
+            const SizedBox(height: 24),
+
+            // 3. Value and Status (Bottom)
+            Text(
+              bmi.toStringAsFixed(1),
+              style: TextStyle(
+                fontSize: 48,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimaryColor,
+                height: 1.0,
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.lightbulb_outline, size: 20, color: AppTheme.textSecondaryColor),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(advice, style: const TextStyle(fontSize: 12))),
-                ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: color.withOpacity(0.2)),
+              ),
+              child: Text(
+                category.toUpperCase(),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
               ),
             ),
           ],
@@ -316,92 +430,114 @@ class _BmiTrendSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter last 6 months for relevance
-    final cutoff = DateTime.now().subtract(const Duration(days: 180));
-    final recentReadings = readings.where((r) => r.measuredAt.isAfter(cutoff)).toList();
-
-    if (recentReadings.isEmpty) {
-      return _BmiCard(
-        title: 'BMI Trend',
-        icon: Icons.show_chart,
-        infoText: 'Your BMI progress over time.',
-        child: const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No recent data."))),
-      );
-    }
-
-    double minX = recentReadings.first.measuredAt.millisecondsSinceEpoch.toDouble();
-    double maxX = recentReadings.last.measuredAt.millisecondsSinceEpoch.toDouble();
-    if (minX == maxX) {
-      minX -= 2629743000; // -1 Month
-      maxX += 2629743000; // +1 Month
-    }
-
-    double minY = 15;
-    double maxY = 35;
-    
-    // Adjust Y based on actual data
-    final vals = recentReadings.map((e) => e.value);
-    if (vals.isNotEmpty) {
-      minY = math.min(minY, vals.reduce(math.min) - 2);
-      maxY = math.max(maxY, vals.reduce(math.max) + 2);
-    }
-
-    return _BmiCard(
+    return _ChartSection(
       title: 'Progress',
       icon: Icons.show_chart,
-      infoText: 'Your BMI trend over the last 6 months.\n\n'
-          '• Consistent monitoring helps track long-term weight management effectiveness.',
-      child: SizedBox(
-        height: 250,
-        child: LineChart(
-          LineChartData(
-            minX: minX, maxX: maxX, minY: minY, maxY: maxY,
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.borderColor.withOpacity(0.5), strokeWidth: 1),
-            ),
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: true, reservedSize: 30, getTitlesWidget: (val, _) => Text(val.toInt().toString(), style: const TextStyle(fontSize: 10))),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: (maxX - minX) / 4,
-                  getTitlesWidget: (val, _) {
-                    if (val == minX || val == maxX) return const SizedBox();
-                    final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(DateFormat('MMM').format(date), style: const TextStyle(fontSize: 10)),
-                    );
-                  },
+      ranges: const ['3M', '6M', '1Y', 'ALL'],
+      infoText: 'Visualizes your BMI trends over time.\n\n'
+          '• Y-Axis: BMI (kg/m²)\n'
+          '• X-Axis: Time\n'
+          '• Green Band: Normal BMI Range (18.5 - 25).',
+      allData: readings,
+      builder: (range, data) {
+        if (data.isEmpty) {
+          return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No data available for this period.")));
+        }
+
+        double minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+        double maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+        if (minX == maxX) {
+          minX -= 2629743000; 
+          maxX += 2629743000;
+        }
+
+        // Dynamic Y Axis
+        final vals = data.map((e) => e.value);
+        double minY = vals.reduce(math.min) - 2;
+        double maxY = vals.reduce(math.max) + 2;
+        
+        // Ensure reasonable bounds
+        minY = math.max(15, minY);
+        maxY = math.max(30, maxY);
+
+        return Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: LineChart(
+                LineChartData(
+                  minX: minX, maxX: maxX, minY: minY, maxY: maxY,
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                  ),
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // REMOVED
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: (maxX - minX) / 4,
+                        getTitlesWidget: (val, _) {
+                          if (val == minX || val == maxX) return const SizedBox();
+                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(DateFormat('MMM').format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  rangeAnnotations: RangeAnnotations(
+                    horizontalRangeAnnotations: [
+                      HorizontalRangeAnnotation(y1: 18.5, y2: 25, color: AppTheme.primaryGreen.withOpacity(0.05)),
+                    ],
+                  ),
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
+                      isCurved: true,
+                      color: AppTheme.primaryBlue,
+                      barWidth: 3,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
+                      ),
+                      belowBarData: BarAreaData(show: true, color: AppTheme.primaryBlue.withOpacity(0.1)),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipItems: (touchedSpots) {
+                        return touchedSpots.map((spot) {
+                          return LineTooltipItem(
+                            '${spot.y.toStringAsFixed(1)}',
+                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                          );
+                        }).toList();
+                      },
+                    ),
+                  ),
                 ),
               ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-            borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.borderColor)),
-            // Background Zones
-            rangeAnnotations: RangeAnnotations(
-              horizontalRangeAnnotations: [
-                HorizontalRangeAnnotation(y1: 18.5, y2: 25, color: AppTheme.primaryGreen.withOpacity(0.05)),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendItem('BMI Trend', AppTheme.primaryBlue, isCircle: true),
+                const SizedBox(width: 16),
+                _LegendItem('Normal Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
             ),
-            lineBarsData: [
-              LineChartBarData(
-                spots: recentReadings.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
-                isCurved: true, 
-                color: AppTheme.primaryBlue,
-                barWidth: 3,
-                dotData: FlDotData(show: true),
-                belowBarData: BarAreaData(show: true, color: AppTheme.primaryBlue.withOpacity(0.1)),
-              ),
-            ],
-          ),
-        ),
-      ),
+          ],
+        );
+      },
     );
   }
 }
@@ -421,119 +557,121 @@ class _BmiCorrelationSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (bmiReadings.isEmpty || hba1cReadings.isEmpty) {
-      return _BmiCard(
-        title: 'Health Correlation',
-        icon: Icons.insights,
-        infoText: 'Compare your BMI against other metrics like HbA1c.',
-        child: const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("Insufficient data for correlation."))),
-      );
-    }
-
-    // Normalize time range
-    final minTime = math.min(
-      bmiReadings.first.measuredAt.millisecondsSinceEpoch,
-      hba1cReadings.first.measuredAt.millisecondsSinceEpoch,
-    ).toDouble();
-    
-    final maxTime = math.max(
-      bmiReadings.last.measuredAt.millisecondsSinceEpoch,
-      hba1cReadings.last.measuredAt.millisecondsSinceEpoch,
-    ).toDouble();
-
-    final span = maxTime - minTime;
-    final adjMin = minTime - (span * 0.05);
-    final adjMax = maxTime + (span * 0.05);
-
-    return _BmiCard(
+    return _ChartSection(
       title: 'BMI vs. HbA1c',
       icon: Icons.insights,
-      infoText: 'Clinical Insight: Is weight management improving your blood sugar?\n\n'
-          '• Blue Line (Left Axis): BMI\n'
-          '• Purple Dots (Right Axis): HbA1c\n'
-          '• Goal: See if both trend downwards together.',
-      child: SizedBox(
-        height: 250,
-        child: LineChart(
-          LineChartData(
-            minX: adjMin, maxX: adjMax,
-            minY: 15, maxY: 40, // BMI Scale
-            
-            titlesData: FlTitlesData(
-              leftTitles: AxisTitles(
-                axisNameWidget: const Text("BMI", style: TextStyle(fontSize: 10)),
-                sideTitles: SideTitles(showTitles: true, reservedSize: 30, interval: 5, getTitlesWidget: (v, _) => Text(v.toInt().toString(), style: const TextStyle(fontSize: 10))),
-              ),
-              rightTitles: AxisTitles(
-                axisNameWidget: const Text("HbA1c %", style: TextStyle(fontSize: 10)),
-                sideTitles: SideTitles(
-                  showTitles: true, 
-                  reservedSize: 30, 
-                  interval: 5, 
-                  getTitlesWidget: (v, _) {
-                    // Reverse map visual 5 units to HbA1c
-                    final hba1cVal = ((v - 15)/25)*8 + 4;
-                    if (hba1cVal < 4 || hba1cVal > 12) return const SizedBox();
-                    return Text(hba1cVal.toStringAsFixed(1), style: const TextStyle(fontSize: 10, color: Colors.purple));
-                  }
+      infoText: 'Compares your BMI trends against HbA1c levels over time.\n\n'
+          '• Blue Line: BMI\n'
+          '• Purple Dots: HbA1c %\n'
+          '• Goal: Observe if weight changes correlate with better blood sugar control.',
+      allData: bmiReadings, // Pass BMI to drive range logic
+      ranges: const ['6M', '1Y', 'ALL'],
+      builder: (range, data) {
+        // 'data' here is filtered BMI readings
+        if (data.isEmpty) {
+          return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No BMI data for correlation.")));
+        }
+
+        // Filter HbA1c based on the same time range
+        final minTime = data.first.measuredAt;
+        final maxTime = data.last.measuredAt;
+        
+        // Widen window slightly to catch HbA1c near the edges
+        final displayHba1c = hba1cReadings.where((r) => 
+          r.measuredAt.isAfter(minTime.subtract(const Duration(days: 30))) && 
+          r.measuredAt.isBefore(maxTime.add(const Duration(days: 30)))
+        ).toList();
+
+        double minX = minTime.millisecondsSinceEpoch.toDouble();
+        double maxX = maxTime.millisecondsSinceEpoch.toDouble();
+        if (minX == maxX) {
+          minX -= 2629743000; 
+          maxX += 2629743000;
+        }
+
+        // Normalize Y-Axis: Map HbA1c (4-12) to fit visually within BMI range (15-40)
+        // y_chart = ((hba1c - 4) / 8) * 25 + 15
+        
+        return Column(
+          children: [
+            SizedBox(
+              height: 250,
+              child: LineChart(
+                LineChartData(
+                  minX: minX, maxX: maxX,
+                  minY: 15, maxY: 40, // BMI Scale
+                  
+                  titlesData: FlTitlesData(
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // REMOVED
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // REMOVED
+                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, _) {
+                         if (val == minX || val == maxX) return const SizedBox();
+                         final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                         return Padding(
+                           padding: const EdgeInsets.only(top: 8.0),
+                           child: Text(DateFormat('MM/yy').format(date), style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                         );
+                      }),
+                    ),
+                  ),
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  lineBarsData: [
+                    // BMI Line (Blue)
+                    LineChartBarData(
+                      spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
+                      color: AppTheme.primaryBlue,
+                      barWidth: 3,
+                      isCurved: true,
+                      dotData: FlDotData(show: false),
+                    ),
+                    // HbA1c Line (Purple - Scaled)
+                    LineChartBarData(
+                      spots: displayHba1c.map((r) {
+                        final scaledY = ((r.value - 4) / 8) * 25 + 15;
+                        return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
+                      }).toList(),
+                      color: Colors.purple,
+                      barWidth: 0, 
+                      isCurved: false,
+                      dotData: FlDotData(
+                        show: true, 
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple, strokeWidth: 1, strokeColor: Colors.white)
+                      ),
+                    ),
+                  ],
+                  lineTouchData: LineTouchData(
+                    touchTooltipData: LineTouchTooltipData(
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipItems: (spots) {
+                        return spots.map((spot) {
+                          if (spot.barIndex == 0) {
+                            return LineTooltipItem("BMI: ${spot.y.toStringAsFixed(1)}", const TextStyle(color: Colors.white));
+                          } else {
+                            final realVal = ((spot.y - 15)/25)*8 + 4;
+                            return LineTooltipItem("HbA1c: ${realVal.toStringAsFixed(1)}%", const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold));
+                          }
+                        }).toList();
+                      }
+                    )
+                  )
                 ),
               ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, _) {
-                   if (val == adjMin || val == adjMax) return const SizedBox();
-                   final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                   return Text(DateFormat('MM/yy').format(date), style: const TextStyle(fontSize: 9));
-                }),
-              ),
-              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
-            gridData: FlGridData(show: true, drawVerticalLine: false),
-            borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.borderColor)),
-            lineBarsData: [
-              // BMI Line (Blue)
-              LineChartBarData(
-                spots: bmiReadings.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
-                color: AppTheme.primaryBlue,
-                barWidth: 3,
-                isCurved: true,
-                dotData: FlDotData(show: false),
-              ),
-              // HbA1c Line (Purple - Scaled)
-              LineChartBarData(
-                spots: hba1cReadings.map((r) {
-                  // Scale HbA1c (approx 4-12) to fit BMI chart (15-40)
-                  // We map 4 -> 15 and 12 -> 40. Range 8 -> Range 25.
-                  final scaledY = ((r.value - 4) / 8) * 25 + 15;
-                  return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
-                }).toList(),
-                color: Colors.purple,
-                barWidth: 0, // Hide line, show dots
-                isCurved: false,
-                dotData: FlDotData(
-                  show: true, 
-                  getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple)
-                ),
-              ),
-            ],
-            lineTouchData: LineTouchData(
-              touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (_) => Colors.black.withOpacity(0.8),
-                getTooltipItems: (spots) {
-                  return spots.map((spot) {
-                    if (spot.barIndex == 0) {
-                      return LineTooltipItem("BMI: ${spot.y.toStringAsFixed(1)}", const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12));
-                    } else {
-                      // Reverse math to show real HbA1c
-                      final realVal = ((spot.y - 15)/25)*8 + 4;
-                      return LineTooltipItem("HbA1c: ${realVal.toStringAsFixed(1)}%", const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12));
-                    }
-                  }).toList();
-                }
-              )
-            )
-          ),
-        ),
-      ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _LegendItem('BMI Trend', AppTheme.primaryBlue, isCircle: true),
+                const SizedBox(width: 16),
+                _LegendItem('HbA1c %', Colors.purple, isCircle: true),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -659,13 +797,27 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      r.value.toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.normal,
-                        color: AppTheme.textPrimaryColor,
-                      ),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          r.value.toStringAsFixed(1),
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.normal,
+                            color: AppTheme.textPrimaryColor,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'kg/m²',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                                fontSize: 12,
+                              ),
+                        ),
+                      ],
                     ),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -688,6 +840,10 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
     );
   }
 }
+
+// ============================================================================
+// HELPERS
+// ============================================================================
 
 class _BmiCard extends StatelessWidget {
   final String title;
@@ -750,6 +906,32 @@ class _BmiCard extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isBox;
+  final bool isCircle;
+
+  const _LegendItem(this.label, this.color, {super.key, this.isBox = false, this.isCircle = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isBox)
+          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
+        else if (isCircle)
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+        else
+          Container(width: 12, height: 2, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 11)),
+      ],
     );
   }
 }
