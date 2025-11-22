@@ -525,7 +525,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                     Text(
                       displayMealTime,
                       style: TextStyle(
-                        color: AppTheme.primaryBlue,
+                        color: AppTheme.textSecondaryColor,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
