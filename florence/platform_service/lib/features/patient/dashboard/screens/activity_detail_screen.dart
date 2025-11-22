@@ -172,7 +172,7 @@ class _StreakHeatmap extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: currentStreak > 0 ? AppTheme.accentColor : AppTheme.textSecondaryColor,
+                  color: currentStreak > 0 ? const Color(0xFFF59E0B) : AppTheme.textSecondaryColor,
                 ),
               ),
               const SizedBox(width: 8),
