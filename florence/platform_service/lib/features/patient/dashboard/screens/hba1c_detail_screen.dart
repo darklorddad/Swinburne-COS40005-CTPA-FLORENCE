@@ -175,7 +175,7 @@ class _GaugeSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: const EdgeInsets.only(bottom: 16),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryGreen.withOpacity(0.1),
@@ -228,7 +228,7 @@ class _GaugeSection extends StatelessWidget {
 
             // 1. The Gauge (Half Circle)
             SizedBox(
-              height: chartRadius + 20, // Increased height to prevent clipping of pivot
+              height: chartRadius,
               width: chartRadius * 2,
               child: Stack(
                 alignment: Alignment.topCenter,
@@ -307,9 +307,9 @@ class _GaugeSection extends StatelessWidget {
               ),
             ),
 
-            // 2. Scale Labels (Slightly wider to center text under tips)
+            // 2. Scale Labels
             const SizedBox(
-              width: 230, 
+              width: 200,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
