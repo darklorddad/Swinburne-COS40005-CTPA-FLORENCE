@@ -441,9 +441,14 @@ class _DietHistoryListState extends State<_DietHistoryList> {
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final displayMealTime = log.mealTime.isNotEmpty 
+        ? log.mealTime[0].toUpperCase() + log.mealTime.substring(1).toLowerCase()
+        : log.mealTime;
+
     final mealName = log.mealDesc != null && log.mealDesc!.isNotEmpty 
         ? log.mealDesc! 
-        : log.mealTime[0].toUpperCase() + log.mealTime.substring(1).toLowerCase();
+        : displayMealTime;
 
     // Use specific time if available, otherwise fallback to logDate
     final displayDate = log.glucoseBeforeMealTime ?? log.logDate;
@@ -513,24 +518,40 @@ class _DietHistoryListState extends State<_DietHistoryList> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.3), 
-                    width: 1
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (deltaText != null) ...[
+                    Text(
+                      displayMealTime,
+                      style: TextStyle(
+                        color: AppTheme.mealColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: (deltaText != null ? statusColor : AppTheme.mealColor).withOpacity(0.3), 
+                        width: 1
+                      ),
+                    ),
+                    child: Text(
+                      deltaText ?? displayMealTime,
+                      style: TextStyle(
+                        color: deltaText != null ? statusColor : AppTheme.mealColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-                child: Text(
-                  deltaText ?? log.mealTime,
-                  style: TextStyle(
-                    color: deltaText != null ? statusColor : AppTheme.mealColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
