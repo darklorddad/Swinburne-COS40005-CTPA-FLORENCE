@@ -472,74 +472,141 @@ class _BmiCorrelationSection extends StatelessWidget {
 // 4. HISTORY LIST
 // ============================================================================
 
-class _BmiHistorySection extends StatelessWidget {
+class _BmiHistorySection extends StatefulWidget {
   final List<MonitorData> readings;
 
   const _BmiHistorySection({required this.readings});
 
   @override
+  State<_BmiHistorySection> createState() => _BmiHistorySectionState();
+}
+
+class _BmiHistorySectionState extends State<_BmiHistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
+
+  @override
   Widget build(BuildContext context) {
-    final reversed = readings.reversed.toList();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
 
-    return _BmiCard(
-      title: 'History',
-      icon: Icons.history,
-      infoText: 'Your recent BMI records.',
-      child: Container(
-        decoration: BoxDecoration(
-          color: containerColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            if (reversed.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(child: Text("No history available")),
-              )
-            else
-              ...reversed.take(5).map((r) {
-                String label;
-                Color color;
-                if (r.value < 18.5) { label = "Underweight"; color = AppTheme.primaryBlue; }
-                else if (r.value < 25) { label = "Normal"; color = AppTheme.primaryGreen; }
-                else if (r.value < 30) { label = "Overweight"; color = AppTheme.warningColor; }
-                else { label = "Obese"; color = AppTheme.errorColor; }
+    final reversed = widget.readings.reversed.toList();
+    final totalItems = reversed.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+    if (totalPages == 0) _currentPage = 0;
+    
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = totalItems > 0 ? reversed.sublist(start, end) : <MonitorData>[];
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: containerColor,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: color.withOpacity(0.3)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        children: [
+          // Header with Pagination
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(r.value.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                            child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(DateFormat('dd/MM/yy').format(r.measuredAt), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
-                        ],
-                      )
-                    ],
+                  const SizedBox(width: 12),
+                  Text(
+                    'History',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                );
-              }).toList(),
-          ],
-        ),
+                ],
+              ),
+              if (totalPages > 1)
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                      icon: const Icon(Icons.chevron_left),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: Text(
+                        '${_currentPage + 1}/$totalPages',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                      icon: const Icon(Icons.chevron_right),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (currentItems.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Center(child: Text("No history available")),
+            )
+          else
+            ...currentItems.map((r) {
+              String label;
+              Color color;
+              if (r.value < 18.5) { label = "Underweight"; color = AppTheme.primaryBlue; }
+              else if (r.value < 25) { label = "Normal"; color = AppTheme.primaryGreen; }
+              else if (r.value < 30) { label = "Overweight"; color = AppTheme.warningColor; }
+              else { label = "Obese"; color = AppTheme.errorColor; }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: containerColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: color.withOpacity(0.3)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(r.value.toStringAsFixed(1), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                          child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(DateFormat('dd/MM/yy').format(r.measuredAt), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
+                      ],
+                    )
+                  ],
+                ),
+              );
+            }),
+        ],
       ),
     );
   }
