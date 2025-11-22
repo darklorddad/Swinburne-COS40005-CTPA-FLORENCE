@@ -269,7 +269,7 @@ class _RatioSection extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
                 color: AppTheme.primaryGreen.withOpacity(0.1),
