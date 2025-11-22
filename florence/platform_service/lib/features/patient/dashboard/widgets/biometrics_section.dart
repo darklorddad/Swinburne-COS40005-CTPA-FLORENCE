@@ -6,7 +6,7 @@ import '../../../../config/routes.dart';
 import 'compact_health_card.dart';
 import '../screens/hba1c_detail_screen.dart';
 import '../screens/cholesterol_detail_screen.dart';
-import '../screens/diet_analytics_screen.dart';
+import '../screens/diet_detail_screen.dart';
 
 /// Biometrics Section
 /// A container widget that groups all health metric cards
