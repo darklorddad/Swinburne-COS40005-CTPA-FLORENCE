@@ -469,6 +469,7 @@ class _BmiTrendSection extends StatelessWidget {
               height: 250,
               child: LineChart(
                 LineChartData(
+                  clipData: const FlClipData.all(),
                   minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
                     show: true,
@@ -476,19 +477,23 @@ class _BmiTrendSection extends StatelessWidget {
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // REMOVED
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
                         interval: (maxX - minX) / 4,
                         getTitlesWidget: (val, _) {
-                          if (val == minX || val == maxX) return const SizedBox();
+                          if (val <= minX || val >= maxX) return const SizedBox();
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                          
+                          final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
+                          final fmt = durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M');
+
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(DateFormat('MMM').format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            child: Text(fmt.format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                           );
                         },
                       ),
@@ -601,16 +606,17 @@ class _BmiCorrelationSection extends StatelessWidget {
               height: 250,
               child: LineChart(
                 LineChartData(
+                  clipData: const FlClipData.all(),
                   minX: minX, maxX: maxX,
                   minY: 15, maxY: 40, // BMI Scale
                   
                   titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // REMOVED
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)), // REMOVED
+                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
+                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(showTitles: true, getTitlesWidget: (val, _) {
-                         if (val == minX || val == maxX) return const SizedBox();
+                         if (val <= minX || val >= maxX) return const SizedBox();
                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                          return Padding(
                            padding: const EdgeInsets.only(top: 8.0),
