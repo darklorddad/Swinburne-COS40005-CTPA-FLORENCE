@@ -127,11 +127,13 @@ class _StreakHeatmap extends StatelessWidget {
     
     // We want to show the last 28 days (4 weeks)
     final now = DateTime.now();
-    final endDate = now;
 
     for (var log in logs) {
-      // Normalize to midnight for grouping
-      final dateKey = DateTime(log.timestamp.year, log.timestamp.month, log.timestamp.day).millisecondsSinceEpoch;
+      // CRITICAL FIX: Convert UTC timestamp to Local Device Time before grouping
+      final localTime = log.timestamp.toLocal();
+      
+      // Normalize to midnight local time
+      final dateKey = DateTime(localTime.year, localTime.month, localTime.day).millisecondsSinceEpoch;
       activityMap[dateKey] = (activityMap[dateKey] ?? 0) + log.duration;
     }
 
@@ -237,8 +239,10 @@ class _StreakHeatmap extends StatelessWidget {
                 itemBuilder: (context, index) {
                   // FIX: Align grid to Monday to match headers (M T W T F S S)
                   // 1. Find the Monday of the current week
-                  final currentWeekday = now.weekday; // 1=Mon...7=Sun
-                  final startOfCurrentWeek = now.subtract(Duration(days: currentWeekday - 1));
+                  // We strip time from 'now' to ensure clean day calculations
+                  final today = DateTime(now.year, now.month, now.day);
+                  final currentWeekday = today.weekday; // 1=Mon...7=Sun
+                  final startOfCurrentWeek = today.subtract(Duration(days: currentWeekday - 1));
                   
                   // 2. Go back 3 weeks to get the Monday of the first row
                   final startDate = startOfCurrentWeek.subtract(const Duration(days: 21));
@@ -247,9 +251,7 @@ class _StreakHeatmap extends StatelessWidget {
                   final date = startDate.add(Duration(days: index));
                   
                   // 4. Handle Future Dates (Empty cells)
-                  // Compare only dates (ignore time)
-                  final isFuture = date.isAfter(now) && 
-                      (date.year != now.year || date.month != now.month || date.day != now.day);
+                  final isFuture = date.isAfter(today);
 
                   if (isFuture) {
                     return Container(
@@ -261,7 +263,8 @@ class _StreakHeatmap extends StatelessWidget {
                     );
                   }
 
-                  final key = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+                  // Key matches the Local midnight format used in the loop above
+                  final key = date.millisecondsSinceEpoch;
                   final minutes = activityMap[key] ?? 0;
 
                   Color cellColor;
