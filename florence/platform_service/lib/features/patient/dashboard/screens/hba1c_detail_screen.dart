@@ -175,7 +175,7 @@ class _GaugeSection extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 width: double.infinity,
-                margin: const EdgeInsets.only(bottom: 20),
+                margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
                   color: AppTheme.primaryGreen.withOpacity(0.1),
@@ -263,9 +263,9 @@ class _GaugeSection extends StatelessWidget {
                   ),
                   
                   // Needle
-                  if (val > 0)
+                  if (val > 0) ...[
                     Positioned(
-                      top: chartRadius - needleLength, // Position based on needle length to align pivot at chartRadius
+                      top: chartRadius - needleLength,
                       left: 0,
                       right: 0,
                       child: Center(
@@ -273,37 +273,36 @@ class _GaugeSection extends StatelessWidget {
                           angle: rotationAngle,
                           alignment: Alignment.bottomCenter,
                           child: SizedBox(
-                            height: needleLength, 
-                            width: 16,
-                            child: Stack(
-                              alignment: Alignment.bottomCenter,
-                              children: [
-                                // Needle Body
-                                Container(
-                                  width: 6, 
-                                  height: needleLength, 
-                                  margin: const EdgeInsets.only(bottom: 0),
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.textPrimaryColor,
-                                    borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
-                                  ),
-                                ),
-                                // Pivot Point (Knob)
-                                Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: AppTheme.textPrimaryColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 3),
-                                  ),
-                                ),
-                              ],
+                            height: needleLength,
+                            width: 6,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.textPrimaryColor,
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
+                    // Pivot Point (Knob) - Centered
+                    Positioned(
+                      top: chartRadius - 8, // Center pivot at y=chartRadius (8 is half height)
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          width: 16,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: AppTheme.textPrimaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -375,7 +374,7 @@ class _TrendsSection extends StatefulWidget {
 }
 
 class _TrendsSectionState extends State<_TrendsSection> {
-  String _selectedRange = '1Y';
+  String _selectedRange = '6M';
   final List<String> _ranges = ['6M', '1Y', 'ALL'];
 
   String _getRangeLabel(String range) {
@@ -1054,7 +1053,7 @@ class _HbA1cCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
           child,
         ],
       ),
