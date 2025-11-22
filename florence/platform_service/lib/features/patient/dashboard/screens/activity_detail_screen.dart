@@ -202,106 +202,68 @@ class _StreakHeatmap extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // The Heatmap Grid
-          // We manually build a grid of 7 rows (days) x 4 cols (weeks)
-          SizedBox(
-            height: 160, // Fixed height for the grid
-            child: Row(
-              children: [
-                // Day Labels Column
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text('Mon', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    Text('', style: TextStyle(fontSize: 10)),
-                    Text('Wed', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    Text('', style: TextStyle(fontSize: 10)),
-                    Text('Fri', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                    Text('', style: TextStyle(fontSize: 10)),
-                    Text('Sun', style: TextStyle(fontSize: 10, color: Colors.grey)),
-                  ],
+          // The Heatmap Grid (7 Columns x 4 Rows)
+          Column(
+            children: [
+              // Days of Week Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+                    .map((d) => Expanded(
+                          child: Text(
+                            d,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.textSecondaryColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+              const SizedBox(height: 12),
+              
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: 28,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 1,
                 ),
-                const SizedBox(width: 12),
-                // Weeks Row
-                Expanded(
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      final cols = 4; // 4 weeks
-                      final colGap = 8.0;
-                      
-                      // 1. Constrain by Width
-                      final availableWidth = constraints.maxWidth - ((cols - 1) * colGap);
-                      final widthBasedSize = availableWidth / cols;
-                      
-                      // 2. Constrain by Height (7 rows)
-                      // Ensure 7 cells fit vertically in the available height
-                      final heightBasedSize = constraints.maxHeight / 7;
+                itemBuilder: (context, index) {
+                  // Calculate date: Show last 28 days
+                  // Index 27 is "Today" (or yesterday if we align to full weeks, but let's just do last 28 days)
+                  final date = now.subtract(Duration(days: 27 - index));
+                  final key = DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+                  final minutes = activityMap[key] ?? 0;
 
-                      // 3. Determine final square size (fit both constraints)
-                      double cellSize = math.min(widthBasedSize, heightBasedSize);
-                      
-                      // Cap max size for aesthetics
-                      if (cellSize > 30) cellSize = 30.0;
+                  Color cellColor;
+                  if (minutes == 0) {
+                    cellColor = AppTheme.textSecondaryColor.withOpacity(0.1);
+                  } else if (minutes < 20) {
+                    cellColor = dataColor.withOpacity(0.4);
+                  } else if (minutes < 45) {
+                    cellColor = dataColor.withOpacity(0.7);
+                  } else {
+                    cellColor = dataColor;
+                  }
 
-                      return ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        physics: const NeverScrollableScrollPhysics(), // Static view
-                        itemCount: cols,
-                        separatorBuilder: (_, __) => SizedBox(width: colGap),
-                        itemBuilder: (context, colIndex) {
-                          // Calculate the start date of this specific week column
-                          // We align so the last column contains "Today"
-                          final weekEnd = endDate.subtract(Duration(days: (cols - 1 - colIndex) * 7));
-                          // Align to Monday of that week
-                          final weekStart = weekEnd.subtract(Duration(days: weekEnd.weekday - 1));
-
-                          return Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: List.generate(7, (rowIndex) {
-                              final cellDate = weekStart.add(Duration(days: rowIndex));
-                              // Don't show future days
-                              if (cellDate.isAfter(now)) {
-                                return Container(
-                                  width: cellSize,
-                                  height: cellSize,
-                                  color: Colors.transparent,
-                                );
-                              }
-
-                              final key = DateTime(cellDate.year, cellDate.month, cellDate.day).millisecondsSinceEpoch;
-                              final minutes = activityMap[key] ?? 0;
-
-                              Color cellColor;
-                              if (minutes == 0) {
-                                cellColor = AppTheme.textSecondaryColor.withOpacity(0.1);
-                              } else if (minutes < 20) {
-                                cellColor = dataColor.withOpacity(0.4);
-                              } else if (minutes < 45) {
-                                cellColor = dataColor.withOpacity(0.7);
-                              } else {
-                                cellColor = dataColor;
-                              }
-
-                              return Tooltip(
-                                message: '${DateFormat('MMM d').format(cellDate)}: ${minutes}m',
-                                child: Container(
-                                  width: cellSize,
-                                  height: cellSize,
-                                  decoration: BoxDecoration(
-                                    color: cellColor,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                ),
-                              );
-                            }),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+                  return Tooltip(
+                    message: '${DateFormat('MMM d').format(date)}: ${minutes}m',
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: cellColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           
           const SizedBox(height: 12),
