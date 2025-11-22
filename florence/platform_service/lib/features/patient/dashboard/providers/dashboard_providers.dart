@@ -21,8 +21,7 @@ final monitorDataProvider = FutureProvider<List<MonitorData>>((ref) async {
 
 // Latest Activity Provider
 final latestActivityProvider = FutureProvider<ActivityLog?>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  final activities = await repository.getActivityLogs();
+  final activities = await ref.watch(activityLogsProvider.future);
   if (activities.isNotEmpty) {
     return activities.first;
   }

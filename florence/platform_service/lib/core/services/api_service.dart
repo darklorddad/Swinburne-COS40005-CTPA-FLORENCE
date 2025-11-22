@@ -40,6 +40,16 @@ class ApiService {
         }
       }
 
+      // Retry on 403 (Transient backend issue)
+      if (response.statusCode == 403) {
+        debugPrint('API 403 Error ($endpoint). Retrying once...');
+        await Future.delayed(const Duration(milliseconds: 500));
+        response = await http.get(
+          Uri.parse('${Environment.apiUrl}$endpoint'),
+          headers: await _getHeaders(),
+        );
+      }
+
       return _processResponse(response);
     } catch (e) {
       debugPrint('API GET Error ($endpoint): $e');
