@@ -447,21 +447,38 @@ class _BmiTrendSection extends StatelessWidget {
           return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No data available for this period.")));
         }
 
-        double minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-        double maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-        if (minX == maxX) {
-          minX -= 2629743000; 
-          maxX += 2629743000;
+        // Calculate X-Axis bounds based on selected range
+        double minX, maxX;
+        final now = DateTime.now();
+        
+        if (range == 'ALL') {
+          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+          if (minX == maxX) {
+            minX -= 2629743000; // -1 Month
+            maxX += 2629743000; // +1 Month
+          }
+        } else {
+          maxX = now.millisecondsSinceEpoch.toDouble();
+          Duration duration;
+          switch (range) {
+            case '1M': duration = const Duration(days: 30); break;
+            case '3M': duration = const Duration(days: 90); break;
+            case '6M': duration = const Duration(days: 180); break;
+            case '1Y': duration = const Duration(days: 365); break;
+            default: duration = const Duration(days: 365); break;
+          }
+          minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
 
-        // Dynamic Y Axis
+        // Dynamic Y Axis with Safe Zone (18.5 - 25) visibility
         final vals = data.map((e) => e.value);
         double minY = vals.reduce(math.min) - 2;
         double maxY = vals.reduce(math.max) + 2;
         
-        // Ensure reasonable bounds
-        minY = math.max(15, minY);
-        maxY = math.max(30, maxY);
+        // Ensure safe zone is visible
+        minY = math.min(minY, 18.0);
+        maxY = math.max(maxY, 26.0);
 
         return Column(
           children: [
@@ -502,7 +519,7 @@ class _BmiTrendSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: 18.5, y2: 25, color: AppTheme.primaryGreen.withOpacity(0.05)),
+                      HorizontalRangeAnnotation(y1: 18.5, y2: 25, color: AppTheme.primaryGreen.withOpacity(0.1)),
                     ],
                   ),
                   lineBarsData: [
@@ -523,9 +540,16 @@ class _BmiTrendSection extends StatelessWidget {
                       getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
+                          final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                           return LineTooltipItem(
-                            '${spot.y.toStringAsFixed(1)}',
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            '${DateFormat('MMM d').format(date)}\n',
+                            const TextStyle(color: Colors.white70, fontSize: 10),
+                            children: [
+                              TextSpan(
+                                text: spot.y.toStringAsFixed(1),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ],
                           );
                         }).toList();
                       },
@@ -656,11 +680,20 @@ class _BmiCorrelationSection extends StatelessWidget {
                       getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (spots) {
                         return spots.map((spot) {
+                          final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                          final dateStr = DateFormat('MMM d').format(date);
+                          
                           if (spot.barIndex == 0) {
-                            return LineTooltipItem("BMI: ${spot.y.toStringAsFixed(1)}", const TextStyle(color: Colors.white));
+                            return LineTooltipItem(
+                              "$dateStr\nBMI: ${spot.y.toStringAsFixed(1)}",
+                              const TextStyle(color: Colors.white, fontSize: 12),
+                            );
                           } else {
                             final realVal = ((spot.y - 15)/25)*8 + 4;
-                            return LineTooltipItem("HbA1c: ${realVal.toStringAsFixed(1)}%", const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold));
+                            return LineTooltipItem(
+                              "$dateStr\nHbA1c: ${realVal.toStringAsFixed(1)}%",
+                              const TextStyle(color: Colors.purpleAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                            );
                           }
                         }).toList();
                       }
