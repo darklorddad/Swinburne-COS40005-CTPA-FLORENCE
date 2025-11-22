@@ -6,6 +6,7 @@ import '../../../../config/routes.dart';
 import 'compact_health_card.dart';
 import '../screens/hba1c_detail_screen.dart';
 import '../screens/cholesterol_detail_screen.dart';
+import '../screens/diet_analytics_screen.dart';
 
 /// Biometrics Section
 /// A container widget that groups all health metric cards
@@ -174,16 +175,19 @@ class BiometricsSection extends StatelessWidget {
       onTap: () => AppRoutes.push(context, AppRoutes.activityDetail),
     ));
 
-    // Meal (Always show)
+    // Diet (Always show)
     cards.add(CompactHealthCard(
-      label: 'Meal',
+      label: 'Diet',
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
       status: _getMealStatus(latestMeal),
       timestamp: latestMeal?.logDate,
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
-      onTap: () => AppRoutes.push(context, AppRoutes.mealImpact),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const DietAnalyticsScreen()),
+      ),
     ));
 
     // BMI (Always show)
