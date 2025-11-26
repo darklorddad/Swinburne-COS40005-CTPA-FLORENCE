@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../models/health_data.dart';
-import '../theme/app_theme.dart';
+import 'package:clinician_dashboard/models/health_data.dart';
+import 'package:clinician_dashboard/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class GlucoseChart extends StatelessWidget {
@@ -45,21 +45,21 @@ class GlucoseChart extends StatelessWidget {
         getDrawingHorizontalLine: (value) {
           if (value == highThreshold || value == lowThreshold) {
             return FlLine(
-              color: value == highThreshold
-                  ? AppTheme.highRiskColor.withOpacity(0.3)
-                  : Colors.blue.withOpacity(0.3),
+            color: value == highThreshold
+                ? AppTheme.highRiskColor.withValues(alpha: 0.5)
+                : AppTheme.secondaryColor.withValues(alpha: 0.5),
               strokeWidth: 1,
-              dashArray: [5, 5],
+              dashArray: [4, 4], // Tighter dash
             );
           }
           return FlLine(
-            color: Colors.grey[300]!,
-            strokeWidth: 0.5,
+            color: Colors.grey[200]!, // Lighter grid lines
+            strokeWidth: 1,
           );
         },
         getDrawingVerticalLine: (value) => FlLine(
-          color: Colors.grey[300]!,
-          strokeWidth: 0.5,
+          color: Colors.transparent, // Hide vertical grid lines for cleaner look
+          strokeWidth: 0, 
         ),
       ),
       titlesData: FlTitlesData(
@@ -129,6 +129,15 @@ class GlucoseChart extends StatelessWidget {
       maxX: sortedReadings.length - 1,
       minY: _getMinY(),
       maxY: _getMaxY(),
+      rangeAnnotations: RangeAnnotations(
+        horizontalRangeAnnotations: [
+          HorizontalRangeAnnotation(
+            y1: lowThreshold,
+            y2: highThreshold,
+            color: AppTheme.lowRiskColor.withValues(alpha: 0.1),
+          ),
+        ],
+      ),
       lineTouchData: LineTouchData(
         touchTooltipData: LineTouchTooltipData(
           tooltipBorder: const BorderSide(color: AppTheme.primaryColor),
@@ -176,7 +185,7 @@ class GlucoseChart extends StatelessWidget {
           }),
           isCurved: true,
           gradient: LinearGradient(
-            colors: [Colors.green.withOpacity(0.5), Colors.green],
+            colors: [AppTheme.lowRiskColor.withValues(alpha: 0.5), AppTheme.lowRiskColor],
           ),
           barWidth: 3,
           isStrokeCapRound: true,
@@ -190,7 +199,7 @@ class GlucoseChart extends StatelessWidget {
               if (reading.value >= highThreshold) {
                 dotColor = AppTheme.highRiskColor;
               } else if (reading.value <= lowThreshold) {
-                dotColor = Colors.blue;
+                dotColor = AppTheme.secondaryColor;
               }
               
               return FlDotCirclePainter(
@@ -205,8 +214,8 @@ class GlucoseChart extends StatelessWidget {
             show: true,
             gradient: LinearGradient(
               colors: [
-                Colors.green.withOpacity(0.2),
-                Colors.green.withOpacity(0.0),
+                AppTheme.lowRiskColor.withValues(alpha: 0.2),
+                AppTheme.lowRiskColor.withValues(alpha: 0.0),
               ],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
@@ -227,7 +236,7 @@ class GlucoseChart extends StatelessWidget {
               getDotPainter: (spot, percent, barData, index) {
                 return FlDotSquarePainter(
                   size: 8,
-                  color: Colors.red.withOpacity(0.8),
+                  color: Colors.red.withValues(alpha: 0.8),
                 );
               },
             ),
@@ -255,7 +264,7 @@ class GlucoseChart extends StatelessWidget {
           ),
           HorizontalLine(
             y: lowThreshold,
-            color: Colors.blue,
+            color: AppTheme.secondaryColor,
             strokeWidth: 1,
             dashArray: [5, 5],
             label: HorizontalLineLabel(
@@ -263,7 +272,7 @@ class GlucoseChart extends StatelessWidget {
               alignment: Alignment.bottomRight,
               padding: const EdgeInsets.only(right: 5, top: 5),
               style: const TextStyle(
-                color: Colors.blue,
+                color: AppTheme.secondaryColor,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),

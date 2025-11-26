@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import '../models/patient.dart';
-import '../models/health_data.dart';
-import '../services/mock_data_service.dart';
-import '../widgets/glucose_chart.dart';
-import '../widgets/activity_chart.dart';
-import '../widgets/risk_indicator.dart';
-import '../theme/app_theme.dart';
+import 'package:clinician_dashboard/models/patient.dart';
+import 'package:clinician_dashboard/models/health_data.dart';
+import 'package:clinician_dashboard/services/api_data_service.dart';
+import 'package:clinician_dashboard/services/data_service.dart';
+import 'package:clinician_dashboard/widgets/risk_indicator.dart';
+import 'package:clinician_dashboard/widgets/bmi_gauge.dart';
+import 'package:clinician_dashboard/theme/app_theme.dart';
+import 'package:clinician_dashboard/screens/glucose_analytics_screen.dart';
+import 'package:clinician_dashboard/screens/hba1c_analytics_screen.dart';
+import 'package:clinician_dashboard/screens/blood_pressure_analytics_screen.dart';
+import 'package:clinician_dashboard/screens/cholesterol_analytics_screen.dart';
+import 'package:clinician_dashboard/screens/activity_analytics_screen.dart';
 import 'package:intl/intl.dart';
-
-enum GlucoseUnit { mgPerdL, mmolPerL }
 
 class _ChatMessage {
   final String text;
@@ -33,57 +36,117 @@ class PatientDetailScreen extends StatefulWidget {
 }
 
 class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTickerProviderStateMixin {
-  final MockDataService _dataService = MockDataService();
+  final DataService _dataService = ApiDataService();
   late TabController _tabController;
-  late Patient _patient;
-  late PatientHealthData _healthData;
-  // Glucose unit state for Avg Glucose metric
-  GlucoseUnit _glucoseUnit = GlucoseUnit.mgPerdL;
-  // Graph timeframe (days)
-  int _graphDays = 30;
+  Patient? _patient;
+  PatientHealthData? _healthData;
+  bool _isLoading = true;
+  String? _error;
+  // Metric/Imperial toggle for BMI
+  bool _isMetric = true;
   
+  /*
   // Chatbot state
   final TextEditingController _chatController = TextEditingController();
   final List<_ChatMessage> _chatMessages = [];
+  */
   
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialTab);
-    
-    // Load patient data
-    _patient = _dataService.getPatients().firstWhere((p) => p.id == widget.patientId);
-    _healthData = _dataService.getPatientHealthData(widget.patientId);
-    
+    _tabController = TabController(length: 2, vsync: this, initialIndex: widget.initialTab);
+    _loadPatientData();
+  }
 
-    // Seed chatbot with a greeting
-    _chatMessages.add(
-      _ChatMessage(
-        text: 'Hi, I am your AI assistant. How can I help with ${_patient.name}\'s care today?',
-        isUser: false,
-        timestamp: DateTime.now(),
-      ),
-    );
+  Future<void> _loadPatientData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final patients = await _dataService.getPatients();
+      final patient = patients.firstWhere((p) => p.id == widget.patientId);
+      final healthData = await _dataService.getPatientHealthData(widget.patientId);
+      
+      if (mounted) {
+        setState(() {
+          _patient = patient;
+          _healthData = healthData;
+          _isLoading = false;
+        });
+
+        /*
+        // Seed chatbot with a greeting
+        _chatMessages.add(
+          _ChatMessage(
+            text: 'Hi, I am your AI assistant. How can I help with ${patient.name}\'s care today?',
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        );
+        */
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
   
   @override
   void dispose() {
     _tabController.dispose();
-    _chatController.dispose();
+    // _chatController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Patient Details'),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_error != null || _patient == null || _healthData == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Patient Details'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 12),
+              Text('Error: ${_error ?? "Patient not found"}'),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: _loadPatientData,
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(_patient.name),
+        title: Text(_patient!.name),
         bottom: TabBar(
           controller: _tabController,
           tabs: const [
             Tab(text: 'Overview'),
             Tab(text: 'Health Data'),
-            Tab(text: 'AI Chatbot'),
+            // Tab(text: 'AI Chatbot'), // Temporarily disabled
           ],
         ),
       ),
@@ -92,7 +155,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         children: [
           _buildOverviewTab(),
           _buildHealthDataTab(),
-          _buildChatbotTab(),
+          // _buildChatbotTab(), // Temporarily disabled
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -107,10 +170,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               // Request new measurements
               _showRequestDataDialog();
               break;
-            case 2:
+            /* case 2:
               // Focus chat input
               FocusScope.of(context).requestFocus(FocusNode());
-              break;
+              break; */
           }
         },
         child: Icon(_tabController.index == 0 ? Icons.calendar_today : (_tabController.index == 1 ? Icons.sync : Icons.smart_toy)),
@@ -125,8 +188,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         // Patient header card
         _buildPatientHeaderCard(),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
+        /*
         // AI-Generated Summary Card
         Card(
           child: Padding(
@@ -153,7 +217,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _healthData.aiGeneratedSummary,
+                  _healthData!.aiGeneratedSummary,
                   style: const TextStyle(fontSize: 14),
                 ),
               ],
@@ -161,7 +225,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        */
         
         // Detected Patterns Card
         Card(
@@ -189,7 +254,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 ),
                 const SizedBox(height: 12),
                 Column(
-                  children: _healthData.detectedPatterns.map((pattern) => 
+                  children: _healthData!.detectedPatterns.map((pattern) => 
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
@@ -214,8 +279,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
+        /*
         // Recommendations Card
         Card(
           child: Padding(
@@ -242,7 +308,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 ),
                 const SizedBox(height: 12),
                 Column(
-                  children: _healthData.recommendations.map((recommendation) => 
+                  children: _healthData!.recommendations.map((recommendation) => 
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Row(
@@ -251,7 +317,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           const Icon(
                             Icons.check_circle,
                             size: 16,
-                            color: Colors.green,
+                            color: AppTheme.lowRiskColor,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -267,8 +333,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        */
         
+        /*
         // Recent Automated Actions Card
         Card(
           child: Padding(
@@ -280,7 +348,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   children: [
                     Icon(
                       Icons.smart_toy,
-                      color: Colors.purple,
+                      color: AppTheme.automatedActionColor,
                       size: 20,
                     ),
                     SizedBox(width: 8),
@@ -294,7 +362,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   ],
                 ),
                 const SizedBox(height: 12),
-                ..._healthData.automatedActions.take(3).map((action) =>
+                ..._healthData!.automatedActions.take(3).map((action) =>
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
@@ -303,7 +371,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.purple.withOpacity(0.1),
+                            color: Colors.purple.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -346,7 +414,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     ),
                   ),
                 ),
-                if (_healthData.automatedActions.length > 3)
+                if (_healthData!.automatedActions.length > 3)
                   TextButton(
                     onPressed: () {
                       _tabController.animateTo(1); // Go to Health Data tab
@@ -357,6 +425,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             ),
           ),
         ),
+        */
       ],
     );
   }
@@ -364,139 +433,176 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   Widget _buildHealthDataTab() {
     // Filter datasets by selected timeframe
     final now = DateTime.now();
-    final since = now.subtract(Duration(days: _graphDays));
-    final filteredGlucose = _healthData.glucoseReadings.where((r) => r.timestamp.isAfter(since)).toList()
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-    final filteredHbA1c = _healthData.hbA1cReadings.where((r) => r.timestamp.isAfter(since)).toList()
-      ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
-    final filteredActivity = _healthData.activityData.where((a) => a.date.isAfter(since)).toList()
+    final since = now.subtract(const Duration(days: 30)); // Default 30 days for activity
+
+    final latestGlucose = _healthData!.glucoseReadings.isNotEmpty ? _healthData!.glucoseReadings.last : null;
+    final latestHbA1c = _healthData!.hbA1cReadings.isNotEmpty ? _healthData!.hbA1cReadings.last : null;
+    final latestBP = _healthData!.bloodPressureReadings.isNotEmpty ? _healthData!.bloodPressureReadings.last : null;
+    final latestCholesterol = _healthData!.cholesterolReadings.isNotEmpty ? _healthData!.cholesterolReadings.last : null;
+
+    final hasGlucose = latestGlucose != null;
+    final hasHbA1c = latestHbA1c != null;
+    final hasBP = latestBP != null;
+    final hasCholesterol = latestCholesterol != null;
+
+    final filteredActivity = _healthData!.activityData.where((a) => a.date.isAfter(since)).toList()
       ..sort((a, b) => a.date.compareTo(b.date));
+
+    final bmi = _healthData!.weight / ((_healthData!.height / 100) * (_healthData!.height / 100));
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Glucose & HbA1c Card
+        // BMI Card
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const Text(
-                  'Glucose & HbA1c Trends',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SegmentedButton<int>(
-                    segments: const <ButtonSegment<int>>[
-                      ButtonSegment(value: 7, label: Text('7d')),
-                      ButtonSegment(value: 14, label: Text('14d')),
-                      ButtonSegment(value: 30, label: Text('30d')),
-                      ButtonSegment(value: 90, label: Text('90d')),
-                    ],
-                    selected: <int>{_graphDays},
-                    showSelectedIcon: false,
-                    style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                    onSelectionChanged: (s) {
-                      setState(() {
-                        _graphDays = s.first;
-                      });
-                    },
-                  ),
-                ),
-                SizedBox(
-                  height: 250,
-                  child: GlucoseChart(
-                    readings: filteredGlucose,
-                    hbA1cReadings: filteredHbA1c,
-                  ),
-                ),
-                const Divider(),
-                // Unit selector for Avg Glucose metric
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: SegmentedButton<GlucoseUnit>(
-                    segments: const <ButtonSegment<GlucoseUnit>>[
-                      ButtonSegment(value: GlucoseUnit.mgPerdL, label: Text('mg/dL')),
-                      ButtonSegment(value: GlucoseUnit.mmolPerL, label: Text('mmol/L')),
-                    ],
-                    selected: <GlucoseUnit>{_glucoseUnit},
-                    showSelectedIcon: false,
-                    style: const ButtonStyle(
-                      visualDensity: VisualDensity.compact,
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Body Mass Index',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
-                    onSelectionChanged: (newSelection) {
-                      setState(() {
-                        _glucoseUnit = newSelection.first;
-                      });
-                    },
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildGlucoseStatChip(
-                        'Avg Glucose',
-                        _formatAvgGlucose(_calculateAverageGlucoseFor(filteredGlucose)),
-                        Colors.green,
-                      ),
-                      _buildGlucoseStatChip(
-                        'High Events',
-                        filteredGlucose.where((r) => r.isHigh).length.toString(),
-                        AppTheme.highRiskColor,
-                      ),
-                      _buildGlucoseStatChip(
-                        'Low Events',
-                        filteredGlucose.where((r) => r.isLow).length.toString(),
-                        Colors.blue,
-                      ),
-                      _buildGlucoseStatChip(
-                        'Latest HbA1c',
-                        '${filteredHbA1c.isEmpty ? "-" : filteredHbA1c.first.value.toString()}%',
-                        Colors.orange,
-                      ),
-                    ],
-                  ),
+                const SizedBox(height: 12),
+                BMIGauge(
+                  bmi: bmi,
+                  weight: _healthData!.weight,
+                  height: _healthData!.height,
+                  isMetric: _isMetric,
+                  onUnitChanged: (val) => setState(() => _isMetric = val),
                 ),
               ],
             ),
           ),
         ),
-        
-        const SizedBox(height: 16),
-        
-        // Activity Data Card
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Physical Activity',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+
+        const SizedBox(height: 12),
+
+        // Glucose & HbA1c Summary Cards
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _buildHealthMetricSummaryCard(
+                  title: 'Glucose',
+                  value: hasGlucose ? '${latestGlucose.value.toInt()} mg/dL' : '-- mg/dL',
+                  status: hasGlucose ? (latestGlucose.isHigh ? 'High' : (latestGlucose.isLow ? 'Low' : 'Normal')) : '',
+                  statusColor: hasGlucose ? (latestGlucose.isHigh ? AppTheme.highRiskColor : (latestGlucose.isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor)) : Colors.grey,
+                  icon: Icons.water_drop,
+                  hasData: hasGlucose,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => GlucoseAnalyticsScreen(
+                        patient: _patient!,
+                        readings: _healthData!.glucoseReadings,
+                      ),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 220,
-                  child: ActivityChart(
-                    activityData: filteredActivity,
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildHealthMetricSummaryCard(
+                  title: 'HbA1c',
+                  value: hasHbA1c ? '${latestHbA1c.value}%' : '-- %',
+                  status: hasHbA1c ? (latestHbA1c.value < 5.7 ? 'Normal' : 'High') : '',
+                  statusColor: hasHbA1c ? (latestHbA1c.value < 5.7 ? AppTheme.lowRiskColor : AppTheme.highRiskColor) : Colors.grey,
+                  icon: Icons.pie_chart,
+                  hasData: hasHbA1c,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => HbA1cAnalyticsScreen(
+                        patient: _patient!,
+                        readings: _healthData!.hbA1cReadings,
+                      ),
+                    ),
                   ),
                 ),
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Row(
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+
+        // Blood Pressure Summary Card
+        _buildHealthMetricSummaryCard(
+          title: 'Blood Pressure',
+          value: hasBP ? '${latestBP.systolic.toInt()}/${latestBP.diastolic.toInt()} mmHg' : '--/-- mmHg',
+          status: hasBP ? (latestBP.systolic > 120 || latestBP.diastolic > 80 ? 'Elevated' : (latestBP.systolic < 90 || latestBP.diastolic < 60 ? 'Low' : 'Normal')) : '',
+          statusColor: hasBP ? (latestBP.systolic > 120 || latestBP.diastolic > 80 ? AppTheme.highRiskColor : (latestBP.systolic < 90 || latestBP.diastolic < 60 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor)) : Colors.grey,
+          icon: Icons.favorite,
+          hasData: hasBP,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BloodPressureAnalyticsScreen(
+                patient: _patient!,
+                readings: _healthData!.bloodPressureReadings,
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+
+        // Cholesterol Summary Card
+        _buildHealthMetricSummaryCard(
+          title: 'Cholesterol',
+          value: hasCholesterol ? '${latestCholesterol.total.toInt()} mg/dL' : '-- mg/dL',
+          status: hasCholesterol ? (latestCholesterol.total >= 240 ? 'High' : (latestCholesterol.total >= 200 ? 'Borderline' : 'Desirable')) : '',
+          statusColor: hasCholesterol ? (latestCholesterol.total >= 240 ? AppTheme.highRiskColor : (latestCholesterol.total >= 200 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor)) : Colors.grey,
+          icon: Icons.opacity,
+          hasData: hasCholesterol,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CholesterolAnalyticsScreen(
+                patient: _patient!,
+                readings: _healthData!.cholesterolReadings,
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Physical Activity Summary Card
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ActivityAnalyticsScreen(
+                patient: _patient!,
+                activityData: filteredActivity,
+              ),
+            ),
+          ),
+          child: Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.directions_run, size: 20, color: AppTheme.textSecondary),
+                      SizedBox(width: 8),
+                      Text('Physical Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildStatCard(
@@ -506,26 +612,26 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         AppTheme.secondaryColor,
                       ),
                       _buildStatCard(
-                        'Avg Active Minutes',
+                        'Avg Active Mins',
                         _calculateAverageActiveMinutes().toInt().toString(),
                         Icons.timer,
-                        Colors.green,
+                        AppTheme.lowRiskColor,
                       ),
                       _buildStatCard(
                         'Avg Calories',
                         _calculateAverageCalories().toInt().toString(),
                         Icons.local_fire_department,
-                        Colors.orange,
+                        AppTheme.accentColor,
                       ),
                     ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
         // Medications Card
         Card(
@@ -542,10 +648,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   ),
                 ),
                 const SizedBox(height: 12),
-                if (_healthData.medications.isEmpty)
+                if (_healthData!.medications.isEmpty)
                   const Text('No active medications recorded.'),
-                ..._healthData.medications.map((m) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                ..._healthData!.medications.map((m) => Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppTheme.dividerColor),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -553,7 +672,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppTheme.secondaryColor.withOpacity(0.1),
+                          color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 20),
@@ -582,9 +701,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                               runSpacing: 4,
                               children: [
                                 _buildNutrientChip('Route', m.route, AppTheme.primaryColor),
-                                _buildNutrientChip('Frequency', m.frequency, Colors.green),
+                                _buildNutrientChip('Frequency', m.frequency, AppTheme.lowRiskColor),
                                 if (m.startDate != null)
-                                  _buildNutrientChip('Started', DateFormat('MMM d, yyyy').format(m.startDate!), Colors.orange),
+                                  _buildNutrientChip('Started', DateFormat('MMM d, yyyy').format(m.startDate!), AppTheme.accentColor),
                               ],
                             ),
                             if (m.notes != null) ...[
@@ -602,7 +721,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
 
         // Diet Log Card
         Card(
@@ -618,10 +737,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
-                ..._healthData.mealEntries.take(3).map((meal) => 
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                const SizedBox(height: 12),
+                ..._healthData!.mealEntries.take(3).map((meal) => 
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.dividerColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -629,7 +761,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withOpacity(0.1),
+                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -672,19 +804,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                                   _buildNutrientChip(
                                     'Carbs',
                                     '${meal.nutritionSummary['carbs']?.toInt() ?? 0}g',
-                                    Colors.amber,
+                                    AppTheme.accentColor,
                                   ),
                                   const SizedBox(width: 8),
                                   _buildNutrientChip(
                                     'Protein',
                                     '${meal.nutritionSummary['protein']?.toInt() ?? 0}g',
-                                    Colors.green,
+                                    AppTheme.lowRiskColor,
                                   ),
                                   const SizedBox(width: 8),
                                   _buildNutrientChip(
                                     'Fat',
                                     '${meal.nutritionSummary['fat']?.toInt() ?? 0}g',
-                                    Colors.red,
+                                    AppTheme.highRiskColor,
                                   ),
                                 ],
                               ),
@@ -695,7 +827,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     ),
                   ),
                 ),
-                if (_healthData.mealEntries.length > 3)
+                if (_healthData!.mealEntries.length > 3)
                   Center(
                     child: TextButton(
                       onPressed: () {
@@ -709,7 +841,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
         
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         
         // Automated Actions Card
         Card(
@@ -725,17 +857,30 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
-                ..._healthData.automatedActions.map((action) =>
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                const SizedBox(height: 12),
+                ..._healthData!.automatedActions.map((action) =>
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppTheme.dividerColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.03),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: Row(
                       children: [
                         Container(
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.purple.withOpacity(0.1),
+                            color: Colors.purple.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -798,6 +943,73 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     );
   }
   
+  Widget _buildHealthMetricSummaryCard({
+    required String title,
+    required String value,
+    required String status,
+    required Color statusColor,
+    required IconData icon,
+    required VoidCallback onTap,
+    bool hasData = true,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Card(
+        color: hasData ? statusColor : const Color(0xFF616161),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  if (!hasData) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'No Data',
+                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+              const SizedBox(height: 8),
+              if (hasData)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    status,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                )
+              else
+                Text(
+                  'No history',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+/*
   Widget _buildChatbotTab() {
     return Column(
       children: [
@@ -855,7 +1067,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 child: TextField(
                   controller: _chatController,
                   decoration: InputDecoration(
-                    hintText: 'Type your question about ${_patient.name}\'s health...',
+                    hintText: 'Type your question about ${_patient!.name}\'s health...',
                     prefixIcon: const Icon(Icons.chat_bubble_outline),
                   ),
                   onSubmitted: (_) => _handleSendMessage(),
@@ -876,6 +1088,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       ],
     );
   }
+  */
   
   Widget _buildPatientHeaderCard() {
     return Card(
@@ -892,12 +1105,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   width: 60,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.2),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
-                      _patient.name.split(' ').map((e) => e[0]).join(''),
+                      _patient!.name.split(' ').map((e) => e[0]).join(''),
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -917,19 +1130,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                       Row(
                         children: [
                           Text(
-                            _patient.name,
+                            _patient!.name,
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          RiskIndicator(riskLevel: _patient.riskLevel),
+                          RiskIndicator(riskLevel: _patient!.riskLevel),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${_patient.age} years, ${_patient.gender}',
+                        '${_patient!.age} years, ${_patient!.gender}',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black87,
@@ -937,7 +1150,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _patient.conditionName,
+                        _patient!.conditionName,
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -959,7 +1172,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'ID: ${_patient.id}',
+                        'ID: ${_patient!.id}',
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
@@ -975,7 +1188,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                       ),
                     ),
                     Text(
-                      _formatDateTime(_patient.lastSync),
+                      _formatDateTime(_patient!.lastSync),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -986,7 +1199,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               ],
             ),
             
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             const Divider(),
             
             // Contact Info
@@ -996,24 +1209,43 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 children: [
                   const Icon(Icons.phone, size: 18, color: Colors.grey),
                   const SizedBox(width: 8),
-                  Text(
-                    _patient.contactInfo,
-                    style: const TextStyle(fontSize: 14),
+                  Expanded(
+                    child: Text(
+                      _patient!.contactInfo,
+                      style: const TextStyle(fontSize: 14),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                  const Spacer(),
-                  TextButton.icon(
-                    icon: const Icon(Icons.message, size: 16),
-                    label: const Text('Message'),
-                    onPressed: () {
-                      _tabController.animateTo(2); // Go to Notes & Communication tab
-                    },
-                  ),
-                  TextButton.icon(
-                    icon: const Icon(Icons.call, size: 16),
-                    label: const Text('Call'),
-                    onPressed: () {
-                      // Make call
-                    },
+                  const SizedBox(width: 8),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextButton.icon(
+                        icon: const Icon(Icons.message, size: 16),
+                        label: const Text('Message'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          _tabController.animateTo(2); // Go to AI Chatbot tab
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        icon: const Icon(Icons.call, size: 16),
+                        label: const Text('Call'),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        onPressed: () {
+                          // Make call
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1025,39 +1257,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
   
   // Helper widgets
-  Widget _buildGlucoseStatChip(String label, String value, Color color) {
-    return Column(
-      children: [
-        Text(
-          label,
-              style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: color.withOpacity(0.5),
-              width: 1,
-            ),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
   
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Column(
@@ -1093,7 +1292,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -1168,39 +1367,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
   
-  double _calculateAverageGlucoseFor(List<GlucoseReading> readings) {
-    if (readings.isEmpty) return 0;
-    final sum = readings.fold(0.0, (prev, element) => prev + element.value);
-    return sum / readings.length;
-  }
-
-  String _formatAvgGlucose(double valueMgPerdL) {
-    if (_glucoseUnit == GlucoseUnit.mgPerdL) {
-      return '${valueMgPerdL.toInt()} mg/dL';
-    }
-    // Convert mg/dL to mmol/L: value / 18
-    final mmol = valueMgPerdL / 18.0;
-    return '${mmol.toStringAsFixed(1)} mmol/L';
-  }
-  
   double _calculateAverageSteps() {
-    if (_healthData.activityData.isEmpty) return 0;
-    final sum = _healthData.activityData.fold(0, (prev, element) => prev + element.steps);
-    return sum / _healthData.activityData.length;
+    if (_healthData!.activityData.isEmpty) return 0;
+    final sum = _healthData!.activityData.fold(0, (prev, element) => prev + element.steps);
+    return sum / _healthData!.activityData.length;
   }
   
   double _calculateAverageActiveMinutes() {
-    if (_healthData.activityData.isEmpty) return 0;
-    final sum = _healthData.activityData.fold(0, (prev, element) => prev + element.activeMinutes);
-    return sum / _healthData.activityData.length;
+    if (_healthData!.activityData.isEmpty) return 0;
+    final sum = _healthData!.activityData.fold(0, (prev, element) => prev + element.activeMinutes);
+    return sum / _healthData!.activityData.length;
   }
   
   double _calculateAverageCalories() {
-    if (_healthData.activityData.isEmpty) return 0;
-    final sum = _healthData.activityData.fold(0, (prev, element) => prev + element.caloriesBurned);
-    return sum / _healthData.activityData.length;
+    if (_healthData!.activityData.isEmpty) return 0;
+    final sum = _healthData!.activityData.fold(0, (prev, element) => prev + element.caloriesBurned);
+    return sum / _healthData!.activityData.length;
   }
   
+  /*
   // Dialog methods
   void _handleSendMessage() {
     final text = _chatController.text.trim();
@@ -1224,27 +1409,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     final lower = userText.toLowerCase();
 
     if (lower.contains('glucose') || lower.contains('sugar')) {
-      if (_healthData.glucoseReadings.isNotEmpty) {
-        final recent = _healthData.glucoseReadings.first;
-        final highEvents = _healthData.glucoseReadings.where((r) => r.isHigh).length;
-        final lowEvents = _healthData.glucoseReadings.where((r) => r.isLow).length;
-        return 'Recent glucose for ${_patient.name} is ${recent.value.toStringAsFixed(0)} mg/dL. In the latest window I see $highEvents high and $lowEvents low events. If this followed a meal rich in refined carbs, consider smaller portions and pairing carbs with protein/fiber. I can also help set reminders for checks after dinner.';
+      if (_healthData!.glucoseReadings.isNotEmpty) {
+        final recent = _healthData!.glucoseReadings.first;
+        final highEvents = _healthData!.glucoseReadings.where((r) => r.isHigh).length;
+        final lowEvents = _healthData!.glucoseReadings.where((r) => r.isLow).length;
+        return 'Recent glucose for ${_patient!.name} is ${recent.value.toStringAsFixed(0)} mg/dL. In the latest window I see $highEvents high and $lowEvents low events. If this followed a meal rich in refined carbs, consider smaller portions and pairing carbs with protein/fiber. I can also help set reminders for checks after dinner.';
       }
-      return 'I do not see recent glucose data for ${_patient.name}. You can request new measurements from the Health Data tab.';
+      return 'I do not see recent glucose data for ${_patient!.name}. You can request new measurements from the Health Data tab.';
     }
 
     if (lower.contains('activity') || lower.contains('steps')) {
-      if (_healthData.activityData.isNotEmpty) {
+      if (_healthData!.activityData.isNotEmpty) {
         final avgSteps = _calculateAverageSteps().toInt();
-        return '${_patient.name} averages about $avgSteps steps/day. A practical next step is a 10–15 minute walk after meals to improve post‑prandial glucose. Want me to add a reminder?';
+        return '${_patient!.name} averages about $avgSteps steps/day. A practical next step is a 10–15 minute walk after meals to improve post‑prandial glucose. Want me to add a reminder?';
       }
       return 'No recent activity data detected. If the patient uses a tracker, ensure permissions are enabled.';
     }
 
     if (lower.contains('hba1c') || lower.contains('a1c')) {
-      if (_healthData.hbA1cReadings.isNotEmpty) {
-        final latest = _healthData.hbA1cReadings.first.value;
-        return "Latest HbA1c for ${_patient.name} is ${latest.toStringAsFixed(1)}%. If you'd like, I can draft a message with diet and activity guidance based on this.";
+      if (_healthData!.hbA1cReadings.isNotEmpty) {
+        final latest = _healthData!.hbA1cReadings.first.value;
+        return "Latest HbA1c for ${_patient!.name} is ${latest.toStringAsFixed(1)}%. If you'd like, I can draft a message with diet and activity guidance based on this.";
       }
       return 'I do not see a recent HbA1c value. You can request a lab test from the Health Data tab.';
     }
@@ -1256,6 +1441,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     // Default response
     return 'I can help with glucose trends, HbA1c context, activity insights, and practical next steps. Try asking: "Why were evening glucose levels high?" or "Summarize weekly trends".';
   }
+  */
 
   
   

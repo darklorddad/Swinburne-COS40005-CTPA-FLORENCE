@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../models/health_data.dart';
-import '../theme/app_theme.dart';
+import 'package:clinician_dashboard/models/health_data.dart';
+import 'package:clinician_dashboard/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class ActivityChart extends StatelessWidget {
@@ -133,7 +133,7 @@ class ActivityChart extends StatelessWidget {
         getDrawingHorizontalLine: (value) {
           if (value == targetSteps.toDouble()) {
             return FlLine(
-              color: AppTheme.accentColor.withOpacity(0.5),
+              color: AppTheme.accentColor.withValues(alpha: 0.5),
               strokeWidth: 1,
               dashArray: [5, 5],
             );

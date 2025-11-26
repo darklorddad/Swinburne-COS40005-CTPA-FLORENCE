@@ -25,6 +25,34 @@ class HbA1cReading {
   bool get isHigh => value > 7.0;
 }
 
+class BloodPressureReading {
+  final DateTime timestamp;
+  final double systolic;
+  final double diastolic;
+  
+  BloodPressureReading({
+    required this.timestamp,
+    required this.systolic,
+    required this.diastolic,
+  });
+}
+
+class CholesterolReading {
+  final DateTime timestamp;
+  final double total;
+  final double ldl;
+  final double hdl;
+  final double triglycerides;
+
+  CholesterolReading({
+    required this.timestamp,
+    required this.total,
+    required this.ldl,
+    required this.hdl,
+    required this.triglycerides,
+  });
+}
+
 class ActivityData {
   final DateTime date;
   final int steps;
@@ -101,8 +129,12 @@ class Medication {
 
 class PatientHealthData {
   final String patientId;
+  final double weight; // kg
+  final double height; // cm
   final List<GlucoseReading> glucoseReadings;
   final List<HbA1cReading> hbA1cReadings;
+  final List<BloodPressureReading> bloodPressureReadings;
+  final List<CholesterolReading> cholesterolReadings;
   final List<ActivityData> activityData;
   final List<MealEntry> mealEntries;
   final List<AutomatedAction> automatedActions;
@@ -113,8 +145,12 @@ class PatientHealthData {
   
   PatientHealthData({
     required this.patientId,
+    required this.weight,
+    required this.height,
     required this.glucoseReadings,
     required this.hbA1cReadings,
+    required this.bloodPressureReadings,
+    required this.cholesterolReadings,
     required this.activityData,
     required this.mealEntries,
     required this.automatedActions,

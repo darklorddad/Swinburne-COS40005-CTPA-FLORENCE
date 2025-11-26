@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/patient.dart';
-import '../theme/app_theme.dart';
-
+import 'package:clinician_dashboard/theme/app_theme.dart';
+import 'package:clinician_dashboard/models/patient.dart';
 
 class RiskIndicator extends StatelessWidget {
   final RiskLevel riskLevel;
@@ -47,7 +46,7 @@ class RiskIndicator extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.5),
+              color: color.withValues(alpha: 0.5),
               blurRadius: 4,
               spreadRadius: 1,
             )

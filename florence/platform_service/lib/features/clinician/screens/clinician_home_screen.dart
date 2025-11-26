@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
-import '../models/patient.dart';
-import '../models/alert.dart';
-import '../services/mock_data_service.dart';
-import '../widgets/patient_list_item.dart';
-import '../widgets/alert_item.dart';
-import '../widgets/patient_filter.dart';
-import '../screens/patient_detail_screen.dart';
-import '../screens/clinician_profile_screen.dart';
+import 'package:clinician_dashboard/models/patient.dart';
+import 'package:clinician_dashboard/models/alert.dart';
+import 'package:clinician_dashboard/services/api_data_service.dart';
+import 'package:clinician_dashboard/widgets/patient_list_item.dart';
+import 'package:clinician_dashboard/widgets/alert_item.dart';
+import 'package:clinician_dashboard/widgets/patient_filter.dart';
+import 'package:clinician_dashboard/screens/patient_detail_screen.dart';
+import 'package:clinician_dashboard/screens/clinician_profile_screen.dart';
+import 'package:clinician_dashboard/theme/app_theme.dart';
+import 'package:clinician_dashboard/services/data_service.dart';
 
 class ClinicianHomeScreen extends StatefulWidget {
   const ClinicianHomeScreen({super.key});
@@ -16,9 +18,11 @@ class ClinicianHomeScreen extends StatefulWidget {
 }
 
 class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
-  final MockDataService _dataService = MockDataService();
-  late List<Patient> _patients;
-  late List<Alert> _alerts;
+  final DataService _dataService = ApiDataService();
+  List<Patient> _patients = [];
+  List<Alert> _alerts = [];
+  bool _isLoading = true;
+  String? _error;
   String _searchQuery = '';
   RiskLevel? _selectedRiskLevel;
   int _selectedUpdateFilter = 0;
@@ -28,8 +32,34 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _patients = _dataService.getPatients();
-    _alerts = _dataService.getAlerts();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final patients = await _dataService.getPatients();
+      final alerts = await _dataService.getAlerts();
+      
+      if (mounted) {
+        setState(() {
+          _patients = patients;
+          _alerts = alerts;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -105,66 +135,84 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
               ],
             ),
           ),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search patient by name or ID',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                        color: _showFilters ? Colors.blue : null,
+          body: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Error: $_error'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadData,
+                            child: const Text('Retry'),
+                          ),
+                        ],
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _showFilters = !_showFilters;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  },
-                ),
-              ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Search bar
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: TextField(
+                            decoration: InputDecoration(
+                              hintText: 'Search patient by name or ID',
+                              prefixIcon: const Icon(Icons.search),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                                  color: _showFilters ? AppTheme.primaryColor : null,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _showFilters = !_showFilters;
+                                  });
+                                },
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                          ),
+                        ),
 
-              if (_showFilters)
-                PatientFilters(
-                  onRiskFilterChanged: (riskLevel) {
-                    setState(() {
-                      _selectedRiskLevel = riskLevel;
-                    });
-                  },
-                  onLastUpdateFilterChanged: (filter) {
-                    setState(() {
-                      _selectedUpdateFilter = filter;
-                    });
-                  },
-                  selectedRiskLevel: _selectedRiskLevel,
-                  selectedUpdateFilter: _selectedUpdateFilter,
-                ),
+                        if (_showFilters)
+                          PatientFilters(
+                            onRiskFilterChanged: (riskLevel) {
+                              setState(() {
+                                _selectedRiskLevel = riskLevel;
+                              });
+                            },
+                            onLastUpdateFilterChanged: (filter) {
+                              setState(() {
+                                _selectedUpdateFilter = filter;
+                              });
+                            },
+                            selectedRiskLevel: _selectedRiskLevel,
+                            selectedUpdateFilter: _selectedUpdateFilter,
+                          ),
 
-              // Tabs content
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    _buildPatientsTabContent(),
-                    _buildAlertsTabContent(),
-                  ],
-                ),
-              ),
-            ],
-          ),
+                        // Tabs content
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              _buildPatientsTabContent(),
+                              _buildAlertsTabContent(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
           floatingActionButton: FloatingActionButton(
             child: const Icon(Icons.add),
             onPressed: () {
@@ -198,58 +246,76 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
           ),
         ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Search bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search patient by name or ID',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _showFilters ? Icons.filter_list_off : Icons.filter_list,
-                    color: _showFilters ? Colors.blue : null,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 64, color: Colors.red),
+                      const SizedBox(height: 16),
+                      Text('Error: $_error'),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: _loadData,
+                        child: const Text('Retry'),
+                      ),
+                    ],
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _showFilters = !_showFilters;
-                    });
-                  },
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                });
-              },
-            ),
-          ),
-          
-          // Filters
-          if (_showFilters)
-            PatientFilters(
-              onRiskFilterChanged: (riskLevel) {
-                setState(() {
-                  _selectedRiskLevel = riskLevel;
-                });
-              },
-              onLastUpdateFilterChanged: (filter) {
-                setState(() {
-                  _selectedUpdateFilter = filter;
-                });
-              },
-              selectedRiskLevel: _selectedRiskLevel,
-              selectedUpdateFilter: _selectedUpdateFilter,
-            ),
-          
-          // Main content
-          Expanded(
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Search bar
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search patient by name or ID',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showFilters ? Icons.filter_list_off : Icons.filter_list,
+                              color: _showFilters ? AppTheme.primaryColor : null,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showFilters = !_showFilters;
+                              });
+                            },
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value;
+                          });
+                        },
+                      ),
+                    ),
+                    
+                    // Filters
+                    if (_showFilters)
+                      PatientFilters(
+                        onRiskFilterChanged: (riskLevel) {
+                          setState(() {
+                            _selectedRiskLevel = riskLevel;
+                          });
+                        },
+                        onLastUpdateFilterChanged: (filter) {
+                          setState(() {
+                            _selectedUpdateFilter = filter;
+                          });
+                        },
+                        selectedRiskLevel: _selectedRiskLevel,
+                        selectedUpdateFilter: _selectedUpdateFilter,
+                      ),
+
+                    // Main content
+                    Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -320,10 +386,8 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                             TextButton.icon(
                               icon: const Icon(Icons.refresh, size: 16),
                               label: const Text('Refresh'),
-                              onPressed: () {
-                                setState(() {
-                                  _alerts = _dataService.getAlerts();
-                                });
+                              onPressed: () async {
+                                await _loadData();
                               },
                             ),
                           ],
@@ -431,10 +495,8 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
               TextButton.icon(
                 icon: const Icon(Icons.refresh, size: 16),
                 label: const Text('Refresh'),
-                onPressed: () {
-                  setState(() {
-                    _alerts = _dataService.getAlerts();
-                  });
+                onPressed: () async {
+                  await _loadData();
                 },
               ),
             ],
@@ -526,7 +588,7 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
     _newPatientNameController.clear();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Add Patient'),
         content: TextField(
           controller: _newPatientNameController,
@@ -537,32 +599,44 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final name = _newPatientNameController.text.trim();
               if (name.isEmpty) return;
-              setState(() {
-                final newId = 'P${(_patients.length + 1).toString().padLeft(3, '0')}';
-                _patients.add(
-                  Patient(
-                    id: newId,
-                    name: name,
-                    age: 50,
-                    gender: 'Unknown',
-                    condition: ChronicCondition.type2Diabetes,
-                    riskLevel: RiskLevel.low,
-                    lastSync: DateTime.now(),
-                    contactInfo: '',
-                  ),
+              
+              try {
+                final newPatient = Patient(
+                  id: '', // Will be assigned by backend
+                  name: name,
+                  age: 50,
+                  gender: 'Unknown',
+                  condition: ChronicCondition.type2Diabetes,
+                  riskLevel: RiskLevel.low,
+                  lastSync: DateTime.now(),
+                  contactInfo: '',
                 );
-              });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Patient "$name" added')),
-              );
+                
+                await _dataService.addPatient(newPatient);
+                await _loadData(); // Reload to get updated list
+                
+                if (dialogContext.mounted) {
+                  Navigator.pop(dialogContext);
+                }
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Patient "$name" added')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error adding patient: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Add'),
           ),

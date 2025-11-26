@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/alert.dart';
-import '../theme/app_theme.dart';
+import 'package:clinician_dashboard/models/alert.dart';
+import 'package:clinician_dashboard/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class AlertItem extends StatelessWidget {
@@ -51,10 +51,10 @@ class AlertItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: _getAlertColor(alert.type).withOpacity(0.1),
+                  color: _getAlertColor(alert.type).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _getAlertColor(alert.type).withOpacity(0.5),
+                    color: _getAlertColor(alert.type).withValues(alpha: 0.5),
                     width: 1,
                   ),
                 ),

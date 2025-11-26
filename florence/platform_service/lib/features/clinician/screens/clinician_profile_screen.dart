@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_theme.dart';
-import '../../../config/routes.dart';
-import '../../../core/utils/helpers.dart';
-import '../../../main.dart';
+import 'package:clinician_dashboard/theme/app_theme.dart';
 
 class ClinicianProfileScreen extends StatefulWidget {
   const ClinicianProfileScreen({super.key});
@@ -95,27 +92,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
     });
   }
 
-  Future<void> _handleLogout() async {
-    final confirmed = await Helpers.showConfirmDialog(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out?',
-    );
-
-    if (confirmed && mounted) {
-      try {
-        await supabase.auth.signOut();
-        if (mounted) {
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      } catch (e) {
-        if (mounted) {
-          Helpers.showError(context, 'Failed to sign out');
-        }
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -142,11 +118,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 ),
               ],
             ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Sign Out',
-          )
         ],
       ),
       body: SingleChildScrollView(

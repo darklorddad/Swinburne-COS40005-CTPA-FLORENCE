@@ -10,6 +10,7 @@ class AppTheme {
   static const Color highRiskColor = Color(0xFFF44336); // Red
   static const Color mediumRiskColor = Color(0xFFFFC107); // Yellow/Amber
   static const Color lowRiskColor = Color(0xFF4CAF50); // Green
+  static const Color automatedActionColor = Color(0xFF9C27B0); // Purple for automated actions
   
   static const Color textPrimary = Color(0xFF212121); // Dark gray/black
   static const Color textSecondary = Color(0xFF70757A); // Medium gray
@@ -59,12 +60,12 @@ class AppTheme {
       surfaceTintColor: Colors.transparent,
     ),
     cardTheme: CardThemeData(
-      elevation: 1,
+      elevation: 0, // Minimal elevation as per screenshots
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       color: Colors.white,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20), // More rounded corners
       ),
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -120,16 +121,17 @@ class AppTheme {
       headingTextStyle: GoogleFonts.inter(fontWeight: FontWeight.w600),
     ),
     chipTheme: ChipThemeData(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF5F5F5), // Light gray background
       labelStyle: GoogleFonts.inter(
-        fontWeight: FontWeight.w500,
-        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
+        color: textPrimary,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: dividerColor, width: 1),
+        borderRadius: BorderRadius.circular(8), // Pill shape
+        side: BorderSide.none,
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     ),
     floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primaryColor,
