@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/models/health_data.dart';
-import 'package:clinician_dashboard/models/patient.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
-import 'package:clinician_dashboard/widgets/activity_chart.dart';
+import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/models/patient.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/widgets/activity_chart.dart';
 
 class ActivityAnalyticsScreen extends StatefulWidget {
   final Patient patient;
