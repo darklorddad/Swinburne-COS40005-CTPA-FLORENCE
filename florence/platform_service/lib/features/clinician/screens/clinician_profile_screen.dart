@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
 
 class ClinicianProfileScreen extends StatefulWidget {
   const ClinicianProfileScreen({super.key});

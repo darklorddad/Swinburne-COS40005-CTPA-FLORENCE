@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/models/patient.dart';
-import 'package:clinician_dashboard/models/alert.dart';
-import 'package:clinician_dashboard/services/api_data_service.dart';
-import 'package:clinician_dashboard/widgets/patient_list_item.dart';
-import 'package:clinician_dashboard/widgets/alert_item.dart';
-import 'package:clinician_dashboard/widgets/patient_filter.dart';
-import 'package:clinician_dashboard/screens/patient_detail_screen.dart';
-import 'package:clinician_dashboard/screens/clinician_profile_screen.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
-import 'package:clinician_dashboard/services/data_service.dart';
+import 'package:florence/features/clinician/models/patient.dart';
+import 'package:florence/features/clinician/models/alert.dart';
+import 'package:florence/features/clinician/services/api_data_service.dart';
+import 'package:florence/features/clinician/widgets/patient_list_item.dart';
+import 'package:florence/features/clinician/widgets/alert_item.dart';
+import 'package:florence/features/clinician/widgets/patient_filter.dart';
+import 'package:florence/features/clinician/screens/patient_detail_screen.dart';
+import 'package:florence/features/clinician/screens/clinician_profile_screen.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/services/data_service.dart';
 
 class ClinicianHomeScreen extends StatefulWidget {
   const ClinicianHomeScreen({super.key});

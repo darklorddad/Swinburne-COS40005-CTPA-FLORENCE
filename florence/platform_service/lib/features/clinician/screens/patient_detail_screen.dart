@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/models/patient.dart';
-import 'package:clinician_dashboard/models/health_data.dart';
-import 'package:clinician_dashboard/services/api_data_service.dart';
-import 'package:clinician_dashboard/services/data_service.dart';
-import 'package:clinician_dashboard/widgets/risk_indicator.dart';
-import 'package:clinician_dashboard/widgets/bmi_gauge.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
-import 'package:clinician_dashboard/screens/glucose_analytics_screen.dart';
-import 'package:clinician_dashboard/screens/hba1c_analytics_screen.dart';
-import 'package:clinician_dashboard/screens/blood_pressure_analytics_screen.dart';
-import 'package:clinician_dashboard/screens/cholesterol_analytics_screen.dart';
-import 'package:clinician_dashboard/screens/activity_analytics_screen.dart';
+import 'package:florence/features/clinician/models/patient.dart';
+import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/services/api_data_service.dart';
+import 'package:florence/features/clinician/services/data_service.dart';
+import 'package:florence/features/clinician/widgets/risk_indicator.dart';
+import 'package:florence/features/clinician/widgets/bmi_gauge.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/screens/glucose_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/hba1c_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/blood_pressure_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/cholesterol_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/activity_analytics_screen.dart';
 import 'package:intl/intl.dart';
 
 class _ChatMessage {
