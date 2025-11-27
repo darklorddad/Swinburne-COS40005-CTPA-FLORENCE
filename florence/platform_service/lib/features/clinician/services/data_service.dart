@@ -1,7 +1,7 @@
-import 'package:clinician_dashboard/models/patient.dart';
-import 'package:clinician_dashboard/models/alert.dart';
-import 'package:clinician_dashboard/models/health_data.dart';
-import 'package:clinician_dashboard/models/clinician_note.dart';
+import 'package:florence/features/clinician/models/patient.dart';
+import 'package:florence/features/clinician/models/alert.dart';
+import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/models/clinician_note.dart';
 
 /// Abstract data service interface for fetching patient and health data
 /// Implement this class with your API service (e.g., ApiDataService)

@@ -1,9 +1,9 @@
-import 'package:clinician_dashboard/models/patient.dart';
-import 'package:clinician_dashboard/models/alert.dart';
-import 'package:clinician_dashboard/models/health_data.dart';
-import 'package:clinician_dashboard/models/clinician_note.dart';
-import 'package:clinician_dashboard/services/data_service.dart';
-import 'package:clinician_dashboard/services/api_service.dart';
+import 'package:florence/features/clinician/models/patient.dart';
+import 'package:florence/features/clinician/models/alert.dart';
+import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/models/clinician_note.dart';
+import 'package:florence/features/clinician/services/data_service.dart';
+import 'package:florence/features/clinician/services/api_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiDataService implements DataService {

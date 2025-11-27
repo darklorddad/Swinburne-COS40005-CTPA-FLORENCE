@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/models/alert.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
+import 'package:florence/features/clinician/models/alert.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class AlertItem extends StatelessWidget {

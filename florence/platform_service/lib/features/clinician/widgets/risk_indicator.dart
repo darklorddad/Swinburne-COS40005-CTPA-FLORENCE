@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
-import 'package:clinician_dashboard/models/patient.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/models/patient.dart';
 
 class RiskIndicator extends StatelessWidget {
   final RiskLevel riskLevel;
