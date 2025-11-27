@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:clinician_dashboard/models/health_data.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
+import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 
 class ActivityChart extends StatelessWidget {
