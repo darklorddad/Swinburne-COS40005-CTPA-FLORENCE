@@ -117,6 +117,7 @@ class _ChartSectionState extends State<_ChartSection> {
   void initState() {
     super.initState();
     _selectedRange = widget.ranges.first;
+    if (widget.ranges.contains('1D')) _selectedRange = '1D';
   }
 
   List<MonitorData> _filterData() {
@@ -126,6 +127,7 @@ class _ChartSectionState extends State<_ChartSection> {
     final now = DateTime.now();
     Duration duration;
     switch (_selectedRange) {
+      case '1D': duration = const Duration(days: 1); break;
       case '1M': duration = const Duration(days: 30); break;
       case '3M': duration = const Duration(days: 90); break;
       case '6M': duration = const Duration(days: 180); break;
@@ -220,6 +222,7 @@ class _ChartSectionState extends State<_ChartSection> {
 
   String _getRangeLabel(String key) {
     switch (key) {
+      case '1D': return 'Daily';
       case '1M': return 'Monthly';
       case '3M': return 'Quarterly';
       case '6M': return 'Half Year';
@@ -436,7 +439,7 @@ class _BmiTrendSection extends StatelessWidget {
     return _ChartSection(
       title: 'Progress',
       icon: Icons.show_chart,
-      ranges: const ['3M', '6M', '1Y', 'ALL'],
+      ranges: const ['1D', '3M', '6M', '1Y', 'ALL'],
       infoText: 'Visualizes your BMI trends over time.\n\n'
           '• Y-Axis: BMI (kg/m²)\n'
           '• X-Axis: Time\n'
@@ -450,8 +453,12 @@ class _BmiTrendSection extends StatelessWidget {
         // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
-        
-        if (range == 'ALL') {
+
+        if (range == '1D') {
+          final startOfDay = DateTime(now.year, now.month, now.day);
+          minX = startOfDay.millisecondsSinceEpoch.toDouble();
+          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
+        } else if (range == 'ALL') {
           minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
           maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
           if (minX == maxX) {
@@ -504,7 +511,7 @@ class _BmiTrendSection extends StatelessWidget {
                         getTitlesWidget: (val, _) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                          final fmt = durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M');
+                          final fmt = range == '1D' ? DateFormat('HH:mm') : (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
 
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
@@ -560,7 +567,7 @@ class _BmiTrendSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('BMI Trend', AppTheme.primaryBlue, isCircle: true),
+                _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
                 _LegendItem('Normal Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
@@ -595,7 +602,7 @@ class _BmiCorrelationSection extends StatelessWidget {
           '• Purple Dots: HbA1c %\n'
           '• Goal: Observe if weight changes correlate with better blood sugar control.',
       allData: bmiReadings, // Pass BMI to drive range logic
-      ranges: const ['6M', '1Y', 'ALL'],
+      ranges: const ['1D', '6M', '1Y', 'ALL'],
       builder: (range, data) {
         // 'data' here is filtered BMI readings
         if (data.isEmpty) {
@@ -605,8 +612,12 @@ class _BmiCorrelationSection extends StatelessWidget {
         // Calculate X-Axis bounds based on selected range (Consistent with Trend Chart)
         double minX, maxX;
         final now = DateTime.now();
-        
-        if (range == 'ALL') {
+
+        if (range == '1D') {
+          final startOfDay = DateTime(now.year, now.month, now.day);
+          minX = startOfDay.millisecondsSinceEpoch.toDouble();
+          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
+        } else if (range == 'ALL') {
           minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
           maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
           if (minX == maxX) {
@@ -656,10 +667,16 @@ class _BmiCorrelationSection extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (val, _) {
-                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                            final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                            // Determine format based on range, similar to BMI Trend
+                            final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
+                            final fmt = range == '1D'
+                                ? DateFormat('HH:mm')
+                                : (durationDays > 365 ? DateFormat('MMM yy') : DateFormat('d/M'));
+
                            return Padding(
                              padding: const EdgeInsets.only(top: 8.0),
-                             child: Text(DateFormat('MM/yy').format(date), style: const TextStyle(fontSize: 9, color: Colors.grey)),
+                             child: Text(fmt.format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
                            );
                         }
                       ),
@@ -734,7 +751,7 @@ class _BmiCorrelationSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('BMI Trend', AppTheme.primaryBlue, isCircle: true),
+                _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
                 _LegendItem('HbA1c %', Colors.purple, isCircle: true),
               ],

@@ -186,15 +186,22 @@ class _ChartSectionState extends State<_ChartSection> {
   List<_BpReading> _filterData() {
     if (widget.allData.isEmpty) return [];
     final now = DateTime.now();
-    Duration duration;
+    DateTime cutoff;
     switch (_selectedRange) {
-      case '7D': duration = const Duration(days: 7); break;
-      case '14D': duration = const Duration(days: 14); break;
-      case '30D': duration = const Duration(days: 30); break;
+      case '7D':
+        cutoff = now.subtract(const Duration(days: 7));
+        break;
+      case '14D':
+        cutoff = now.subtract(const Duration(days: 14));
+        break;
+      case '30D':
+        cutoff = now.subtract(const Duration(days: 30));
+        break;
       case '1D':
-      default: duration = const Duration(hours: 24); break;
+      default:
+        cutoff = DateTime(now.year, now.month, now.day);
+        break;
     }
-    final cutoff = now.subtract(duration);
     return widget.allData.where((d) => d.timestamp.isAfter(cutoff)).toList();
   }
 
@@ -454,18 +461,11 @@ class _DualTrendSection extends StatelessWidget {
       builder: (range, data) {
         double minX, maxX;
         if (range == '1D') {
-          // For Daily view, always show full 24h of the specific day (or last 24h)
-          final now = DateTime.now();
-          // Align to start of day if data exists, otherwise last 24h
-          if (data.isNotEmpty) {
-             final day = data.last.timestamp;
-             minX = DateTime(day.year, day.month, day.day).millisecondsSinceEpoch.toDouble();
-             // Use next midnight for cleaner 24h axis division
-             maxX = DateTime(day.year, day.month, day.day).add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
-          } else {
-             minX = now.subtract(const Duration(hours: 24)).millisecondsSinceEpoch.toDouble();
-             maxX = now.millisecondsSinceEpoch.toDouble();
-          }
+           final now = DateTime.now();
+          // For Daily view, always show today's full 24h range
+          final startOfDay = DateTime(now.year, now.month, now.day);
+          minX = startOfDay.millisecondsSinceEpoch.toDouble();
+          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
         } else if (data.isNotEmpty) {
            minX = data.first.timestamp.millisecondsSinceEpoch.toDouble();
            maxX = data.last.timestamp.millisecondsSinceEpoch.toDouble();
@@ -638,22 +638,45 @@ class _FloatingBarSection extends StatelessWidget {
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, getTitlesWidget: (v, meta) {
-                        if (v.toInt() >= data.length) return const SizedBox();
-                        
-                        // Hide first and last labels
-                        if (v == 0 || v.toInt() == data.length - 1) return const SizedBox();
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        interval: range == '1D' ? (data.length > 0 ? data.length / 6 : 1) : 1,
+                        getTitlesWidget: (v, meta) {
+                          if (v.toInt() >= data.length) return const SizedBox();
 
-                        // Skip every other label if too many points
-                        if (data.length > 10 && v.toInt() % 2 != 0) return const SizedBox();
-                        
-                        final date = data[v.toInt()].timestamp;
-                        final text = range == '1D' 
-                            ? DateFormat('HH:mm').format(date) 
-                            : DateFormat('d/M').format(date);
-                            
-                        return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
-                      })),
+                          final int index = v.toInt();
+                          final int total = data.length;
+                          bool shouldSkip = false;
+
+                          // Smartly skip labels to avoid clutter
+                          switch (range) {
+                            case '1D':
+                              if (total > 12) shouldSkip = index % 3 != 0; // Show every 3rd
+                              else if (total > 5) shouldSkip = index % 2 != 0; // Show every 2nd
+                              break;
+                            case '30D':
+                              if (total > 15) shouldSkip = index % 5 != 0; // Show every 5th
+                              else if (total > 8) shouldSkip = index % 3 != 0; // Show every 3rd
+                              break;
+                            default: // 7D, 14D
+                              if (total > 10) shouldSkip = index % 2 != 0;
+                              break;
+                          }
+
+                          // But, always show the first and last label for context
+                          if (index == 0 || index == total - 1) {
+                            shouldSkip = false;
+                          }
+
+                          if (shouldSkip) return const SizedBox();
+
+                          final date = data[index].timestamp;
+                          final text = range == '1D'
+                              ? DateFormat('HH:mm').format(date)
+                              : DateFormat('d/M').format(date);
+
+                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
+                        })),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
