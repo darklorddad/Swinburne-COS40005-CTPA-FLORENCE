@@ -584,64 +584,86 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
   }
 
 
-  void _showAddPatientDialog() {
-    _newPatientNameController.clear();
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Add Patient'),
-        content: TextField(
-          controller: _newPatientNameController,
-          decoration: const InputDecoration(
-            labelText: 'Patient name',
-            border: OutlineInputBorder(),
+  Future<void> _showAddPatientDialog() async {
+    try {
+      // Show loading indicator while fetching
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(child: CircularProgressIndicator()),
+      );
+
+      final availablePatients = await _dataService.getAvailablePatients();
+      
+      if (!mounted) return;
+      Navigator.pop(context); // Dismiss loading
+
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Add Patient'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: availablePatients.isEmpty 
+              ? const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Text('No available patients found to add.'),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: availablePatients.length,
+                  itemBuilder: (context, index) {
+                    final patient = availablePatients[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                        child: Text(
+                          patient.name.isNotEmpty ? patient.name[0] : '?',
+                          style: const TextStyle(color: AppTheme.primaryColor),
+                        ),
+                      ),
+                      title: Text(patient.name),
+                      subtitle: Text('ID: ${patient.id}'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+                        onPressed: () async {
+                          try {
+                            await _dataService.assignPatient(patient.id);
+                            if (mounted) {
+                                Navigator.pop(dialogContext);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Patient ${patient.name} added to your list')),
+                                );
+                                _loadData();
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error adding patient: $e')),
+                              );
+                            }
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Close'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final name = _newPatientNameController.text.trim();
-              if (name.isEmpty) return;
-              
-              try {
-                final newPatient = Patient(
-                  id: '', // Will be assigned by backend
-                  name: name,
-                  age: 50,
-                  gender: 'Unknown',
-                  condition: ChronicCondition.type2Diabetes,
-                  riskLevel: RiskLevel.low,
-                  lastSync: DateTime.now(),
-                  contactInfo: '',
-                );
-                
-                await _dataService.addPatient(newPatient);
-                await _loadData(); // Reload to get updated list
-                
-                if (dialogContext.mounted) {
-                  Navigator.pop(dialogContext);
-                }
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Patient "$name" added')),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error adding patient: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading if error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading available patients: $e')),
+        );
+      }
+    }
   }
 }

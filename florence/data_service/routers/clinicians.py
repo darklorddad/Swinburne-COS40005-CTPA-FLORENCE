@@ -89,6 +89,36 @@ async def get_assigned_patients(clinician_profile: dict = Depends(get_current_cl
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve assigned patients: {str(e)}")
 
+@router.get("/available-patients", summary="Get list of unassigned patients")
+async def get_available_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves a list of patients who are not currently assigned to any clinician."""
+    try:
+        # Fetch patients where clinician_id is NULL
+        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level').is_('clinician_id', 'null').execute()
+        return patients_response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve available patients: {str(e)}")
+
+@router.post("/patients/{patient_id}/assign", summary="Assign a patient to myself")
+async def assign_patient_to_me(patient_id: int, clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Assigns an unassigned patient to the current clinician."""
+    try:
+        # Check if patient is unassigned first to prevent stealing
+        check = supabase.table('patient_profiles').select('clinician_id').eq('id', patient_id).single().execute()
+        if check.data.get('clinician_id') is not None:
+             raise HTTPException(status_code=400, detail="Patient is already assigned to a clinician.")
+
+        update_payload = {
+            "clinician_id": clinician_profile['id']
+        }
+        updated_patient = supabase.table('patient_profiles').update(update_payload).eq('id', patient_id).execute()
+        
+        return updated_patient.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to assign patient: {str(e)}")
+
 @router.get("/me/patients/{patient_id}", summary="Get full profile & data for an assigned patient only")
 async def get_assigned_patient_details(patient_id: int, clinician_profile: dict = Depends(get_current_clinician_profile)):
     """

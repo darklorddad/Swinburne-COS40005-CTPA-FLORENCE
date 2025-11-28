@@ -17,6 +17,12 @@ abstract class DataService {
   
   /// Get clinician notes for a specific patient
   Future<List<ClinicianNote>> getClinicianNotes(String patientId);
+
+  /// Get list of unassigned patients
+  Future<List<Patient>> getAvailablePatients();
+
+  /// Assign a patient to the current clinician
+  Future<void> assignPatient(String patientId);
   
   /// Add a new patient
   Future<Patient> addPatient(Patient patient);

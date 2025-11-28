@@ -17,7 +17,7 @@ class ApiDataService implements DataService {
       
       // Assuming data is a list of patient objects
       return (data as List).map((json) => Patient(
-        id: json['id'] ?? '',
+        id: json['id']?.toString() ?? '',
         name: json['name'] ?? 'Unknown',
         age: json['age'] ?? 0,
         gender: json['gender'] ?? 'Unknown',
@@ -30,6 +30,33 @@ class ApiDataService implements DataService {
       debugPrint('Error fetching patients: $e');
       return [];
     }
+  }
+
+  @override
+  Future<List<Patient>> getAvailablePatients() async {
+    try {
+      final data = await _api.get('/clinicians/available-patients');
+      if (data == null) return [];
+      
+      return (data as List).map((json) => Patient(
+        id: json['id']?.toString() ?? '',
+        name: json['name'] ?? 'Unknown',
+        age: json['age'] ?? 0,
+        gender: json['gender'] ?? 'Unknown',
+        condition: _parseCondition(json['condition']),
+        riskLevel: _parseRiskLevel(json['risk_level']),
+        lastSync: json['last_sync'] != null ? DateTime.parse(json['last_sync']) : DateTime.now(),
+        contactInfo: json['contact_info'] ?? '',
+      )).toList();
+    } catch (e) {
+      debugPrint('Error fetching available patients: $e');
+      return [];
+    }
+  }
+
+  @override
+  Future<void> assignPatient(String patientId) async {
+    await _api.post('/clinicians/patients/$patientId/assign', {});
   }
 
   @override
