@@ -7,6 +7,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../../../core/services/api_service.dart';
 
 /// Log Glucose Screen
 /// Allows users to record blood glucose readings
@@ -21,29 +22,33 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _glucoseController = TextEditingController();
   final _notesController = TextEditingController();
-  
+  final _apiService = ApiService();
+
   // State
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
-  String _selectedContext = 'Before Meal';
-  
-  // Context options
-  final List<String> _contextOptions = [
+  String _selectedTiming = 'No Meal';
+  String _selectedMealType = 'BREAKFAST';
+
+  final List<String> _timingOptions = [
+    'No Meal',
     'Before Meal',
-    'After Meal (1hr)',
-    'After Meal (2hr)',
-    'Fasting',
-    'Before Bed',
-    'Random',
+    'After Meal',
   ];
-  
+
+  final List<String> _mealTypeOptions = [
+    'BREAKFAST',
+    'LUNCH',
+    'DINNER',
+  ];
+
   @override
   void dispose() {
     _glucoseController.dispose();
     _notesController.dispose();
     super.dispose();
   }
-  
+
   /// Handle save
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
@@ -54,27 +59,55 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // TODO: Save to Supabase
-      // final glucoseValue = double.parse(_glucoseController.text);
-      // await healthService.saveGlucoseReading({
-      //   'value': glucoseValue,
-      //   'context': _selectedContext,
-      //   'timestamp': _selectedDateTime.toIso8601String(),
-      //   'notes': _notesController.text.trim(),
-      // });
+      final glucoseValue = double.parse(_glucoseController.text);
+      final timestamp = _selectedDateTime.toIso8601String();
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      if (_selectedTiming == 'No Meal') {
+        await _apiService.post('/patients/me/monitor-data', {
+          'data_type': 'GLUCOSE',
+          'value': glucoseValue,
+          'measured_at': timestamp,
+        });
+      } 
+      else {
+        // Format date as YYYY-MM-DD
+        final logDate = "${_selectedDateTime.year}-${_selectedDateTime.month.toString().padLeft(2, '0')}-${_selectedDateTime.day.toString().padLeft(2, '0')}";
+        
+        final isBefore = _selectedTiming == 'Before Meal';
+        
+        // Construct payload for Daily Log
+        final Map<String, dynamic> payload = {
+          'log_date': logDate,
+          'meal_time': _selectedMealType,
+          // Only send description if it is NOT before meal (i.e. it is After Meal)
+          'meal_desc': (!isBefore && _notesController.text.trim().isNotEmpty) 
+              ? _notesController.text.trim() 
+              : null,
+        };
+
+        // Add specific glucose fields based on context
+        if (isBefore) {
+          payload['glucose_before_meal'] = glucoseValue;
+          payload['glucose_before_meal_time'] = timestamp;
+        } else {
+          payload['glucose_after_meal'] = glucoseValue;
+          payload['glucose_after_meal_time'] = timestamp;
+        }
+
+        await _apiService.post('/patients/me/daily-logs', payload);
+      }
       
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');
-        
-        // Go back to dashboard
         AppRoutes.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to save glucose reading');
+        if (e.toString().contains('409')) {
+          Helpers.showError(context, 'A log for this meal already exists today.');
+        } else {
+          Helpers.showError(context, 'Failed to save glucose reading: ${e.toString()}');
+        }
       }
     } finally {
       if (mounted) {
@@ -82,7 +115,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       }
     }
   }
-  
+
   /// Show date time picker
   Future<void> _selectDateTime() async {
     final date = await showDatePicker(
@@ -91,13 +124,13 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now(),
     );
-    
+
     if (date != null && mounted) {
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
       );
-      
+
       if (time != null && mounted) {
         setState(() {
           _selectedDateTime = DateTime(
@@ -111,12 +144,12 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
     final glucoseColor = _getGlucoseColor(glucoseValue);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log Glucose'),
@@ -141,23 +174,23 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
               // Info card
               _buildInfoCard(),
               const SizedBox(height: 24),
-              
+
               // Glucose value input (large and prominent)
               _buildGlucoseInput(glucoseColor),
               const SizedBox(height: 24),
-              
+
               // Date and time
               _buildDateTimeSection(),
               const SizedBox(height: 24),
-              
+
               // Context selection
               _buildContextSection(),
               const SizedBox(height: 24),
-              
+
               // Notes (optional)
               _buildNotesSection(),
               const SizedBox(height: 32),
-              
+
               // Save button
               PrimaryButton(
                 text: 'Save Reading',
@@ -166,7 +199,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
                 width: double.infinity,
               ),
               const SizedBox(height: 16),
-              
+
               // Reference ranges
               _buildReferenceRanges(),
             ],
@@ -175,7 +208,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ),
     );
   }
-  
+
   /// Build info card
   Widget _buildInfoCard() {
     return BaseCard(
@@ -200,7 +233,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ),
     );
   }
-  
+
   /// Build glucose input
   Widget _buildGlucoseInput(Color? glucoseColor) {
     return Container(
@@ -223,7 +256,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
                 ),
           ),
           const SizedBox(height: 16),
-          
+
           // Large glucose input
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -235,7 +268,8 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
                 child: TextFormField(
                   controller: _glucoseController,
                   validator: Validators.glucose,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                         fontSize: 64,
@@ -261,7 +295,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
               ),
             ],
           ),
-          
+
           // Status indicator
           if (glucoseColor != null) ...[
             const SizedBox(height: 16),
@@ -284,7 +318,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ),
     );
   }
-  
+
   /// Build date time section
   Widget _buildDateTimeSection() {
     return BaseCard(
@@ -308,7 +342,6 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
           InkWell(
             onTap: _selectDateTime,
             borderRadius: BorderRadius.circular(12),
@@ -334,15 +367,17 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
                       children: [
                         Text(
                           Formatters.date(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         Text(
                           Formatters.time(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondaryColor,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppTheme.textSecondaryColor,
+                                  ),
                         ),
                       ],
                     ),
@@ -359,7 +394,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ),
     );
   }
-  
+
   /// Build context section
   Widget _buildContextSection() {
     return BaseCard(
@@ -368,11 +403,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
         children: [
           Row(
             children: [
-              Icon(
-                Icons.restaurant,
-                size: 20,
-                color: AppTheme.primaryBlue,
-              ),
+              Icon(Icons.restaurant, size: 20, color: AppTheme.primaryBlue),
               const SizedBox(width: 8),
               Text(
                 'Context',
@@ -383,18 +414,17 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          
+
+          // 1. Timing Selection (No Meal, Before, After)
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _contextOptions.map((context) {
-              final isSelected = context == _selectedContext;
+            children: _timingOptions.map((timing) {
+              final isSelected = timing == _selectedTiming;
               return ChoiceChip(
-                label: Text(context),
+                label: Text(timing),
                 selected: isSelected,
-                onSelected: (_) {
-                  setState(() => _selectedContext = context);
-                },
+                onSelected: (_) => setState(() => _selectedTiming = timing),
                 selectedColor: AppTheme.primaryBlue,
                 labelStyle: TextStyle(
                   color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
@@ -403,13 +433,52 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
               );
             }).toList(),
           ),
+
+          // 2. Meal Type Selection (Only if Before/After is selected)
+          if (_selectedTiming != 'No Meal') ...[
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              'Select Meal',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _mealTypeOptions.map((meal) {
+                final isSelected = meal == _selectedMealType;
+                final displayLabel = meal[0] + meal.substring(1).toLowerCase();
+
+                return ChoiceChip(
+                  label: Text(displayLabel),
+                  selected: isSelected,
+                  onSelected: (_) => setState(() => _selectedMealType = meal),
+                  selectedColor:
+                      AppTheme.primaryBlue,
+                  labelStyle: TextStyle(
+                    color:
+                        isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                    fontWeight:
+                        isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );
   }
-  
+
   /// Build notes section
   Widget _buildNotesSection() {
+    // Only show notes if "After Meal" is selected
+    if (_selectedTiming != 'After Meal') return const SizedBox.shrink();
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -417,13 +486,13 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
           Row(
             children: [
               Icon(
-                Icons.notes,
+                Icons.menu_book,
                 size: 20,
                 color: AppTheme.primaryBlue,
               ),
               const SizedBox(width: 8),
               Text(
-                'Notes (Optional)',
+                'Meal Details',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -434,7 +503,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
           
           CustomTextField(
             controller: _notesController,
-            hint: 'Add any notes about this reading...',
+            hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
             maxLines: 3,
             textInputAction: TextInputAction.done,
           ),
@@ -442,7 +511,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ),
     );
   }
-  
+
   /// Build reference ranges
   Widget _buildReferenceRanges() {
     return BaseCard(
@@ -457,7 +526,6 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
                 ),
           ),
           const SizedBox(height: 12),
-          
           _buildRangeItem(
             'Normal',
             '70-180 mg/dL',
@@ -479,7 +547,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ),
     );
   }
-  
+
   /// Build single range item
   Widget _buildRangeItem(String label, String range, Color color) {
     return Row(
@@ -509,11 +577,11 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       ],
     );
   }
-  
+
   /// Get glucose color based on value
   Color? _getGlucoseColor(double? value) {
     if (value == null) return null;
-    
+
     if (value < 70) {
       return AppTheme.glucoseLow;
     } else if (value > 180) {
@@ -522,11 +590,11 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
       return AppTheme.glucoseNormal;
     }
   }
-  
+
   /// Get glucose status text
   String _getGlucoseStatus(double? value) {
     if (value == null) return '';
-    
+
     if (value < 70) {
       return 'Low - Eat something!';
     } else if (value > 180) {
