@@ -28,25 +28,6 @@ class _LogActivityScreenState extends State<LogActivityScreen> {
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
-  // Activity type options with icons and colors
-  final List<Map<String, dynamic>> _activityTypes = [
-    {
-      'name': 'Walking',
-      'icon': Icons.directions_walk,
-      'color': const Color(0xFF4CAF50)
-    },
-    {'name': 'Running', 'icon': Icons.directions_run, 'color': const Color(0xFFFF5722)},
-    {'name': 'Cycling', 'icon': Icons.pedal_bike, 'color': const Color(0xFF2196F3)},
-    {'name': 'Swimming', 'icon': Icons.pool, 'color': const Color(0xFF00BCD4)},
-    {'name': 'Gym', 'icon': Icons.fitness_center, 'color': const Color(0xFF9C27B0)},
-    {'name': 'Yoga', 'icon': Icons.self_improvement, 'color': const Color(0xFFE91E63)},
-    {'name': 'Sports', 'icon': Icons.sports_soccer, 'color': const Color(0xFFFF9800)},
-    {'name': 'Other', 'icon': Icons.more_horiz, 'color': const Color(0xFF607D8B)},
-  ];
-  
-  // Intensity options
-  final List<String> _intensityOptions = ['Light', 'Moderate', 'Vigorous'];
-  
   @override
   void dispose() {
     _descriptionController.dispose();
