@@ -31,7 +31,7 @@ abstract class DataService {
   /// Assign a patient to the current clinician
   Future<void> assignPatient(String patientId);
 
-  /// Assign a patient to the current clinician
+  /// Unassign a patient from the current clinician
   Future<void> unassignPatient(String patientId);
   
   /// Add a new patient
