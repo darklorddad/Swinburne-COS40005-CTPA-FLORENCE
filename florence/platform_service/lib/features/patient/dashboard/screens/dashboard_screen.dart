@@ -159,9 +159,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             // Quick actions
             QuickActionsGrid(
               onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-              onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure), // Updated
+              onLogCholesterol: () => AppRoutes.push(context, AppRoutes.logCholesterol),     // Updated
               onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
-              onLogMedication: () => AppRoutes.push(context, AppRoutes.logMedication),
             ),
             const SizedBox(height: spacing),
           ],
@@ -328,30 +328,12 @@ class _QuickLogModal extends StatelessWidget {
                 },
               ),
               _QuickLogButton(
-                icon: Icons.restaurant,
-                label: 'Meal',
-                color: AppTheme.mealColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logMeal);
-                },
-              ),
-              _QuickLogButton(
                 icon: Icons.directions_run,
                 label: 'Activity',
                 color: AppTheme.activityColor,
                 onTap: () {
                   Navigator.pop(context);
                   AppRoutes.push(context, AppRoutes.logActivity);
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.medication,
-                label: 'Medication',
-                color: AppTheme.medicationColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logMedication);
                 },
               ),
             ],

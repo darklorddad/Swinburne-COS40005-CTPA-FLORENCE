@@ -6,16 +6,16 @@ import '../../../../config/theme.dart';
 /// Grid of buttons for quick data logging
 class QuickActionsGrid extends StatelessWidget {
   final VoidCallback onLogGlucose;
-  final VoidCallback onLogMeal;
+  final VoidCallback onLogBloodPressure;
+  final VoidCallback onLogCholesterol;
   final VoidCallback onLogActivity;
-  final VoidCallback onLogMedication;
   
   const QuickActionsGrid({
     super.key,
     required this.onLogGlucose,
-    required this.onLogMeal,
+    required this.onLogBloodPressure,
+    required this.onLogCholesterol,
     required this.onLogActivity,
-    required this.onLogMedication,
   });
   
   @override
@@ -80,10 +80,18 @@ class QuickActionsGrid extends StatelessWidget {
               const SizedBox(width: 12),
               _buildActionButton(
                 context,
-                'Meal',
-                Icons.restaurant_rounded,
-                AppTheme.mealColor,
-                onLogMeal,
+                'Pressure',
+                Icons.monitor_heart_outlined,
+                AppTheme.primaryRed,
+                onLogBloodPressure,
+              ),
+              const SizedBox(width: 12),
+              _buildActionButton(
+                context,
+                'Cholesterol',
+                Icons.bloodtype_outlined,
+                AppTheme.accentPurple,
+                onLogCholesterol,
               ),
               const SizedBox(width: 12),
               _buildActionButton(
@@ -92,14 +100,6 @@ class QuickActionsGrid extends StatelessWidget {
                 Icons.directions_run_rounded,
                 AppTheme.activityColor,
                 onLogActivity,
-              ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                context,
-                'Meds',
-                Icons.medication_rounded,
-                AppTheme.medicationColor,
-                onLogMedication,
               ),
             ],
           ),
