@@ -291,6 +291,16 @@ class _QuickLogModal extends StatelessWidget {
                 },
               ),
               _QuickLogButton(
+                icon: Icons.percent,
+                label: 'HbA1c',
+                color: Colors.deepOrange, 
+                onTap: () {
+                  Navigator.pop(context);
+                  // Make sure to add this route to your AppRoutes class
+                  AppRoutes.push(context, AppRoutes.logHba1c); 
+                },
+              ),
+              _QuickLogButton(
                 icon: Icons.monitor_heart,
                 label: 'Blood Pressure',
                 color: AppTheme.primaryRed,

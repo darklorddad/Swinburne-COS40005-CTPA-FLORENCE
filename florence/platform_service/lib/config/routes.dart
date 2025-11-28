@@ -1,3 +1,5 @@
+import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
+
 import '../features/clinician/screens/clinician_profile_screen.dart';
 import '../features/clinician/screens/patient_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -65,6 +67,7 @@ class AppRoutes {
   static const String logBloodPressure = '/log/blood-pressure';
   static const String logCholesterol = '/log/cholesterol';
   static const String logBmi = '/log/bmi';
+  static const String logHba1c = '/log/Hba1c';
 
   // Clinician/Admin routes
   static const String clinicianDashboard = '/clinician-dashboard';
@@ -103,7 +106,8 @@ class AppRoutes {
         return _buildRoute(const GlucoseDetailScreen(patientId: 1), settings);
 
       case trendsDetail:
-        return _buildRoute(const GlucoseDetailScreen(patientId: 1)); // Mock ID for now
+        return _buildRoute(
+            const GlucoseDetailScreen(patientId: 1)); // Mock ID for now
 
       case bloodPressureDetail:
         return _buildRoute(const BloodPressureDetailScreen());
@@ -141,7 +145,7 @@ class AppRoutes {
       case logActivity:
         return _buildRoute(const LogActivityScreen(), settings);
 
-      case logMedication: 
+      case logMedication:
         return _buildRoute(const LogMedicationScreen(), settings);
 
       case logBloodPressure:
@@ -153,11 +157,14 @@ class AppRoutes {
       case logBmi:
         return _buildRoute(const LogBmiScreen(), settings);
 
+      case logHba1c:
+        return _buildRoute(const LogHba1cScreen(), settings);
+
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);
 
       case clinicianPatientDetail:
-        return _buildRoute(const PatientDetailScreen(patientId:   ''), settings);
+        return _buildRoute(const PatientDetailScreen(patientId: ''), settings);
 
       case clinicianProfile:
         return _buildRoute(const ClinicianProfileScreen(), settings);
