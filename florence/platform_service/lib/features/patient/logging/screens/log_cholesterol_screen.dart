@@ -19,8 +19,10 @@ class LogCholesterolScreen extends StatefulWidget {
 
 class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _cholesterolController = TextEditingController();
-  final _notesController = TextEditingController();
+  final _totalController = TextEditingController(); 
+  final _ldlController = TextEditingController();
+  final _hdlController = TextEditingController();
+  final _triglyceridesController = TextEditingController();
   final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
@@ -28,8 +30,10 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
 
   @override
   void dispose() {
-    _cholesterolController.dispose();
-    _notesController.dispose();
+    _totalController.dispose();
+    _ldlController.dispose();
+    _hdlController.dispose();
+    _triglyceridesController.dispose();
     super.dispose();
   }
 
@@ -42,19 +46,40 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'CHOLESTEROL',
-        'value': double.parse(_cholesterolController.text),
-        'measured_at': _selectedDateTime.toIso8601String(),
-      });
+      final String measuredAt = _selectedDateTime.toIso8601String();
+      final List<Future> apiCalls = [];
+
+      // Helper to prepare API calls
+      void addCallIfNotEmpty(TextEditingController controller, String dataType) {
+        if (controller.text.trim().isNotEmpty) {
+          apiCalls.add(_apiService.post('/patients/me/monitor-data', {
+            'data_type': dataType,
+            'value': double.parse(controller.text.trim()),
+            'measured_at': measuredAt,
+          }));
+        }
+      }
+
+      // Queue up requests for any field that has data
+      addCallIfNotEmpty(_totalController, 'CHOLESTEROL_TOTAL');
+      addCallIfNotEmpty(_ldlController, 'CHOLESTEROL_LDL');
+      addCallIfNotEmpty(_hdlController, 'CHOLESTEROL_HDL');
+      addCallIfNotEmpty(_triglyceridesController, 'CHOLESTEROL_TRIGLYCERIDES');
+
+      if (apiCalls.isEmpty) {
+        throw Exception("Please enter at least one value.");
+      }
+
+      // Execute all requests in parallel
+      await Future.wait(apiCalls);
 
       if (mounted) {
-        Helpers.showSuccess(context, 'Cholesterol logged successfully!');
+        Helpers.showSuccess(context, 'Cholesterol data logged successfully!');
         AppRoutes.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to log cholesterol: ${e.toString()}');
+        Helpers.showError(context, 'Failed to log data: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -103,8 +128,6 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
               const SizedBox(height: 24),
               _buildDateTimeSection(),
               const SizedBox(height: 24),
-              _buildNotesSection(),
-              const SizedBox(height: 32),
               PrimaryButton(
                 text: 'Save Reading',
                 onPressed: _isLoading ? null : _handleSave,
@@ -136,14 +159,43 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
 
   Widget _buildInputSection() {
     return BaseCard(
-      child: CustomTextField(
-        label: 'Total Cholesterol (mg/dL)',
-        hint: 'e.g., 190',
-        controller: _cholesterolController,
-        validator: (value) =>
-            Validators.minLength(value, 1, fieldName: 'Total Cholesterol'),
-        keyboardType: TextInputType.number,
-        prefixIcon: const Icon(Icons.bloodtype_outlined),
+      child: Column(
+        children: [
+          CustomTextField(
+            label: 'Total Cholesterol (mg/dL)',
+            hint: 'e.g., 190',
+            controller: _totalController,
+            // Keep Total as required, or remove validator to make it optional
+            validator: (value) =>
+                Validators.minLength(value, 1, fieldName: 'Total Cholesterol'),
+            keyboardType: TextInputType.number,
+            prefixIcon: const Icon(Icons.bloodtype_outlined),
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            label: 'LDL Cholesterol (mg/dL)',
+            hint: 'e.g., 100',
+            controller: _ldlController,
+            keyboardType: TextInputType.number,
+            prefixIcon: const Icon(Icons.arrow_downward),
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            label: 'HDL Cholesterol (mg/dL)',
+            hint: 'e.g., 60',
+            controller: _hdlController,
+            keyboardType: TextInputType.number,
+            prefixIcon: const Icon(Icons.arrow_upward),
+          ),
+          const SizedBox(height: 16),
+          CustomTextField(
+            label: 'Triglycerides (mg/dL)',
+            hint: 'e.g., 150',
+            controller: _triglyceridesController,
+            keyboardType: TextInputType.number,
+            prefixIcon: const Icon(Icons.water_drop_outlined),
+          ),
+        ],
       ),
     );
   }
@@ -189,16 +241,6 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildNotesSection() {
-    return CustomTextField(
-      label: 'Notes (Optional)',
-      hint: 'e.g., Fasting test',
-      controller: _notesController,
-      maxLines: 3,
-      textInputAction: TextInputAction.done,
     );
   }
 }

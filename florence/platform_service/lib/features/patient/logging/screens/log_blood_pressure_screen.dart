@@ -21,7 +21,6 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
   final _formKey = GlobalKey<FormState>();
   final _systolicController = TextEditingController();
   final _diastolicController = TextEditingController();
-  final _notesController = TextEditingController();
   final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
@@ -31,7 +30,6 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
   void dispose() {
     _systolicController.dispose();
     _diastolicController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -122,8 +120,6 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
               const SizedBox(height: 24),
               _buildDateTimeSection(),
               const SizedBox(height: 24),
-              _buildNotesSection(),
-              const SizedBox(height: 32),
               PrimaryButton(
                 text: 'Save Reading',
                 onPressed: _isLoading ? null : _handleSave,
@@ -249,16 +245,6 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildNotesSection() {
-    return CustomTextField(
-      label: 'Notes (Optional)',
-      hint: 'Any symptoms or observations?',
-      controller: _notesController,
-      maxLines: 3,
-      textInputAction: TextInputAction.done,
     );
   }
 }
