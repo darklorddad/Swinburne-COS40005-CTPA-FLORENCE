@@ -248,50 +248,23 @@ class ApiDataService implements DataService {
     }
   }
 
-  List<GlucoseReading> _parseGlucoseReadings(List? logs) {
-    if (logs == null) return [];
-    return logs.map((log) => GlucoseReading(
-      timestamp: DateTime.parse(log['timestamp']),
-      value: (log['value'] ?? 0).toDouble(),
-      context: log['context'] ?? '',
-    )).toList();
-  }
-
-  List<HbA1cReading> _parseHbA1cReadings(List? logs) {
-    if (logs == null) return [];
-    return logs.map((log) => HbA1cReading(
-      timestamp: DateTime.parse(log['timestamp']),
-      value: (log['value'] ?? 0).toDouble(),
-    )).toList();
-  }
-
-  List<BloodPressureReading> _parseBPReadings(List? logs) {
-    if (logs == null) return [];
-    return logs.map((log) => BloodPressureReading(
-      timestamp: DateTime.parse(log['timestamp']),
-      systolic: (log['systolic'] ?? 0).toDouble(),
-      diastolic: (log['diastolic'] ?? 0).toDouble(),
-    )).toList();
-  }
-
-  List<CholesterolReading> _parseCholesterolReadings(List? logs) {
-    if (logs == null) return [];
-    return logs.map((log) => CholesterolReading(
-      timestamp: DateTime.parse(log['timestamp']),
-      total: (log['total'] ?? 0).toDouble(),
-      ldl: (log['ldl'] ?? 0).toDouble(),
-      hdl: (log['hdl'] ?? 0).toDouble(),
-      triglycerides: (log['triglycerides'] ?? 0).toDouble(),
-    )).toList();
+  AlertType _parseAlertType(String? type) {
+    switch (type) {
+      case 'highGlucose': return AlertType.highGlucose;
+      case 'lowGlucose': return AlertType.lowGlucose;
+      case 'highHbA1c': return AlertType.highHbA1c;
+      case 'highBloodPressure': return AlertType.highBloodPressure;
+      default: return AlertType.missedMedication; // Fallback
+    }
   }
 
   List<ActivityData> _parseActivityData(List? logs) {
     if (logs == null) return [];
     return logs.map((log) => ActivityData(
-      date: DateTime.parse(log['date']),
-      steps: log['steps'] ?? 0,
-      activeMinutes: log['active_minutes'] ?? 0,
-      caloriesBurned: log['calories'] ?? 0,
+      date: DateTime.parse(log['performed_at']),
+      steps: 0, // Not in DB yet
+      activeMinutes: log['duration_minutes'] ?? 0,
+      caloriesBurned: 0, // Not in DB yet
     )).toList();
   }
 }
