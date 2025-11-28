@@ -336,27 +336,41 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                         ),
                       ),
                       Expanded(
-                        child: _filteredPatients.isEmpty
-                            ? const Center(child: Text('No patients found'))
-                            : ListView.builder(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                itemCount: _filteredPatients.length,
-                                itemBuilder: (context, index) {
-                                  return PatientListItem(
-                                    patient: _filteredPatients[index],
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PatientDetailScreen(
-                                            patientId: _filteredPatients[index].id,
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: _filteredPatients.isEmpty
+                              ? LayoutBuilder(
+                                  builder: (context, constraints) => ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      Container(
+                                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                        child: const Center(child: Text('No patients found')),
+                                      )
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  itemCount: _filteredPatients.length,
+                                  itemBuilder: (context, index) {
+                                    return PatientListItem(
+                                      patient: _filteredPatients[index],
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PatientDetailScreen(
+                                              patientId: _filteredPatients[index].id,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                        ),
                       ),
                     ],
                   ),
@@ -394,28 +408,42 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                         ),
                       ),
                       Expanded(
-                        child: _alerts.isEmpty
-                            ? const Center(child: Text('No alerts'))
-                            : ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                itemCount: _alerts.length,
-                                itemBuilder: (context, index) {
-                                  return AlertItem(
-                                    alert: _alerts[index],
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => PatientDetailScreen(
-                                            patientId: _alerts[index].patientId,
-                                            initialTab: 1, // Show data visualization tab
+                        child: RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: _alerts.isEmpty
+                              ? LayoutBuilder(
+                                  builder: (context, constraints) => ListView(
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    children: [
+                                      Container(
+                                        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                                        child: const Center(child: Text('No alerts')),
+                                      )
+                                    ],
+                                  ),
+                                )
+                              : ListView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                  itemCount: _alerts.length,
+                                  itemBuilder: (context, index) {
+                                    return AlertItem(
+                                      alert: _alerts[index],
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => PatientDetailScreen(
+                                              patientId: _alerts[index].patientId,
+                                              initialTab: 1, // Show data visualization tab
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
+                                        );
+                                      },
+                                    );
+                                  },
+                                ),
+                        ),
                       ),
                     ],
                   ),
@@ -450,27 +478,41 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
           ),
         ),
         Expanded(
-          child: _filteredPatients.isEmpty
-              ? const Center(child: Text('No patients found'))
-              : ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  itemCount: _filteredPatients.length,
-                  itemBuilder: (context, index) {
-                    return PatientListItem(
-                      patient: _filteredPatients[index],
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PatientDetailScreen(
-                              patientId: _filteredPatients[index].id,
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            child: _filteredPatients.isEmpty
+                ? LayoutBuilder(
+                    builder: (context, constraints) => ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        Container(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: const Center(child: Text('No patients found')),
+                        )
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 16),
+                    itemCount: _filteredPatients.length,
+                    itemBuilder: (context, index) {
+                      return PatientListItem(
+                        patient: _filteredPatients[index],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PatientDetailScreen(
+                                patientId: _filteredPatients[index].id,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     );
@@ -503,28 +545,42 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
           ),
         ),
         Expanded(
-          child: _alerts.isEmpty
-              ? const Center(child: Text('No alerts'))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                  itemCount: _alerts.length,
-                  itemBuilder: (context, index) {
-                    return AlertItem(
-                      alert: _alerts[index],
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PatientDetailScreen(
-                              patientId: _alerts[index].patientId,
-                              initialTab: 1,
+          child: RefreshIndicator(
+            onRefresh: _loadData,
+            child: _alerts.isEmpty
+                ? LayoutBuilder(
+                    builder: (context, constraints) => ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        Container(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: const Center(child: Text('No alerts')),
+                        )
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                    itemCount: _alerts.length,
+                    itemBuilder: (context, index) {
+                      return AlertItem(
+                        alert: _alerts[index],
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PatientDetailScreen(
+                                patientId: _alerts[index].patientId,
+                                initialTab: 1,
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+          ),
         ),
       ],
     );
