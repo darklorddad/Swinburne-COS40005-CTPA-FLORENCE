@@ -555,7 +555,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: LineChart(
-                swapAnimationDuration: Duration.zero, // Fix janky animation
                 LineChartData(
                   minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(

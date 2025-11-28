@@ -484,7 +484,6 @@ class _DualTrendSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: LineChart(
-                swapAnimationDuration: Duration.zero, // Fix janky animation
                 LineChartData(
                   minX: minX, maxX: maxX, minY: 40, maxY: 180,
                   gridData: FlGridData(
@@ -631,7 +630,6 @@ class _FloatingBarSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: BarChart(
-                swapAnimationDuration: Duration.zero, // Fix animation
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: 200, minY: 40,
@@ -752,7 +750,6 @@ class _ScatterSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: ScatterChart(
-                swapAnimationDuration: Duration.zero, // Fix animation
                 ScatterChartData(
                   scatterSpots: data.map((r) {
                     Color dotColor;
