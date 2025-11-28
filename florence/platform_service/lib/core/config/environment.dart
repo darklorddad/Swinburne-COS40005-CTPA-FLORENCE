@@ -22,9 +22,9 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL (Data Service)
-  static const String apiUrl = 'http://127.0.0.1:8000';       // Local (Chrome)
+  // static const String apiUrl = 'http://127.0.0.1:8000';       // Local (Chrome)
   // static const String apiUrl = 'http://10.0.2.2:8000';        // Local (Android Emulator)
-  // static const String apiUrl = 'https://ds-florence-dhp.vercel.app'; // Production
+  static const String apiUrl = 'https://ds-florence-dhp.vercel.app'; // Production
 
   /// Chatbot Service URL
   // static const String chatbotServiceUrl = 'http://127.0.0.1:8001';      // Local (Chrome)
