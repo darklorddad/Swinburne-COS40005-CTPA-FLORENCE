@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/services/data_service.dart';
+import 'package:florence/features/clinician/services/api_data_service.dart';
+import 'package:florence/features/clinician/models/clinician.dart';
 
 class ClinicianProfileScreen extends StatefulWidget {
   const ClinicianProfileScreen({super.key});
@@ -11,53 +14,59 @@ class ClinicianProfileScreen extends StatefulWidget {
 
 class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
   final _formKey = GlobalKey<FormState>();
+  final DataService _dataService = ApiDataService();
   
   // Form controllers
-  final TextEditingController _nameController = TextEditingController(text: 'Dr. Example Clinician');
-  final TextEditingController _mobileController = TextEditingController(text: '+601234567890');
-  final TextEditingController _loginIdController = TextEditingController(text: 'clinician01');
-  final TextEditingController _passwordController = TextEditingController(text: '••••••••');
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _mobileController = TextEditingController();
   
   // Dropdown values
-  String _selectedGender = 'Male';
-  String _selectedCountry = 'Malaysia';
-  String _selectedProfession = 'Endocrinologist';
+  String? _selectedGender;
   
   bool _isEditing = false;
-  bool _obscurePassword = true;
+  bool _isLoading = true;
+  Clinician? _clinician;
+  String? _email;
 
   // Available options
   final List<String> _genders = ['Male', 'Female', 'Other'];
-  final List<String> _countries = [
-    'Malaysia',
-    'Singapore',
-    'Thailand',
-    'Indonesia',
-    'Philippines',
-    'Vietnam',
-    'United States',
-    'United Kingdom',
-    'Australia',
-    'India',
-    'China',
-    'Japan',
-  ];
-  final List<String> _professions = [
-    'Endocrinologist',
-    'General Practitioner',
-    'Internal Medicine',
-    'Family Physician',
-    'Diabetologist',
-    'Cardiologist',
-    'Nephrologist',
-  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() => _isLoading = true);
+    try {
+      final clinician = await _dataService.getClinicianProfile();
+      final email = Supabase.instance.client.auth.currentUser?.email;
+      
+      if (mounted) {
+        setState(() {
+          _clinician = clinician;
+          _email = email;
+          _nameController.text = clinician.name;
+          _mobileController.text = clinician.phoneNumber;
+          _selectedGender = clinician.gender.isNotEmpty ? clinician.gender : null;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading profile: $e')),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
     _nameController.dispose();
     _mobileController.dispose();
-    _loginIdController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -67,26 +76,45 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
     });
   }
 
-  void _saveProfile() {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isEditing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully')),
-      );
+  Future<void> _saveProfile() async {
+    if (_formKey.currentState!.validate() && _clinician != null) {
+      try {
+        final updatedClinician = Clinician(
+          id: _clinician!.id,
+          userId: _clinician!.userId,
+          name: _nameController.text,
+          phoneNumber: _mobileController.text,
+          gender: _selectedGender ?? '',
+          organisationId: _clinician!.organisationId,
+        );
+
+        await _dataService.updateClinicianProfile(updatedClinician);
+
+        if (mounted) {
+          setState(() {
+            _clinician = updatedClinician;
+            _isEditing = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile updated successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating profile: $e')),
+          );
+        }
+      }
     }
   }
 
   void _cancelEdit() {
-    // Reset to original values
-    _nameController.text = 'Dr. Example Clinician';
-    _mobileController.text = '+601234567890';
-    _loginIdController.text = 'clinician01';
-    _passwordController.text = '••••••••';
-    _selectedGender = 'Male';
-    _selectedCountry = 'Malaysia';
-    _selectedProfession = 'Endocrinologist';
+    if (_clinician != null) {
+      _nameController.text = _clinician!.name;
+      _mobileController.text = _clinician!.phoneNumber;
+      _selectedGender = _clinician!.gender.isNotEmpty ? _clinician!.gender : null;
+    }
     
     setState(() {
       _isEditing = false;
@@ -95,6 +123,12 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Clinician Profile'),
@@ -139,7 +173,9 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         radius: 40,
                         backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
                         child: Text(
-                          _nameController.text.split(' ').map((e) => e[0]).join(''),
+                          _nameController.text.isNotEmpty 
+                            ? _nameController.text.split(' ').map((e) => e.isNotEmpty ? e[0] : '').join('')
+                            : '?',
                           style: const TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
@@ -161,7 +197,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _selectedProfession,
+                              'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: AppTheme.textSecondary,
@@ -213,7 +249,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       
                       // Gender
                       DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
+                        value: _selectedGender,
                         decoration: const InputDecoration(
                           labelText: 'Gender',
                           prefixIcon: Icon(Icons.people),
@@ -229,31 +265,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                             ? (value) {
                                 setState(() {
                                   _selectedGender = value!;
-                                });
-                              }
-                            : null,
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Country
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedCountry,
-                        decoration: const InputDecoration(
-                          labelText: 'Country',
-                          prefixIcon: Icon(Icons.public),
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _countries.map((country) {
-                          return DropdownMenuItem(
-                            value: country,
-                            child: Text(country),
-                          );
-                        }).toList(),
-                        onChanged: _isEditing
-                            ? (value) {
-                                setState(() {
-                                  _selectedCountry = value!;
                                 });
                               }
                             : null,
@@ -285,50 +296,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
               
               const SizedBox(height: 24),
               
-              // Professional Information Section
-              const Text(
-                'Professional Information',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 12),
-              
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Type of Profession
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedProfession,
-                        decoration: const InputDecoration(
-                          labelText: 'Type of Profession',
-                          prefixIcon: Icon(Icons.work),
-                          border: OutlineInputBorder(),
-                        ),
-                        items: _professions.map((profession) {
-                          return DropdownMenuItem(
-                            value: profession,
-                            child: Text(profession),
-                          );
-                        }).toList(),
-                        onChanged: _isEditing
-                            ? (value) {
-                                setState(() {
-                                  _selectedProfession = value!;
-                                });
-                              }
-                            : null,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
               // Account Information Section
               const Text(
                 'Account Information',
@@ -344,56 +311,28 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      // Login ID
+                      // Email (Read-only)
                       TextFormField(
-                        controller: _loginIdController,
-                        enabled: _isEditing,
+                        initialValue: _email,
+                        enabled: false,
                         decoration: const InputDecoration(
-                          labelText: 'Login ID',
-                          prefixIcon: Icon(Icons.alternate_email),
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter login ID';
-                          }
-                          return null;
-                        },
                       ),
                       
                       const SizedBox(height: 16),
                       
-                      // Password
+                      // Organisation ID (Read-only)
                       TextFormField(
-                        controller: _passwordController,
-                        enabled: _isEditing,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: _isEditing
-                              ? IconButton(
-                                  icon: Icon(
-                                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _obscurePassword = !_obscurePassword;
-                                    });
-                                  },
-                                )
-                              : null,
-                          border: const OutlineInputBorder(),
+                        initialValue: _clinician?.organisationId.toString(),
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Organisation ID',
+                          prefixIcon: Icon(Icons.business),
+                          border: OutlineInputBorder(),
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter password';
-                          }
-                          if (_isEditing && value.length < 8) {
-                            return 'Password must be at least 8 characters';
-                          }
-                          return null;
-                        },
                       ),
                     ],
                   ),

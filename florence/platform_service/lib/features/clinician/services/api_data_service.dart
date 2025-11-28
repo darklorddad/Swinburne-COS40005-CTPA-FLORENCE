@@ -2,12 +2,25 @@ import 'package:florence/features/clinician/models/patient.dart';
 import 'package:florence/features/clinician/models/alert.dart';
 import 'package:florence/features/clinician/models/health_data.dart';
 import 'package:florence/features/clinician/models/clinician_note.dart';
+import 'package:florence/features/clinician/models/clinician.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
 import 'package:florence/features/clinician/services/api_service.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiDataService implements DataService {
   final ApiService _api = ApiService();
+
+  @override
+  Future<Clinician> getClinicianProfile() async {
+    final data = await _api.get('/clinicians/me');
+    if (data == null) throw Exception('Profile not found');
+    return Clinician.fromJson(data);
+  }
+
+  @override
+  Future<void> updateClinicianProfile(Clinician clinician) async {
+    await _api.put('/clinicians/me', clinician.toJson());
+  }
 
   @override
   Future<List<Patient>> getPatients() async {

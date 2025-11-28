@@ -2,10 +2,17 @@ import 'package:florence/features/clinician/models/patient.dart';
 import 'package:florence/features/clinician/models/alert.dart';
 import 'package:florence/features/clinician/models/health_data.dart';
 import 'package:florence/features/clinician/models/clinician_note.dart';
+import 'package:florence/features/clinician/models/clinician.dart';
 
 /// Abstract data service interface for fetching patient and health data
 /// Implement this class with your API service (e.g., ApiDataService)
 abstract class DataService {
+  /// Get current clinician profile
+  Future<Clinician> getClinicianProfile();
+
+  /// Update clinician profile
+  Future<void> updateClinicianProfile(Clinician clinician);
+
   /// Get list of patients assigned to the current clinician
   Future<List<Patient>> getPatients();
   

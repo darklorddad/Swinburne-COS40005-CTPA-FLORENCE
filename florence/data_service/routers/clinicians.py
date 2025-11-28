@@ -66,6 +66,11 @@ class PatientThresholdUpdate(BaseModel):
     min_value: float
     max_value: float
 
+class ClinicianProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -79,6 +84,22 @@ router = APIRouter(
 async def get_own_clinician_profile(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves the complete profile for the currently authenticated clinician."""
     return clinician_profile
+
+@router.put("/me", summary="Update my clinician profile")
+async def update_own_clinician_profile(
+    update_data: ClinicianProfileUpdate,
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Updates the authenticated clinician's profile."""
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        updated_profile = supabase.table('clinician_profiles').update(update_dict).eq('id', clinician_profile['id']).execute()
+        return updated_profile.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
 @router.get("/me/patients", summary="Get a list of all patients assigned to me")
 async def get_assigned_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
