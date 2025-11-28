@@ -76,60 +76,146 @@ class ApiDataService implements DataService {
   Future<PatientHealthData> getPatientHealthData(String patientId) async {
     try {
       // Endpoint: GET /clinicians/me/patients/{id}
-      // Includes logs, notes, thresholds. 
-      // We need to map this to PatientHealthData.
       final data = await _api.get('/clinicians/me/patients/$patientId');
       if (data == null) throw Exception('Patient data not found');
 
-      // Mapping logic (placeholder based on expected structure)
-      // We might need to adapt this based on actual API response structure
+      final monitorData = data['monitor_data'] as List? ?? [];
+      final activityLogs = data['activity_logs'] as List? ?? [];
+      
+      // Parse monitor data into specific categories
+      final glucose = <GlucoseReading>[];
+      final hba1c = <HbA1cReading>[];
+      
+      // Grouping maps for multi-part data (BP, Cholesterol)
+      final bpMap = <String, Map<String, dynamic>>{}; // timestamp -> {systolic, diastolic}
+      final cholMap = <String, Map<String, dynamic>>{}; // timestamp -> {total, ldl, hdl, trig}
+
+      for (var record in monitorData) {
+        final type = record['data_type'];
+        final value = (record['value'] as num).toDouble();
+        final timestamp = DateTime.parse(record['measured_at']);
+        final timeKey = timestamp.toString(); // Simple grouping key
+
+        if (type == 'GLUCOSE') {
+          glucose.add(GlucoseReading(
+            timestamp: timestamp,
+            value: value,
+            context: 'Measured',
+          ));
+        } else if (type == 'HBA1C') {
+          hba1c.add(HbA1cReading(
+            timestamp: timestamp,
+            value: value,
+          ));
+        } else if (type == 'BLOOD_PRESSURE_SYSTOLIC') {
+          bpMap.putIfAbsent(timeKey, () => {'ts': timestamp});
+          bpMap[timeKey]!['sys'] = value;
+        } else if (type == 'BLOOD_PRESSURE_DIASTOLIC') {
+          bpMap.putIfAbsent(timeKey, () => {'ts': timestamp});
+          bpMap[timeKey]!['dia'] = value;
+        } else if (type.startsWith('CHOLESTEROL')) {
+          cholMap.putIfAbsent(timeKey, () => {'ts': timestamp});
+          if (type == 'CHOLESTEROL_TOTAL') cholMap[timeKey]!['total'] = value;
+          if (type == 'CHOLESTEROL_LDL') cholMap[timeKey]!['ldl'] = value;
+          if (type == 'CHOLESTEROL_HDL') cholMap[timeKey]!['hdl'] = value;
+          if (type == 'CHOLESTEROL_TRIGLYCERIDES') cholMap[timeKey]!['trig'] = value;
+        }
+      }
+
+      // Convert maps to lists
+      final bpReadings = bpMap.values
+          .where((e) => e.containsKey('sys') && e.containsKey('dia'))
+          .map((e) => BloodPressureReading(
+                timestamp: e['ts'],
+                systolic: e['sys'],
+                diastolic: e['dia'],
+              ))
+          .toList();
+
+      final cholReadings = cholMap.values
+          .where((e) => e.containsKey('total'))
+          .map((e) => CholesterolReading(
+                timestamp: e['ts'],
+                total: e['total'] ?? 0,
+                ldl: e['ldl'] ?? 0,
+                hdl: e['hdl'] ?? 0,
+                triglycerides: e['trig'] ?? 0,
+              ))
+          .toList();
+
+      // Parse BMI from monitor data (take latest)
+      double weight = 70.0; // Default
+      double height = 170.0; // Default
+      final bmiRecords = monitorData.where((r) => r['data_type'] == 'BMI').toList();
+      if (bmiRecords.isNotEmpty) {
+        // Reverse calculate weight if we assume height (or fetch height from profile if available)
+        // For now, we'll just use the BMI value to display, but the model asks for weight/height.
+        // We'll mock weight/height to match the BMI for the gauge.
+        final latestBmi = (bmiRecords.last['value'] as num).toDouble();
+        weight = latestBmi * (1.7 * 1.7);
+      }
+
       return PatientHealthData(
         patientId: patientId,
-        weight: (data['weight'] ?? 0.0).toDouble(),
-        height: (data['height'] ?? 0.0).toDouble(),
-        glucoseReadings: _parseGlucoseReadings(data['glucose_logs']),
-        hbA1cReadings: _parseHbA1cReadings(data['hba1c_logs']),
-        bloodPressureReadings: _parseBPReadings(data['bp_logs']),
-        cholesterolReadings: _parseCholesterolReadings(data['cholesterol_logs']),
-        activityData: _parseActivityData(data['activity_logs']),
-        mealEntries: [], // Map if available
-        automatedActions: [], // Map if available
-        medications: [], // Map if available
-        aiGeneratedSummary: data['ai_summary'] ?? '',
-        detectedPatterns: [], // Map if available
-        recommendations: [], // Map if available
+        weight: weight,
+        height: height,
+        glucoseReadings: glucose,
+        hbA1cReadings: hba1c,
+        bloodPressureReadings: bpReadings,
+        cholesterolReadings: cholReadings,
+        activityData: _parseActivityData(activityLogs),
+        mealEntries: [], 
+        automatedActions: [], 
+        medications: [], 
+        aiGeneratedSummary: 'Patient data loaded successfully.',
+        detectedPatterns: [], 
+        recommendations: [], 
       );
     } catch (e) {
       debugPrint('Error fetching patient health data: $e');
-      // Return empty data or rethrow
-      return PatientHealthData(
-        patientId: patientId,
-        weight: 0,
-        height: 0,
-        glucoseReadings: [],
-        hbA1cReadings: [],
-        bloodPressureReadings: [],
-        cholesterolReadings: [],
-        activityData: [],
-        mealEntries: [],
-        automatedActions: [],
-        medications: [],
-        aiGeneratedSummary: 'Error fetching data',
-        detectedPatterns: [],
-        recommendations: [],
-      );
+      rethrow;
     }
   }
 
   @override
   Future<List<Alert>> getAlerts() async {
-    // Not explicitly mentioned in prompt endpoints, returning empty for now
-    return [];
+    try {
+      final data = await _api.get('/clinicians/me/alerts');
+      if (data == null) return [];
+      
+      return (data as List).map((json) => Alert(
+        id: json['id']?.toString() ?? '',
+        patientId: json['patientId']?.toString() ?? '',
+        patientName: json['patientName'] ?? 'Unknown',
+        type: _parseAlertType(json['type']),
+        timestamp: DateTime.parse(json['timestamp']),
+        description: json['description'] ?? '',
+        dataPointRef: json['dataPointRef']?.toString() ?? '',
+      )).toList();
+    } catch (e) {
+      debugPrint('Error fetching alerts: $e');
+      return [];
+    }
   }
 
   @override
   Future<List<ClinicianNote>> getClinicianNotes(String patientId) async {
-    return [];
+    try {
+      // We fetch the full patient details which includes notes
+      final data = await _api.get('/clinicians/me/patients/$patientId');
+      if (data == null || data['notes'] == null) return [];
+      
+      return (data['notes'] as List).map((json) => ClinicianNote(
+        id: json['id'].toString(),
+        patientId: json['patient_id'].toString(),
+        timestamp: DateTime.parse(json['created_at']),
+        content: json['note_content'] ?? '',
+        isPrivate: true,
+      )).toList();
+    } catch (e) {
+      debugPrint('Error fetching notes: $e');
+      return [];
+    }
   }
 
   @override

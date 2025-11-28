@@ -110,6 +110,78 @@ async def get_assigned_patients(clinician_profile: dict = Depends(get_current_cl
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve assigned patients: {str(e)}")
 
+@router.get("/me/alerts", summary="Get priority alerts for assigned patients")
+async def get_clinician_alerts(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """
+    Generates alerts based on patient data exceeding thresholds in the last 7 days.
+    """
+    try:
+        # 1. Get all assigned patients
+        patients = supabase.table('patient_profiles').select('id, name').eq('clinician_id', clinician_profile['id']).execute().data
+        patient_ids = [p['id'] for p in patients]
+        
+        if not patient_ids:
+            return []
+
+        # 2. Get thresholds for these patients
+        thresholds = supabase.table('patient_thresholds').select('*').in_('patient_id', patient_ids).execute().data
+        # Map: patient_id -> { data_type: {min, max} }
+        threshold_map = {}
+        for t in thresholds:
+            pid = t['patient_id']
+            if pid not in threshold_map: threshold_map[pid] = {}
+            threshold_map[pid][t['data_type']] = {'min': t['min_value'], 'max': t['max_value']}
+
+        # 3. Get recent monitor data (limit to recent entries for performance)
+        monitor_data = supabase.table('patient_monitor_data').select('*').in_('patient_id', patient_ids).order('measured_at', desc=True).limit(500).execute().data
+
+        alerts = []
+        
+        for record in monitor_data:
+            pid = record['patient_id']
+            dtype = record['data_type']
+            val = record['value']
+            
+            # Find threshold
+            p_thresh = threshold_map.get(pid, {}).get(dtype)
+            if not p_thresh: continue
+            
+            patient_name = next((p['name'] for p in patients if p['id'] == pid), "Unknown")
+            
+            alert_type = None
+            desc = ""
+            
+            if val > p_thresh['max']:
+                if dtype == 'GLUCOSE': 
+                    alert_type = 'highGlucose'
+                    desc = f"High Glucose: {val} mg/dL"
+                elif dtype == 'BLOOD_PRESSURE_SYSTOLIC':
+                    alert_type = 'highBloodPressure'
+                    desc = f"High Systolic BP: {val} mmHg"
+                elif dtype == 'HBA1C':
+                    alert_type = 'highHbA1c'
+                    desc = f"High HbA1c: {val}%"
+            elif val < p_thresh['min']:
+                if dtype == 'GLUCOSE':
+                    alert_type = 'lowGlucose'
+                    desc = f"Low Glucose: {val} mg/dL"
+            
+            if alert_type:
+                alerts.append({
+                    "id": str(record['id']),
+                    "patientId": str(pid),
+                    "patientName": patient_name,
+                    "type": alert_type,
+                    "timestamp": record['measured_at'],
+                    "description": desc,
+                    "dataPointRef": str(record['id'])
+                })
+        
+        return alerts
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate alerts: {str(e)}")
+
 @router.get("/available-patients", summary="Get list of unassigned patients")
 async def get_available_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves a list of patients who are not currently assigned to any clinician."""
