@@ -325,7 +325,7 @@ class _DietImpactChart extends StatelessWidget {
             barTouchData: BarTouchData(
               enabled: false,
               touchTooltipData: BarTouchTooltipData(
-                tooltipBgColor: Colors.transparent,
+                getTooltipColor: (_) => Colors.transparent,
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {

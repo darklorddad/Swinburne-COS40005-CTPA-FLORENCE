@@ -572,7 +572,7 @@ class _DualTrendSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      tooltipBgColor: Colors.black.withOpacity(0.8),
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                            final isSys = spot.barIndex == 0;
@@ -682,7 +682,7 @@ class _FloatingBarSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      tooltipBgColor: Colors.black.withOpacity(0.8),
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                          final r = data[group.x.toInt()];
                          return BarTooltipItem(
@@ -790,7 +790,7 @@ class _ScatterSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   scatterTouchData: ScatterTouchData(
                     touchTooltipData: ScatterTouchTooltipData(
-                      tooltipBgColor: Colors.black.withOpacity(0.8),
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (spot) {
                         return ScatterTooltipItem(
                           'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',

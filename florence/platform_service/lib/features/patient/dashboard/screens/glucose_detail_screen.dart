@@ -627,7 +627,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      tooltipBgColor: Colors.black.withOpacity(0.8),
+                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {

@@ -509,7 +509,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
             barTouchData: BarTouchData(
               enabled: false,
               touchTooltipData: BarTouchTooltipData(
-                tooltipBgColor: Colors.transparent,
+                getTooltipColor: (_) => Colors.transparent,
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -655,7 +655,7 @@ class _ActivityTimingChart extends StatelessWidget {
             }).toList(),
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
-                tooltipBgColor: Colors.black87,
+                getTooltipColor: (_) => Colors.black87,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                   if (dataPoints[group.x.toInt()].value == 0) return null;
