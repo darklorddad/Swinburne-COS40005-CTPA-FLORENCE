@@ -555,7 +555,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: LineChart(
-                duration: Duration.zero, // Fix janky animation
+                swapAnimationDuration: Duration.zero, // Fix janky animation
                 LineChartData(
                   minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
@@ -628,7 +628,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {

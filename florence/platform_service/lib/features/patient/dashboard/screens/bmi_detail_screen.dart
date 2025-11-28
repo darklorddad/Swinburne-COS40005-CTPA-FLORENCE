@@ -542,7 +542,7 @@ class _BmiTrendSection extends StatelessWidget {
                   ],
                   lineTouchData: LineTouchData(
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
@@ -710,7 +710,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                   ],
                   lineTouchData: LineTouchData(
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       getTooltipItems: (spots) {
                         return spots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());

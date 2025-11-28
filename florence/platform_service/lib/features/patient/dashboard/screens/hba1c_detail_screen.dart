@@ -549,7 +549,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
@@ -690,7 +690,7 @@ class _GoalComparisonSection extends StatelessWidget {
                   barTouchData: BarTouchData(
                     enabled: false, // Disable touch interaction, just show tooltip
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (_) => Colors.transparent,
+                      tooltipBgColor: Colors.transparent,
                       tooltipPadding: EdgeInsets.zero,
                       tooltipMargin: 4,
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {

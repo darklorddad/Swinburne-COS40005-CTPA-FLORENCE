@@ -484,7 +484,7 @@ class _DualTrendSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: LineChart(
-                duration: Duration.zero, // Fix janky animation
+                swapAnimationDuration: Duration.zero, // Fix janky animation
                 LineChartData(
                   minX: minX, maxX: maxX, minY: 40, maxY: 180,
                   gridData: FlGridData(
@@ -573,7 +573,7 @@ class _DualTrendSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                            final isSys = spot.barIndex == 0;
@@ -631,7 +631,7 @@ class _FloatingBarSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: BarChart(
-                duration: Duration.zero, // Fix animation
+                swapAnimationDuration: Duration.zero, // Fix animation
                 BarChartData(
                   alignment: BarChartAlignment.spaceAround,
                   maxY: 200, minY: 40,
@@ -684,7 +684,7 @@ class _FloatingBarSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                          final r = data[group.x.toInt()];
                          return BarTooltipItem(
@@ -752,7 +752,7 @@ class _ScatterSection extends StatelessWidget {
             SizedBox(
               height: 250,
               child: ScatterChart(
-                duration: Duration.zero, // Fix animation
+                swapAnimationDuration: Duration.zero, // Fix animation
                 ScatterChartData(
                   scatterSpots: data.map((r) {
                     Color dotColor;
@@ -793,7 +793,7 @@ class _ScatterSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   scatterTouchData: ScatterTouchData(
                     touchTooltipData: ScatterTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      tooltipBgColor: Colors.black.withOpacity(0.8),
                       getTooltipItems: (spot) {
                         return ScatterTooltipItem(
                           'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',
