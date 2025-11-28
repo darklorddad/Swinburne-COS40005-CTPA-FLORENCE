@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
@@ -22,7 +21,6 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
   final _formKey = GlobalKey<FormState>();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
-  final _notesController = TextEditingController();
   final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
@@ -42,7 +40,6 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
     _weightController.removeListener(_calculateBmi);
     _heightController.dispose();
     _weightController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -139,8 +136,6 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
               ],
               _buildDateTimeSection(),
               const SizedBox(height: 24),
-              _buildNotesSection(),
-              const SizedBox(height: 32),
               PrimaryButton(
                 text: 'Save Reading',
                 onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
@@ -284,16 +279,6 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildNotesSection() {
-    return CustomTextField(
-      label: 'Notes (Optional)',
-      hint: 'e.g., Morning measurement',
-      controller: _notesController,
-      maxLines: 3,
-      textInputAction: TextInputAction.done,
     );
   }
 }
