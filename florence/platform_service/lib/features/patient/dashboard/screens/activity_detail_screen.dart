@@ -1,8 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
+
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -509,7 +511,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
             barTouchData: BarTouchData(
               enabled: false,
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => Colors.transparent,
+                getTooltipColor: (group) => Colors.transparent,
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
@@ -655,7 +657,7 @@ class _ActivityTimingChart extends StatelessWidget {
             }).toList(),
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => Colors.black87,
+                getTooltipColor: (group) => Colors.black87,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
                   if (dataPoints[group.x.toInt()].value == 0) return null;

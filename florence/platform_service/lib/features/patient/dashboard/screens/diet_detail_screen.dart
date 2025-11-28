@@ -1,8 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
+
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -325,7 +327,7 @@ class _DietImpactChart extends StatelessWidget {
             barTouchData: BarTouchData(
               enabled: false,
               touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => Colors.transparent,
+                getTooltipColor: (group) => Colors.transparent,
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {

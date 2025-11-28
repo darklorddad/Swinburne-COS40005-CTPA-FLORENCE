@@ -1,8 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
+
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -572,7 +574,7 @@ class _DualTrendSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                            final isSys = spot.barIndex == 0;
@@ -682,7 +684,7 @@ class _FloatingBarSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (group) => Colors.black.withOpacity(0.8),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                          final r = data[group.x.toInt()];
                          return BarTooltipItem(
@@ -790,7 +792,7 @@ class _ScatterSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   scatterTouchData: ScatterTouchData(
                     touchTooltipData: ScatterTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (spot) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (spot) {
                         return ScatterTooltipItem(
                           'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',

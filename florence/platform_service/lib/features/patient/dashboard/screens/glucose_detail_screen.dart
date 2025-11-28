@@ -1,8 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'dart:math' as math;
+
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -627,7 +629,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (_) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
