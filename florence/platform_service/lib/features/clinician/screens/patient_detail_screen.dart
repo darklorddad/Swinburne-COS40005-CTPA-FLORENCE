@@ -104,6 +104,47 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     super.dispose();
   }
 
+  Future<void> _showUnassignConfirmation() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unassign Patient'),
+        content: Text('Are you sure you want to remove ${_patient!.name} from your patient list? They will become available for other clinicians.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Unassign'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        // Assuming DataService has or will have an unassign method. 
+        // If not, this needs to be added to your service layer.
+        await _dataService.unassignPatient(widget.patientId);
+        
+        if (mounted) {
+          Navigator.pop(context); // Return to previous screen
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -1129,18 +1170,31 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     children: [
                       Row(
                         children: [
-                          Text(
-                            _patient!.name,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              _patient!.name,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           const SizedBox(width: 8),
                           RiskIndicator(riskLevel: _patient!.riskLevel),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.person_remove_outlined, size: 24, color: Colors.grey),
+                            tooltip: 'Unassign Patient',
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            style: IconButton.styleFrom(
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            ),
+                            onPressed: _showUnassignConfirmation,
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 4),
                       Text(
                         '${_patient!.age} years, ${_patient!.gender}',
                         style: const TextStyle(

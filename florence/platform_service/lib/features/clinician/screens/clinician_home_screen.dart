@@ -357,8 +357,8 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                                   itemBuilder: (context, index) {
                                     return PatientListItem(
                                       patient: _filteredPatients[index],
-                                      onTap: () {
-                                        Navigator.push(
+                                      onTap: () async {
+                                        await Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                             builder: (context) => PatientDetailScreen(
@@ -366,6 +366,7 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                                             ),
                                           ),
                                         );
+                                        if (mounted) _loadData(); 
                                       },
                                     );
                                   },
@@ -499,8 +500,8 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                     itemBuilder: (context, index) {
                       return PatientListItem(
                         patient: _filteredPatients[index],
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => PatientDetailScreen(
@@ -508,6 +509,7 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                               ),
                             ),
                           );
+                          if (mounted) _loadData();
                         },
                       );
                     },
@@ -566,8 +568,8 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                     itemBuilder: (context, index) {
                       return AlertItem(
                         alert: _alerts[index],
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => PatientDetailScreen(
@@ -576,6 +578,7 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                               ),
                             ),
                           );
+                          if (mounted) _loadData();
                         },
                       );
                     },

@@ -73,6 +73,11 @@ class ApiDataService implements DataService {
   }
 
   @override
+  Future<void> unassignPatient(String patientId) async {
+    await _api.post('/clinicians/patients/$patientId/unassign', {});
+  }
+
+  @override
   Future<PatientHealthData> getPatientHealthData(String patientId) async {
     try {
       // Endpoint: GET /clinicians/me/patients/{id}

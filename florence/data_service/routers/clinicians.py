@@ -212,6 +212,26 @@ async def assign_patient_to_me(patient_id: int, clinician_profile: dict = Depend
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to assign patient: {str(e)}")
 
+@router.post("/patients/{patient_id}/unassign", summary="Unassign a patient from myself")
+async def unassign_patient(patient_id: int, clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Unassigns a patient from the current clinician."""
+    try:
+        # Verify patient is assigned to this clinician
+        patient_check = supabase.table('patient_profiles').select('id', count='exact').eq('id', patient_id).eq('clinician_id', clinician_profile['id']).execute()
+        if patient_check.count == 0:
+            raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
+
+        update_payload = {
+            "clinician_id": None
+        }
+        updated_patient = supabase.table('patient_profiles').update(update_payload).eq('id', patient_id).execute()
+        
+        return updated_patient.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to unassign patient: {str(e)}")
+
 @router.get("/me/patients/{patient_id}", summary="Get full profile & data for an assigned patient only")
 async def get_assigned_patient_details(patient_id: int, clinician_profile: dict = Depends(get_current_clinician_profile)):
     """
