@@ -89,11 +89,15 @@ class HealthDataState {
     final hyperEvents = glucoseInPeriod.where((r) => r.value > 180).length;
     final hypoEvents = glucoseInPeriod.where((r) => r.value < 70).length;
 
+    // Calculate Estimated A1c: (Avg Glucose + 46.7) / 28.7
+    final estimatedA1c = avgGlucose > 0 ? (avgGlucose + 46.7) / 28.7 : 0.0;
+
     return HealthSummary(
       startDate: startDate,
       endDate: endDate,
       averageGlucose: avgGlucose,
       glucoseStdDev: stdDev,
+      estimatedA1c: estimatedA1c,
       timeInRange: timeInRange,
       totalReadings: glucoseInPeriod.length,
       hyperEvents: hyperEvents,
