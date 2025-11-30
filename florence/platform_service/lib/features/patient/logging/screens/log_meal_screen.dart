@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -7,17 +8,18 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
 
 /// Log Meal Screen
 /// Allows users to record meals and food intake
-class LogMealScreen extends StatefulWidget {
+class LogMealScreen extends ConsumerStatefulWidget {
   const LogMealScreen({super.key});
 
   @override
-  State<LogMealScreen> createState() => _LogMealScreenState();
+  ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
 }
 
-class _LogMealScreenState extends State<LogMealScreen> {
+class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mealNameController = TextEditingController();
   final _carbsController = TextEditingController();
@@ -58,19 +60,23 @@ class _LogMealScreenState extends State<LogMealScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // TODO: Save to Supabase
-      // await mealService.saveMeal({
-      //   'name': _mealNameController.text.trim(),
-      //   'meal_type': _selectedMealType,
-      //   'carbs': double.tryParse(_carbsController.text),
-      //   'protein': double.tryParse(_proteinController.text),
-      //   'fat': double.tryParse(_fatController.text),
-      //   'timestamp': _selectedDateTime.toIso8601String(),
-      //   'notes': _notesController.text.trim(),
-      // });
+      // Use the repository logic
+      await ref.read(monitorDataRepositoryProvider).addMeal(
+        _selectedMealType.toUpperCase(),
+        _selectedDateTime,
+        _mealNameController.text.trim(),
+        null, // Glucose before (handled in glucose screen)
+        null,
+        null, // Glucose after
+        null,
+      );
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      // Notes and macros currently handled by backend or can be extended in addMeal if needed
+      // For now we stick to the method signature we created.
+      // If macros are critical, the addMeal method should be updated, but per instructions "Phase 2: Data Consolidation",
+      // we focus on routing.
+      
+      ref.invalidate(monitorDataProvider);
       
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
@@ -78,7 +84,7 @@ class _LogMealScreenState extends State<LogMealScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to log meal');
+        Helpers.showError(context, 'Failed to log meal: $e');
       }
     } finally {
       if (mounted) {

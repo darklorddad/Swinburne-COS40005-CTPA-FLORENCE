@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/api_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/api_service.dart'; // For ApiService (if needed, but repo used)
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -7,20 +8,20 @@ import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart'; // Added
 
 /// Log HbA1c Screen
 /// Allows users to record Hemoglobin A1c readings
-class LogHba1cScreen extends StatefulWidget {
+class LogHba1cScreen extends ConsumerStatefulWidget {
   const LogHba1cScreen({super.key});
 
   @override
-  State<LogHba1cScreen> createState() => _LogHba1cScreenState();
+  ConsumerState<LogHba1cScreen> createState() => _LogHba1cScreenState();
 }
 
-class _LogHba1cScreenState extends State<LogHba1cScreen> {
+class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   final _formKey = GlobalKey<FormState>();
   final _hba1cController = TextEditingController();
-  final _apiService = ApiService();
   
   // State
   bool _isLoading = false;
@@ -44,11 +45,15 @@ class _LogHba1cScreenState extends State<LogHba1cScreen> {
     try {
       final value = double.parse(_hba1cController.text);
 
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'HBA1C',
-        'value': value,
-        'measured_at': _selectedDateTime.toIso8601String(),
-      });
+      // Use repository to add data
+      await ref.read(monitorDataRepositoryProvider).addMonitorData(
+        'HBA1C',
+        value,
+        _selectedDateTime,
+      );
+      
+      // Invalidate provider to refresh dashboard
+      ref.invalidate(monitorDataProvider);
       
       if (mounted) {
         Helpers.showSuccess(context, 'HbA1c reading saved successfully!');

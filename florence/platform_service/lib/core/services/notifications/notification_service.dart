@@ -1,40 +1,33 @@
-/// Notification Service for FLORENCE Digital Health Platform
-/// Manages in-app notifications and automation triggers
-library;
-
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/environment.dart';
 import '../automation/pattern_detection_service.dart';
 import 'notification_models.dart';
 
-/// Service for managing notifications
-class NotificationService with ChangeNotifier {
+/// Notification Provider
+final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new);
+
+/// Notifier for managing notifications
+class NotificationNotifier extends Notifier<List<HealthNotification>> {
   final PatternDetectionService _patternService = PatternDetectionService();
-
-  // Singleton pattern
-  static final NotificationService _instance = NotificationService._internal();
-  factory NotificationService() => _instance;
-  NotificationService._internal() {
-    if (Environment.enableAutomation) {
-      _startAutomationMonitoring();
-    }
-  }
-
-  // Notification storage
-  final List<HealthNotification> _notifications = [];
+  
   Timer? _monitoringTimer;
   int _notificationsToday = 0;
   DateTime? _lastCheckDate;
 
-  List<HealthNotification> get allNotifications =>
-      List.unmodifiable(_notifications);
+  @override
+  List<HealthNotification> build() {
+    if (Environment.enableAutomation) {
+      _startAutomationMonitoring();
+    }
+    return [];
+  }
 
   List<HealthNotification> get unreadNotifications =>
-      _notifications.where((n) => !n.isRead).toList();
+      state.where((n) => !n.isRead).toList();
 
   List<HealthNotification> get criticalNotifications =>
-      _notifications.where((n) => n.priority == NotificationPriority.critical && !n.isRead).toList();
+      state.where((n) => n.priority == NotificationPriority.critical && !n.isRead).toList();
 
   int get unreadCount => unreadNotifications.length;
   int get criticalCount => criticalNotifications.length;
@@ -221,7 +214,7 @@ class NotificationService with ChangeNotifier {
     }
 
     // Avoid duplicates within 1 hour
-    final isDuplicate = _notifications.any((n) =>
+    final isDuplicate = state.any((n) =>
         n.title == notification.title &&
         DateTime.now().difference(n.createdAt).inHours < 1);
 
@@ -229,9 +222,9 @@ class NotificationService with ChangeNotifier {
       return;
     }
 
-    _notifications.insert(0, notification);
+    // Add to start of list
+    state = [notification, ...state];
     _notificationsToday++;
-    notifyListeners();
 
     // TODO: In production, show system notification
     print('🔔 Notification: ${notification.title} - ${notification.message}');
@@ -239,40 +232,40 @@ class NotificationService with ChangeNotifier {
 
   /// Mark notification as read
   void markAsRead(String id) {
-    final index = _notifications.indexWhere((n) => n.id == id);
-    if (index != -1) {
-      _notifications[index] = _notifications[index].markAsRead();
-      notifyListeners();
-    }
+    state = [
+      for (final notification in state)
+        if (notification.id == id)
+          notification.markAsRead()
+        else
+          notification
+    ];
   }
 
   /// Mark all as read
   void markAllAsRead() {
-    for (int i = 0; i < _notifications.length; i++) {
-      if (!_notifications[i].isRead) {
-        _notifications[i] = _notifications[i].markAsRead();
-      }
-    }
-    notifyListeners();
+    state = [
+      for (final notification in state)
+        if (!notification.isRead)
+          notification.markAsRead()
+        else
+          notification
+    ];
   }
 
   /// Delete notification
   void deleteNotification(String id) {
-    _notifications.removeWhere((n) => n.id == id);
-    notifyListeners();
+    state = state.where((n) => n.id != id).toList();
   }
 
   /// Clear all notifications
   void clearAll() {
-    _notifications.clear();
-    notifyListeners();
+    state = [];
   }
 
   /// Clear old notifications (older than 7 days)
   void clearOldNotifications() {
     final cutoffDate = DateTime.now().subtract(const Duration(days: 7));
-    _notifications.removeWhere((n) => n.createdAt.isBefore(cutoffDate) && n.isRead);
-    notifyListeners();
+    state = state.where((n) => !(n.createdAt.isBefore(cutoffDate) && n.isRead)).toList();
   }
 
   /// Send a weekly summary notification
@@ -359,24 +352,17 @@ Tap to see detailed trends!
     await addNotification(notification);
   }
 
-  /// Get notifications by type
-  List<HealthNotification> getNotificationsByType(NotificationType type) {
-    return _notifications.where((n) => n.type == type).toList();
-  }
-
-  /// Get notifications by priority
-  List<HealthNotification> getNotificationsByPriority(NotificationPriority priority) {
-    return _notifications.where((n) => n.priority == priority).toList();
-  }
-
   /// Manual trigger check (for testing)
   Future<void> checkNow() async {
     await _checkForTriggers();
   }
+  
+  // Helper methods for filtered access (though usually done in UI or selector)
+  List<HealthNotification> getNotificationsByType(NotificationType type) {
+    return state.where((n) => n.type == type).toList();
+  }
 
-  @override
-  void dispose() {
-    _monitoringTimer?.cancel();
-    super.dispose();
+  List<HealthNotification> getNotificationsByPriority(NotificationPriority priority) {
+    return state.where((n) => n.priority == priority).toList();
   }
 }

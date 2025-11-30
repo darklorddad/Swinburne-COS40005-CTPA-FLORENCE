@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -8,16 +9,17 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
 
 /// Log Blood Pressure Screen
-class LogBloodPressureScreen extends StatefulWidget {
+class LogBloodPressureScreen extends ConsumerStatefulWidget {
   const LogBloodPressureScreen({super.key});
 
   @override
-  State<LogBloodPressureScreen> createState() => _LogBloodPressureScreenState();
+  ConsumerState<LogBloodPressureScreen> createState() => _LogBloodPressureScreenState();
 }
 
-class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
+class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen> {
   final _formKey = GlobalKey<FormState>();
   final _systolicController = TextEditingController();
   final _diastolicController = TextEditingController();
@@ -42,21 +44,13 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final now = _selectedDateTime.toIso8601String();
+      await ref.read(monitorDataRepositoryProvider).addBloodPressure(
+        _selectedDateTime,
+        double.parse(_systolicController.text),
+        double.parse(_diastolicController.text),
+      );
       
-      // Post Systolic
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'BLOOD_PRESSURE_SYSTOLIC',
-        'value': double.parse(_systolicController.text),
-        'measured_at': now,
-      });
-
-      // Post Diastolic
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'BLOOD_PRESSURE_DIASTOLIC',
-        'value': double.parse(_diastolicController.text),
-        'measured_at': now,
-      });
+      ref.invalidate(monitorDataProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Blood pressure logged successfully!');

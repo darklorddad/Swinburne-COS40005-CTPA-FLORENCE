@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -8,20 +9,21 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
 
 /// Log BMI Screen
-class LogBmiScreen extends StatefulWidget {
+class LogBmiScreen extends ConsumerStatefulWidget {
   const LogBmiScreen({super.key});
 
   @override
-  State<LogBmiScreen> createState() => _LogBmiScreenState();
+  ConsumerState<LogBmiScreen> createState() => _LogBmiScreenState();
 }
 
-class _LogBmiScreenState extends State<LogBmiScreen> {
+class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   final _formKey = GlobalKey<FormState>();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
-  final ApiService _apiService = ApiService();
+  // final ApiService _apiService = ApiService(); // Removed
 
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
@@ -71,11 +73,13 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'BMI',
-        'value': _calculatedBmi,
-        'measured_at': _selectedDateTime.toIso8601String(),
-      });
+      await ref.read(monitorDataRepositoryProvider).addMonitorData(
+        'BMI',
+        _calculatedBmi!,
+        _selectedDateTime,
+      );
+      
+      ref.invalidate(monitorDataProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged successfully!');
