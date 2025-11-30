@@ -10,6 +10,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {
@@ -25,7 +26,6 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _ldlController = TextEditingController();
   final _hdlController = TextEditingController();
   final _triglyceridesController = TextEditingController();
-  // final ApiService _apiService = ApiService(); // Removed
 
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
@@ -83,76 +83,6 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
-    }
-  }
-
-class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _totalController = TextEditingController(); 
-  final _ldlController = TextEditingController();
-  final _hdlController = TextEditingController();
-  final _triglyceridesController = TextEditingController();
-  // final ApiService _apiService = ApiService(); // Removed
-
-  bool _isLoading = false;
-  DateTime _selectedDateTime = DateTime.now();
-
-  @override
-  void dispose() {
-    _totalController.dispose();
-    _ldlController.dispose();
-    _hdlController.dispose();
-    _triglyceridesController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _handleSave() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    Helpers.hideKeyboard(context);
-    setState(() => _isLoading = true);
-
-    try {
-      final repo = ref.read(monitorDataRepositoryProvider);
-      final List<Future> tasks = [];
-
-      // Helper
-      void addCallIfNotEmpty(TextEditingController controller, Function(DateTime, double) operation) {
-        if (controller.text.trim().isNotEmpty) {
-          tasks.add(operation(_selectedDateTime, double.parse(controller.text.trim())));
-        }
-      }
-
-      // Queue up requests
-      // Note: We need dedicated repo methods for each if we want repo to encapsulate logic
-      // Or we can create a generic addCholesterolReading in the repo.
-      // For now, I will add a generic 'addMonitorData' to the repo or specific ones if available.
-      // Since I added addCholesterol (which does total), I might need addLDL, etc or make it more generic.
-      // But wait, the implementation plan said: "Move Write logic ... into MonitorDataRepository".
-      // I implemented 'addCholesterol' for TOTAL only in the previous step.
-      // I should probably update the repo to handle all types or expose a generic write.
-      // To be architecturally strict, I should add specific methods.
-      
-      // Let's assume I'll update the repo again to support these or use a generic method if I had one.
-      // Actually, to save time and be cleaner, I should probably just add a flexible 'addMonitorData' to the repo.
-      // But the instruction was "Create mutation providers... that call the repository".
-      // Let's start with what I have. I have addCholesterol (Total). I need others.
-      
-      // Re-reading the repo file I edited... I added addCholesterol(DateTime timestamp, double value) for CHOLESTEROL_TOTAL.
-      // I should probably make that method more flexible or add others.
-      // I will edit the repo to add 'addMonitorData' which is generic enough for all.
-      
-      // Actually, let's just use the repo's generic nature if possible.
-      // I'll queue them using a new Generic method I'll add to repo next.
-      
-      // Wait, I can't edit the repo method signature inside this file edit.
-      // I will pause this edit and update the repo first.
-      throw Exception("Repo update needed first"); 
-
-    } catch (e) {
-      // ...
     }
   }
 

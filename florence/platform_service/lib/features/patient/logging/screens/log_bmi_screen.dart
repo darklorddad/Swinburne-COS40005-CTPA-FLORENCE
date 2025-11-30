@@ -10,6 +10,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {

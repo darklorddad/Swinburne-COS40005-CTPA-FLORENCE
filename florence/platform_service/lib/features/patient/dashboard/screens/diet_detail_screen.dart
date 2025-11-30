@@ -38,7 +38,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              await ref.refresh(dailyPatientLogsProvider.future);
+              ref.refresh(dailyPatientLogsProvider);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),

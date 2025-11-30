@@ -95,12 +95,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     ref.invalidate(patientThresholdsProvider);
     ref.invalidate(dailyPatientLogsProvider);
     // Wait for them to rebuild
-    await Future.wait([
-       ref.read(monitorDataProvider.future),
-       ref.read(latestActivityProvider.future),
-       ref.read(patientThresholdsProvider.future),
-       ref.read(dailyPatientLogsProvider.future),
-    ]);
+    // Note: If these are simple Providers returning AsyncValue, we can't await .future
+    // We just refresh them.
+    ref.refresh(monitorDataProvider);
+    ref.refresh(latestActivityProvider);
+    ref.refresh(patientThresholdsProvider);
+    ref.refresh(dailyPatientLogsProvider);
   }
 
   /// Show quick log modal

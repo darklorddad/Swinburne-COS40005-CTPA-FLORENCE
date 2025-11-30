@@ -366,3 +366,13 @@ Tap to see detailed trends!
     return state.where((n) => n.priority == priority).toList();
   }
 }
+import 'package:flutter/foundation.dart';
+
+class NotificationService extends ChangeNotifier {
+  int get unreadCount => 0;
+  
+  // Singleton
+  static final NotificationService _instance = NotificationService._internal();
+  factory NotificationService() => _instance;
+  NotificationService._internal();
+}

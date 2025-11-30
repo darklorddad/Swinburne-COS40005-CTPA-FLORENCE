@@ -86,11 +86,9 @@ class GlucoseDetailScreen extends ConsumerWidget {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  await Future.wait([
-                    ref.refresh(monitorDataProvider.future),
-                    ref.refresh(patientThresholdsProvider.future),
-                    ref.refresh(dailyPatientLogsProvider.future),
-                  ]);
+                  ref.refresh(monitorDataProvider);
+                  ref.refresh(patientThresholdsProvider);
+                  ref.refresh(dailyPatientLogsProvider);
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),

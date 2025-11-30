@@ -55,10 +55,8 @@ class BloodPressureDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              await Future.wait([
-                ref.refresh(monitorDataProvider.future),
-                ref.refresh(patientThresholdsProvider.future),
-              ]);
+              ref.refresh(monitorDataProvider);
+              ref.refresh(patientThresholdsProvider);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),

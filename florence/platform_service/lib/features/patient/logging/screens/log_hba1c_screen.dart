@@ -9,6 +9,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../core/providers/monitor_data_providers.dart'; // Added
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log HbA1c Screen
 /// Allows users to record Hemoglobin A1c readings

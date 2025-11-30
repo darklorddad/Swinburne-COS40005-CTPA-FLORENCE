@@ -3,6 +3,26 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
 import '../models/health_data_models.dart';
 
+class HealthSummary {
+  final double averageGlucose;
+  final double timeInRange;
+  final int totalReadings;
+  final int totalActivityMinutes;
+  final int totalMeals;
+  final double averageCarbs;
+  final double medicationAdherence;
+
+  HealthSummary({
+    this.averageGlucose = 0,
+    this.timeInRange = 0,
+    this.totalReadings = 0,
+    this.totalActivityMinutes = 0,
+    this.totalMeals = 0,
+    this.averageCarbs = 0,
+    this.medicationAdherence = 0,
+  });
+}
+
 /// Payload class for all health data
 class HealthDataState {
   final List<GlucoseReading> glucoseReadings;
@@ -56,6 +76,34 @@ class HealthDataState {
       bmiResults: bmiResults ?? this.bmiResults,
       healthThresholds: healthThresholds ?? this.healthThresholds,
       allMonitorData: allMonitorData ?? this.allMonitorData,
+    );
+  }
+
+  HealthSummary getHealthSummary({required DateTime startDate, required DateTime endDate}) {
+    final glucoseInPeriod = glucoseReadings.where((r) => r.timestamp.isAfter(startDate) && r.timestamp.isBefore(endDate)).toList();
+    final avgGlucose = glucoseInPeriod.isNotEmpty 
+        ? glucoseInPeriod.map((e) => e.value).reduce((a, b) => a + b) / glucoseInPeriod.length 
+        : 0.0;
+    
+    final inRangeCount = glucoseInPeriod.where((r) => r.value >= 70 && r.value <= 180).length;
+    final timeInRange = glucoseInPeriod.isNotEmpty ? (inRangeCount / glucoseInPeriod.length) * 100 : 0.0;
+
+    final activityInPeriod = activities.where((a) => a.timestamp.isAfter(startDate) && a.timestamp.isBefore(endDate)).toList();
+    final totalMinutes = activityInPeriod.fold(0, (sum, a) => sum + a.duration);
+
+    final mealsInPeriod = meals.where((m) => m.timestamp.isAfter(startDate) && m.timestamp.isBefore(endDate)).toList();
+    final avgCarbs = mealsInPeriod.isNotEmpty 
+        ? mealsInPeriod.map((m) => m.carbs).reduce((a, b) => a + b) / mealsInPeriod.length 
+        : 0.0;
+
+    return HealthSummary(
+      averageGlucose: avgGlucose,
+      timeInRange: timeInRange,
+      totalReadings: glucoseInPeriod.length,
+      totalActivityMinutes: totalMinutes,
+      totalMeals: mealsInPeriod.length,
+      averageCarbs: avgCarbs,
+      medicationAdherence: 0.85, // Mocked for now
     );
   }
 }
@@ -190,25 +238,24 @@ class MonitorDataRepository {
       'measured_at': reading.timestamp.toIso8601String(),
     });
   }
-  
-  Future<void> addCholesterol(DateTime timestamp, double value) async {
+
+  Future<void> addMonitorData(String type, double value, DateTime timestamp) async {
     await _apiService.post('/patients/me/monitor-data', {
-      'data_type': 'CHOLESTEROL_TOTAL',
+      'data_type': type,
       'value': value,
       'measured_at': timestamp.toIso8601String(),
     });
   }
 
-  Future<void> addBmi(DateTime timestamp, double value) async {
-    await _apiService.post('/patients/me/monitor-data', {
-      'data_type': 'BMI',
-      'value': value,
-      'measured_at': timestamp.toIso8601String(),
-    });
+  Future<void> addBloodPressure(DateTime timestamp, double systolic, double diastolic) async {
+    await Future.wait([
+      addMonitorData('BLOOD_PRESSURE_SYSTOLIC', systolic, timestamp),
+      addMonitorData('BLOOD_PRESSURE_DIASTOLIC', diastolic, timestamp),
+    ]);
   }
 
   Future<void> addMeal(String mealTime, DateTime logDate, String? mealDesc, double? glucoseBefore, DateTime? timeBefore, double? glucoseAfter, DateTime? timeAfter) async {
-    final payload = {
+    final Map<String, dynamic> payload = {
       'log_date': logDate.toIso8601String().split('T')[0],
       'meal_time': mealTime,
       'meal_desc': mealDesc,

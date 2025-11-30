@@ -11,6 +11,7 @@ import '../../../../config/routes.dart';
 import '../../../../core/services/api_service.dart';
 import '../../core/models/health_data_models.dart'; // Added
 import '../../core/providers/monitor_data_providers.dart'; // Added
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Activity Screen
 /// Allows users to record physical activities and exercise

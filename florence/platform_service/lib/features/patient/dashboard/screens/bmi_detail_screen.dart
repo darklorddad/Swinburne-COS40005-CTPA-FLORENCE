@@ -50,7 +50,7 @@ class BmiDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              await ref.refresh(monitorDataProvider.future);
+              ref.refresh(monitorDataProvider);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
