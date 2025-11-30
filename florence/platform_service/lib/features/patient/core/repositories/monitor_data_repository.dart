@@ -76,12 +76,28 @@ class HealthDataState {
         ? mealsInPeriod.map((m) => m.carbs).reduce((a, b) => a + b) / mealsInPeriod.length 
         : 0.0;
 
+    // Calculate Standard Deviation
+    double stdDev = 0.0;
+    if (glucoseInPeriod.isNotEmpty) {
+      final sumSquaredDiff = glucoseInPeriod.fold(0.0, (sum, r) {
+        final diff = r.value - avgGlucose;
+        return sum + (diff * diff);
+      });
+      stdDev = sqrt(sumSquaredDiff / glucoseInPeriod.length);
+    }
+
+    final hyperEvents = glucoseInPeriod.where((r) => r.value > 180).length;
+    final hypoEvents = glucoseInPeriod.where((r) => r.value < 70).length;
+
     return HealthSummary(
       startDate: startDate,
       endDate: endDate,
       averageGlucose: avgGlucose,
+      glucoseStdDev: stdDev,
       timeInRange: timeInRange,
       totalReadings: glucoseInPeriod.length,
+      hyperEvents: hyperEvents,
+      hypoEvents: hypoEvents,
       totalActivityMinutes: totalMinutes,
       totalMeals: mealsInPeriod.length,
       averageCarbs: avgCarbs,
