@@ -92,6 +92,13 @@ class HealthDataState {
     // Calculate Estimated A1c: (Avg Glucose + 46.7) / 28.7
     final estimatedA1c = avgGlucose > 0 ? (avgGlucose + 46.7) / 28.7 : 0.0;
 
+    // Calculate Average Sleep
+    double avgSleep = 0.0;
+    final sleepInPeriod = sleepLogs.where((s) => s.startTime.isAfter(startDate) && s.startTime.isBefore(endDate)).toList();
+    if (sleepInPeriod.isNotEmpty) {
+      avgSleep = sleepInPeriod.map((s) => s.durationHours).reduce((a, b) => a + b) / sleepInPeriod.length;
+    }
+
     return HealthSummary(
       startDate: startDate,
       endDate: endDate,
@@ -106,6 +113,7 @@ class HealthDataState {
       totalMeals: mealsInPeriod.length,
       averageCarbs: avgCarbs,
       medicationAdherence: 0.85, // Mocked for now
+      averageSleepHours: avgSleep,
     );
   }
 }
