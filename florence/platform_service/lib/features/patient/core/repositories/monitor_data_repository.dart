@@ -93,10 +93,11 @@ class HealthDataState {
     final estimatedA1c = avgGlucose > 0 ? (avgGlucose + 46.7) / 28.7 : 0.0;
 
     // Calculate Average Sleep
-    double avgSleep = 0.0;
-    final sleepInPeriod = sleepLogs.where((s) => s.startTime.isAfter(startDate) && s.startTime.isBefore(endDate)).toList();
+    int avgSleep = 0;
+    final sleepInPeriod = sleepLogs.where((s) => s.timestamp.isAfter(startDate) && s.timestamp.isBefore(endDate)).toList();
     if (sleepInPeriod.isNotEmpty) {
-      avgSleep = sleepInPeriod.map((s) => s.durationHours).reduce((a, b) => a + b) / sleepInPeriod.length;
+      final avgSleepVal = sleepInPeriod.map((s) => s.duration).reduce((a, b) => a + b) / sleepInPeriod.length;
+      avgSleep = avgSleepVal.round();
     }
 
     return HealthSummary(
