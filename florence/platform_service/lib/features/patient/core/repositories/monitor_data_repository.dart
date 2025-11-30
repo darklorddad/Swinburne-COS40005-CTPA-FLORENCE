@@ -77,6 +77,8 @@ class HealthDataState {
         : 0.0;
 
     return HealthSummary(
+      startDate: startDate,
+      endDate: endDate,
       averageGlucose: avgGlucose,
       timeInRange: timeInRange,
       totalReadings: glucoseInPeriod.length,

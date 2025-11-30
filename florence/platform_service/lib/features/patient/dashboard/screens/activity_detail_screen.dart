@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
-import '../../dashboard/providers/dashboard_providers.dart';
+import '../../core/providers/monitor_data_providers.dart';
 
 class ActivityDetailScreen extends ConsumerWidget {
   const ActivityDetailScreen({super.key});
