@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../config/environment.dart';
 import '../automation/pattern_detection_service.dart';
@@ -366,7 +367,6 @@ Tap to see detailed trends!
     return state.where((n) => n.priority == priority).toList();
   }
 }
-import 'package:flutter/foundation.dart';
 
 class NotificationService extends ChangeNotifier {
   int get unreadCount => 0;

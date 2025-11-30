@@ -3,26 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
 import '../models/health_data_models.dart';
 
-class HealthSummary {
-  final double averageGlucose;
-  final double timeInRange;
-  final int totalReadings;
-  final int totalActivityMinutes;
-  final int totalMeals;
-  final double averageCarbs;
-  final double medicationAdherence;
-
-  HealthSummary({
-    this.averageGlucose = 0,
-    this.timeInRange = 0,
-    this.totalReadings = 0,
-    this.totalActivityMinutes = 0,
-    this.totalMeals = 0,
-    this.averageCarbs = 0,
-    this.medicationAdherence = 0,
-  });
-}
-
 /// Payload class for all health data
 class HealthDataState {
   final List<GlucoseReading> glucoseReadings;

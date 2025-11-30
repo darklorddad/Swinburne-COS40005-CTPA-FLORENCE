@@ -14,8 +14,7 @@ class ActivityDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activityAsync = ref.watch(activityLogsProvider);
-    final monitorAsync = ref.watch(monitorDataProvider);
+    final healthDataAsync = ref.watch(monitorDataProvider);
 
     // Data Color: Green (Movement as Medicine)
     final Color dataColor = AppTheme.primaryGreen;
@@ -33,75 +32,71 @@ class ActivityDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: activityAsync.when(
-        data: (logs) {
-          return monitorAsync.when(
-            data: (monitorData) {
-              // Sort logs: Newest first
-              final sortedLogs = List<ActivityLog>.from(logs)
-                ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      body: healthDataAsync.when(
+        data: (healthData) {
+          final logs = healthData.activities;
+          final monitorData = healthData.allMonitorData;
 
-              // Filter glucose for impact analysis
-              final glucoseReadings = monitorData
-                  .where((d) => d.dataType == MonitorDataType.GLUCOSE)
-                  .toList();
+          // Sort logs: Newest first
+          final sortedLogs = List<ActivityLog>.from(logs)
+            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  ref.refresh(activityLogsProvider);
-                  ref.refresh(monitorDataProvider);
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      // 1. Daily Volume
-                      _DailyVolumeCard(
-                        logs: sortedLogs, 
-                        dataColor: dataColor
-                      ),
-                      const SizedBox(height: 20),
+          // Filter glucose for impact analysis
+          final glucoseReadings = monitorData
+              .where((d) => d.dataType == MonitorDataType.GLUCOSE)
+              .toList();
 
-                      // 2. Streak Heatmap
-                      _StreakHeatmap(
-                        logs: sortedLogs,
-                        dataColor: dataColor,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 3. Weekly Consistency
-                      _WeeklyConsistencyChart(
-                        logs: sortedLogs, 
-                        dataColor: dataColor
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 4. Activity Timing (Last 28 Days)
-                      _ActivityTimingChart(
-                        logs: sortedLogs, 
-                        dataColor: dataColor
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 5. History List (Consistent Design)
-                      _ActivityHistoryList(
-                        logs: sortedLogs,
-                        glucoseReadings: glucoseReadings,
-                        dataColor: dataColor,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              );
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.refresh(monitorDataProvider);
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error loading health data: $err')),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // 1. Daily Volume
+                  _DailyVolumeCard(
+                    logs: sortedLogs, 
+                    dataColor: dataColor
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 2. Streak Heatmap
+                  _StreakHeatmap(
+                    logs: sortedLogs,
+                    dataColor: dataColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 3. Weekly Consistency
+                  _WeeklyConsistencyChart(
+                    logs: sortedLogs, 
+                    dataColor: dataColor
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 4. Activity Timing (Last 28 Days)
+                  _ActivityTimingChart(
+                    logs: sortedLogs, 
+                    dataColor: dataColor
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 5. History List (Consistent Design)
+                  _ActivityHistoryList(
+                    logs: sortedLogs,
+                    glucoseReadings: glucoseReadings,
+                    dataColor: dataColor,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error loading activity: $err')),
+        error: (err, stack) => Center(child: Text('Error loading health data: $err')),
       ),
     );
   }
