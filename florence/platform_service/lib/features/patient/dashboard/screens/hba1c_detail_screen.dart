@@ -157,8 +157,9 @@ class _GaugeSection extends StatelessWidget {
     String infoText;
     if (threshold != null) {
       infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
-                 '• Your Target: Below ${threshold!.maxValue.toStringAsFixed(1)}%\n'
-                 '• Above Target: ${threshold!.maxValue.toStringAsFixed(1)}% or higher';
+                 '• Target Range: ${threshold!.minValue.toStringAsFixed(1)}% - ${threshold!.maxValue.toStringAsFixed(1)}%\n'
+                 '• Low: Below ${threshold!.minValue.toStringAsFixed(1)}%\n'
+                 '• High: Above ${threshold!.maxValue.toStringAsFixed(1)}%';
     } else {
       infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
                  '• Set a target in your profile to see status.';
