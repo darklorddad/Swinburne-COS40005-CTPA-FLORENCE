@@ -25,7 +25,10 @@ final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((re
         logDate: m.timestamp,
         mealTime: m.type.toUpperCase(),
         mealDesc: m.description,
-        // Mapping limited fields as MealLog differs slightly from DailyPatientLog
+        glucoseBeforeMeal: m.glucoseBefore,
+        glucoseAfterMeal: m.glucoseAfter,
+        glucoseBeforeMealTime: m.glucoseBeforeTime,
+        glucoseAfterMealTime: m.glucoseAfterTime,
       )).toList();
   });
 });

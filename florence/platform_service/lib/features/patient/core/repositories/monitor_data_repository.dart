@@ -357,6 +357,10 @@ class MonitorDataRepository {
             description: item['meal_desc'] ?? 'Logged Meal',
             carbs: 0, 
             calories: 0,
+            glucoseBefore: item['glucose_before_meal'] != null ? (item['glucose_before_meal'] as num).toDouble() : null,
+            glucoseAfter: item['glucose_after_meal'] != null ? (item['glucose_after_meal'] as num).toDouble() : null,
+            glucoseBeforeTime: item['glucose_before_meal_time'] != null ? DateTime.parse(item['glucose_before_meal_time']) : null,
+            glucoseAfterTime: item['glucose_after_meal_time'] != null ? DateTime.parse(item['glucose_after_meal_time']) : null,
           ));
         }
       }

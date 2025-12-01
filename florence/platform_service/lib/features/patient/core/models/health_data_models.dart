@@ -320,6 +320,10 @@ class MealLog {
   final String? photoUrl;
   final String? notes;
   final List<String> tags; // e.g., ["high-carb", "vegetarian"]
+  final double? glucoseBefore;
+  final double? glucoseAfter;
+  final DateTime? glucoseBeforeTime;
+  final DateTime? glucoseAfterTime;
 
   const MealLog({
     required this.id,
@@ -333,6 +337,10 @@ class MealLog {
     this.photoUrl,
     this.notes,
     this.tags = const [],
+    this.glucoseBefore,
+    this.glucoseAfter,
+    this.glucoseBeforeTime,
+    this.glucoseAfterTime,
   });
 
   bool get isHighCarb => carbs > 60;
@@ -350,6 +358,10 @@ class MealLog {
     String? photoUrl,
     String? notes,
     List<String>? tags,
+    double? glucoseBefore,
+    double? glucoseAfter,
+    DateTime? glucoseBeforeTime,
+    DateTime? glucoseAfterTime,
   }) {
     return MealLog(
       id: id ?? this.id,
@@ -363,6 +375,10 @@ class MealLog {
       photoUrl: photoUrl ?? this.photoUrl,
       notes: notes ?? this.notes,
       tags: tags ?? this.tags,
+      glucoseBefore: glucoseBefore ?? this.glucoseBefore,
+      glucoseAfter: glucoseAfter ?? this.glucoseAfter,
+      glucoseBeforeTime: glucoseBeforeTime ?? this.glucoseBeforeTime,
+      glucoseAfterTime: glucoseAfterTime ?? this.glucoseAfterTime,
     );
   }
 
@@ -395,6 +411,10 @@ class MealLog {
       photoUrl: json['photoUrl'] as String?,
       notes: json['notes'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
+      glucoseBefore: json['glucose_before_meal'] != null ? (json['glucose_before_meal'] as num).toDouble() : null,
+      glucoseAfter: json['glucose_after_meal'] != null ? (json['glucose_after_meal'] as num).toDouble() : null,
+      glucoseBeforeTime: json['glucose_before_meal_time'] != null ? DateTime.parse(json['glucose_before_meal_time'] as String) : null,
+      glucoseAfterTime: json['glucose_after_meal_time'] != null ? DateTime.parse(json['glucose_after_meal_time'] as String) : null,
     );
   }
 }
