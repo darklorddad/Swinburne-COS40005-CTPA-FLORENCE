@@ -94,10 +94,11 @@ class HealthDataState {
 
     // Calculate Average Sleep
     int avgSleep = 0;
-    final sleepInPeriod = sleepLogs.where((s) => s.timestamp.isAfter(startDate) && s.timestamp.isBefore(endDate)).toList();
+    final sleepInPeriod = sleepLogs.where((s) => s.bedTime.isAfter(startDate) && s.bedTime.isBefore(endDate)).toList();
     if (sleepInPeriod.isNotEmpty) {
-      final avgSleepVal = sleepInPeriod.map((s) => s.duration).reduce((a, b) => a + b) / sleepInPeriod.length;
-      avgSleep = avgSleepVal.round();
+      final totalMinutes = sleepInPeriod.map((s) => s.duration.inMinutes).fold(0, (a, b) => a + b);
+      final avgMinutes = totalMinutes / sleepInPeriod.length;
+      avgSleep = (avgMinutes / 60).round();
     }
 
     return HealthSummary(
