@@ -99,7 +99,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     // Watch Riverpod providers
-    final monitorData = ref.watch(monitorDataProvider).asData?.value ?? [];
+    final monitorData = ref.watch(core_data.monitorDataProvider).asData?.value ?? [];
     final activity = ref.watch(latestActivityProvider).asData?.value;
     final thresholds = ref.watch(patientThresholdsProvider).asData?.value ?? [];
     final mealLogs = ref.watch(dailyPatientLogsProvider).asData?.value ?? [];
