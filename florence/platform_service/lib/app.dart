@@ -2,29 +2,26 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'core/services/api_service.dart';
-import 'core/utils/helpers.dart';
 import 'core/providers/theme_provider.dart';
-import 'core/providers/settings_provider.dart';
-import 'features/patient/core/providers/health_data_provider.dart';
 import 'features/admin/core/services/admin_auth_service.dart';
 import 'main.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
 
-class App extends StatefulWidget {
+class App extends ConsumerStatefulWidget {
   const App({super.key});
 
   @override
-  State<App> createState() => _AppState();
+  ConsumerState<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends ConsumerState<App> {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<Uri>? _linkSubscription;
   final ApiService _apiService = ApiService();
@@ -219,52 +216,32 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
-          // Dynamic system UI overlay based on theme
-          final isDark = themeProvider.isDarkMode;
-          final systemUiOverlay = SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-            systemNavigationBarColor: isDark ? const Color(0xFF1F2937) : Colors.white,
-            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          );
+    final themeMode = ref.watch(themeProvider);
+    final isDark = themeMode == ThemeMode.dark;
 
-          return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: systemUiOverlay,
-            child: MaterialApp(
-              navigatorKey: navigatorKey, // Assign the key here
-              title: 'Florence',
-              debugShowCheckedModeBanner: false,
+    // Dynamic system UI overlay based on theme
+    final systemUiOverlay = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    );
 
-              // Theme with dynamic mode switching
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeProvider.themeMode,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemUiOverlay,
+      child: MaterialApp(
+        navigatorKey: navigatorKey, // Assign the key here
+        title: 'Florence',
+        debugShowCheckedModeBanner: false,
 
-              // Routing
-              initialRoute: AppRoutes.splash,
-              onGenerateRoute: AppRoutes.generateRoute,
+        // Theme with dynamic mode switching
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
 
-              // Localization (for future use)
-              // localizationsDelegates: const [
-              //   GlobalMaterialLocalizations.delegate,
-              //   GlobalWidgetsLocalizations.delegate,
-              //   GlobalCupertinoLocalizations.delegate,
-              // ],
-              // supportedLocales: const [
-              //   Locale('en', 'US'),
-              //   Locale('ms', 'MY'),
-              // ],
-            ),
-          );
-        },
+        // Routing
+        initialRoute: AppRoutes.splash,
+        onGenerateRoute: AppRoutes.generateRoute,
       ),
     );
   }
