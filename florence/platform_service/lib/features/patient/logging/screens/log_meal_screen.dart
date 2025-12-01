@@ -90,11 +90,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         null, // Time after
       );
       
-      // Notes and macros currently handled by backend or can be extended in addMeal if needed
-      // For now we stick to the method signature we created.
-      // If macros are critical, the addMeal method should be updated, but per instructions "Phase 2: Data Consolidation",
-      // we focus on routing.
-      
       ref.invalidate(monitorDataProvider);
       
       if (mounted) {
