@@ -78,7 +78,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       await ref.read(monitorDataRepositoryProvider).addMonitorData(
         'BMI',
         _calculatedBmi!,
-        _selectedDateTime,
+        _selectedDateTime.toUtc(),
       );
       
       ref.invalidate(monitorDataProvider);
@@ -191,7 +191,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   hint: 'e.g., 175',
                   controller: _heightController,
                   validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Height'),
+                      Validators.range(value, 50, 300, fieldName: 'Height'),
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.height),
                 ),
@@ -203,7 +203,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   hint: 'e.g., 70',
                   controller: _weightController,
                   validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Weight'),
+                      Validators.range(value, 20, 500, fieldName: 'Weight'),
                   keyboardType: TextInputType.number,
                   prefixIcon: const Icon(Icons.scale),
                 ),
