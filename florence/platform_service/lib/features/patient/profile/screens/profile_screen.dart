@@ -32,11 +32,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   double _targetMin = 70.0;
   double _targetMax = 180.0;
   
-  // Medications list (mock)
-  List<Map<String, String>> _medications = [
-    {'name': 'Metformin', 'dosage': '500mg', 'frequency': 'Twice daily'},
-    {'name': 'Insulin', 'dosage': '10 units', 'frequency': 'Before meals'},
-  ];
+  // Medications list
+  List<Map<String, String>> _medications = [];
   
   // Settings
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'

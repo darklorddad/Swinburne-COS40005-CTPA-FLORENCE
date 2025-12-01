@@ -40,15 +40,12 @@ class _ActivityImpactScreenState extends State<ActivityImpactScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Load real data from Supabase
-      // For now, generate mock data
-      _generateMockActivityData();
+      // TODO: Connect to a real backend endpoint for impact analysis
+      // For now, initialize empty to show "No Data" state
+      _allActivities = [];
 
       // Filter by intensity
       _filterActivitiesByIntensity();
-
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {
       debugPrint('Error loading activity impact data: $e');
     } finally {
@@ -56,152 +53,6 @@ class _ActivityImpactScreenState extends State<ActivityImpactScreen> {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  /// Generate mock activity impact data
-  void _generateMockActivityData() {
-    _allActivities = [
-      // Light intensity
-      ActivityImpact(
-        activityName: 'Walking (Slow)',
-        intensity: 'Light',
-        avgDuration: 30,
-        beforeGlucose: 145,
-        afterGlucose: 130,
-        glucoseDrop: 15,
-        frequency: 25,
-        caloriesBurned: 90,
-        effectiveness: 3.5,
-        optimalTiming: 'After meals',
-      ),
-      ActivityImpact(
-        activityName: 'Yoga',
-        intensity: 'Light',
-        avgDuration: 45,
-        beforeGlucose: 128,
-        afterGlucose: 118,
-        glucoseDrop: 10,
-        frequency: 12,
-        caloriesBurned: 135,
-        effectiveness: 3.0,
-        optimalTiming: 'Morning',
-      ),
-      ActivityImpact(
-        activityName: 'Stretching',
-        intensity: 'Light',
-        avgDuration: 20,
-        beforeGlucose: 135,
-        afterGlucose: 128,
-        glucoseDrop: 7,
-        frequency: 15,
-        caloriesBurned: 40,
-        effectiveness: 2.5,
-        optimalTiming: 'Anytime',
-      ),
-
-      // Moderate intensity
-      ActivityImpact(
-        activityName: 'Walking (Brisk)',
-        intensity: 'Moderate',
-        avgDuration: 30,
-        beforeGlucose: 152,
-        afterGlucose: 122,
-        glucoseDrop: 30,
-        frequency: 20,
-        caloriesBurned: 150,
-        effectiveness: 4.5,
-        optimalTiming: 'After lunch',
-      ),
-      ActivityImpact(
-        activityName: 'Cycling',
-        intensity: 'Moderate',
-        avgDuration: 40,
-        beforeGlucose: 148,
-        afterGlucose: 110,
-        glucoseDrop: 38,
-        frequency: 10,
-        caloriesBurned: 280,
-        effectiveness: 4.8,
-        optimalTiming: 'Morning',
-      ),
-      ActivityImpact(
-        activityName: 'Swimming',
-        intensity: 'Moderate',
-        avgDuration: 35,
-        beforeGlucose: 140,
-        afterGlucose: 105,
-        glucoseDrop: 35,
-        frequency: 8,
-        caloriesBurned: 245,
-        effectiveness: 4.7,
-        optimalTiming: 'Afternoon',
-      ),
-      ActivityImpact(
-        activityName: 'Dancing',
-        intensity: 'Moderate',
-        avgDuration: 30,
-        beforeGlucose: 138,
-        afterGlucose: 115,
-        glucoseDrop: 23,
-        frequency: 6,
-        caloriesBurned: 180,
-        effectiveness: 4.0,
-        optimalTiming: 'Evening',
-      ),
-
-      // Vigorous intensity
-      ActivityImpact(
-        activityName: 'Running',
-        intensity: 'Vigorous',
-        avgDuration: 25,
-        beforeGlucose: 155,
-        afterGlucose: 108,
-        glucoseDrop: 47,
-        frequency: 15,
-        caloriesBurned: 325,
-        effectiveness: 5.0,
-        optimalTiming: 'Morning',
-      ),
-      ActivityImpact(
-        activityName: 'HIIT Workout',
-        intensity: 'Vigorous',
-        avgDuration: 20,
-        beforeGlucose: 142,
-        afterGlucose: 98,
-        glucoseDrop: 44,
-        frequency: 8,
-        caloriesBurned: 280,
-        effectiveness: 4.9,
-        optimalTiming: 'Morning',
-      ),
-      ActivityImpact(
-        activityName: 'Weight Training',
-        intensity: 'Vigorous',
-        avgDuration: 45,
-        beforeGlucose: 138,
-        afterGlucose: 102,
-        glucoseDrop: 36,
-        frequency: 12,
-        caloriesBurned: 315,
-        effectiveness: 4.6,
-        optimalTiming: 'Afternoon',
-      ),
-      ActivityImpact(
-        activityName: 'Basketball',
-        intensity: 'Vigorous',
-        avgDuration: 35,
-        beforeGlucose: 145,
-        afterGlucose: 105,
-        glucoseDrop: 40,
-        frequency: 6,
-        caloriesBurned: 350,
-        effectiveness: 4.7,
-        optimalTiming: 'Afternoon',
-      ),
-    ];
-
-    // Sort by effectiveness (descending)
-    _allActivities.sort((a, b) => b.effectiveness.compareTo(a.effectiveness));
   }
 
   /// Filter activities by intensity

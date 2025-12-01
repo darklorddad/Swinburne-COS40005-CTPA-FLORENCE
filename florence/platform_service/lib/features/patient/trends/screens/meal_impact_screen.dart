@@ -41,15 +41,12 @@ class _MealImpactScreenState extends State<MealImpactScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Load real data from Supabase
-      // For now, generate mock data
-      _generateMockMealData();
+      // TODO: Connect to a real backend endpoint for impact analysis
+      // For now, initialize empty to show "No Data" state
+      _allMealImpacts = [];
 
       // Filter by meal type
       _filterMealsByType();
-
-      // Simulate network delay
-      await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {
       debugPrint('Error loading meal impact data: $e');
     } finally {
@@ -57,166 +54,6 @@ class _MealImpactScreenState extends State<MealImpactScreen> {
         setState(() => _isLoading = false);
       }
     }
-  }
-
-  /// Generate mock meal impact data
-  void _generateMockMealData() {
-    _allMealImpacts = [
-      // Breakfast foods
-      MealImpact(
-        foodName: 'Oatmeal with Berries',
-        mealType: 'Breakfast',
-        beforeGlucose: 95,
-        afterGlucose: 125,
-        glucoseSpike: 30,
-        frequency: 12,
-        averageCarbs: 45,
-      ),
-      MealImpact(
-        foodName: 'Scrambled Eggs & Toast',
-        mealType: 'Breakfast',
-        beforeGlucose: 92,
-        afterGlucose: 110,
-        glucoseSpike: 18,
-        frequency: 15,
-        averageCarbs: 25,
-      ),
-      MealImpact(
-        foodName: 'Pancakes with Syrup',
-        mealType: 'Breakfast',
-        beforeGlucose: 88,
-        afterGlucose: 175,
-        glucoseSpike: 87,
-        frequency: 3,
-        averageCarbs: 85,
-      ),
-      MealImpact(
-        foodName: 'Greek Yogurt with Nuts',
-        mealType: 'Breakfast',
-        beforeGlucose: 90,
-        afterGlucose: 105,
-        glucoseSpike: 15,
-        frequency: 10,
-        averageCarbs: 20,
-      ),
-
-      // Lunch foods
-      MealImpact(
-        foodName: 'Grilled Chicken Salad',
-        mealType: 'Lunch',
-        beforeGlucose: 102,
-        afterGlucose: 118,
-        glucoseSpike: 16,
-        frequency: 18,
-        averageCarbs: 15,
-      ),
-      MealImpact(
-        foodName: 'Turkey Sandwich (Whole Wheat)',
-        mealType: 'Lunch',
-        beforeGlucose: 98,
-        afterGlucose: 135,
-        glucoseSpike: 37,
-        frequency: 14,
-        averageCarbs: 40,
-      ),
-      MealImpact(
-        foodName: 'Pasta with Marinara',
-        mealType: 'Lunch',
-        beforeGlucose: 105,
-        afterGlucose: 182,
-        glucoseSpike: 77,
-        frequency: 5,
-        averageCarbs: 75,
-      ),
-      MealImpact(
-        foodName: 'Quinoa Bowl with Veggies',
-        mealType: 'Lunch',
-        beforeGlucose: 100,
-        afterGlucose: 128,
-        glucoseSpike: 28,
-        frequency: 8,
-        averageCarbs: 35,
-      ),
-
-      // Dinner foods
-      MealImpact(
-        foodName: 'Salmon with Broccoli',
-        mealType: 'Dinner',
-        beforeGlucose: 108,
-        afterGlucose: 122,
-        glucoseSpike: 14,
-        frequency: 16,
-        averageCarbs: 10,
-      ),
-      MealImpact(
-        foodName: 'Steak with Sweet Potato',
-        mealType: 'Dinner',
-        beforeGlucose: 112,
-        afterGlucose: 145,
-        glucoseSpike: 33,
-        frequency: 10,
-        averageCarbs: 30,
-      ),
-      MealImpact(
-        foodName: 'Pizza (2 slices)',
-        mealType: 'Dinner',
-        beforeGlucose: 110,
-        afterGlucose: 195,
-        glucoseSpike: 85,
-        frequency: 4,
-        averageCarbs: 70,
-      ),
-      MealImpact(
-        foodName: 'Stir-fry with Brown Rice',
-        mealType: 'Dinner',
-        beforeGlucose: 105,
-        afterGlucose: 138,
-        glucoseSpike: 33,
-        frequency: 12,
-        averageCarbs: 45,
-      ),
-
-      // Snacks
-      MealImpact(
-        foodName: 'Apple with Almond Butter',
-        mealType: 'Snack',
-        beforeGlucose: 95,
-        afterGlucose: 108,
-        glucoseSpike: 13,
-        frequency: 20,
-        averageCarbs: 20,
-      ),
-      MealImpact(
-        foodName: 'Protein Bar',
-        mealType: 'Snack',
-        beforeGlucose: 102,
-        afterGlucose: 125,
-        glucoseSpike: 23,
-        frequency: 15,
-        averageCarbs: 25,
-      ),
-      MealImpact(
-        foodName: 'Chocolate Cookies',
-        mealType: 'Snack',
-        beforeGlucose: 98,
-        afterGlucose: 165,
-        glucoseSpike: 67,
-        frequency: 6,
-        averageCarbs: 55,
-      ),
-      MealImpact(
-        foodName: 'Carrot Sticks with Hummus',
-        mealType: 'Snack',
-        beforeGlucose: 100,
-        afterGlucose: 110,
-        glucoseSpike: 10,
-        frequency: 18,
-        averageCarbs: 12,
-      ),
-    ];
-
-    // Sort by glucose spike (ascending)
-    _allMealImpacts.sort((a, b) => a.glucoseSpike.compareTo(b.glucoseSpike));
   }
 
   /// Filter meals by selected type
