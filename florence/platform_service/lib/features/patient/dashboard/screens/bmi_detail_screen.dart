@@ -778,8 +778,12 @@ class _BmiCorrelationSection extends StatelessWidget {
 
 class _BmiHistorySection extends StatefulWidget {
   final List<MonitorData> readings;
+  final List<HealthThreshold> thresholds;
 
-  const _BmiHistorySection({required this.readings});
+  const _BmiHistorySection({
+    required this.readings,
+    this.thresholds = const [],
+  });
 
   @override
   State<_BmiHistorySection> createState() => _BmiHistorySectionState();
@@ -794,6 +798,12 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
+
+    // Filter thresholds
+    HealthThreshold? t;
+    try {
+      t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.BMI);
+    } catch (_) {}
 
     final reversed = widget.readings.reversed.toList();
     final totalItems = reversed.length;
@@ -876,10 +886,22 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
             ...currentItems.map((r) {
               String label;
               Color color;
-              if (r.value < 18.5) { label = "Underweight"; color = AppTheme.primaryBlue; }
-              else if (r.value < 25) { label = "Normal"; color = AppTheme.primaryGreen; }
-              else if (r.value < 30) { label = "Overweight"; color = AppTheme.warningColor; }
-              else { label = "Obese"; color = AppTheme.errorColor; }
+              
+              if (t != null) {
+                if (r.value < t.minValue) {
+                  label = "Low";
+                  color = AppTheme.warningColor;
+                } else if (r.value > t.maxValue) {
+                  label = "High";
+                  color = AppTheme.errorColor;
+                } else {
+                  label = "Normal";
+                  color = AppTheme.primaryGreen;
+                }
+              } else {
+                label = "Recorded";
+                color = AppTheme.primaryBlue;
+              }
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
