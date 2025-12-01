@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class GlucoseDetailScreen extends ConsumerWidget {
@@ -86,9 +87,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  ref.refresh(monitorDataProvider);
-                  ref.refresh(patientThresholdsProvider);
-                  ref.refresh(dailyPatientLogsProvider);
+                  return ref.refresh(core_data.monitorDataProvider.future);
                 },
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),

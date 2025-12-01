@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:math' as math;
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class CholesterolDetailScreen extends ConsumerWidget {
@@ -66,8 +67,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-               ref.refresh(monitorDataProvider);
-               ref.refresh(patientThresholdsProvider);
+               return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),

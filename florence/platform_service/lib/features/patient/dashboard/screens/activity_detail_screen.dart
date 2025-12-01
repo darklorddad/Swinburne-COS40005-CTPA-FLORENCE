@@ -48,7 +48,7 @@ class ActivityDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              ref.refresh(monitorDataProvider);
+              return ref.refresh(monitorDataProvider.future);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
