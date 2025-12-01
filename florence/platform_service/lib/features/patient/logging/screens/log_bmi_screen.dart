@@ -81,6 +81,26 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       return;
     }
 
+    // Foolproof: Check for duplicate entries at the same time
+    final existingData = ref.read(monitorDataProvider).asData?.value ?? [];
+    final isDuplicate = existingData.any((d) {
+      if (d.dataType != MonitorDataType.BMI) return false;
+      
+      // Convert to local to match user selection
+      final localDate = d.measuredAt.toLocal();
+      
+      return localDate.year == _selectedDateTime.year &&
+             localDate.month == _selectedDateTime.month &&
+             localDate.day == _selectedDateTime.day &&
+             localDate.hour == _selectedDateTime.hour &&
+             localDate.minute == _selectedDateTime.minute;
+    });
+
+    if (isDuplicate) {
+      Helpers.showError(context, 'A BMI reading for this time already exists.');
+      return;
+    }
+
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
 
