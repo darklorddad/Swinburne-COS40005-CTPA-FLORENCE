@@ -918,7 +918,7 @@ class _HistorySectionState extends State<_HistorySection> {
               final minHdl = getLimit(MonitorDataType.CHOLESTEROL_HDL, isMin: true);
               final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
 
-              // Determine Headline Value (Total > Calc Total > LDL)
+              // Determine Headline Value (Total > Calc Total > LDL > HDL > Tri)
               String headlineValue = '--';
               String headlineLabel = 'Total mg/dL';
 

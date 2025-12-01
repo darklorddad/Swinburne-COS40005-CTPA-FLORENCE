@@ -124,10 +124,11 @@ class BiometricsSection extends StatelessWidget {
     final bpSystolic = latestBP.sys;
     final bpDiastolic = latestBP.dia;
     final hba1c = getData(MonitorDataType.HBA1C);
+    
+    // Smart Cholesterol Selection (Total > LDL, or newest)
     final cholesterolTotal = getData(MonitorDataType.CHOLESTEROL_TOTAL);
     final cholesterolLdl = getData(MonitorDataType.CHOLESTEROL_LDL);
     
-    // Determine which reading is fresher
     MonitorData? cholesterolDisplay;
     bool isLdlDisplay = false;
 
