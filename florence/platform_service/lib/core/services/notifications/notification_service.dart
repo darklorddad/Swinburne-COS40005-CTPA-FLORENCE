@@ -110,7 +110,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           title: 'Low Glucose Alert',
           message: pattern.description + '\n\nIf you feel symptoms, have a fast-acting carb.',
           createdAt: DateTime.now(),
-          actionUrl: '/log-glucose',
+          actionUrl: '/log/glucose',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
           iconName: 'trending_down',
         );
@@ -124,7 +124,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           title: 'Post-Meal Spike',
           message: pattern.description + '\n\nTip: A 10-minute walk after meals can help reduce spikes.',
           createdAt: DateTime.now(),
-          actionUrl: '/log-activity',
+          actionUrl: '/log/activity',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
           iconName: 'restaurant',
         );
@@ -138,7 +138,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           title: 'Time to Move!',
           message: 'You\'ve been less active today. Even a short walk helps manage glucose!',
           createdAt: DateTime.now(),
-          actionUrl: '/log-activity',
+          actionUrl: '/log/activity',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
           iconName: 'directions_walk',
         );
@@ -152,7 +152,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           title: 'Medication Reminder',
           message: pattern.description,
           createdAt: DateTime.now(),
-          actionUrl: '/medications',
+          actionUrl: '/log/medication',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
           iconName: 'medication',
         );
