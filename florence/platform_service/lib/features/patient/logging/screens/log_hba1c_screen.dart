@@ -8,6 +8,7 @@ import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart'; // Added
 import '../../core/repositories/monitor_data_repository.dart';
 
@@ -37,6 +38,28 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   /// Handle save
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Foolproof 1: Prevent logging in the future
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log readings in the future.');
+      return;
+    }
+
+    // Foolproof 2: Prevent duplicate logs
+    final existingData = ref.read(monitorDataProvider).asData?.value.allMonitorData ?? [];
+    final isDuplicate = existingData.any((d) => 
+      d.dataType == MonitorDataType.HBA1C && 
+      d.measuredAt.year == _selectedDateTime.year &&
+      d.measuredAt.month == _selectedDateTime.month &&
+      d.measuredAt.day == _selectedDateTime.day &&
+      d.measuredAt.hour == _selectedDateTime.hour &&
+      d.measuredAt.minute == _selectedDateTime.minute
+    );
+
+    if (isDuplicate) {
+      Helpers.showError(context, 'An HbA1c reading for this time already exists.');
       return;
     }
     
