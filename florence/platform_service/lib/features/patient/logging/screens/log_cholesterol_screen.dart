@@ -245,11 +245,22 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                   const Icon(Icons.calendar_today, color: AppTheme.accentPurple),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      Formatters.date(_selectedDateTime),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Formatters.date(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        Text(
+                          Formatters.time(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
