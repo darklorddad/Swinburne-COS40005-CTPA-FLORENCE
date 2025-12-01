@@ -466,7 +466,8 @@ class _LdlTargetSection extends StatelessWidget {
     }
 
     final ldl = reading?.ldl ?? 0.0;
-    final double maxScale = math.max(200.0, target! * 1.5);
+    // Scale must accommodate the Target OR the User's Value (whichever is larger), plus buffer
+    final double maxScale = math.max(200.0, math.max(target! * 1.5, ldl * 1.2));
     
     return _CholesterolCard(
       title: 'LDL Performance',
