@@ -28,7 +28,14 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _triglyceridesController = TextEditingController();
 
   bool _isLoading = false;
-  DateTime _selectedDateTime = DateTime.now();
+  // Initialize with seconds/milliseconds stripped for clean database grouping
+  DateTime _selectedDateTime = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+    DateTime.now().hour,
+    DateTime.now().minute,
+  );
 
   @override
   void dispose() {

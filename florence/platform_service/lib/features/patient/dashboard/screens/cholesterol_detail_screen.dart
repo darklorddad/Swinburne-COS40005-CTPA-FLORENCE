@@ -931,6 +931,12 @@ class _HistorySectionState extends State<_HistorySection> {
               } else if (r.ldl != null) {
                 headlineValue = r.ldl!.toInt().toString();
                 headlineLabel = 'LDL mg/dL';
+              } else if (r.hdl != null) {
+                headlineValue = r.hdl!.toInt().toString();
+                headlineLabel = 'HDL mg/dL';
+              } else if (r.triglycerides != null) {
+                headlineValue = r.triglycerides!.toInt().toString();
+                headlineLabel = 'Triglycerides';
               }
 
               // Determine status based on priority (LDL > Total > Tri > HDL)
