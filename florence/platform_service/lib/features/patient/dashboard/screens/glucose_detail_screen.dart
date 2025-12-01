@@ -45,7 +45,8 @@ class GlucoseDetailScreen extends ConsumerWidget {
               for (var meal in mealLogs) {
                 if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
                   mealReadings.add(MonitorData(
-                    id: -1 * meal.id, // Negative ID to differentiate
+                    // FIX: Multiply by 2 to create enough spacing for Before/After slots
+                    id: -(meal.id * 2),
                     patientId: 0,
                     dataType: MonitorDataType.GLUCOSE,
                     value: meal.glucoseBeforeMeal!,
@@ -55,7 +56,8 @@ class GlucoseDetailScreen extends ConsumerWidget {
                 
                 if (meal.glucoseAfterMeal != null && meal.glucoseAfterMealTime != null) {
                   mealReadings.add(MonitorData(
-                    id: (-1 * meal.id) - 1,
+                    // FIX: Offset by 1 from the doubled ID
+                    id: -(meal.id * 2) - 1,
                     patientId: 0,
                     dataType: MonitorDataType.GLUCOSE,
                     value: meal.glucoseAfterMeal!,
