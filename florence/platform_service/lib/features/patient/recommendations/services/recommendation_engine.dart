@@ -20,7 +20,7 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
   Future<void> generateRecommendations({
     int daysToAnalyze = 7,
   }) async {
-    final healthData = ref.read(monitorDataProvider).valueOrNull;
+    final healthData = ref.read(monitorDataProvider).asData?.value;
     if (healthData == null) return;
 
     final summary = healthData.getHealthSummary(
