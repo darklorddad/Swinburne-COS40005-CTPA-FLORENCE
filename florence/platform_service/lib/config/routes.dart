@@ -1,4 +1,4 @@
-// import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
+import '../features/patient/logging/screens/log_hba1c_screen.dart';
 
 import '../features/clinician/screens/clinician_profile_screen.dart';
 import '../features/clinician/screens/patient_detail_screen.dart';
@@ -19,6 +19,7 @@ import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
 import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
 import '../features/patient/dashboard/screens/activity_detail_screen.dart';
 import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
+import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
 import '../features/patient/summaries/screens/weekly_summaries_screen.dart';
@@ -41,6 +42,7 @@ class AppRoutes {
   static const String bloodPressureDetail = '/trends/blood-pressure';
   static const String activityDetail = '/trends/activity-detail';
   static const String bmiDetail = '/bmi-detail';
+  static const String hba1cDetail = '/hba1c-detail';
   static const String weeklyReport = '/trends/weekly-report';
 
   static const String chat = '/chat';
@@ -114,6 +116,9 @@ class AppRoutes {
       case bmiDetail:
         return _buildRoute(const BmiDetailScreen());
 
+      case hba1cDetail:
+        return _buildRoute(const HbA1cDetailScreen());
+
       case weeklyReport:
         return _buildRoute(const WeeklySummariesScreen());
 
@@ -148,7 +153,7 @@ class AppRoutes {
         return _buildRoute(const LogBmiScreen(), settings);
 
       case logHba1c:
-        return _buildRoute(const _PlaceholderScreen(title: 'Log HbA1c'), settings);
+        return _buildRoute(const LogHba1cScreen(), settings);
 
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);

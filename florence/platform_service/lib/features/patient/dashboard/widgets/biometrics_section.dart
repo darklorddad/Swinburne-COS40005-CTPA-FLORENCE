@@ -163,10 +163,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: hba1c?.measuredAt,
       icon: Icons.pie_chart_outline,
       color: _getHba1cColor(hba1c?.value, thresholds),
-      onTap: () => Navigator.push(
-        context, 
-        MaterialPageRoute(builder: (context) => const HbA1cDetailScreen())
-      ),
+      onTap: () => AppRoutes.push(context, AppRoutes.hba1cDetail),
     ));
 
     // Cholesterol (Always show)
