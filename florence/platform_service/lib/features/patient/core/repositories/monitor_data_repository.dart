@@ -133,7 +133,9 @@ class HealthDataState {
       totalActivityMinutes: totalMinutes,
       totalMeals: mealsInPeriod.length,
       averageCarbs: avgCarbs,
-      medicationAdherence: 0.85, // Mocked for now
+      medicationAdherence: medications.isNotEmpty 
+          ? medications.map((m) => m.adherenceRate).reduce((a, b) => a + b) / medications.length 
+          : 0.0,
       averageSleepHours: avgSleep,
     );
   }

@@ -56,9 +56,6 @@ class Environment {
   /// Enable debug mode
   static const bool isDebug = true;
 
-  /// Mock data mode
-  static const bool useMockData = false;
-
   // ==================== THRESHOLDS ====================
 
   /// Glucose thresholds (mg/dL)
@@ -112,7 +109,6 @@ class Environment {
   /// Get current mode description
   static String get modeDescription {
     if (enableSupabase) return 'Production Mode (Supabase Connected)';
-    if (useMockData) return 'Demo Mode (Mock Data)';
     return 'Development Mode';
   }
 
