@@ -730,10 +730,9 @@ class _TrafficLightCalendar extends StatelessWidget {
         if (!dayMaxSpike.containsKey(dateKey) || spike > dayMaxSpike[dateKey]!) {
           dayMaxSpike[dateKey] = spike;
         }
-      } else {
-        // Logged but no glucose data? Treat as 0 spike (Green) if not already set
-        dayMaxSpike.putIfAbsent(dateKey, () => 0);
       }
+      // If no glucose data, we simply don't add to dayMaxSpike. 
+      // The builder handles `maxSpike == null` as the Neutral/Blue state.
     }
 
     // 2. Logic to Align Grid to Monday
