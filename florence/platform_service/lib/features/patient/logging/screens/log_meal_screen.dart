@@ -84,10 +84,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         _selectedMealType.toUpperCase(),
         _selectedDateTime,
         description,
-        null, // Glucose before (handled in glucose screen)
-        null,
+        null, // Glucose before
+        null, // Time before
         null, // Glucose after
-        null,
+        null, // Time after
       );
       
       // Notes and macros currently handled by backend or can be extended in addMeal if needed
