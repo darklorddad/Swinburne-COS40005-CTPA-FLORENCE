@@ -126,9 +126,27 @@ class BiometricsSection extends StatelessWidget {
     final hba1c = getData(MonitorDataType.HBA1C);
     final cholesterolTotal = getData(MonitorDataType.CHOLESTEROL_TOTAL);
     final cholesterolLdl = getData(MonitorDataType.CHOLESTEROL_LDL);
-    // Prefer Total, fallback to LDL
-    final cholesterolDisplay = cholesterolTotal ?? cholesterolLdl;
-    final isLdlDisplay = cholesterolTotal == null && cholesterolLdl != null;
+    
+    // Determine which reading is fresher
+    MonitorData? cholesterolDisplay;
+    bool isLdlDisplay = false;
+
+    if (cholesterolTotal == null && cholesterolLdl == null) {
+      cholesterolDisplay = null;
+    } else if (cholesterolTotal == null) {
+      cholesterolDisplay = cholesterolLdl;
+      isLdlDisplay = true;
+    } else if (cholesterolLdl == null) {
+      cholesterolDisplay = cholesterolTotal;
+    } else {
+      // Both exist, prioritize the most recent one
+      if (cholesterolLdl.measuredAt.isAfter(cholesterolTotal.measuredAt)) {
+        cholesterolDisplay = cholesterolLdl;
+        isLdlDisplay = true;
+      } else {
+        cholesterolDisplay = cholesterolTotal;
+      }
+    }
 
     final bmi = getData(MonitorDataType.BMI);
 
