@@ -721,8 +721,9 @@ class _TrafficLightCalendar extends StatelessWidget {
     final Map<int, int> dayLogCount = {};
 
     for (var log in logs) {
-      // FIX: Convert to Local Time to ensure alignment with UI
+      // Use logDate as the source of truth for the "Day"
       final localDate = log.logDate.toLocal();
+      // Strip time components to ensure consistent key
       final dateKey = DateTime(localDate.year, localDate.month, localDate.day).millisecondsSinceEpoch;
       
       // Count logs
