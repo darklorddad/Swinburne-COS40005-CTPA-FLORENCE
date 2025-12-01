@@ -32,6 +32,9 @@ class BmiDetailScreen extends ConsumerWidget {
       ),
       body: monitorAsync.when(
         data: (dataList) {
+          // TODO: Fetch real thresholds from provider
+          final thresholds = <HealthThreshold>[];
+
           // Filter BMI Data
           final bmiReadings = dataList
               .where((d) => d.dataType == MonitorDataType.BMI)
@@ -74,7 +77,10 @@ class BmiDetailScreen extends ConsumerWidget {
                   const SizedBox(height: 20),
 
                   // 4. History List
-                  _BmiHistorySection(readings: bmiReadings),
+                  _BmiHistorySection(
+                    readings: bmiReadings,
+                    thresholds: thresholds,
+                  ),
                   const SizedBox(height: 24),
                 ],
               ),
