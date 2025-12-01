@@ -75,7 +75,7 @@ class MonitorDataType(str, Enum):
 
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
-    # Database Foolproofing: Ensure values are physically possible (0 < x < 1000)
+    # Foolproof 3: Database integrity check (must be positive, physiological value)
     value: float = Field(..., gt=0, lt=1000, description="Must be a positive physiological value")
     measured_at: datetime
 

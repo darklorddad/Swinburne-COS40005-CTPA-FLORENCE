@@ -39,11 +39,12 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
       return;
     }
 
+    // Foolproof 2: Logic check prevents impossible medical data
     final sys = double.parse(_systolicController.text);
     final dia = double.parse(_diastolicController.text);
 
     if (dia >= sys) {
-      Helpers.showError(context, 'Diastolic must be lower than Systolic.');
+      Helpers.showError(context, 'Diastolic (bottom) must be lower than Systolic (top).');
       return;
     }
 
@@ -169,6 +170,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   label: 'Systolic',
                   hint: 'e.g., 120',
                   controller: _systolicController,
+                  // Foolproof 1: Range validator prevents non-numbers crashing the app
                   validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.arrow_upward),
@@ -180,6 +182,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   label: 'Diastolic',
                   hint: 'e.g., 80',
                   controller: _diastolicController,
+                  // Foolproof 1: Range validator prevents non-numbers crashing the app
                   validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.arrow_downward),
