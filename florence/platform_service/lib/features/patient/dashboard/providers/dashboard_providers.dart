@@ -10,7 +10,7 @@ final monitorDataProvider = Provider<AsyncValue<List<MonitorData>>>((ref) {
 
 final latestActivityProvider = Provider<AsyncValue<ActivityLog?>>((ref) {
   return ref.watch(core.monitorDataProvider).whenData((state) => 
-    state.activities.isNotEmpty ? state.activities.last : null // Activities sorted by time usually? My Repo sorted them.
+    state.activities.isNotEmpty ? state.activities.first : null // Repo sorts descending (Newest first)
   );
 });
 
