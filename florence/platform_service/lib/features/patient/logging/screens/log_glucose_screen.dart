@@ -97,7 +97,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     } catch (e) {
       if (mounted) {
         if (e.toString().contains('409')) {
-          Helpers.showError(context, 'A log for this meal already exists today.');
+          Helpers.showError(context, 'You have already logged $_selectedMealType for this date.');
         } else {
           Helpers.showError(context, 'Failed to save glucose reading: ${e.toString()}');
         }
