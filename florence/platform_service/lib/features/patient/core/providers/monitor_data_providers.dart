@@ -69,7 +69,7 @@ final latestGlucoseProvider = Provider<GlucoseReading?>((ref) {
 
 final addGlucoseProvider = AsyncNotifierProvider.autoDispose<AddGlucoseNotifier, void>(AddGlucoseNotifier.new);
 
-class AddGlucoseNotifier extends AsyncNotifier<void> {
+class AddGlucoseNotifier extends AutoDisposeAsyncNotifier<void> {
   @override
   Future<void> build() async {}
 

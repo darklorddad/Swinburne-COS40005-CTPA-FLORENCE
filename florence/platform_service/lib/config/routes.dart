@@ -1,4 +1,4 @@
-import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
+// import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
 
 import '../features/clinician/screens/clinician_profile_screen.dart';
 import '../features/clinician/screens/patient_detail_screen.dart';
@@ -148,7 +148,7 @@ class AppRoutes {
         return _buildRoute(const LogBmiScreen(), settings);
 
       case logHba1c:
-        return _buildRoute(const LogHba1cScreen(), settings);
+        return _buildRoute(const _PlaceholderScreen(title: 'Log HbA1c'), settings);
 
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);
