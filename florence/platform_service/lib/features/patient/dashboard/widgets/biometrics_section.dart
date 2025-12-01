@@ -4,7 +4,6 @@ import '../../../../core/utils/helpers.dart';
 import '../../core/models/health_data_models.dart'; // Updated import
 import '../../../../config/routes.dart';
 import 'compact_health_card.dart';
-import '../screens/hba1c_detail_screen.dart';
 import '../screens/cholesterol_detail_screen.dart';
 import '../screens/diet_detail_screen.dart';
 
