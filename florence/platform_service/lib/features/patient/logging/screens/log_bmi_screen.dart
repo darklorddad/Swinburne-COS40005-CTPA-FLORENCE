@@ -107,15 +107,22 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     );
 
     if (date != null && mounted) {
-      setState(() {
-        _selectedDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          _selectedDateTime.hour,
-          _selectedDateTime.minute,
-        );
-      });
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+
+      if (time != null && mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+          );
+        });
+      }
     }
   }
 
@@ -301,11 +308,22 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   const Icon(Icons.calendar_today, color: AppTheme.primaryGreen),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      Formatters.date(_selectedDateTime),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Formatters.date(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        Text(
+                          Formatters.time(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
