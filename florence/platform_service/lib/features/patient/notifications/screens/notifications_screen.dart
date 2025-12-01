@@ -2,44 +2,28 @@
 /// Displays all notifications with filtering and actions
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/notifications/notification_service.dart';
 import '../../../../core/services/notifications/notification_models.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../config/theme.dart';
 
 /// Notifications screen showing all notifications
-class NotificationsScreen extends StatefulWidget {
+class NotificationsScreen extends ConsumerStatefulWidget {
   const NotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
-  final NotificationService _notificationService = NotificationService();
+class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   NotificationType? _selectedFilter;
 
   @override
-  void initState() {
-    super.initState();
-    _notificationService.addListener(_onNotificationsChanged);
-  }
-
-  @override
-  void dispose() {
-    _notificationService.removeListener(_onNotificationsChanged);
-    super.dispose();
-  }
-
-  void _onNotificationsChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final allNotifications = _notificationService.allNotifications;
+    final allNotifications = ref.watch(notificationProvider);
+    final notifier = ref.read(notificationProvider.notifier);
+
     final filteredNotifications = _selectedFilter == null
         ? allNotifications
         : allNotifications
@@ -102,8 +86,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           IconButton(
             icon: const Icon(Icons.done_all),
             onPressed: () {
-              _notificationService.markAllAsRead();
-              setState(() {});
+              notifier.markAllAsRead();
             },
             tooltip: 'Mark all as read',
           ),
@@ -116,8 +99,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 'Are you sure you want to clear all notifications?',
               );
               if (confirmed) {
-                _notificationService.clearAll();
-                setState(() {});
+                notifier.clearAll();
               }
             },
             tooltip: 'Clear all',
@@ -128,17 +110,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ? _buildEmptyState()
           : ListView(
               children: [
-                if (today.isNotEmpty) _buildGroup('Today', today),
-                if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday),
-                if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek),
-                if (older.isNotEmpty) _buildGroup('Older', older),
+                if (today.isNotEmpty) _buildGroup('Today', today, notifier),
+                if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday, notifier),
+                if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek, notifier),
+                if (older.isNotEmpty) _buildGroup('Older', older, notifier),
               ],
             ),
     );
   }
 
   /// Build notification group
-  Widget _buildGroup(String title, List<HealthNotification> notifications) {
+  Widget _buildGroup(String title, List<HealthNotification> notifications, NotificationNotifier notifier) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -153,13 +135,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
           ),
         ),
-        ...notifications.map((n) => _buildNotificationCard(n)),
+        ...notifications.map((n) => _buildNotificationCard(n, notifier)),
       ],
     );
   }
 
   /// Build notification card
-  Widget _buildNotificationCard(HealthNotification notification) {
+  Widget _buildNotificationCard(HealthNotification notification, NotificationNotifier notifier) {
     return Dismissible(
       key: Key(notification.id),
       direction: DismissDirection.endToStart,
@@ -170,15 +152,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       onDismissed: (_) {
-        _notificationService.deleteNotification(notification.id);
-        setState(() {});
+        notifier.deleteNotification(notification.id);
       },
       child: InkWell(
         onTap: () {
           // Mark as read
           if (!notification.isRead) {
-            _notificationService.markAsRead(notification.id);
-            setState(() {});
+            notifier.markAsRead(notification.id);
           }
 
           // Navigate if action URL exists

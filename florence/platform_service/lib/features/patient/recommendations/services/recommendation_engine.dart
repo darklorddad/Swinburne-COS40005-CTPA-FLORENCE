@@ -1,45 +1,42 @@
-/// AI-Powered Recommendation Engine for FLORENCE Digital Health Platform
-/// Generates personalized health recommendations
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/config/environment.dart';
 import '../../../patient/core/models/health_data_models.dart';
-import '../../../patient/core/services/data_ingestion_service.dart';
+import '../../../patient/core/providers/monitor_data_providers.dart';
 import '../models/recommendation_models.dart';
 
-/// Service for generating health recommendations
-class RecommendationEngine {
-  final DataIngestionService _dataService = DataIngestionService();
+final recommendationProvider = NotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(RecommendationNotifier.new);
 
-  // Singleton pattern
-  static final RecommendationEngine _instance = RecommendationEngine._internal();
-  factory RecommendationEngine() => _instance;
-  RecommendationEngine._internal();
-
-  // Cache of generated recommendations
-  final List<HealthRecommendation> _recommendations = [];
-
-  List<HealthRecommendation> get allRecommendations =>
-      List.unmodifiable(_recommendations);
-
-  List<HealthRecommendation> get activeRecommendations =>
-      _recommendations.where((r) => r.isActive).toList();
-
-  /// Generate new recommendations based on recent health data
-  Future<List<HealthRecommendation>> generateRecommendations({
-    int daysToAnalyze = 7,
-  }) async {
-    // Currently only rule-based recommendations are supported
-    // until the Python service exposes a recommendation endpoint.
-    return _generateRuleBasedRecommendations();
+class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
+  
+  @override
+  List<HealthRecommendation> build() {
+    return [];
   }
 
-  /// Generate rule-based recommendations (fallback)
-  List<HealthRecommendation> _generateRuleBasedRecommendations() {
-    final recommendations = <HealthRecommendation>[];
-    final summary = _dataService.getHealthSummary(
-      startDate: DateTime.now().subtract(const Duration(days: 7)),
+  List<HealthRecommendation> get activeRecommendations =>
+      state.where((r) => r.isActive).toList();
+
+  /// Generate new recommendations based on recent health data
+  Future<void> generateRecommendations({
+    int daysToAnalyze = 7,
+  }) async {
+    final healthData = ref.read(monitorDataProvider).valueOrNull;
+    if (healthData == null) return;
+
+    final summary = healthData.getHealthSummary(
+      startDate: DateTime.now().subtract(Duration(days: daysToAnalyze)),
       endDate: DateTime.now(),
     );
+
+    final newRecommendations = _generateRuleBasedRecommendations(summary);
+    
+    // Append new recommendations, avoiding duplicates if needed
+    state = [...state, ...newRecommendations];
+  }
+
+  /// Generate rule-based recommendations
+  List<HealthRecommendation> _generateRuleBasedRecommendations(HealthSummary summary) {
+    final recommendations = <HealthRecommendation>[];
 
     // High glucose
     if (summary.averageGlucose > Environment.glucoseHigh) {
@@ -79,38 +76,33 @@ class RecommendationEngine {
       ));
     }
 
-    _recommendations.addAll(recommendations);
     return recommendations;
-  }
-
-  /// Explain a specific recommendation
-  Future<String> explainRecommendation(HealthRecommendation recommendation) async {
-    // Return static rationale as AI explanation is currently unavailable
-    return recommendation.explanation?.rationale ?? 'No explanation available';
   }
 
   /// Mark recommendation as completed
   void completeRecommendation(String id) {
-    final index = _recommendations.indexWhere((r) => r.id == id);
-    if (index != -1) {
-      _recommendations[index] = _recommendations[index].copyWith(
-        status: RecommendationStatus.completed,
-      );
-    }
+    state = [
+      for (final r in state)
+        if (r.id == id)
+          r.copyWith(status: RecommendationStatus.completed)
+        else
+          r
+    ];
   }
 
   /// Dismiss recommendation
   void dismissRecommendation(String id) {
-    final index = _recommendations.indexWhere((r) => r.id == id);
-    if (index != -1) {
-      _recommendations[index] = _recommendations[index].copyWith(
-        status: RecommendationStatus.dismissed,
-      );
-    }
+    state = [
+      for (final r in state)
+        if (r.id == id)
+          r.copyWith(status: RecommendationStatus.dismissed)
+        else
+          r
+    ];
   }
 
   /// Clear all recommendations
   void clearRecommendations() {
-    _recommendations.clear();
+    state = [];
   }
 }

@@ -4,27 +4,30 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/widgets/card_widgets.dart';
-import '../../core/providers/health_data_provider.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart'; // For HealthDataState
 
 /// Weekly summaries screen
-class WeeklySummariesScreen extends StatefulWidget {
+class WeeklySummariesScreen extends ConsumerStatefulWidget {
   const WeeklySummariesScreen({super.key});
 
   @override
-  State<WeeklySummariesScreen> createState() => _WeeklySummariesScreenState();
+  ConsumerState<WeeklySummariesScreen> createState() => _WeeklySummariesScreenState();
 }
 
-class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
+class _WeeklySummariesScreenState extends ConsumerState<WeeklySummariesScreen> {
   int _weeksBack = 0; // 0 = this week, 1 = last week, etc.
   final int _maxWeeksBack = 12; // Show up to 12 weeks of history
 
   @override
   Widget build(BuildContext context) {
+    final healthDataAsync = ref.watch(monitorDataProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Weekly Summaries'),
@@ -38,14 +41,15 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
           ),
         ],
       ),
-      body: Consumer<HealthDataProvider>(
-        builder: (context, healthData, child) {
-          final summary = _getWeeklySummary(healthData);
+      body: healthDataAsync.when(
+        data: (healthData) {
+          final summary = healthData.getHealthSummary(
+            startDate: _getWeekStart(),
+            endDate: _getWeekEnd(),
+          );
 
           return RefreshIndicator(
-            onRefresh: () async {
-              await healthData.refreshData();
-            },
+            onRefresh: () => ref.refresh(monitorDataProvider.future),
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(16),
@@ -75,7 +79,7 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
                   // Medication adherence
                   _buildSectionHeader('Medication Adherence'),
                   const SizedBox(height: 12),
-                  _buildMedicationCard(healthData),
+                  _buildMedicationCard(summary),
                   const SizedBox(height: 16),
 
                   // Week comparison chart
@@ -94,6 +98,8 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
             ),
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }
@@ -336,18 +342,24 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
   }
 
   /// Build medication card
-  Widget _buildMedicationCard(HealthDataProvider healthData) {
-    final adherence = healthData.getMedicationAdherence();
+  Widget _buildMedicationCard(HealthSummary summary) {
+    // Use summary directly since we added medicationAdherence to it
+    // Wait, in HealthSummary models it IS 'medicationAdherence' (double 0.0 - 1.0)
+    // Here it was multiplying by 100? No, healthData.getMedicationAdherence() returned rate.
+    // Let's check HealthSummary model: 'required this.medicationAdherence' (double).
+    // And adherence is calculated as sum of rates / count. So it's 0.0 - 1.0.
+    
+    final adherencePercentage = summary.medicationAdherence * 100;
 
     Color color;
     IconData icon;
     String status;
 
-    if (adherence >= 80) {
+    if (adherencePercentage >= 80) {
       color = AppTheme.primaryGreen;
       icon = Icons.check_circle;
       status = 'Excellent';
-    } else if (adherence >= 60) {
+    } else if (adherencePercentage >= 60) {
       color = AppTheme.warningColor;
       icon = Icons.info;
       status = 'Good';
@@ -376,7 +388,7 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${adherence.toStringAsFixed(0)}% Adherence',
+                    '${adherencePercentage.toStringAsFixed(0)}% Adherence',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -399,7 +411,7 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
   }
 
   /// Build trends card
-  Widget _buildTrendsCard(HealthDataProvider healthData) {
+  Widget _buildTrendsCard(HealthDataState healthData) {
     // Get last 4 weeks of data for comparison
     final weeks = <Map<String, dynamic>>[];
 
@@ -637,14 +649,6 @@ class _WeeklySummariesScreenState extends State<WeeklySummariesScreen> {
   /// Get week end date
   DateTime _getWeekEnd() {
     return _getWeekStart().add(const Duration(days: 6, hours: 23, minutes: 59));
-  }
-
-  /// Get weekly summary
-  HealthSummary _getWeeklySummary(HealthDataProvider healthData) {
-    return healthData.getHealthSummary(
-      startDate: _getWeekStart(),
-      endDate: _getWeekEnd(),
-    );
   }
 
   /// Generate AI insights

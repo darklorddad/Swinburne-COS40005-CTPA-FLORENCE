@@ -1,62 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
 import 'recommendation_detail_screen.dart';
 import '../services/recommendation_engine.dart';
 import '../models/recommendation_models.dart';
 
 /// Health Insights Screen
 /// Displays AI-generated health insights with explainability
-class RecommendationsScreen extends StatefulWidget {
+class RecommendationsScreen extends ConsumerStatefulWidget {
   const RecommendationsScreen({super.key});
 
   @override
-  State<RecommendationsScreen> createState() => _RecommendationsScreenState();
+  ConsumerState<RecommendationsScreen> createState() => _RecommendationsScreenState();
 }
 
-class _RecommendationsScreenState extends State<RecommendationsScreen> {
+class _RecommendationsScreenState extends ConsumerState<RecommendationsScreen> {
   bool _isLoading = false;
   bool _isGenerating = false;
-
-  // Recommendation engine
-  final RecommendationEngine _engine = RecommendationEngine();
-
-  // Recommendations data
-  List<HealthRecommendation> _insights = [];
 
   @override
   void initState() {
     super.initState();
-    _loadInsights();
+    // Initial generation if empty
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndLoadInsights();
+    });
   }
 
-  /// Load insights
-  Future<void> _loadInsights() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Get all cached recommendations from engine
-      // For the insights view, we might want to show all active ones, or even history if relevant.
-      // For now, let's show active ones as "Current Insights".
-      final allRecs = _engine.allRecommendations;
-      
-      if (allRecs.isEmpty) {
-        await _generateNewInsights();
-      } else {
-        _insights = allRecs.where((r) => r.isActive).toList();
-      }
-    } catch (e) {
-      debugPrint('Error loading insights: $e');
-      if (mounted) {
-        Helpers.showError(context, 'Failed to load insights');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+  Future<void> _checkAndLoadInsights() async {
+    final currentRecs = ref.read(recommendationProvider);
+    if (currentRecs.isEmpty) {
+      await _generateNewInsights();
     }
   }
 
@@ -65,19 +42,10 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
     setState(() => _isGenerating = true);
 
     try {
-      final newRecs = await _engine.generateRecommendations(daysToAnalyze: 7);
-
+      await ref.read(recommendationProvider.notifier).generateRecommendations(daysToAnalyze: 7);
+      // In a real scenario, we might compare old vs new count here or return new ones from the method
       if (mounted) {
-        setState(() {
-          _insights = _engine.allRecommendations.where((r) => r.isActive).toList();
-        });
-
-        if (newRecs.isNotEmpty) {
-          Helpers.showSuccess(
-            context,
-            'Found ${newRecs.length} new insights',
-          );
-        }
+        Helpers.showSuccess(context, 'Analysis complete');
       }
     } catch (e) {
       debugPrint('Error generating insights: $e');
@@ -93,6 +61,9 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final insights = ref.watch(recommendationProvider);
+    final activeInsights = insights.where((r) => r.isActive).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Health Insights'),
@@ -119,15 +90,15 @@ class _RecommendationsScreenState extends State<RecommendationsScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _insights.isEmpty
+          : activeInsights.isEmpty && !_isGenerating
               ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: _generateNewInsights,
                   child: ListView.builder(
                     padding: const EdgeInsets.all(16),
-                    itemCount: _insights.length,
+                    itemCount: activeInsights.length,
                     itemBuilder: (context, index) {
-                      return _buildInsightCard(_insights[index]);
+                      return _buildInsightCard(activeInsights[index]);
                     },
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
@@ -9,17 +10,16 @@ import '../models/chat_message.dart';
 
 /// Chat Screen - AI Health Assistant
 /// Conversational interface for health questions and guidance
-class ChatScreen extends StatefulWidget {
+class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
-  final _chatbotService = ChatbotService(); // Uses the singleton instance
   
   bool _isTyping = false;
 
@@ -34,65 +34,22 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Listen to service updates (e.g. when background messages arrive)
-    _chatbotService.addListener(_onServiceUpdate);
-    
-    // Initialize typing state based on current messages
-    // If the last message is from the user, it means we are waiting for AI response
-    if (_chatbotService.messages.isNotEmpty) {
-      _isTyping = _chatbotService.messages.last.isUser;
-    }
-    
-    _initializeChat();
+    // Initialize chat after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeChat();
+    });
   }
 
   @override
   void dispose() {
-    _chatbotService.removeListener(_onServiceUpdate);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  /// Called whenever the service notifies of changes
-  void _onServiceUpdate() {
-    if (mounted) {
-      setState(() {
-        // The UI rebuilds using _chatbotService.messages directly
-        // We check if the last message is from user to determine typing state
-        if (_chatbotService.messages.isNotEmpty) {
-          _isTyping = _chatbotService.messages.last.isUser;
-        } else {
-          _isTyping = false;
-        }
-      });
-      
-      // Scroll to bottom on new messages if not loading
-      if (_chatbotService.messages.isNotEmpty && 
-          !_chatbotService.isLoadingHistory && 
-          !_chatbotService.isClearingHistory) {
-        _scrollToBottom();
-      }
-    }
-  }
-
   /// Initialize chat: check cache or fetch history
   Future<void> _initializeChat() async {
-    // If not loaded and not currently loading, trigger load
-    if (!_chatbotService.hasLoadedHistory && !_chatbotService.isLoadingHistory) {
-      await _loadHistory();
-    }
-  }
-
-  /// Load chat history from service
-  Future<void> _loadHistory() async {
-    try {
-      await _chatbotService.loadHistory();
-    } catch (e) {
-      if (mounted) {
-        Helpers.showError(context, 'Failed to sync chat history');
-      }
-    }
+    ref.read(chatProvider.notifier).loadHistory();
   }
 
   /// Confirm and clear history
@@ -120,7 +77,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (confirmed == true) {
       try {
-        await _chatbotService.clearHistory();
+        await ref.read(chatProvider.notifier).clearHistory();
         if (mounted) {
           Helpers.showInfo(context, 'Chat history cleared');
         }
@@ -139,14 +96,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final messageText = text.trim();
     _messageController.clear();
 
-    // We don't manually add to a local list anymore.
-    // We call the service, which updates its list and notifies us.
-    
     try {
-      await _chatbotService.sendMessage(messageText);
+      await ref.read(chatProvider.notifier).sendMessage(messageText);
+      _scrollToBottom();
     } catch (e) {
       if (mounted) {
-        // The service has already removed the message from the list
         Helpers.showError(context, "Failed to send message. Please try again.");
       }
     }
@@ -215,14 +169,22 @@ class _ChatScreenState extends State<ChatScreen> {
   
   @override
   Widget build(BuildContext context) {
-    final messages = _chatbotService.messages;
-    final isLoading = _chatbotService.isLoadingHistory;
-    final isClearing = _chatbotService.isClearingHistory;
-    
-    final showLoading = isLoading || isClearing;
-    final loadingText = isClearing 
+    final chatState = ref.watch(chatProvider);
+    final messages = chatState.messages;
+    final showLoading = chatState.isLoadingHistory || chatState.isClearingHistory;
+    final loadingText = chatState.isClearingHistory 
         ? 'Clearing conversation history...' 
         : 'Syncing conversation history...';
+
+    // Determine typing state
+    final isTyping = messages.isNotEmpty && messages.last.isUser;
+
+    // Scroll to bottom when messages change (and not loading)
+    ref.listen(chatProvider, (previous, next) {
+      if (next.messages.length > (previous?.messages.length ?? 0) && !next.isLoadingHistory) {
+        _scrollToBottom();
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -256,7 +218,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           
           // Typing indicator
-          if (_isTyping && !showLoading) _buildTypingIndicator(),
+          if (isTyping && !showLoading) _buildTypingIndicator(),
           
           // Input area
           _buildInputArea(isEnabled: !showLoading),
@@ -511,7 +473,7 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          top: BorderSide(color: AppTheme.borderColor),
+          bottom: BorderSide(color: AppTheme.borderColor),
         ),
       ),
       child: SafeArea(
