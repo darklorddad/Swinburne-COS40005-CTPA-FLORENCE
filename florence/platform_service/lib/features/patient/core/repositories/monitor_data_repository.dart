@@ -228,7 +228,39 @@ class MonitorDataRepository {
     // 4. Fetch Meals
     final meals = await _fetchMeals();
 
-    // 5. No Mock Data
+    // 5. Integrate Meal Glucose into Monitor Data
+    final mealMonitorData = <MonitorData>[];
+    for (var m in meals) {
+      final mealId = int.tryParse(m.id) ?? 0;
+      
+      // Glucose Before Meal
+      if (m.glucoseBefore != null && m.glucoseBeforeTime != null) {
+        mealMonitorData.add(MonitorData(
+          id: -(mealId * 2), // Negative ID to avoid collision with main table
+          patientId: 0, 
+          dataType: MonitorDataType.GLUCOSE,
+          value: m.glucoseBefore!,
+          measuredAt: m.glucoseBeforeTime!,
+        ));
+      }
+      
+      // Glucose After Meal
+      if (m.glucoseAfter != null && m.glucoseAfterTime != null) {
+        mealMonitorData.add(MonitorData(
+          id: -(mealId * 2) - 1,
+          patientId: 0,
+          dataType: MonitorDataType.GLUCOSE,
+          value: m.glucoseAfter!,
+          measuredAt: m.glucoseAfterTime!,
+        ));
+      }
+    }
+
+    // Combine and Sort
+    final combinedMonitorData = [...allMonitorData, ...mealMonitorData];
+    combinedMonitorData.sort((a, b) => b.measuredAt.compareTo(a.measuredAt));
+
+    // 6. No Mock Data
     final medications = <MedicationLog>[];
     final sleepLogs = <SleepLog>[];
 
@@ -252,7 +284,7 @@ class MonitorDataRepository {
       cholesterolResults: cholesterolResults,
       bmiResults: bmiResults,
       healthThresholds: thresholds,
-      allMonitorData: allMonitorData,
+      allMonitorData: combinedMonitorData,
     );
   }
 

@@ -34,113 +34,81 @@ class GlucoseDetailScreen extends ConsumerWidget {
       ),
       body: glucoseAsync.when(
         data: (dataList) {
-          return dailyLogsAsync.when(
-            data: (mealLogs) {
-              // 1. Global Data Prep
-              final directReadings = dataList
-                  .where((d) => d.dataType == MonitorDataType.GLUCOSE)
-                  .toList();
+          // 1. Global Data Prep
+          // Filter glucose readings from the consolidated dataList
+          final allReadings = dataList
+              .where((d) => d.dataType == MonitorDataType.GLUCOSE)
+              .toList();
 
-              // Convert meal log glucose entries to MonitorData ONLY if time exists
-              final mealReadings = <MonitorData>[];
-              for (var meal in mealLogs) {
-                if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
-                  mealReadings.add(MonitorData(
-                    // FIX: Multiply by 2 to create enough spacing for Before/After slots
-                    id: -(meal.id * 2),
-                    patientId: 0,
-                    dataType: MonitorDataType.GLUCOSE,
-                    value: meal.glucoseBeforeMeal!,
-                    measuredAt: meal.glucoseBeforeMealTime!,
-                  ));
-                }
-                
-                if (meal.glucoseAfterMeal != null && meal.glucoseAfterMealTime != null) {
-                  mealReadings.add(MonitorData(
-                    // FIX: Offset by 1 from the doubled ID
-                    id: -(meal.id * 2) - 1,
-                    patientId: 0,
-                    dataType: MonitorDataType.GLUCOSE,
-                    value: meal.glucoseAfterMeal!,
-                    measuredAt: meal.glucoseAfterMealTime!,
-                  ));
-                }
-              }
+          // Sort ascending for charts logic (Timeline needs X-axis increasing)
+          allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
-              final allReadings = [...directReadings, ...mealReadings];
+          final thresholds = thresholdsAsync.value ?? [];
+          
+          // Check if user actually has a set threshold
+          HealthThreshold? userThreshold;
+          try {
+            userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+          } catch (_) {}
 
-              // Sort ascending for charts logic (Timeline needs X-axis increasing)
-              allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
+          final isDefault = userThreshold == null;
+          
+          // Use user's threshold or safe default
+          final effectiveThreshold = userThreshold;
 
-              final thresholds = thresholdsAsync.value ?? [];
-              
-              // Check if user actually has a set threshold
-              HealthThreshold? userThreshold;
-              try {
-                userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
-              } catch (_) {}
-
-              final isDefault = userThreshold == null;
-              
-              // Use user's threshold or safe default
-              final effectiveThreshold = userThreshold;
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  return ref.refresh(core_data.monitorDataProvider.future);
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Statistics
-                    _StatisticsSection(
-                      readings: allReadings, 
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 2. Annotated Line Chart
-                    _GlucoseTrendsSection(
-                      allReadings: allReadings,
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 3. Time in Range
-                    _TimeInRangeSection(
-                      allReadings: allReadings,
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 4. Modal Day
-                    _ModalDaySection(
-                      allReadings: allReadings,
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 5. History List
-                    _HistorySection(
-                      allReadings: allReadings, // Pass sorted list, we will reverse it inside
-                      thresholds: thresholds,
-                    ),
-                    
-                    // Bottom Spacing to match Dashboard
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ));
+          return RefreshIndicator(
+            onRefresh: () async {
+              return ref.refresh(core_data.monitorDataProvider.future);
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error loading logs: $err')),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Statistics
+                  _StatisticsSection(
+                    readings: allReadings, 
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 2. Annotated Line Chart
+                  _GlucoseTrendsSection(
+                    allReadings: allReadings,
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 3. Time in Range
+                  _TimeInRangeSection(
+                    allReadings: allReadings,
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 4. Modal Day
+                  _ModalDaySection(
+                    allReadings: allReadings,
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 5. History List
+                  _HistorySection(
+                    allReadings: allReadings, // Pass sorted list, we will reverse it inside
+                    thresholds: thresholds,
+                  ),
+                  
+                  // Bottom Spacing to match Dashboard
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

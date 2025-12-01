@@ -104,34 +104,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final thresholds = ref.watch(patientThresholdsProvider).asData?.value ?? [];
     final mealLogs = ref.watch(dailyPatientLogsProvider).asData?.value ?? [];
 
-    // Merge meal glucose readings into monitor data for unified display
-    final combinedMonitorData = <MonitorData>[];
-
-    if (healthDataState != null) {
-      // Use all data from monitor_data table (BP, Cholesterol, BMI, HbA1c, and manual Glucose)
-      combinedMonitorData.addAll(healthDataState.allMonitorData);
-    }
-
-    for (var meal in mealLogs) {
-      if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
-        combinedMonitorData.add(MonitorData(
-          id: -(meal.id * 2), // Negative ID to avoid collision
-          patientId: 0,
-          dataType: MonitorDataType.GLUCOSE,
-          value: meal.glucoseBeforeMeal!,
-          measuredAt: meal.glucoseBeforeMealTime!,
-        ));
-      }
-      if (meal.glucoseAfterMeal != null && meal.glucoseAfterMealTime != null) {
-        combinedMonitorData.add(MonitorData(
-          id: -(meal.id * 2) - 1,
-          patientId: 0,
-          dataType: MonitorDataType.GLUCOSE,
-          value: meal.glucoseAfterMeal!,
-          measuredAt: meal.glucoseAfterMealTime!,
-        ));
-      }
-    }
+    // Monitor Data now already includes meal glucose readings from the repository
+    final combinedMonitorData = healthDataState?.allMonitorData ?? [];
 
     // Determine latest meal
     DailyPatientLog? latestMeal;
