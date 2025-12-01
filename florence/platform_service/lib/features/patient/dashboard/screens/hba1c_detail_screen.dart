@@ -248,7 +248,7 @@ class _GaugeSection extends StatelessWidget {
                         centerSpaceRadius: centerRadius,
                         sections: threshold != null 
                         ? [
-                          // Dynamic Ranges based on User Thresholds
+                          // Dynamic Ranges based on User Thresholds (Scale: 2.0 to 15.0, Span: 13.0)
                           // 1. Low Zone (2.0 to MinValue)
                           if (threshold!.minValue > 2.0)
                             PieChartSectionData(
@@ -272,7 +272,7 @@ class _GaugeSection extends StatelessWidget {
                               radius: sectionWidth, showTitle: false
                             ),
 
-                          // Bottom Half (Transparent filler)
+                          // Bottom Half (Transparent filler matching total span of 13.0)
                           PieChartSectionData(value: 13.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ]
                         : [
