@@ -220,14 +220,23 @@ class BiometricsSection extends StatelessWidget {
     // Diet (Always show)
     String? dietSubtitle;
     if (latestMeal != null) {
-      // If we have specific time (glucose logged), show relative time.
-      // Otherwise (date only), show date or 'Today'.
+      final desc = latestMeal!.mealDesc;
       final hasTime = latestMeal!.glucoseBeforeMealTime != null || latestMeal!.glucoseAfterMealTime != null;
-      if (!hasTime) {
-        dietSubtitle = 'Date: ${Formatters.relativeDate(latestMeal!.logDate)}';
+      
+      // Construct subtitle: "Food Name • Time"
+      String timePart;
+      if (hasTime) {
+        timePart = Formatters.timeAgo(latestMeal!.effectiveTime);
       } else {
-        // Let CompactHealthCard use relative time via timestamp
-        dietSubtitle = null; 
+        timePart = Formatters.relativeDate(latestMeal!.logDate);
+      }
+
+      if (desc != null && desc.isNotEmpty) {
+        dietSubtitle = '$desc • $timePart';
+      } else if (!hasTime) {
+        dietSubtitle = timePart; // Just date if no specific time and no desc
+      } else {
+        dietSubtitle = null; // Default to CompactHealthCard's timeago
       }
     }
 
@@ -269,17 +278,20 @@ class BiometricsSection extends StatelessWidget {
   String _getMealStatus(DailyPatientLog? meal) {
     if (meal == null) return 'No Data';
 
-    // 1. If there is a text description, show it
-    if (meal.mealDesc != null && meal.mealDesc!.isNotEmpty) {
-      return meal.mealDesc!;
+    // 1. Check for Glucose Impact (Priority)
+    if (meal.glucoseBeforeMeal != null && meal.glucoseAfterMeal != null) {
+      final spike = meal.glucoseAfterMeal! - meal.glucoseBeforeMeal!;
+      if (spike > 50) return 'High Spike';
+      if (spike > 30) return 'Elevated';
+      return 'Stable';
     }
 
-    // 2. If no description but glucose was logged, show that
+    // 2. Partial Glucose Data
     if (meal.glucoseBeforeMeal != null || meal.glucoseAfterMeal != null) {
-      return 'Glucose Tracked';
+      return 'Partial Data';
     }
 
-    // 3. Fallback if it exists but has no details
+    // 3. Default
     return 'Logged';
   }
 
