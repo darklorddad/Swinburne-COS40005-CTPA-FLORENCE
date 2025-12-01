@@ -57,7 +57,7 @@ class Environment {
   static const bool isDebug = true;
 
   /// Mock data mode
-  static const bool useMockData = !enableSupabase;
+  static const bool useMockData = false;
 
   // ==================== THRESHOLDS ====================
 
