@@ -117,8 +117,8 @@ class _GaugeSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final val = latestReading?.value ?? 0.0;
     
-    const double minScale = 4.0;
-    const double maxScale = 12.0;
+    const double minScale = 2.0;
+    const double maxScale = 15.0;
     
     final double normalized = ((val.clamp(minScale, maxScale)) - minScale) / (maxScale - minScale);
     // -90 deg (left) to +90 deg (right)
@@ -249,36 +249,36 @@ class _GaugeSection extends StatelessWidget {
                         sections: threshold != null 
                         ? [
                           // Dynamic Ranges based on User Thresholds
-                          // 1. Low Zone (4.0 to MinValue)
-                          if (threshold!.minValue > 4.0)
+                          // 1. Low Zone (2.0 to MinValue)
+                          if (threshold!.minValue > 2.0)
                             PieChartSectionData(
-                              value: (threshold!.minValue - 4.0).clamp(0.0, 8.0), 
+                              value: (threshold!.minValue - 2.0).clamp(0.0, 13.0), 
                               color: AppTheme.warningColor.withOpacity(0.8), 
                               radius: sectionWidth, showTitle: false
                             ),
                           
                           // 2. Safe Zone (MinValue to MaxValue)
                           PieChartSectionData(
-                            value: (threshold!.maxValue - math.max(4.0, threshold!.minValue)).clamp(0.0, 8.0), 
+                            value: (threshold!.maxValue - math.max(2.0, threshold!.minValue)).clamp(0.0, 13.0), 
                             color: AppTheme.primaryGreen.withOpacity(0.8), 
                             radius: sectionWidth, showTitle: false
                           ),
 
-                          // 3. High Zone (MaxValue to 12.0)
-                          if (threshold!.maxValue < 12.0)
+                          // 3. High Zone (MaxValue to 15.0)
+                          if (threshold!.maxValue < 15.0)
                             PieChartSectionData(
-                              value: (12.0 - threshold!.maxValue).clamp(0.0, 8.0), 
+                              value: (15.0 - threshold!.maxValue).clamp(0.0, 13.0), 
                               color: AppTheme.errorColor.withOpacity(0.8), 
                               radius: sectionWidth, showTitle: false
                             ),
 
                           // Bottom Half (Transparent filler)
-                          PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 13.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ]
                         : [
-                          // Neutral Blue Arc (4.0 to 12.0 range = 8 units)
-                          PieChartSectionData(value: 8.0, color: AppTheme.primaryBlue.withOpacity(0.2), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
+                          // Neutral Blue Arc (2.0 to 15.0 range = 13 units)
+                          PieChartSectionData(value: 13.0, color: AppTheme.primaryBlue.withOpacity(0.2), radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 13.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ],
                       ),
                     ),
@@ -335,8 +335,8 @@ class _GaugeSection extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('4.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('12.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('2.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('15.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
             ),
