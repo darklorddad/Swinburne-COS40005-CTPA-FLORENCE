@@ -406,6 +406,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
     final filtered = _filterData();
     
     double minX = 0, maxX = 1;
+    double minY = 4;  // Default min
     double maxY = 10; // Default max
 
     if (filtered.isNotEmpty) {
@@ -416,10 +417,15 @@ class _TrendsSectionState extends State<_TrendsSection> {
         maxX += 2629743000; 
       }
       
-      // Dynamic Y-axis max to prevent clipping high values
+      // Dynamic Y-axis bounds to prevent clipping
       final dataMax = filtered.map((e) => e.value).reduce(math.max);
+      final dataMin = filtered.map((e) => e.value).reduce(math.min);
+
       if (dataMax > 9.5) {
         maxY = dataMax + 1.0;
+      }
+      if (dataMin < 4.5) {
+        minY = math.max(0, dataMin - 0.5);
       }
     } else {
        final now = DateTime.now();
@@ -483,7 +489,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
                 LineChartData(
                   // FIX: Ensure FLChart knows to clip content to the border
                   clipData: const FlClipData.all(), 
-                  minX: minX, maxX: maxX, minY: 4, maxY: maxY,
+                  minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
@@ -516,7 +522,8 @@ class _TrendsSectionState extends State<_TrendsSection> {
                   ),
                   rangeAnnotations: widget.targetMax != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
+                      // Extend green band to cover dynamic minY
+                      HorizontalRangeAnnotation(y1: minY, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
                       HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
                       // Extend red band to cover dynamic maxY
                       HorizontalRangeAnnotation(y1: 6.5, y2: math.max(maxY, 20), color: AppTheme.errorColor.withOpacity(0.08)),
