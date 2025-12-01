@@ -188,9 +188,23 @@ class _CholesterolReading {
     );
   }
 
+  double get effectiveTotal {
+    if (total != null) return total!;
+    // Friedewald formula: Total = HDL + LDL + (Triglycerides / 5)
+    if (hdl != null && ldl != null && triglycerides != null) {
+      return hdl! + ldl! + (triglycerides! / 5);
+    }
+    // Partial fallback
+    if (hdl != null && ldl != null) {
+      return hdl! + ldl!;
+    }
+    return 0.0;
+  }
+
   double get ratio {
-    if (total != null && hdl != null && hdl! > 0) {
-      return total! / hdl!;
+    final t = effectiveTotal;
+    if (t > 0 && hdl != null && hdl! > 0) {
+      return t / hdl!;
     }
     return 0.0;
   }
@@ -220,7 +234,7 @@ class _RatioSection extends StatelessWidget {
     final ratio = reading?.ratio ?? 0.0;
     // Use non-HDL cholesterol as the "bad" portion for the chart representation
     // Total = HDL + Non-HDL. So Non-HDL = Total - HDL.
-    final valTotal = reading?.total ?? 0.0;
+    final valTotal = reading?.effectiveTotal ?? 0.0;
     final valHdl = reading?.hdl ?? 0.0;
     final valNonHdl = (valTotal > valHdl) ? valTotal - valHdl : 0.0;
     
