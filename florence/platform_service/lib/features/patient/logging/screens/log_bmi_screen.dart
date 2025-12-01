@@ -48,8 +48,12 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   }
 
   void _calculateBmi() {
-    final heightCm = double.tryParse(_heightController.text);
-    final weightKg = double.tryParse(_weightController.text);
+    // Handle commas for international users
+    final hText = _heightController.text.replaceAll(',', '.');
+    final wText = _weightController.text.replaceAll(',', '.');
+
+    final heightCm = double.tryParse(hText);
+    final weightKg = double.tryParse(wText);
 
     if (heightCm != null && heightCm > 0 && weightKg != null && weightKg > 0) {
       final heightM = heightCm / 100;
@@ -68,6 +72,11 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       if (_calculatedBmi == null) {
         Helpers.showError(context, 'Please enter valid height and weight to calculate BMI.');
       }
+      return;
+    }
+
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log measurements in the future.');
       return;
     }
 
