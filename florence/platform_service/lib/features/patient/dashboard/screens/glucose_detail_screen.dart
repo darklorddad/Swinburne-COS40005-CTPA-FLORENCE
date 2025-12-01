@@ -10,9 +10,7 @@ import '../../core/models/health_data_models.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class GlucoseDetailScreen extends ConsumerWidget {
-  final int patientId;
-
-  const GlucoseDetailScreen({super.key, required this.patientId});
+  const GlucoseDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -891,6 +889,12 @@ class _HistorySectionState extends State<_HistorySection> {
     final end = math.min(start + _itemsPerPage, totalItems);
     final currentItems = sortedReadings.sublist(start, end);
 
+    // Get threshold from backend data (no fallback)
+    HealthThreshold? t;
+    try {
+      t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+    } catch (_) {}
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -929,12 +933,6 @@ class _HistorySectionState extends State<_HistorySection> {
             String statusText;
             Color statusColor;
             
-            // Get threshold from backend data (no fallback)
-            HealthThreshold? t;
-            try {
-              t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
-            } catch (_) {}
-
             if (t != null) {
               if (item.value < t.minValue) {
                 statusText = 'LOW';
