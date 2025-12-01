@@ -163,9 +163,6 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             label: 'Total Cholesterol (mg/dL)',
             hint: 'e.g., 190',
             controller: _totalController,
-            // Keep Total as required, or remove validator to make it optional
-            validator: (value) =>
-                Validators.minLength(value, 1, fieldName: 'Total Cholesterol'),
             keyboardType: TextInputType.number,
             prefixIcon: const Icon(Icons.bloodtype_outlined),
           ),
