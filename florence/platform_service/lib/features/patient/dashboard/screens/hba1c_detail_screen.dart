@@ -556,20 +556,20 @@ class _TrendsSectionState extends State<_TrendsSection> {
                     horizontalLines: [
                        HorizontalLine(
                          y: widget.threshold!.maxValue, 
-                         color: AppTheme.primaryBlue.withOpacity(0.8), 
+                         color: AppTheme.primaryGreen.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
                          label: HorizontalLineLabel(
                            show: true, 
                            alignment: Alignment.topRight, 
                            padding: const EdgeInsets.only(right: 5, bottom: 2), 
-                           style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
+                           style: TextStyle(color: AppTheme.primaryGreen, fontSize: 10, fontWeight: FontWeight.bold), 
                            labelResolver: (line) => 'Target Max'
                          )
                        ),
                        HorizontalLine(
                          y: widget.threshold!.minValue, 
-                         color: AppTheme.primaryBlue.withOpacity(0.8), 
+                         color: AppTheme.primaryGreen.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
                        )

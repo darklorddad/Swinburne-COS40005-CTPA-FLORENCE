@@ -120,14 +120,14 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
       );
 
-      if (time != null && mounted) {
+      if (mounted) {
         setState(() {
           _selectedDateTime = DateTime(
             date.year,
             date.month,
             date.day,
-            time.hour,
-            time.minute,
+            time?.hour ?? _selectedDateTime.hour,
+            time?.minute ?? _selectedDateTime.minute,
           );
         });
       }
