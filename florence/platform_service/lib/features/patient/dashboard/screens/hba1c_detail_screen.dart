@@ -402,25 +402,21 @@ class _TrendsSectionState extends State<_TrendsSection> {
   Widget build(BuildContext context) {
     final filtered = _filterData();
     
-    // Dynamic Y-Axis Range
-    double minY = 4.0;
-    double maxY = 10.0; // Default max
-
-    if (filtered.isNotEmpty) {
-      double dataMin = filtered.map((e) => e.value).reduce(math.min);
-      double dataMax = filtered.map((e) => e.value).reduce(math.max);
-      
-      minY = math.min(minY, dataMin - 0.5);
-      maxY = math.max(maxY, dataMax + 1.0); // Add padding at top
-    }
-
     double minX = 0, maxX = 1;
+    double maxY = 10; // Default max
+
     if (filtered.isNotEmpty) {
       minX = filtered.first.measuredAt.millisecondsSinceEpoch.toDouble();
       maxX = filtered.last.measuredAt.millisecondsSinceEpoch.toDouble();
       if (minX == maxX) {
         minX -= 2629743000;
         maxX += 2629743000; 
+      }
+      
+      // Dynamic Y-axis max to prevent clipping high values
+      final dataMax = filtered.map((e) => e.value).reduce(math.max);
+      if (dataMax > 9.5) {
+        maxY = dataMax + 1.0;
       }
     } else {
        final now = DateTime.now();
@@ -484,7 +480,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
                 LineChartData(
                   // FIX: Ensure FLChart knows to clip content to the border
                   clipData: const FlClipData.all(), 
-                  minX: minX, maxX: maxX, minY: minY, maxY: maxY,
+                  minX: minX, maxX: maxX, minY: 4, maxY: maxY,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
