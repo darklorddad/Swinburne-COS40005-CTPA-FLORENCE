@@ -108,15 +108,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final combinedMonitorData = <MonitorData>[];
 
     if (healthDataState != null) {
-      for (final reading in healthDataState.glucoseReadings) {
-        combinedMonitorData.add(MonitorData(
-          id: reading.id.hashCode,
-          patientId: 0,
-          dataType: MonitorDataType.GLUCOSE,
-          value: reading.value,
-          measuredAt: reading.timestamp,
-        ));
-      }
+      // Use all data from monitor_data table (BP, Cholesterol, BMI, HbA1c, and manual Glucose)
+      combinedMonitorData.addAll(healthDataState.allMonitorData);
     }
 
     for (var meal in mealLogs) {
