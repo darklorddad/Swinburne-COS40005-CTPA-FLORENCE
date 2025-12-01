@@ -15,6 +15,7 @@ import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../providers/dashboard_providers.dart'; // Added
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
@@ -86,18 +87,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    // This invalidates the state, forcing a re-fetch from the repositories
-    ref.invalidate(monitorDataProvider);
-    ref.invalidate(latestActivityProvider);
-    ref.invalidate(patientThresholdsProvider);
-    ref.invalidate(dailyPatientLogsProvider);
-    // Wait for them to rebuild
-    // Note: If these are simple Providers returning AsyncValue, we can't await .future
-    // We just refresh them.
-    ref.refresh(monitorDataProvider);
-    ref.refresh(latestActivityProvider);
-    ref.refresh(patientThresholdsProvider);
-    ref.refresh(dailyPatientLogsProvider);
+    // Refresh the core data provider, which will propagate to all derived providers
+    return ref.refresh(core_data.monitorDataProvider.future);
   }
 
   /// Show quick log modal
