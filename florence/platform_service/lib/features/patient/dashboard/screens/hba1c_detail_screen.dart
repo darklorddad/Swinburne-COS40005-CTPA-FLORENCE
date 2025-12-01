@@ -446,7 +446,19 @@ class _TrendsSectionState extends State<_TrendsSection> {
       if (dataMin < 4.5) {
         minY = math.max(0, dataMin - 0.5);
       }
-    } else {
+    }
+
+    // Ensure thresholds are visible
+    if (widget.threshold != null) {
+      if (widget.threshold!.maxValue > maxY - 0.5) {
+        maxY = widget.threshold!.maxValue + 1.0;
+      }
+      if (widget.threshold!.minValue < minY + 0.5) {
+        minY = math.max(0, widget.threshold!.minValue - 1.0);
+      }
+    }
+
+    if (filtered.isEmpty) {
        final now = DateTime.now();
        minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
        maxX = now.millisecondsSinceEpoch.toDouble();
