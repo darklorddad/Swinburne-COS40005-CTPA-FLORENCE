@@ -132,12 +132,15 @@ class _GaugeSection extends StatelessWidget {
       statusText = "No Data";
       statusColor = AppTheme.textSecondaryColor;
     } else if (threshold != null) {
-      if (val <= threshold!.maxValue) {
-        statusColor = AppTheme.primaryGreen;
-        statusText = "Normal";
-      } else {
+      if (val > threshold!.maxValue) {
         statusColor = AppTheme.errorColor;
         statusText = "High";
+      } else if (val < threshold!.minValue) {
+        statusColor = AppTheme.warningColor;
+        statusText = "Low";
+      } else {
+        statusColor = AppTheme.primaryGreen;
+        statusText = "Normal";
       }
     } else {
       statusColor = AppTheme.primaryBlue;
