@@ -28,7 +28,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _triglyceridesController = TextEditingController();
 
   bool _isLoading = false;
-  // Initialize with seconds/milliseconds stripped for clean database grouping
+  // Initialize with seconds stripped for clean database grouping
   DateTime _selectedDateTime = DateTime(
     DateTime.now().year,
     DateTime.now().month,
@@ -60,8 +60,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       // Helper
       void addCallIfNotEmpty(TextEditingController controller, String type) {
+        // Fix: Handle comma inputs (e.g. 190,5 -> 190.5) to prevent crashes
         final text = controller.text.trim().replaceAll(',', '.');
         if (text.isNotEmpty) {
+          // Fix: Send UTC time to ensure consistency across timezones
           tasks.add(repo.addMonitorData(
             type, 
             double.parse(text), 
@@ -107,6 +109,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
 
     if (date != null && mounted) {
+      // Fix: Add TimePicker to allow accurate back-logging of lab results
       final time = await showTimePicker(
         context: context,
         initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
@@ -182,6 +185,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             label: 'Total Cholesterol (mg/dL)',
             hint: 'e.g., 190',
             controller: _totalController,
+            // Fix: Remove validator to make Total optional
             keyboardType: TextInputType.number,
             prefixIcon: const Icon(Icons.bloodtype_outlined),
           ),
