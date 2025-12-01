@@ -262,7 +262,7 @@ class BiometricsSection extends StatelessWidget {
       unit: '',
       status: _getBmiStatus(bmi?.value, thresholds),
       timestamp: bmi?.measuredAt,
-      icon: Icons.height_outlined,
+      icon: Icons.monitor_weight_outlined,
       color: _getBmiColor(bmi?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.bmiDetail),
     ));
@@ -416,8 +416,9 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return 'Recorded';
 
-    if (value < t.minValue) return 'Low';
-    if (value > t.maxValue) return 'High';
+    if (value < t.minValue) return 'Underweight';
+    if (value > 30.0) return 'Obese';
+    if (value > t.maxValue) return 'Overweight';
     return 'Normal';
   }
 
@@ -426,8 +427,9 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return AppTheme.primaryBlue;
 
-    if (value < t.minValue) return AppTheme.warningColor; // Underweight
-    if (value > t.maxValue) return AppTheme.errorColor; // Overweight/Obese
+    if (value < t.minValue) return AppTheme.primaryBlue; // Underweight
+    if (value > 30.0) return AppTheme.errorColor; // Obese
+    if (value > t.maxValue) return AppTheme.warningColor; // Overweight
     return AppTheme.primaryGreen;
   }
 }
