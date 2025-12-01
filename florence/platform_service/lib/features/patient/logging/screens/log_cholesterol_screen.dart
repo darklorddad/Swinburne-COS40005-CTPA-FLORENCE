@@ -95,15 +95,22 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
 
     if (date != null && mounted) {
-      setState(() {
-        _selectedDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          _selectedDateTime.hour,
-          _selectedDateTime.minute,
-        );
-      });
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+
+      if (mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time?.hour ?? _selectedDateTime.hour,
+            time?.minute ?? _selectedDateTime.minute,
+          );
+        });
+      }
     }
   }
 
