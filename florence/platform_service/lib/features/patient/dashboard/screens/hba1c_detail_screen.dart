@@ -621,7 +621,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
               children: [
                 _LegendItem('Low', AppTheme.warningColor.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Target', AppTheme.primaryBlue.withOpacity(0.8), isDashed: true),
+                _LegendItem('Target', AppTheme.primaryGreen.withOpacity(0.5)),
                 const SizedBox(width: 16),
                 _LegendItem('High', AppTheme.errorColor.withOpacity(0.5)),
               ],
