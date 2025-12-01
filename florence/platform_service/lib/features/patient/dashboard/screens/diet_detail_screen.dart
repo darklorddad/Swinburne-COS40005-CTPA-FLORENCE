@@ -478,6 +478,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
 
     // Use specific time if available, otherwise fallback to logDate
     final displayDate = log.effectiveTime;
+    final hasSpecificTime = log.glucoseBeforeMealTime != null || log.glucoseAfterMealTime != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -581,7 +582,9 @@ class _DietHistoryListState extends State<_DietHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(displayDate.toLocal()),
+                hasSpecificTime 
+                    ? DateFormat('dd/MM/yy HH:mm').format(displayDate.toLocal())
+                    : DateFormat('dd/MM/yy').format(displayDate.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,
