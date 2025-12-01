@@ -12,6 +12,7 @@ class CompactHealthCard extends StatelessWidget {
   final Color color;
   final VoidCallback? onTap;
   final double? height;
+  final String? subtitleOverride;
 
   const CompactHealthCard({
     super.key,
@@ -24,6 +25,7 @@ class CompactHealthCard extends StatelessWidget {
     required this.color,
     this.onTap,
     this.height,
+    this.subtitleOverride,
   });
 
   @override
@@ -159,9 +161,9 @@ class CompactHealthCard extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          timestamp != null 
+          subtitleOverride ?? (timestamp != null 
               ? 'Last updated: ${Formatters.timeAgo(timestamp!)}'
-              : 'No history',
+              : 'No history'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: unitColor.withOpacity(0.7),
               ),

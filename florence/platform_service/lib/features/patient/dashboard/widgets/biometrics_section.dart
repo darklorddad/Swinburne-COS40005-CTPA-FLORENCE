@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../core/models/health_data_models.dart'; // Updated import
 import '../../../../config/routes.dart';
@@ -217,12 +218,26 @@ class BiometricsSection extends StatelessWidget {
     ));
 
     // Diet (Always show)
+    String? dietSubtitle;
+    if (latestMeal != null) {
+      // If we have specific time (glucose logged), show relative time.
+      // Otherwise (date only), show date or 'Today'.
+      final hasTime = latestMeal!.glucoseBeforeMealTime != null || latestMeal!.glucoseAfterMealTime != null;
+      if (!hasTime) {
+        dietSubtitle = 'Date: ${Formatters.relativeDate(latestMeal!.logDate)}';
+      } else {
+        // Let CompactHealthCard use relative time via timestamp
+        dietSubtitle = null; 
+      }
+    }
+
     cards.add(CompactHealthCard(
       label: 'Diet',
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
       status: _getMealStatus(latestMeal),
       timestamp: latestMeal?.effectiveTime,
+      subtitleOverride: dietSubtitle,
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
       onTap: () => Navigator.push(
