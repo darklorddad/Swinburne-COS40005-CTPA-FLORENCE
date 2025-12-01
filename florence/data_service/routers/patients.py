@@ -214,26 +214,42 @@ async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
 
-@router.post("/me/daily-logs", summary="Add a new daily log for myself")
+@router.post("/me/daily-logs", summary="Add or Update a daily log for myself")
 async def add_own_daily_log(
     log_data: DailyLogCreate,
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Adds a new daily log entry for the currently authenticated patient.
+    Adds or updates a daily log entry. If a log exists for this date/meal, it updates it.
     """
     try:
-        insert_dict = log_data.model_dump(mode='json')
-        insert_dict['patient_id'] = patient_profile['id']
+        # exclude_unset=True ensures we don't overwrite existing data with None 
+        # if the user only sends partial data (e.g. only glucose_after)
+        data_dict = log_data.model_dump(mode='json', exclude_unset=True)
+        data_dict['patient_id'] = patient_profile['id']
         
-        new_log_response = supabase.table('daily_patient_logs').insert(insert_dict).execute()
-        return new_log_response.data[0]
+        # Check if row exists
+        existing = supabase.table('daily_patient_logs')\
+            .select('id')\
+            .eq('patient_id', patient_profile['id'])\
+            .eq('log_date', data_dict['log_date'])\
+            .eq('meal_time', data_dict['meal_time'])\
+            .execute()
+
+        if existing.data:
+            # Update existing row
+            log_id = existing.data[0]['id']
+            response = supabase.table('daily_patient_logs').update(data_dict).eq('id', log_id).execute()
+            return response.data[0]
+        else:
+            # Insert new row
+            response = supabase.table('daily_patient_logs').insert(data_dict).execute()
+            return response.data[0]
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        if "duplicate key value violates unique constraint" in str(e):
-            raise HTTPException(status_code=409, detail="A log for this date and meal time already exists.")
-        raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save daily log: {str(e)}")
 
 
 @router.get("/me/thresholds", summary="Get my own defined health thresholds")

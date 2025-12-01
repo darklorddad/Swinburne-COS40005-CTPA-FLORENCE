@@ -326,8 +326,12 @@ class MonitorDataRepository {
     final Map<String, dynamic> payload = {
       'log_date': logDate.toIso8601String().split('T')[0],
       'meal_time': mealTime,
-      'meal_desc': mealDesc,
     };
+
+    // Only add meal_desc if it has a value to prevent overwriting existing data with null
+    if (mealDesc != null && mealDesc.isNotEmpty) {
+      payload['meal_desc'] = mealDesc;
+    }
 
     // Add glucose data to payload if present
     if (glucoseBefore != null) {
