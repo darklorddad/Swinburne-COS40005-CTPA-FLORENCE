@@ -64,7 +64,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       return;
     }
 
-    if (_selectedDateTime.isAfter(DateTime.now())) {
+    // Check only date part for future validation
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day);
+
+    if (selectedDate.isAfter(today)) {
       Helpers.showError(context, 'Cannot log meals in the future.');
       return;
     }
@@ -107,7 +112,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     }
   }
   
-  /// Show date time picker
+  /// Show date picker (Time is not needed for meals as per backend schema)
   Future<void> _selectDateTime() async {
     final date = await showDatePicker(
       context: context,
@@ -117,22 +122,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
     
     if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-      
-      if (time != null && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
+      setState(() {
+        _selectedDateTime = date;
+      });
     }
   }
   
@@ -302,14 +294,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
   }
   
-  /// Build date time section
+  /// Build date section (Time removed)
   Widget _buildDateTimeSection() {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Date & Time',
+            'Date',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -328,25 +320,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, color: AppTheme.mealColor),
+                  Icon(Icons.calendar_today, color: AppTheme.mealColor),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                        ),
-                      ],
+                    child: Text(
+                      Formatters.date(_selectedDateTime),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ),
                   Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
