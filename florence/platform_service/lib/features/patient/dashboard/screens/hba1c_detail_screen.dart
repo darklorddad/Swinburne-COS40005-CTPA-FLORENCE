@@ -71,7 +71,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
 
                   _GoalComparisonSection(
                     latestReading: readings.isNotEmpty ? readings.last : null,
-                    targetMax: targetMax,
+                    threshold: userThreshold,
                   ),
                   const SizedBox(height: 20),
                   
@@ -518,7 +518,8 @@ class _TrendsSectionState extends State<_TrendsSection> {
                     horizontalRangeAnnotations: [
                       HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
                       HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
-                      HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
+                      // Extend red band to cover dynamic maxY
+                      HorizontalRangeAnnotation(y1: 6.5, y2: math.max(maxY, 20), color: AppTheme.errorColor.withOpacity(0.08)),
                     ],
                   ) : null,
                   extraLinesData: widget.targetMax != null ? ExtraLinesData(
@@ -602,13 +603,13 @@ class _TrendsSectionState extends State<_TrendsSection> {
 
 class _GoalComparisonSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final double? targetMax;
+  final HealthThreshold? threshold;
 
-  const _GoalComparisonSection({this.latestReading, this.targetMax});
+  const _GoalComparisonSection({this.latestReading, this.threshold});
 
   @override
   Widget build(BuildContext context) {
-    if (targetMax == null) {
+    if (threshold == null) {
       return _HbA1cCard(
         title: 'Actual vs. Goal',
         icon: Icons.flag_outlined,
@@ -621,16 +622,34 @@ class _GoalComparisonSection extends StatelessWidget {
     }
 
     final current = latestReading?.value ?? 0.0;
-    final isGood = current <= targetMax! && current > 0;
-    final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
-    final maxY = math.max(current, targetMax!) * 1.4;
+    
+    // Evaluate status
+    bool isHigh = current > threshold!.maxValue;
+    bool isLow = current < threshold!.minValue && current > 0;
+    bool isGood = !isHigh && !isLow && current > 0;
+
+    Color barColor;
+    if (isHigh) barColor = AppTheme.errorColor;
+    else if (isLow) barColor = AppTheme.warningColor;
+    else barColor = AppTheme.primaryGreen;
+
+    final maxY = math.max(current, threshold!.maxValue) * 1.4;
+
+    String feedbackText;
+    if (isHigh) {
+      feedbackText = "You are ${(current - threshold!.maxValue).toStringAsFixed(1)}% above your target";
+    } else if (isLow) {
+      feedbackText = "You are ${(threshold!.minValue - current).toStringAsFixed(1)}% below your target";
+    } else {
+      feedbackText = "You are within your target range";
+    }
 
     return _HbA1cCard(
       title: 'Actual vs. Goal',
       icon: Icons.flag_outlined,
       infoText: 'Compares your latest reading against your set target.\n\n'
                 'Left Bar: Your latest HbA1c\n'
-                'Right Bar: Your Goal',
+                'Right Bar: Your Goal Max',
       child: Column(
         children: [
           if (latestReading == null)
@@ -658,7 +677,7 @@ class _GoalComparisonSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 40, // Increased reserved size to prevent clipping
+                        reservedSize: 40,
                         getTitlesWidget: (val, _) {
                            switch(val.toInt()) {
                              case 0: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('You', style: TextStyle(fontWeight: FontWeight.bold)));
@@ -689,7 +708,7 @@ class _GoalComparisonSection extends StatelessWidget {
                       x: 1,
                       barRods: [
                         BarChartRodData(
-                          toY: targetMax!,
+                          toY: threshold!.maxValue,
                           color: AppTheme.primaryBlue.withOpacity(0.3),
                           width: 30,
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
@@ -699,7 +718,7 @@ class _GoalComparisonSection extends StatelessWidget {
                     ),
                   ],
                   barTouchData: BarTouchData(
-                    enabled: false, // Disable touch interaction, just show tooltip
+                    enabled: false,
                     touchTooltipData: BarTouchTooltipData(
                       getTooltipColor: (group) => Colors.transparent,
                       tooltipPadding: EdgeInsets.zero,
@@ -724,25 +743,23 @@ class _GoalComparisonSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (isGood ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.1),
+                color: barColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: (isGood ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.3)),
+                border: Border.all(color: barColor.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
                   Icon(
                     isGood ? Icons.check_circle : Icons.warning,
-                    color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
+                    color: barColor,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      isGood 
-                        ? "You are within your target of <${targetMax!.toStringAsFixed(1)}%"
-                        : "You are ${(current - targetMax!).toStringAsFixed(1)}% above your target",
+                      feedbackText,
                       style: TextStyle(
-                        color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
+                        color: barColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
