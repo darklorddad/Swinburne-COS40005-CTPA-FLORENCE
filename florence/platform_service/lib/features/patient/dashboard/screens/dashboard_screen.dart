@@ -150,8 +150,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             // Quick actions
             QuickActionsGrid(
               onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure), // Updated
-              onLogCholesterol: () => AppRoutes.push(context, AppRoutes.logCholesterol),     // Updated
+              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+              onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
               onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
             ),
             const SizedBox(height: spacing),
