@@ -60,13 +60,32 @@ class HealthDataState {
   }
 
   HealthSummary getHealthSummary({required DateTime startDate, required DateTime endDate}) {
-    final glucoseInPeriod = glucoseReadings.where((r) => r.timestamp.isAfter(startDate) && r.timestamp.isBefore(endDate)).toList();
-    final avgGlucose = glucoseInPeriod.isNotEmpty 
-        ? glucoseInPeriod.map((e) => e.value).reduce((a, b) => a + b) / glucoseInPeriod.length 
+    // 1. Get direct readings
+    final directReadings = glucoseReadings
+        .where((r) => r.timestamp.isAfter(startDate) && r.timestamp.isBefore(endDate))
+        .map((r) => r.value);
+
+    // 2. Extract readings from meals in this period
+    final mealReadings = meals
+        .where((m) => m.timestamp.isAfter(startDate) && m.timestamp.isBefore(endDate))
+        .expand((m) => [
+              if (m.glucoseBefore != null) m.glucoseBefore!,
+              if (m.glucoseAfter != null) m.glucoseAfter!
+            ]);
+
+    // 3. Combine them
+    final allGlucoseValues = [...directReadings, ...mealReadings].toList();
+
+    // 4. Calculate Average using the combined list
+    final avgGlucose = allGlucoseValues.isNotEmpty
+        ? allGlucoseValues.reduce((a, b) => a + b) / allGlucoseValues.length
         : 0.0;
-    
-    final inRangeCount = glucoseInPeriod.where((r) => r.value >= 70 && r.value <= 180).length;
-    final timeInRange = glucoseInPeriod.isNotEmpty ? (inRangeCount / glucoseInPeriod.length) * 100 : 0.0;
+
+    // 5. Calculate Time In Range using the combined list
+    final inRangeCount = allGlucoseValues.where((v) => v >= 70 && v <= 180).length;
+    final timeInRange = allGlucoseValues.isNotEmpty 
+        ? (inRangeCount / allGlucoseValues.length) * 100 
+        : 0.0;
 
     final activityInPeriod = activities.where((a) => a.timestamp.isAfter(startDate) && a.timestamp.isBefore(endDate)).toList();
     final totalMinutes = activityInPeriod.fold(0, (sum, a) => sum + a.duration);
@@ -78,16 +97,16 @@ class HealthDataState {
 
     // Calculate Standard Deviation
     double stdDev = 0.0;
-    if (glucoseInPeriod.isNotEmpty) {
-      final sumSquaredDiff = glucoseInPeriod.fold(0.0, (sum, r) {
-        final diff = r.value - avgGlucose;
+    if (allGlucoseValues.isNotEmpty) {
+      final sumSquaredDiff = allGlucoseValues.fold(0.0, (sum, v) {
+        final diff = v - avgGlucose;
         return sum + (diff * diff);
       });
-      stdDev = sqrt(sumSquaredDiff / glucoseInPeriod.length);
+      stdDev = sqrt(sumSquaredDiff / allGlucoseValues.length);
     }
 
-    final hyperEvents = glucoseInPeriod.where((r) => r.value > 180).length;
-    final hypoEvents = glucoseInPeriod.where((r) => r.value < 70).length;
+    final hyperEvents = allGlucoseValues.where((v) => v > 180).length;
+    final hypoEvents = allGlucoseValues.where((v) => v < 70).length;
 
     // Calculate Estimated A1c: (Avg Glucose + 46.7) / 28.7
     final estimatedA1c = avgGlucose > 0 ? (avgGlucose + 46.7) / 28.7 : 0.0;
@@ -108,7 +127,7 @@ class HealthDataState {
       glucoseStdDev: stdDev,
       estimatedA1c: estimatedA1c,
       timeInRange: timeInRange,
-      totalReadings: glucoseInPeriod.length,
+      totalReadings: allGlucoseValues.length,
       hyperEvents: hyperEvents,
       hypoEvents: hypoEvents,
       totalActivityMinutes: totalMinutes,
