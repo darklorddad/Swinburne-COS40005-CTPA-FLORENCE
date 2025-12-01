@@ -117,6 +117,8 @@ class DailyPatientLog {
   final DateTime logDate;
   final String mealTime; // 'BREAKFAST', 'LUNCH', 'DINNER'
 
+  DateTime get effectiveTime => glucoseBeforeMealTime ?? glucoseAfterMealTime ?? logDate;
+
   const DailyPatientLog({
     required this.id,
     required this.logDate,

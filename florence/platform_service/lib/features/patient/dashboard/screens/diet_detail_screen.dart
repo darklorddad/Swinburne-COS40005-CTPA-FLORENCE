@@ -33,9 +33,13 @@ class DietAnalyticsScreen extends ConsumerWidget {
       ),
       body: logsAsync.when(
         data: (logs) {
-          // Sort logs descending by date
+          // Sort logs descending by date, then by meal time priority
           final sortedLogs = List<DailyPatientLog>.from(logs)
-            ..sort((a, b) => b.logDate.compareTo(a.logDate));
+            ..sort((a, b) {
+              final dateComp = b.logDate.compareTo(a.logDate);
+              if (dateComp != 0) return dateComp;
+              return _getMealTimePriority(b.mealTime).compareTo(_getMealTimePriority(a.mealTime));
+            });
 
           return RefreshIndicator(
             onRefresh: () async {
@@ -70,6 +74,15 @@ class DietAnalyticsScreen extends ConsumerWidget {
         error: (err, stack) => Center(child: Text('Error loading diet data: $err')),
       ),
     );
+  }
+
+  int _getMealTimePriority(String time) {
+    switch (time.toUpperCase()) {
+      case 'BREAKFAST': return 1;
+      case 'LUNCH': return 2;
+      case 'DINNER': return 3;
+      default: return 0;
+    }
   }
 }
 
@@ -464,7 +477,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
         : displayMealTime;
 
     // Use specific time if available, otherwise fallback to logDate
-    final displayDate = log.glucoseBeforeMealTime ?? log.logDate;
+    final displayDate = log.effectiveTime;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -568,7 +581,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(displayDate),
+                DateFormat('dd/MM/yy HH:mm').format(displayDate.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,

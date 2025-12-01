@@ -222,7 +222,7 @@ class BiometricsSection extends StatelessWidget {
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
       status: _getMealStatus(latestMeal),
-      timestamp: latestMeal?.logDate,
+      timestamp: latestMeal?.effectiveTime,
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
       onTap: () => Navigator.push(
