@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -24,7 +23,6 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   final _formKey = GlobalKey<FormState>();
   final _systolicController = TextEditingController();
   final _diastolicController = TextEditingController();
-  final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();

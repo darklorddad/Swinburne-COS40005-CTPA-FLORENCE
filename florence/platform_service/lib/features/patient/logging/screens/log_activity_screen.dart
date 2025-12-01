@@ -8,7 +8,6 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import '../../../../core/services/api_service.dart';
 import '../../core/models/health_data_models.dart'; // Added
 import '../../core/providers/monitor_data_providers.dart'; // Added
 import '../../core/repositories/monitor_data_repository.dart';
@@ -26,7 +25,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
   final _durationController = TextEditingController();
-  final _apiService = ApiService();
   
   // State
   bool _isLoading = false;
