@@ -38,7 +38,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     {'name': 'Breakfast', 'icon': Icons.wb_sunny},
     {'name': 'Lunch', 'icon': Icons.wb_cloudy},
     {'name': 'Dinner', 'icon': Icons.nightlight},
-    {'name': 'Snack', 'icon': Icons.cookie},
+    // REMOVED 'Snack' to match backend MealTime enum (BREAKFAST, LUNCH, DINNER)
   ];
   
   @override
