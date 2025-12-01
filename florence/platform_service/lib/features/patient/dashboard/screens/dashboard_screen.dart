@@ -310,15 +310,6 @@ class _QuickLogModal extends StatelessWidget {
                 },
               ),
               _QuickLogButton(
-                icon: Icons.bloodtype,
-                label: 'Cholesterol',
-                color: AppTheme.accentPurple,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logCholesterol);
-                },
-              ),
-              _QuickLogButton(
                 icon: Icons.height,
                 label: 'BMI',
                 color: AppTheme.primaryGreen,
