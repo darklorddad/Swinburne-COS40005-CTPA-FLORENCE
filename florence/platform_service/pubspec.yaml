@@ -13,6 +13,8 @@ dependencies:
     sdk: flutter
 
   # State Management
+  flutter_riverpod: ^2.6.1
+
   # Backend & API
   supabase_flutter:
   http:
@@ -45,7 +47,8 @@ dependencies:
 
   # Fonts
   google_fonts:
-  flutter_riverpod: ^2.6.1
+
+  # Markdown Support
   flutter_markdown: ^0.7.7+1
 
 dev_dependencies:
