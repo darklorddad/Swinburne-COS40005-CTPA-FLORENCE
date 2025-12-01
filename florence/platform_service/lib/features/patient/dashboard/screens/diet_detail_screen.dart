@@ -454,7 +454,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
     // Calculate spike and determine color/text
     String valueText = 'Logged';
     String unitText = '';
-    Color statusColor = AppTheme.primaryGreen;
+    Color statusColor = AppTheme.primaryBlue;
     String? deltaText;
 
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
@@ -568,17 +568,17 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (deltaText != null ? statusColor : AppTheme.primaryGreen).withOpacity(0.1),
+                      color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: (deltaText != null ? statusColor : AppTheme.primaryGreen).withOpacity(0.3), 
+                        color: statusColor.withOpacity(0.3), 
                         width: 1
                       ),
                     ),
                     child: Text(
                       deltaText ?? displayMealTime,
                       style: TextStyle(
-                        color: deltaText != null ? statusColor : AppTheme.primaryGreen,
+                        color: statusColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
