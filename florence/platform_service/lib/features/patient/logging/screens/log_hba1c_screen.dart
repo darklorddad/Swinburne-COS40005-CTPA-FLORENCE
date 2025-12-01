@@ -80,10 +80,11 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       }
 
       // Use repository to add data
+      // Convert to UTC to ensure global consistency
       await ref.read(monitorDataRepositoryProvider).addMonitorData(
         'HBA1C',
         value,
-        _selectedDateTime,
+        _selectedDateTime.toUtc(),
       );
       
       // Invalidate provider to refresh dashboard
