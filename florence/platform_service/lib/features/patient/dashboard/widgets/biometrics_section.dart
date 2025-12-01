@@ -416,8 +416,13 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return 'Recorded';
 
-    if (value < t.minValue) return 'Low';
-    if (value > t.maxValue) return 'High';
+    // Dynamic Obese cutoff (Approx: Max Normal + 5)
+    // e.g. Standard: 25 + 5 = 30. Asian: 23 + 5 = 28.
+    final obeseCutoff = t.maxValue + 5.0;
+
+    if (value < t.minValue) return 'Underweight';
+    if (value > obeseCutoff) return 'Obese';
+    if (value > t.maxValue) return 'Overweight';
     return 'Normal';
   }
 
@@ -426,8 +431,11 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return AppTheme.primaryBlue;
 
-    if (value < t.minValue) return AppTheme.warningColor;
-    if (value > t.maxValue) return AppTheme.errorColor;
+    final obeseCutoff = t.maxValue + 5.0;
+
+    if (value < t.minValue) return AppTheme.primaryBlue; // Underweight
+    if (value > obeseCutoff) return AppTheme.errorColor; // Obese
+    if (value > t.maxValue) return AppTheme.warningColor; // Overweight
     return AppTheme.primaryGreen;
   }
 }
