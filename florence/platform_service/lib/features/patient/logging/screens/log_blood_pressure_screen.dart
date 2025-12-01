@@ -40,8 +40,13 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     }
 
     // Foolproof 2: Logic check prevents impossible medical data
-    final sys = double.parse(_systolicController.text);
-    final dia = double.parse(_diastolicController.text);
+    final sys = double.tryParse(_systolicController.text);
+    final dia = double.tryParse(_diastolicController.text);
+
+    if (sys == null || dia == null) {
+      Helpers.showError(context, 'Please enter valid numbers.');
+      return;
+    }
 
     if (dia >= sys) {
       Helpers.showError(context, 'Diastolic (bottom) must be lower than Systolic (top).');
@@ -54,8 +59,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     try {
       await ref.read(monitorDataRepositoryProvider).addBloodPressure(
         _selectedDateTime,
-        double.parse(_systolicController.text),
-        double.parse(_diastolicController.text),
+        sys,
+        dia,
       );
       
       ref.invalidate(monitorDataProvider);
