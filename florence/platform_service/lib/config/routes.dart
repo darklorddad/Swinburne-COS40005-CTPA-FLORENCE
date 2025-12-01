@@ -22,7 +22,6 @@ import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
 import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
-import '../features/patient/summaries/screens/weekly_summaries_screen.dart';
 import '../features/clinician/screens/clinician_home_screen.dart';
 import '../features/admin/dashboard/screens/super_admin_dashboard_screen.dart';
 
@@ -43,7 +42,6 @@ class AppRoutes {
   static const String activityDetail = '/trends/activity-detail';
   static const String bmiDetail = '/bmi-detail';
   static const String hba1cDetail = '/hba1c-detail';
-  static const String weeklyReport = '/trends/weekly-report';
 
   static const String chat = '/chat';
   static const String recommendations = '/recommendations';
@@ -118,9 +116,6 @@ class AppRoutes {
 
       case hba1cDetail:
         return _buildRoute(const HbA1cDetailScreen());
-
-      case weeklyReport:
-        return _buildRoute(const WeeklySummariesScreen());
 
       case chat:
         return _buildRoute(const ChatScreen(), settings);
