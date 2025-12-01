@@ -621,7 +621,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
               children: [
                 _LegendItem('Low', AppTheme.warningColor.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Target', AppTheme.primaryGreen.withOpacity(0.5)),
+                _LegendItem('Target', AppTheme.primaryBlue.withOpacity(0.8), isDashed: true),
                 const SizedBox(width: 16),
                 _LegendItem('High', AppTheme.errorColor.withOpacity(0.5)),
               ],
@@ -1131,20 +1131,37 @@ class _HbA1cCard extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
-  const _LegendItem(this.label, this.color);
+  final bool isDashed;
+  
+  const _LegendItem(this.label, this.color, {this.isDashed = false});
+  
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 12, 
-          height: 12, 
-          decoration: BoxDecoration(
-            color: color, 
-            borderRadius: BorderRadius.circular(2),
+        if (isDashed)
+          SizedBox(
+            width: 16,
+            height: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(width: 4, height: 2, color: color),
+                Container(width: 4, height: 2, color: color),
+                Container(width: 4, height: 2, color: color),
+              ],
+            ),
+          )
+        else
+          Container(
+            width: 12, 
+            height: 12, 
+            decoration: BoxDecoration(
+              color: color, 
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
       ],
