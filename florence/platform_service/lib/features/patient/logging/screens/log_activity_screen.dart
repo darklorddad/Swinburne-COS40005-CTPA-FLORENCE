@@ -219,7 +219,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             keyboardType: TextInputType.number,
             hint: 'Duration in minutes',
             prefixIcon: const Icon(Icons.timer),
-            onChanged: (_) => setState(() {}),
           ),
         ],
       ),

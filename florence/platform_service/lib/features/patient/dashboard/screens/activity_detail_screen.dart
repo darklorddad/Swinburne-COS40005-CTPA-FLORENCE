@@ -709,6 +709,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
 
+    // Logs are passed in DESC order (Newest first). Do NOT reverse them.
     final totalItems = widget.logs.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
     
