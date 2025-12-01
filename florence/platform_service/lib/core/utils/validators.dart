@@ -144,8 +144,8 @@ class Validators {
       return 'Please enter a valid number';
     }
     
-    if (hba1cValue < 4.0 || hba1cValue > 15.0) {
-      return 'HbA1c level must be between 4.0% and 15.0%';
+    if (hba1cValue < 2.0 || hba1cValue > 25.0) {
+      return 'HbA1c level must be between 2.0% and 25.0%';
     }
     
     return null;

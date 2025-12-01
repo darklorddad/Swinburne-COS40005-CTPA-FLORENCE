@@ -110,15 +110,22 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     );
     
     if (date != null && mounted) {
-      setState(() {
-        _selectedDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          DateTime.now().hour,
-          DateTime.now().minute,
-        );
-      });
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+
+      if (time != null && mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+          );
+        });
+      }
     }
   }
   
