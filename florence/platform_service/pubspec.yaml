@@ -13,8 +13,6 @@ dependencies:
     sdk: flutter
 
   # State Management
-  provider:
-
   # Backend & API
   supabase_flutter:
   http:
