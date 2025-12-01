@@ -42,6 +42,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log activity in the future.');
+      return;
+    }
     
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
