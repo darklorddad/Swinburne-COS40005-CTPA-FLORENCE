@@ -351,9 +351,15 @@ class _DietImpactChart extends StatelessWidget {
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                  if (dataMap[categories[group.x.toInt()]]!.isEmpty) return null;
+                  final cat = categories[group.x.toInt()];
+                  final spikes = dataMap[cat]!;
+                  if (spikes.isEmpty) return null;
+                  
+                  final avg = spikes.reduce((a, b) => a + b) / spikes.length;
+                  final prefix = avg > 0 ? '+' : '';
+
                   return BarTooltipItem(
-                    '+${rod.toY.toInt()}',
+                    '$prefix${avg.toInt()}',
                     TextStyle(
                       color: rod.color,
                       fontWeight: FontWeight.bold,
