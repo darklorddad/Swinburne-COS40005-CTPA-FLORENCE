@@ -67,9 +67,13 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Foolproof 3: Handle comma vs dot for decimals to prevent crash
+      // Foolproof 3: Handle comma vs dot and use tryParse for crash safety
       final normalizedText = _hba1cController.text.replaceAll(',', '.');
-      final value = double.parse(normalizedText);
+      final value = double.tryParse(normalizedText);
+
+      if (value == null) {
+        throw const FormatException('Invalid number format');
+      }
 
       // Use repository to add data
       await ref.read(monitorDataRepositoryProvider).addMonitorData(
@@ -168,7 +172,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         children: [
           Icon(
             Icons.info_outline,
-            color: Colors.deepOrange,
+            color: AppTheme.primaryBlue,
             size: 24,
           ),
           SizedBox(width: 12),
@@ -255,7 +259,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: Colors.deepOrange),
+                  const Icon(Icons.calendar_today, color: AppTheme.primaryBlue),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
