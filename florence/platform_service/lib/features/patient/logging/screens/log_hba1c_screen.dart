@@ -67,7 +67,9 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final value = double.parse(_hba1cController.text);
+      // Foolproof 3: Handle comma vs dot for decimals to prevent crash
+      final normalizedText = _hba1cController.text.replaceAll(',', '.');
+      final value = double.parse(normalizedText);
 
       // Use repository to add data
       await ref.read(monitorDataRepositoryProvider).addMonitorData(
@@ -287,11 +289,11 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           ),
           const SizedBox(height: 12),
           
-          _buildRangeItem('Normal', 'Below 5.7%', Colors.green),
+          _buildRangeItem('Normal', 'Below 5.7%', AppTheme.primaryGreen),
           const SizedBox(height: 8),
-          _buildRangeItem('Prediabetes', '5.7% - 6.4%', Colors.orange),
+          _buildRangeItem('Prediabetes', '5.7% - 6.4%', AppTheme.warningColor),
           const SizedBox(height: 8),
-          _buildRangeItem('Diabetes', '6.5% or higher', Colors.red),
+          _buildRangeItem('Diabetes', '6.5% or higher', AppTheme.errorColor),
         ],
       ),
     );
