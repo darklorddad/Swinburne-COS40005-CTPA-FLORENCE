@@ -103,11 +103,11 @@ class AppRoutes {
         return _buildRoute(const DashboardScreen(), settings);
 
       case trends:
-        return _buildRoute(const GlucoseDetailScreen(patientId: 1), settings);
+        return _buildRoute(const GlucoseDetailScreen(), settings);
 
       case trendsDetail:
         return _buildRoute(
-            const GlucoseDetailScreen(patientId: 1)); // Mock ID for now
+            const GlucoseDetailScreen());
 
       case bloodPressureDetail:
         return _buildRoute(const BloodPressureDetailScreen());
