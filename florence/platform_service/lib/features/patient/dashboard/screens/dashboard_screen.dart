@@ -113,6 +113,29 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
     final mealLogs = ref.watch(dailyPatientLogsProvider).valueOrNull ?? [];
 
+    // Merge meal glucose readings into monitor data for unified display
+    final combinedMonitorData = List<MonitorData>.from(monitorData);
+    for (var meal in mealLogs) {
+      if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
+        combinedMonitorData.add(MonitorData(
+          id: -(meal.id * 2), // Negative ID to avoid collision
+          patientId: 0,
+          dataType: MonitorDataType.GLUCOSE,
+          value: meal.glucoseBeforeMeal!,
+          measuredAt: meal.glucoseBeforeMealTime!,
+        ));
+      }
+      if (meal.glucoseAfterMeal != null && meal.glucoseAfterMealTime != null) {
+        combinedMonitorData.add(MonitorData(
+          id: -(meal.id * 2) - 1,
+          patientId: 0,
+          dataType: MonitorDataType.GLUCOSE,
+          value: meal.glucoseAfterMeal!,
+          measuredAt: meal.glucoseAfterMealTime!,
+        ));
+      }
+    }
+
     // Determine latest meal
     DailyPatientLog? latestMeal;
     if (mealLogs.isNotEmpty) {
@@ -146,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
             // Biometrics Section (Loaded via Riverpod)
             BiometricsSection(
-              monitorData: monitorData,
+              monitorData: combinedMonitorData,
               latestActivity: activity,
               latestMeal: latestMeal,
               thresholds: thresholds,
