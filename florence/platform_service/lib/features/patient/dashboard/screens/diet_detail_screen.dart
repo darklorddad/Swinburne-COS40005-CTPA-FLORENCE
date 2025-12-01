@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../config/routes.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -30,6 +31,11 @@ class DietAnalyticsScreen extends ConsumerWidget {
             height: 1.0,
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => AppRoutes.push(context, AppRoutes.logMeal),
+        backgroundColor: AppTheme.mealColor,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
       body: logsAsync.when(
         data: (logs) {

@@ -296,10 +296,11 @@ class BiometricsSection extends StatelessWidget {
       
       if (spike > 50) return AppTheme.errorColor;    // Red: High Spike (>50)
       if (spike > 30) return AppTheme.warningColor;  // Orange: Elevated Spike (30-50)
+      return AppTheme.primaryGreen; // Green: Controlled Spike (<30)
     }
 
-    // Default: Green (Stable spike or just logged)
-    return AppTheme.primaryGreen; 
+    // Default: Just logged (no glucose data) -> Neutral Blue
+    return AppTheme.primaryBlue; 
   }
 
   // --- Helper Methods (Updated to handle nulls) ---
