@@ -28,7 +28,20 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   // State
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
-  String _selectedMealType = 'Breakfast';
+  late String _selectedMealType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMealType = _getMealTypeFromTime(DateTime.now());
+  }
+
+  String _getMealTypeFromTime(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 4 && hour < 11) return 'Breakfast';
+    if (hour >= 11 && hour < 16) return 'Lunch';
+    return 'Dinner';
+  }
   
   // Meal type options
   final List<Map<String, dynamic>> _mealTypeOptions = [
@@ -85,7 +98,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to log meal: $e');
+        if (e.toString().contains('409')) {
+          Helpers.showError(context, 'You have already logged $_selectedMealType for this date.');
+        } else {
+          Helpers.showError(context, 'Failed to log meal: $e');
+        }
       }
     } finally {
       if (mounted) {
