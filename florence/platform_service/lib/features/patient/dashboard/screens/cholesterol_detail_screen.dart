@@ -918,6 +918,21 @@ class _HistorySectionState extends State<_HistorySection> {
               final minHdl = getLimit(MonitorDataType.CHOLESTEROL_HDL, isMin: true);
               final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
 
+              // Determine Headline Value (Total > Calc Total > LDL)
+              String headlineValue = '--';
+              String headlineLabel = 'Total mg/dL';
+
+              if (r.total != null) {
+                headlineValue = r.total!.toInt().toString();
+                headlineLabel = 'Total mg/dL';
+              } else if (r.effectiveTotal > 0) {
+                headlineValue = r.effectiveTotal.toInt().toString();
+                headlineLabel = 'Est. Total';
+              } else if (r.ldl != null) {
+                headlineValue = r.ldl!.toInt().toString();
+                headlineLabel = 'LDL mg/dL';
+              }
+
               // Determine status based on priority (LDL > Total > Tri > HDL)
               String statusText = 'RECORDED';
               Color statusColor = AppTheme.primaryBlue;
@@ -972,7 +987,7 @@ class _HistorySectionState extends State<_HistorySection> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text(
-                              r.total != null ? r.total!.toInt().toString() : (r.ldl != null ? r.ldl!.toInt().toString() : '--'),
+                              headlineValue,
                               style: TextStyle(
                                 fontWeight: FontWeight.normal,
                                 fontSize: 20,
@@ -981,7 +996,7 @@ class _HistorySectionState extends State<_HistorySection> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              r.total != null ? 'Total mg/dL' : 'LDL mg/dL',
+                              headlineLabel,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppTheme.textSecondaryColor,
                                     fontSize: 12,
