@@ -248,12 +248,31 @@ class _GaugeSection extends StatelessWidget {
                         centerSpaceRadius: centerRadius,
                         sections: threshold != null 
                         ? [
-                          // Clinical Ranges (Only show if threshold exists, implying user cares about status)
-                          // Note: Mapping exact user thresholds to a fixed gauge is complex, 
-                          // so we stick to clinical backgrounds BUT only if a threshold is set.
-                          PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
+                          // Dynamic Ranges based on User Thresholds
+                          // 1. Low Zone (4.0 to MinValue)
+                          if (threshold!.minValue > 4.0)
+                            PieChartSectionData(
+                              value: (threshold!.minValue - 4.0).clamp(0.0, 8.0), 
+                              color: AppTheme.warningColor.withOpacity(0.8), 
+                              radius: sectionWidth, showTitle: false
+                            ),
+                          
+                          // 2. Safe Zone (MinValue to MaxValue)
+                          PieChartSectionData(
+                            value: (threshold!.maxValue - math.max(4.0, threshold!.minValue)).clamp(0.0, 8.0), 
+                            color: AppTheme.primaryGreen.withOpacity(0.8), 
+                            radius: sectionWidth, showTitle: false
+                          ),
+
+                          // 3. High Zone (MaxValue to 12.0)
+                          if (threshold!.maxValue < 12.0)
+                            PieChartSectionData(
+                              value: (12.0 - threshold!.maxValue).clamp(0.0, 8.0), 
+                              color: AppTheme.errorColor.withOpacity(0.8), 
+                              radius: sectionWidth, showTitle: false
+                            ),
+
+                          // Bottom Half (Transparent filler)
                           PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ]
                         : [
