@@ -234,6 +234,7 @@ class _RatioSection extends StatelessWidget {
     final ratio = reading?.ratio ?? 0.0;
     // Use non-HDL cholesterol as the "bad" portion for the chart representation
     // Total = HDL + Non-HDL. So Non-HDL = Total - HDL.
+    // Use effectiveTotal to ensure chart works even if Total wasn't explicitly logged
     final valTotal = reading?.effectiveTotal ?? 0.0;
     final valHdl = reading?.hdl ?? 0.0;
     final valNonHdl = (valTotal > valHdl) ? valTotal - valHdl : 0.0;
