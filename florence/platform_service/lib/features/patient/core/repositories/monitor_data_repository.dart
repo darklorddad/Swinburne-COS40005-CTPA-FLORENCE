@@ -281,18 +281,28 @@ class MonitorDataRepository {
     ]);
   }
 
-  Future<void> addMeal(String mealTime, DateTime logDate, String? mealDesc, double? glucoseBefore, DateTime? timeBefore, double? glucoseAfter, DateTime? timeAfter) async {
+  Future<void> addMeal(
+    String mealTime,
+    DateTime logDate,
+    String? mealDesc,
+    // Add these optional parameters
+    double? glucoseBefore,
+    DateTime? timeBefore,
+    double? glucoseAfter,
+    DateTime? timeAfter,
+  ) async {
     final Map<String, dynamic> payload = {
       'log_date': logDate.toIso8601String().split('T')[0],
       'meal_time': mealTime,
       'meal_desc': mealDesc,
     };
-    
+
+    // Add glucose data to payload if present
     if (glucoseBefore != null) {
       payload['glucose_before_meal'] = glucoseBefore;
       payload['glucose_before_meal_time'] = timeBefore?.toIso8601String();
     }
-    
+
     if (glucoseAfter != null) {
       payload['glucose_after_meal'] = glucoseAfter;
       payload['glucose_after_meal_time'] = timeAfter?.toIso8601String();
