@@ -1,47 +1,31 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/health_data_models.dart';
-import '../../core/repositories/monitor_data_repository.dart';
-import '../../core/services/data_ingestion_service.dart';
+import '../../core/providers/monitor_data_providers.dart' as core;
 
-// Repository Provider
-final monitorDataRepositoryProvider = Provider<MonitorDataRepository>((ref) {
-  return MonitorDataRepository();
+// Adapters for Dashboard to use Centralized Data Layer
+
+final monitorDataProvider = Provider<AsyncValue<List<MonitorData>>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) => state.allMonitorData);
 });
 
-// Data Service Provider (for Activity)
-final dataIngestionServiceProvider = Provider<DataIngestionService>((ref) {
-  return DataIngestionService();
+final latestActivityProvider = Provider<AsyncValue<ActivityLog?>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) => 
+    state.activities.isNotEmpty ? state.activities.last : null // Activities sorted by time usually? My Repo sorted them.
+  );
 });
 
-// Monitor Data Provider
-final monitorDataProvider = FutureProvider<List<MonitorData>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getAllMonitorData();
+final patientThresholdsProvider = Provider<AsyncValue<List<HealthThreshold>>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) => state.healthThresholds);
 });
 
-// Latest Activity Provider
-final latestActivityProvider = FutureProvider<ActivityLog?>((ref) async {
-  final activities = await ref.watch(activityLogsProvider.future);
-  if (activities.isNotEmpty) {
-    return activities.first;
-  }
-  return null;
-});
-
-// Patient Thresholds Provider
-final patientThresholdsProvider = FutureProvider<List<HealthThreshold>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getHealthThresholds();
-});
-
-// Daily Patient Logs Provider (Meals)
-final dailyPatientLogsProvider = FutureProvider<List<DailyPatientLog>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getDailyPatientLogs();
-});
-
-// Activity Logs Provider
-final activityLogsProvider = FutureProvider<List<ActivityLog>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getActivityLogs();
+final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) {
+      return state.meals.map((m) => DailyPatientLog(
+        id: int.tryParse(m.id) ?? 0,
+        logDate: m.timestamp,
+        mealTime: m.type.toUpperCase(),
+        mealDesc: m.description,
+        // Mapping limited fields as MealLog differs slightly from DailyPatientLog
+      )).toList();
+  });
 });
