@@ -282,6 +282,15 @@ class _QuickLogModal extends StatelessWidget {
                 },
               ),
               _QuickLogButton(
+                icon: Icons.restaurant,
+                label: 'Meal',
+                color: AppTheme.mealColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logMeal);
+                },
+              ),
+              _QuickLogButton(
                 icon: Icons.percent,
                 label: 'HbA1c',
                 color: Colors.deepOrange, 
