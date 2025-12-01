@@ -155,7 +155,7 @@ class _DietStatsSection extends StatelessWidget {
             child: _buildStatBox(
               context, 
               'Avg Spike', 
-              avgSpike > 0 ? '+${avgSpike.toStringAsFixed(0)}' : '--', 
+              spikeCount > 0 ? (avgSpike > 0 ? '+' : '') + avgSpike.toStringAsFixed(0) : '--', 
               'mg/dL', 
               avgSpike > 50 ? AppTheme.errorColor : (avgSpike > 30 ? AppTheme.warningColor : AppTheme.primaryGreen)
             )
