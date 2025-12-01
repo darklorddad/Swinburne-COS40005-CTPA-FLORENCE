@@ -870,12 +870,15 @@ class _HistorySectionState extends State<_HistorySection> {
              Color statusColor;
              
              if (widget.threshold != null) {
-               if (r.value <= widget.threshold!.maxValue) {
-                 statusText = 'NORMAL';
-                 statusColor = AppTheme.primaryGreen;
-               } else {
+               if (r.value > widget.threshold!.maxValue) {
                  statusText = 'HIGH';
                  statusColor = AppTheme.errorColor;
+               } else if (r.value < widget.threshold!.minValue) {
+                 statusText = 'LOW';
+                 statusColor = AppTheme.warningColor;
+               } else {
+                 statusText = 'NORMAL';
+                 statusColor = AppTheme.primaryGreen;
                }
              } else {
                statusText = 'RECORDED';

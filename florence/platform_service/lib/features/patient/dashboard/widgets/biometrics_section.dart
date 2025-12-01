@@ -322,8 +322,9 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
     if (t == null) return 'Recorded';
 
-    if (value <= t.maxValue) return 'Normal';
-    return 'High';
+    if (value > t.maxValue) return 'High';
+    if (value < t.minValue) return 'Low';
+    return 'Normal';
   }
 
   Color _getHba1cColor(double? value, List<HealthThreshold> thresholds) {
@@ -331,8 +332,9 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
     if (t == null) return AppTheme.primaryBlue;
 
-    if (value <= t.maxValue) return AppTheme.primaryGreen;
-    return AppTheme.errorColor;
+    if (value > t.maxValue) return AppTheme.errorColor;
+    if (value < t.minValue) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
   }
 
   String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds) {
