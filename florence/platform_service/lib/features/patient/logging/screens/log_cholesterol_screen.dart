@@ -60,10 +60,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       // Helper
       void addCallIfNotEmpty(TextEditingController controller, String type) {
-        if (controller.text.trim().isNotEmpty) {
+        final text = controller.text.trim().replaceAll(',', '.');
+        if (text.isNotEmpty) {
           tasks.add(repo.addMonitorData(
             type, 
-            double.parse(controller.text.trim()), 
+            double.parse(text), 
             _selectedDateTime.toUtc(),
           ));
         }
