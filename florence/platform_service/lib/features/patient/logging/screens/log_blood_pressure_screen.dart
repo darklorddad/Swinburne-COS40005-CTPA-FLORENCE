@@ -161,9 +161,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   label: 'Systolic',
                   hint: 'e.g., 120',
                   controller: _systolicController,
-                  validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Systolic'),
-                  keyboardType: TextInputType.number,
+                  validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.arrow_upward),
                 ),
               ),
@@ -173,9 +172,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   label: 'Diastolic',
                   hint: 'e.g., 80',
                   controller: _diastolicController,
-                  validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Diastolic'),
-                  keyboardType: TextInputType.number,
+                  validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.arrow_downward),
                 ),
               ),
