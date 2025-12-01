@@ -770,7 +770,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
     // CALCULATE GLUCOSE IMPACT
     double? startGlucose;
     double? endGlucose;
-    final activityTime = log.timestamp;
+    final activityTime = log.timestamp; // Keep UTC for glucose comparisons
     
     // 1. Start Reading: [Time - 60min] to [Time + 10min]
     final beforeReadings = widget.glucoseReadings.where((r) => 
@@ -895,7 +895,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(log.timestamp),
+                DateFormat('dd/MM/yy HH:mm').format(log.timestamp.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,
