@@ -100,9 +100,30 @@ class BiometricsSection extends StatelessWidget {
         curr.measuredAt.isAfter(next.measuredAt) ? curr : next);
     }
 
+    // Helper to find latest PAIRED Blood Pressure
+    ({MonitorData? sys, MonitorData? dia}) getLatestBP() {
+      final sysList = monitorData.where((d) => d.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC).toList();
+      final diaList = monitorData.where((d) => d.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC).toList();
+
+      // Sort descending to check newest first
+      sysList.sort((a, b) => b.measuredAt.compareTo(a.measuredAt));
+
+      for (final sys in sysList) {
+        try {
+          // Find diastolic with exact matching timestamp
+          final dia = diaList.firstWhere((d) => d.measuredAt.isAtSameMomentAs(sys.measuredAt));
+          return (sys: sys, dia: dia);
+        } catch (_) {
+          continue; // Orphan systolic, skip
+        }
+      }
+      return (sys: null, dia: null);
+    }
+
     final glucose = getData(MonitorDataType.GLUCOSE);
-    final bpSystolic = getData(MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
-    final bpDiastolic = getData(MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
+    final latestBP = getLatestBP();
+    final bpSystolic = latestBP.sys;
+    final bpDiastolic = latestBP.dia;
     final hba1c = getData(MonitorDataType.HBA1C);
     final cholesterol = getData(MonitorDataType.CHOLESTEROL_TOTAL);
     final bmi = getData(MonitorDataType.BMI);
