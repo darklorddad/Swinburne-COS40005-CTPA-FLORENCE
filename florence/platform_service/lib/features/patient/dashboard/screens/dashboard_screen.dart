@@ -106,6 +106,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
     // Merge meal glucose readings into monitor data for unified display
     final combinedMonitorData = <MonitorData>[];
+
+    if (healthDataState != null) {
+      for (final reading in healthDataState.glucoseReadings) {
+        combinedMonitorData.add(MonitorData(
+          id: reading.id.hashCode,
+          patientId: 0,
+          dataType: MonitorDataType.GLUCOSE,
+          value: reading.value,
+          measuredAt: reading.timestamp,
+        ));
+      }
+    }
+
     for (var meal in mealLogs) {
       if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
         combinedMonitorData.add(MonitorData(
