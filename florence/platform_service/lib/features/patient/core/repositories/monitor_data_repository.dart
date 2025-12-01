@@ -141,123 +141,117 @@ class HealthDataState {
 
 class MonitorDataRepository {
   final ApiService _apiService;
-  final Random _random = Random();
 
   MonitorDataRepository(this._apiService);
 
   Future<HealthDataState> fetchAllData() async {
-    try {
-      // 1. Fetch Thresholds
-      final thresholds = await _fetchThresholds();
+    // 1. Fetch Thresholds
+    final thresholds = await _fetchThresholds();
 
-      // 2. Fetch Monitor Data (Glucose, HbA1c, BP, Cholesterol, BMI)
-      final monitorDataJson = await _apiService.get('/patients/me/monitor-data') as List;
-      final allMonitorData = monitorDataJson.map((e) => MonitorData.fromJson(e)).toList();
-      
-      final glucoseReadings = <GlucoseReading>[];
-      final hba1cResults = <HbA1cResult>[];
-      final cholesterolResults = <CholesterolResult>[];
-      final bmiResults = <BmiResult>[];
-      final systolicReadings = <String, dynamic>{};
-      final diastolicReadings = <String, dynamic>{};
-      final bloodPressureReadings = <BloodPressureReading>[];
+    // 2. Fetch Monitor Data (Glucose, HbA1c, BP, Cholesterol, BMI)
+    final monitorDataJson = await _apiService.get('/patients/me/monitor-data') as List;
+    final allMonitorData = monitorDataJson.map((e) => MonitorData.fromJson(e)).toList();
+    
+    final glucoseReadings = <GlucoseReading>[];
+    final hba1cResults = <HbA1cResult>[];
+    final cholesterolResults = <CholesterolResult>[];
+    final bmiResults = <BmiResult>[];
+    final systolicReadings = <String, dynamic>{};
+    final diastolicReadings = <String, dynamic>{};
+    final bloodPressureReadings = <BloodPressureReading>[];
 
-      for (var item in monitorDataJson) {
-        final dataType = item['data_type'];
-        final timestamp = DateTime.parse(item['measured_at']);
-        final id = item['id'].toString();
-        final value = (item['value'] as num).toDouble();
+    for (var item in monitorDataJson) {
+      final dataType = item['data_type'];
+      final timestamp = DateTime.parse(item['measured_at']);
+      final id = item['id'].toString();
+      final value = (item['value'] as num).toDouble();
 
-        switch (dataType) {
-          case 'GLUCOSE':
-            glucoseReadings.add(GlucoseReading(
-              id: id,
-              timestamp: timestamp,
-              value: value,
-              context: _getGlucoseContext(timestamp.hour),
-              isFlagged: value > 180 || value < 70,
-            ));
-            break;
-          case 'HBA1C':
-            hba1cResults.add(HbA1cResult(
-              id: id,
-              testDate: timestamp,
-              value: value,
-            ));
-            break;
-          case 'BLOOD_PRESSURE_SYSTOLIC':
-            systolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
-            break;
-          case 'BLOOD_PRESSURE_DIASTOLIC':
-            diastolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
-            break;
-          case 'CHOLESTEROL': 
-          case 'CHOLESTEROL_TOTAL':
-            cholesterolResults.add(CholesterolResult(
-              id: id,
-              testDate: timestamp,
-              value: value,
-            ));
-            break;
-          case 'BMI':
-            bmiResults.add(BmiResult(
-              id: id,
-              testDate: timestamp,
-              value: value,
-            ));
-            break;
-        }
-      }
-
-      // Pair BP readings
-      systolicReadings.forEach((timestampStr, systolicData) {
-        if (diastolicReadings.containsKey(timestampStr)) {
-          final diastolicData = diastolicReadings[timestampStr];
-          bloodPressureReadings.add(BloodPressureReading(
-            id: systolicData['id'],
-            timestamp: DateTime.parse(timestampStr),
-            systolic: systolicData['value'],
-            diastolic: diastolicData['value'],
+      switch (dataType) {
+        case 'GLUCOSE':
+          glucoseReadings.add(GlucoseReading(
+            id: id,
+            timestamp: timestamp,
+            value: value,
+            context: _getGlucoseContext(timestamp.hour),
+            isFlagged: value > 180 || value < 70,
           ));
-        }
-      });
-
-      // 3. Fetch Activities
-      final activities = await _fetchActivities();
-
-      // 4. Fetch Meals
-      final meals = await _fetchMeals();
-
-      // 5. Mock additional data
-      final medications = _generateMockMedications();
-      final sleepLogs = _generateMockSleepLogs();
-
-      // Sort
-      glucoseReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      hba1cResults.sort((a, b) => b.testDate.compareTo(a.testDate));
-      bloodPressureReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      cholesterolResults.sort((a, b) => b.testDate.compareTo(a.testDate));
-      bmiResults.sort((a, b) => b.testDate.compareTo(a.testDate));
-      activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-      meals.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-      return HealthDataState(
-        glucoseReadings: glucoseReadings,
-        meals: meals,
-        activities: activities,
-        medications: medications,
-        hba1cResults: hba1cResults,
-        sleepLogs: sleepLogs,
-        bloodPressureReadings: bloodPressureReadings,
-        cholesterolResults: cholesterolResults,
-        bmiResults: bmiResults,
-        healthThresholds: thresholds,
-        allMonitorData: allMonitorData,
-      );
-    } catch (e) {
-      print("Error fetching real data: $e");
-      return _generateAllMockData();
+          break;
+        case 'HBA1C':
+          hba1cResults.add(HbA1cResult(
+            id: id,
+            testDate: timestamp,
+            value: value,
+          ));
+          break;
+        case 'BLOOD_PRESSURE_SYSTOLIC':
+          systolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
+          break;
+        case 'BLOOD_PRESSURE_DIASTOLIC':
+          diastolicReadings[timestamp.toIso8601String()] = {'id': id, 'value': value};
+          break;
+        case 'CHOLESTEROL': 
+        case 'CHOLESTEROL_TOTAL':
+          cholesterolResults.add(CholesterolResult(
+            id: id,
+            testDate: timestamp,
+            value: value,
+          ));
+          break;
+        case 'BMI':
+          bmiResults.add(BmiResult(
+            id: id,
+            testDate: timestamp,
+            value: value,
+          ));
+          break;
+      }
     }
+
+    // Pair BP readings
+    systolicReadings.forEach((timestampStr, systolicData) {
+      if (diastolicReadings.containsKey(timestampStr)) {
+        final diastolicData = diastolicReadings[timestampStr];
+        bloodPressureReadings.add(BloodPressureReading(
+          id: systolicData['id'],
+          timestamp: DateTime.parse(timestampStr),
+          systolic: systolicData['value'],
+          diastolic: diastolicData['value'],
+        ));
+      }
+    });
+
+    // 3. Fetch Activities
+    final activities = await _fetchActivities();
+
+    // 4. Fetch Meals
+    final meals = await _fetchMeals();
+
+    // 5. No Mock Data
+    final medications = <MedicationLog>[];
+    final sleepLogs = <SleepLog>[];
+
+    // Sort
+    glucoseReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    hba1cResults.sort((a, b) => b.testDate.compareTo(a.testDate));
+    bloodPressureReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    cholesterolResults.sort((a, b) => b.testDate.compareTo(a.testDate));
+    bmiResults.sort((a, b) => b.testDate.compareTo(a.testDate));
+    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    meals.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    return HealthDataState(
+      glucoseReadings: glucoseReadings,
+      meals: meals,
+      activities: activities,
+      medications: medications,
+      hba1cResults: hba1cResults,
+      sleepLogs: sleepLogs,
+      bloodPressureReadings: bloodPressureReadings,
+      cholesterolResults: cholesterolResults,
+      bmiResults: bmiResults,
+      healthThresholds: thresholds,
+      allMonitorData: allMonitorData,
+    );
   }
 
   // ==================== WRITE OPERATIONS ====================
@@ -402,73 +396,6 @@ class MonitorDataRepository {
     return 'Bedtime';
   }
 
-  HealthDataState _generateAllMockData() {
-     return HealthDataState(
-        glucoseReadings: _generateMockGlucoseReadings(),
-        meals: _generateMockMeals(),
-        activities: _generateMockActivities(),
-        medications: _generateMockMedications(),
-        hba1cResults: [], // Simplified mocks
-        sleepLogs: _generateMockSleepLogs(),
-        bloodPressureReadings: [],
-        cholesterolResults: [],
-        bmiResults: [],
-     );
-  }
-
-  List<GlucoseReading> _generateMockGlucoseReadings() {
-    final readings = <GlucoseReading>[];
-    final now = DateTime.now();
-    const days = 30;
-    for (int day = 0; day < days; day++) {
-      final date = now.subtract(Duration(days: days - day));
-      final readingsPerDay = 3;
-      for (int i = 0; i < readingsPerDay; i++) {
-        final timestamp = DateTime(date.year, date.month, date.day, 8 + i*5, 0);
-        readings.add(GlucoseReading(
-          id: 'glucose_${timestamp.millisecondsSinceEpoch}',
-          timestamp: timestamp,
-          value: 100.0 + _random.nextInt(40),
-          context: _getGlucoseContext(timestamp.hour),
-        ));
-      }
-    }
-    readings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return readings;
-  }
-
-  List<MealLog> _generateMockMeals() {
-    final meals = <MealLog>[];
-    final now = DateTime.now();
-    for (int i = 0; i < 10; i++) {
-      final timestamp = now.subtract(Duration(days: i));
-      meals.add(MealLog(
-        id: 'meal_$i',
-        timestamp: timestamp,
-        type: 'Lunch',
-        description: 'Mock Meal $i',
-        carbs: 50,
-        calories: 500,
-      ));
-    }
-    return meals;
-  }
-  
-  List<ActivityLog> _generateMockActivities() {
-     return [];
-  }
-
-  List<MedicationLog> _generateMockMedications() {
-     return [];
-  }
-  
-  List<SleepLog> _generateMockSleepLogs() {
-    return [];
-  }
-
-  double _randomGaussian(double min, double max) {
-    return min + _random.nextDouble() * (max - min);
-  }
 }
 
 /// Provider for the repository
