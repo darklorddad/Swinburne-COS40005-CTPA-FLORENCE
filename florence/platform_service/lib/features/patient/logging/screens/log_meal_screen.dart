@@ -23,9 +23,6 @@ class LogMealScreen extends ConsumerStatefulWidget {
 class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mealNameController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _fatController = TextEditingController();
   final _notesController = TextEditingController();
   
   // State
@@ -44,9 +41,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   @override
   void dispose() {
     _mealNameController.dispose();
-    _carbsController.dispose();
-    _proteinController.dispose();
-    _fatController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -61,11 +55,17 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     setState(() => _isLoading = true);
     
     try {
+      // Combine Name and Notes for the description
+      String description = _mealNameController.text.trim();
+      if (_notesController.text.isNotEmpty) {
+        description += ' - ${_notesController.text.trim()}';
+      }
+
       // Use the repository logic
       await ref.read(monitorDataRepositoryProvider).addMeal(
         _selectedMealType.toUpperCase(),
         _selectedDateTime,
-        _mealNameController.text.trim(),
+        description,
         null, // Glucose before (handled in glucose screen)
         null,
         null, // Glucose after
@@ -123,19 +123,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     }
   }
   
-  /// Calculate total calories
-  int _calculateCalories() {
-    final carbs = double.tryParse(_carbsController.text) ?? 0;
-    final protein = double.tryParse(_proteinController.text) ?? 0;
-    final fat = double.tryParse(_fatController.text) ?? 0;
-    
-    return ((carbs * 4) + (protein * 4) + (fat * 9)).round();
-  }
-  
   @override
   Widget build(BuildContext context) {
-    final totalCalories = _calculateCalories();
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log Meal'),
@@ -170,10 +159,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               
               // Date and time
               _buildDateTimeSection(),
-              const SizedBox(height: 24),
-              
-              // Macros section
-              _buildMacrosSection(totalCalories),
               const SizedBox(height: 24),
               
               // Notes
@@ -355,81 +340,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build macros section
-  Widget _buildMacrosSection(int totalCalories) {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Nutrition (Optional)',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              if (totalCalories > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.mealColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '$totalCalories kcal',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.mealColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  label: 'Carbs (g)',
-                  hint: '0',
-                  controller: _carbsController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CustomTextField(
-                  label: 'Protein (g)',
-                  hint: '0',
-                  controller: _proteinController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CustomTextField(
-                  label: 'Fat (g)',
-                  hint: '0',
-                  controller: _fatController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-            ],
           ),
         ],
       ),
