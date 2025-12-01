@@ -49,14 +49,18 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
     // Foolproof 2: Prevent duplicate logs
     final existingData = ref.read(monitorDataProvider).asData?.value.allMonitorData ?? [];
-    final isDuplicate = existingData.any((d) => 
-      d.dataType == MonitorDataType.HBA1C && 
-      d.measuredAt.year == _selectedDateTime.year &&
-      d.measuredAt.month == _selectedDateTime.month &&
-      d.measuredAt.day == _selectedDateTime.day &&
-      d.measuredAt.hour == _selectedDateTime.hour &&
-      d.measuredAt.minute == _selectedDateTime.minute
-    );
+    final isDuplicate = existingData.any((d) {
+      if (d.dataType != MonitorDataType.HBA1C) return false;
+      
+      // Convert DB time to local to match user selection
+      final localDate = d.measuredAt.toLocal();
+      
+      return localDate.year == _selectedDateTime.year &&
+             localDate.month == _selectedDateTime.month &&
+             localDate.day == _selectedDateTime.day &&
+             localDate.hour == _selectedDateTime.hour &&
+             localDate.minute == _selectedDateTime.minute;
+    });
 
     if (isDuplicate) {
       Helpers.showError(context, 'An HbA1c reading for this time already exists.');
