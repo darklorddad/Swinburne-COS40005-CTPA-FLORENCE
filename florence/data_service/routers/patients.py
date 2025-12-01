@@ -1,6 +1,6 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field
 from typing import Optional
 from supabase_auth.errors import AuthApiError
 from datetime import datetime, date
@@ -75,7 +75,8 @@ class MonitorDataType(str, Enum):
 
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
-    value: float
+    # Database Foolproofing: Ensure values are physically possible (0 < x < 1000)
+    value: float = Field(..., gt=0, lt=1000, description="Must be a positive physiological value")
     measured_at: datetime
 
 class MonitorDataUpdate(BaseModel):

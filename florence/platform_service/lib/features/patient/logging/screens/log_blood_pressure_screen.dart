@@ -39,6 +39,14 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
       return;
     }
 
+    final sys = double.parse(_systolicController.text);
+    final dia = double.parse(_diastolicController.text);
+
+    if (dia >= sys) {
+      Helpers.showError(context, 'Diastolic must be lower than Systolic.');
+      return;
+    }
+
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
 
