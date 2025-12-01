@@ -734,18 +734,20 @@ class _CompositionSectionState extends State<_CompositionSection> {
                     final hdl = r.hdl ?? 0;
                     final ldl = r.ldl ?? 0;
                     final tri = r.triglycerides ?? 0;
+                    // Visualize VLDL (approx Tri/5) so bar height ~ Total Cholesterol
+                    final vldl = tri / 5;
                     
                     return BarChartGroupData(
                       x: index,
                       barRods: [
                         BarChartRodData(
-                          toY: hdl + ldl + tri,
+                          toY: hdl + ldl + vldl,
                           width: 16,
                           borderRadius: BorderRadius.circular(2),
                           rodStackItems: [
                             BarChartRodStackItem(0, hdl, AppTheme.primaryGreen),
                             BarChartRodStackItem(hdl, hdl + ldl, AppTheme.errorColor),
-                            BarChartRodStackItem(hdl + ldl, hdl + ldl + tri, Colors.orange),
+                            BarChartRodStackItem(hdl + ldl, hdl + ldl + vldl, Colors.orange),
                           ],
                         ),
                       ],
@@ -762,7 +764,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               const SizedBox(width: 16),
               _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('Triglycerides', Colors.orange),
+              _LegendItem('VLDL (Tri/5)', Colors.orange),
             ],
           ),
         ],
