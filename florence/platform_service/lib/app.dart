@@ -190,8 +190,6 @@ class _AppState extends ConsumerState<App> {
         AdminAuthService().logout(); // Ensure admin state is cleared
         destinationRoute = AppRoutes.clinicianDashboard;
       } else if (userRole.toUpperCase() == 'ADMIN') {
-        // Set the current admin user in the mock service
-        AdminAuthService().setCurrentUserFromSupabase(session.user);
         destinationRoute = AppRoutes.adminDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
