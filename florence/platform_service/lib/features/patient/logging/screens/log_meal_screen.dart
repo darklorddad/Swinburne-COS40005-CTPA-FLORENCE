@@ -103,11 +103,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       }
     } catch (e) {
       if (mounted) {
-        if (e.toString().contains('409')) {
-          Helpers.showError(context, 'You have already logged $_selectedMealType for this date.');
-        } else {
-          Helpers.showError(context, 'Failed to log meal: $e');
-        }
+        Helpers.showError(context, 'Failed to log meal: $e');
       }
     } finally {
       if (mounted) {
