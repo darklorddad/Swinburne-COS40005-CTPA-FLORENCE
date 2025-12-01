@@ -65,7 +65,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
                   
                   _TrendsSection(
                     readings: readings,
-                    targetMax: targetMax,
+                    threshold: userThreshold,
                   ),
                   const SizedBox(height: 20),
 
@@ -387,9 +387,9 @@ class _GaugeSection extends StatelessWidget {
 
 class _TrendsSection extends StatefulWidget {
   final List<MonitorData> readings;
-  final double? targetMax;
+  final HealthThreshold? threshold;
 
-  const _TrendsSection({required this.readings, this.targetMax});
+  const _TrendsSection({required this.readings, this.threshold});
 
   @override
   State<_TrendsSection> createState() => _TrendsSectionState();
@@ -539,19 +539,23 @@ class _TrendsSectionState extends State<_TrendsSection> {
                     show: true, 
                     border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))
                   ),
-                  rangeAnnotations: widget.targetMax != null ? RangeAnnotations(
+                  rangeAnnotations: widget.threshold != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      // Extend green band to cover dynamic minY
-                      HorizontalRangeAnnotation(y1: minY, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
-                      HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
-                      // Extend red band to cover dynamic maxY
-                      HorizontalRangeAnnotation(y1: 6.5, y2: math.max(maxY, 20), color: AppTheme.errorColor.withOpacity(0.08)),
+                      // Low Zone (Yellow)
+                      if (widget.threshold!.minValue > minY)
+                        HorizontalRangeAnnotation(y1: minY, y2: widget.threshold!.minValue, color: AppTheme.warningColor.withOpacity(0.08)),
+                      
+                      // Safe Zone (Green)
+                      HorizontalRangeAnnotation(y1: math.max(minY, widget.threshold!.minValue), y2: widget.threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.08)),
+                      
+                      // High Zone (Red)
+                      HorizontalRangeAnnotation(y1: widget.threshold!.maxValue, y2: math.max(maxY, 20), color: AppTheme.errorColor.withOpacity(0.08)),
                     ],
                   ) : null,
-                  extraLinesData: widget.targetMax != null ? ExtraLinesData(
+                  extraLinesData: widget.threshold != null ? ExtraLinesData(
                     horizontalLines: [
                        HorizontalLine(
-                         y: widget.targetMax!, 
+                         y: widget.threshold!.maxValue, 
                          color: AppTheme.primaryBlue.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
@@ -560,8 +564,14 @@ class _TrendsSectionState extends State<_TrendsSection> {
                            alignment: Alignment.topRight, 
                            padding: const EdgeInsets.only(right: 5, bottom: 2), 
                            style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
-                           labelResolver: (line) => 'Target'
+                           labelResolver: (line) => 'Target Max'
                          )
+                       ),
+                       HorizontalLine(
+                         y: widget.threshold!.minValue, 
+                         color: AppTheme.primaryBlue.withOpacity(0.8), 
+                         strokeWidth: 1, 
+                         dashArray: [5,5], 
                        )
                     ]
                   ) : null,
@@ -604,16 +614,16 @@ class _TrendsSectionState extends State<_TrendsSection> {
               ),
             ),
           ),
-          if (widget.targetMax != null) ...[
+          if (widget.threshold != null) ...[
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.5)),
+                _LegendItem('Low', AppTheme.warningColor.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.5)),
+                _LegendItem('Target', AppTheme.primaryGreen.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.5)),
+                _LegendItem('High', AppTheme.errorColor.withOpacity(0.5)),
               ],
             )
           ]
