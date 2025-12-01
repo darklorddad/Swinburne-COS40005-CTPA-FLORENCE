@@ -9,7 +9,6 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
 import '../../../../main.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
