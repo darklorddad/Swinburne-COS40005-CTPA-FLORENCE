@@ -9,6 +9,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -208,7 +209,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   controller: _heightController,
                   validator: (value) =>
                       Validators.range(value, 50, 300, fieldName: 'Height'),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.height),
                 ),
               ),
@@ -220,7 +221,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   controller: _weightController,
                   validator: (value) =>
                       Validators.range(value, 20, 500, fieldName: 'Weight'),
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.scale),
                 ),
               ),
