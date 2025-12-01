@@ -1,4 +1,4 @@
-name: florence
+name: Florence
 description: AI-Enabled Digital Health Platform for Chronic Disease Monitoring
 publish_to: 'none'
 version: 1.0.0+1
@@ -18,14 +18,12 @@ dependencies:
   http: ^1.2.2
 
   # Data Visualization
-  # UPDATED: Major upgrade from 0.69.2 -> 1.1.1 based on your logs
   fl_chart: ^1.1.1 
 
   # Data Serialization
   json_annotation: ^4.9.0
 
   # Date & Time Handling
-  # UPDATED: Upgraded to latest major version
   intl: ^0.20.2
   table_calendar: ^3.2.0
 
@@ -58,7 +56,6 @@ dev_dependencies:
     sdk: flutter
 
   # Linter
-  # UPDATED: Major upgrade 5.0.0 -> 6.0.0
   flutter_lints: ^6.0.0
 
   # Code Generation
