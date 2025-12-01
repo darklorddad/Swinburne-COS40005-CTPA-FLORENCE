@@ -11,6 +11,7 @@ import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
+import '../../dashboard/providers/dashboard_providers.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
@@ -215,7 +216,37 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   }
 
   Widget _buildBmiResultCard() {
-    final bmiCategory = Helpers.getBMICategory(_calculatedBmi!);
+    // Fetch dynamic thresholds from the provider
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    final thresholds = thresholdsAsync.value ?? [];
+    
+    String bmiCategory;
+    
+    // Try to find dynamic BMI threshold
+    final t = thresholds.cast<HealthThreshold?>().firstWhere(
+          (t) => t?.dataType == MonitorDataType.BMI,
+          orElse: () => null,
+        );
+
+    if (t != null) {
+      // Dynamic Logic
+      final maxNormal = t.maxValue;
+      final obeseCutoff = maxNormal + 5.0;
+
+      if (_calculatedBmi! < t.minValue) {
+        bmiCategory = 'Underweight';
+      } else if (_calculatedBmi! <= maxNormal) {
+        bmiCategory = 'Normal';
+      } else if (_calculatedBmi! <= obeseCutoff) {
+        bmiCategory = 'Overweight';
+      } else {
+        bmiCategory = 'Obese';
+      }
+    } else {
+      // Fallback to static helper if no data loaded
+      bmiCategory = Helpers.getBMICategory(_calculatedBmi!);
+    }
+
     return BaseCard(
       child: Column(
         children: [

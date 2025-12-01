@@ -197,15 +197,6 @@ class HealthStatusEvaluator {
     MonitorDataType type,
     List<HealthThreshold> thresholds,
   ) {
-    // BMI Specific Logic
-    if (type == MonitorDataType.BMI) {
-      if (value < 18.5) return HealthStatus.warning; // Underweight
-      if (value >= 18.5 && value <= 24.9) return HealthStatus.safe; // Normal
-      if (value >= 25.0 && value <= 29.9) return HealthStatus.warning; // Overweight
-      if (value >= 30.0) return HealthStatus.critical; // Obese
-      return HealthStatus.unknown;
-    }
-
     // Find specific threshold
     try {
       final threshold = thresholds.firstWhere((t) => t.dataType == type);
