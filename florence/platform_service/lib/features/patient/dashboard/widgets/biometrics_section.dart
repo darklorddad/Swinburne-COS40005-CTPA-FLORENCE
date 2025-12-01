@@ -124,7 +124,12 @@ class BiometricsSection extends StatelessWidget {
     final bpSystolic = latestBP.sys;
     final bpDiastolic = latestBP.dia;
     final hba1c = getData(MonitorDataType.HBA1C);
-    final cholesterol = getData(MonitorDataType.CHOLESTEROL_TOTAL);
+    final cholesterolTotal = getData(MonitorDataType.CHOLESTEROL_TOTAL);
+    final cholesterolLdl = getData(MonitorDataType.CHOLESTEROL_LDL);
+    // Prefer Total, fallback to LDL
+    final cholesterolDisplay = cholesterolTotal ?? cholesterolLdl;
+    final isLdlDisplay = cholesterolTotal == null && cholesterolLdl != null;
+
     final bmi = getData(MonitorDataType.BMI);
 
     // Glucose (Always show)
@@ -167,13 +172,13 @@ class BiometricsSection extends StatelessWidget {
 
     // Cholesterol (Always show)
     cards.add(CompactHealthCard(
-      label: 'Cholesterol',
-      value: cholesterol?.value.toStringAsFixed(0) ?? '--',
+      label: isLdlDisplay ? 'Cholesterol (LDL)' : 'Cholesterol',
+      value: cholesterolDisplay?.value.toStringAsFixed(0) ?? '--',
       unit: 'mg/dL',
-      status: _getCholesterolStatus(cholesterol?.value, thresholds),
-      timestamp: cholesterol?.measuredAt,
+      status: _getCholesterolStatus(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
+      timestamp: cholesterolDisplay?.measuredAt,
       icon: Icons.bloodtype_outlined,
-      color: _getCholesterolColor(cholesterol?.value, thresholds),
+      color: _getCholesterolColor(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
       onTap: () => Navigator.push(
         context, 
         MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
@@ -337,18 +342,22 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds) {
+  String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds, {bool isLdl = false}) {
     if (value == null) return 'No Data';
-    final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+    final type = isLdl ? MonitorDataType.CHOLESTEROL_LDL : MonitorDataType.CHOLESTEROL_TOTAL;
+    final t = _getThreshold(thresholds, type);
+    
     if (t == null) return 'Recorded';
 
     if (value > t.maxValue) return 'High';
     return 'Desirable';
   }
 
-  Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds) {
+  Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds, {bool isLdl = false}) {
     if (value == null) return AppTheme.textSecondaryColor;
-    final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+    final type = isLdl ? MonitorDataType.CHOLESTEROL_LDL : MonitorDataType.CHOLESTEROL_TOTAL;
+    final t = _getThreshold(thresholds, type);
+    
     if (t == null) return AppTheme.primaryBlue;
 
     if (value > t.maxValue) return AppTheme.errorColor;
