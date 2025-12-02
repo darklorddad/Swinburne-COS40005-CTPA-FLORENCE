@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -53,6 +54,7 @@ class ChatNotifier extends Notifier<ChatState> {
 
   /// Send a message to the Chatbot Service
   Future<void> sendMessage(String message) async {
+    debugPrint('[Chatbot] Sending message: $message');
     // 1. Optimistically add user message
     final userMsg = ChatMessage(
       id: 'temp_${DateTime.now().millisecondsSinceEpoch}',
@@ -74,18 +76,23 @@ class ChatNotifier extends Notifier<ChatState> {
         }),
       );
 
+      debugPrint('[Chatbot] Send response code: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final aiMsg = ChatMessage.fromJson(data);
         
         // 2. Add AI response
         state = state.copyWith(messages: [...state.messages, aiMsg]);
+        debugPrint('[Chatbot] Message sent successfully');
       } else {
+        debugPrint('[Chatbot] Failed to send message: ${response.body}');
         throw Exception('Failed to send message: ${response.body}');
       }
     } catch (e) {
       // On failure, remove the optimistic message
       state = state.copyWith(messages: previousMessages);
+      debugPrint('[Chatbot] Error communicating with service: $e');
       throw Exception('Error communicating with chatbot service: $e');
     }
   }
@@ -94,6 +101,7 @@ class ChatNotifier extends Notifier<ChatState> {
   Future<void> loadHistory({int limit = 50}) async {
     if (_hasLoadedHistory || state.isLoadingHistory) return;
 
+    debugPrint('[Chatbot] Loading history...');
     state = state.copyWith(isLoadingHistory: true);
 
     try {
@@ -101,6 +109,8 @@ class ChatNotifier extends Notifier<ChatState> {
         Uri.parse('$_baseUrl/chat/history?limit=$limit'),
         headers: _getHeaders(),
       );
+
+      debugPrint('[Chatbot] History response code: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -113,11 +123,14 @@ class ChatNotifier extends Notifier<ChatState> {
           isLoadingHistory: false,
         );
         _hasLoadedHistory = true;
+        debugPrint('[Chatbot] Loaded ${loadedMessages.length} messages');
       } else {
+        debugPrint('[Chatbot] Failed to load history: ${response.body}');
         throw Exception('Failed to load history: ${response.body}');
       }
     } catch (e) {
       state = state.copyWith(isLoadingHistory: false);
+      debugPrint('[Chatbot] Error loading chat history: $e');
       throw Exception('Error loading chat history: $e');
     }
   }
