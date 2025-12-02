@@ -37,8 +37,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.initState();
     // Trigger initial chat fetch so it's ready when needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(chatProvider.notifier).loadHistory();
+      _safeLoadChatHistory();
     });
+  }
+
+  Future<void> _safeLoadChatHistory() async {
+    try {
+      await ref.read(chatProvider.notifier).loadHistory();
+    } catch (e) {
+      debugPrint("Dashboard: Failed to load chat history (Non-critical): $e");
+    }
   }
 
   @override
@@ -55,7 +63,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     await Future.wait([
       ref.refresh(core_data.monitorDataProvider.future),
       ref.refresh(userProfileProvider.future),
-      ref.read(chatProvider.notifier).loadHistory(),
+      _safeLoadChatHistory(), // Use safe wrapper
     ]);
   }
 

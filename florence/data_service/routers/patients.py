@@ -50,12 +50,12 @@ async def get_current_patient_profile(authorization: str = Header(...)):
             profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
             
             if not profile_response.data:
-                # --- AUTO-HEAL & FORCE RETRY ---
+                # --- AUTO-HEAL: Create missing profile if user is a PATIENT ---
                 role = user.app_metadata.get('role', '').upper()
                 if role == 'PATIENT':
-                    print(f"DEBUG: Profile missing/unreadable for {user.id}. Attempting auto-heal.")
+                    print(f"DEBUG: Auto-creating missing profile for patient {user.id}")
                     try:
-                        # 1. Try to create the profile (Fixes New Users)
+                        # Attempt to get name from metadata, fallback to email
                         name = user.user_metadata.get('name', user.email.split('@')[0] if user.email else 'Patient')
                         
                         new_profile = {
@@ -66,18 +66,14 @@ async def get_current_patient_profile(authorization: str = Header(...)):
                         
                         insert_res = supabase.table('patient_profiles').insert(new_profile).execute()
                         if insert_res.data:
-                            # Add default thresholds for the new profile
-                            pid = insert_res.data[0]['id']
-                            thresholds = [{**t, 'patient_id': pid} for t in DEFAULT_THRESHOLDS]
+                            profile_data = insert_res.data[0]
+                            # Insert default thresholds
+                            thresholds = [{**t, 'patient_id': profile_data['id']} for t in DEFAULT_THRESHOLDS]
                             supabase.table('patient_thresholds').insert(thresholds).execute()
                             
-                            return insert_res.data[0]
-                    
+                            return profile_data
                     except Exception as e:
                         # If creation fails (e.g., Duplicate Key), it implies the profile ALREADY EXISTS.
-                        # This happens if:
-                        # 1. The user is an existing user (your case).
-                        # 2. A parallel request just created it.
                         # We must fetch it again immediately instead of failing.
                         print(f"DEBUG: Auto-create clash for {user.id}. Fetching existing profile.")
                         final_attempt = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
