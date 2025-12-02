@@ -10,7 +10,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_providers;
 import '../../core/repositories/monitor_data_repository.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 
@@ -111,7 +111,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         _selectedDateTime.toUtc(),
       );
       
-      ref.invalidate(monitorDataProvider);
+      ref.invalidate(core_providers.monitorDataProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged successfully!');
