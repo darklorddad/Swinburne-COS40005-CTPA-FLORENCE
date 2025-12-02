@@ -74,13 +74,18 @@ async def get_current_patient_profile(authorization: str = Header(...)):
                             return insert_res.data[0]
                     
                     except Exception as e:
-                        # 2. If creation fails (e.g., Duplicate Key), it means the profile DOES exist 
-                        # and the previous reads failed due to a glitch.
-                        # We force a final fetch here (Fixes Existing Users).
-                        print(f"DEBUG: Auto-heal triggered duplicate check. Fetching existing profile.")
-                        final_try = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
-                        if final_try.data:
-                            return final_try.data[0]
+                        # If creation fails (e.g., Duplicate Key), it implies the profile ALREADY EXISTS.
+                        # This happens if:
+                        # 1. The user is an existing user (your case).
+                        # 2. A parallel request just created it.
+                        # We must fetch it again immediately instead of failing.
+                        print(f"DEBUG: Auto-create clash for {user.id}. Fetching existing profile.")
+                        final_attempt = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
+                        if final_attempt.data:
+                            return final_attempt.data[0]
+                        
+                        # Only fail if we really can't find it
+                        print(f"ERROR: Auto-create failed and fetch failed: {e}")
 
                 print(f"DEBUG: Access denied for user_id: {user.id}. Profile not found in patient_profiles.")
                 raise HTTPException(status_code=403, detail=f"Access denied: User {user.id} is not a patient.")
