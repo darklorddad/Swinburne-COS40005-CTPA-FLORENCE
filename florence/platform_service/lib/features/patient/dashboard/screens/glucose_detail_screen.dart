@@ -535,48 +535,57 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
+                        reservedSize: 22,
+                        // Interval: Divide total duration by 5 to get ~6 evenly spaced ticks
                         interval: (maxX - minX) / 5, 
                         getTitlesWidget: (val, meta) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
-                          // Calculate percentage position (0.0 to 1.0)
                           final double totalRange = meta.max - meta.min;
+                          // Protect against division by zero
+                          if (totalRange == 0) return const SizedBox.shrink();
+                          
                           final double percent = (val - meta.min) / totalRange;
 
-                          // 1. Determine alignment adjustment based on position
-                          // Start (0%): needs to shift RIGHT to stay inside (padding on left)
-                          // End (100%): needs to shift LEFT to stay inside (padding on right)
-                          // Middle: Centered
-                          
-                          EdgeInsets padding = EdgeInsets.zero;
-                          TextAlign align = TextAlign.center;
+                          // Logic:
+                          // 1. First Label (0%): Show, shift right slightly.
+                          // 2. Last Label (100%): Show, shift left slightly.
+                          // 3. Buffer Zone (2-15% AND 85-98%): Hide to prevent overlapping the edges.
+                          // 4. Middle: Show normally.
 
-                          if (percent < 0.05) {
-                            // Left Edge: Shift text slightly right so it doesn't cut off
-                            padding = const EdgeInsets.only(left: 10);
+                          double offsetX = 0;
+                          TextAlign align = TextAlign.center;
+                          bool isEdge = false;
+
+                          if (percent < 0.02) {
+                            // Start
+                            offsetX = 12.0; 
                             align = TextAlign.left;
-                          } else if (percent > 0.95) {
-                            // Right Edge: Shift text slightly left
-                            padding = const EdgeInsets.only(right: 10);
+                            isEdge = true;
+                          } else if (percent > 0.98) {
+                            // End
+                            offsetX = -12.0;
                             align = TextAlign.right;
-                          } else {
-                            // Middle: Check for overlap with edges
-                            // If strictly adjacent to edges (e.g. 15% or 85%), hide it to give breathing room to the start/end labels
-                            if (percent < 0.15 || percent > 0.85) {
-                              return const SizedBox.shrink();
-                            }
+                            isEdge = true;
+                          } else if (percent < 0.15 || percent > 0.85) {
+                            // Buffer Zone - Hide to protect edges
+                            return const SizedBox.shrink();
                           }
 
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8) + padding,
-                            child: Text(
-                              fmt.format(date),
-                              textAlign: align,
-                              style: TextStyle(
-                                fontSize: 9, 
-                                color: AppTheme.textSecondaryColor,
-                                fontWeight: FontWeight.normal,
+                          return Transform.translate(
+                            offset: Offset(offsetX, 0),
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text(
+                                fmt.format(date),
+                                textAlign: align,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: AppTheme.textSecondaryColor,
+                                  // Subtle bold for edges to frame the chart
+                                  fontWeight: isEdge ? FontWeight.w600 : FontWeight.normal, 
+                                ),
                               ),
                             ),
                           );
