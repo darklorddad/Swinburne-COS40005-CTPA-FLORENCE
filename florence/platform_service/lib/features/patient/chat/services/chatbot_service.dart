@@ -156,7 +156,7 @@ class ChatNotifier extends Notifier<ChatState> {
 }
 
 /// Singleton-like provider (global state)
-final chatProvider = NotifierProvider<ChatNotifier, ChatState>(ChatNotifier.new);
+final chatProvider = NotifierProvider<ChatNotifier, ChatState>(ChatNotifier.new, isAutoDispose: true);
 
 /// Legacy compatibility (if needed, though discouraged)
 class ChatbotService {

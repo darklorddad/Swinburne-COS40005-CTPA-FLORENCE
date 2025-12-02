@@ -6,7 +6,7 @@ import '../automation/pattern_detection_service.dart';
 import 'notification_models.dart';
 
 /// Notification Provider
-final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new);
+final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);
 
 /// Notifier for managing notifications
 class NotificationNotifier extends Notifier<List<HealthNotification>> {

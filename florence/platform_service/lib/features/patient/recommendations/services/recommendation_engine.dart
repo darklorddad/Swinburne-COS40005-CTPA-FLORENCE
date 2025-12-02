@@ -4,7 +4,7 @@ import '../../../patient/core/models/health_data_models.dart';
 import '../../../patient/core/providers/monitor_data_providers.dart';
 import '../models/recommendation_models.dart';
 
-final recommendationProvider = NotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(RecommendationNotifier.new);
+final recommendationProvider = NotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(RecommendationNotifier.new, isAutoDispose: true);
 
 class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
   

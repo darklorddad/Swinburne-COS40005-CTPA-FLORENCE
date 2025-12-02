@@ -16,4 +16,4 @@ final userProfileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
     ...profile,
     'email': email, // Ensure email is present
   };
-});
+}, isAutoDispose: true);
