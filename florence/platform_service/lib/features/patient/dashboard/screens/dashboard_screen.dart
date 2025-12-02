@@ -44,7 +44,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   /// Handle refresh
   Future<void> _handleRefresh() async {
     // Refresh BOTH providers in parallel for maximum efficiency
-    return Future.wait([
+    await Future.wait([
       ref.refresh(core_data.monitorDataProvider.future),
       ref.refresh(userProfileProvider.future),
     ]);
