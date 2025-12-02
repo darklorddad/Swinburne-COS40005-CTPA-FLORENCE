@@ -56,14 +56,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    // Force reset chat history state to allow reloading
     ref.invalidate(chatProvider);
 
-    // Refresh ALL providers in parallel for maximum efficiency
+    // 1. Fetch Profile First ("Prime" the backend)
+    // This ensures the profile record exists and prevents race conditions on the heavy queries
+    await ref.refresh(userProfileProvider.future);
+
+    // 2. Fetch Data & Chat in Parallel (Safe now)
     await Future.wait([
       ref.refresh(core_data.monitorDataProvider.future),
-      ref.refresh(userProfileProvider.future),
-      _safeLoadChatHistory(), // Use safe wrapper
+      _safeLoadChatHistory(), 
     ]);
   }
 
@@ -74,12 +76,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. WATCH PROVIDERS (Triggers parallel fetch immediately on build)
-    final healthDataState = ref.watch(core_data.monitorDataProvider).asData?.value;
+    // 1. WATCH PROFILE (Triggers immediately)
     final userProfileAsync = ref.watch(userProfileProvider);
+
+    // 2. WATCH DATA (Sequential Trigger)
+    // Only trigger the heavy data fetch once we know who the user is.
+    // This prevents the "Thundering Herd" of 403s on the backend.
+    final healthDataState = userProfileAsync.hasValue 
+        ? ref.watch(core_data.monitorDataProvider).asData?.value 
+        : null;
     
-    // Keep chat provider alive so data persists across tab switches
+    // Keep chat provider alive, but load history only after profile is ready
     ref.watch(chatProvider);
+    if (userProfileAsync.hasValue) {
+      // We use a post-frame callback inside a specialized widget or just let the 
+      // initState/Refresh logic handle the explicit calls. 
+      // The _handleRefresh logic above covers manual reloads. 
+      // For initial load, we rely on the provider lifecycle.
+    }
     
     // Derived values (will update automatically as healthDataState arrives)
     final activity = ref.watch(latestActivityProvider).asData?.value;
