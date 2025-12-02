@@ -129,6 +129,18 @@ class _AppState extends ConsumerState<App> {
     debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
 
     if (session != null) {
+      // Force invalidate providers on fresh login to prevent seeing previous user's data
+      if (data.event == AuthChangeEvent.signedIn ||
+          data.event == AuthChangeEvent.passwordRecovery) {
+        debugPrint(
+            '[App Listener] Sign-in detected. Invalidating providers to clear stale data.');
+        ref.invalidate(monitorDataProvider);
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(chatProvider);
+        ref.invalidate(recommendationProvider);
+        ref.invalidate(notificationProvider);
+      }
+
       // The ApiService now gets the token directly from the Supabase client.
       // No need to manually manage the token in SessionManager.
       debugPrint('[App Listener] Session found. Token is available via supabase.auth.currentSession.');
