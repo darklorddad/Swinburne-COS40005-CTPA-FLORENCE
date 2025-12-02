@@ -535,19 +535,36 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (maxX - minX) / 5, // Increased label density
+                        // Dynamic Interval: Divide total range by 5 to get ~6 evenly spaced labels (Start, 20%, 40%, 60%, 80%, End)
+                        // This ensures the first (minX) and last (maxX) are mathematically hit by the iterator.
+                        interval: (maxX - minX) / 5, 
                         getTitlesWidget: (val, meta) {
-                          // Allow first and last values to show
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('MM/dd');
+                          final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
-                          // Simple check to ensure we don't render text that is too close to the very edge if needed, 
-                          // but since we want "as much as possible", we render everything.
+                          // Logic to prevent edge overlap:
+                          // If this value is NOT the min or max, but is very close to them (within 5% of range), hide it.
+                          // This protects the First and Last labels from being crowded by neighbors.
+                          final rangeSize = meta.max - meta.min;
+                          final isMin = (val - meta.min).abs() < (rangeSize * 0.01);
+                          final isMax = (val - meta.max).abs() < (rangeSize * 0.01);
+                          final isNearEdge = !isMin && !isMax && (
+                            (val - meta.min).abs() < (rangeSize * 0.1) || 
+                            (meta.max - val).abs() < (rangeSize * 0.1)
+                          );
+
+                          if (isNearEdge) return const SizedBox.shrink();
+
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
                               fmt.format(date),
-                              style: TextStyle(fontSize: 9, color: AppTheme.textSecondaryColor),
+                              style: TextStyle(
+                                fontSize: 9, 
+                                color: AppTheme.textSecondaryColor,
+                                // Bold the start and end for emphasis
+                                fontWeight: (isMin || isMax) ? FontWeight.bold : FontWeight.normal
+                              ),
                             ),
                           );
                         },
@@ -609,22 +626,29 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                          final dateStr = DateFormat('MMM d, h:mm a').format(date);
-                          
+                          // Include Date, Time, Value, and Unit
                           return LineTooltipItem(
-                            '$dateStr\n',
+                            '${DateFormat('MMM d, y').format(date)}\n', // Date Line
                             const TextStyle(
                               color: Colors.white70,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w500,
                               fontSize: 10,
                             ),
                             children: [
                               TextSpan(
-                                text: '${spot.y.toInt()} mg/dL',
+                                text: '${DateFormat('h:mm a').format(date)}\n', // Time Line
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '${spot.y.toInt()} mg/dL', // Value + Unit
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                                  fontSize: 14,
+                                  height: 1.5,
                                 ),
                               ),
                             ],
