@@ -10,6 +10,11 @@ import 'core/services/api_service.dart';
 import 'core/providers/theme_provider.dart';
 import 'features/admin/core/services/admin_auth_service.dart';
 import 'main.dart';
+import 'features/patient/core/providers/monitor_data_providers.dart';
+import 'features/patient/profile/providers/user_profile_provider.dart';
+import 'features/patient/chat/services/chatbot_service.dart';
+import 'features/patient/recommendations/services/recommendation_engine.dart';
+import 'core/services/notifications/notification_service.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
@@ -206,6 +211,14 @@ class _AppState extends ConsumerState<App> {
     } else {
       // Handle sign out, session expiration, or no initial session
       debugPrint('[App Listener] No session found. Navigating to login.');
+
+      // Invalidate Riverpod providers to clear user data
+      ref.invalidate(monitorDataProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(chatProvider);
+      ref.invalidate(recommendationProvider);
+      ref.invalidate(notificationProvider);
+
       // Clear admin session state as well
       AdminAuthService().logout();
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
