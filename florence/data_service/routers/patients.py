@@ -8,6 +8,20 @@ from enum import Enum
 
 from client import supabase
 
+# --- Constants ---
+
+DEFAULT_THRESHOLDS = [
+    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
+    {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
+    {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
+]
+
 # --- Helper Functions / Dependencies ---
 
 async def get_current_patient_profile(authorization: str = Header(...)):
@@ -36,6 +50,38 @@ async def get_current_patient_profile(authorization: str = Header(...)):
             profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
             
             if not profile_response.data:
+                # --- AUTO-HEAL & FORCE RETRY ---
+                role = user.app_metadata.get('role', '').upper()
+                if role == 'PATIENT':
+                    print(f"DEBUG: Profile missing/unreadable for {user.id}. Attempting auto-heal.")
+                    try:
+                        # 1. Try to create the profile (Fixes New Users)
+                        name = user.user_metadata.get('name', user.email.split('@')[0] if user.email else 'Patient')
+                        
+                        new_profile = {
+                            "user_id": user.id,
+                            "name": name,
+                            "risk_level": "LOW"
+                        }
+                        
+                        insert_res = supabase.table('patient_profiles').insert(new_profile).execute()
+                        if insert_res.data:
+                            # Add default thresholds for the new profile
+                            pid = insert_res.data[0]['id']
+                            thresholds = [{**t, 'patient_id': pid} for t in DEFAULT_THRESHOLDS]
+                            supabase.table('patient_thresholds').insert(thresholds).execute()
+                            
+                            return insert_res.data[0]
+                    
+                    except Exception as e:
+                        # 2. If creation fails (e.g., Duplicate Key), it means the profile DOES exist 
+                        # and the previous reads failed due to a glitch.
+                        # We force a final fetch here (Fixes Existing Users).
+                        print(f"DEBUG: Auto-heal triggered duplicate check. Fetching existing profile.")
+                        final_try = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
+                        if final_try.data:
+                            return final_try.data[0]
+
                 print(f"DEBUG: Access denied for user_id: {user.id}. Profile not found in patient_profiles.")
                 raise HTTPException(status_code=403, detail=f"Access denied: User {user.id} is not a patient.")
         
