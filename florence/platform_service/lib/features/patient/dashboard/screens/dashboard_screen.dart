@@ -138,21 +138,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: spacing),
 
-            // Biometrics Section (Loaded via Riverpod)
-            BiometricsSection(
-              monitorData: combinedMonitorData,
-              latestActivity: activity,
-              latestMeal: latestMeal,
-              thresholds: thresholds,
-            ),
-            const SizedBox(height: spacing),
-
             // Quick actions
             QuickActionsGrid(
               onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
               onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
               onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
               onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+            ),
+            const SizedBox(height: spacing),
+
+            // Biometrics Section (Loaded via Riverpod)
+            BiometricsSection(
+              monitorData: combinedMonitorData,
+              latestActivity: activity,
+              latestMeal: latestMeal,
+              thresholds: thresholds,
             ),
             const SizedBox(height: spacing),
           ],
