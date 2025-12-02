@@ -535,26 +535,18 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        // Dynamic Interval: Divide total range by 5 to get ~6 evenly spaced labels (Start, 20%, 40%, 60%, 80%, End)
-                        // This ensures the first (minX) and last (maxX) are mathematically hit by the iterator.
                         interval: (maxX - minX) / 5, 
                         getTitlesWidget: (val, meta) {
+                          // Hide the First and Last labels explicitly
+                          // We use a small tolerance to catch floating point values near the edges
+                          final double tolerance = (meta.max - meta.min) * 0.01; 
+                          if (val < meta.min + tolerance || val > meta.max - tolerance) {
+                             return const SizedBox.shrink();
+                          }
+
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
-                          // Logic to prevent edge overlap:
-                          // If this value is NOT the min or max, but is very close to them (within 5% of range), hide it.
-                          // This protects the First and Last labels from being crowded by neighbors.
-                          final rangeSize = meta.max - meta.min;
-                          final isMin = (val - meta.min).abs() < (rangeSize * 0.01);
-                          final isMax = (val - meta.max).abs() < (rangeSize * 0.01);
-                          final isNearEdge = !isMin && !isMax && (
-                            (val - meta.min).abs() < (rangeSize * 0.1) || 
-                            (meta.max - val).abs() < (rangeSize * 0.1)
-                          );
-
-                          if (isNearEdge) return const SizedBox.shrink();
-
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
@@ -562,8 +554,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 9, 
                                 color: AppTheme.textSecondaryColor,
-                                // Bold the start and end for emphasis
-                                fontWeight: (isMin || isMax) ? FontWeight.bold : FontWeight.normal
                               ),
                             ),
                           );
