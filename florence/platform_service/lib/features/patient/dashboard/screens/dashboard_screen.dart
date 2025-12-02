@@ -15,6 +15,7 @@ import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../providers/dashboard_providers.dart'; // Added
 import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
+import '../../chat/services/chatbot_service.dart'; // Chat Service
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 
@@ -34,6 +35,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    // Trigger initial chat fetch so it's ready when needed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(chatProvider.notifier).loadHistory();
+    });
   }
 
   @override
@@ -43,10 +48,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    // Refresh BOTH providers in parallel for maximum efficiency
+    // Force reset chat history state to allow reloading
+    ref.invalidate(chatProvider);
+
+    // Refresh ALL providers in parallel for maximum efficiency
     await Future.wait([
       ref.refresh(core_data.monitorDataProvider.future),
       ref.refresh(userProfileProvider.future),
+      ref.read(chatProvider.notifier).loadHistory(),
     ]);
   }
 
@@ -60,6 +69,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // 1. WATCH PROVIDERS (Triggers parallel fetch immediately on build)
     final healthDataState = ref.watch(core_data.monitorDataProvider).asData?.value;
     final userProfileAsync = ref.watch(userProfileProvider);
+    
+    // Keep chat provider alive so data persists across tab switches
+    ref.watch(chatProvider);
     
     // Derived values (will update automatically as healthDataState arrives)
     final activity = ref.watch(latestActivityProvider).asData?.value;
