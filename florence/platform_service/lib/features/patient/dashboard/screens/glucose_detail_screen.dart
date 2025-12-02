@@ -536,7 +536,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 30,
-                        interval: (maxX - minX) / 5, // Basic interval division
+                        // No interval set - let FL Chart calculate the best fit automatically
                         getTitlesWidget: (val, meta) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
