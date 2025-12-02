@@ -180,16 +180,27 @@ class _AppState extends ConsumerState<App> {
             return; // Stop processing
           }
         } else {
-          // For any other error, or if the user is not found on a subsequent login,
-          // treat it as a validation failure.
-          debugPrint('[App Listener] Backend session validation failed: $e');
-          await supabase.auth.signOut();
-          navigator.pushNamedAndRemoveUntil(
-            AppRoutes.login,
-            (route) => false,
-            arguments: {'message': 'Session validation failed. Please log in again'},
-          );
-          return; // Stop processing
+          // Check if this is a network error vs an actual auth error
+          final errorStr = e.toString().toLowerCase();
+          final isNetworkError = errorStr.contains('socketexception') || 
+                                 errorStr.contains('clientexception') || 
+                                 errorStr.contains('connection') ||
+                                 errorStr.contains('host lookup');
+
+          if (isNetworkError) {
+             debugPrint('[App Listener] Network error during validation. Proceeding with local session. Error: $e');
+             // Proceed to navigation below. We trust the local Supabase token if the backend is just unreachable.
+          } else {
+            // Real auth error (401/403/404/500 from API)
+            debugPrint('[App Listener] Backend session validation failed (Auth Error): $e');
+            await supabase.auth.signOut();
+            navigator.pushNamedAndRemoveUntil(
+              AppRoutes.login,
+              (route) => false,
+              arguments: {'message': 'Session expired. Please log in again'},
+            );
+            return; // Stop processing
+          }
         }
       }
 
