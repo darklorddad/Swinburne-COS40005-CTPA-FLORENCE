@@ -534,13 +534,22 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true, 
-                        interval: (maxX - minX) / 4, 
-                        getTitlesWidget: (val, _) {
-                          if (val == minX || val == maxX) return const SizedBox(); // Hide start/end
+                        showTitles: true,
+                        interval: (maxX - minX) / 5, // Increased label density
+                        getTitlesWidget: (val, meta) {
+                          // Allow first and last values to show
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
-                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 9)));
+                          final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('MM/dd');
+                          
+                          // Simple check to ensure we don't render text that is too close to the very edge if needed, 
+                          // but since we want "as much as possible", we render everything.
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              fmt.format(date),
+                              style: TextStyle(fontSize: 9, color: AppTheme.textSecondaryColor),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -599,9 +608,26 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
+                          final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                          final dateStr = DateFormat('MMM d, h:mm a').format(date);
+                          
                           return LineTooltipItem(
-                            '${spot.y.toInt()}',
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            '$dateStr\n',
+                            const TextStyle(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 10,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: '${spot.y.toInt()} mg/dL',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           );
                         }).toList();
                       },
@@ -615,7 +641,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
               Wrap(
                 spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
                 children: [
-                  _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                  _buildLegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
                 ],
               ),
             ],
