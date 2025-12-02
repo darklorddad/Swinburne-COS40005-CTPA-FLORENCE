@@ -535,36 +535,23 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        // Interval: Roughly 5-6 segments across the width
+                        // Divide by 5 to get ~6 evenly spaced labels across the width
                         interval: (maxX - minX) / 5, 
                         getTitlesWidget: (val, meta) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
-                          // Calculate percentage position (0.0 to 1.0)
-                          final double totalRange = meta.max - meta.min;
-                          final double percent = (val - meta.min) / totalRange;
-
-                          // 1. Always show First (0%) and Last (100%)
-                          // Use small tolerance for floating point comparison
-                          final bool isEdge = percent < 0.01 || percent > 0.99;
-
-                          // 2. Hide labels that are "too close" to the edges to prevent overlap
-                          // If a label is within 12% of the start or end, but ISN'T the start/end itself, hide it.
-                          // e.g., if interval lands at 10%, hide it so 0% has room.
-                          if (!isEdge && (percent < 0.12 || percent > 0.88)) {
-                            return const SizedBox.shrink();
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8),
+                          // SideTitleWidget with fitInside automatically handles edge alignment
+                          // to prevent cutting off the first and last labels.
+                          return SideTitleWidget(
+                            axisSide: meta.axisSide,
+                            fitInside: SideTitleFitInsideData.fromTitleMeta(meta),
                             child: Text(
                               fmt.format(date),
                               style: TextStyle(
                                 fontSize: 9, 
                                 color: AppTheme.textSecondaryColor,
-                                // Bold the start and end values for emphasis
-                                fontWeight: isEdge ? FontWeight.bold : FontWeight.normal,
+                                fontWeight: FontWeight.normal,
                               ),
                             ),
                           );
