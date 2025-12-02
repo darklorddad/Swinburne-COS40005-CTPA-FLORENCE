@@ -535,19 +535,44 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        // Divide by 5 to get ~6 evenly spaced labels across the width
                         interval: (maxX - minX) / 5, 
                         getTitlesWidget: (val, meta) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
-                          // SideTitleWidget with fitInside automatically handles edge alignment
-                          // to prevent cutting off the first and last labels.
-                          return SideTitleWidget(
-                            axisSide: meta.axisSide,
-                            fitInside: SideTitleFitInsideData.fromTitleMeta(meta),
+                          // Calculate percentage position (0.0 to 1.0)
+                          final double totalRange = meta.max - meta.min;
+                          final double percent = (val - meta.min) / totalRange;
+
+                          // 1. Determine alignment adjustment based on position
+                          // Start (0%): needs to shift RIGHT to stay inside (padding on left)
+                          // End (100%): needs to shift LEFT to stay inside (padding on right)
+                          // Middle: Centered
+                          
+                          EdgeInsetsGeometry padding = EdgeInsets.zero;
+                          TextAlign align = TextAlign.center;
+
+                          if (percent < 0.05) {
+                            // Left Edge: Shift text slightly right so it doesn't cut off
+                            padding = const EdgeInsets.only(left: 10);
+                            align = TextAlign.left;
+                          } else if (percent > 0.95) {
+                            // Right Edge: Shift text slightly left
+                            padding = const EdgeInsets.only(right: 10);
+                            align = TextAlign.right;
+                          } else {
+                            // Middle: Check for overlap with edges
+                            // If strictly adjacent to edges (e.g. 15% or 85%), hide it to give breathing room to the start/end labels
+                            if (percent < 0.15 || percent > 0.85) {
+                              return const SizedBox.shrink();
+                            }
+                          }
+
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8) + padding,
                             child: Text(
                               fmt.format(date),
+                              textAlign: align,
                               style: TextStyle(
                                 fontSize: 9, 
                                 color: AppTheme.textSecondaryColor,
