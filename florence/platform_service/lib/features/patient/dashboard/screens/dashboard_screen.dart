@@ -119,8 +119,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     const double spacing = 20.0;
 
     return Scaffold(
-      // Pass the profile provider to the AppBar
-      appBar: _buildAppBar(context, userProfileAsync),
+      appBar: _buildAppBar(context),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         edgeOffset: 0,
@@ -160,41 +159,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 
   /// Build app bar
-  AppBar _buildAppBar(BuildContext context, AsyncValue<Map<String, dynamic>> userProfile) {
+  AppBar _buildAppBar(BuildContext context) {
     final monitorDataAsync = ref.watch(monitorDataProvider);
-    final isLoading = monitorDataAsync.isLoading || userProfile.isLoading;
+    final activityAsync = ref.watch(latestActivityProvider);
+    final isLoading = monitorDataAsync.isLoading || activityAsync.isLoading;
     final borderColor = AppTheme.getBorderColor(context);
-
-    // Safely extract name from profile provider
-    final userName = userProfile.when(
-      data: (data) => data['name'] ?? 'Florence',
-      loading: () => '...',
-      error: (_, __) => 'Florence',
-    );
 
     return AppBar(
       title: InkWell(
         onTap: _handleRefresh,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                userName == 'Florence' || userName == '...' ? 'Florence' : 'Hello, $userName',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              if (userName != 'Florence' && userName != '...')
-                Text(
-                  'Florence',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-            ],
-          ),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Text('Florence'),
         ),
       ),
       actions: [
