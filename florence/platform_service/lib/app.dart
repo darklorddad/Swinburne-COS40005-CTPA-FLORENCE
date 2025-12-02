@@ -130,10 +130,8 @@ class _AppState extends ConsumerState<App> {
 
     if (session != null) {
       // Force invalidate providers on fresh login to prevent seeing previous user's data
-      if (data.event == AuthChangeEvent.signedIn ||
-          data.event == AuthChangeEvent.passwordRecovery) {
-        debugPrint(
-            '[App Listener] Sign-in detected. Invalidating providers to clear stale data.');
+      if (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('[App Listener] Sign-in detected. Invalidating providers to clear stale data.');
         ref.invalidate(monitorDataProvider);
         ref.invalidate(userProfileProvider);
         ref.invalidate(chatProvider);
