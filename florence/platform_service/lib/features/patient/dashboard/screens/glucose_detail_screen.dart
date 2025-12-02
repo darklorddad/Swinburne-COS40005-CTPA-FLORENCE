@@ -549,7 +549,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                           // End (100%): needs to shift LEFT to stay inside (padding on right)
                           // Middle: Centered
                           
-                          EdgeInsetsGeometry padding = EdgeInsets.zero;
+                          EdgeInsets padding = EdgeInsets.zero;
                           TextAlign align = TextAlign.center;
 
                           if (percent < 0.05) {
