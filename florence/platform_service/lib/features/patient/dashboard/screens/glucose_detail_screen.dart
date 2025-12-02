@@ -535,57 +535,19 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 22,
-                        // Interval: Divide total duration by 5 to get ~6 evenly spaced ticks
-                        interval: (maxX - minX) / 5, 
+                        reservedSize: 30,
+                        interval: (maxX - minX) / 5, // Basic interval division
                         getTitlesWidget: (val, meta) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
-                          final double totalRange = meta.max - meta.min;
-                          // Protect against division by zero
-                          if (totalRange == 0) return const SizedBox.shrink();
-                          
-                          final double percent = (val - meta.min) / totalRange;
-
-                          // Logic:
-                          // 1. First Label (0%): Show, shift right slightly.
-                          // 2. Last Label (100%): Show, shift left slightly.
-                          // 3. Buffer Zone (2-15% AND 85-98%): Hide to prevent overlapping the edges.
-                          // 4. Middle: Show normally.
-
-                          double offsetX = 0;
-                          TextAlign align = TextAlign.center;
-                          bool isEdge = false;
-
-                          if (percent < 0.02) {
-                            // Start
-                            offsetX = 12.0; 
-                            align = TextAlign.left;
-                            isEdge = true;
-                          } else if (percent > 0.98) {
-                            // End
-                            offsetX = -12.0;
-                            align = TextAlign.right;
-                            isEdge = true;
-                          } else if (percent < 0.15 || percent > 0.85) {
-                            // Buffer Zone - Hide to protect edges
-                            return const SizedBox.shrink();
-                          }
-
-                          return Transform.translate(
-                            offset: Offset(offsetX, 0),
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Text(
-                                fmt.format(date),
-                                textAlign: align,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  color: AppTheme.textSecondaryColor,
-                                  // Subtle bold for edges to frame the chart
-                                  fontWeight: isEdge ? FontWeight.w600 : FontWeight.normal, 
-                                ),
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              fmt.format(date),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textSecondaryColor,
                               ),
                             ),
                           );
