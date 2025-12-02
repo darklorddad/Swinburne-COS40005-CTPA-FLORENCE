@@ -18,6 +18,11 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
 
   @override
   List<HealthNotification> build() {
+    // Ensure timer is cancelled when provider is disposed/invalidated
+    ref.onDispose(() {
+      _monitoringTimer?.cancel();
+    });
+
     if (Environment.enableAutomation) {
       _startAutomationMonitoring();
     }
