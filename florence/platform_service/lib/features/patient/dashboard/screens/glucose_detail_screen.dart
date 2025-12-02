@@ -542,8 +542,8 @@ class _GlucoseTrendsSection extends StatelessWidget {
                           final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
                           
                           // Calculate percentage position (0.0 to 1.0)
-                          final double range = meta.max - meta.min;
-                          final double percent = (val - meta.min) / range;
+                          final double totalRange = meta.max - meta.min;
+                          final double percent = (val - meta.min) / totalRange;
 
                           // 1. Always show First (0%) and Last (100%)
                           // Use small tolerance for floating point comparison
