@@ -14,6 +14,7 @@ import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
 import '../providers/dashboard_providers.dart'; // Added
+import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 
@@ -27,21 +28,12 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  String? _userName;
+  // Local state for welcome message only
   bool _hasShownWelcomeMessage = false;
-  int _loadUserRetries = 0;
-
-  // Services
-  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadUserData();
-      }
-    });
   }
 
   @override
@@ -49,46 +41,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.dispose();
   }
 
-  /// Load user data
-  Future<void> _loadUserData() async {
-    try {
-      // Fetch the full profile from the backend API
-      final profile = await _apiService.get('/patients/me');
-      if (mounted) {
-        setState(() {
-          _userName = profile['name'] as String? ?? 'Patient';
-          _loadUserRetries = 0; // Reset on success
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading user data for dashboard: $e');
-
-      final user = supabase.auth.currentUser;
-      final isNewUser = user != null &&
-          user.createdAt != null &&
-          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
-
-      // If it's a new user and the profile isn't found yet, retry up to 2 times.
-      if (isNewUser && e.toString().contains('Access denied') && _loadUserRetries < 2) {
-        _loadUserRetries++;
-        debugPrint('Dashboard: Patient profile not found for new user. Retry attempt #$_loadUserRetries...');
-        await Future.delayed(const Duration(seconds: 3));
-        await _loadUserData(); // Recursive retry
-      } else {
-        // Fallback to a generic name if API fails after retries or for other errors
-        if (mounted) {
-          setState(() {
-            _userName = 'Patient';
-          });
-        }
-      }
-    }
-  }
-
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    // Refresh the core data provider, which will propagate to all derived providers
-    return ref.refresh(core_data.monitorDataProvider.future);
+    // Refresh BOTH providers in parallel for maximum efficiency
+    return Future.wait([
+      ref.refresh(core_data.monitorDataProvider.future),
+      ref.refresh(userProfileProvider.future),
+    ]);
   }
 
   /// Show quick log modal
@@ -98,8 +57,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch Riverpod providers
+    // 1. WATCH PROVIDERS (Triggers parallel fetch immediately on build)
     final healthDataState = ref.watch(core_data.monitorDataProvider).asData?.value;
+    final userProfileAsync = ref.watch(userProfileProvider);
+    
+    // Derived values (will update automatically as healthDataState arrives)
     final activity = ref.watch(latestActivityProvider).asData?.value;
     final thresholds = ref.watch(patientThresholdsProvider).asData?.value ?? [];
     final mealLogs = ref.watch(dailyPatientLogsProvider).asData?.value ?? [];
@@ -123,7 +85,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     const double spacing = 20.0;
 
     return Scaffold(
-      appBar: _buildAppBar(context),
+      // Pass the profile provider to the AppBar
+      appBar: _buildAppBar(context, userProfileAsync),
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         edgeOffset: 0,
@@ -163,19 +126,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 
   /// Build app bar
-  AppBar _buildAppBar(BuildContext context) {
+  AppBar _buildAppBar(BuildContext context, AsyncValue<Map<String, dynamic>> userProfile) {
     final monitorDataAsync = ref.watch(monitorDataProvider);
-    final activityAsync = ref.watch(latestActivityProvider);
-    final isLoading = monitorDataAsync.isLoading || activityAsync.isLoading;
+    final isLoading = monitorDataAsync.isLoading || userProfile.isLoading;
     final borderColor = AppTheme.getBorderColor(context);
+
+    // Safely extract name from profile provider
+    final userName = userProfile.when(
+      data: (data) => data['name'] ?? 'Florence',
+      loading: () => '...',
+      error: (_, __) => 'Florence',
+    );
 
     return AppBar(
       title: InkWell(
         onTap: _handleRefresh,
         borderRadius: BorderRadius.circular(8),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text('Florence'),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                userName == 'Florence' || userName == '...' ? 'Florence' : 'Hello, $userName',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              if (userName != 'Florence' && userName != '...')
+                Text(
+                  'Florence',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
       actions: [

@@ -147,11 +147,22 @@ class MonitorDataRepository {
   MonitorDataRepository(this._apiService);
 
   Future<HealthDataState> fetchAllData() async {
-    // 1. Fetch Thresholds
-    final thresholds = await _fetchThresholds();
+    // EXECUTE ALL REQUESTS IN PARALLEL FOR EFFICIENCY
+    // This minimizes the initial load time to the slowest individual request
+    final results = await Future.wait([
+      _fetchThresholds(),                            // Index 0
+      _apiService.get('/patients/me/monitor-data'),  // Index 1
+      _fetchActivities(),                            // Index 2
+      _fetchMeals(),                                 // Index 3
+    ]);
 
-    // 2. Fetch Monitor Data (Glucose, HbA1c, BP, Cholesterol, BMI)
-    final monitorDataJson = await _apiService.get('/patients/me/monitor-data') as List;
+    // Extract results
+    final thresholds = results[0] as List<HealthThreshold>;
+    final monitorDataJson = results[1] as List;
+    final activities = results[2] as List<ActivityLog>;
+    final meals = results[3] as List<MealLog>;
+
+    // Process Monitor Data
     final allMonitorData = monitorDataJson.map((e) => MonitorData.fromJson(e)).toList();
     
     final glucoseReadings = <GlucoseReading>[];
@@ -221,12 +232,6 @@ class MonitorDataRepository {
         ));
       }
     });
-
-    // 3. Fetch Activities
-    final activities = await _fetchActivities();
-
-    // 4. Fetch Meals
-    final meals = await _fetchMeals();
 
     // 5. Integrate Meal Glucose into Monitor Data
     final mealMonitorData = <MonitorData>[];
