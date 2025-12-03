@@ -539,7 +539,7 @@ class _LdlTargetSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Target\n${target!.toInt()}',
+                            'Target Max\n${target!.toInt()}',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 10,
