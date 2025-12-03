@@ -806,9 +806,12 @@ class _ModalDaySection extends StatelessWidget {
       builder: (range, data) {
         final Map<int, List<FlSpot>> lines = {};
         for (var r in data) {
+          // Convert to local time so the hour (0-24) matches the user's timezone
+          final localDate = r.measuredAt.toLocal();
+          
           // Use unique date identifier (YYYYMMDD) so distinct days don't merge
-          final key = r.measuredAt.year * 10000 + r.measuredAt.month * 100 + r.measuredAt.day;
-          final x = r.measuredAt.hour + (r.measuredAt.minute / 60.0);
+          final key = localDate.year * 10000 + localDate.month * 100 + localDate.day;
+          final x = localDate.hour + (localDate.minute / 60.0);
           lines.putIfAbsent(key, () => []).add(FlSpot(x, r.value));
         }
         List<LineChartBarData> chartLines = [];
@@ -819,7 +822,15 @@ class _ModalDaySection extends StatelessWidget {
             isCurved: true, 
             color: AppTheme.textSecondaryColor.withOpacity(0.3), 
             barWidth: 1.5, 
-            dotData: const FlDotData(show: false)
+            // Enable dots so single readings are visible
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 2,
+                color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                strokeWidth: 0,
+              ),
+            ),
           ));
         });
 
