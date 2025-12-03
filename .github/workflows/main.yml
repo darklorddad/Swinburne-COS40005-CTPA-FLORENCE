@@ -53,7 +53,7 @@ jobs:
       # 6. Build APK
       # Injects the calculated version name (e.g., 1.2.0)
       - name: Build APK
-        run: flutter build apk --debug --build-name=${{ steps.version.outputs.version }}
+        run: flutter build apk --debug --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }}
 
       # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
@@ -63,4 +63,4 @@ jobs:
           token: ${{ secrets.FIREBASE_TOKEN }}
           groups: testers
           file: florence/platform_service/build/app/outputs/flutter-apk/app-debug.apk
-          releaseNotes: "Version ${{ steps.version.outputs.version }} - Automated Release"
+          releaseNotes: "Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }}) - Automated Release"
