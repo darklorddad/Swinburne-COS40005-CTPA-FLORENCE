@@ -643,6 +643,15 @@ class _CompositionSectionState extends State<_CompositionSection> {
   @override
   Widget build(BuildContext context) {
     final displayData = _filterData();
+    
+    // Calculate dynamic Max Y based on the new stacked totals (HDL + LDL + Tri)
+    // Adding 20% headroom ensures bars don't hit the ceiling
+    double maxY = 200;
+    if (displayData.isNotEmpty) {
+      final maxStack = displayData.map((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + (r.triglycerides ?? 0)).reduce(math.max);
+      maxY = math.max(200, maxStack * 1.2);
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return _CholesterolCard(
@@ -702,6 +711,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               height: 250,
               child: BarChart(
                 BarChartData(
+                  maxY: maxY,
                   alignment: BarChartAlignment.spaceAround,
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
