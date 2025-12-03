@@ -644,12 +644,11 @@ class _CompositionSectionState extends State<_CompositionSection> {
   Widget build(BuildContext context) {
     final displayData = _filterData();
     
-    // Calculate dynamic Max Y based on the new stacked totals (HDL + LDL + Tri)
-    // Adding 20% headroom ensures bars don't hit the ceiling
-    double maxY = 200;
+    // Calculate dynamic Max Y based on Total Cholesterol formula (HDL + LDL + Tri/5)
+    double maxY = 240;
     if (displayData.isNotEmpty) {
-      final maxStack = displayData.map((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + (r.triglycerides ?? 0)).reduce(math.max);
-      maxY = math.max(200, maxStack * 1.2);
+      final maxStack = displayData.map((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + ((r.triglycerides ?? 0) / 5)).reduce(math.max);
+      maxY = math.max(240, maxStack * 1.2);
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -657,10 +656,10 @@ class _CompositionSectionState extends State<_CompositionSection> {
     return _CholesterolCard(
       title: 'Cholesterol Breakdown',
       icon: Icons.bar_chart,
-      infoText: 'Composition of your cholesterol levels over time.\n\n'
-                '• Green (Bottom): HDL (Good)\n'
-                '• Red (Middle): LDL (Bad)\n'
-                '• Orange (Top): Triglycerides',
+      infoText: 'Breakdown of your Total Cholesterol.\n\n'
+                '• Green: HDL (Good)\n'
+                '• Red: LDL (Bad)\n'
+                '• Orange: VLDL (Calculated as Triglycerides / 5)',
       child: Column(
         children: [
           // Timeline Selector
@@ -778,18 +777,20 @@ class _CompositionSectionState extends State<_CompositionSection> {
                     final hdl = r.hdl ?? 0;
                     final ldl = r.ldl ?? 0;
                     final tri = r.triglycerides ?? 0;
+                    // Use VLDL (Tri/5) for visual stack so it sums to Total Cholesterol
+                    final vldl = tri / 5;
                     
                     return BarChartGroupData(
                       x: index,
                       barRods: [
                         BarChartRodData(
-                          toY: hdl + ldl + tri,
+                          toY: hdl + ldl + vldl,
                           width: 16,
                           borderRadius: BorderRadius.circular(2),
                           rodStackItems: [
                             BarChartRodStackItem(0, hdl, AppTheme.primaryGreen),
                             BarChartRodStackItem(hdl, hdl + ldl, AppTheme.errorColor),
-                            BarChartRodStackItem(hdl + ldl, hdl + ldl + tri, Colors.orange),
+                            BarChartRodStackItem(hdl + ldl, hdl + ldl + vldl, Colors.orange),
                           ],
                         ),
                       ],
@@ -806,7 +807,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               const SizedBox(width: 16),
               _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('Triglycerides', Colors.orange),
+              _LegendItem('VLDL', Colors.orange),
             ],
           ),
         ],
