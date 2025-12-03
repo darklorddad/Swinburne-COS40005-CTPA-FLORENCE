@@ -651,7 +651,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
       infoText: 'Composition of your cholesterol levels over time.\n\n'
                 '• Green (Bottom): HDL (Good)\n'
                 '• Red (Middle): LDL (Bad)\n'
-                '• Orange (Top): VLDL (Estimated from Triglycerides)',
+                '• Orange (Top): Triglycerides',
       child: Column(
         children: [
           // Timeline Selector
@@ -768,20 +768,18 @@ class _CompositionSectionState extends State<_CompositionSection> {
                     final hdl = r.hdl ?? 0;
                     final ldl = r.ldl ?? 0;
                     final tri = r.triglycerides ?? 0;
-                    // Visualize VLDL (approx Tri/5) so bar height ~ Total Cholesterol
-                    final vldl = tri / 5;
                     
                     return BarChartGroupData(
                       x: index,
                       barRods: [
                         BarChartRodData(
-                          toY: hdl + ldl + vldl,
+                          toY: hdl + ldl + tri,
                           width: 16,
                           borderRadius: BorderRadius.circular(2),
                           rodStackItems: [
                             BarChartRodStackItem(0, hdl, AppTheme.primaryGreen),
                             BarChartRodStackItem(hdl, hdl + ldl, AppTheme.errorColor),
-                            BarChartRodStackItem(hdl + ldl, hdl + ldl + vldl, Colors.orange),
+                            BarChartRodStackItem(hdl + ldl, hdl + ldl + tri, Colors.orange),
                           ],
                         ),
                       ],
