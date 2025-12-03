@@ -80,7 +80,7 @@ class QuickActionsGrid extends StatelessWidget {
               const SizedBox(width: 12),
               _buildActionButton(
                 context,
-                'Pressure',
+                'Blood Pressure',
                 Icons.monitor_heart_outlined,
                 AppTheme.primaryRed,
                 onLogBloodPressure,
