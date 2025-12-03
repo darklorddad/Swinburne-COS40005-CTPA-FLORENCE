@@ -55,18 +55,12 @@ jobs:
       - name: Build APK
         run: flutter build apk --debug --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }}
 
-      - name: Decode Firebase Service Account
-        env:
-          FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_JSON_BASE64" | base64 -d > firebase_credentials.json
-
       # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFile: firebase_credentials.json
+          serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
           file: florence/platform_service/build/app/outputs/flutter-apk/app-debug.apk
           releaseNotes: "Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }}) - Automated Release"
