@@ -798,7 +798,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               const SizedBox(width: 16),
               _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('VLDL (Tri/5)', Colors.orange),
+              _LegendItem('Triglycerides', Colors.orange),
             ],
           ),
         ],
