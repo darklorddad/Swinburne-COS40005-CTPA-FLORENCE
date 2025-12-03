@@ -157,12 +157,13 @@ class QuickActionsGrid extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 label,
+                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontSize: 10,
                     ),
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
