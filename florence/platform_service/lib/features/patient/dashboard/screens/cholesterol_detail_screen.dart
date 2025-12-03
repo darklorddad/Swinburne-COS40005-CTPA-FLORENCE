@@ -539,7 +539,7 @@ class _LdlTargetSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Max\n${target!.toInt()}',
+                            'Limit\n${target!.toInt()}',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 10,
@@ -555,7 +555,7 @@ class _LdlTargetSection extends StatelessWidget {
                     if (ldl > 0)
                       Positioned(
                         left: (actualPos - 20).clamp(0, width - 40),
-                        top: -10,
+                        top: -22,
                         child: Column(
                           children: [
                             Container(
