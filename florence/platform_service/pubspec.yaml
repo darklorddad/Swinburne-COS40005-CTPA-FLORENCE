@@ -13,40 +13,40 @@ dependencies:
     sdk: flutter
 
   # State Management
-  provider:
+  provider: ^6.0.0
 
   # Backend & API
-  supabase_flutter:
-  http:
+  supabase_flutter: ^2.8.0
+  http: ^1.2.0
 
   # Data Visualization
-  fl_chart:
+  fl_chart: ^0.68.0
 
   # Data Serialization
-  json_annotation:
+  json_annotation: ^4.8.0
 
   # Date & Time Handling
-  intl:
-  table_calendar:
+  intl: ^0.19.0
+  table_calendar: ^3.0.0
 
   # Image Handling
-  image_picker:
-  cached_network_image:
+  image_picker: ^1.0.0
+  cached_network_image: ^3.3.0
 
   # iOS Style Icons
-  cupertino_icons:
+  cupertino_icons: ^1.0.2
 
   # Deep Linking
-  app_links:
+  app_links: ^6.0.0
 
   # SVG Support
-  flutter_svg:
+  flutter_svg: ^2.0.0
 
   # Local Storage
-  shared_preferences:
+  shared_preferences: ^2.2.0
 
   # Fonts
-  google_fonts:
+  google_fonts: ^6.1.0
   flutter_riverpod: ^2.6.1
   flutter_markdown: ^0.7.7+1
 
@@ -54,15 +54,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints:
+  flutter_lints: ^3.0.0
 
   # Code Generation
-  build_runner:
-  json_serializable:
+  build_runner: ^2.4.0
+  json_serializable: ^6.7.0
 
-  change_app_package_name:
+  change_app_package_name: ^1.1.0
 
-  flutter_app_name:
+  flutter_app_name: ^0.1.1
 
 flutter:
 

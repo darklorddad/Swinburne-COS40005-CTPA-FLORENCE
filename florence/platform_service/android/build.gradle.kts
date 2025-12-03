@@ -26,7 +26,6 @@ subprojects {
         }
     }
 }
-// --- FIX END ---
 
 subprojects {
     project.evaluationDependsOn(":app")
