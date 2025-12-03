@@ -6,6 +6,7 @@ from supabase_auth.errors import AuthApiError
 from datetime import datetime, date
 from enum import Enum
 
+import time
 from client import supabase
 
 # --- Constants ---
@@ -106,6 +107,7 @@ class PatientProfileUpdate(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    profile_picture_url: Optional[str] = None
 
 class MonitorDataType(str, Enum):
     BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
@@ -336,3 +338,41 @@ async def add_own_activity_log(
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to log activity: {str(e)}")
+
+@router.post("/me/avatar", summary="Upload profile picture")
+async def upload_patient_avatar(
+    file: UploadFile = File(...),
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Uploads a profile picture to Storage and updates the profile record."""
+    try:
+        user_id = patient_profile['user_id']
+        file_ext = file.filename.split('.')[-1]
+        # Create a unique filename
+        filename = f"Profile_Picture/{user_id}/avatar_{int(time.time())}.{file_ext}"
+        
+        file_content = await file.read()
+
+        # 1. Upload to Supabase Storage
+        # Note: 'upsert' options are handled differently in python client versions, 
+        # usually default upload overwrites or we handle errors.
+        # Ensure your Bucket is named "Bucket"
+        res = supabase.storage.from_("Bucket").upload(
+            file=file_content,
+            path=filename,
+            file_options={"content-type": file.content_type, "upsert": "true"}
+        )
+
+        # 2. Get Public URL
+        public_url = supabase.storage.from_("Bucket").get_public_url(filename)
+
+        # 3. Update Database Profile
+        update_res = supabase.table('patient_profiles').update({
+            "profile_picture_url": public_url
+        }).eq('id', patient_profile['id']).execute()
+
+        return {"url": public_url}
+
+    except Exception as e:
+        print(f"Upload Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
