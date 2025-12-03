@@ -621,9 +621,20 @@ class _FloatingBarSection extends StatelessWidget {
                 '• Bar Height: Difference between Systolic and Diastolic.',
       allData: readings,
       builder: (range, data) {
+        if (data.isEmpty) {
+          return const Padding(
+            padding: EdgeInsets.all(40.0),
+            child: Center(
+              child: Text(
+                'No data available for this period',
+                style: TextStyle(color: Colors.grey),
+              ),
+            ),
+          );
+        }
+
         // For bar chart, too many points look bad. Limit or aggregate if needed.
         // Here we simply show the data points available in range.
-        // If 1D, show actual points. If 30D, we might want to sample, but filtering is done by wrapper.
         
         return Column(
           children: [
@@ -715,9 +726,9 @@ class _FloatingBarSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem('Systolic (Top)', AppTheme.primaryBlue.withOpacity(0.6), isBox: true),
+                _buildLegendItem('Systolic (Top Bound)', AppTheme.primaryBlue.withOpacity(0.6), isBox: true),
                 const SizedBox(width: 16),
-                _buildLegendItem('Diastolic (Bottom)', AppTheme.primaryBlue.withOpacity(0.6), isBox: true),
+                _buildLegendItem('Diastolic (Bottom Bound)', AppTheme.primaryBlue.withOpacity(0.6), isBox: true),
               ],
             )
           ],
