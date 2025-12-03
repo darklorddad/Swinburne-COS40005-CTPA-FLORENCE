@@ -482,51 +482,46 @@ class _GlucoseTrendsSection extends StatelessWidget {
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
-        // Determine X-Axis range with snapping to round hours/days for cleaner axis
-        double minX, maxX;
-        if (data.isNotEmpty) {
-          final first = data.first.measuredAt;
-          final last = data.last.measuredAt;
-          
-          // Snap min to start of hour, max to start of next hour
-          final minDate = DateTime(first.year, first.month, first.day, first.hour);
-          final maxDate = DateTime(last.year, last.month, last.day, last.hour).add(const Duration(hours: 1));
-          
-          minX = minDate.millisecondsSinceEpoch.toDouble();
-          maxX = maxDate.millisecondsSinceEpoch.toDouble();
-          
-          // Ensure minimal visible range (e.g. 6 hours) if data points are too close
-          if (maxX - minX < 21600000) { 
-             minX -= 10800000; // -3h
-             maxX += 10800000; // +3h
-          }
-        } else {
-          // Default X range if no data
-          final now = DateTime.now();
-          // Snap 'now' to next hour
-          final snappedNow = DateTime(now.year, now.month, now.day, now.hour + 1);
-          
-          Duration d = const Duration(hours: 24);
-          if (range == '7D') d = const Duration(days: 7);
-          else if (range == '14D') d = const Duration(days: 14);
-          else if (range == '30D') d = const Duration(days: 30);
-          
-          maxX = snappedNow.millisecondsSinceEpoch.toDouble();
-          minX = snappedNow.subtract(d).millisecondsSinceEpoch.toDouble();
+        // Enforce a fixed time window based on selected range (1D, 7D, etc.)
+        // This ensures the X-axis is stable, evenly spaced, and correctly formatted
+        // regardless of how sparse the data points are.
+        final now = DateTime.now();
+        // Snap 'now' to next hour to avoid odd minutes like 10:52am
+        final endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
+        
+        late DateTime startOfWindow;
+        late double interval;
+        late DateFormat dateFormat;
+
+        switch (range) {
+          case '1D':
+            startOfWindow = endOfWindow.subtract(const Duration(hours: 24));
+            interval = 14400000; // 4 hours
+            dateFormat = DateFormat('h a'); // e.g. 3 PM
+            break;
+          case '7D':
+            startOfWindow = endOfWindow.subtract(const Duration(days: 7));
+            interval = 86400000; // 1 day
+            dateFormat = DateFormat('M/d'); // e.g. 12/4
+            break;
+          case '14D':
+            startOfWindow = endOfWindow.subtract(const Duration(days: 14));
+            interval = 172800000; // 2 days
+            dateFormat = DateFormat('M/d');
+            break;
+          case '30D':
+            startOfWindow = endOfWindow.subtract(const Duration(days: 30));
+            interval = 432000000; // 5 days
+            dateFormat = DateFormat('M/d');
+            break;
+          default:
+            startOfWindow = endOfWindow.subtract(const Duration(hours: 24));
+            interval = 14400000;
+            dateFormat = DateFormat('h a');
         }
 
-        // Determine dynamic interval to avoid overlapping and odd times
-        // 1D (24h) -> 3 hour interval (8 ticks)
-        // 7D+ -> 1 day interval
-        double? interval;
-        final rangeMs = maxX - minX;
-        
-        if (rangeMs <= 86400000) { // <= 24h
-           interval = 10800000; // 3 hours
-        } else if (rangeMs <= 604800000) { // <= 7d
-           interval = 86400000; // 1 day
-        } 
-        // For >7D, let auto-calculate or set larger fixed interval if needed
+        final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
+        final double maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
 
         // Determine Y-Axis range
         double minY = threshold != null ? (threshold!.minValue - 20).clamp(0, double.infinity) : 60;
@@ -543,8 +538,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
         minY = (minY / 50).floor() * 50.0;
         maxY = (maxY / 50).ceil() * 50.0;
         if (maxY == minY) maxY += 50;
-
-        // Centering Logic
 
         return Column(
           children: [
@@ -565,30 +558,24 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 30,
-                        // No interval set - let FL Chart calculate the best fit automatically
+                        interval: interval,
                         getTitlesWidget: (val, meta) {
-                          // 1. Skip strictly first and last to prevent edge clipping
-                          if (val == meta.min || val == meta.max) {
+                          // Prevent edge labels from clipping
+                          if (val <= meta.min || val >= meta.max) {
                             return const SizedBox.shrink();
                           }
                           
-                          // 2. Skip if too close to edges (3% margin)
-                          final range = meta.max - meta.min;
-                          if (val < meta.min + (range * 0.03) || val > meta.max - (range * 0.03)) {
+                          // Extra margin check (3%) to ensure no overlap with borders
+                          final rangeSpan = meta.max - meta.min;
+                          if (val < meta.min + (rangeSpan * 0.03) || val > meta.max - (rangeSpan * 0.03)) {
                              return const SizedBox.shrink();
                           }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          
-                          // 3. Format: 'h a' (e.g. 3 PM) avoids odd minutes like 10:52
-                          final fmt = (rangeMs <= 86400000) 
-                              ? DateFormat('h a') 
-                              : DateFormat('M/d');
-                          
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              fmt.format(date),
+                              dateFormat.format(date),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppTheme.textSecondaryColor,
