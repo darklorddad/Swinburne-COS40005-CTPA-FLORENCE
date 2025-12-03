@@ -572,13 +572,6 @@ class _TrendsSectionState extends State<_TrendsSection> {
                          color: AppTheme.primaryGreen.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
-                         label: HorizontalLineLabel(
-                           show: true, 
-                           alignment: Alignment.topRight, 
-                           padding: const EdgeInsets.only(right: 5, bottom: 2), 
-                           style: TextStyle(color: AppTheme.primaryGreen, fontSize: 10, fontWeight: FontWeight.bold), 
-                           labelResolver: (line) => 'Target Max'
-                         )
                        ),
                        HorizontalLine(
                          y: widget.threshold!.minValue, 
@@ -634,7 +627,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
               children: [
                 _LegendItem('Low', AppTheme.warningColor.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Target', AppTheme.primaryGreen.withOpacity(0.5)),
+                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5)),
                 const SizedBox(width: 16),
                 _LegendItem('High', AppTheme.errorColor.withOpacity(0.5)),
               ],
