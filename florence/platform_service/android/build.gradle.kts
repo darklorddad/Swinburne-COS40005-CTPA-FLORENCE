@@ -12,6 +12,21 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
+
+subprojects {
+    afterEvaluate {
+        // Fix for old plugins (like uni_links) missing namespace
+        if (project.hasProperty("android")) {
+            val android = project.extensions.findByName("android")
+            if (android != null && android is com.android.build.gradle.LibraryExtension) {
+                if (android.namespace == null) {
+                    android.namespace = "com.example.${project.name.replace("-", "_")}"
+                }
+            }
+        }
+    }
+}
+
 subprojects {
     project.evaluationDependsOn(":app")
 }
