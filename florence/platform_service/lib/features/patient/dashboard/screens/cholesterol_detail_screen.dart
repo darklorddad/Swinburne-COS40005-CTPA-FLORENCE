@@ -651,7 +651,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
       infoText: 'Composition of your cholesterol levels over time.\n\n'
                 '• Green (Bottom): HDL (Good)\n'
                 '• Red (Middle): LDL (Bad)\n'
-                '• Orange (Top): Triglycerides',
+                '• Orange (Top): VLDL (Estimated from Triglycerides)',
       child: Column(
         children: [
           // Timeline Selector
@@ -730,6 +730,38 @@ class _CompositionSectionState extends State<_CompositionSection> {
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (group) => Colors.black.withOpacity(0.8),
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final r = displayData[group.x.toInt()];
+                        // Map stack index to Label
+                        String label;
+                        String value;
+                        Color color;
+                        
+                        if (rodIndex == 0) { // Bottom (HDL)
+                          label = 'HDL';
+                          value = '${r.hdl?.toInt() ?? 0}';
+                          color = AppTheme.primaryGreen;
+                        } else if (rodIndex == 1) { // Middle (LDL)
+                          label = 'LDL';
+                          value = '${r.ldl?.toInt() ?? 0}';
+                          color = AppTheme.errorColor;
+                        } else { // Top (VLDL/Tri)
+                          label = 'Triglycerides';
+                          // Show actual Tri value, not the VLDL calc
+                          value = '${r.triglycerides?.toInt() ?? 0}';
+                          color = Colors.orange;
+                        }
+
+                        return BarTooltipItem(
+                          '$label: $value',
+                          TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+                        );
+                      }
+                    ),
+                  ),
                   barGroups: displayData.asMap().entries.map((entry) {
                     final index = entry.key;
                     final r = entry.value;
