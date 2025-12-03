@@ -1,12 +1,26 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field
 from typing import Optional
 from supabase_auth.errors import AuthApiError
 from datetime import datetime, date
 from enum import Enum
 
 from client import supabase
+
+# --- Constants ---
+
+DEFAULT_THRESHOLDS = [
+    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
+    {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
+    {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
+]
 
 # --- Helper Functions / Dependencies ---
 
@@ -32,12 +46,45 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         
         if not profile_response.data:
             # Retry once to handle potential race conditions in the client/connection
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
             profile_response = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
             
             if not profile_response.data:
-                print(f"DEBUG: Access denied for user_id: {user.id}. Profile not found.")
-                raise HTTPException(status_code=403, detail="Access denied: User is not a patient.")
+                # --- AUTO-HEAL: Create missing profile if user is a PATIENT ---
+                role = user.app_metadata.get('role', '').upper()
+                if role == 'PATIENT':
+                    print(f"DEBUG: Auto-creating missing profile for patient {user.id}")
+                    try:
+                        # Attempt to get name from metadata, fallback to email
+                        name = user.user_metadata.get('name', user.email.split('@')[0] if user.email else 'Patient')
+                        
+                        new_profile = {
+                            "user_id": user.id,
+                            "name": name,
+                            "risk_level": "LOW"
+                        }
+                        
+                        insert_res = supabase.table('patient_profiles').insert(new_profile).execute()
+                        if insert_res.data:
+                            profile_data = insert_res.data[0]
+                            # Insert default thresholds
+                            thresholds = [{**t, 'patient_id': profile_data['id']} for t in DEFAULT_THRESHOLDS]
+                            supabase.table('patient_thresholds').insert(thresholds).execute()
+                            
+                            return profile_data
+                    except Exception as e:
+                        # If creation fails (e.g., Duplicate Key), it implies the profile ALREADY EXISTS.
+                        # We must fetch it again immediately instead of failing.
+                        print(f"DEBUG: Auto-create clash for {user.id}. Fetching existing profile.")
+                        final_attempt = supabase.table('patient_profiles').select('*').eq('user_id', user.id).execute()
+                        if final_attempt.data:
+                            return final_attempt.data[0]
+                        
+                        # Only fail if we really can't find it
+                        print(f"ERROR: Auto-create failed and fetch failed: {e}")
+
+                print(f"DEBUG: Access denied for user_id: {user.id}. Profile not found in patient_profiles.")
+                raise HTTPException(status_code=403, detail=f"Access denied: User {user.id} is not a patient.")
         
         if len(profile_response.data) > 1:
             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
@@ -75,7 +122,8 @@ class MonitorDataType(str, Enum):
 
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
-    value: float
+    # Foolproof 3: Database integrity check (must be positive, physiological value)
+    value: float = Field(..., gt=0, lt=1000, description="Must be a positive physiological value")
     measured_at: datetime
 
 class MonitorDataUpdate(BaseModel):
@@ -214,26 +262,42 @@ async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
 
-@router.post("/me/daily-logs", summary="Add a new daily log for myself")
+@router.post("/me/daily-logs", summary="Add or Update a daily log for myself")
 async def add_own_daily_log(
     log_data: DailyLogCreate,
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Adds a new daily log entry for the currently authenticated patient.
+    Adds or updates a daily log entry. If a log exists for this date/meal, it updates it.
     """
     try:
-        insert_dict = log_data.model_dump(mode='json')
-        insert_dict['patient_id'] = patient_profile['id']
+        # exclude_unset=True ensures we don't overwrite existing data with None 
+        # if the user only sends partial data (e.g. only glucose_after)
+        data_dict = log_data.model_dump(mode='json', exclude_unset=True)
+        data_dict['patient_id'] = patient_profile['id']
         
-        new_log_response = supabase.table('daily_patient_logs').insert(insert_dict).execute()
-        return new_log_response.data[0]
+        # Check if row exists
+        existing = supabase.table('daily_patient_logs')\
+            .select('id')\
+            .eq('patient_id', patient_profile['id'])\
+            .eq('log_date', data_dict['log_date'])\
+            .eq('meal_time', data_dict['meal_time'])\
+            .execute()
+
+        if existing.data:
+            # Update existing row
+            log_id = existing.data[0]['id']
+            response = supabase.table('daily_patient_logs').update(data_dict).eq('id', log_id).execute()
+            return response.data[0]
+        else:
+            # Insert new row
+            response = supabase.table('daily_patient_logs').insert(data_dict).execute()
+            return response.data[0]
+
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        if "duplicate key value violates unique constraint" in str(e):
-            raise HTTPException(status_code=409, detail="A log for this date and meal time already exists.")
-        raise HTTPException(status_code=500, detail=f"Failed to add daily log: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save daily log: {str(e)}")
 
 
 @router.get("/me/thresholds", summary="Get my own defined health thresholds")

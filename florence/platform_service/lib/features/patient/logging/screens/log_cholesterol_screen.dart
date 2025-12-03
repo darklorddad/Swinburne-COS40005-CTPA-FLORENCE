@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -8,25 +9,33 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Cholesterol Screen
-class LogCholesterolScreen extends StatefulWidget {
+class LogCholesterolScreen extends ConsumerStatefulWidget {
   const LogCholesterolScreen({super.key});
 
   @override
-  State<LogCholesterolScreen> createState() => _LogCholesterolScreenState();
+  ConsumerState<LogCholesterolScreen> createState() => _LogCholesterolScreenState();
 }
 
-class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
+class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _formKey = GlobalKey<FormState>();
   final _totalController = TextEditingController(); 
   final _ldlController = TextEditingController();
   final _hdlController = TextEditingController();
   final _triglyceridesController = TextEditingController();
-  final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
-  DateTime _selectedDateTime = DateTime.now();
+  // Initialize with seconds stripped for clean database grouping
+  DateTime _selectedDateTime = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+    DateTime.now().hour,
+    DateTime.now().minute,
+  );
 
   @override
   void dispose() {
@@ -46,32 +55,35 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final String measuredAt = _selectedDateTime.toIso8601String();
-      final List<Future> apiCalls = [];
+      final repo = ref.read(monitorDataRepositoryProvider);
+      final List<Future> tasks = [];
 
-      // Helper to prepare API calls
-      void addCallIfNotEmpty(TextEditingController controller, String dataType) {
-        if (controller.text.trim().isNotEmpty) {
-          apiCalls.add(_apiService.post('/patients/me/monitor-data', {
-            'data_type': dataType,
-            'value': double.parse(controller.text.trim()),
-            'measured_at': measuredAt,
-          }));
+      // Helper
+      void addCallIfNotEmpty(TextEditingController controller, String type) {
+        // Fix: Handle comma inputs (e.g. 190,5 -> 190.5) to prevent crashes
+        final text = controller.text.trim().replaceAll(',', '.');
+        if (text.isNotEmpty) {
+          // Fix: Send UTC time to ensure consistency across timezones
+          tasks.add(repo.addMonitorData(
+            type, 
+            double.parse(text), 
+            _selectedDateTime.toUtc(),
+          ));
         }
       }
 
-      // Queue up requests for any field that has data
       addCallIfNotEmpty(_totalController, 'CHOLESTEROL_TOTAL');
       addCallIfNotEmpty(_ldlController, 'CHOLESTEROL_LDL');
       addCallIfNotEmpty(_hdlController, 'CHOLESTEROL_HDL');
       addCallIfNotEmpty(_triglyceridesController, 'CHOLESTEROL_TRIGLYCERIDES');
 
-      if (apiCalls.isEmpty) {
+      if (tasks.isEmpty) {
         throw Exception("Please enter at least one value.");
       }
 
-      // Execute all requests in parallel
-      await Future.wait(apiCalls);
+      await Future.wait(tasks);
+      
+      ref.invalidate(monitorDataProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Cholesterol data logged successfully!');
@@ -97,15 +109,23 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
     );
 
     if (date != null && mounted) {
-      setState(() {
-        _selectedDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          _selectedDateTime.hour,
-          _selectedDateTime.minute,
-        );
-      });
+      // Fix: Add TimePicker to allow accurate back-logging of lab results
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+
+      if (mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time?.hour ?? _selectedDateTime.hour,
+            time?.minute ?? _selectedDateTime.minute,
+          );
+        });
+      }
     }
   }
 
@@ -165,9 +185,7 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
             label: 'Total Cholesterol (mg/dL)',
             hint: 'e.g., 190',
             controller: _totalController,
-            // Keep Total as required, or remove validator to make it optional
-            validator: (value) =>
-                Validators.minLength(value, 1, fieldName: 'Total Cholesterol'),
+            // Fix: Remove validator to make Total optional
             keyboardType: TextInputType.number,
             prefixIcon: const Icon(Icons.bloodtype_outlined),
           ),
@@ -227,11 +245,22 @@ class _LogCholesterolScreenState extends State<LogCholesterolScreen> {
                   const Icon(Icons.calendar_today, color: AppTheme.accentPurple),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      Formatters.date(_selectedDateTime),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Formatters.date(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        Text(
+                          Formatters.time(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),

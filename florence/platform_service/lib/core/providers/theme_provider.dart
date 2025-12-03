@@ -1,39 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Theme Provider
+/// Theme Notifier
 /// Manages application theme state (light/dark mode)
-class ThemeProvider extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.light;
-
-  /// Get current theme mode
-  ThemeMode get themeMode => _themeMode;
+class ThemeNotifier extends Notifier<ThemeMode> {
+  @override
+  ThemeMode build() => ThemeMode.light;
 
   /// Check if dark mode is active
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
+  bool get isDarkMode => state == ThemeMode.dark;
 
   /// Toggle between light and dark mode
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.light
-        ? ThemeMode.dark
-        : ThemeMode.light;
-    notifyListeners();
+    state = state == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
   }
 
   /// Set specific theme mode
   void setTheme(ThemeMode mode) {
-    _themeMode = mode;
-    notifyListeners();
+    state = mode;
   }
 
   /// Set light theme
   void setLightTheme() {
-    _themeMode = ThemeMode.light;
-    notifyListeners();
+    state = ThemeMode.light;
   }
 
   /// Set dark theme
   void setDarkTheme() {
-    _themeMode = ThemeMode.dark;
-    notifyListeners();
+    state = ThemeMode.dark;
   }
 }
+
+/// Global provider for the theme state
+final themeProvider = NotifierProvider<ThemeNotifier, ThemeMode>(ThemeNotifier.new);

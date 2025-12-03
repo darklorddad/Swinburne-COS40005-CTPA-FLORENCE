@@ -4,7 +4,7 @@
 import 'dart:math';
 import '../../config/environment.dart';
 import '../../../features/patient/core/models/health_data_models.dart';
-import '../../../features/patient/core/services/data_ingestion_service.dart';
+// import '../../../features/patient/core/services/data_ingestion_service.dart';
 
 /// Type of detected pattern
 enum PatternType {
@@ -83,7 +83,7 @@ class DetectedPattern {
 
 /// Service for detecting patterns in health data
 class PatternDetectionService {
-  final DataIngestionService _dataService = DataIngestionService();
+  // final DataIngestionService _dataService = DataIngestionService();
 
   // Singleton pattern
   static final PatternDetectionService _instance = PatternDetectionService._internal();
@@ -98,10 +98,10 @@ class PatternDetectionService {
     final patterns = <DetectedPattern>[];
 
     // Rule-based pattern detection
-    patterns.addAll(await _detectGlucosePatterns(hoursToAnalyze));
-    patterns.addAll(await _detectActivityPatterns(hoursToAnalyze));
-    patterns.addAll(await _detectMedicationPatterns(hoursToAnalyze));
-    patterns.addAll(await _detectMealPatterns(hoursToAnalyze));
+    // patterns.addAll(await _detectGlucosePatterns(hoursToAnalyze));
+    // patterns.addAll(await _detectActivityPatterns(hoursToAnalyze));
+    // patterns.addAll(await _detectMedicationPatterns(hoursToAnalyze));
+    // patterns.addAll(await _detectMealPatterns(hoursToAnalyze));
 
     // AI-powered deep pattern analysis
     if (useAI && Environment.enableAI && patterns.isNotEmpty) {
@@ -114,6 +114,7 @@ class PatternDetectionService {
     return patterns;
   }
 
+  /*
   /// Detect glucose patterns
   Future<List<DetectedPattern>> _detectGlucosePatterns(int hours) async {
     final patterns = <DetectedPattern>[];
@@ -341,6 +342,7 @@ class PatternDetectionService {
 
     return patterns;
   }
+  */
 
   /// Enrich patterns with AI insights
   Future<void> _enrichPatternsWithAI(List<DetectedPattern> patterns, int hours) async {

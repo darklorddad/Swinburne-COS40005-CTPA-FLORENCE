@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/api_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -8,20 +8,21 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Blood Pressure Screen
-class LogBloodPressureScreen extends StatefulWidget {
+class LogBloodPressureScreen extends ConsumerStatefulWidget {
   const LogBloodPressureScreen({super.key});
 
   @override
-  State<LogBloodPressureScreen> createState() => _LogBloodPressureScreenState();
+  ConsumerState<LogBloodPressureScreen> createState() => _LogBloodPressureScreenState();
 }
 
-class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
+class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen> {
   final _formKey = GlobalKey<FormState>();
   final _systolicController = TextEditingController();
   final _diastolicController = TextEditingController();
-  final ApiService _apiService = ApiService();
 
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
@@ -38,25 +39,31 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
       return;
     }
 
+    // Foolproof 2: Logic check prevents impossible medical data
+    final sys = double.tryParse(_systolicController.text);
+    final dia = double.tryParse(_diastolicController.text);
+
+    if (sys == null || dia == null) {
+      Helpers.showError(context, 'Please enter valid numbers.');
+      return;
+    }
+
+    if (dia >= sys) {
+      Helpers.showError(context, 'Diastolic (bottom) must be lower than Systolic (top).');
+      return;
+    }
+
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
 
     try {
-      final now = _selectedDateTime.toIso8601String();
+      await ref.read(monitorDataRepositoryProvider).addBloodPressure(
+        _selectedDateTime,
+        sys,
+        dia,
+      );
       
-      // Post Systolic
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'BLOOD_PRESSURE_SYSTOLIC',
-        'value': double.parse(_systolicController.text),
-        'measured_at': now,
-      });
-
-      // Post Diastolic
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'BLOOD_PRESSURE_DIASTOLIC',
-        'value': double.parse(_diastolicController.text),
-        'measured_at': now,
-      });
+      ref.invalidate(monitorDataProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Blood pressure logged successfully!');
@@ -168,9 +175,9 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
                   label: 'Systolic',
                   hint: 'e.g., 120',
                   controller: _systolicController,
-                  validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Systolic'),
-                  keyboardType: TextInputType.number,
+                  // Foolproof 1: Range validator prevents non-numbers crashing the app
+                  validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.arrow_upward),
                 ),
               ),
@@ -180,9 +187,9 @@ class _LogBloodPressureScreenState extends State<LogBloodPressureScreen> {
                   label: 'Diastolic',
                   hint: 'e.g., 80',
                   controller: _diastolicController,
-                  validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Diastolic'),
-                  keyboardType: TextInputType.number,
+                  // Foolproof 1: Range validator prevents non-numbers crashing the app
+                  validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.arrow_downward),
                 ),
               ),

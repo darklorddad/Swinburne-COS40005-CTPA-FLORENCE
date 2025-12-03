@@ -6,7 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../config/routes.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 /// Diet Analytics Screen (formerly MealImpactScreen)
@@ -30,15 +32,24 @@ class DietAnalyticsScreen extends ConsumerWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => AppRoutes.push(context, AppRoutes.logMeal),
+        backgroundColor: AppTheme.mealColor,
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
       body: logsAsync.when(
         data: (logs) {
-          // Sort logs descending by date
+          // Sort logs descending by date, then by meal time priority
           final sortedLogs = List<DailyPatientLog>.from(logs)
-            ..sort((a, b) => b.logDate.compareTo(a.logDate));
+            ..sort((a, b) {
+              final dateComp = b.logDate.compareTo(a.logDate);
+              if (dateComp != 0) return dateComp;
+              return _getMealTimePriority(b.mealTime).compareTo(_getMealTimePriority(a.mealTime));
+            });
 
           return RefreshIndicator(
             onRefresh: () async {
-              await ref.refresh(dailyPatientLogsProvider.future);
+              return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -69,6 +80,15 @@ class DietAnalyticsScreen extends ConsumerWidget {
         error: (err, stack) => Center(child: Text('Error loading diet data: $err')),
       ),
     );
+  }
+
+  int _getMealTimePriority(String time) {
+    switch (time.toUpperCase()) {
+      case 'BREAKFAST': return 1;
+      case 'LUNCH': return 2;
+      case 'DINNER': return 3;
+      default: return 0;
+    }
   }
 }
 
@@ -135,7 +155,7 @@ class _DietStatsSection extends StatelessWidget {
             child: _buildStatBox(
               context, 
               'Avg Spike', 
-              avgSpike > 0 ? '+${avgSpike.toStringAsFixed(0)}' : '--', 
+              spikeCount > 0 ? (avgSpike > 0 ? '+' : '') + avgSpike.toStringAsFixed(0) : '--', 
               'mg/dL', 
               avgSpike > 50 ? AppTheme.errorColor : (avgSpike > 30 ? AppTheme.warningColor : AppTheme.primaryGreen)
             )
@@ -331,9 +351,15 @@ class _DietImpactChart extends StatelessWidget {
                 tooltipPadding: EdgeInsets.zero,
                 tooltipMargin: 4,
                 getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                  if (dataMap[categories[group.x.toInt()]]!.isEmpty) return null;
+                  final cat = categories[group.x.toInt()];
+                  final spikes = dataMap[cat]!;
+                  if (spikes.isEmpty) return null;
+                  
+                  final avg = spikes.reduce((a, b) => a + b) / spikes.length;
+                  final prefix = avg > 0 ? '+' : '';
+
                   return BarTooltipItem(
-                    '+${rod.toY.toInt()}',
+                    '$prefix${avg.toInt()}',
                     TextStyle(
                       color: rod.color,
                       fontWeight: FontWeight.bold,
@@ -434,7 +460,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
     // Calculate spike and determine color/text
     String valueText = 'Logged';
     String unitText = '';
-    Color statusColor = AppTheme.primaryGreen;
+    Color statusColor = AppTheme.primaryBlue;
     String? deltaText;
 
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
@@ -463,7 +489,8 @@ class _DietHistoryListState extends State<_DietHistoryList> {
         : displayMealTime;
 
     // Use specific time if available, otherwise fallback to logDate
-    final displayDate = log.glucoseBeforeMealTime ?? log.logDate;
+    final displayDate = log.effectiveTime;
+    final hasSpecificTime = log.glucoseBeforeMealTime != null || log.glucoseAfterMealTime != null;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -547,17 +574,17 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: (deltaText != null ? statusColor : AppTheme.primaryGreen).withOpacity(0.1),
+                      color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: (deltaText != null ? statusColor : AppTheme.primaryGreen).withOpacity(0.3), 
+                        color: statusColor.withOpacity(0.3), 
                         width: 1
                       ),
                     ),
                     child: Text(
                       deltaText ?? displayMealTime,
                       style: TextStyle(
-                        color: deltaText != null ? statusColor : AppTheme.primaryGreen,
+                        color: statusColor,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -567,7 +594,9 @@ class _DietHistoryListState extends State<_DietHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(displayDate),
+                hasSpecificTime 
+                    ? DateFormat('dd/MM/yy HH:mm').format(displayDate.toLocal())
+                    : DateFormat('dd/MM/yy').format(displayDate.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,
@@ -692,8 +721,9 @@ class _TrafficLightCalendar extends StatelessWidget {
     final Map<int, int> dayLogCount = {};
 
     for (var log in logs) {
-      // FIX: Convert to Local Time to ensure alignment with UI
+      // Use logDate as the source of truth for the "Day"
       final localDate = log.logDate.toLocal();
+      // Strip time components to ensure consistent key
       final dateKey = DateTime(localDate.year, localDate.month, localDate.day).millisecondsSinceEpoch;
       
       // Count logs
@@ -707,10 +737,9 @@ class _TrafficLightCalendar extends StatelessWidget {
         if (!dayMaxSpike.containsKey(dateKey) || spike > dayMaxSpike[dateKey]!) {
           dayMaxSpike[dateKey] = spike;
         }
-      } else {
-        // Logged but no glucose data? Treat as 0 spike (Green) if not already set
-        dayMaxSpike.putIfAbsent(dateKey, () => 0);
       }
+      // If no glucose data, we simply don't add to dayMaxSpike. 
+      // The builder handles `maxSpike == null` as the Neutral/Blue state.
     }
 
     // 2. Logic to Align Grid to Monday

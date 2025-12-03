@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -8,20 +9,24 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_providers;
+import '../../core/repositories/monitor_data_repository.dart';
+import '../../dashboard/providers/dashboard_providers.dart';
 
 /// Log BMI Screen
-class LogBmiScreen extends StatefulWidget {
+class LogBmiScreen extends ConsumerStatefulWidget {
   const LogBmiScreen({super.key});
 
   @override
-  State<LogBmiScreen> createState() => _LogBmiScreenState();
+  ConsumerState<LogBmiScreen> createState() => _LogBmiScreenState();
 }
 
-class _LogBmiScreenState extends State<LogBmiScreen> {
+class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   final _formKey = GlobalKey<FormState>();
   final _heightController = TextEditingController();
   final _weightController = TextEditingController();
-  final ApiService _apiService = ApiService();
+  // final ApiService _apiService = ApiService(); // Removed
 
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
@@ -44,8 +49,12 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
   }
 
   void _calculateBmi() {
-    final heightCm = double.tryParse(_heightController.text);
-    final weightKg = double.tryParse(_weightController.text);
+    // Handle commas for international users
+    final hText = _heightController.text.replaceAll(',', '.');
+    final wText = _weightController.text.replaceAll(',', '.');
+
+    final heightCm = double.tryParse(hText);
+    final weightKg = double.tryParse(wText);
 
     if (heightCm != null && heightCm > 0 && weightKg != null && weightKg > 0) {
       final heightM = heightCm / 100;
@@ -67,15 +76,42 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
       return;
     }
 
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log measurements in the future.');
+      return;
+    }
+
+    // Foolproof: Check for duplicate entries at the same time
+    final existingData = ref.read(monitorDataProvider).asData?.value ?? [];
+    final isDuplicate = existingData.any((d) {
+      if (d.dataType != MonitorDataType.BMI) return false;
+      
+      // Convert to local to match user selection
+      final localDate = d.measuredAt.toLocal();
+      
+      return localDate.year == _selectedDateTime.year &&
+             localDate.month == _selectedDateTime.month &&
+             localDate.day == _selectedDateTime.day &&
+             localDate.hour == _selectedDateTime.hour &&
+             localDate.minute == _selectedDateTime.minute;
+    });
+
+    if (isDuplicate) {
+      Helpers.showError(context, 'A BMI reading for this time already exists.');
+      return;
+    }
+
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
 
     try {
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'BMI',
-        'value': _calculatedBmi,
-        'measured_at': _selectedDateTime.toIso8601String(),
-      });
+      await ref.read(monitorDataRepositoryProvider).addMonitorData(
+        'BMI',
+        _calculatedBmi!,
+        _selectedDateTime.toUtc(),
+      );
+      
+      ref.invalidate(core_providers.monitorDataProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged successfully!');
@@ -101,15 +137,22 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
     );
 
     if (date != null && mounted) {
-      setState(() {
-        _selectedDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          _selectedDateTime.hour,
-          _selectedDateTime.minute,
-        );
-      });
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+
+      if (time != null && mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+          );
+        });
+      }
     }
   }
 
@@ -185,8 +228,8 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
                   hint: 'e.g., 175',
                   controller: _heightController,
                   validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Height'),
-                  keyboardType: TextInputType.number,
+                      Validators.range(value, 50, 300, fieldName: 'Height'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.height),
                 ),
               ),
@@ -197,8 +240,8 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
                   hint: 'e.g., 70',
                   controller: _weightController,
                   validator: (value) =>
-                      Validators.minLength(value, 1, fieldName: 'Weight'),
-                  keyboardType: TextInputType.number,
+                      Validators.range(value, 20, 500, fieldName: 'Weight'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   prefixIcon: const Icon(Icons.scale),
                 ),
               ),
@@ -210,7 +253,37 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
   }
 
   Widget _buildBmiResultCard() {
-    final bmiCategory = Helpers.getBMICategory(_calculatedBmi!);
+    // Fetch dynamic thresholds from the provider
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    final thresholds = thresholdsAsync.value ?? [];
+    
+    String bmiCategory;
+    
+    // Try to find dynamic BMI threshold
+    final t = thresholds.cast<HealthThreshold?>().firstWhere(
+          (t) => t?.dataType == MonitorDataType.BMI,
+          orElse: () => null,
+        );
+
+    if (t != null) {
+      // Dynamic Logic
+      final maxNormal = t.maxValue;
+      final obeseCutoff = maxNormal + 5.0;
+
+      if (_calculatedBmi! < t.minValue) {
+        bmiCategory = 'Underweight';
+      } else if (_calculatedBmi! <= maxNormal) {
+        bmiCategory = 'Normal';
+      } else if (_calculatedBmi! <= obeseCutoff) {
+        bmiCategory = 'Overweight';
+      } else {
+        bmiCategory = 'Obese';
+      }
+    } else {
+      // Fallback to static helper if no data loaded
+      bmiCategory = Helpers.getBMICategory(_calculatedBmi!);
+    }
+
     return BaseCard(
       child: Column(
         children: [
@@ -265,11 +338,22 @@ class _LogBmiScreenState extends State<LogBmiScreen> {
                   const Icon(Icons.calendar_today, color: AppTheme.primaryGreen),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      Formatters.date(_selectedDateTime),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Formatters.date(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        Text(
+                          Formatters.time(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),

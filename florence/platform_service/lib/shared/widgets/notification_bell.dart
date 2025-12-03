@@ -1,43 +1,20 @@
 /// Notification Bell Widget for FLORENCE Digital Health Platform
 /// Displays notification icon with unread count badge
-library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/services/notifications/notification_service.dart';
 import '../../features/patient/notifications/screens/notifications_screen.dart';
 
 /// Notification bell icon with badge
-class NotificationBell extends StatefulWidget {
+class NotificationBell extends ConsumerWidget {
   const NotificationBell({super.key});
 
   @override
-  State<NotificationBell> createState() => _NotificationBellState();
-}
-
-class _NotificationBellState extends State<NotificationBell> {
-  final NotificationService _notificationService = NotificationService();
-
-  @override
-  void initState() {
-    super.initState();
-    _notificationService.addListener(_onNotificationsChanged);
-  }
-
-  @override
-  void dispose() {
-    _notificationService.removeListener(_onNotificationsChanged);
-    super.dispose();
-  }
-
-  void _onNotificationsChanged() {
-    if (mounted) {
-      setState(() {});
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final unreadCount = _notificationService.unreadCount;
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch notification state
+    final notifications = ref.watch(notificationProvider);
+    final unreadCount = notifications.where((n) => !n.isRead).length;
 
     return Stack(
       children: [

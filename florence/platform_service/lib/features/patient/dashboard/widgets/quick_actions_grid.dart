@@ -7,14 +7,14 @@ import '../../../../config/theme.dart';
 class QuickActionsGrid extends StatelessWidget {
   final VoidCallback onLogGlucose;
   final VoidCallback onLogBloodPressure;
-  final VoidCallback onLogCholesterol;
+  final VoidCallback onLogMeal;
   final VoidCallback onLogActivity;
   
   const QuickActionsGrid({
     super.key,
     required this.onLogGlucose,
     required this.onLogBloodPressure,
-    required this.onLogCholesterol,
+    required this.onLogMeal,
     required this.onLogActivity,
   });
   
@@ -88,10 +88,10 @@ class QuickActionsGrid extends StatelessWidget {
               const SizedBox(width: 12),
               _buildActionButton(
                 context,
-                'Cholesterol',
-                Icons.bloodtype_outlined,
-                AppTheme.accentPurple,
-                onLogCholesterol,
+                'Diet',
+                Icons.restaurant_outlined,
+                AppTheme.mealColor,
+                onLogMeal,
               ),
               const SizedBox(width: 12),
               _buildActionButton(

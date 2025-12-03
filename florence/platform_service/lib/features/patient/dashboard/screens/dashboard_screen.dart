@@ -9,15 +9,15 @@ import '../../../../core/widgets/empty_state_widget.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
 import '../../../../main.dart';
-import '../widgets/health_metric_card.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
 import '../widgets/ai_insight_card.dart';
-import '../widgets/health_metric_card.dart';
 import '../providers/dashboard_providers.dart'; // Added
+import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
+import '../../chat/services/chatbot_service.dart'; // Chat Service
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
@@ -29,21 +29,24 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  String? _userName;
+  // Local state for welcome message only
   bool _hasShownWelcomeMessage = false;
-  int _loadUserRetries = 0;
-
-  // Services
-  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
     super.initState();
+    // Trigger initial chat fetch so it's ready when needed
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadUserData();
-      }
+      _safeLoadChatHistory();
     });
+  }
+
+  Future<void> _safeLoadChatHistory() async {
+    try {
+      await ref.read(chatProvider.notifier).loadHistory();
+    } catch (e) {
+      debugPrint("Dashboard: Failed to load chat history (Non-critical): $e");
+    }
   }
 
   @override
@@ -51,55 +54,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     super.dispose();
   }
 
-  /// Load user data
-  Future<void> _loadUserData() async {
-    try {
-      // Fetch the full profile from the backend API
-      final profile = await _apiService.get('/patients/me');
-      if (mounted) {
-        setState(() {
-          _userName = profile['name'] as String? ?? 'Patient';
-          _loadUserRetries = 0; // Reset on success
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading user data for dashboard: $e');
-
-      final user = supabase.auth.currentUser;
-      final isNewUser = user != null &&
-          user.createdAt != null &&
-          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes < 2;
-
-      // If it's a new user and the profile isn't found yet, retry up to 2 times.
-      if (isNewUser && e.toString().contains('Access denied') && _loadUserRetries < 2) {
-        _loadUserRetries++;
-        debugPrint('Dashboard: Patient profile not found for new user. Retry attempt #$_loadUserRetries...');
-        await Future.delayed(const Duration(seconds: 3));
-        await _loadUserData(); // Recursive retry
-      } else {
-        // Fallback to a generic name if API fails after retries or for other errors
-        if (mounted) {
-          setState(() {
-            _userName = 'Patient';
-          });
-        }
-      }
-    }
-  }
-
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    // This invalidates the state, forcing a re-fetch from the repositories
-    ref.invalidate(monitorDataProvider);
-    ref.invalidate(latestActivityProvider);
-    ref.invalidate(patientThresholdsProvider);
-    ref.invalidate(dailyPatientLogsProvider);
-    // Wait for them to rebuild
+    ref.invalidate(chatProvider);
+
+    // 1. Fetch Profile First ("Prime" the backend)
+    // This ensures the profile record exists and prevents race conditions on the heavy queries
+    await ref.refresh(userProfileProvider.future);
+
+    // 2. Fetch Data & Chat in Parallel (Safe now)
     await Future.wait([
-       ref.read(monitorDataProvider.future),
-       ref.read(latestActivityProvider.future),
-       ref.read(patientThresholdsProvider.future),
-       ref.read(dailyPatientLogsProvider.future),
+      ref.refresh(core_data.monitorDataProvider.future),
+      _safeLoadChatHistory(), 
     ]);
   }
 
@@ -110,11 +76,32 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Watch Riverpod providers
-    final monitorData = ref.watch(monitorDataProvider).valueOrNull ?? [];
-    final activity = ref.watch(latestActivityProvider).valueOrNull;
-    final thresholds = ref.watch(patientThresholdsProvider).valueOrNull ?? [];
-    final mealLogs = ref.watch(dailyPatientLogsProvider).valueOrNull ?? [];
+    // 1. WATCH PROFILE (Triggers immediately)
+    final userProfileAsync = ref.watch(userProfileProvider);
+
+    // 2. WATCH DATA (Sequential Trigger)
+    // Only trigger the heavy data fetch once we know who the user is.
+    // This prevents the "Thundering Herd" of 403s on the backend.
+    final healthDataState = userProfileAsync.hasValue 
+        ? ref.watch(core_data.monitorDataProvider).asData?.value 
+        : null;
+    
+    // Keep chat provider alive, but load history only after profile is ready
+    ref.watch(chatProvider);
+    if (userProfileAsync.hasValue) {
+      // We use a post-frame callback inside a specialized widget or just let the 
+      // initState/Refresh logic handle the explicit calls. 
+      // The _handleRefresh logic above covers manual reloads. 
+      // For initial load, we rely on the provider lifecycle.
+    }
+    
+    // Derived values (will update automatically as healthDataState arrives)
+    final activity = ref.watch(latestActivityProvider).asData?.value;
+    final thresholds = ref.watch(patientThresholdsProvider).asData?.value ?? [];
+    final mealLogs = ref.watch(dailyPatientLogsProvider).asData?.value ?? [];
+
+    // Monitor Data now already includes meal glucose readings from the repository
+    final combinedMonitorData = healthDataState?.allMonitorData ?? [];
 
     // Determine latest meal
     DailyPatientLog? latestMeal;
@@ -147,21 +134,21 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
             const SizedBox(height: spacing),
 
-            // Biometrics Section (Loaded via Riverpod)
-            BiometricsSection(
-              monitorData: monitorData,
-              latestActivity: activity,
-              latestMeal: latestMeal,
-              thresholds: thresholds,
-            ),
-            const SizedBox(height: spacing),
-
             // Quick actions
             QuickActionsGrid(
               onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure), // Updated
-              onLogCholesterol: () => AppRoutes.push(context, AppRoutes.logCholesterol),     // Updated
+              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+              onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
               onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+            ),
+            const SizedBox(height: spacing),
+
+            // Biometrics Section (Loaded via Riverpod)
+            BiometricsSection(
+              monitorData: combinedMonitorData,
+              latestActivity: activity,
+              latestMeal: latestMeal,
+              thresholds: thresholds,
             ),
             const SizedBox(height: spacing),
           ],
@@ -291,6 +278,15 @@ class _QuickLogModal extends StatelessWidget {
                 },
               ),
               _QuickLogButton(
+                icon: Icons.restaurant,
+                label: 'Meal',
+                color: AppTheme.mealColor,
+                onTap: () {
+                  Navigator.pop(context);
+                  AppRoutes.push(context, AppRoutes.logMeal);
+                },
+              ),
+              _QuickLogButton(
                 icon: Icons.percent,
                 label: 'HbA1c',
                 color: Colors.deepOrange, 
@@ -307,15 +303,6 @@ class _QuickLogModal extends StatelessWidget {
                 onTap: () {
                   Navigator.pop(context);
                   AppRoutes.push(context, AppRoutes.logBloodPressure);
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.bloodtype,
-                label: 'Cholesterol',
-                color: AppTheme.accentPurple,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logCholesterol);
                 },
               ),
               _QuickLogButton(

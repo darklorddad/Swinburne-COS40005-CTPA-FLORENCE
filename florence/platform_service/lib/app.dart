@@ -2,29 +2,31 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'config/theme.dart';
 import 'config/routes.dart';
 import 'core/services/api_service.dart';
-import 'core/utils/helpers.dart';
 import 'core/providers/theme_provider.dart';
-import 'core/providers/settings_provider.dart';
-import 'features/patient/core/providers/health_data_provider.dart';
 import 'features/admin/core/services/admin_auth_service.dart';
 import 'main.dart';
+import 'features/patient/core/providers/monitor_data_providers.dart';
+import 'features/patient/profile/providers/user_profile_provider.dart';
+import 'features/patient/chat/services/chatbot_service.dart';
+import 'features/patient/recommendations/services/recommendation_engine.dart';
+import 'core/services/notifications/notification_service.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
 
-class App extends StatefulWidget {
+class App extends ConsumerStatefulWidget {
   const App({super.key});
 
   @override
-  State<App> createState() => _AppState();
+  ConsumerState<App> createState() => _AppState();
 }
 
-class _AppState extends State<App> {
+class _AppState extends ConsumerState<App> {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<Uri>? _linkSubscription;
   final ApiService _apiService = ApiService();
@@ -127,6 +129,16 @@ class _AppState extends State<App> {
     debugPrint('[Auth Listener] Session is: ${session != null ? 'PRESENT' : 'NULL'}');
 
     if (session != null) {
+      // Force invalidate providers on fresh login to prevent seeing previous user's data
+      if (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.passwordRecovery) {
+        debugPrint('[App Listener] Sign-in detected. Invalidating providers to clear stale data.');
+        ref.invalidate(monitorDataProvider);
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(chatProvider);
+        ref.invalidate(recommendationProvider);
+        ref.invalidate(notificationProvider);
+      }
+
       // The ApiService now gets the token directly from the Supabase client.
       // No need to manually manage the token in SessionManager.
       debugPrint('[App Listener] Session found. Token is available via supabase.auth.currentSession.');
@@ -168,16 +180,27 @@ class _AppState extends State<App> {
             return; // Stop processing
           }
         } else {
-          // For any other error, or if the user is not found on a subsequent login,
-          // treat it as a validation failure.
-          debugPrint('[App Listener] Backend session validation failed: $e');
-          await supabase.auth.signOut();
-          navigator.pushNamedAndRemoveUntil(
-            AppRoutes.login,
-            (route) => false,
-            arguments: {'message': 'Session validation failed. Please log in again'},
-          );
-          return; // Stop processing
+          // Check if this is a network error vs an actual auth error
+          final errorStr = e.toString().toLowerCase();
+          final isNetworkError = errorStr.contains('socketexception') || 
+                                 errorStr.contains('clientexception') || 
+                                 errorStr.contains('connection') ||
+                                 errorStr.contains('host lookup');
+
+          if (isNetworkError) {
+             debugPrint('[App Listener] Network error during validation. Proceeding with local session. Error: $e');
+             // Proceed to navigation below. We trust the local Supabase token if the backend is just unreachable.
+          } else {
+            // Real auth error (401/403/404/500 from API)
+            debugPrint('[App Listener] Backend session validation failed (Auth Error): $e');
+            await supabase.auth.signOut();
+            navigator.pushNamedAndRemoveUntil(
+              AppRoutes.login,
+              (route) => false,
+              arguments: {'message': 'Session expired. Please log in again'},
+            );
+            return; // Stop processing
+          }
         }
       }
 
@@ -193,8 +216,6 @@ class _AppState extends State<App> {
         AdminAuthService().logout(); // Ensure admin state is cleared
         destinationRoute = AppRoutes.clinicianDashboard;
       } else if (userRole.toUpperCase() == 'ADMIN') {
-        // Set the current admin user in the mock service
-        AdminAuthService().setCurrentUserFromSupabase(session.user);
         destinationRoute = AppRoutes.adminDashboard;
       } else {
         navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false,
@@ -211,6 +232,14 @@ class _AppState extends State<App> {
     } else {
       // Handle sign out, session expiration, or no initial session
       debugPrint('[App Listener] No session found. Navigating to login.');
+
+      // Invalidate Riverpod providers to clear user data
+      ref.invalidate(monitorDataProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(chatProvider);
+      ref.invalidate(recommendationProvider);
+      ref.invalidate(notificationProvider);
+
       // Clear admin session state as well
       AdminAuthService().logout();
       navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
@@ -219,52 +248,32 @@ class _AppState extends State<App> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => HealthDataProvider()),
-      ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, _) {
-          // Dynamic system UI overlay based on theme
-          final isDark = themeProvider.isDarkMode;
-          final systemUiOverlay = SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-            systemNavigationBarColor: isDark ? const Color(0xFF1F2937) : Colors.white,
-            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          );
+    final themeMode = ref.watch(themeProvider);
+    final isDark = themeMode == ThemeMode.dark;
 
-          return AnnotatedRegion<SystemUiOverlayStyle>(
-            value: systemUiOverlay,
-            child: MaterialApp(
-              navigatorKey: navigatorKey, // Assign the key here
-              title: 'Florence',
-              debugShowCheckedModeBanner: false,
+    // Dynamic system UI overlay based on theme
+    final systemUiOverlay = SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarColor: isDark ? const Color(0xFF1F2937) : Colors.white,
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+    );
 
-              // Theme with dynamic mode switching
-              theme: AppTheme.lightTheme,
-              darkTheme: AppTheme.darkTheme,
-              themeMode: themeProvider.themeMode,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: systemUiOverlay,
+      child: MaterialApp(
+        navigatorKey: navigatorKey, // Assign the key here
+        title: 'Florence',
+        debugShowCheckedModeBanner: false,
 
-              // Routing
-              initialRoute: AppRoutes.splash,
-              onGenerateRoute: AppRoutes.generateRoute,
+        // Theme with dynamic mode switching
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeMode,
 
-              // Localization (for future use)
-              // localizationsDelegates: const [
-              //   GlobalMaterialLocalizations.delegate,
-              //   GlobalWidgetsLocalizations.delegate,
-              //   GlobalCupertinoLocalizations.delegate,
-              // ],
-              // supportedLocales: const [
-              //   Locale('en', 'US'),
-              //   Locale('ms', 'MY'),
-              // ],
-            ),
-          );
-        },
+        // Routing
+        initialRoute: AppRoutes.splash,
+        onGenerateRoute: AppRoutes.generateRoute,
       ),
     );
   }

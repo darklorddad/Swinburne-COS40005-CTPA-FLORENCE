@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -7,22 +8,23 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
-import '../../../../core/services/api_service.dart';
+import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Glucose Screen
 /// Allows users to record blood glucose readings
-class LogGlucoseScreen extends StatefulWidget {
+class LogGlucoseScreen extends ConsumerStatefulWidget {
   const LogGlucoseScreen({super.key});
 
   @override
-  State<LogGlucoseScreen> createState() => _LogGlucoseScreenState();
+  ConsumerState<LogGlucoseScreen> createState() => _LogGlucoseScreenState();
 }
 
-class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
+class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _glucoseController = TextEditingController();
   final _notesController = TextEditingController();
-  final _apiService = ApiService();
 
   // State
   bool _isLoading = false;
@@ -60,43 +62,34 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
     
     try {
       final glucoseValue = double.parse(_glucoseController.text);
-      final timestamp = _selectedDateTime.toIso8601String();
-      
+      // Use the repository provider
+      final repo = ref.read(monitorDataRepositoryProvider);
+
       if (_selectedTiming == 'No Meal') {
-        await _apiService.post('/patients/me/monitor-data', {
-          'data_type': 'GLUCOSE',
-          'value': glucoseValue,
-          'measured_at': timestamp,
-        });
+        await repo.addGlucoseReading(GlucoseReading(
+          id: '', // Backend generates ID
+          timestamp: _selectedDateTime,
+          value: glucoseValue,
+          context: _selectedTiming,
+        ));
       } 
       else {
-        // Format date as YYYY-MM-DD
-        final logDate = "${_selectedDateTime.year}-${_selectedDateTime.month.toString().padLeft(2, '0')}-${_selectedDateTime.day.toString().padLeft(2, '0')}";
-        
         final isBefore = _selectedTiming == 'Before Meal';
-        
-        // Construct payload for Daily Log
-        final Map<String, dynamic> payload = {
-          'log_date': logDate,
-          'meal_time': _selectedMealType,
-          // Only send description if it is NOT before meal (i.e. it is After Meal)
-          'meal_desc': (!isBefore && _notesController.text.trim().isNotEmpty) 
-              ? _notesController.text.trim() 
-              : null,
-        };
-
-        // Add specific glucose fields based on context
-        if (isBefore) {
-          payload['glucose_before_meal'] = glucoseValue;
-          payload['glucose_before_meal_time'] = timestamp;
-        } else {
-          payload['glucose_after_meal'] = glucoseValue;
-          payload['glucose_after_meal_time'] = timestamp;
-        }
-
-        await _apiService.post('/patients/me/daily-logs', payload);
+        // Delegate complex logic to repository
+        await repo.addMeal(
+          _selectedMealType,
+          _selectedDateTime, // Date only used for day
+          (!isBefore && _notesController.text.trim().isNotEmpty) ? _notesController.text.trim() : null,
+          isBefore ? glucoseValue : null,
+          isBefore ? _selectedDateTime : null,
+          !isBefore ? glucoseValue : null,
+          !isBefore ? _selectedDateTime : null,
+        );
       }
       
+      // Invalidate provider to refresh dashboard
+      ref.invalidate(monitorDataProvider);
+
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');
         AppRoutes.pop(context);
@@ -104,7 +97,7 @@ class _LogGlucoseScreenState extends State<LogGlucoseScreen> {
     } catch (e) {
       if (mounted) {
         if (e.toString().contains('409')) {
-          Helpers.showError(context, 'A log for this meal already exists today.');
+          Helpers.showError(context, 'You have already logged $_selectedMealType for this date.');
         } else {
           Helpers.showError(context, 'Failed to save glucose reading: ${e.toString()}');
         }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -7,43 +8,52 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Meal Screen
 /// Allows users to record meals and food intake
-class LogMealScreen extends StatefulWidget {
+class LogMealScreen extends ConsumerStatefulWidget {
   const LogMealScreen({super.key});
 
   @override
-  State<LogMealScreen> createState() => _LogMealScreenState();
+  ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
 }
 
-class _LogMealScreenState extends State<LogMealScreen> {
+class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mealNameController = TextEditingController();
-  final _carbsController = TextEditingController();
-  final _proteinController = TextEditingController();
-  final _fatController = TextEditingController();
   final _notesController = TextEditingController();
   
   // State
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
-  String _selectedMealType = 'Breakfast';
+  late String _selectedMealType;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMealType = _getMealTypeFromTime(DateTime.now());
+  }
+
+  String _getMealTypeFromTime(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 4 && hour < 11) return 'Breakfast';
+    if (hour >= 11 && hour < 16) return 'Lunch';
+    return 'Dinner';
+  }
   
   // Meal type options
   final List<Map<String, dynamic>> _mealTypeOptions = [
     {'name': 'Breakfast', 'icon': Icons.wb_sunny},
     {'name': 'Lunch', 'icon': Icons.wb_cloudy},
     {'name': 'Dinner', 'icon': Icons.nightlight},
-    {'name': 'Snack', 'icon': Icons.cookie},
+    // REMOVED 'Snack' to match backend MealTime enum (BREAKFAST, LUNCH, DINNER)
   ];
   
   @override
   void dispose() {
     _mealNameController.dispose();
-    _carbsController.dispose();
-    _proteinController.dispose();
-    _fatController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -53,24 +63,39 @@ class _LogMealScreenState extends State<LogMealScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    // Check only date part for future validation
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day);
+
+    if (selectedDate.isAfter(today)) {
+      Helpers.showError(context, 'Cannot log meals in the future.');
+      return;
+    }
     
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
     
     try {
-      // TODO: Save to Supabase
-      // await mealService.saveMeal({
-      //   'name': _mealNameController.text.trim(),
-      //   'meal_type': _selectedMealType,
-      //   'carbs': double.tryParse(_carbsController.text),
-      //   'protein': double.tryParse(_proteinController.text),
-      //   'fat': double.tryParse(_fatController.text),
-      //   'timestamp': _selectedDateTime.toIso8601String(),
-      //   'notes': _notesController.text.trim(),
-      // });
+      // Combine Name and Notes for the description
+      String description = _mealNameController.text.trim();
+      if (_notesController.text.isNotEmpty) {
+        description += ' - ${_notesController.text.trim()}';
+      }
+
+      // Use the repository logic
+      await ref.read(monitorDataRepositoryProvider).addMeal(
+        _selectedMealType.toUpperCase(),
+        _selectedDateTime,
+        description,
+        null, // Glucose before
+        null, // Time before
+        null, // Glucose after
+        null, // Time after
+      );
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      ref.invalidate(monitorDataProvider);
       
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
@@ -78,7 +103,7 @@ class _LogMealScreenState extends State<LogMealScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to log meal');
+        Helpers.showError(context, 'Failed to log meal: $e');
       }
     } finally {
       if (mounted) {
@@ -87,7 +112,7 @@ class _LogMealScreenState extends State<LogMealScreen> {
     }
   }
   
-  /// Show date time picker
+  /// Show date picker (Time is not needed for meals as per backend schema)
   Future<void> _selectDateTime() async {
     final date = await showDatePicker(
       context: context,
@@ -97,38 +122,14 @@ class _LogMealScreenState extends State<LogMealScreen> {
     );
     
     if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-      
-      if (time != null && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
+      setState(() {
+        _selectedDateTime = date;
+      });
     }
-  }
-  
-  /// Calculate total calories
-  int _calculateCalories() {
-    final carbs = double.tryParse(_carbsController.text) ?? 0;
-    final protein = double.tryParse(_proteinController.text) ?? 0;
-    final fat = double.tryParse(_fatController.text) ?? 0;
-    
-    return ((carbs * 4) + (protein * 4) + (fat * 9)).round();
   }
   
   @override
   Widget build(BuildContext context) {
-    final totalCalories = _calculateCalories();
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log Meal'),
@@ -163,10 +164,6 @@ class _LogMealScreenState extends State<LogMealScreen> {
               
               // Date and time
               _buildDateTimeSection(),
-              const SizedBox(height: 24),
-              
-              // Macros section
-              _buildMacrosSection(totalCalories),
               const SizedBox(height: 24),
               
               // Notes
@@ -291,20 +288,20 @@ class _LogMealScreenState extends State<LogMealScreen> {
       label: 'Meal Name',
       hint: 'e.g., Chicken rice, Oatmeal with fruits',
       controller: _mealNameController,
-      validator: (value) => Validators.name(value, fieldName: 'Meal name'),
+      validator: (value) => Validators.required(value, fieldName: 'Meal name'),
       textCapitalization: TextCapitalization.sentences,
       prefixIcon: const Icon(Icons.restaurant_menu),
     );
   }
   
-  /// Build date time section
+  /// Build date section (Time removed)
   Widget _buildDateTimeSection() {
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Date & Time',
+            'Date',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -323,106 +320,20 @@ class _LogMealScreenState extends State<LogMealScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.access_time, color: AppTheme.mealColor),
+                  Icon(Icons.calendar_today, color: AppTheme.mealColor),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                        ),
-                      ],
+                    child: Text(
+                      Formatters.date(_selectedDateTime),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ),
                   Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build macros section
-  Widget _buildMacrosSection(int totalCalories) {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Nutrition (Optional)',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              if (totalCalories > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.mealColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    '$totalCalories kcal',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.mealColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  label: 'Carbs (g)',
-                  hint: '0',
-                  controller: _carbsController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CustomTextField(
-                  label: 'Protein (g)',
-                  hint: '0',
-                  controller: _proteinController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CustomTextField(
-                  label: 'Fat (g)',
-                  hint: '0',
-                  controller: _fatController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-            ],
           ),
         ],
       ),

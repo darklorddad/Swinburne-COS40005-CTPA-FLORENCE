@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../core/models/health_data_models.dart'; // Updated import
 import '../../../../config/routes.dart';
 import 'compact_health_card.dart';
-import '../screens/hba1c_detail_screen.dart';
 import '../screens/cholesterol_detail_screen.dart';
 import '../screens/diet_detail_screen.dart';
 
@@ -100,11 +100,56 @@ class BiometricsSection extends StatelessWidget {
         curr.measuredAt.isAfter(next.measuredAt) ? curr : next);
     }
 
+    // Helper to find latest PAIRED Blood Pressure
+    ({MonitorData? sys, MonitorData? dia}) getLatestBP() {
+      final sysList = monitorData.where((d) => d.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC).toList();
+      final diaList = monitorData.where((d) => d.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC).toList();
+
+      // Sort descending to check newest first
+      sysList.sort((a, b) => b.measuredAt.compareTo(a.measuredAt));
+
+      for (final sys in sysList) {
+        try {
+          // Find diastolic with exact matching timestamp
+          final dia = diaList.firstWhere((d) => d.measuredAt.isAtSameMomentAs(sys.measuredAt));
+          return (sys: sys, dia: dia);
+        } catch (_) {
+          continue; // Orphan systolic, skip
+        }
+      }
+      return (sys: null, dia: null);
+    }
+
     final glucose = getData(MonitorDataType.GLUCOSE);
-    final bpSystolic = getData(MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
-    final bpDiastolic = getData(MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
+    final latestBP = getLatestBP();
+    final bpSystolic = latestBP.sys;
+    final bpDiastolic = latestBP.dia;
     final hba1c = getData(MonitorDataType.HBA1C);
-    final cholesterol = getData(MonitorDataType.CHOLESTEROL_TOTAL);
+    
+    // Smart Cholesterol Selection (Total > LDL, or newest)
+    final cholesterolTotal = getData(MonitorDataType.CHOLESTEROL_TOTAL);
+    final cholesterolLdl = getData(MonitorDataType.CHOLESTEROL_LDL);
+    
+    MonitorData? cholesterolDisplay;
+    bool isLdlDisplay = false;
+
+    if (cholesterolTotal == null && cholesterolLdl == null) {
+      cholesterolDisplay = null;
+    } else if (cholesterolTotal == null) {
+      cholesterolDisplay = cholesterolLdl;
+      isLdlDisplay = true;
+    } else if (cholesterolLdl == null) {
+      cholesterolDisplay = cholesterolTotal;
+    } else {
+      // Both exist, prioritize the most recent one
+      if (cholesterolLdl.measuredAt.isAfter(cholesterolTotal.measuredAt)) {
+        cholesterolDisplay = cholesterolLdl;
+        isLdlDisplay = true;
+      } else {
+        cholesterolDisplay = cholesterolTotal;
+      }
+    }
+
     final bmi = getData(MonitorDataType.BMI);
 
     // Glucose (Always show)
@@ -142,21 +187,18 @@ class BiometricsSection extends StatelessWidget {
       timestamp: hba1c?.measuredAt,
       icon: Icons.pie_chart_outline,
       color: _getHba1cColor(hba1c?.value, thresholds),
-      onTap: () => Navigator.push(
-        context, 
-        MaterialPageRoute(builder: (context) => const HbA1cDetailScreen())
-      ),
+      onTap: () => AppRoutes.push(context, AppRoutes.hba1cDetail),
     ));
 
     // Cholesterol (Always show)
     cards.add(CompactHealthCard(
-      label: 'Cholesterol',
-      value: cholesterol?.value.toStringAsFixed(0) ?? '--',
+      label: isLdlDisplay ? 'Cholesterol (LDL)' : 'Cholesterol',
+      value: cholesterolDisplay?.value.toStringAsFixed(0) ?? '--',
       unit: 'mg/dL',
-      status: _getCholesterolStatus(cholesterol?.value, thresholds),
-      timestamp: cholesterol?.measuredAt,
+      status: _getCholesterolStatus(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
+      timestamp: cholesterolDisplay?.measuredAt,
       icon: Icons.bloodtype_outlined,
-      color: _getCholesterolColor(cholesterol?.value, thresholds),
+      color: _getCholesterolColor(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
       onTap: () => Navigator.push(
         context, 
         MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
@@ -176,12 +218,35 @@ class BiometricsSection extends StatelessWidget {
     ));
 
     // Diet (Always show)
+    String? dietSubtitle;
+    if (latestMeal != null) {
+      final desc = latestMeal!.mealDesc;
+      final hasTime = latestMeal!.glucoseBeforeMealTime != null || latestMeal!.glucoseAfterMealTime != null;
+      
+      // Construct subtitle: "Food Name • Time"
+      String timePart;
+      if (hasTime) {
+        timePart = Formatters.timeAgo(latestMeal!.effectiveTime);
+      } else {
+        timePart = Formatters.relativeDate(latestMeal!.logDate);
+      }
+
+      if (desc != null && desc.isNotEmpty) {
+        dietSubtitle = '$desc • $timePart';
+      } else if (!hasTime) {
+        dietSubtitle = timePart; // Just date if no specific time and no desc
+      } else {
+        dietSubtitle = null; // Default to CompactHealthCard's timeago
+      }
+    }
+
     cards.add(CompactHealthCard(
       label: 'Diet',
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
       status: _getMealStatus(latestMeal),
-      timestamp: latestMeal?.logDate,
+      timestamp: latestMeal?.effectiveTime,
+      subtitleOverride: dietSubtitle,
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
       onTap: () => Navigator.push(
@@ -197,7 +262,7 @@ class BiometricsSection extends StatelessWidget {
       unit: '',
       status: _getBmiStatus(bmi?.value, thresholds),
       timestamp: bmi?.measuredAt,
-      icon: Icons.height_outlined,
+      icon: Icons.monitor_weight_outlined,
       color: _getBmiColor(bmi?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.bmiDetail),
     ));
@@ -213,17 +278,20 @@ class BiometricsSection extends StatelessWidget {
   String _getMealStatus(DailyPatientLog? meal) {
     if (meal == null) return 'No Data';
 
-    // 1. If there is a text description, show it
-    if (meal.mealDesc != null && meal.mealDesc!.isNotEmpty) {
-      return meal.mealDesc!;
+    // 1. Check for Glucose Impact (Priority)
+    if (meal.glucoseBeforeMeal != null && meal.glucoseAfterMeal != null) {
+      final spike = meal.glucoseAfterMeal! - meal.glucoseBeforeMeal!;
+      if (spike > 50) return 'High Spike';
+      if (spike > 30) return 'Elevated';
+      return 'Stable';
     }
 
-    // 2. If no description but glucose was logged, show that
+    // 2. Partial Glucose Data
     if (meal.glucoseBeforeMeal != null || meal.glucoseAfterMeal != null) {
-      return 'Glucose Tracked';
+      return 'Partial Data';
     }
 
-    // 3. Fallback if it exists but has no details
+    // 3. Default
     return 'Logged';
   }
 
@@ -240,10 +308,11 @@ class BiometricsSection extends StatelessWidget {
       
       if (spike > 50) return AppTheme.errorColor;    // Red: High Spike (>50)
       if (spike > 30) return AppTheme.warningColor;  // Orange: Elevated Spike (30-50)
+      return AppTheme.primaryGreen; // Green: Controlled Spike (<30)
     }
 
-    // Default: Green (Stable spike or just logged)
-    return AppTheme.primaryGreen; 
+    // Default: Just logged (no glucose data) -> Neutral Blue
+    return AppTheme.primaryBlue; 
   }
 
   // --- Helper Methods (Updated to handle nulls) ---
@@ -305,8 +374,9 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
     if (t == null) return 'Recorded';
 
-    if (value <= t.maxValue) return 'Normal';
-    return 'High';
+    if (value > t.maxValue) return 'High';
+    if (value < t.minValue) return 'Low';
+    return 'Normal';
   }
 
   Color _getHba1cColor(double? value, List<HealthThreshold> thresholds) {
@@ -314,22 +384,27 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
     if (t == null) return AppTheme.primaryBlue;
 
-    if (value <= t.maxValue) return AppTheme.primaryGreen;
-    return AppTheme.errorColor;
+    if (value > t.maxValue) return AppTheme.errorColor;
+    if (value < t.minValue) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
   }
 
-  String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds) {
+  String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds, {bool isLdl = false}) {
     if (value == null) return 'No Data';
-    final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+    final type = isLdl ? MonitorDataType.CHOLESTEROL_LDL : MonitorDataType.CHOLESTEROL_TOTAL;
+    final t = _getThreshold(thresholds, type);
+    
     if (t == null) return 'Recorded';
 
     if (value > t.maxValue) return 'High';
     return 'Desirable';
   }
 
-  Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds) {
+  Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds, {bool isLdl = false}) {
     if (value == null) return AppTheme.textSecondaryColor;
-    final t = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
+    final type = isLdl ? MonitorDataType.CHOLESTEROL_LDL : MonitorDataType.CHOLESTEROL_TOTAL;
+    final t = _getThreshold(thresholds, type);
+    
     if (t == null) return AppTheme.primaryBlue;
 
     if (value > t.maxValue) return AppTheme.errorColor;
@@ -341,8 +416,13 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return 'Recorded';
 
-    if (value < t.minValue) return 'Low';
-    if (value > t.maxValue) return 'High';
+    // Dynamic Obese cutoff (Approx: Max Normal + 5)
+    // e.g. Standard: 25 + 5 = 30. Asian: 23 + 5 = 28.
+    final obeseCutoff = t.maxValue + 5.0;
+
+    if (value < t.minValue) return 'Underweight';
+    if (value > obeseCutoff) return 'Obese';
+    if (value > t.maxValue) return 'Overweight';
     return 'Normal';
   }
 
@@ -351,8 +431,11 @@ class BiometricsSection extends StatelessWidget {
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return AppTheme.primaryBlue;
 
-    if (value < t.minValue) return AppTheme.warningColor; // Underweight
-    if (value > t.maxValue) return AppTheme.errorColor; // Overweight/Obese
+    final obeseCutoff = t.maxValue + 5.0;
+
+    if (value < t.minValue) return AppTheme.primaryBlue; // Underweight
+    if (value > obeseCutoff) return AppTheme.errorColor; // Obese
+    if (value > t.maxValue) return AppTheme.warningColor; // Overweight
     return AppTheme.primaryGreen;
   }
 }

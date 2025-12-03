@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:math' as math;
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class CholesterolDetailScreen extends ConsumerWidget {
@@ -66,10 +67,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-               await Future.wait([
-                 ref.refresh(monitorDataProvider.future),
-                 ref.refresh(patientThresholdsProvider.future),
-               ]);
+               return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -190,9 +188,23 @@ class _CholesterolReading {
     );
   }
 
+  double get effectiveTotal {
+    if (total != null) return total!;
+    // Friedewald formula: Total = HDL + LDL + (Triglycerides / 5)
+    if (hdl != null && ldl != null && triglycerides != null) {
+      return hdl! + ldl! + (triglycerides! / 5);
+    }
+    // Partial fallback
+    if (hdl != null && ldl != null) {
+      return hdl! + ldl!;
+    }
+    return 0.0;
+  }
+
   double get ratio {
-    if (total != null && hdl != null && hdl! > 0) {
-      return total! / hdl!;
+    final t = effectiveTotal;
+    if (t > 0 && hdl != null && hdl! > 0) {
+      return t / hdl!;
     }
     return 0.0;
   }
@@ -222,7 +234,8 @@ class _RatioSection extends StatelessWidget {
     final ratio = reading?.ratio ?? 0.0;
     // Use non-HDL cholesterol as the "bad" portion for the chart representation
     // Total = HDL + Non-HDL. So Non-HDL = Total - HDL.
-    final valTotal = reading?.total ?? 0.0;
+    // Use effectiveTotal to ensure chart works even if Total wasn't explicitly logged
+    final valTotal = reading?.effectiveTotal ?? 0.0;
     final valHdl = reading?.hdl ?? 0.0;
     final valNonHdl = (valTotal > valHdl) ? valTotal - valHdl : 0.0;
     
@@ -310,13 +323,13 @@ class _RatioSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   // Targets List
-                  _buildMiniTargetRow('Total', total != null ? '${total!.minValue.toInt()} - ${total!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Total', total != null ? 'Below ${total!.maxValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('LDL', ldl != null ? '${ldl!.minValue.toInt()} - ${ldl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('LDL', ldl != null ? 'Below ${ldl!.maxValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('HDL', hdl != null ? '${hdl!.minValue.toInt()} - ${hdl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('HDL', hdl != null ? 'Above ${hdl!.minValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('Triglycerides', tri != null ? '${tri!.minValue.toInt()} - ${tri!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Triglycerides', tri != null ? 'Below ${tri!.maxValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
                 ],
               ),
             ),
@@ -454,7 +467,8 @@ class _LdlTargetSection extends StatelessWidget {
     }
 
     final ldl = reading?.ldl ?? 0.0;
-    final double maxScale = math.max(200.0, target! * 1.5);
+    // Scale must accommodate the Target OR the User's Value (whichever is larger), plus buffer
+    final double maxScale = math.max(200.0, math.max(target! * 1.5, ldl * 1.2));
     
     return _CholesterolCard(
       title: 'LDL Performance',
@@ -721,18 +735,20 @@ class _CompositionSectionState extends State<_CompositionSection> {
                     final hdl = r.hdl ?? 0;
                     final ldl = r.ldl ?? 0;
                     final tri = r.triglycerides ?? 0;
+                    // Visualize VLDL (approx Tri/5) so bar height ~ Total Cholesterol
+                    final vldl = tri / 5;
                     
                     return BarChartGroupData(
                       x: index,
                       barRods: [
                         BarChartRodData(
-                          toY: hdl + ldl + tri,
+                          toY: hdl + ldl + vldl,
                           width: 16,
                           borderRadius: BorderRadius.circular(2),
                           rodStackItems: [
                             BarChartRodStackItem(0, hdl, AppTheme.primaryGreen),
                             BarChartRodStackItem(hdl, hdl + ldl, AppTheme.errorColor),
-                            BarChartRodStackItem(hdl + ldl, hdl + ldl + tri, Colors.orange),
+                            BarChartRodStackItem(hdl + ldl, hdl + ldl + vldl, Colors.orange),
                           ],
                         ),
                       ],
@@ -749,7 +765,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               const SizedBox(width: 16),
               _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('Triglycerides', Colors.orange),
+              _LegendItem('VLDL (Tri/5)', Colors.orange),
             ],
           ),
         ],
@@ -902,6 +918,27 @@ class _HistorySectionState extends State<_HistorySection> {
               final minHdl = getLimit(MonitorDataType.CHOLESTEROL_HDL, isMin: true);
               final maxTri = getLimit(MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
 
+              // Determine Headline Value (Total > Calc Total > LDL > HDL > Tri)
+              String headlineValue = '--';
+              String headlineLabel = 'Total mg/dL';
+
+              if (r.total != null) {
+                headlineValue = r.total!.toInt().toString();
+                headlineLabel = 'Total mg/dL';
+              } else if (r.effectiveTotal > 0) {
+                headlineValue = r.effectiveTotal.toInt().toString();
+                headlineLabel = 'Est. Total';
+              } else if (r.ldl != null) {
+                headlineValue = r.ldl!.toInt().toString();
+                headlineLabel = 'LDL mg/dL';
+              } else if (r.hdl != null) {
+                headlineValue = r.hdl!.toInt().toString();
+                headlineLabel = 'HDL mg/dL';
+              } else if (r.triglycerides != null) {
+                headlineValue = r.triglycerides!.toInt().toString();
+                headlineLabel = 'Triglycerides';
+              }
+
               // Determine status based on priority (LDL > Total > Tri > HDL)
               String statusText = 'RECORDED';
               Color statusColor = AppTheme.primaryBlue;
@@ -956,7 +993,7 @@ class _HistorySectionState extends State<_HistorySection> {
                           textBaseline: TextBaseline.alphabetic,
                           children: [
                             Text(
-                              r.total != null ? r.total!.toInt().toString() : (r.ldl != null ? r.ldl!.toInt().toString() : '--'),
+                              headlineValue,
                               style: TextStyle(
                                 fontWeight: FontWeight.normal,
                                 fontSize: 20,
@@ -965,7 +1002,7 @@ class _HistorySectionState extends State<_HistorySection> {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              r.total != null ? 'Total mg/dL' : 'LDL mg/dL',
+                              headlineLabel,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     color: AppTheme.textSecondaryColor,
                                     fontSize: 12,

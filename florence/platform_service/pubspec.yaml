@@ -1,8 +1,6 @@
 name: florence
 description: AI-Enabled Digital Health Platform for Chronic Disease Monitoring
-
 publish_to: 'none'
-
 version: 1.0.0+1
 
 environment:
@@ -13,62 +11,63 @@ dependencies:
     sdk: flutter
 
   # State Management
-  provider:
+  flutter_riverpod: ^3.0.3
 
   # Backend & API
-  supabase_flutter: ^2.0.0
-  http:
+  supabase_flutter: ^2.10.3
+  http: ^1.2.2
 
   # Data Visualization
-  fl_chart:
+  fl_chart: ^1.1.1 
 
   # Data Serialization
-  json_annotation:
+  json_annotation: ^4.9.0
 
   # Date & Time Handling
-  intl:
-  table_calendar:
+  intl: ^0.20.2
+  table_calendar: ^3.2.0
 
   # Image Handling
-  image_picker:
-  cached_network_image:
+  image_picker: ^1.1.2
+  cached_network_image: ^3.4.1
 
   # iOS Style Icons
-  cupertino_icons:
+  cupertino_icons: ^1.0.8
 
   # Deep Linking
-  app_links:
+  # STRICTLY KEPT at v6 because Supabase requires it. 
+  # If you change this to 7.0.0, 'pub get' will fail.
+  app_links: ^6.4.1
 
   # SVG Support
-  flutter_svg: ^1.0.3
+  flutter_svg: ^2.2.3
 
   # Local Storage
-  shared_preferences:
+  shared_preferences: ^2.3.3
 
   # Fonts
-  google_fonts:
-  flutter_riverpod: ^2.6.1
-  flutter_markdown: ^0.7.7+1
+  google_fonts: ^6.2.1
+
+  # Markdown Support
+  flutter_markdown_plus: ^1.0.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints:
+  # Linter
+  flutter_lints: ^6.0.0
 
   # Code Generation
-  build_runner:
-  json_serializable:
+  build_runner: ^2.4.13
+  # Note: Latest is 6.11.3, but your logs say it's blocked at 6.11.2 by another package.
+  # We use ^6.11.2 to allow it to auto-update when the blocker is fixed.
+  json_serializable: ^6.11.2
 
-  change_app_package_name:
-
-  flutter_app_name:
+  # Tool to rename app package
+  change_app_package_name: ^1.4.0
 
 flutter:
-
   uses-material-design: true
   assets:
     - shorebird.yaml
-
-flutter_app_name:
-  name: "Florence"

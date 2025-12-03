@@ -1,47 +1,34 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/health_data_models.dart';
-import '../../core/repositories/monitor_data_repository.dart';
-import '../../core/services/data_ingestion_service.dart';
+import '../../core/providers/monitor_data_providers.dart' as core;
 
-// Repository Provider
-final monitorDataRepositoryProvider = Provider<MonitorDataRepository>((ref) {
-  return MonitorDataRepository();
-});
+// Adapters for Dashboard to use Centralized Data Layer
 
-// Data Service Provider (for Activity)
-final dataIngestionServiceProvider = Provider<DataIngestionService>((ref) {
-  return DataIngestionService();
-});
+final monitorDataProvider = Provider<AsyncValue<List<MonitorData>>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) => state.allMonitorData);
+}, isAutoDispose: true);
 
-// Monitor Data Provider
-final monitorDataProvider = FutureProvider<List<MonitorData>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getAllMonitorData();
-});
+final latestActivityProvider = Provider<AsyncValue<ActivityLog?>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) => 
+    state.activities.isNotEmpty ? state.activities.first : null // Repo sorts descending (Newest first)
+  );
+}, isAutoDispose: true);
 
-// Latest Activity Provider
-final latestActivityProvider = FutureProvider<ActivityLog?>((ref) async {
-  final activities = await ref.watch(activityLogsProvider.future);
-  if (activities.isNotEmpty) {
-    return activities.first;
-  }
-  return null;
-});
+final patientThresholdsProvider = Provider<AsyncValue<List<HealthThreshold>>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) => state.healthThresholds);
+}, isAutoDispose: true);
 
-// Patient Thresholds Provider
-final patientThresholdsProvider = FutureProvider<List<HealthThreshold>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getHealthThresholds();
-});
-
-// Daily Patient Logs Provider (Meals)
-final dailyPatientLogsProvider = FutureProvider<List<DailyPatientLog>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getDailyPatientLogs();
-});
-
-// Activity Logs Provider
-final activityLogsProvider = FutureProvider<List<ActivityLog>>((ref) async {
-  final repository = ref.watch(monitorDataRepositoryProvider);
-  return repository.getActivityLogs();
-});
+final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((ref) {
+  return ref.watch(core.monitorDataProvider).whenData((state) {
+      return state.meals.map((m) => DailyPatientLog(
+        id: int.tryParse(m.id) ?? 0,
+        logDate: m.timestamp,
+        mealTime: m.type.toUpperCase(),
+        mealDesc: m.description,
+        glucoseBeforeMeal: m.glucoseBefore,
+        glucoseAfterMeal: m.glucoseAfter,
+        glucoseBeforeMealTime: m.glucoseBeforeTime,
+        glucoseAfterMealTime: m.glucoseAfterTime,
+      )).toList();
+  });
+}, isAutoDispose: true);

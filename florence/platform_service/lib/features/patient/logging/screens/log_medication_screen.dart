@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -7,17 +8,19 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Medication Screen
 /// Allows users to record medication intake
-class LogMedicationScreen extends StatefulWidget {
+class LogMedicationScreen extends ConsumerStatefulWidget {
   const LogMedicationScreen({super.key});
 
   @override
-  State<LogMedicationScreen> createState() => _LogMedicationScreenState();
+  ConsumerState<LogMedicationScreen> createState() => _LogMedicationScreenState();
 }
 
-class _LogMedicationScreenState extends State<LogMedicationScreen> {
+class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _medicationNameController = TextEditingController();
   final _dosageController = TextEditingController();
@@ -67,18 +70,16 @@ class _LogMedicationScreenState extends State<LogMedicationScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // TODO: Save to Supabase
-      // await medicationService.saveMedication({
-      //   'name': _medicationNameController.text.trim(),
-      //   'type': _selectedMedicationType,
-      //   'dosage': _dosageController.text.trim(),
-      //   'timing': _selectedTiming,
-      //   'timestamp': _selectedDateTime.toIso8601String(),
-      //   'notes': _notesController.text.trim(),
-      // });
+      await ref.read(monitorDataRepositoryProvider).addMedication(
+        _medicationNameController.text.trim(),
+        _selectedMedicationType,
+        _dosageController.text.trim(),
+        _selectedTiming,
+        _selectedDateTime,
+        _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
+      );
       
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
+      ref.invalidate(monitorDataProvider);
       
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');
@@ -86,7 +87,7 @@ class _LogMedicationScreenState extends State<LogMedicationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to log medication');
+        Helpers.showError(context, 'Failed to log medication: $e');
       }
     } finally {
       if (mounted) {

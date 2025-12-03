@@ -7,15 +7,14 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
-import '../../dashboard/providers/dashboard_providers.dart';
+import '../../core/providers/monitor_data_providers.dart';
 
 class ActivityDetailScreen extends ConsumerWidget {
   const ActivityDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activityAsync = ref.watch(activityLogsProvider);
-    final monitorAsync = ref.watch(monitorDataProvider);
+    final healthDataAsync = ref.watch(monitorDataProvider);
 
     // Data Color: Green (Movement as Medicine)
     final Color dataColor = AppTheme.primaryGreen;
@@ -33,77 +32,71 @@ class ActivityDetailScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: activityAsync.when(
-        data: (logs) {
-          return monitorAsync.when(
-            data: (monitorData) {
-              // Sort logs: Newest first
-              final sortedLogs = List<ActivityLog>.from(logs)
-                ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      body: healthDataAsync.when(
+        data: (healthData) {
+          final logs = healthData.activities;
+          final monitorData = healthData.allMonitorData;
 
-              // Filter glucose for impact analysis
-              final glucoseReadings = monitorData
-                  .where((d) => d.dataType == MonitorDataType.GLUCOSE)
-                  .toList();
+          // Sort logs: Newest first
+          final sortedLogs = List<ActivityLog>.from(logs)
+            ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  await Future.wait([
-                    ref.refresh(activityLogsProvider.future),
-                    ref.refresh(monitorDataProvider.future),
-                  ]);
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      // 1. Daily Volume
-                      _DailyVolumeCard(
-                        logs: sortedLogs, 
-                        dataColor: dataColor
-                      ),
-                      const SizedBox(height: 20),
+          // Filter glucose for impact analysis
+          final glucoseReadings = monitorData
+              .where((d) => d.dataType == MonitorDataType.GLUCOSE)
+              .toList();
 
-                      // 2. Streak Heatmap
-                      _StreakHeatmap(
-                        logs: sortedLogs,
-                        dataColor: dataColor,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 3. Weekly Consistency
-                      _WeeklyConsistencyChart(
-                        logs: sortedLogs, 
-                        dataColor: dataColor
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 4. Activity Timing (Last 28 Days)
-                      _ActivityTimingChart(
-                        logs: sortedLogs, 
-                        dataColor: dataColor
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 5. History List (Consistent Design)
-                      _ActivityHistoryList(
-                        logs: sortedLogs,
-                        glucoseReadings: glucoseReadings,
-                        dataColor: dataColor,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
-                ),
-              );
+          return RefreshIndicator(
+            onRefresh: () async {
+              return ref.refresh(monitorDataProvider.future);
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error loading health data: $err')),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  // 1. Daily Volume
+                  _DailyVolumeCard(
+                    logs: sortedLogs, 
+                    dataColor: dataColor
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 2. Streak Heatmap
+                  _StreakHeatmap(
+                    logs: sortedLogs,
+                    dataColor: dataColor,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 3. Weekly Consistency
+                  _WeeklyConsistencyChart(
+                    logs: sortedLogs, 
+                    dataColor: dataColor
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 4. Activity Timing (Last 28 Days)
+                  _ActivityTimingChart(
+                    logs: sortedLogs, 
+                    dataColor: dataColor
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 5. History List (Consistent Design)
+                  _ActivityHistoryList(
+                    logs: sortedLogs,
+                    glucoseReadings: glucoseReadings,
+                    dataColor: dataColor,
+                  ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text('Error loading activity: $err')),
+        error: (err, stack) => Center(child: Text('Error loading health data: $err')),
       ),
     );
   }
@@ -349,11 +342,12 @@ class _DailyVolumeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
-    final todayLogs = logs.where((log) => 
-      log.timestamp.year == now.year && 
-      log.timestamp.month == now.month && 
-      log.timestamp.day == now.day
-    ).toList();
+    final todayLogs = logs.where((log) {
+      final localDate = log.timestamp.toLocal();
+      return localDate.year == now.year && 
+             localDate.month == now.month && 
+             localDate.day == now.day;
+    }).toList();
     
     final totalMinutes = todayLogs.fold(0, (sum, log) => sum + log.duration);
     final sessionCount = todayLogs.length;
@@ -427,7 +421,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
     }
 
     for (var log in logs) {
-      final d = log.timestamp;
+      final d = log.timestamp.toLocal();
       final dayKey = d.year * 10000 + d.month * 100 + d.day;
       if (dailyTotals.containsKey(dayKey)) {
         dailyTotals[dayKey] = (dailyTotals[dayKey] ?? 0) + log.duration;
@@ -559,7 +553,7 @@ class _ActivityTimingChart extends StatelessWidget {
     double night = 0;   // 22-5
 
     for (var log in recentLogs) {
-      final h = log.timestamp.hour;
+      final h = log.timestamp.toLocal().hour;
       if (h >= 5 && h < 11) morning += log.duration;
       else if (h >= 11 && h < 17) midday += log.duration;
       else if (h >= 17 && h < 22) evening += log.duration;
@@ -715,6 +709,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
 
+    // Logs are passed in DESC order (Newest first). Do NOT reverse them.
     final totalItems = widget.logs.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
     
@@ -776,7 +771,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
     // CALCULATE GLUCOSE IMPACT
     double? startGlucose;
     double? endGlucose;
-    final activityTime = log.timestamp;
+    final activityTime = log.timestamp; // Keep UTC for glucose comparisons
     
     // 1. Start Reading: [Time - 60min] to [Time + 10min]
     final beforeReadings = widget.glucoseReadings.where((r) => 
@@ -901,7 +896,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(log.timestamp),
+                DateFormat('dd/MM/yy HH:mm').format(log.timestamp.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
                       color: AppTheme.textSecondaryColor,

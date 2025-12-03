@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/services/api_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/services/api_service.dart'; // For ApiService (if needed, but repo used)
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -7,20 +8,22 @@ import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart'; // Added
+import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log HbA1c Screen
 /// Allows users to record Hemoglobin A1c readings
-class LogHba1cScreen extends StatefulWidget {
+class LogHba1cScreen extends ConsumerStatefulWidget {
   const LogHba1cScreen({super.key});
 
   @override
-  State<LogHba1cScreen> createState() => _LogHba1cScreenState();
+  ConsumerState<LogHba1cScreen> createState() => _LogHba1cScreenState();
 }
 
-class _LogHba1cScreenState extends State<LogHba1cScreen> {
+class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   final _formKey = GlobalKey<FormState>();
   final _hba1cController = TextEditingController();
-  final _apiService = ApiService();
   
   // State
   bool _isLoading = false;
@@ -37,18 +40,55 @@ class _LogHba1cScreenState extends State<LogHba1cScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    // Foolproof 1: Prevent logging in the future
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log readings in the future.');
+      return;
+    }
+
+    // Foolproof 2: Prevent duplicate logs
+    final existingData = ref.read(monitorDataProvider).asData?.value.allMonitorData ?? [];
+    final isDuplicate = existingData.any((d) {
+      if (d.dataType != MonitorDataType.HBA1C) return false;
+      
+      // Convert DB time to local to match user selection
+      final localDate = d.measuredAt.toLocal();
+      
+      return localDate.year == _selectedDateTime.year &&
+             localDate.month == _selectedDateTime.month &&
+             localDate.day == _selectedDateTime.day &&
+             localDate.hour == _selectedDateTime.hour &&
+             localDate.minute == _selectedDateTime.minute;
+    });
+
+    if (isDuplicate) {
+      Helpers.showError(context, 'An HbA1c reading for this time already exists.');
+      return;
+    }
     
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
     
     try {
-      final value = double.parse(_hba1cController.text);
+      // Foolproof 3: Handle comma vs dot and use tryParse for crash safety
+      final normalizedText = _hba1cController.text.replaceAll(',', '.');
+      final value = double.tryParse(normalizedText);
 
-      await _apiService.post('/patients/me/monitor-data', {
-        'data_type': 'HBA1C',
-        'value': value,
-        'measured_at': _selectedDateTime.toIso8601String(),
-      });
+      if (value == null) {
+        throw const FormatException('Invalid number format');
+      }
+
+      // Use repository to add data
+      // Convert to UTC to ensure global consistency
+      await ref.read(monitorDataRepositoryProvider).addMonitorData(
+        'HBA1C',
+        value,
+        _selectedDateTime.toUtc(),
+      );
+      
+      // Invalidate provider to refresh dashboard
+      ref.invalidate(monitorDataProvider);
       
       if (mounted) {
         Helpers.showSuccess(context, 'HbA1c reading saved successfully!');
@@ -75,15 +115,22 @@ class _LogHba1cScreenState extends State<LogHba1cScreen> {
     );
     
     if (date != null && mounted) {
-      setState(() {
-        _selectedDateTime = DateTime(
-          date.year,
-          date.month,
-          date.day,
-          DateTime.now().hour,
-          DateTime.now().minute,
-        );
-      });
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+      );
+
+      if (mounted) {
+        setState(() {
+          _selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time?.hour ?? _selectedDateTime.hour,
+            time?.minute ?? _selectedDateTime.minute,
+          );
+        });
+      }
     }
   }
   
@@ -137,7 +184,7 @@ class _LogHba1cScreenState extends State<LogHba1cScreen> {
         children: [
           Icon(
             Icons.info_outline,
-            color: Colors.deepOrange,
+            color: AppTheme.primaryBlue,
             size: 24,
           ),
           SizedBox(width: 12),
@@ -224,14 +271,25 @@ class _LogHba1cScreenState extends State<LogHba1cScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.calendar_today, color: Colors.deepOrange),
+                  const Icon(Icons.calendar_today, color: AppTheme.primaryBlue),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      Formatters.date(_selectedDateTime),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          Formatters.date(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                        Text(
+                          Formatters.time(_selectedDateTime),
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
+                      ],
                     ),
                   ),
                   const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
@@ -258,11 +316,11 @@ class _LogHba1cScreenState extends State<LogHba1cScreen> {
           ),
           const SizedBox(height: 12),
           
-          _buildRangeItem('Normal', 'Below 5.7%', Colors.green),
+          _buildRangeItem('Normal', 'Below 5.7%', AppTheme.primaryGreen),
           const SizedBox(height: 8),
-          _buildRangeItem('Prediabetes', '5.7% - 6.4%', Colors.orange),
+          _buildRangeItem('Prediabetes', '5.7% - 6.4%', AppTheme.warningColor),
           const SizedBox(height: 8),
-          _buildRangeItem('Diabetes', '6.5% or higher', Colors.red),
+          _buildRangeItem('Diabetes', '6.5% or higher', AppTheme.errorColor),
         ],
       ),
     );

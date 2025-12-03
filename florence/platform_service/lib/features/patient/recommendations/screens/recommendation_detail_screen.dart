@@ -27,27 +27,8 @@ class _RecommendationDetailScreenState
     extends State<RecommendationDetailScreen> {
   bool _isLoading = false;
 
-  // Mock related data
-  final List<Map<String, dynamic>> _relatedData = [
-    {
-      'type': 'Glucose Reading',
-      'value': '195 mg/dL',
-      'timestamp': DateTime.now().subtract(const Duration(hours: 26)),
-      'note': 'After dinner',
-    },
-    {
-      'type': 'Meal Log',
-      'value': 'Pasta with bread',
-      'timestamp': DateTime.now().subtract(const Duration(hours: 28)),
-      'note': 'High carbs',
-    },
-    {
-      'type': 'Glucose Reading',
-      'value': '178 mg/dL',
-      'timestamp': DateTime.now().subtract(const Duration(days: 2)),
-      'note': 'After dinner',
-    },
-  ];
+  // Related data
+  final List<Map<String, dynamic>> _relatedData = [];
 
   /// Mark as done
   Future<void> _markAsDone() async {
@@ -484,16 +465,12 @@ class _RecommendationDetailScreenState
 
   /// Build mini chart
   Widget _buildMiniChart(HealthRecommendation recommendation) {
-    // Mock data for the mini chart
-    final spots = [
-      const FlSpot(0, 120),
-      const FlSpot(1, 145),
-      const FlSpot(2, 195), // Spike
-      const FlSpot(3, 165),
-      const FlSpot(4, 118),
-      const FlSpot(5, 142),
-      const FlSpot(6, 188), // Another spike
-    ];
+    // TODO: Fetch real data for the mini chart
+    final spots = <FlSpot>[];
+
+    if (spots.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       height: 150,

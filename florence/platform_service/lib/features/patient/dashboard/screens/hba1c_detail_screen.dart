@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class HbA1cDetailScreen extends ConsumerWidget {
@@ -49,10 +50,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-               await Future.wait([
-                 ref.refresh(monitorDataProvider.future),
-                 ref.refresh(patientThresholdsProvider.future),
-               ]);
+               return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -67,13 +65,13 @@ class HbA1cDetailScreen extends ConsumerWidget {
                   
                   _TrendsSection(
                     readings: readings,
-                    targetMax: targetMax,
+                    threshold: userThreshold,
                   ),
                   const SizedBox(height: 20),
 
                   _GoalComparisonSection(
                     latestReading: readings.isNotEmpty ? readings.last : null,
-                    targetMax: targetMax,
+                    threshold: userThreshold,
                   ),
                   const SizedBox(height: 20),
                   
@@ -119,8 +117,8 @@ class _GaugeSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final val = latestReading?.value ?? 0.0;
     
-    const double minScale = 4.0;
-    const double maxScale = 12.0;
+    const double minScale = 2.0;
+    const double maxScale = 15.0;
     
     final double normalized = ((val.clamp(minScale, maxScale)) - minScale) / (maxScale - minScale);
     // -90 deg (left) to +90 deg (right)
@@ -134,12 +132,15 @@ class _GaugeSection extends StatelessWidget {
       statusText = "No Data";
       statusColor = AppTheme.textSecondaryColor;
     } else if (threshold != null) {
-      if (val <= threshold!.maxValue) {
-        statusColor = AppTheme.primaryGreen;
-        statusText = "Normal";
-      } else {
+      if (val > threshold!.maxValue) {
         statusColor = AppTheme.errorColor;
         statusText = "High";
+      } else if (val < threshold!.minValue) {
+        statusColor = AppTheme.warningColor;
+        statusText = "Low";
+      } else {
+        statusColor = AppTheme.primaryGreen;
+        statusText = "Normal";
       }
     } else {
       statusColor = AppTheme.primaryBlue;
@@ -156,8 +157,9 @@ class _GaugeSection extends StatelessWidget {
     String infoText;
     if (threshold != null) {
       infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
-                 '• Your Target: Below ${threshold!.maxValue.toStringAsFixed(1)}%\n'
-                 '• Above Target: ${threshold!.maxValue.toStringAsFixed(1)}% or higher';
+                 '• Target Range: ${threshold!.minValue.toStringAsFixed(1)}% - ${threshold!.maxValue.toStringAsFixed(1)}%\n'
+                 '• Low: Below ${threshold!.minValue.toStringAsFixed(1)}%\n'
+                 '• High: Above ${threshold!.maxValue.toStringAsFixed(1)}%';
     } else {
       infoText = 'HbA1c reflects your average blood sugar over the past 3 months.\n\n'
                  '• Set a target in your profile to see status.';
@@ -247,18 +249,37 @@ class _GaugeSection extends StatelessWidget {
                         centerSpaceRadius: centerRadius,
                         sections: threshold != null 
                         ? [
-                          // Clinical Ranges (Only show if threshold exists, implying user cares about status)
-                          // Note: Mapping exact user thresholds to a fixed gauge is complex, 
-                          // so we stick to clinical backgrounds BUT only if a threshold is set.
-                          PieChartSectionData(value: 1.7, color: AppTheme.primaryGreen.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 0.8, color: AppTheme.warningColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 5.5, color: AppTheme.errorColor.withOpacity(0.8), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
+                          // Dynamic Ranges based on User Thresholds (Scale: 2.0 to 15.0, Span: 13.0)
+                          // 1. Low Zone (2.0 to MinValue)
+                          if (threshold!.minValue > 2.0)
+                            PieChartSectionData(
+                              value: (threshold!.minValue - 2.0).clamp(0.0, 13.0), 
+                              color: AppTheme.warningColor.withOpacity(0.8), 
+                              radius: sectionWidth, showTitle: false
+                            ),
+                          
+                          // 2. Safe Zone (MinValue to MaxValue)
+                          PieChartSectionData(
+                            value: (threshold!.maxValue - math.max(2.0, threshold!.minValue)).clamp(0.0, 13.0), 
+                            color: AppTheme.primaryGreen.withOpacity(0.8), 
+                            radius: sectionWidth, showTitle: false
+                          ),
+
+                          // 3. High Zone (MaxValue to 15.0)
+                          if (threshold!.maxValue < 15.0)
+                            PieChartSectionData(
+                              value: (15.0 - threshold!.maxValue).clamp(0.0, 13.0), 
+                              color: AppTheme.errorColor.withOpacity(0.8), 
+                              radius: sectionWidth, showTitle: false
+                            ),
+
+                          // Bottom Half (Transparent filler matching total span of 13.0)
+                          PieChartSectionData(value: 13.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ]
                         : [
-                          // Neutral Blue Arc (4.0 to 12.0 range = 8 units)
-                          PieChartSectionData(value: 8.0, color: AppTheme.primaryBlue.withOpacity(0.2), radius: sectionWidth, showTitle: false),
-                          PieChartSectionData(value: 8.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
+                          // Neutral Blue Arc (2.0 to 15.0 range = 13 units)
+                          PieChartSectionData(value: 13.0, color: AppTheme.primaryBlue.withOpacity(0.2), radius: sectionWidth, showTitle: false),
+                          PieChartSectionData(value: 13.0, color: Colors.transparent, radius: sectionWidth, showTitle: false),
                         ],
                       ),
                     ),
@@ -315,8 +336,8 @@ class _GaugeSection extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('4.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('12.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('2.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text('15.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
                 ],
               ),
             ),
@@ -367,9 +388,9 @@ class _GaugeSection extends StatelessWidget {
 
 class _TrendsSection extends StatefulWidget {
   final List<MonitorData> readings;
-  final double? targetMax;
+  final HealthThreshold? threshold;
 
-  const _TrendsSection({required this.readings, this.targetMax});
+  const _TrendsSection({required this.readings, this.threshold});
 
   @override
   State<_TrendsSection> createState() => _TrendsSectionState();
@@ -405,6 +426,9 @@ class _TrendsSectionState extends State<_TrendsSection> {
     final filtered = _filterData();
     
     double minX = 0, maxX = 1;
+    double minY = 4;  // Default min
+    double maxY = 10; // Default max
+
     if (filtered.isNotEmpty) {
       minX = filtered.first.measuredAt.millisecondsSinceEpoch.toDouble();
       maxX = filtered.last.measuredAt.millisecondsSinceEpoch.toDouble();
@@ -412,7 +436,30 @@ class _TrendsSectionState extends State<_TrendsSection> {
         minX -= 2629743000;
         maxX += 2629743000; 
       }
-    } else {
+      
+      // Dynamic Y-axis bounds to prevent clipping
+      final dataMax = filtered.map((e) => e.value).reduce(math.max);
+      final dataMin = filtered.map((e) => e.value).reduce(math.min);
+
+      if (dataMax > 9.5) {
+        maxY = dataMax + 1.0;
+      }
+      if (dataMin < 4.5) {
+        minY = math.max(0, dataMin - 0.5);
+      }
+    }
+
+    // Ensure thresholds are visible
+    if (widget.threshold != null) {
+      if (widget.threshold!.maxValue > maxY - 0.5) {
+        maxY = widget.threshold!.maxValue + 1.0;
+      }
+      if (widget.threshold!.minValue < minY + 0.5) {
+        minY = math.max(0, widget.threshold!.minValue - 1.0);
+      }
+    }
+
+    if (filtered.isEmpty) {
        final now = DateTime.now();
        minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
        maxX = now.millisecondsSinceEpoch.toDouble();
@@ -474,7 +521,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
                 LineChartData(
                   // FIX: Ensure FLChart knows to clip content to the border
                   clipData: const FlClipData.all(), 
-                  minX: minX, maxX: maxX, minY: 4, maxY: 10,
+                  minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
@@ -505,27 +552,39 @@ class _TrendsSectionState extends State<_TrendsSection> {
                     show: true, 
                     border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))
                   ),
-                  rangeAnnotations: widget.targetMax != null ? RangeAnnotations(
+                  rangeAnnotations: widget.threshold != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: 4, y2: 5.7, color: AppTheme.primaryGreen.withOpacity(0.08)),
-                      HorizontalRangeAnnotation(y1: 5.7, y2: 6.5, color: AppTheme.warningColor.withOpacity(0.08)),
-                      HorizontalRangeAnnotation(y1: 6.5, y2: 14, color: AppTheme.errorColor.withOpacity(0.08)),
+                      // Low Zone (Yellow)
+                      if (widget.threshold!.minValue > minY)
+                        HorizontalRangeAnnotation(y1: minY, y2: widget.threshold!.minValue, color: AppTheme.warningColor.withOpacity(0.08)),
+                      
+                      // Safe Zone (Green)
+                      HorizontalRangeAnnotation(y1: math.max(minY, widget.threshold!.minValue), y2: widget.threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.08)),
+                      
+                      // High Zone (Red)
+                      HorizontalRangeAnnotation(y1: widget.threshold!.maxValue, y2: math.max(maxY, 20), color: AppTheme.errorColor.withOpacity(0.08)),
                     ],
                   ) : null,
-                  extraLinesData: widget.targetMax != null ? ExtraLinesData(
+                  extraLinesData: widget.threshold != null ? ExtraLinesData(
                     horizontalLines: [
                        HorizontalLine(
-                         y: widget.targetMax!, 
-                         color: AppTheme.primaryBlue.withOpacity(0.8), 
+                         y: widget.threshold!.maxValue, 
+                         color: AppTheme.primaryGreen.withOpacity(0.8), 
                          strokeWidth: 1, 
                          dashArray: [5,5], 
                          label: HorizontalLineLabel(
                            show: true, 
                            alignment: Alignment.topRight, 
                            padding: const EdgeInsets.only(right: 5, bottom: 2), 
-                           style: TextStyle(color: AppTheme.primaryBlue, fontSize: 10, fontWeight: FontWeight.bold), 
-                           labelResolver: (line) => 'Target'
+                           style: TextStyle(color: AppTheme.primaryGreen, fontSize: 10, fontWeight: FontWeight.bold), 
+                           labelResolver: (line) => 'Target Max'
                          )
+                       ),
+                       HorizontalLine(
+                         y: widget.threshold!.minValue, 
+                         color: AppTheme.primaryGreen.withOpacity(0.8), 
+                         strokeWidth: 1, 
+                         dashArray: [5,5], 
                        )
                     ]
                   ) : null,
@@ -568,16 +627,16 @@ class _TrendsSectionState extends State<_TrendsSection> {
               ),
             ),
           ),
-          if (widget.targetMax != null) ...[
+          if (widget.threshold != null) ...[
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('Normal', AppTheme.primaryGreen.withOpacity(0.5)),
+                _LegendItem('Low', AppTheme.warningColor.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Pre-diabetes', AppTheme.warningColor.withOpacity(0.5)),
+                _LegendItem('Target', AppTheme.primaryGreen.withOpacity(0.5)),
                 const SizedBox(width: 16),
-                _LegendItem('Diabetes', AppTheme.errorColor.withOpacity(0.5)),
+                _LegendItem('High', AppTheme.errorColor.withOpacity(0.5)),
               ],
             )
           ]
@@ -593,13 +652,13 @@ class _TrendsSectionState extends State<_TrendsSection> {
 
 class _GoalComparisonSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final double? targetMax;
+  final HealthThreshold? threshold;
 
-  const _GoalComparisonSection({this.latestReading, this.targetMax});
+  const _GoalComparisonSection({this.latestReading, this.threshold});
 
   @override
   Widget build(BuildContext context) {
-    if (targetMax == null) {
+    if (threshold == null) {
       return _HbA1cCard(
         title: 'Actual vs. Goal',
         icon: Icons.flag_outlined,
@@ -612,16 +671,34 @@ class _GoalComparisonSection extends StatelessWidget {
     }
 
     final current = latestReading?.value ?? 0.0;
-    final isGood = current <= targetMax! && current > 0;
-    final barColor = isGood ? AppTheme.primaryGreen : AppTheme.errorColor;
-    final maxY = math.max(current, targetMax!) * 1.4;
+    
+    // Evaluate status
+    bool isHigh = current > threshold!.maxValue;
+    bool isLow = current < threshold!.minValue && current > 0;
+    bool isGood = !isHigh && !isLow && current > 0;
+
+    Color barColor;
+    if (isHigh) barColor = AppTheme.errorColor;
+    else if (isLow) barColor = AppTheme.warningColor;
+    else barColor = AppTheme.primaryGreen;
+
+    final maxY = math.max(current, threshold!.maxValue) * 1.4;
+
+    String feedbackText;
+    if (isHigh) {
+      feedbackText = "You are ${(current - threshold!.maxValue).toStringAsFixed(1)}% above your target";
+    } else if (isLow) {
+      feedbackText = "You are ${(threshold!.minValue - current).toStringAsFixed(1)}% below your target";
+    } else {
+      feedbackText = "You are within your target range";
+    }
 
     return _HbA1cCard(
       title: 'Actual vs. Goal',
       icon: Icons.flag_outlined,
       infoText: 'Compares your latest reading against your set target.\n\n'
                 'Left Bar: Your latest HbA1c\n'
-                'Right Bar: Your Goal',
+                'Right Bar: Your Goal Max',
       child: Column(
         children: [
           if (latestReading == null)
@@ -649,7 +726,7 @@ class _GoalComparisonSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        reservedSize: 40, // Increased reserved size to prevent clipping
+                        reservedSize: 40,
                         getTitlesWidget: (val, _) {
                            switch(val.toInt()) {
                              case 0: return const Padding(padding: EdgeInsets.only(top: 8), child: Text('You', style: TextStyle(fontWeight: FontWeight.bold)));
@@ -680,7 +757,7 @@ class _GoalComparisonSection extends StatelessWidget {
                       x: 1,
                       barRods: [
                         BarChartRodData(
-                          toY: targetMax!,
+                          toY: threshold!.maxValue,
                           color: AppTheme.primaryBlue.withOpacity(0.3),
                           width: 30,
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
@@ -690,7 +767,7 @@ class _GoalComparisonSection extends StatelessWidget {
                     ),
                   ],
                   barTouchData: BarTouchData(
-                    enabled: false, // Disable touch interaction, just show tooltip
+                    enabled: false,
                     touchTooltipData: BarTouchTooltipData(
                       getTooltipColor: (group) => Colors.transparent,
                       tooltipPadding: EdgeInsets.zero,
@@ -715,25 +792,23 @@ class _GoalComparisonSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: (isGood ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.1),
+                color: barColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: (isGood ? AppTheme.primaryGreen : AppTheme.errorColor).withOpacity(0.3)),
+                border: Border.all(color: barColor.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
                   Icon(
                     isGood ? Icons.check_circle : Icons.warning,
-                    color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
+                    color: barColor,
                     size: 20,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      isGood 
-                        ? "You are within your target of <${targetMax!.toStringAsFixed(1)}%"
-                        : "You are ${(current - targetMax!).toStringAsFixed(1)}% above your target",
+                      feedbackText,
                       style: TextStyle(
-                        color: isGood ? AppTheme.primaryGreen : AppTheme.errorColor,
+                        color: barColor,
                         fontWeight: FontWeight.w600,
                         fontSize: 13,
                       ),
@@ -864,12 +939,15 @@ class _HistorySectionState extends State<_HistorySection> {
              Color statusColor;
              
              if (widget.threshold != null) {
-               if (r.value <= widget.threshold!.maxValue) {
-                 statusText = 'NORMAL';
-                 statusColor = AppTheme.primaryGreen;
-               } else {
+               if (r.value > widget.threshold!.maxValue) {
                  statusText = 'HIGH';
                  statusColor = AppTheme.errorColor;
+               } else if (r.value < widget.threshold!.minValue) {
+                 statusText = 'LOW';
+                 statusColor = AppTheme.warningColor;
+               } else {
+                 statusText = 'NORMAL';
+                 statusColor = AppTheme.primaryGreen;
                }
              } else {
                statusText = 'RECORDED';
@@ -942,7 +1020,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        ),
                        const SizedBox(height: 6),
                        Text(
-                         DateFormat('dd/MM/yy HH:mm').format(r.measuredAt),
+                         DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()),
                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                fontSize: 11,
                                color: AppTheme.textSecondaryColor,
@@ -1066,20 +1144,37 @@ class _HbA1cCard extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
-  const _LegendItem(this.label, this.color);
+  final bool isDashed;
+  
+  const _LegendItem(this.label, this.color, {this.isDashed = false});
+  
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 12, 
-          height: 12, 
-          decoration: BoxDecoration(
-            color: color, 
-            borderRadius: BorderRadius.circular(2),
+        if (isDashed)
+          SizedBox(
+            width: 16,
+            height: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(width: 4, height: 2, color: color),
+                Container(width: 4, height: 2, color: color),
+                Container(width: 4, height: 2, color: color),
+              ],
+            ),
+          )
+        else
+          Container(
+            width: 12, 
+            height: 12, 
+            decoration: BoxDecoration(
+              color: color, 
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-        ),
         const SizedBox(width: 6),
         Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
       ],

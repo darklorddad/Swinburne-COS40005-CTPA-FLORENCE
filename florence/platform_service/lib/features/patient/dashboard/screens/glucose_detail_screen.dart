@@ -7,12 +7,11 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class GlucoseDetailScreen extends ConsumerWidget {
-  final int patientId;
-
-  const GlucoseDetailScreen({super.key, required this.patientId});
+  const GlucoseDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -35,115 +34,81 @@ class GlucoseDetailScreen extends ConsumerWidget {
       ),
       body: glucoseAsync.when(
         data: (dataList) {
-          return dailyLogsAsync.when(
-            data: (mealLogs) {
-              // 1. Global Data Prep
-              final directReadings = dataList
-                  .where((d) => d.dataType == MonitorDataType.GLUCOSE)
-                  .toList();
+          // 1. Global Data Prep
+          // Filter glucose readings from the consolidated dataList
+          final allReadings = dataList
+              .where((d) => d.dataType == MonitorDataType.GLUCOSE)
+              .toList();
 
-              // Convert meal log glucose entries to MonitorData ONLY if time exists
-              final mealReadings = <MonitorData>[];
-              for (var meal in mealLogs) {
-                if (meal.glucoseBeforeMeal != null && meal.glucoseBeforeMealTime != null) {
-                  mealReadings.add(MonitorData(
-                    id: -1 * meal.id, // Negative ID to differentiate
-                    patientId: 0,
-                    dataType: MonitorDataType.GLUCOSE,
-                    value: meal.glucoseBeforeMeal!,
-                    measuredAt: meal.glucoseBeforeMealTime!,
-                  ));
-                }
-                
-                if (meal.glucoseAfterMeal != null && meal.glucoseAfterMealTime != null) {
-                  mealReadings.add(MonitorData(
-                    id: (-1 * meal.id) - 1,
-                    patientId: 0,
-                    dataType: MonitorDataType.GLUCOSE,
-                    value: meal.glucoseAfterMeal!,
-                    measuredAt: meal.glucoseAfterMealTime!,
-                  ));
-                }
-              }
+          // Sort ascending for charts logic (Timeline needs X-axis increasing)
+          allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
-              final allReadings = [...directReadings, ...mealReadings];
+          final thresholds = thresholdsAsync.value ?? [];
+          
+          // Check if user actually has a set threshold
+          HealthThreshold? userThreshold;
+          try {
+            userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+          } catch (_) {}
 
-              // Sort ascending for charts logic (Timeline needs X-axis increasing)
-              allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
+          final isDefault = userThreshold == null;
+          
+          // Use user's threshold or safe default
+          final effectiveThreshold = userThreshold;
 
-              final thresholds = thresholdsAsync.value ?? [];
-              
-              // Check if user actually has a set threshold
-              HealthThreshold? userThreshold;
-              try {
-                userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
-              } catch (_) {}
-
-              final isDefault = userThreshold == null;
-              
-              // Use user's threshold or safe default
-              final effectiveThreshold = userThreshold;
-
-              return RefreshIndicator(
-                onRefresh: () async {
-                  await Future.wait([
-                    ref.refresh(monitorDataProvider.future),
-                    ref.refresh(patientThresholdsProvider.future),
-                    ref.refresh(dailyPatientLogsProvider.future),
-                  ]);
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Statistics
-                    _StatisticsSection(
-                      readings: allReadings, 
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 2. Annotated Line Chart
-                    _GlucoseTrendsSection(
-                      allReadings: allReadings,
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 3. Time in Range
-                    _TimeInRangeSection(
-                      allReadings: allReadings,
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 4. Modal Day
-                    _ModalDaySection(
-                      allReadings: allReadings,
-                      threshold: effectiveThreshold,
-                      isDefault: isDefault,
-                    ),
-                    const SizedBox(height: 20),
-
-                    // 5. History List
-                    _HistorySection(
-                      allReadings: allReadings, // Pass sorted list, we will reverse it inside
-                      thresholds: thresholds,
-                    ),
-                    
-                    // Bottom Spacing to match Dashboard
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ));
+          return RefreshIndicator(
+            onRefresh: () async {
+              return ref.refresh(core_data.monitorDataProvider.future);
             },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => Center(child: Text('Error loading logs: $err')),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 1. Statistics
+                  _StatisticsSection(
+                    readings: allReadings, 
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 2. Annotated Line Chart
+                  _GlucoseTrendsSection(
+                    allReadings: allReadings,
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 3. Time in Range
+                  _TimeInRangeSection(
+                    allReadings: allReadings,
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 4. Modal Day
+                  _ModalDaySection(
+                    allReadings: allReadings,
+                    threshold: effectiveThreshold,
+                    isDefault: isDefault,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 5. History List
+                  _HistorySection(
+                    allReadings: allReadings, // Pass sorted list, we will reverse it inside
+                    thresholds: thresholds,
+                  ),
+                  
+                  // Bottom Spacing to match Dashboard
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -569,13 +534,23 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
-                        showTitles: true, 
-                        interval: (maxX - minX) / 4, 
-                        getTitlesWidget: (val, _) {
-                          if (val == minX || val == maxX) return const SizedBox(); // Hide start/end
+                        showTitles: true,
+                        reservedSize: 30,
+                        // No interval set - let FL Chart calculate the best fit automatically
+                        getTitlesWidget: (val, meta) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          final fmt = range == '1D' ? DateFormat('HH:mm') : DateFormat('MM/dd');
-                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(fmt.format(date), style: const TextStyle(fontSize: 9)));
+                          final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
+                          
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              fmt.format(date),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ),
@@ -634,9 +609,33 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
+                          final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                          // Include Date, Time, Value, and Unit
                           return LineTooltipItem(
-                            '${spot.y.toInt()}',
-                            const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                            '${DateFormat('MMM d, y').format(date)}\n', // Date Line
+                            const TextStyle(
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                              fontSize: 10,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: '${DateFormat('h:mm a').format(date)}\n', // Time Line
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              TextSpan(
+                                text: '${spot.y.toInt()} mg/dL', // Value + Unit
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
                           );
                         }).toList();
                       },
@@ -650,7 +649,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
               Wrap(
                 spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
                 children: [
-                  _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                  _buildLegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
                 ],
               ),
             ],
@@ -893,6 +892,12 @@ class _HistorySectionState extends State<_HistorySection> {
     final end = math.min(start + _itemsPerPage, totalItems);
     final currentItems = sortedReadings.sublist(start, end);
 
+    // Get threshold from backend data (no fallback)
+    HealthThreshold? t;
+    try {
+      t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+    } catch (_) {}
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -931,12 +936,6 @@ class _HistorySectionState extends State<_HistorySection> {
             String statusText;
             Color statusColor;
             
-            // Get threshold from backend data (no fallback)
-            HealthThreshold? t;
-            try {
-              t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
-            } catch (_) {}
-
             if (t != null) {
               if (item.value < t.minValue) {
                 statusText = 'LOW';

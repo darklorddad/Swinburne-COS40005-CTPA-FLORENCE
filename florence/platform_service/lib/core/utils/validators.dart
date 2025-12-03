@@ -116,7 +116,8 @@ class Validators {
       return 'Glucose level is required';
     }
     
-    final glucoseValue = double.tryParse(value);
+    final normalized = value.replaceAll(',', '.');
+    final glucoseValue = double.tryParse(normalized);
     
     if (glucoseValue == null) {
       return 'Please enter a valid number';
@@ -138,14 +139,15 @@ class Validators {
       return 'HbA1c level is required';
     }
     
-    final hba1cValue = double.tryParse(value);
+    final normalized = value.replaceAll(',', '.');
+    final hba1cValue = double.tryParse(normalized);
     
     if (hba1cValue == null) {
       return 'Please enter a valid number';
     }
     
-    if (hba1cValue < 4.0 || hba1cValue > 15.0) {
-      return 'HbA1c level must be between 4.0% and 15.0%';
+    if (hba1cValue < 2.0 || hba1cValue > 25.0) {
+      return 'HbA1c level must be between 2.0% and 25.0%';
     }
     
     return null;
@@ -160,7 +162,8 @@ class Validators {
       return 'Weight is required';
     }
     
-    final weightValue = double.tryParse(value);
+    final normalized = value.replaceAll(',', '.');
+    final weightValue = double.tryParse(normalized);
     
     if (weightValue == null) {
       return 'Please enter a valid number';
@@ -230,7 +233,8 @@ class Validators {
       return '$fieldName is required';
     }
     
-    if (double.tryParse(value) == null) {
+    final normalized = value.replaceAll(',', '.');
+    if (double.tryParse(normalized) == null) {
       return '$fieldName must be a number';
     }
     
@@ -242,7 +246,8 @@ class Validators {
       return '$fieldName is required';
     }
     
-    final numValue = double.tryParse(value);
+    final normalized = value.replaceAll(',', '.');
+    final numValue = double.tryParse(normalized);
     
     if (numValue == null) {
       return '$fieldName must be a number';

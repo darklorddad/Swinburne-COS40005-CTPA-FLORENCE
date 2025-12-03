@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/validators.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../chat/services/chatbot_service.dart';
-import '../../core/providers/health_data_provider.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
@@ -13,21 +10,19 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../../../main.dart';
+import '../providers/user_profile_provider.dart'; // Added
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings
-class ProfileScreen extends StatefulWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
-  final ApiService _apiService = ApiService();
-  bool _isLoading = false;
-  
-  // Mock user data (will be replaced with real data)
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  // Mock user data (fallback)
   String _userName = 'John Doe';
   String _userEmail = 'john.doe@example.com';
   String _dateOfBirth = 'January 15, 1985';
@@ -37,11 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   double _targetMin = 70.0;
   double _targetMax = 180.0;
   
-  // Medications list (mock)
-  List<Map<String, String>> _medications = [
-    {'name': 'Metformin', 'dosage': '500mg', 'frequency': 'Twice daily'},
-    {'name': 'Insulin', 'dosage': '10 units', 'frequency': 'Before meals'},
-  ];
+  // Medications list
+  List<Map<String, String>> _medications = [];
   
   // Settings
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
@@ -52,42 +44,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
-  }
-  
-  /// Load user data
-  Future<void> _loadUserData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Get email from the local session (safe)
-      final email = supabase.auth.currentUser?.email ?? 'user@example.com';
-
-      // Fetch the full profile from the backend API
-      final profile = await _apiService.get('/patients/me');
-
-      if (mounted) {
-        setState(() {
-          _userEmail = email;
-          _userName = profile['name'] ?? 'John Doe';
-          _dateOfBirth = profile['date_of_birth'] != null
-              ? Formatters.date(DateTime.parse(profile['date_of_birth']))
-              : 'Not set';
-          _gender = profile['gender'] ?? 'Not set';
-          _phoneNumber = profile['phone_number'] ?? 'Not set';
-          // TODO: Load other profile fields like diabetes type, targets, etc.
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading profile: $e');
-      if (mounted) {
-        Helpers.showError(context, 'Failed to load profile data.');
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
   }
   
   /// Handle logout
@@ -101,7 +57,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (confirmed) {
       try {
         // Clear chatbot session state
-        ChatbotService().resetSession();
+        ref.read(chatProvider.notifier).resetSession();
         
         await supabase.auth.signOut();
         if (mounted) {
@@ -145,9 +101,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   /// Toggle dark mode
   void _toggleDarkMode(bool value) {
-    Provider.of<ThemeProvider>(context, listen: false).setTheme(
-      value ? ThemeMode.dark : ThemeMode.light,
-    );
+    ref.read(themeProvider.notifier).setTheme(
+          value ? ThemeMode.dark : ThemeMode.light,
+        );
   }
   
   /// Check for updates
@@ -158,6 +114,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final userProfileAsync = ref.watch(userProfileProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profile & Settings'),
@@ -169,55 +127,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadUserData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Profile header with avatar
-                    _buildProfileHeader(),
-                    const SizedBox(height: 24),
-                    
-                    // Personal info section
-                    _buildPersonalInfoSection(),
-                    const SizedBox(height: 16),
-                    
-                    // Health profile section
-                    _buildHealthProfileSection(),
-                    const SizedBox(height: 16),
-                    
-                    // Medications section
-                    _buildMedicationsSection(),
-                    const SizedBox(height: 16),
-                    
-                    // Settings section
-                    _buildSettingsSection(),
-                    const SizedBox(height: 16),
-                    
-                    // About section
-                    _buildAboutSection(),
-                    const SizedBox(height: 24),
-                    
-                    // Sign out button
-                    OutlinedButton(
-                      onPressed: _handleLogout,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.errorColor,
-                        side: BorderSide(color: AppTheme.errorColor),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('Sign Out'),
+      body: userProfileAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error loading profile: $error'),
+              ElevatedButton(
+                onPressed: () => ref.refresh(userProfileProvider),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
+        data: (profileData) {
+          // Update local state from fetched data
+          _userName = profileData['name'] ?? 'John Doe';
+          _userEmail = profileData['email'] ?? 'user@example.com';
+          _dateOfBirth = profileData['date_of_birth'] != null
+              ? Formatters.date(DateTime.parse(profileData['date_of_birth']))
+              : 'Not set';
+          _gender = profileData['gender'] ?? 'Not set';
+          _phoneNumber = profileData['phone_number'] ?? 'Not set';
+
+          return RefreshIndicator(
+            onRefresh: () => ref.refresh(userProfileProvider.future),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Profile header with avatar
+                  _buildProfileHeader(),
+                  const SizedBox(height: 24),
+                  
+                  // Personal info section
+                  _buildPersonalInfoSection(),
+                  const SizedBox(height: 16),
+                  
+                  // Health profile section
+                  _buildHealthProfileSection(),
+                  const SizedBox(height: 16),
+                  
+                  // Medications section
+                  _buildMedicationsSection(),
+                  const SizedBox(height: 16),
+                  
+                  // Settings section
+                  _buildSettingsSection(),
+                  const SizedBox(height: 16),
+                  
+                  // About section
+                  _buildAboutSection(),
+                  const SizedBox(height: 24),
+                  
+                  // Sign out button
+                  OutlinedButton(
+                    onPressed: _handleLogout,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.errorColor,
+                      side: BorderSide(color: AppTheme.errorColor),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
+                    child: const Text('Sign Out'),
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
+          );
+        },
+      ),
     );
   }
   
@@ -465,14 +447,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Divider(height: 24),
 
           // Dark mode toggle
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, _) => _buildSettingToggle(
-              'Dark Mode',
-              'Switch between light and dark theme',
-              Icons.dark_mode_outlined,
-              themeProvider.isDarkMode,
-              _toggleDarkMode,
-            ),
+          _buildSettingToggle(
+            'Dark Mode',
+            'Switch between light and dark theme',
+            Icons.dark_mode_outlined,
+            ref.watch(themeProvider) == ThemeMode.dark,
+            _toggleDarkMode,
           ),
           const Divider(height: 24),
         ],

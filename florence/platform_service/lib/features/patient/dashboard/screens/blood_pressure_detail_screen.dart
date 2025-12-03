@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../core/models/health_data_models.dart';
+import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class BloodPressureDetailScreen extends ConsumerWidget {
@@ -55,10 +56,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              await Future.wait([
-                ref.refresh(monitorDataProvider.future),
-                ref.refresh(patientThresholdsProvider.future),
-              ]);
+              return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
