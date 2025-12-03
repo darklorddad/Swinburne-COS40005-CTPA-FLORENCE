@@ -806,7 +806,8 @@ class _ModalDaySection extends StatelessWidget {
       builder: (range, data) {
         final Map<int, List<FlSpot>> lines = {};
         for (var r in data) {
-          final key = r.measuredAt.day;
+          // Use unique date identifier (YYYYMMDD) so distinct days don't merge
+          final key = r.measuredAt.year * 10000 + r.measuredAt.month * 100 + r.measuredAt.day;
           final x = r.measuredAt.hour + (r.measuredAt.minute / 60.0);
           lines.putIfAbsent(key, () => []).add(FlSpot(x, r.value));
         }
@@ -876,7 +877,7 @@ class _ModalDaySection extends StatelessWidget {
             // Legend
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (threshold != null) ...[
-                _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                _buildLegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
                 const SizedBox(width: 12),
               ],
               _buildLegendItem('Daily Traces', AppTheme.textSecondaryColor, isDashed: false),

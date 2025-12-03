@@ -80,7 +80,7 @@ class QuickActionsGrid extends StatelessWidget {
               const SizedBox(width: 12),
               _buildActionButton(
                 context,
-                'Blood Pressure',
+                'B.Pressure',
                 Icons.monitor_heart_outlined,
                 AppTheme.primaryRed,
                 onLogBloodPressure,
@@ -157,13 +157,12 @@ class QuickActionsGrid extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 label,
-                textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                       fontSize: 10,
                     ),
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
             ],
