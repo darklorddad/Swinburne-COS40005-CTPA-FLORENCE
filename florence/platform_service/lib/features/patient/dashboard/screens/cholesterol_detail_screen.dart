@@ -555,7 +555,7 @@ class _LdlTargetSection extends StatelessWidget {
                     if (ldl > 0)
                       Positioned(
                         left: (actualPos - 20).clamp(0, width - 40),
-                        top: -14,
+                        top: -19,
                         child: Column(
                           children: [
                             Container(
