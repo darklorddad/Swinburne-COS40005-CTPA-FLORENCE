@@ -3,7 +3,7 @@ name: Build and Distribute
 on:
   push:
     branches:
-      - czy_testing_branch
+      - main
   workflow_dispatch:
 
 jobs:
@@ -59,7 +59,7 @@ jobs:
         env:
           FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
         run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_BASE64" | base64 -d > firebase_credentials.json
+          echo "$FIREBASE_SERVICE_ACCOUNT_JSON_BASE64" | base64 -d > firebase_credentials.json
 
       # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
