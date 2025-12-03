@@ -482,22 +482,51 @@ class _GlucoseTrendsSection extends StatelessWidget {
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
-        // Determine X-Axis range
+        // Determine X-Axis range with snapping to round hours/days for cleaner axis
         double minX, maxX;
         if (data.isNotEmpty) {
-          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-          if (minX == maxX) { minX -= 3600000; maxX += 3600000; }
+          final first = data.first.measuredAt;
+          final last = data.last.measuredAt;
+          
+          // Snap min to start of hour, max to start of next hour
+          final minDate = DateTime(first.year, first.month, first.day, first.hour);
+          final maxDate = DateTime(last.year, last.month, last.day, last.hour).add(const Duration(hours: 1));
+          
+          minX = minDate.millisecondsSinceEpoch.toDouble();
+          maxX = maxDate.millisecondsSinceEpoch.toDouble();
+          
+          // Ensure minimal visible range (e.g. 6 hours) if data points are too close
+          if (maxX - minX < 21600000) { 
+             minX -= 10800000; // -3h
+             maxX += 10800000; // +3h
+          }
         } else {
           // Default X range if no data
           final now = DateTime.now();
+          // Snap 'now' to next hour
+          final snappedNow = DateTime(now.year, now.month, now.day, now.hour + 1);
+          
           Duration d = const Duration(hours: 24);
           if (range == '7D') d = const Duration(days: 7);
           else if (range == '14D') d = const Duration(days: 14);
           else if (range == '30D') d = const Duration(days: 30);
-          minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
-          maxX = now.millisecondsSinceEpoch.toDouble();
+          
+          maxX = snappedNow.millisecondsSinceEpoch.toDouble();
+          minX = snappedNow.subtract(d).millisecondsSinceEpoch.toDouble();
         }
+
+        // Determine dynamic interval to avoid overlapping and odd times
+        // 1D (24h) -> 3 hour interval (8 ticks)
+        // 7D+ -> 1 day interval
+        double? interval;
+        final rangeMs = maxX - minX;
+        
+        if (rangeMs <= 86400000) { // <= 24h
+           interval = 10800000; // 3 hours
+        } else if (rangeMs <= 604800000) { // <= 7d
+           interval = 86400000; // 1 day
+        } 
+        // For >7D, let auto-calculate or set larger fixed interval if needed
 
         // Determine Y-Axis range
         double minY = threshold != null ? (threshold!.minValue - 20).clamp(0, double.infinity) : 60;
@@ -538,8 +567,23 @@ class _GlucoseTrendsSection extends StatelessWidget {
                         reservedSize: 30,
                         // No interval set - let FL Chart calculate the best fit automatically
                         getTitlesWidget: (val, meta) {
+                          // 1. Skip strictly first and last to prevent edge clipping
+                          if (val == meta.min || val == meta.max) {
+                            return const SizedBox.shrink();
+                          }
+                          
+                          // 2. Skip if too close to edges (3% margin)
+                          final range = meta.max - meta.min;
+                          if (val < meta.min + (range * 0.03) || val > meta.max - (range * 0.03)) {
+                             return const SizedBox.shrink();
+                          }
+
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
+                          
+                          // 3. Format: 'h a' (e.g. 3 PM) avoids odd minutes like 10:52
+                          final fmt = (rangeMs <= 86400000) 
+                              ? DateFormat('h a') 
+                              : DateFormat('M/d');
                           
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
