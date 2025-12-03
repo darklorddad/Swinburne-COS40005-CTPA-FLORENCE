@@ -528,7 +528,8 @@ class _LdlTargetSection extends StatelessWidget {
                     
                     // 2. Target Line
                     Positioned(
-                      left: targetPos - 1, 
+                      left: targetPos - 30, 
+                      width: 60,
                       top: 15, 
                       child: Column(
                         children: [
