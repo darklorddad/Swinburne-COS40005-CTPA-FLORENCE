@@ -160,7 +160,7 @@ class AppRoutes {
         return _buildRoute(const ClinicianProfileScreen(), settings);
 
       case adminDashboard:
-        return _buildRoute(const SuperAdminDashboardScreen(), settings);
+        return _buildRoute(const AdminDashboardScreen(), settings);
 
       default:
         return _buildRoute(

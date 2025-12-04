@@ -15,7 +15,7 @@ class AdminRoutes {
   static const String login = '/admin/login';
 
   // Dashboards
-  static const String superAdminDashboard = '/admin/super-dashboard';
+  static const String adminDashboard = '/admin/home';
   static const String hospitalAdminDashboard = '/admin/hospital-dashboard';
   static const String dashboard = '/admin/dashboard'; // Auto-redirect based on role
 
@@ -116,13 +116,13 @@ class AdminRoutes {
         // Auto-redirect based on role
         return _buildDashboardRoute(settings);
 
-      case AdminRoutes.superAdminDashboard:
+      case AdminRoutes.adminDashboard:
         return _buildGuardedRoute(
           settings: settings,
-          requiredRole: AdminRole.superAdmin,
+          requiredRole: AdminRole.admin,
           builder: (_) => _PlaceholderScreen(
-            title: 'Super Admin Dashboard',
-            route: superAdminDashboard,
+            title: 'Admin Dashboard',
+            route: adminDashboard,
           ),
         );
 
@@ -495,8 +495,8 @@ class AdminRoutes {
 
     // Redirect to appropriate dashboard based on role
     String dashboardRoute;
-    if (currentUser.isSuperAdmin) {
-      dashboardRoute = superAdminDashboard;
+    if (currentUser.isAdmin) {
+      dashboardRoute = adminDashboard;
     } else if (currentUser.isHospitalAdmin) {
       dashboardRoute = hospitalAdminDashboard;
     } else {

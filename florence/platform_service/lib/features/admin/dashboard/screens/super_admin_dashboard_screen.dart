@@ -5,17 +5,17 @@ import '../../core/services/admin_auth_service.dart';
 import '../../core/services/permission_service.dart';
 import '../../../../config/admin_routes.dart';
 
-/// Super Admin Dashboard
+/// Admin Dashboard (Global)
 /// System-wide overview with metrics, recent activity, and quick actions
-class SuperAdminDashboardScreen extends StatefulWidget {
-  const SuperAdminDashboardScreen({super.key});
+class AdminDashboardScreen extends StatefulWidget {
+  const AdminDashboardScreen({super.key});
 
   @override
-  State<SuperAdminDashboardScreen> createState() =>
-      _SuperAdminDashboardScreenState();
+  State<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
 }
 
-class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
+class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final _authService = AdminAuthService();
   bool _isLoading = false;
 
@@ -36,8 +36,8 @@ class _SuperAdminDashboardScreenState extends State<SuperAdminDashboardScreen> {
     final currentUser = PermissionService().currentUser;
 
     return AdminScaffold(
-      title: 'Super Admin Dashboard',
-      currentRoute: AdminRoutes.superAdminDashboard,
+      title: 'Admin Dashboard',
+      currentRoute: AdminRoutes.adminDashboard,
       body: LoadingOverlay(
         isLoading: _isLoading,
         child: SingleChildScrollView(

@@ -40,8 +40,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
     final currentUser = _permissionService.currentUser;
     List<dynamic> users;
 
-    // Super Admin sees all users, Hospital Admin sees only org users
-    if (_permissionService.isSuperAdmin) {
+    // Global Admin sees all users, Hospital Admin sees only org users
+    if (_permissionService.isAdmin) {
       users = _authService.getAllUsers();
     } else if (currentUser?.organizationId != null) {
       users = _authService
@@ -182,7 +182,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                     items: const [
                       DropdownMenuItem(value: 'all', child: Text('All Roles')),
                       DropdownMenuItem(
-                          value: 'superadmin', child: Text('Super Admin')),
+                          value: 'admin', child: Text('Admin')),
                       DropdownMenuItem(
                           value: 'hospitaladmin', child: Text('Hospital Admin')),
                     ],

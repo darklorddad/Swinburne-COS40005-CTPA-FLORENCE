@@ -153,13 +153,13 @@ class RoleGuard extends StatelessWidget {
   }
 }
 
-/// Permission Guard for Super Admin only
-class SuperAdminGuard extends StatelessWidget {
+/// Permission Guard for Global Admin only
+class AdminGuard extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
   final bool showFallback;
 
-  const SuperAdminGuard({
+  const AdminGuard({
     super.key,
     required this.child,
     this.fallback,
@@ -169,7 +169,7 @@ class SuperAdminGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
-      role: AdminRole.superAdmin,
+      role: AdminRole.admin,
       fallback: fallback,
       showFallback: showFallback,
       child: child,

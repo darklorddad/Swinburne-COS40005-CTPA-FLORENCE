@@ -49,8 +49,8 @@ class AdminSidebar extends StatelessWidget {
 
                 const SizedBox(height: 4),
 
-                // Organizations (Super Admin only)
-                SuperAdminGuard(
+                // Organizations (Global Admin only)
+                AdminGuard(
                   child: Column(
                     children: [
                       _buildSectionHeader(context, 'SYSTEM MANAGEMENT'),
@@ -102,7 +102,7 @@ class AdminSidebar extends StatelessWidget {
 
                 // Roles & Permissions (Admin only)
                 PermissionGuard(
-                  anyRoles: [AdminRole.superAdmin, AdminRole.hospitalAdmin],
+                  anyRoles: [AdminRole.admin, AdminRole.hospitalAdmin],
                   child: Column(
                     children: [
                       _buildSectionHeader(context, 'ACCESS CONTROL'),
@@ -176,8 +176,8 @@ class AdminSidebar extends StatelessWidget {
 
                 const SizedBox(height: 4),
 
-                // Audit Logs (Super Admin only)
-                SuperAdminGuard(
+                // Audit Logs (Global Admin only)
+                AdminGuard(
                   child: Column(
                     children: [
                       _buildSectionHeader(context, 'MONITORING'),

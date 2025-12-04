@@ -122,15 +122,15 @@ class AdminAuthService {
   // ============================================
 
   final List<AdminUser> _mockUsers = [
-    // Super Admin
+    // Global Admin
     AdminUser(
-      id: 'super_admin_001',
-      email: 'superadmin@biotective.com',
+      id: 'admin_001',
+      email: 'admin@biotective.com',
       firstName: 'Sarah',
       lastName: 'Anderson',
-      role: AdminRole.superAdmin,
+      role: AdminRole.admin,
       status: UserStatus.active,
-      organizationId: null, // Super Admin has no org restriction
+      organizationId: null, // Admin has no org restriction
       organizationName: null,
       phone: '+60 12-3456789',
       profileImageUrl: null,
@@ -331,9 +331,9 @@ class AdminAuthService {
     }
   }
 
-  /// Get all organizations (Super Admin only)
+  /// Get all organizations (Global Admin only)
   List<Organization> getAllOrganizations() {
-    if (_currentUser?.isSuperAdmin != true) {
+    if (_currentUser?.isAdmin != true) {
       return [];
     }
     return _mockOrganizations;
@@ -372,8 +372,8 @@ class AdminAuthService {
   /// Get demo credentials for testing
   static Map<String, Map<String, String>> getDemoCredentials() {
     return {
-      'Super Admin': {
-        'email': 'superadmin@biotective.com',
+      'Admin': {
+        'email': 'admin@biotective.com',
         'password': 'demo123',
         'description': 'Full system access',
       },

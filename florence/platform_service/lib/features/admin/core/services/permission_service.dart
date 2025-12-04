@@ -42,9 +42,9 @@ class PermissionService {
   // ROLE-BASED CHECKS
   // ============================================
 
-  /// Check if current user is Super Admin
-  bool get isSuperAdmin {
-    return currentUser?.isSuperAdmin ?? false;
+  /// Check if current user is Global Admin
+  bool get isAdmin {
+    return currentUser?.isAdmin ?? false;
   }
 
   /// Check if current user is Hospital Admin
@@ -72,8 +72,8 @@ class PermissionService {
   bool belongsToOrganization(String organizationId) {
     final userOrgId = currentUser?.organizationId;
     
-    // Super Admin has access to all organizations
-    if (isSuperAdmin) return true;
+    // Global Admin has access to all organizations
+    if (isAdmin) return true;
     
     // Check if user's org matches
     return userOrgId == organizationId;
@@ -81,14 +81,14 @@ class PermissionService {
 
   /// Check if current user can access data from specific organization
   bool canAccessOrganization(String organizationId) {
-    // Super Admin can access all organizations
-    if (isSuperAdmin) return true;
+    // Global Admin can access all organizations
+    if (isAdmin) return true;
     
     // Other roles can only access their own organization
     return belongsToOrganization(organizationId);
   }
 
-  /// Get current user's organization ID (null for Super Admin)
+  /// Get current user's organization ID (null for Global Admin)
   String? get currentOrganizationId {
     return currentUser?.organizationId;
   }

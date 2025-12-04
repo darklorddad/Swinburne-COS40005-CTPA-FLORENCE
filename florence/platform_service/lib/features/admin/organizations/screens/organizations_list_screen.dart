@@ -5,7 +5,7 @@ import '../../core/services/admin_auth_service.dart';
 import '../../../../config/admin_routes.dart';
 
 /// Organizations List Screen
-/// View and manage all organizations in the system (Super Admin only)
+/// View and manage all organizations in the system (Global Admin only)
 class OrganizationsListScreen extends StatefulWidget {
   const OrganizationsListScreen({super.key});
 
