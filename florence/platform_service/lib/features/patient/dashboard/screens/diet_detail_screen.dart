@@ -32,11 +32,6 @@ class DietAnalyticsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => AppRoutes.push(context, AppRoutes.logMeal),
-        backgroundColor: AppTheme.mealColor,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
       body: logsAsync.when(
         data: (logs) {
           // Sort logs descending by date, then by meal time priority
