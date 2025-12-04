@@ -275,9 +275,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: AppTheme.primaryBlue.withOpacity(0.1),
+                          border: Border.all(color: AppTheme.borderColor),
                         ),
                         child: ClipOval(
-                          child: _profileImageUrl != null
+                          child: (_profileImageUrl != null &&
+                                  _profileImageUrl!.isNotEmpty)
                               ? Image.network(
                                   _profileImageUrl!,
                                   fit: BoxFit.cover,
