@@ -420,11 +420,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 16),
           
-          _buildInfoRow(
-            'Diabetes Type',
-            _diabetesType,
-            Icons.medical_information,
-          ),
           const Divider(height: 24),
           _buildInfoRow(
             'Target Glucose Range',
