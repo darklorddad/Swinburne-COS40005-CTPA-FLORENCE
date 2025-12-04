@@ -175,6 +175,12 @@ async def get_own_patient_profile(patient_profile: dict = Depends(get_current_pa
     Retrieves the complete profile for the currently authenticated patient,
     including details from the `patient_profiles` table.
     """
+    # The profile_picture_url is retrieved here as part of the 'patient_profile' dictionary
+    # which comes from the 'get_current_patient_profile' dependency querying the 'patient_profiles' table.
+    
+    # Print URL to console as requested
+    print(f"DEBUG: Fetched Profile URL: {patient_profile.get('profile_picture_url')}")
+    
     return patient_profile
 
 @router.put("/me", summary="Update my own patient profile")
