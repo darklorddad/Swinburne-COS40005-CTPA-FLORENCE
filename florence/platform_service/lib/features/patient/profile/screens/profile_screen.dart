@@ -77,6 +77,74 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return ['+60', fullNumber.replaceAll(RegExp(r'\D'), '')];
   }
 
+  String _formatDisplayPhone(String phone) {
+    if (phone.isEmpty || phone == 'Not set') return phone;
+
+    // Sort by length desc so +60 matches before +6
+    final sortedCodes = _countryCodes
+      ..sort((a, b) => b['code']!.length.compareTo(a['code']!.length));
+
+    String? code;
+    for (final c in sortedCodes) {
+      if (phone.startsWith(c['code']!)) {
+        code = c['code'];
+        break;
+      }
+    }
+
+    if (code == null) return phone;
+
+    final number = phone.substring(code.length);
+
+    if (code == '+60') {
+      // Malaysia: +60 13-830 0886 (9 digits after +60) or +60 11-xxxx xxxx (10 digits)
+      if (number.length == 9) {
+        // e.g. 138300886 -> 13-830 0886
+        return '$code ${number.substring(0, 2)}-${number.substring(2, 5)} ${number.substring(5)}';
+      } else if (number.length >= 10) {
+        // e.g. 11xxxxxxxx -> 11-xxxx xxxx
+        return '$code ${number.substring(0, 2)}-${number.substring(2, 6)} ${number.substring(6)}';
+      }
+    } else if (code == '+1') {
+      // US/Can
+      if (number.length == 10) {
+        return '$code (${number.substring(0, 3)}) ${number.substring(3, 6)}-${number.substring(6)}';
+      }
+    } 
+    
+    // UK (+44) -> +44 7911 123456
+    else if (code == '+44') {
+      if (number.length >= 10) return '$code ${number.substring(0, 4)} ${number.substring(4)}';
+    }
+    
+    // Australia (+61) -> +61 412 345 678 (Standard mobile is 9 digits after 0)
+    else if (code == '+61') {
+      if (number.length == 9) return '$code ${number.substring(0, 3)} ${number.substring(3, 6)} ${number.substring(6)}';
+    }
+    
+    // Singapore (+65) -> +65 9123 4567 (8 digits)
+    else if (code == '+65') {
+      if (number.length == 8) return '$code ${number.substring(0, 4)} ${number.substring(4)}';
+    }
+    
+    // India (+91) -> +91 98765 43210 (10 digits)
+    else if (code == '+91') {
+      if (number.length == 10) return '$code ${number.substring(0, 5)} ${number.substring(5)}';
+    }
+    
+    // Indonesia (+62) -> +62 812-3456-7890
+    else if (code == '+62') {
+      if (number.length >= 10) return '$code ${number.substring(0, 3)}-${number.substring(3, 7)}-${number.substring(7)}';
+    }
+    
+    // Japan (+81) -> +81 90-1234-5678
+    else if (code == '+81') {
+      if (number.length == 10) return '$code ${number.substring(0, 2)}-${number.substring(2, 6)}-${number.substring(6)}';
+    }
+
+    return '$code $number';
+  }
+
   // Medications list
   List<Map<String, String>> _medications = [];
   
@@ -389,10 +457,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   setState(() => isSaving = true);
                   try {
                     final apiService = ApiService();
-                    
+
+                    String cleanPhone(String num) {
+                      if (num.startsWith('0')) return num.substring(1);
+                      return num;
+                    }
                     // Combine Country Code + Number
-                    final fullPhone = '$selectedPhoneCode${phoneNumController.text.trim()}';
-                    final fullEcPhone = '$selectedEcPhoneCode${ecPhoneNumController.text.trim()}';
+                    final fullPhone = '$selectedPhoneCode${cleanPhone(phoneNumController.text.trim())}';
+                    final fullEcPhone = '$selectedEcPhoneCode${cleanPhone(ecPhoneNumController.text.trim())}';
 
                     await apiService.put('/patients/me', {
                       'name': nameController.text.trim(),
@@ -565,80 +637,84 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Center(
             child: Column(
               children: [
-                GestureDetector(
-                  onTap: _uploadProfilePicture,
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
-                          border: Border.all(color: AppTheme.borderColor),
-                        ),
-                        child: ClipOval(
-                          child: (_profileImageUrl != null &&
-                                  _profileImageUrl!.isNotEmpty)
-                              ? Image.network(
-                                  _profileImageUrl!,
-                                  fit: BoxFit.cover,
-                                  width: 100,
-                                  height: 100,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Text(
-                                        _userName.isNotEmpty
-                                            ? _userName[0].toUpperCase()
-                                            : 'U',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displayMedium
-                                            ?.copyWith(
-                                              color: AppTheme.primaryBlue,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                )
-                              : Center(
-                                  child: Text(
-                                    _userName.isNotEmpty
-                                        ? _userName[0].toUpperCase()
-                                        : 'U',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displayMedium
-                                        ?.copyWith(
-                                          color: AppTheme.primaryBlue,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
+                // Wrap GestureDetector with MouseRegion
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _uploadProfilePicture,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryBlue,
                             shape: BoxShape.circle,
-                            border: Border.all(
+                            color: AppTheme.primaryBlue.withOpacity(0.1),
+                            border: Border.all(color: AppTheme.borderColor),
+                          ),
+                          child: ClipOval(
+                            child: (_profileImageUrl != null &&
+                                    _profileImageUrl!.isNotEmpty)
+                                ? Image.network(
+                                    _profileImageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: 100,
+                                    height: 100,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Text(
+                                          _userName.isNotEmpty
+                                              ? _userName[0].toUpperCase()
+                                              : 'U',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displayMedium
+                                              ?.copyWith(
+                                                color: AppTheme.primaryBlue,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
+                                    child: Text(
+                                      _userName.isNotEmpty
+                                          ? _userName[0].toUpperCase()
+                                          : 'U',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayMedium
+                                          ?.copyWith(
+                                            color: AppTheme.primaryBlue,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBlue,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 16,
                               color: Colors.white,
-                              width: 2,
                             ),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 16,
-                            color: Colors.white,
-                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -671,7 +747,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 24),
           _buildInfoRow('Gender', _gender, Icons.wc),
           const Divider(height: 24),
-          _buildInfoRow('Phone Number', _phoneNumber, Icons.phone),
+          _buildInfoRow('Phone Number', _formatDisplayPhone(_phoneNumber), Icons.phone),
 
           const SizedBox(height: 40),
 
@@ -681,7 +757,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           _buildInfoRow('Name', _emergencyContactName, Icons.person),
           const Divider(height: 24),
-          _buildInfoRow('Phone Number', _emergencyContactPhone, Icons.phone),
+          _buildInfoRow('Phone Number', _formatDisplayPhone(_emergencyContactPhone), Icons.phone),
           const Divider(height: 24),
           _buildInfoRow('Relationship', _emergencyContactRelationship, Icons.people),
           const SizedBox(height: 24),
