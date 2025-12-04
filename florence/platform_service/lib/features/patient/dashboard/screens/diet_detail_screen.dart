@@ -458,10 +458,10 @@ class _DietHistoryListState extends State<_DietHistoryList> {
 
   Widget _buildLogItem(BuildContext context, DailyPatientLog log) {
     // Calculate spike and determine color/text
-    String valueText = 'Logged';
+    String valueText = 'N/A';
     String unitText = '';
     Color statusColor = AppTheme.primaryBlue;
-    String? deltaText;
+    String? deltaText = 'N/A';
 
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
       final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
@@ -873,7 +873,7 @@ class _TrafficLightCalendar extends StatelessWidget {
             runSpacing: 8,
             children: [
               _LegendDot(color: AppTheme.textSecondaryColor.withOpacity(0.5), label: 'No Data', isOutline: true),
-              _LegendDot(color: AppTheme.primaryBlue, label: 'Logged'),
+              _LegendDot(color: AppTheme.primaryBlue, label: 'No Glucose'),
               _LegendDot(color: AppTheme.primaryGreen, label: 'Good'),
               _LegendDot(color: AppTheme.warningColor, label: 'Fair'),
               _LegendDot(color: AppTheme.errorColor, label: 'High Spike'),
