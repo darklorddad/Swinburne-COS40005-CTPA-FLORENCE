@@ -77,6 +77,100 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return ['+60', fullNumber.replaceAll(RegExp(r'\D'), '')];
   }
 
+  // Medications list
+  List<Map<String, String>> _medications = [];
+  
+  // Settings
+  String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
+
+  // App info
+  final String _appVersion = '1.0.0';
+  
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  /// Upload Profile Picture via Backend
+  Future<void> _uploadProfilePicture() async {
+    final picker = ImagePicker();
+    final imageFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 600,
+      maxHeight: 600,
+    );
+
+    if (imageFile == null) return;
+
+    // Show loading indicator
+    Helpers.showLoadingDialog(context, message: "Uploading...");
+
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final fileName = imageFile.name;
+
+      final ApiService apiService = ApiService();
+      
+      // Call the backend endpoint
+      final response = await apiService.uploadFile(
+        '/patients/me/avatar', 
+        'file', 
+        bytes, 
+        fileName
+      );
+
+      // Optimistic update
+      if (mounted) {
+        setState(() {
+          _profileImageUrl = response['url'];
+        });
+        Helpers.hideLoadingDialog(context);
+        Helpers.showSuccess(context, 'Profile picture updated');
+        // Refresh provider to sync everything
+        ref.refresh(userProfileProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        Helpers.hideLoadingDialog(context);
+        Helpers.showError(context, 'Failed to upload image: $e');
+      }
+    }
+  }
+  
+  /// Handle logout
+  Future<void> _handleLogout() async {
+    final confirmed = await Helpers.showConfirmDialog(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+    );
+    
+    if (confirmed) {
+      try {
+        // Clear chatbot session state
+        ref.read(chatProvider.notifier).resetSession();
+        
+        await supabase.auth.signOut();
+        if (mounted) {
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
+        }
+      } catch (e) {
+        if (mounted) {
+          // In demo mode, just navigate to login
+          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
+        }
+      }
+    }
+  }
+  
+  /// Edit profile
+  void _editProfile() {
+    final profileData = ref.read(userProfileProvider).value;
+    if (profileData != null) {
+      _showEditProfileDialog(profileData);
+    }
+  }
+
   /// Show edit profile dialog
   void _showEditProfileDialog(Map<String, dynamic> profile) {
     final nameController = TextEditingController(text: profile['name']);
@@ -335,274 +429,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 }
-
-  // Medications list
-  List<Map<String, String>> _medications = [];
-  
-  // Settings
-  String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
-
-  // App info
-  final String _appVersion = '1.0.0';
-  
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  /// Upload Profile Picture via Backend
-  Future<void> _uploadProfilePicture() async {
-    final picker = ImagePicker();
-    final imageFile = await picker.pickImage(
-      source: ImageSource.gallery,
-      maxWidth: 600,
-      maxHeight: 600,
-    );
-
-    if (imageFile == null) return;
-
-    // Show loading indicator
-    Helpers.showLoadingDialog(context, message: "Uploading...");
-
-    try {
-      final bytes = await imageFile.readAsBytes();
-      final fileName = imageFile.name;
-
-      final ApiService apiService = ApiService();
-      
-      // Call the backend endpoint
-      final response = await apiService.uploadFile(
-        '/patients/me/avatar', 
-        'file', 
-        bytes, 
-        fileName
-      );
-
-      // Optimistic update
-      if (mounted) {
-        setState(() {
-          _profileImageUrl = response['url'];
-        });
-        Helpers.hideLoadingDialog(context);
-        Helpers.showSuccess(context, 'Profile picture updated');
-        // Refresh provider to sync everything
-        ref.refresh(userProfileProvider);
-      }
-    } catch (e) {
-      if (mounted) {
-        Helpers.hideLoadingDialog(context);
-        Helpers.showError(context, 'Failed to upload image: $e');
-      }
-    }
-  }
-  
-  /// Handle logout
-  Future<void> _handleLogout() async {
-    final confirmed = await Helpers.showConfirmDialog(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out?',
-    );
-    
-    if (confirmed) {
-      try {
-        // Clear chatbot session state
-        ref.read(chatProvider.notifier).resetSession();
-        
-        await supabase.auth.signOut();
-        if (mounted) {
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      } catch (e) {
-        if (mounted) {
-          // In demo mode, just navigate to login
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      }
-    }
-  }
-  
-  /// Edit profile
-  void _editProfile() {
-    final profileData = ref.read(userProfileProvider).value;
-    if (profileData != null) {
-      _showEditProfileDialog(profileData);
-    }
-  }
-
-  /// Show edit profile dialog
-  void _showEditProfileDialog(Map<String, dynamic> profile) {
-    final nameController = TextEditingController(text: profile['name']);
-    final emailController = TextEditingController(text: profile['email']);
-    final phoneController = TextEditingController(text: profile['phone_number']);
-    final genderController = TextEditingController(text: profile['gender']);
-    final ecNameController = TextEditingController(text: profile['emergency_contact_name']);
-    final ecPhoneController = TextEditingController(text: profile['emergency_contact_phone']);
-    final ecRelController = TextEditingController(text: profile['emergency_contact_relationship']);
-    
-    DateTime? selectedDob = profile['date_of_birth'] != null 
-        ? DateTime.tryParse(profile['date_of_birth']) 
-        : null;
-        
-    final dobController = TextEditingController(
-      text: selectedDob != null ? Formatters.dateShort(selectedDob) : '',
-    );
-
-    final formKey = GlobalKey<FormState>();
-    bool isSaving = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('Edit Profile'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Form(
-                key: formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CustomTextField(
-                      label: 'Full Name',
-                      controller: nameController,
-                      validator: Validators.name,
-                      prefixIcon: const Icon(Icons.person_outline),
-                    ),
-                    const SizedBox(height: 16),
-                    CustomTextField(
-                      label: 'Email',
-                      controller: emailController,
-                      validator: Validators.email,
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      keyboardType: TextInputType.emailAddress,
-                    ),
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: () async {
-                        final date = await showDatePicker(
-                          context: context,
-                          initialDate: selectedDob ?? DateTime(1990),
-                          firstDate: DateTime(1900),
-                          lastDate: DateTime.now(),
-                        );
-                        if (date != null) {
-                          setState(() {
-                            selectedDob = date;
-                            dobController.text = Formatters.dateShort(date);
-                          });
-                        }
-                      },
-                      child: AbsorbPointer(
-                        child: CustomTextField(
-                          label: 'Date of Birth',
-                          controller: dobController,
-                          prefixIcon: const Icon(Icons.calendar_today),
-                          suffixIcon: const Icon(Icons.arrow_drop_down),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownField<String>(
-                      label: 'Gender',
-                      value: ['Male', 'Female', 'Other'].contains(genderController.text) 
-                          ? genderController.text 
-                          : null,
-                      items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                      onChanged: (val) {
-                        setState(() {
-                           genderController.text = val ?? '';
-                        });
-                      },
-                      prefixIcon: const Icon(Icons.wc),
-                    ),
-                    const SizedBox(height: 16),
-                    CustomTextField(
-                      label: 'Phone Number',
-                      controller: phoneController,
-                      validator: Validators.phone,
-                      prefixIcon: const Icon(Icons.phone),
-                      keyboardType: TextInputType.phone,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Emergency Contact',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 16),
-                    CustomTextField(
-                      label: 'Contact Name',
-                      controller: ecNameController,
-                      validator: Validators.required,
-                      prefixIcon: const Icon(Icons.person),
-                    ),
-                    const SizedBox(height: 16),
-                    CustomTextField(
-                      label: 'Relationship',
-                      controller: ecRelController,
-                      validator: Validators.required,
-                      prefixIcon: const Icon(Icons.people),
-                    ),
-                    const SizedBox(height: 16),
-                    CustomTextField(
-                      label: 'Contact Phone',
-                      controller: ecPhoneController,
-                      validator: Validators.phone,
-                      prefixIcon: const Icon(Icons.phone),
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSaving ? null : () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: isSaving ? null : () async {
-                if (formKey.currentState!.validate()) {
-                  setState(() => isSaving = true);
-                  try {
-                    final apiService = ApiService();
-                    await apiService.put('/patients/me', {
-                      'name': nameController.text.trim(),
-                      'email': emailController.text.trim(),
-                      'phone_number': phoneController.text.trim(),
-                      'gender': genderController.text,
-                      'date_of_birth': selectedDob?.toIso8601String().split('T')[0],
-                      'emergency_contact_name': ecNameController.text.trim(),
-                      'emergency_contact_relationship': ecRelController.text.trim(),
-                      'emergency_contact_phone': ecPhoneController.text.trim(),
-                    });
-                    
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ref.refresh(userProfileProvider);
-                      Helpers.showSuccess(context, 'Profile updated successfully');
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      Helpers.showError(context, 'Failed to update profile: ${e.toString().replaceAll('Exception: ', '')}');
-                    }
-                  } finally {
-                    if (mounted) setState(() => isSaving = false);
-                  }
-                }
-              },
-              child: isSaving 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text('Save'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
   /// Edit health profile
   void _editHealthProfile() {
     Helpers.showInfo(context, 'Edit health profile feature coming soon');
