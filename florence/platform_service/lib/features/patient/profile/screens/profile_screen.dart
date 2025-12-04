@@ -8,8 +8,10 @@ import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../main.dart';
 import '../../../../shared/widgets/card_widgets.dart';
+import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
 import '../providers/user_profile_provider.dart';
 
@@ -36,7 +38,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _diabetesType = 'Type 2';
   double _targetMin = 70.0;
   double _targetMax = 180.0;
+
+  final List<Map<String, String>> _countryCodes = [
+    {'code': '+1', 'name': 'USA/CAN'},
+    {'code': '+44', 'name': 'UK'},
+    {'code': '+60', 'name': 'MY'},
+    {'code': '+61', 'name': 'AUS'},
+    {'code': '+65', 'name': 'SGP'},
+    {'code': '+81', 'name': 'JPN'},
+    {'code': '+86', 'name': 'CHN'},
+    {'code': '+91', 'name': 'IND'},
+    {'code': '+62', 'name': 'IDN'},
+    {'code': '+63', 'name': 'PHL'},
+    {'code': '+66', 'name': 'THA'},
+    {'code': '+84', 'name': 'VNM'},
+    {'code': '+49', 'name': 'DEU'},
+    {'code': '+33', 'name': 'FRA'}
+  ];
+
+  final List<String> _relationships = ['Parent', 'Spouse', 'Child', 'Sibling', 'Partner', 'Guardian', 'Relative', 'Friend', 'Other'];
   
+  List<String> _parsePhone(String? fullNumber) {
+    if (fullNumber == null || fullNumber.isEmpty) return ['+60', ''];
+    
+    // Sort codes by length desc so +1 doesn't match +123
+    final codes = _countryCodes.map((e) => e['code']!).toList()
+      ..sort((a, b) => b.length.compareTo(a.length));
+
+    for (final code in codes) {
+      if (fullNumber.startsWith(code)) {
+        String number = fullNumber.substring(code.length).trim();
+        // Remove any formatting spaces/dashes for the input field
+        number = number.replaceAll(RegExp(r'\D'), ''); 
+        return [code, number];
+      }
+    }
+    // Default fallback
+    return ['+60', fullNumber.replaceAll(RegExp(r'\D'), '')];
+  }
+
   // Medications list
   List<Map<String, String>> _medications = [];
   
@@ -124,8 +164,268 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   
   /// Edit profile
   void _editProfile() {
-    Helpers.showInfo(context, 'Edit profile feature coming soon');
-    // TODO: Navigate to edit profile screen or show bottom sheet
+    final profileData = ref.read(userProfileProvider).value;
+    if (profileData != null) {
+      _showEditProfileDialog(profileData);
+    }
+  }
+
+  /// Show edit profile dialog
+  void _showEditProfileDialog(Map<String, dynamic> profile) {
+    final nameController = TextEditingController(text: profile['name']);
+    final emailController = TextEditingController(text: profile['email']);
+    
+    // Parse User Phone
+    final parsedPhone = _parsePhone(profile['phone_number']);
+    String selectedPhoneCode = parsedPhone[0];
+    final phoneNumController = TextEditingController(text: parsedPhone[1]);
+
+    final genderController = TextEditingController(text: profile['gender']);
+    
+    // Emergency Contact
+    final ecNameController = TextEditingController(text: profile['emergency_contact_name']);
+    
+    // Parse EC Phone
+    final parsedEcPhone = _parsePhone(profile['emergency_contact_phone']);
+    String selectedEcPhoneCode = parsedEcPhone[0];
+    final ecPhoneNumController = TextEditingController(text: parsedEcPhone[1]);
+    
+    String? selectedRelationship = profile['emergency_contact_relationship'];
+    if (!_relationships.contains(selectedRelationship)) selectedRelationship = null;
+
+    DateTime? selectedDob = profile['date_of_birth'] != null 
+        ? DateTime.tryParse(profile['date_of_birth']) 
+        : null;
+        
+    final dobController = TextEditingController(
+      text: selectedDob != null ? Formatters.dateShort(selectedDob) : '',
+    );
+
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    // Calculate max date allowed (13 years ago from today)
+    final now = DateTime.now();
+    final maxDateOfBirth = DateTime(now.year - 13, now.month, now.day);
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomTextField(
+                      label: 'Full Name',
+                      controller: nameController,
+                      validator: Validators.name,
+                      prefixIcon: const Icon(Icons.person_outline),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Email',
+                      controller: emailController,
+                      validator: Validators.email,
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDob != null && selectedDob!.isBefore(maxDateOfBirth) 
+                              ? selectedDob! 
+                              : maxDateOfBirth,
+                          firstDate: DateTime(1900),
+                          lastDate: maxDateOfBirth, // Enforce 13yo limit
+                          helpText: 'SELECT DATE OF BIRTH (Min Age: 13)',
+                        );
+                        if (date != null) {
+                          setState(() {
+                            selectedDob = date;
+                            dobController.text = Formatters.dateShort(date);
+                          });
+                        }
+                      },
+                      child: AbsorbPointer(
+                        child: CustomTextField(
+                          label: 'Date of Birth',
+                          controller: dobController,
+                          prefixIcon: const Icon(Icons.calendar_today),
+                          suffixIcon: const Icon(Icons.arrow_drop_down),
+                          validator: (val) => val == null || val.isEmpty ? 'Date of birth required' : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownField<String>(
+                      label: 'Gender',
+                      value: ['Male', 'Female', 'Other'].contains(genderController.text) 
+                          ? genderController.text 
+                          : null,
+                      items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                           genderController.text = val ?? '';
+                        });
+                      },
+                      validator: (val) => val == null ? 'Gender required' : null,
+                      prefixIcon: const Icon(Icons.wc),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Phone Number with Country Code
+                    Text('Phone Number', style: Theme.of(context).textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: DropdownButtonFormField<String>(
+                            value: selectedPhoneCode,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            items: _countryCodes.map((c) => DropdownMenuItem(
+                              value: c['code'],
+                              child: Text('${c['code']}'),
+                            )).toList(),
+                            onChanged: (val) => setState(() => selectedPhoneCode = val!),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CustomTextField(
+                            controller: phoneNumController,
+                            validator: Validators.phoneDigits, // Validate digits only
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Emergency Contact',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Contact Name',
+                      controller: ecNameController,
+                      validator: Validators.name,
+                      prefixIcon: const Icon(Icons.person),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownField<String>(
+                      label: 'Relationship',
+                      value: selectedRelationship,
+                      items: _relationships.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                      onChanged: (val) => setState(() => selectedRelationship = val),
+                      validator: (val) => val == null ? 'Required' : null,
+                      prefixIcon: const Icon(Icons.people),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // EC Phone Number with Country Code
+                    Text('Contact Phone', style: Theme.of(context).textTheme.labelLarge),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: DropdownButtonFormField<String>(
+                            value: selectedEcPhoneCode,
+                            isExpanded: true,
+                            decoration: InputDecoration(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                            items: _countryCodes.map((c) => DropdownMenuItem(
+                              value: c['code'],
+                              child: Text('${c['code']}'),
+                            )).toList(),
+                            onChanged: (val) => setState(() => selectedEcPhoneCode = val!),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: CustomTextField(
+                            controller: ecPhoneNumController,
+                            validator: Validators.phoneDigits,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving ? null : () async {
+                if (formKey.currentState!.validate()) {
+                  setState(() => isSaving = true);
+                  try {
+                    final apiService = ApiService();
+                    
+                    // Combine Country Code + Number
+                    final fullPhone = '$selectedPhoneCode${phoneNumController.text.trim()}';
+                    final fullEcPhone = '$selectedEcPhoneCode${ecPhoneNumController.text.trim()}';
+
+                    await apiService.put('/patients/me', {
+                      'name': nameController.text.trim(),
+                      'email': emailController.text.trim(),
+                      'phone_number': fullPhone,
+                      'gender': genderController.text,
+                      'date_of_birth': selectedDob?.toIso8601String().split('T')[0],
+                      'emergency_contact_name': ecNameController.text.trim(),
+                      'emergency_contact_relationship': selectedRelationship,
+                      'emergency_contact_phone': fullEcPhone,
+                    });
+                    
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ref.refresh(userProfileProvider);
+                      Helpers.showSuccess(context, 'Profile updated successfully');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      Helpers.showError(context, 'Failed to update profile: ${e.toString().replaceAll('Exception: ', '')}');
+                    }
+                  } finally {
+                    if (mounted) setState(() => isSaving = false);
+                  }
+                }
+              },
+              child: isSaving 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   
   /// Edit health profile
@@ -419,11 +719,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
           const SizedBox(height: 16),
           
-          _buildInfoRow(
-            'Diabetes Type',
-            _diabetesType,
-            Icons.medical_information,
-          ),
           const Divider(height: 24),
           _buildInfoRow(
             'Target Glucose Range',

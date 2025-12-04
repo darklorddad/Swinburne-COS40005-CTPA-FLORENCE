@@ -42,7 +42,6 @@ jobs:
         run: flutter pub get
 
       # 6. Build APK
-      # Injects the calculated version name (e.g., 1.2.0)
       - name: Build APK
         run: flutter build apk --debug --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }}
 
