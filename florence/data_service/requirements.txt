@@ -4,3 +4,4 @@ supabase
 python-dotenv
 httpx
 pydantic[email]
+python-multipart
