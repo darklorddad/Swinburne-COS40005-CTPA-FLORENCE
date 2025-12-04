@@ -263,8 +263,8 @@ class AccessDeniedScreen extends StatelessWidget {
         return '/admin/super-dashboard';
       case AdminRole.hospitalAdmin:
         return '/admin/hospital-dashboard';
-      case AdminRole.doctor:
-        return '/admin/doctor-dashboard';
+      case AdminRole.clinician:
+        return '/admin/clinician-dashboard';
     }
   }
 }

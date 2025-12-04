@@ -52,9 +52,9 @@ class PermissionService {
     return currentUser?.isHospitalAdmin ?? false;
   }
 
-  /// Check if current user is Doctor
-  bool get isDoctor {
-    return currentUser?.isDoctor ?? false;
+  /// Check if current user is Clinician
+  bool get isClinician {
+    return currentUser?.isClinician ?? false;
   }
 
   /// Check if current user has specific role

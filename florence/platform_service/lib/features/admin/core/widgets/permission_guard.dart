@@ -201,13 +201,13 @@ class HospitalAdminGuard extends StatelessWidget {
   }
 }
 
-/// Permission Guard for Doctor only
-class DoctorGuard extends StatelessWidget {
+/// Permission Guard for Clinician only
+class ClinicianGuard extends StatelessWidget {
   final Widget child;
   final Widget? fallback;
   final bool showFallback;
 
-  const DoctorGuard({
+  const ClinicianGuard({
     super.key,
     required this.child,
     this.fallback,
@@ -217,7 +217,7 @@ class DoctorGuard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RoleGuard(
-      role: AdminRole.doctor,
+      role: AdminRole.clinician,
       fallback: fallback,
       showFallback: showFallback,
       child: child,

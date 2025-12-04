@@ -244,13 +244,13 @@ class AdminAuthService {
       lastLoginAt: DateTime(2025, 10, 25, 9, 15),
     ),
 
-    // Doctor - City General Hospital
+    // Clinician - City General Hospital
     AdminUser(
       id: 'doctor_001',
       email: 'dr.johnson@citygeneral.com',
       firstName: 'James',
       lastName: 'Johnson',
-      role: AdminRole.doctor,
+      role: AdminRole.clinician,
       status: UserStatus.active,
       organizationId: 'org_001',
       organizationName: 'City General Hospital',
@@ -278,13 +278,13 @@ class AdminAuthService {
       lastLoginAt: DateTime(2025, 10, 27, 7, 00),
     ),
 
-    // Doctor - Memorial Medical Center
+    // Clinician - Memorial Medical Center
     AdminUser(
       id: 'doctor_002',
       email: 'dr.patel@memorialmedical.com',
       firstName: 'Priya',
       lastName: 'Patel',
-      role: AdminRole.doctor,
+      role: AdminRole.clinician,
       status: UserStatus.active,
       organizationId: 'org_002',
       organizationName: 'Memorial Medical Center',
@@ -306,13 +306,13 @@ class AdminAuthService {
       lastLoginAt: DateTime(2025, 10, 26, 16, 30),
     ),
 
-    // Doctor - Community Health Clinic
+    // Clinician - Community Health Clinic
     AdminUser(
       id: 'doctor_003',
       email: 'dr.wong@communityhealthclinic.com',
       firstName: 'David',
       lastName: 'Wong',
-      role: AdminRole.doctor,
+      role: AdminRole.clinician,
       status: UserStatus.active,
       organizationId: 'org_003',
       organizationName: 'Community Health Clinic',
@@ -473,17 +473,17 @@ class AdminAuthService {
         'password': 'demo123',
         'description': 'Memorial Medical Center access',
       },
-      'Doctor (City General)': {
+      'Clinician (City General)': {
         'email': 'dr.johnson@citygeneral.com',
         'password': 'demo123',
         'description': 'Clinical access - City General',
       },
-      'Doctor (Memorial)': {
+      'Clinician (Memorial)': {
         'email': 'dr.patel@memorialmedical.com',
         'password': 'demo123',
         'description': 'Clinical access - Memorial',
       },
-      'Doctor (Community)': {
+      'Clinician (Community)': {
         'email': 'dr.wong@communityhealthclinic.com',
         'password': 'demo123',
         'description': 'Clinical access - Community Clinic',

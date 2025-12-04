@@ -17,7 +17,7 @@ class AdminRoutes {
   // Dashboards
   static const String superAdminDashboard = '/admin/super-dashboard';
   static const String hospitalAdminDashboard = '/admin/hospital-dashboard';
-  static const String doctorDashboard = '/admin/doctor-dashboard';
+  static const String clinicianDashboard = '/admin/clinician-dashboard';
   static const String dashboard = '/admin/dashboard'; // Auto-redirect based on role
 
   // Organizations (Super Admin only)
@@ -137,13 +137,13 @@ class AdminRoutes {
           ),
         );
 
-      case AdminRoutes.doctorDashboard:
+      case AdminRoutes.clinicianDashboard:
         return _buildGuardedRoute(
           settings: settings,
-          requiredRole: AdminRole.doctor,
+          requiredRole: AdminRole.clinician,
           builder: (_) => _PlaceholderScreen(
-            title: 'Doctor Dashboard',
-            route: doctorDashboard,
+            title: 'Clinician Dashboard',
+            route: clinicianDashboard,
           ),
         );
 
@@ -510,8 +510,8 @@ class AdminRoutes {
       dashboardRoute = superAdminDashboard;
     } else if (currentUser.isHospitalAdmin) {
       dashboardRoute = hospitalAdminDashboard;
-    } else if (currentUser.isDoctor) {
-      dashboardRoute = doctorDashboard;
+    } else if (currentUser.isClinician) {
+      dashboardRoute = clinicianDashboard;
     } else {
       // Fallback
       dashboardRoute = settings.name ?? dashboard;

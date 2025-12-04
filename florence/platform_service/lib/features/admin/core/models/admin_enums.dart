@@ -8,7 +8,7 @@
 enum AdminRole {
   superAdmin('Super Admin', 'Full system access'),
   hospitalAdmin('Hospital Admin', 'Organization-level access'),
-  doctor('Doctor', 'Clinical access');
+  clinician('Clinician', 'Clinical access');
 
   final String displayName;
   final String description;
@@ -21,8 +21,8 @@ enum AdminRole {
   /// Check if this role is Hospital Admin
   bool get isHospitalAdmin => this == AdminRole.hospitalAdmin;
   
-  /// Check if this role is Doctor
-  bool get isDoctor => this == AdminRole.doctor;
+  /// Check if this role is Clinician
+  bool get isClinician => this == AdminRole.clinician;
   
   /// Get role from string
   static AdminRole fromString(String role) {
@@ -34,7 +34,8 @@ enum AdminRole {
         return AdminRole.hospitalAdmin;
       case 'doctor':
       case 'physician':
-        return AdminRole.doctor;
+      case 'clinician':
+        return AdminRole.clinician;
       default:
         throw Exception('Unknown admin role: $role');
     }

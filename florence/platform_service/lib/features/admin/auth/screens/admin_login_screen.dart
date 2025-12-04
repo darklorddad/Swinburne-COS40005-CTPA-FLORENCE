@@ -366,10 +366,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           ),
                           const SizedBox(height: 8),
                           _QuickLoginButton(
-                            label: 'Doctor',
+                            label: 'Clinician',
                             email: 'dr.johnson@citygeneral.com',
                             icon: Icons.medical_services,
-                            color: AdminTheme.doctorColor,
+                            color: AdminTheme.clinicianColor,
                             onTap: () => _fillDemoCredentials('dr.johnson@citygeneral.com'),
                           ),
 
