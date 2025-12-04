@@ -870,6 +870,8 @@ class _TrafficLightCalendar extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              _LegendDot(color: AppTheme.primaryBlue, label: 'Logged'),
+              const SizedBox(width: 16),
               _LegendDot(color: AppTheme.primaryGreen, label: 'Good'),
               const SizedBox(width: 16),
               _LegendDot(color: AppTheme.warningColor, label: 'Fair'),
