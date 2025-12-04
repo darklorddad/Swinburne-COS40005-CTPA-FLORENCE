@@ -347,6 +347,21 @@ async def upload_patient_avatar(
     """Uploads a profile picture to Storage and updates the profile record."""
     try:
         user_id = patient_profile['user_id']
+        
+        # 0. Clean up old avatars
+        try:
+            folder_path = f"Profile_Picture/{user_id}"
+            # List files in the user's folder to delete previous ones
+            existing_files = supabase.storage.from_("Bucket").list(folder_path)
+            
+            if existing_files:
+                files_to_remove = [f"{folder_path}/{f['name']}" for f in existing_files if 'name' in f]
+                if files_to_remove:
+                    supabase.storage.from_("Bucket").remove(files_to_remove)
+        except Exception as cleanup_error:
+            # Continue even if cleanup fails
+            print(f"Warning: Failed to cleanup old avatars: {cleanup_error}")
+
         file_ext = file.filename.split('.')[-1]
         # Create a unique filename
         filename = f"Profile_Picture/{user_id}/avatar_{int(time.time())}.{file_ext}"
