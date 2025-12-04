@@ -15,23 +15,14 @@ jobs:
         working-directory: ./florence/platform_service
 
     steps:
-      # 1. Download Code (Fetch depth 0 is required for version calculation)
+      # 1. Download Code
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 2. Calculate Semantic Version automatically
-      - name: Calculate Semantic Version
+      # 2. Get Version from pubspec.yaml
+      - name: Get Version from pubspec.yaml
         id: version
-        uses: paulhatch/semantic-version@v5.4.0
-        with:
-          tag_prefix: "v"
-          # If commit message contains "(MAJOR)", bump major version (1.0.0 -> 2.0.0)
-          major_pattern: "(MAJOR)"
-          # If commit message contains "(feat)", bump minor version (1.0.0 -> 1.1.0) 
-          minor_pattern: "(feat)"
-          version_format: "${major}.${minor}.${patch}"
+        run: echo "version=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')" >> $GITHUB_OUTPUT
 
       # 3. Setup Java
       - name: Set up JDK 17
