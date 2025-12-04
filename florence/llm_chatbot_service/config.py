@@ -13,12 +13,12 @@ class Settings(BaseSettings):
     # Data Service Configuration
     data_service_url: str = "https://ds-florence-dhp.vercel.app"
 
-    # DeepSeek AI Configuration
-    deepseek_api_key: str
-    deepseek_base_url: str = "https://api.deepseek.com/v1"
-    deepseek_model: str = "deepseek-chat"
-    deepseek_temperature: Optional[float] = None
-    deepseek_max_tokens: Optional[int] = None
+    # OpenRouter Configuration (Temporarily replacing DeepSeek)
+    openrouter_api_key: str
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_model: str = "google/gemini-3-pro-preview"
+    openrouter_temperature: Optional[float] = None
+    openrouter_max_tokens: Optional[int] = None
 
     # Service Configuration
     service_host: str = "0.0.0.0"
