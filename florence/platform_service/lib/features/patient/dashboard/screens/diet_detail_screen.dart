@@ -867,15 +867,15 @@ class _TrafficLightCalendar extends StatelessWidget {
           const SizedBox(height: 16),
           
           // Legend
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 8,
             children: [
+              _LegendDot(color: AppTheme.textSecondaryColor.withOpacity(0.5), label: 'No Data', isOutline: true),
               _LegendDot(color: AppTheme.primaryBlue, label: 'Logged'),
-              const SizedBox(width: 16),
               _LegendDot(color: AppTheme.primaryGreen, label: 'Good'),
-              const SizedBox(width: 16),
               _LegendDot(color: AppTheme.warningColor, label: 'Fair'),
-              const SizedBox(width: 16),
               _LegendDot(color: AppTheme.errorColor, label: 'High Spike'),
             ],
           ),
@@ -888,19 +888,26 @@ class _TrafficLightCalendar extends StatelessWidget {
 class _LegendDot extends StatelessWidget {
   final Color color;
   final String label;
+  final bool isOutline;
 
-  const _LegendDot({required this.color, required this.label});
+  const _LegendDot({
+    required this.color, 
+    required this.label,
+    this.isOutline = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           width: 8,
           height: 8,
           decoration: BoxDecoration(
-            color: color,
+            color: isOutline ? Colors.transparent : color,
             shape: BoxShape.circle,
+            border: isOutline ? Border.all(color: color, width: 1) : null,
           ),
         ),
         const SizedBox(width: 6),
