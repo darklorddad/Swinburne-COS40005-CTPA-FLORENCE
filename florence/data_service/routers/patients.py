@@ -363,8 +363,20 @@ async def upload_patient_avatar(
             print(f"Warning: Failed to cleanup old avatars: {cleanup_error}")
 
         file_ext = file.filename.split('.')[-1]
-        # Create a unique filename
-        filename = f"Profile_Picture/{user_id}/avatar_{int(time.time())}.{file_ext}"
+        
+        # Sanitize username for filename (Requirement: save as username.extension)
+        raw_name = patient_profile.get('name', 'user').strip()
+        # Keep alphanumeric, dashes, underscores. Replace others with underscore.
+        safe_name = "".join([c if c.isalnum() or c in ('-', '_') else '_' for c in raw_name])
+        # Remove consecutive underscores
+        while "__" in safe_name:
+            safe_name = safe_name.replace("__", "_")
+        
+        if not safe_name:
+            safe_name = "user"
+
+        # Create filename: Profile_Picture/{user_id}/{username}.{ext}
+        filename = f"Profile_Picture/{user_id}/{safe_name}.{file_ext}"
         
         file_content = await file.read()
 
@@ -379,14 +391,16 @@ async def upload_patient_avatar(
         )
 
         # 2. Get Public URL
+        # Append timestamp to query param to bust frontend cache since filename stays constant
         public_url = supabase.storage.from_("Bucket").get_public_url(filename)
+        public_url_with_cache_bust = f"{public_url}?t={int(time.time())}"
 
         # 3. Update Database Profile
         update_res = supabase.table('patient_profiles').update({
-            "profile_picture_url": public_url
+            "profile_picture_url": public_url_with_cache_bust
         }).eq('id', patient_profile['id']).execute()
 
-        return {"url": public_url}
+        return {"url": public_url_with_cache_bust}
 
     except Exception as e:
         print(f"Upload Error: {str(e)}")
