@@ -8,8 +8,10 @@ import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../main.dart';
 import '../../../../shared/widgets/card_widgets.dart';
+import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
 import '../providers/user_profile_provider.dart';
 
@@ -125,8 +127,183 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   
   /// Edit profile
   void _editProfile() {
-    Helpers.showInfo(context, 'Edit profile feature coming soon');
-    // TODO: Navigate to edit profile screen or show bottom sheet
+    final profileData = ref.read(userProfileProvider).value;
+    if (profileData != null) {
+      _showEditProfileDialog(profileData);
+    }
+  }
+
+  /// Show edit profile dialog
+  void _showEditProfileDialog(Map<String, dynamic> profile) {
+    final nameController = TextEditingController(text: profile['name']);
+    final emailController = TextEditingController(text: profile['email']);
+    final phoneController = TextEditingController(text: profile['phone_number']);
+    final genderController = TextEditingController(text: profile['gender']);
+    final ecNameController = TextEditingController(text: profile['emergency_contact_name']);
+    final ecPhoneController = TextEditingController(text: profile['emergency_contact_phone']);
+    final ecRelController = TextEditingController(text: profile['emergency_contact_relationship']);
+    
+    DateTime? selectedDob = profile['date_of_birth'] != null 
+        ? DateTime.tryParse(profile['date_of_birth']) 
+        : null;
+        
+    final dobController = TextEditingController(
+      text: selectedDob != null ? Formatters.dateShort(selectedDob) : '',
+    );
+
+    final formKey = GlobalKey<FormState>();
+    bool isSaving = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Edit Profile'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CustomTextField(
+                      label: 'Full Name',
+                      controller: nameController,
+                      validator: Validators.name,
+                      prefixIcon: const Icon(Icons.person_outline),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Email',
+                      controller: emailController,
+                      validator: Validators.email,
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: selectedDob ?? DateTime(1990),
+                          firstDate: DateTime(1900),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          setState(() {
+                            selectedDob = date;
+                            dobController.text = Formatters.dateShort(date);
+                          });
+                        }
+                      },
+                      child: AbsorbPointer(
+                        child: CustomTextField(
+                          label: 'Date of Birth',
+                          controller: dobController,
+                          prefixIcon: const Icon(Icons.calendar_today),
+                          suffixIcon: const Icon(Icons.arrow_drop_down),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownField<String>(
+                      label: 'Gender',
+                      value: ['Male', 'Female', 'Other'].contains(genderController.text) 
+                          ? genderController.text 
+                          : null,
+                      items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                           genderController.text = val ?? '';
+                        });
+                      },
+                      prefixIcon: const Icon(Icons.wc),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Phone Number',
+                      controller: phoneController,
+                      validator: Validators.phone,
+                      prefixIcon: const Icon(Icons.phone),
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Emergency Contact',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Contact Name',
+                      controller: ecNameController,
+                      validator: Validators.required,
+                      prefixIcon: const Icon(Icons.person),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Relationship',
+                      controller: ecRelController,
+                      validator: Validators.required,
+                      prefixIcon: const Icon(Icons.people),
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      label: 'Contact Phone',
+                      controller: ecPhoneController,
+                      validator: Validators.phone,
+                      prefixIcon: const Icon(Icons.phone),
+                      keyboardType: TextInputType.phone,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving ? null : () async {
+                if (formKey.currentState!.validate()) {
+                  setState(() => isSaving = true);
+                  try {
+                    final apiService = ApiService();
+                    await apiService.put('/patients/me', {
+                      'name': nameController.text.trim(),
+                      'email': emailController.text.trim(),
+                      'phone_number': phoneController.text.trim(),
+                      'gender': genderController.text,
+                      'date_of_birth': selectedDob?.toIso8601String().split('T')[0],
+                      'emergency_contact_name': ecNameController.text.trim(),
+                      'emergency_contact_relationship': ecRelController.text.trim(),
+                      'emergency_contact_phone': ecPhoneController.text.trim(),
+                    });
+                    
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ref.refresh(userProfileProvider);
+                      Helpers.showSuccess(context, 'Profile updated successfully');
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      Helpers.showError(context, 'Failed to update profile: ${e.toString().replaceAll('Exception: ', '')}');
+                    }
+                  } finally {
+                    if (mounted) setState(() => isSaving = false);
+                  }
+                }
+              },
+              child: isSaving 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Save'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
   
   /// Edit health profile

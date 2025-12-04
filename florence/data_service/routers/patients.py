@@ -1,6 +1,6 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
-from pydantic import BaseModel, model_validator, Field
+from pydantic import BaseModel, model_validator, Field, EmailStr
 from typing import Optional
 from supabase_auth.errors import AuthApiError
 from datetime import datetime, date
@@ -108,6 +108,9 @@ class PatientProfileUpdate(BaseModel):
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
     profile_picture_url: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
+    email: Optional[EmailStr] = None
 
 class MonitorDataType(str, Enum):
     BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
@@ -197,8 +200,27 @@ async def update_own_patient_profile(
         raise HTTPException(status_code=400, detail="No update data provided.")
 
     try:
-        updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
-        return updated_profile_response.data[0]
+        # Handle email update separately via Auth Admin API
+        if 'email' in update_dict:
+            new_email = update_dict.pop('email')
+            # Update email in Supabase Auth
+            supabase.auth.admin.update_user_by_id(
+                patient_profile['user_id'], 
+                {"email": new_email}
+            )
+        
+        # If there are other fields to update in the profile table
+        if update_dict:
+            # Ensure date conversion for JSON serialization if needed
+            if 'date_of_birth' in update_dict and update_dict['date_of_birth']:
+                update_dict['date_of_birth'] = update_dict['date_of_birth'].isoformat()
+
+            updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+            return updated_profile_response.data[0]
+        else:
+            # Return existing profile if only email was updated
+            return patient_profile
+            
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
