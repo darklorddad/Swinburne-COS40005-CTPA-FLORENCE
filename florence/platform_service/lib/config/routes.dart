@@ -23,7 +23,7 @@ import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
 import '../features/clinician/screens/clinician_home_screen.dart';
-import '../features/admin/dashboard/screens/super_admin_dashboard_screen.dart';
+import '../features/admin/dashboard/screens/admin_dashboard_screen.dart';
 
 /// Application routing configuration
 /// Centralized navigation management

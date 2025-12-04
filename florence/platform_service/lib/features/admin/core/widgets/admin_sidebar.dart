@@ -72,7 +72,7 @@ class AdminSidebar extends StatelessWidget {
                   ],
                   child: Column(
                     children: [
-                      if (!permissionService.isSuperAdmin)
+                      if (!permissionService.isAdmin)
                         _buildSectionHeader(context, 'MANAGEMENT'),
                       _buildMenuItem(
                         context,

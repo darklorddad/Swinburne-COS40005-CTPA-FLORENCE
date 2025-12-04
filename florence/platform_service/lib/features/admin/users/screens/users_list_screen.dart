@@ -91,7 +91,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
       currentRoute: AdminRoutes.users,
       body: AdminPageLayout(
         title: 'Users',
-        subtitle: _permissionService.isSuperAdmin
+        subtitle: _permissionService.isAdmin
             ? 'Manage all users in the system'
             : 'Manage users in your organization',
         actions: canCreate
