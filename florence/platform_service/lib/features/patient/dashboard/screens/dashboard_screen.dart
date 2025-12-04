@@ -41,9 +41,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
   }
 
-  Future<void> _safeLoadChatHistory() async {
+  Future<void> _safeLoadChatHistory({bool force = false}) async {
     try {
-      await ref.read(chatProvider.notifier).loadHistory();
+      await ref.read(chatProvider.notifier).loadHistory(force: force);
     } catch (e) {
       debugPrint("Dashboard: Failed to load chat history (Non-critical): $e");
     }
@@ -65,7 +65,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // 2. Fetch Data & Chat in Parallel (Safe now)
     await Future.wait([
       ref.refresh(core_data.monitorDataProvider.future),
-      _safeLoadChatHistory(), 
+      _safeLoadChatHistory(force: true), 
     ]);
   }
 
