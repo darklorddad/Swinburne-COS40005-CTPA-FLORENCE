@@ -441,7 +441,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           if (currentItems.isEmpty)
             const Padding(padding: EdgeInsets.all(16), child: Text('No meals logged yet'))
           else
