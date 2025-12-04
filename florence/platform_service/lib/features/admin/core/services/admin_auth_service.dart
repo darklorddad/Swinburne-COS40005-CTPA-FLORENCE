@@ -29,7 +29,10 @@ class AdminAuthService {
       _currentUser = matchedUser.copyWith(id: supabaseUser.id); // Update ID from live session
     } catch (e) {
       // If not found in mocks (e.g., a newly registered admin), create a default one
-      final userRole = AdminRole.fromString(supabaseUser.appMetadata['role'] ?? 'Hospital Admin');
+      // Default to Hospital Admin if role is missing/invalid during development
+      final roleStr = supabaseUser.appMetadata['role'] ?? 'Hospital Admin';
+      final userRole = AdminRole.fromString(roleStr);
+      
       _currentUser = AdminUser(
           id: supabaseUser.id,
           email: supabaseUser.email!,
