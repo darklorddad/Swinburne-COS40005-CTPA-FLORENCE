@@ -1,8 +1,10 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+
 import 'package:flutter/foundation.dart';
-import '../config/environment.dart';
+import 'package:http/http.dart' as http;
+
 import '../../main.dart';
+import '../config/environment.dart';
 
 class ApiService {
   Future<Map<String, String>> _getHeaders() async {
@@ -136,6 +138,38 @@ class ApiService {
       return _processResponse(response);
     } catch (e) {
       debugPrint('API DELETE Error ($endpoint): $e');
+      rethrow;
+    }
+  }
+
+  
+  /// Upload a file via Multipart Request
+  Future<dynamic> uploadFile(String endpoint, String fieldName, List<int> fileBytes, String filename) async {
+    try {
+      final uri = Uri.parse('${Environment.apiUrl}$endpoint');
+      final request = http.MultipartRequest('POST', uri);
+
+      // Add Headers (Auth)
+      final headers = await _getHeaders();
+      request.headers.addAll(headers);
+      // Remove Content-Type as MultipartRequest sets it automatically
+      request.headers.remove('Content-Type'); 
+
+      // Add File
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          fieldName,
+          fileBytes,
+          filename: filename,
+        ),
+      );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      
+      return _processResponse(response);
+    } catch (e) {
+      debugPrint('API UPLOAD Error ($endpoint): $e');
       rethrow;
     }
   }

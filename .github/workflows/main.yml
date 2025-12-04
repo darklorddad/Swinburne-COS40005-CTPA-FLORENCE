@@ -3,7 +3,7 @@ name: Build and Distribute
 on:
   push:
     branches:
-      - czy_testing_branch
+      - production
   workflow_dispatch:
 
 jobs:
@@ -15,23 +15,14 @@ jobs:
         working-directory: ./florence/platform_service
 
     steps:
-      # 1. Download Code (Fetch depth 0 is required for version calculation)
+      # 1. Download Code
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 2. Calculate Semantic Version automatically
-      - name: Calculate Semantic Version
+      # 2. Get Version from pubspec.yaml
+      - name: Get Version from pubspec.yaml
         id: version
-        uses: paulhatch/semantic-version@v5.4.0
-        with:
-          tag_prefix: "v"
-          # If commit message contains "(MAJOR)", bump major version (1.0.0 -> 2.0.0)
-          major_pattern: "(MAJOR)"
-          # If commit message contains "(feat)", bump minor version (1.0.0 -> 1.1.0) 
-          minor_pattern: "(feat)"
-          version_format: "${major}.${minor}.${patch}"
+        run: echo "version=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')" >> $GITHUB_OUTPUT
 
       # 3. Setup Java
       - name: Set up JDK 17
@@ -55,18 +46,12 @@ jobs:
       - name: Build APK
         run: flutter build apk --debug --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }}
 
-      - name: Decode Firebase Service Account
-        env:
-          FIREBASE_SERVICE_ACCOUNT_BASE64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64 }}
-        run: |
-          echo "$FIREBASE_SERVICE_ACCOUNT_BASE64" | base64 -d > firebase_credentials.json
-
       # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
-          serviceCredentialsFile: firebase_credentials.json
+          serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
           file: florence/platform_service/build/app/outputs/flutter-apk/app-debug.apk
           releaseNotes: "Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }}) - Automated Release"

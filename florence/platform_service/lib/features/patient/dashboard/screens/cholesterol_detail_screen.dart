@@ -323,13 +323,13 @@ class _RatioSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   // Targets List
-                  _buildMiniTargetRow('Total', total != null ? 'Below ${total!.maxValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Total', total != null ? '${total!.minValue.toInt()} - ${total!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('LDL', ldl != null ? 'Below ${ldl!.maxValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('LDL', ldl != null ? '${ldl!.minValue.toInt()} - ${ldl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('HDL', hdl != null ? 'Above ${hdl!.minValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('HDL', hdl != null ? '${hdl!.minValue.toInt()} - ${hdl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('Triglycerides', tri != null ? 'Below ${tri!.maxValue.toInt()}' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Triglycerides', tri != null ? '${tri!.minValue.toInt()} - ${tri!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                 ],
               ),
             ),
@@ -528,7 +528,8 @@ class _LdlTargetSection extends StatelessWidget {
                     
                     // 2. Target Line
                     Positioned(
-                      left: targetPos - 1, 
+                      left: targetPos - 30, 
+                      width: 60,
                       top: 15, 
                       child: Column(
                         children: [
@@ -539,7 +540,7 @@ class _LdlTargetSection extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Max\n${target!.toInt()}',
+                            'Target Max\n${target!.toInt()}',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 10,
@@ -555,7 +556,7 @@ class _LdlTargetSection extends StatelessWidget {
                     if (ldl > 0)
                       Positioned(
                         left: (actualPos - 20).clamp(0, width - 40),
-                        top: -10,
+                        top: -18,
                         child: Column(
                           children: [
                             Container(
@@ -642,15 +643,23 @@ class _CompositionSectionState extends State<_CompositionSection> {
   @override
   Widget build(BuildContext context) {
     final displayData = _filterData();
+    
+    // Calculate dynamic Max Y based on Total Cholesterol formula (HDL + LDL + Tri/5)
+    double maxY = 240;
+    if (displayData.isNotEmpty) {
+      final maxStack = displayData.map((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + ((r.triglycerides ?? 0) / 5)).reduce(math.max);
+      maxY = math.max(240, maxStack * 1.2);
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return _CholesterolCard(
       title: 'Cholesterol Breakdown',
       icon: Icons.bar_chart,
-      infoText: 'Composition of your cholesterol levels over time.\n\n'
-                '• Green (Bottom): HDL (Good)\n'
-                '• Red (Middle): LDL (Bad)\n'
-                '• Orange (Top): Triglycerides',
+      infoText: 'Breakdown of your Total Cholesterol.\n\n'
+                '• Green: HDL (Good)\n'
+                '• Red: LDL (Bad)\n'
+                '• Orange: VLDL (Calculated as Triglycerides / 5)',
       child: Column(
         children: [
           // Timeline Selector
@@ -701,6 +710,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               height: 250,
               child: BarChart(
                 BarChartData(
+                  maxY: maxY,
                   alignment: BarChartAlignment.spaceAround,
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -729,13 +739,45 @@ class _CompositionSectionState extends State<_CompositionSection> {
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  barTouchData: BarTouchData(
+                    touchTooltipData: BarTouchTooltipData(
+                      getTooltipColor: (group) => Colors.black.withOpacity(0.8),
+                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                        final r = displayData[group.x.toInt()];
+                        // Map stack index to Label
+                        String label;
+                        String value;
+                        Color color;
+                        
+                        if (rodIndex == 0) { // Bottom (HDL)
+                          label = 'HDL';
+                          value = '${r.hdl?.toInt() ?? 0}';
+                          color = AppTheme.primaryGreen;
+                        } else if (rodIndex == 1) { // Middle (LDL)
+                          label = 'LDL';
+                          value = '${r.ldl?.toInt() ?? 0}';
+                          color = AppTheme.errorColor;
+                        } else { // Top (VLDL/Tri)
+                          label = 'Triglycerides';
+                          // Show actual Tri value, not the VLDL calc
+                          value = '${r.triglycerides?.toInt() ?? 0}';
+                          color = Colors.orange;
+                        }
+
+                        return BarTooltipItem(
+                          '$label: $value',
+                          TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),
+                        );
+                      }
+                    ),
+                  ),
                   barGroups: displayData.asMap().entries.map((entry) {
                     final index = entry.key;
                     final r = entry.value;
                     final hdl = r.hdl ?? 0;
                     final ldl = r.ldl ?? 0;
                     final tri = r.triglycerides ?? 0;
-                    // Visualize VLDL (approx Tri/5) so bar height ~ Total Cholesterol
+                    // Use VLDL (Tri/5) for visual stack so it sums to Total Cholesterol
                     final vldl = tri / 5;
                     
                     return BarChartGroupData(
@@ -765,7 +807,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
               const SizedBox(width: 16),
               _LegendItem('LDL', AppTheme.errorColor),
               const SizedBox(width: 16),
-              _LegendItem('VLDL (Tri/5)', Colors.orange),
+              _LegendItem('VLDL', Colors.orange),
             ],
           ),
         ],

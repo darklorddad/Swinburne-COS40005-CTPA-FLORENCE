@@ -42,36 +42,36 @@ class ClearHistoryResponse(BaseModel):
     cleared_count: int
 
 
-class DeepSeekMessage(BaseModel):
-    """Message format for DeepSeek API."""
+class LLMMessage(BaseModel):
+    """Message format for LLM API."""
     role: Literal["system", "user", "assistant"]
     content: str
 
 
-class DeepSeekRequest(BaseModel):
-    """Request format for DeepSeek API."""
+class LLMRequest(BaseModel):
+    """Request format for LLM API."""
     model: str
-    messages: list[DeepSeekMessage]
+    messages: list[LLMMessage]
     temperature: Optional[float] = None
     max_tokens: Optional[int] = None
     stream: bool = False
 
 
-class DeepSeekChoice(BaseModel):
-    """Choice object in DeepSeek response."""
-    message: DeepSeekMessage
+class LLMChoice(BaseModel):
+    """Choice object in LLM response."""
+    message: LLMMessage
     finish_reason: str
 
 
-class DeepSeekUsage(BaseModel):
-    """Token usage information from DeepSeek."""
+class LLMUsage(BaseModel):
+    """Token usage information from LLM."""
     prompt_tokens: Optional[int] = None
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
 
 
-class DeepSeekResponse(BaseModel):
-    """Response format from DeepSeek API."""
-    choices: list[DeepSeekChoice]
-    usage: Optional[DeepSeekUsage] = None
+class LLMResponse(BaseModel):
+    """Response format from LLM API."""
+    choices: list[LLMChoice]
+    usage: Optional[LLMUsage] = None
     model: str

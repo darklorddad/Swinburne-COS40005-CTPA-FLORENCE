@@ -757,7 +757,7 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           if (currentItems.isEmpty)
             const Padding(padding: EdgeInsets.all(16), child: Text('No activity logs found'))
           else
@@ -837,42 +837,44 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // LEFT: Value (Duration) + Unit + Type
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    '${log.duration}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.normal,
-                      fontSize: 20,
-                      color: AppTheme.textPrimaryColor,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '${log.duration}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 20,
+                        color: AppTheme.textPrimaryColor,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'min',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                          fontSize: 12,
-                        ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 2),
-              Text(
-                log.type, // Activity Description
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(width: 4),
+                    Text(
+                      'min',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                            fontSize: 12,
+                          ),
                     ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  log.type, // Activity Description
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
 
           // RIGHT: Status Badge + Date

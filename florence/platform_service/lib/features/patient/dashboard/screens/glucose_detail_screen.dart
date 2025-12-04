@@ -482,22 +482,46 @@ class _GlucoseTrendsSection extends StatelessWidget {
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
-        // Determine X-Axis range
-        double minX, maxX;
-        if (data.isNotEmpty) {
-          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-          if (minX == maxX) { minX -= 3600000; maxX += 3600000; }
-        } else {
-          // Default X range if no data
-          final now = DateTime.now();
-          Duration d = const Duration(hours: 24);
-          if (range == '7D') d = const Duration(days: 7);
-          else if (range == '14D') d = const Duration(days: 14);
-          else if (range == '30D') d = const Duration(days: 30);
-          minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
-          maxX = now.millisecondsSinceEpoch.toDouble();
+        // Enforce a fixed time window based on selected range (1D, 7D, etc.)
+        // This ensures the X-axis is stable, evenly spaced, and correctly formatted
+        // regardless of how sparse the data points are.
+        final now = DateTime.now();
+        // Snap 'now' to next hour to avoid odd minutes like 10:52am
+        final endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
+        
+        late DateTime startOfWindow;
+        late double interval;
+        late DateFormat dateFormat;
+
+        switch (range) {
+          case '1D':
+            startOfWindow = endOfWindow.subtract(const Duration(hours: 24));
+            interval = 14400000; // 4 hours
+            dateFormat = DateFormat('h a'); // e.g. 3 PM
+            break;
+          case '7D':
+            startOfWindow = endOfWindow.subtract(const Duration(days: 7));
+            interval = 86400000; // 1 day
+            dateFormat = DateFormat('M/d'); // e.g. 12/4
+            break;
+          case '14D':
+            startOfWindow = endOfWindow.subtract(const Duration(days: 14));
+            interval = 172800000; // 2 days
+            dateFormat = DateFormat('M/d');
+            break;
+          case '30D':
+            startOfWindow = endOfWindow.subtract(const Duration(days: 30));
+            interval = 432000000; // 5 days
+            dateFormat = DateFormat('M/d');
+            break;
+          default:
+            startOfWindow = endOfWindow.subtract(const Duration(hours: 24));
+            interval = 14400000;
+            dateFormat = DateFormat('h a');
         }
+
+        final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
+        final double maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
 
         // Determine Y-Axis range
         double minY = threshold != null ? (threshold!.minValue - 20).clamp(0, double.infinity) : 60;
@@ -514,8 +538,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
         minY = (minY / 50).floor() * 50.0;
         maxY = (maxY / 50).ceil() * 50.0;
         if (maxY == minY) maxY += 50;
-
-        // Centering Logic
 
         return Column(
           children: [
@@ -536,15 +558,24 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         reservedSize: 30,
-                        // No interval set - let FL Chart calculate the best fit automatically
+                        interval: interval,
                         getTitlesWidget: (val, meta) {
-                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          final fmt = range == '1D' ? DateFormat('h:mm a') : DateFormat('M/d');
+                          // Prevent edge labels from clipping
+                          if (val <= meta.min || val >= meta.max) {
+                            return const SizedBox.shrink();
+                          }
                           
+                          // Extra margin check (3%) to ensure no overlap with borders
+                          final rangeSpan = meta.max - meta.min;
+                          if (val < meta.min + (rangeSpan * 0.03) || val > meta.max - (rangeSpan * 0.03)) {
+                             return const SizedBox.shrink();
+                          }
+
+                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: Text(
-                              fmt.format(date),
+                              dateFormat.format(date),
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppTheme.textSecondaryColor,
@@ -775,8 +806,12 @@ class _ModalDaySection extends StatelessWidget {
       builder: (range, data) {
         final Map<int, List<FlSpot>> lines = {};
         for (var r in data) {
-          final key = r.measuredAt.day;
-          final x = r.measuredAt.hour + (r.measuredAt.minute / 60.0);
+          // Convert to local time so the hour (0-24) matches the user's timezone
+          final localDate = r.measuredAt.toLocal();
+          
+          // Use unique date identifier (YYYYMMDD) so distinct days don't merge
+          final key = localDate.year * 10000 + localDate.month * 100 + localDate.day;
+          final x = localDate.hour + (localDate.minute / 60.0);
           lines.putIfAbsent(key, () => []).add(FlSpot(x, r.value));
         }
         List<LineChartBarData> chartLines = [];
@@ -787,7 +822,15 @@ class _ModalDaySection extends StatelessWidget {
             isCurved: true, 
             color: AppTheme.textSecondaryColor.withOpacity(0.3), 
             barWidth: 1.5, 
-            dotData: const FlDotData(show: false)
+            // Enable dots so single readings are visible
+            dotData: FlDotData(
+              show: true,
+              getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                radius: 2,
+                color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                strokeWidth: 0,
+              ),
+            ),
           ));
         });
 
@@ -845,7 +888,7 @@ class _ModalDaySection extends StatelessWidget {
             // Legend
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (threshold != null) ...[
-                _buildLegendItem('Safe Zone', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                _buildLegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
                 const SizedBox(width: 12),
               ],
               _buildLegendItem('Daily Traces', AppTheme.textSecondaryColor, isDashed: false),

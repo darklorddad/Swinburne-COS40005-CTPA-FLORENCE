@@ -288,11 +288,11 @@ class BiometricsSection extends StatelessWidget {
 
     // 2. Partial Glucose Data
     if (meal.glucoseBeforeMeal != null || meal.glucoseAfterMeal != null) {
-      return 'Partial Data';
+      return 'Incomplete';
     }
 
     // 3. Default
-    return 'Logged';
+    return 'No Glucose';
   }
 
   Color _getMealColor(DailyPatientLog? meal, List<HealthThreshold> thresholds) {

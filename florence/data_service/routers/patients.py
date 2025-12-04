@@ -1,11 +1,12 @@
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, Header
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
 from pydantic import BaseModel, model_validator, Field
 from typing import Optional
 from supabase_auth.errors import AuthApiError
 from datetime import datetime, date
 from enum import Enum
 
+import time
 from client import supabase
 
 # --- Constants ---
@@ -106,6 +107,7 @@ class PatientProfileUpdate(BaseModel):
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
+    profile_picture_url: Optional[str] = None
 
 class MonitorDataType(str, Enum):
     BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
@@ -173,6 +175,12 @@ async def get_own_patient_profile(patient_profile: dict = Depends(get_current_pa
     Retrieves the complete profile for the currently authenticated patient,
     including details from the `patient_profiles` table.
     """
+    # The profile_picture_url is retrieved here as part of the 'patient_profile' dictionary
+    # which comes from the 'get_current_patient_profile' dependency querying the 'patient_profiles' table.
+    
+    # Print URL to console as requested
+    print(f"DEBUG: Fetched Profile URL: {patient_profile.get('profile_picture_url')}")
+    
     return patient_profile
 
 @router.put("/me", summary="Update my own patient profile")
@@ -336,3 +344,70 @@ async def add_own_activity_log(
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to log activity: {str(e)}")
+
+@router.post("/me/avatar", summary="Upload profile picture")
+async def upload_patient_avatar(
+    file: UploadFile = File(...),
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Uploads a profile picture to Storage and updates the profile record."""
+    try:
+        user_id = patient_profile['user_id']
+        
+        # 0. Clean up old avatars
+        try:
+            folder_path = f"Profile_Picture/{user_id}"
+            # List files in the user's folder to delete previous ones
+            existing_files = supabase.storage.from_("Bucket").list(folder_path)
+            
+            if existing_files:
+                files_to_remove = [f"{folder_path}/{f['name']}" for f in existing_files if 'name' in f]
+                if files_to_remove:
+                    supabase.storage.from_("Bucket").remove(files_to_remove)
+        except Exception as cleanup_error:
+            # Continue even if cleanup fails
+            print(f"Warning: Failed to cleanup old avatars: {cleanup_error}")
+
+        file_ext = file.filename.split('.')[-1]
+        
+        # Sanitize username for filename (Requirement: save as username.extension)
+        raw_name = patient_profile.get('name', 'user').strip()
+        # Keep alphanumeric, dashes, underscores. Replace others with underscore.
+        safe_name = "".join([c if c.isalnum() or c in ('-', '_') else '_' for c in raw_name])
+        # Remove consecutive underscores
+        while "__" in safe_name:
+            safe_name = safe_name.replace("__", "_")
+        
+        if not safe_name:
+            safe_name = "user"
+
+        # Create filename: Profile_Picture/{user_id}/{username}.{ext}
+        filename = f"Profile_Picture/{user_id}/{safe_name}.{file_ext}"
+        
+        file_content = await file.read()
+
+        # 1. Upload to Supabase Storage
+        # Note: 'upsert' options are handled differently in python client versions, 
+        # usually default upload overwrites or we handle errors.
+        # Ensure your Bucket is named "Bucket"
+        res = supabase.storage.from_("Bucket").upload(
+            file=file_content,
+            path=filename,
+            file_options={"content-type": file.content_type, "upsert": "true"}
+        )
+
+        # 2. Get Public URL
+        # Append timestamp to query param to bust frontend cache since filename stays constant
+        public_url = supabase.storage.from_("Bucket").get_public_url(filename)
+        public_url_with_cache_bust = f"{public_url}?t={int(time.time())}"
+
+        # 3. Update Database Profile
+        update_res = supabase.table('patient_profiles').update({
+            "profile_picture_url": public_url_with_cache_bust
+        }).eq('id', patient_profile['id']).execute()
+
+        return {"url": public_url_with_cache_bust}
+
+    except Exception as e:
+        print(f"Upload Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
