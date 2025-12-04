@@ -21,7 +21,7 @@ jobs:
 
       # 2. Get Version from pubspec.yaml
       - name: Get Version from pubspec.yaml
-        id: version
+        id: Version
         run: echo "version=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')" >> $GITHUB_OUTPUT
 
       # 3. Setup Java
