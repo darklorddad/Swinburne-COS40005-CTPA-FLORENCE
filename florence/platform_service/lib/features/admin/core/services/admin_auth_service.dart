@@ -29,7 +29,7 @@ class AdminAuthService {
       _currentUser = matchedUser.copyWith(id: supabaseUser.id); // Update ID from live session
     } catch (e) {
       // If not found in mocks (e.g., a newly registered admin), create a default one
-      final userRole = AdminRole.fromString(supabaseUser.appMetadata['role'] ?? 'Clinician');
+      final userRole = AdminRole.fromString(supabaseUser.appMetadata['role'] ?? 'Hospital Admin');
       _currentUser = AdminUser(
           id: supabaseUser.id,
           email: supabaseUser.email!,
@@ -244,95 +244,6 @@ class AdminAuthService {
       lastLoginAt: DateTime(2025, 10, 25, 9, 15),
     ),
 
-    // Clinician - City General Hospital
-    AdminUser(
-      id: 'doctor_001',
-      email: 'dr.johnson@citygeneral.com',
-      firstName: 'James',
-      lastName: 'Johnson',
-      role: AdminRole.clinician,
-      status: UserStatus.active,
-      organizationId: 'org_001',
-      organizationName: 'City General Hospital',
-      phone: '+60 14-2223344',
-      profileImageUrl: null,
-      permissions: [
-        // Patients (view only)
-        AdminPermission.viewOrgPatients,
-        
-        // Clinical Data (full access)
-        AdminPermission.viewPatientHealthData,
-        AdminPermission.editPatientHealthData,
-        AdminPermission.viewHypoHyperEvents,
-        AdminPermission.viewPatientLogbook,
-        AdminPermission.addPatientNotes,
-        
-        // Appointments (view/edit)
-        AdminPermission.viewAppointments,
-        AdminPermission.editAppointment,
-        
-        // Medications (view only)
-        AdminPermission.viewMedications,
-      ],
-      createdAt: DateTime(2024, 2, 1),
-      lastLoginAt: DateTime(2025, 10, 27, 7, 00),
-    ),
-
-    // Clinician - Memorial Medical Center
-    AdminUser(
-      id: 'doctor_002',
-      email: 'dr.patel@memorialmedical.com',
-      firstName: 'Priya',
-      lastName: 'Patel',
-      role: AdminRole.clinician,
-      status: UserStatus.active,
-      organizationId: 'org_002',
-      organizationName: 'Memorial Medical Center',
-      phone: '+60 15-6667788',
-      profileImageUrl: null,
-      permissions: [
-        // Same as doctor_001
-        AdminPermission.viewOrgPatients,
-        AdminPermission.viewPatientHealthData,
-        AdminPermission.editPatientHealthData,
-        AdminPermission.viewHypoHyperEvents,
-        AdminPermission.viewPatientLogbook,
-        AdminPermission.addPatientNotes,
-        AdminPermission.viewAppointments,
-        AdminPermission.editAppointment,
-        AdminPermission.viewMedications,
-      ],
-      createdAt: DateTime(2024, 3, 15),
-      lastLoginAt: DateTime(2025, 10, 26, 16, 30),
-    ),
-
-    // Clinician - Community Health Clinic
-    AdminUser(
-      id: 'doctor_003',
-      email: 'dr.wong@communityhealthclinic.com',
-      firstName: 'David',
-      lastName: 'Wong',
-      role: AdminRole.clinician,
-      status: UserStatus.active,
-      organizationId: 'org_003',
-      organizationName: 'Community Health Clinic',
-      phone: '+60 16-9998877',
-      profileImageUrl: null,
-      permissions: [
-        // Same as other doctors
-        AdminPermission.viewOrgPatients,
-        AdminPermission.viewPatientHealthData,
-        AdminPermission.editPatientHealthData,
-        AdminPermission.viewHypoHyperEvents,
-        AdminPermission.viewPatientLogbook,
-        AdminPermission.addPatientNotes,
-        AdminPermission.viewAppointments,
-        AdminPermission.editAppointment,
-        AdminPermission.viewMedications,
-      ],
-      createdAt: DateTime(2024, 6, 25),
-      lastLoginAt: DateTime(2025, 10, 24, 13, 20),
-    ),
   ];
 
   // ============================================
@@ -472,21 +383,6 @@ class AdminAuthService {
         'email': 'admin@memorialmedical.com',
         'password': 'demo123',
         'description': 'Memorial Medical Center access',
-      },
-      'Clinician (City General)': {
-        'email': 'dr.johnson@citygeneral.com',
-        'password': 'demo123',
-        'description': 'Clinical access - City General',
-      },
-      'Clinician (Memorial)': {
-        'email': 'dr.patel@memorialmedical.com',
-        'password': 'demo123',
-        'description': 'Clinical access - Memorial',
-      },
-      'Clinician (Community)': {
-        'email': 'dr.wong@communityhealthclinic.com',
-        'password': 'demo123',
-        'description': 'Clinical access - Community Clinic',
       },
     };
   }

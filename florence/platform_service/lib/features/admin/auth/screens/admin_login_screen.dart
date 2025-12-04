@@ -364,14 +364,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             color: AdminTheme.hospitalAdminColor,
                             onTap: () => _fillDemoCredentials('admin@citygeneral.com'),
                           ),
-                          const SizedBox(height: 8),
-                          _QuickLoginButton(
-                            label: 'Clinician',
-                            email: 'dr.johnson@citygeneral.com',
-                            icon: Icons.medical_services,
-                            color: AdminTheme.clinicianColor,
-                            onTap: () => _fillDemoCredentials('dr.johnson@citygeneral.com'),
-                          ),
 
                           const SizedBox(height: 16),
 

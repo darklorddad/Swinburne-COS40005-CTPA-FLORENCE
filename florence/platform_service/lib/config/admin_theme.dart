@@ -46,7 +46,6 @@ class AdminTheme {
 
   static const Color superAdminColor = Color(0xFF8B5CF6); // Purple
   static const Color hospitalAdminColor = Color(0xFF3F51B5); // Indigo
-  static const Color clinicianColor = Color(0xFF059669); // Green
 
   // ============================================
   // ORGANIZATION STATUS COLORS
@@ -385,10 +384,6 @@ class AdminTheme {
       case 'hospital admin':
       case 'hospitaladmin':
         return hospitalAdminColor;
-      case 'doctor':
-      case 'physician':
-      case 'clinician':
-        return clinicianColor;
       default:
         return textSecondaryColor;
     }

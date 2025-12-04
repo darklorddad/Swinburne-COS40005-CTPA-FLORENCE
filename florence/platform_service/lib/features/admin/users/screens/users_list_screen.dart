@@ -185,7 +185,6 @@ class _UsersListScreenState extends State<UsersListScreen> {
                           value: 'superadmin', child: Text('Super Admin')),
                       DropdownMenuItem(
                           value: 'hospitaladmin', child: Text('Hospital Admin')),
-                      DropdownMenuItem(value: 'clinician', child: Text('Clinician')),
                     ],
                     onChanged: (value) {
                       setState(() {

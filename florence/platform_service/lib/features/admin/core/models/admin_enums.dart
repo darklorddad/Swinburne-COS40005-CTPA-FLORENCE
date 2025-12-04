@@ -7,8 +7,7 @@
 
 enum AdminRole {
   superAdmin('Super Admin', 'Full system access'),
-  hospitalAdmin('Hospital Admin', 'Organization-level access'),
-  clinician('Clinician', 'Clinical access');
+  hospitalAdmin('Hospital Admin', 'Organization-level access');
 
   final String displayName;
   final String description;
@@ -21,9 +20,6 @@ enum AdminRole {
   /// Check if this role is Hospital Admin
   bool get isHospitalAdmin => this == AdminRole.hospitalAdmin;
   
-  /// Check if this role is Clinician
-  bool get isClinician => this == AdminRole.clinician;
-  
   /// Get role from string
   static AdminRole fromString(String role) {
     switch (role.toLowerCase().replaceAll(' ', '')) {
@@ -32,10 +28,6 @@ enum AdminRole {
         return AdminRole.superAdmin;
       case 'hospitaladmin':
         return AdminRole.hospitalAdmin;
-      case 'doctor':
-      case 'physician':
-      case 'clinician':
-        return AdminRole.clinician;
       default:
         throw Exception('Unknown admin role: $role');
     }

@@ -201,29 +201,6 @@ class HospitalAdminGuard extends StatelessWidget {
   }
 }
 
-/// Permission Guard for Clinician only
-class ClinicianGuard extends StatelessWidget {
-  final Widget child;
-  final Widget? fallback;
-  final bool showFallback;
-
-  const ClinicianGuard({
-    super.key,
-    required this.child,
-    this.fallback,
-    this.showFallback = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return RoleGuard(
-      role: AdminRole.clinician,
-      fallback: fallback,
-      showFallback: showFallback,
-      child: child,
-    );
-  }
-}
 
 /// Permission Guard Builder
 /// Provides builder pattern for more complex conditional rendering
