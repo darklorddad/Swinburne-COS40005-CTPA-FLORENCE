@@ -1,23 +1,18 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
-import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../core/widgets/empty_state_widget.dart';
-import '../../../../shared/widgets/notification_bell.dart';
-import '../../../../config/theme.dart';
+
 import '../../../../config/routes.dart';
-import '../../../../main.dart';
-import '../widgets/biometrics_section.dart';
-import '../widgets/quick_actions_grid.dart';
-import '../widgets/ai_insight_card.dart';
-import '../providers/dashboard_providers.dart'; // Added
-import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
+import '../../../../config/theme.dart';
+import '../../../../core/utils/helpers.dart';
+import '../../../../shared/widgets/notification_bell.dart';
 import '../../chat/services/chatbot_service.dart'; // Chat Service
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
+import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
+import '../providers/dashboard_providers.dart'; // Added
+import '../widgets/ai_insight_card.dart';
+import '../widgets/biometrics_section.dart';
+import '../widgets/quick_actions_grid.dart';
 
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
@@ -278,12 +273,12 @@ class _QuickLogModal extends StatelessWidget {
                 },
               ),
               _QuickLogButton(
-                icon: Icons.restaurant,
-                label: 'Meal',
+                icon: Icons.bloodtype_outlined,
+                label: 'Cholesterol',
                 color: AppTheme.mealColor,
                 onTap: () {
                   Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logMeal);
+                  AppRoutes.push(context, AppRoutes.logCholesterol);
                 },
               ),
               _QuickLogButton(
