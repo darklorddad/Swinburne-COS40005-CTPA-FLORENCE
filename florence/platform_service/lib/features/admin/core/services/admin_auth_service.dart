@@ -75,7 +75,7 @@ class AdminAuthService {
       staffCount: 45,
       createdAt: DateTime(2024, 1, 15),
       updatedAt: DateTime(2025, 10, 20),
-      createdBy: 'super_admin_001',
+      createdBy: 'admin_001',
     ),
     Organization(
       id: 'org_002',
@@ -94,7 +94,7 @@ class AdminAuthService {
       staffCount: 78,
       createdAt: DateTime(2024, 3, 10),
       updatedAt: DateTime(2025, 10, 15),
-      createdBy: 'super_admin_001',
+      createdBy: 'admin_001',
     ),
     Organization(
       id: 'org_003',
@@ -113,7 +113,7 @@ class AdminAuthService {
       staffCount: 23,
       createdAt: DateTime(2024, 6, 20),
       updatedAt: DateTime(2025, 10, 10),
-      createdBy: 'super_admin_001',
+      createdBy: 'admin_001',
     ),
   ];
 
