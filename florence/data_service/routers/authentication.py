@@ -36,6 +36,10 @@ class UserLogin(BaseModel):
 class AdminRegistration(BaseModel):
     email: EmailStr
     password: str
+    role: Literal['ADMIN', 'HOSPITALADMIN']
+    name: str
+    phone_number: Optional[str] = None
+    organisation_id: Optional[int] = None
 
 
 DEFAULT_THRESHOLDS = [
