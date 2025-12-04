@@ -44,7 +44,7 @@ class AdminSidebar extends StatelessWidget {
                   context,
                   icon: Icons.dashboard,
                   label: 'Dashboard',
-                  route: '/admin/dashboard',
+                  route: '/admin/home',
                 ),
 
                 const SizedBox(height: 4),
