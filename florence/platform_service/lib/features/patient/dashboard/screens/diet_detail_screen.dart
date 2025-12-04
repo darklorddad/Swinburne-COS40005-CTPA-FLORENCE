@@ -815,8 +815,8 @@ class _TrafficLightCalendar extends StatelessWidget {
                 tooltip = 'No logs';
               } else if (maxSpike == null) {
                 // Logged but no glucose data
-                cellColor = AppTheme.primaryBlue.withOpacity(0.2);
-                textColor = AppTheme.primaryBlue;
+                cellColor = AppTheme.primaryBlue;
+                textColor = Colors.white;
                 tooltip = 'Meal logged (No Glucose)';
               } else if (maxSpike > 50) {
                 cellColor = AppTheme.errorColor;
