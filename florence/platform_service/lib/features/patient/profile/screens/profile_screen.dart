@@ -260,8 +260,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('Personal Information', Icons.person_outline),
-          const SizedBox(height: 24),
 
           // Avatar & Basic Info (Centered)
           Center(
@@ -271,21 +269,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: _uploadProfilePicture,
                   child: Stack(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-                        backgroundImage: _profileImageUrl != null
-                            ? NetworkImage(_profileImageUrl!)
-                            : null,
-                        child: _profileImageUrl == null
-                            ? Text(
-                                _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                                style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                                      color: AppTheme.primaryBlue,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              )
-                            : null,
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                        ),
+                        child: ClipOval(
+                          child: _profileImageUrl != null
+                              ? Image.network(
+                                  _profileImageUrl!,
+                                  fit: BoxFit.cover,
+                                  width: 100,
+                                  height: 100,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Text(
+                                        _userName.isNotEmpty
+                                            ? _userName[0].toUpperCase()
+                                            : 'U',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .displayMedium
+                                            ?.copyWith(
+                                              color: AppTheme.primaryBlue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                )
+                              : Center(
+                                  child: Text(
+                                    _userName.isNotEmpty
+                                        ? _userName[0].toUpperCase()
+                                        : 'U',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .displayMedium
+                                        ?.copyWith(
+                                          color: AppTheme.primaryBlue,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                  ),
+                                ),
+                        ),
                       ),
                       Positioned(
                         bottom: 0,
@@ -331,7 +360,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
 
           const SizedBox(height: 24),
-          const Divider(),
+          _buildSectionHeader('Personal Information', Icons.person_outline),
+
           const SizedBox(height: 16),
 
           // Details
