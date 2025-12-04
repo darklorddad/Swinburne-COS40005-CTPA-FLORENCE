@@ -260,8 +260,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('Personal Information', Icons.person_outline),
-          const SizedBox(height: 24),
 
           // Avatar & Basic Info (Centered)
           Center(
@@ -331,7 +329,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
 
           const SizedBox(height: 24),
-          const Divider(),
+          _buildSectionHeader('Personal Information', Icons.person_outline),
+
           const SizedBox(height: 16),
 
           // Details
