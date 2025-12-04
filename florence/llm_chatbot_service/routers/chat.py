@@ -74,9 +74,9 @@ async def send_message(
         # Add current user message
         messages.append(DeepSeekMessage(role="user", content=request.message))
 
-        # Call DeepSeek API
+        # Call OpenRouter API
         assistant_content = await deepseek_service.chat_completion(messages)
-        logger.info(f"DeepSeek responded to patient {patient_id}")
+        logger.info(f"OpenRouter responded to patient {patient_id}")
 
         # Save assistant response with health context
         assistant_message = await conversation_service.save_message(

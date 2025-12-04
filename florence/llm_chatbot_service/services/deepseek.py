@@ -15,18 +15,20 @@ class DeepSeekService:
     """Service for interacting with the DeepSeek API."""
 
     def __init__(self):
-        """Initialize the DeepSeek service."""
-        self.base_url = settings.deepseek_base_url
-        self.api_key = settings.deepseek_api_key
-        self.model = settings.deepseek_model
-        self.temperature = settings.deepseek_temperature
-        self.max_tokens = settings.deepseek_max_tokens
+        """Initialize the OpenRouter service."""
+        self.base_url = settings.openrouter_base_url
+        self.api_key = settings.openrouter_api_key
+        self.model = settings.openrouter_model
+        self.temperature = settings.openrouter_temperature
+        self.max_tokens = settings.openrouter_max_tokens
 
     def _get_headers(self) -> dict:
-        """Get HTTP headers for DeepSeek API requests."""
+        """Get HTTP headers for OpenRouter API requests."""
         return {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "https://florence-health.app",
+            "X-Title": "Florence Health",
         }
 
     async def chat_completion(
@@ -36,7 +38,7 @@ class DeepSeekService:
         max_tokens: Optional[int] = None,
     ) -> str:
         """
-        Send a chat completion request to DeepSeek API.
+        Send a chat completion request to OpenRouter API.
 
         Args:
             messages: List of conversation messages
@@ -64,7 +66,7 @@ class DeepSeekService:
                     f"{self.base_url}/chat/completions",
                     headers=self._get_headers(),
                     json=request_data.model_dump(exclude_none=True),
-                    timeout=30.0,
+                    timeout=60.0,
                 )
 
                 response.raise_for_status()
@@ -73,16 +75,16 @@ class DeepSeekService:
                 deepseek_response = DeepSeekResponse(**data)
 
                 if not deepseek_response.choices or len(deepseek_response.choices) == 0:
-                    raise Exception("No response choices returned from DeepSeek API")
+                    raise Exception("No response choices returned from OpenRouter API")
 
                 return deepseek_response.choices[0].message.content
 
             except httpx.HTTPStatusError as e:
-                raise Exception(f"DeepSeek API error: {e.response.status_code} - {e.response.text}")
+                raise Exception(f"OpenRouter API error: {e.response.status_code} - {e.response.text}")
             except httpx.RequestError as e:
-                raise Exception(f"Network error calling DeepSeek API: {str(e)}")
+                raise Exception(f"Network error calling OpenRouter API: {str(e)}")
             except Exception as e:
-                raise Exception(f"Error processing DeepSeek response: {str(e)}")
+                raise Exception(f"Error processing OpenRouter response: {str(e)}")
 
     def build_system_prompt(self, health_context_formatted: str) -> str:
         """
