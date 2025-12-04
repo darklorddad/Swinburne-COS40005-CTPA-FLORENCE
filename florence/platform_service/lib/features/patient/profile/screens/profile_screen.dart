@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+
+import '../../../../config/routes.dart';
+import '../../../../config/theme.dart';
+import '../../../../core/providers/theme_provider.dart';
+import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
-import '../../chat/services/chatbot_service.dart';
-import '../../../../core/providers/theme_provider.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
 import '../../../../main.dart';
-import '../providers/user_profile_provider.dart'; // Added
+import '../../../../shared/widgets/card_widgets.dart';
+import '../../chat/services/chatbot_service.dart';
+import '../providers/user_profile_provider.dart';
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings
@@ -28,6 +29,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _dateOfBirth = 'January 15, 1985';
   String _gender = 'Male';
   String _phoneNumber = '+60 12-345 6789';
+  String? _profileImageUrl; // Added
+  String _emergencyContactName = 'Not set';
+  String _emergencyContactPhone = 'Not set';
+  String _emergencyContactRelationship = 'Not set';
   String _diabetesType = 'Type 2';
   double _targetMin = 70.0;
   double _targetMax = 180.0;
@@ -44,6 +49,52 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
+  }
+
+  /// Upload Profile Picture via Backend
+  Future<void> _uploadProfilePicture() async {
+    final picker = ImagePicker();
+    final imageFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 600,
+      maxHeight: 600,
+    );
+
+    if (imageFile == null) return;
+
+    // Show loading indicator
+    Helpers.showLoadingDialog(context, message: "Uploading...");
+
+    try {
+      final bytes = await imageFile.readAsBytes();
+      final fileName = imageFile.name;
+
+      final ApiService apiService = ApiService();
+      
+      // Call the backend endpoint
+      final response = await apiService.uploadFile(
+        '/patients/me/avatar', 
+        'file', 
+        bytes, 
+        fileName
+      );
+
+      // Optimistic update
+      if (mounted) {
+        setState(() {
+          _profileImageUrl = response['url'];
+        });
+        Helpers.hideLoadingDialog(context);
+        Helpers.showSuccess(context, 'Profile picture updated');
+        // Refresh provider to sync everything
+        ref.refresh(userProfileProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        Helpers.hideLoadingDialog(context);
+        Helpers.showError(context, 'Failed to upload image: $e');
+      }
+    }
   }
   
   /// Handle logout
@@ -150,6 +201,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               : 'Not set';
           _gender = profileData['gender'] ?? 'Not set';
           _phoneNumber = profileData['phone_number'] ?? 'Not set';
+          _profileImageUrl = profileData['profile_picture_url']; // Added
+          _emergencyContactName = profileData['emergency_contact_name'] ?? 'Not set';
+          _emergencyContactPhone = profileData['emergency_contact_phone'] ?? 'Not set';
+          _emergencyContactRelationship = profileData['emergency_contact_relationship'] ?? 'Not set';
 
           return RefreshIndicator(
             onRefresh: () => ref.refresh(userProfileProvider.future),
@@ -159,15 +214,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Profile header with avatar
-                  _buildProfileHeader(),
-                  const SizedBox(height: 24),
-                  
                   // Personal info section
                   _buildPersonalInfoSection(),
                   const SizedBox(height: 16),
-                  
-                  // Health profile section
+
+                  // Health Profile section
                   _buildHealthProfileSection(),
                   const SizedBox(height: 16),
                   
@@ -204,99 +255,120 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
   
   /// Build profile header with avatar
-  Widget _buildProfileHeader() {
+ Widget _buildPersonalInfoSection() {
     return BaseCard(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Avatar
-          Stack(
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-                child: Text(
-                  _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        color: AppTheme.primaryBlue,
+          _buildSectionHeader('Personal Information', Icons.person_outline),
+          const SizedBox(height: 24),
+
+          // Avatar & Basic Info (Centered)
+          Center(
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _uploadProfilePicture,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+                        backgroundImage: _profileImageUrl != null
+                            ? NetworkImage(_profileImageUrl!)
+                            : null,
+                        child: _profileImageUrl == null
+                            ? Text(
+                                _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                                style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                                      color: AppTheme.primaryBlue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryBlue,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _userName,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              Positioned(
-                bottom: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white,
-                      width: 2,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.edit,
-                    size: 16,
-                    color: Colors.white,
-                  ),
+                const SizedBox(height: 4),
+                Text(
+                  _userEmail,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+
+          const SizedBox(height: 24),
+          const Divider(),
           const SizedBox(height: 16),
-          
-          // Name
-          Text(
-            _userName,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 4),
-          
-          // Email
-          Text(
-            _userEmail,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                ),
-          ),
+
+          // Details
+          _buildInfoRow('Date of Birth', _dateOfBirth, Icons.cake),
+          const Divider(height: 24),
+          _buildInfoRow('Gender', _gender, Icons.wc),
+          const Divider(height: 24),
+          _buildInfoRow('Phone Number', _phoneNumber, Icons.phone),
+
+          const SizedBox(height: 40),
+
+          // Emergency Contact Header
+          _buildSectionHeader('Emergency Contact', Icons.contact_emergency),
           const SizedBox(height: 16),
-          
-          // Edit profile button
-          TextButton.icon(
-            onPressed: _editProfile,
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Edit Profile'),
-            style: TextButton.styleFrom(
-              foregroundColor: AppTheme.primaryBlue,
+
+          _buildInfoRow('Name', _emergencyContactName, Icons.person),
+          const Divider(height: 24),
+          _buildInfoRow('Phone Number', _emergencyContactPhone, Icons.phone),
+          const Divider(height: 24),
+          _buildInfoRow('Relationship', _emergencyContactRelationship, Icons.people),
+          const SizedBox(height: 24),
+
+          // Edit button
+          Center(
+            child: TextButton.icon(
+              onPressed: _editProfile,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Edit Profile'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryBlue,
+              ),
             ),
           ),
         ],
       ),
     );
   }
-  
-  /// Build personal info section
-  Widget _buildPersonalInfoSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Personal Information', Icons.person_outline),
-          const SizedBox(height: 16),
-          
-          _buildInfoRow('Date of Birth', _dateOfBirth, Icons.cake),
-          const Divider(height: 24),
-          _buildInfoRow('Gender', _gender, Icons.wc),
-          const Divider(height: 24),
-          _buildInfoRow('Phone Number', _phoneNumber, Icons.phone),
-        ],
-      ),
-    );
-  }
-  
   /// Build health profile section
   Widget _buildHealthProfileSection() {
     return BaseCard(
