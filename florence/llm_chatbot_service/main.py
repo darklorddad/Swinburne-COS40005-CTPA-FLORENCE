@@ -47,7 +47,7 @@ async def startup_event():
     logger.info("=" * 60)
     logger.info(f"Service URL: http://{settings.service_host}:{settings.service_port}")
     logger.info(f"Data Service URL: {settings.data_service_url}")
-    logger.info(f"OpenRouter Model: {settings.openrouter_model}")
+    logger.info(f"LLM Model: {settings.llm_model}")
     logger.info("=" * 60)
 
 

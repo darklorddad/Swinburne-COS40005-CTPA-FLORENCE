@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import List, Optional
 import httpx
 from config import settings
-from models.chat import ChatMessage, DeepSeekMessage
+from models.chat import ChatMessage, LLMMessage
 
 
 class ConversationService:
@@ -104,15 +104,15 @@ class ConversationService:
             # For now, we just return 0 as the count isn't critical.
             return 0
 
-    def convert_to_deepseek_messages(
+    def convert_to_llm_messages(
         self,
         chat_messages: List[ChatMessage]
-    ) -> List[DeepSeekMessage]:
+    ) -> List[LLMMessage]:
         """
-        Convert ChatMessage objects to DeepSeekMessage format.
+        Convert ChatMessage objects to LLMMessage format.
         """
         return [
-            DeepSeekMessage(role=msg.role, content=msg.content)
+            LLMMessage(role=msg.role, content=msg.content)
             for msg in chat_messages
             if msg.role in ["user", "assistant"]  # Exclude system messages
         ]

@@ -6,7 +6,7 @@ A dedicated multi-tenant Python microservice for AI-powered health chatbot funct
 
 This service provides AI-powered conversational assistance for diabetes management by:
 - Managing chat logic and conversation history
-- Integrating with DeepSeek LLM for intelligent responses
+- Integrating with LLM providers (e.g., OpenRouter, DeepSeek) for intelligent responses
 - Fetching and aggregating patient health data
 - Ensuring strict user data isolation and security
 
@@ -15,7 +15,7 @@ This service provides AI-powered conversational assistance for diabetes manageme
 ```
 Flutter App → JWT Auth → Chatbot Service → Supabase Database
                                       ↓
-                                 DeepSeek API
+                                   LLM API
 ```
 
 ### Key Principles
@@ -39,7 +39,7 @@ chatbot_service/
 │   └── chat.py               # Chat API endpoints
 ├── services/
 │   ├── __init__.py
-│   ├── deepseek.py           # DeepSeek API integration
+│   ├── llm.py                # LLM API integration (Generic)
 │   ├── health_data.py        # Health data aggregation
 │   └── conversation.py       # Chat history management
 ├── models/
@@ -57,7 +57,7 @@ chatbot_service/
 
 - Python 3.10 or higher
 - Supabase account with configured database
-- DeepSeek API key
+- LLM Provider API key (e.g., OpenRouter, DeepSeek)
 
 ### Setup Steps
 
@@ -95,12 +95,12 @@ chatbot_service/
    SUPABASE_SERVICE_KEY="your-service-role-key"
    SUPABASE_ANON_KEY="your-anon-key"
 
-   # DeepSeek AI Configuration
-   DEEPSEEK_API_KEY="your-deepseek-api-key"
-   DEEPSEEK_BASE_URL="https://api.deepseek.com/v1"
-   DEEPSEEK_MODEL="deepseek-chat"
-   # DEEPSEEK_TEMPERATURE=0.8 (Optional)
-   # DEEPSEEK_MAX_TOKENS=1000 (Optional)
+   # LLM Configuration (Example: OpenRouter)
+   LLM_API_KEY="your-api-key"
+   LLM_BASE_URL="https://openrouter.ai/api/v1"
+   LLM_MODEL="google/gemini-3-pro-preview"
+   # LLM_TEMPERATURE=0.8 (Optional)
+   # LLM_MAX_TOKENS=1000 (Optional)
 
    # Service Configuration
    SERVICE_HOST="0.0.0.0"
@@ -247,16 +247,16 @@ This raw data is fetched from Supabase and formatted for the LLM prompt, allowin
 
 ## LLM Integration
 
-### DeepSeek Configuration
+### Configuration
 
-- **Model**: deepseek-chat
+- **Model**: Configurable via `LLM_MODEL` (e.g., `google/gemini-3-pro-preview`)
 - **Temperature**: 0.8 (conversational, balanced creativity)
 - **Max Tokens**: 1000
 - **System Prompt**: Includes patient health context and safety guidelines
 
 ### Fallback Responses
 
-If the DeepSeek API fails, the service returns helpful fallback responses to maintain user experience.
+If the LLM API fails, the service returns helpful fallback responses to maintain user experience.
 
 ## Database Schema
 
@@ -343,15 +343,15 @@ Suitable for:
 The service logs:
 - Patient interactions (message IDs only, not content)
 - API errors and failures
-- DeepSeek API calls
+- LLM API calls
 - Authentication failures
 
 ### Metrics to Track
 
 - Request latency
-- DeepSeek API response time
+- LLM API response time
 - Error rates by endpoint
-- Token usage (DeepSeek)
+- Token usage (LLM)
 - Active conversations
 
 ## Troubleshooting
@@ -367,10 +367,10 @@ The service logs:
    - Ensure user has a patient profile in patient_profiles table
    - Check user_id matches between auth.users and patient_profiles
 
-3. **"DeepSeek API error"**
+3. **"LLM API error"**
    - Verify API key is valid
    - Check internet connectivity
-   - Review DeepSeek API status
+   - Review LLM Provider API status
    - Fallback responses will be used automatically
 
 4. **"No health data available"**
@@ -393,7 +393,7 @@ Edit `services/health_data.py` → `get_health_context()` method.
 
 ### Customizing LLM Prompts
 
-Edit `services/deepseek.py` → `build_system_prompt()` method.
+Edit `services/llm.py` → `build_system_prompt()` method.
 
 ## Migration from Flutter
 

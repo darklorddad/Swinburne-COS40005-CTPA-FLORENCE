@@ -8,7 +8,7 @@ import logging
 from utils.auth import get_current_patient
 from services import (
     get_health_data_service,
-    get_deepseek_service,
+    get_llm_service,
     get_conversation_service,
 )
 from models.chat import (
@@ -16,7 +16,7 @@ from models.chat import (
     ChatMessageResponse,
     ChatHistoryResponse,
     ClearHistoryResponse,
-    DeepSeekMessage,
+    LLMMessage,
 )
 
 # Configure logging
@@ -41,7 +41,7 @@ async def send_message(
     try:
         # Get service instances
         health_service = get_health_data_service()
-        deepseek_service = get_deepseek_service()
+        llm_service = get_llm_service()
         conversation_service = get_conversation_service()
 
         # Save user message
@@ -58,25 +58,25 @@ async def send_message(
         health_context_formatted = health_context.format_for_prompt()
 
         # Build system prompt with health context
-        system_prompt = deepseek_service.build_system_prompt(health_context_formatted)
+        system_prompt = llm_service.build_system_prompt(health_context_formatted)
 
         # Prepare messages for LLM
-        messages = [DeepSeekMessage(role="system", content=system_prompt)]
+        messages = [LLMMessage(role="system", content=system_prompt)]
 
         # Add conversation history if requested
         if request.include_history:
             # Fetch all history (using a large limit)
             history = await conversation_service.get_conversation_history(token, limit=10000)
-            # Convert to DeepSeek format (excludes system messages)
-            history_messages = conversation_service.convert_to_deepseek_messages(history)
+            # Convert to LLM format (excludes system messages)
+            history_messages = conversation_service.convert_to_llm_messages(history)
             messages.extend(history_messages)
 
         # Add current user message
-        messages.append(DeepSeekMessage(role="user", content=request.message))
+        messages.append(LLMMessage(role="user", content=request.message))
 
-        # Call OpenRouter API
-        assistant_content = await deepseek_service.chat_completion(messages)
-        logger.info(f"OpenRouter responded to patient {patient_id}")
+        # Call LLM API
+        assistant_content = await llm_service.chat_completion(messages)
+        logger.info(f"LLM responded to patient {patient_id}")
 
         # Save assistant response with health context
         assistant_message = await conversation_service.save_message(

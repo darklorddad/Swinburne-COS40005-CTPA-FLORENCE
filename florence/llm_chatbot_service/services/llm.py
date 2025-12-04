@@ -5,25 +5,25 @@ import httpx
 from typing import List, Optional
 from config import settings
 from models.chat import (
-    DeepSeekMessage,
-    DeepSeekRequest,
-    DeepSeekResponse,
+    LLMMessage,
+    LLMRequest,
+    LLMResponse,
 )
 
 
-class DeepSeekService:
-    """Service for interacting with the DeepSeek API."""
+class LLMService:
+    """Service for interacting with the LLM API."""
 
     def __init__(self):
-        """Initialize the OpenRouter service."""
-        self.base_url = settings.openrouter_base_url
-        self.api_key = settings.openrouter_api_key
-        self.model = settings.openrouter_model
-        self.temperature = settings.openrouter_temperature
-        self.max_tokens = settings.openrouter_max_tokens
+        """Initialize the LLM service."""
+        self.base_url = settings.llm_base_url
+        self.api_key = settings.llm_api_key
+        self.model = settings.llm_model
+        self.temperature = settings.llm_temperature
+        self.max_tokens = settings.llm_max_tokens
 
     def _get_headers(self) -> dict:
-        """Get HTTP headers for OpenRouter API requests."""
+        """Get HTTP headers for LLM API requests."""
         return {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
@@ -33,12 +33,12 @@ class DeepSeekService:
 
     async def chat_completion(
         self,
-        messages: List[DeepSeekMessage],
+        messages: List[LLMMessage],
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
     ) -> str:
         """
-        Send a chat completion request to OpenRouter API.
+        Send a chat completion request to LLM API.
 
         Args:
             messages: List of conversation messages
@@ -52,7 +52,7 @@ class DeepSeekService:
             httpx.HTTPError: If API request fails
             Exception: If response parsing fails
         """
-        request_data = DeepSeekRequest(
+        request_data = LLMRequest(
             model=self.model,
             messages=messages,
             temperature=temperature or self.temperature,
@@ -72,19 +72,19 @@ class DeepSeekService:
                 response.raise_for_status()
 
                 data = response.json()
-                deepseek_response = DeepSeekResponse(**data)
+                llm_response = LLMResponse(**data)
 
-                if not deepseek_response.choices or len(deepseek_response.choices) == 0:
-                    raise Exception("No response choices returned from OpenRouter API")
+                if not llm_response.choices or len(llm_response.choices) == 0:
+                    raise Exception("No response choices returned from LLM API")
 
-                return deepseek_response.choices[0].message.content
+                return llm_response.choices[0].message.content
 
             except httpx.HTTPStatusError as e:
-                raise Exception(f"OpenRouter API error: {e.response.status_code} - {e.response.text}")
+                raise Exception(f"LLM API error: {e.response.status_code} - {e.response.text}")
             except httpx.RequestError as e:
-                raise Exception(f"Network error calling OpenRouter API: {str(e)}")
+                raise Exception(f"Network error calling LLM API: {str(e)}")
             except Exception as e:
-                raise Exception(f"Error processing OpenRouter response: {str(e)}")
+                raise Exception(f"Error processing LLM response: {str(e)}")
 
     def build_system_prompt(self, health_context_formatted: str) -> str:
         """
@@ -118,12 +118,12 @@ Important:
 
 
 # Singleton instance
-_deepseek_service: Optional[DeepSeekService] = None
+_llm_service: Optional[LLMService] = None
 
 
-def get_deepseek_service() -> DeepSeekService:
-    """Get or create the singleton DeepSeekService instance."""
-    global _deepseek_service
-    if _deepseek_service is None:
-        _deepseek_service = DeepSeekService()
-    return _deepseek_service
+def get_llm_service() -> LLMService:
+    """Get or create the singleton LLMService instance."""
+    global _llm_service
+    if _llm_service is None:
+        _llm_service = LLMService()
+    return _llm_service
