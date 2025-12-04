@@ -79,9 +79,10 @@ class Validators {
       return '$fieldName must be less than 50 characters';
     }
     
-    // Only letters, spaces, hyphens, and apostrophes
-    if (!RegExp(r"^[a-zA-Z\s\-']+$").hasMatch(value)) {
-      return '$fieldName can only contain letters, spaces, hyphens, and apostrophes';
+    // Strict regex: letters (Unicode supported), spaces, hyphens, apostrophes only.
+    // No numbers, no other special symbols.
+    if (!RegExp(r"^[a-zA-Z\u00C0-\u00FF\s\-']+$").hasMatch(value)) {
+      return '$fieldName cannot contain numbers or special characters';
     }
     
     return null;
@@ -91,17 +92,18 @@ class Validators {
   // PHONE VALIDATION
   // ============================================
   
-  static String? phone(String? value) {
+  static String? phoneDigits(String? value) {
     if (value == null || value.isEmpty) {
       return 'Phone number is required';
     }
     
-    // Remove all non-digit characters for validation
-    final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
-    
-    // Malaysian phone numbers typically have 9-11 digits
-    if (digitsOnly.length < 9 || digitsOnly.length > 11) {
-      return 'Please enter a valid phone number';
+    // Allow digits only
+    if (!RegExp(r'^\d+$').hasMatch(value)) {
+      return 'Only digits allowed';
+    }
+
+    if (value.length < 6 || value.length > 15) {
+      return 'Invalid length';
     }
     
     return null;

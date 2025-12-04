@@ -103,13 +103,13 @@ async def get_current_patient_profile(authorization: str = Header(...)):
 class PatientProfileUpdate(BaseModel):
     """Fields a patient is allowed to update on their own profile."""
     name: Optional[str] = None
+    gender: Optional[str] = None
+    date_of_birth: Optional[date] = None
     phone_number: Optional[str] = None
     emergency_contact_name: Optional[str] = None
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
     profile_picture_url: Optional[str] = None
-    gender: Optional[str] = None
-    date_of_birth: Optional[date] = None
     email: Optional[EmailStr] = None
 
 class MonitorDataType(str, Enum):
