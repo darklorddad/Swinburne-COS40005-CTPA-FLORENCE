@@ -6,7 +6,7 @@ from typing import List, Optional
 import httpx
 from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from config import settings
-from models.chat import ChatMessage, LLMMessage
+from models.chat import ChatMessage
 
 
 class ConversationService:

@@ -40,38 +40,3 @@ class ClearHistoryResponse(BaseModel):
     """Response model for clearing chat history."""
     message: str
     cleared_count: int
-
-
-class LLMMessage(BaseModel):
-    """Message format for LLM API."""
-    role: Literal["system", "user", "assistant"]
-    content: str
-
-
-class LLMRequest(BaseModel):
-    """Request format for LLM API."""
-    model: str
-    messages: list[LLMMessage]
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    stream: bool = False
-
-
-class LLMChoice(BaseModel):
-    """Choice object in LLM response."""
-    message: LLMMessage
-    finish_reason: str
-
-
-class LLMUsage(BaseModel):
-    """Token usage information from LLM."""
-    prompt_tokens: Optional[int] = None
-    completion_tokens: Optional[int] = None
-    total_tokens: Optional[int] = None
-
-
-class LLMResponse(BaseModel):
-    """Response format from LLM API."""
-    choices: list[LLMChoice]
-    usage: Optional[LLMUsage] = None
-    model: str
