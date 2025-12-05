@@ -1,7 +1,7 @@
 """
 DeepSeek API integration service for LLM-powered chat responses.
 """
-from typing import List
+from typing import List, Optional
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
