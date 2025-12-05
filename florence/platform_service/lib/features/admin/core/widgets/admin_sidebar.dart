@@ -202,7 +202,7 @@ class AdminSidebar extends StatelessWidget {
           _buildSidebarFooter(context),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildSidebarHeader(BuildContext context, dynamic currentUser) {
@@ -375,7 +375,7 @@ class AdminSidebar extends StatelessWidget {
           ),
         ],
       ),
-    ));
+    );
   }
 
   void _handleLogout(BuildContext context) {
