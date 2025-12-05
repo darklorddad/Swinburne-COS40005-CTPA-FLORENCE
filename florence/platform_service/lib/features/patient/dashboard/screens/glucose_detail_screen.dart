@@ -560,15 +560,9 @@ class _GlucoseTrendsSection extends StatelessWidget {
                         reservedSize: 30,
                         interval: interval,
                         getTitlesWidget: (val, meta) {
-                          // Prevent edge labels from clipping
+                          // Prevent edge labels from clipping strictly at the bounds
                           if (val <= meta.min || val >= meta.max) {
                             return const SizedBox.shrink();
-                          }
-                          
-                          // Extra margin check (3%) to ensure no overlap with borders
-                          final rangeSpan = meta.max - meta.min;
-                          if (val < meta.min + (rangeSpan * 0.03) || val > meta.max - (rangeSpan * 0.03)) {
-                             return const SizedBox.shrink();
                           }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
