@@ -42,16 +42,6 @@ This command is intended for local development. The `--reload` flag automaticall
 
 The API will be available at `http://127.0.0.1:8000`, and the interactive documentation (Swagger UI) can be accessed at `http://127.0.0.1:8000/docs`.
 
-## Developer Tool
-
-A simple GUI tool is provided to help with common development tasks like seeding test data.
-
-To run the tool, execute the following command from the project root directory:
-
-```bash
-python -m florence.data_service.data_service_devtool.devtool
-```
-
 ---
 
 ## Running the Complete Florence Platform

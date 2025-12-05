@@ -1,55 +1,39 @@
 ### darklorddad's
 .aider*
 dld*
-COS40005-EAT40005-Worklog-102777801*
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Contains sensitive information such as name, student ID, email and etc.
-Group-List.xlsx
-Project-selection.jpg
-COS40005-EAT40005-Team-and-Project-Plan-Group-7*
-Project-progress-discussions/
-COS40005-EAT40005-Sprint-Reports-Group-7*
-20250918_215731.jpg
-20250918_215757.jpg
-20250918_215827.jpg
-20250918_220502.jpg
-20250918_220513.jpg
-20250918_220518.jpg
-20250918_221022.jpg
-COS40005-EAT40005-Sprint-2-Report-Group-7*
-
-Documentation-(Due-Week-13)/
-Documents/Computing-Technology-Project-A/Individual/Semester-1-Peer-Review-(Due-Week-13)
-Documents/Computing-Technology-Project-A/Individual/Worklog-1-(Due-Week-6)
-Documents/Computing-Technology-Project-A/Individual/Worklog-2-(Due-Week-13)/Submission
+Documents/Computing-Technology-Project-A/Documentation-(Due-Week-13)/
+Documents/Computing-Technology-Project-A/Individual/Semester-1-Peer-Review-(Due-Week-13)/
+Documents/Computing-Technology-Project-A/Individual/Worklog-1-(Due-Week-6)/
+Documents/Computing-Technology-Project-A/Individual/Worklog-2-(Due-Week-13)/Submission/
 Documents/Computing-Technology-Project-A/Individual/Worklog-2-(Due-Week-13)/COS40005-EAT40005-Worklog-2-102777801.docx
-Documents/Computing-Technology-Project-A/Poster/FYP-Showcase-Poster-Group-7
-Documents/Computing-Technology-Project-A/Project-progress-discussions
-Documents/Computing-Technology-Project-A/Project-progress-discussions-2
-Documents/Computing-Technology-Project-A/Project-progress-discussions-3
-Documents/Computing-Technology-Project-A/Sprint-1-Report-(Due-Week-6)
+Documents/Computing-Technology-Project-A/Poster/FYP-Showcase-Poster-Group-7/
+Documents/Computing-Technology-Project-A/Project-progress-discussions/
+Documents/Computing-Technology-Project-A/Project-progress-discussions-2/
+Documents/Computing-Technology-Project-A/Project-progress-discussions-3/
+Documents/Computing-Technology-Project-A/Sprint-1-Report-(Due-Week-6)/
 Documents/Computing-Technology-Project-A/Sprint-2-Report-(Due-Week-9)/COS40005-EAT40005-Sprint-2-Report-Group-7.docx
-Documents/Computing-Technology-Project-A/Sprint-2-Report-(Due-Week-9)/Submission
-Documents/Computing-Technology-Project-A/Sprint-3-Report-(Due-Week-12)
-Documents/Computing-Technology-Project-A/Team-and-Project-Plan-(Due-Week-4)/Submission
+Documents/Computing-Technology-Project-A/Sprint-2-Report-(Due-Week-9)/Submission/
+Documents/Computing-Technology-Project-A/Sprint-3-Report-(Due-Week-12)/
+Documents/Computing-Technology-Project-A/Team-and-Project-Plan-(Due-Week-4)/Submission/
 Documents/Computing-Technology-Project-A/Team-and-Project-Plan-(Due-Week-4)/COS40005-EAT40005-Team-and-Project-Plan-Group-7-submission.md
-Documents/Computing-Technology-Project-A/Team-and-Project-Plan-(Due-Week-4)/COS40005-EAT40005-Team-and-Project-Plan-Group-7-V1.md.md
+Documents/Computing-Technology-Project-A/Team-and-Project-Plan-(Due-Week-4)/COS40005-EAT40005-Team-and-Project-Plan-Group-7-V1.md
 Documents/Computing-Technology-Project-A/Team-and-Project-Plan-(Due-Week-4)/COS40005-EAT40005-Team-and-Project-Plan-Group-7.docx
-Documents/Computing-Technology-Project-A/Team-availability
+Documents/Computing-Technology-Project-A/Team-availability/
 Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Video-presentation.pptx
 Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Video-presentation.pdf
 Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Video-presentation.mp4
 Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Presentation-link.docx
-Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Submission
-Documents/Git-history
-Documents/Group-to-Client-Email
+Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Submission/
+Documents/Git-history/
+Documents/Group-to-Client-Email/
 Documents/swinburne-cos40005-florence-cb2eeb034529.json
 ~$*
-
-Images/WhatsApp Image 2025-11-07 at 11.56.29 PM (1).jpeg
-Images/WhatsApp Image 2025-11-07 at 11.56.29 PM.jpeg
+Documents/COS40005-or-EAT40005-(S2,-2025)/General/Group-List.xlsx
+Documents/COS40005-or-EAT40005-(S2,-2025)/Project-selection.jpg
 
 #SQL
 *.sql
@@ -58,10 +42,9 @@ Images/WhatsApp Image 2025-11-07 at 11.56.29 PM.jpeg
 .env
 
 *.tmp
-.admin_creds.json
-.monthly_patient_id
 supabase/
 .claude/
+CLAUDE.md
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
