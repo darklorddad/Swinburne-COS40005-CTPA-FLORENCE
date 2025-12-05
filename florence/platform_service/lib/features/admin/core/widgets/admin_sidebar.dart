@@ -28,10 +28,11 @@ class AdminSidebar extends StatelessWidget {
     return Container(
       width: 260,
       color: AdminTheme.sidebarColor,
-      child: Column(
-        children: [
-          // Sidebar Header
-          _buildSidebarHeader(context, currentUser),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Sidebar Header
+            _buildSidebarHeader(context, currentUser),
 
           const Divider(height: 1, color: AdminTheme.sidebarHoverColor),
 
@@ -374,7 +375,7 @@ class AdminSidebar extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ));
   }
 
   void _handleLogout(BuildContext context) {
