@@ -185,7 +185,8 @@ class MonitorDataRepository {
             id: id,
             timestamp: timestamp,
             value: value,
-            context: _getGlucoseContext(timestamp.hour),
+            // Convert to local to ensure '8 AM' is treated as morning, not UTC night
+            context: _getGlucoseContext(timestamp.toLocal().hour),
             isFlagged: value > 180 || value < 70,
           ));
           break;

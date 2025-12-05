@@ -398,7 +398,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                _formatTime(message.timestamp),
+                _formatTime(message.timestamp.toLocal()),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondaryColor,
                       fontSize: 11,
