@@ -36,6 +36,10 @@ class UserLogin(BaseModel):
 class AdminRegistration(BaseModel):
     email: EmailStr
     password: str
+    role: Literal['ADMIN', 'HOSPITALADMIN']
+    name: str
+    phone_number: Optional[str] = None
+    organisation_id: Optional[int] = None
 
 
 DEFAULT_THRESHOLDS = [
@@ -124,7 +128,8 @@ async def get_current_admin_user(authorization: str = Header(...)):
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
         
-        if user.app_metadata.get('role', '').upper() != 'ADMIN':
+        role = user.app_metadata.get('role', '').upper()
+        if role not in ['ADMIN', 'HOSPITALADMIN']:
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
             
         return user
@@ -139,13 +144,27 @@ async def get_current_admin_user(authorization: str = Header(...)):
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
 async def register_admin(user_data: AdminRegistration):
     """Registers a new admin user. This endpoint is protected and only accessible by other admins."""
+    
+    # Validation: Hospital Admins must have an organization
+    if user_data.role == 'HOSPITALADMIN' and not user_data.organisation_id:
+        raise HTTPException(status_code=400, detail="Organisation ID is required for Hospital Admins.")
+    
+    # Validation: Global Admins should not belong to an organization
+    if user_data.role == 'ADMIN' and user_data.organisation_id:
+        user_data.organisation_id = None
+
     try:
         supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
-            "app_metadata": {"role": "ADMIN"},
+            "app_metadata": {"role": user_data.role},
+            "user_metadata": {"name": user_data.name, "phone_number": user_data.phone_number}
         })
+        
+        # Note: In a real implementation, we would also insert into admin_profiles table here
+        # using the returned user ID and the organisation_id
+        
         return {"message": "Admin registered successfully."}
     except AuthApiError as e:
         raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")

@@ -29,7 +29,10 @@ class AdminAuthService {
       _currentUser = matchedUser.copyWith(id: supabaseUser.id); // Update ID from live session
     } catch (e) {
       // If not found in mocks (e.g., a newly registered admin), create a default one
-      final userRole = AdminRole.fromString(supabaseUser.appMetadata['role'] ?? 'Doctor');
+      // Default to Hospital Admin if role is missing/invalid during development
+      final roleStr = supabaseUser.appMetadata['role'] ?? 'Hospital Admin';
+      final userRole = AdminRole.fromString(roleStr);
+      
       _currentUser = AdminUser(
           id: supabaseUser.id,
           email: supabaseUser.email!,
@@ -72,7 +75,7 @@ class AdminAuthService {
       staffCount: 45,
       createdAt: DateTime(2024, 1, 15),
       updatedAt: DateTime(2025, 10, 20),
-      createdBy: 'super_admin_001',
+      createdBy: 'admin_001',
     ),
     Organization(
       id: 'org_002',
@@ -91,7 +94,7 @@ class AdminAuthService {
       staffCount: 78,
       createdAt: DateTime(2024, 3, 10),
       updatedAt: DateTime(2025, 10, 15),
-      createdBy: 'super_admin_001',
+      createdBy: 'admin_001',
     ),
     Organization(
       id: 'org_003',
@@ -110,7 +113,7 @@ class AdminAuthService {
       staffCount: 23,
       createdAt: DateTime(2024, 6, 20),
       updatedAt: DateTime(2025, 10, 10),
-      createdBy: 'super_admin_001',
+      createdBy: 'admin_001',
     ),
   ];
 
@@ -119,15 +122,15 @@ class AdminAuthService {
   // ============================================
 
   final List<AdminUser> _mockUsers = [
-    // Super Admin
+    // Global Admin
     AdminUser(
-      id: 'super_admin_001',
-      email: 'superadmin@biotective.com',
+      id: 'admin_001',
+      email: 'admin@biotective.com',
       firstName: 'Sarah',
       lastName: 'Anderson',
-      role: AdminRole.superAdmin,
+      role: AdminRole.admin,
       status: UserStatus.active,
-      organizationId: null, // Super Admin has no org restriction
+      organizationId: null, // Admin has no org restriction
       organizationName: null,
       phone: '+60 12-3456789',
       profileImageUrl: null,
@@ -244,95 +247,6 @@ class AdminAuthService {
       lastLoginAt: DateTime(2025, 10, 25, 9, 15),
     ),
 
-    // Doctor - City General Hospital
-    AdminUser(
-      id: 'doctor_001',
-      email: 'dr.johnson@citygeneral.com',
-      firstName: 'James',
-      lastName: 'Johnson',
-      role: AdminRole.doctor,
-      status: UserStatus.active,
-      organizationId: 'org_001',
-      organizationName: 'City General Hospital',
-      phone: '+60 14-2223344',
-      profileImageUrl: null,
-      permissions: [
-        // Patients (view only)
-        AdminPermission.viewOrgPatients,
-        
-        // Clinical Data (full access)
-        AdminPermission.viewPatientHealthData,
-        AdminPermission.editPatientHealthData,
-        AdminPermission.viewHypoHyperEvents,
-        AdminPermission.viewPatientLogbook,
-        AdminPermission.addPatientNotes,
-        
-        // Appointments (view/edit)
-        AdminPermission.viewAppointments,
-        AdminPermission.editAppointment,
-        
-        // Medications (view only)
-        AdminPermission.viewMedications,
-      ],
-      createdAt: DateTime(2024, 2, 1),
-      lastLoginAt: DateTime(2025, 10, 27, 7, 00),
-    ),
-
-    // Doctor - Memorial Medical Center
-    AdminUser(
-      id: 'doctor_002',
-      email: 'dr.patel@memorialmedical.com',
-      firstName: 'Priya',
-      lastName: 'Patel',
-      role: AdminRole.doctor,
-      status: UserStatus.active,
-      organizationId: 'org_002',
-      organizationName: 'Memorial Medical Center',
-      phone: '+60 15-6667788',
-      profileImageUrl: null,
-      permissions: [
-        // Same as doctor_001
-        AdminPermission.viewOrgPatients,
-        AdminPermission.viewPatientHealthData,
-        AdminPermission.editPatientHealthData,
-        AdminPermission.viewHypoHyperEvents,
-        AdminPermission.viewPatientLogbook,
-        AdminPermission.addPatientNotes,
-        AdminPermission.viewAppointments,
-        AdminPermission.editAppointment,
-        AdminPermission.viewMedications,
-      ],
-      createdAt: DateTime(2024, 3, 15),
-      lastLoginAt: DateTime(2025, 10, 26, 16, 30),
-    ),
-
-    // Doctor - Community Health Clinic
-    AdminUser(
-      id: 'doctor_003',
-      email: 'dr.wong@communityhealthclinic.com',
-      firstName: 'David',
-      lastName: 'Wong',
-      role: AdminRole.doctor,
-      status: UserStatus.active,
-      organizationId: 'org_003',
-      organizationName: 'Community Health Clinic',
-      phone: '+60 16-9998877',
-      profileImageUrl: null,
-      permissions: [
-        // Same as other doctors
-        AdminPermission.viewOrgPatients,
-        AdminPermission.viewPatientHealthData,
-        AdminPermission.editPatientHealthData,
-        AdminPermission.viewHypoHyperEvents,
-        AdminPermission.viewPatientLogbook,
-        AdminPermission.addPatientNotes,
-        AdminPermission.viewAppointments,
-        AdminPermission.editAppointment,
-        AdminPermission.viewMedications,
-      ],
-      createdAt: DateTime(2024, 6, 25),
-      lastLoginAt: DateTime(2025, 10, 24, 13, 20),
-    ),
   ];
 
   // ============================================
@@ -417,9 +331,9 @@ class AdminAuthService {
     }
   }
 
-  /// Get all organizations (Super Admin only)
+  /// Get all organizations (Global Admin only)
   List<Organization> getAllOrganizations() {
-    if (_currentUser?.isSuperAdmin != true) {
+    if (_currentUser?.isAdmin != true) {
       return [];
     }
     return _mockOrganizations;
@@ -458,8 +372,8 @@ class AdminAuthService {
   /// Get demo credentials for testing
   static Map<String, Map<String, String>> getDemoCredentials() {
     return {
-      'Super Admin': {
-        'email': 'superadmin@biotective.com',
+      'Admin': {
+        'email': 'admin@biotective.com',
         'password': 'demo123',
         'description': 'Full system access',
       },
@@ -472,21 +386,6 @@ class AdminAuthService {
         'email': 'admin@memorialmedical.com',
         'password': 'demo123',
         'description': 'Memorial Medical Center access',
-      },
-      'Doctor (City General)': {
-        'email': 'dr.johnson@citygeneral.com',
-        'password': 'demo123',
-        'description': 'Clinical access - City General',
-      },
-      'Doctor (Memorial)': {
-        'email': 'dr.patel@memorialmedical.com',
-        'password': 'demo123',
-        'description': 'Clinical access - Memorial',
-      },
-      'Doctor (Community)': {
-        'email': 'dr.wong@communityhealthclinic.com',
-        'password': 'demo123',
-        'description': 'Clinical access - Community Clinic',
       },
     };
   }

@@ -6,35 +6,28 @@
 // ============================================
 
 enum AdminRole {
-  superAdmin('Super Admin', 'Full system access'),
-  hospitalAdmin('Hospital Admin', 'Organization-level access'),
-  doctor('Doctor', 'Clinical access');
+  admin('Admin', 'Full system access'),
+  hospitalAdmin('Hospital Admin', 'Organization-level access');
 
   final String displayName;
   final String description;
   
   const AdminRole(this.displayName, this.description);
   
-  /// Check if this role is Super Admin
-  bool get isSuperAdmin => this == AdminRole.superAdmin;
+  /// Check if this role is Global Admin
+  bool get isAdmin => this == AdminRole.admin;
   
   /// Check if this role is Hospital Admin
   bool get isHospitalAdmin => this == AdminRole.hospitalAdmin;
-  
-  /// Check if this role is Doctor
-  bool get isDoctor => this == AdminRole.doctor;
   
   /// Get role from string
   static AdminRole fromString(String role) {
     switch (role.toLowerCase().replaceAll(' ', '')) {
       case 'admin':
       case 'superadmin':
-        return AdminRole.superAdmin;
+        return AdminRole.admin;
       case 'hospitaladmin':
         return AdminRole.hospitalAdmin;
-      case 'doctor':
-      case 'physician':
-        return AdminRole.doctor;
       default:
         throw Exception('Unknown admin role: $role');
     }

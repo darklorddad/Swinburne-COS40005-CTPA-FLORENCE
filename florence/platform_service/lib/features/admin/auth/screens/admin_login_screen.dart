@@ -350,11 +350,11 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
 
                           // Quick login buttons
                           _QuickLoginButton(
-                            label: 'Super Admin',
-                            email: 'superadmin@biotective.com',
+                            label: 'Admin',
+                            email: 'admin@biotective.com',
                             icon: Icons.shield,
-                            color: AdminTheme.superAdminColor,
-                            onTap: () => _fillDemoCredentials('superadmin@biotective.com'),
+                            color: AdminTheme.adminColor,
+                            onTap: () => _fillDemoCredentials('admin@biotective.com'),
                           ),
                           const SizedBox(height: 8),
                           _QuickLoginButton(
@@ -363,14 +363,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             icon: Icons.business,
                             color: AdminTheme.hospitalAdminColor,
                             onTap: () => _fillDemoCredentials('admin@citygeneral.com'),
-                          ),
-                          const SizedBox(height: 8),
-                          _QuickLoginButton(
-                            label: 'Doctor',
-                            email: 'dr.johnson@citygeneral.com',
-                            icon: Icons.medical_services,
-                            color: AdminTheme.doctorColor,
-                            onTap: () => _fillDemoCredentials('dr.johnson@citygeneral.com'),
                           ),
 
                           const SizedBox(height: 16),

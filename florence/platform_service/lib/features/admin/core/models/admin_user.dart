@@ -136,14 +136,11 @@ class AdminUser {
   /// Check if user is active
   bool get isActive => status.isActive;
 
-  /// Check if user is Super Admin
-  bool get isSuperAdmin => role.isSuperAdmin;
+  /// Check if user is Global Admin
+  bool get isAdmin => role.isAdmin;
 
   /// Check if user is Hospital Admin
   bool get isHospitalAdmin => role.isHospitalAdmin;
-
-  /// Check if user is Doctor
-  bool get isDoctor => role.isDoctor;
 
   /// Check if user has a specific permission
   bool hasPermission(AdminPermission permission) {

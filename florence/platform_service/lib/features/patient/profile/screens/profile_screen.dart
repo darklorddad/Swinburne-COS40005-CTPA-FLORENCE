@@ -218,13 +218,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         // Clear chatbot session state
         ref.read(chatProvider.notifier).resetSession();
         
+        // Sign out - this triggers the onAuthStateChange listener in app.dart
+        // which handles the navigation to the login screen.
         await supabase.auth.signOut();
-        if (mounted) {
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
       } catch (e) {
         if (mounted) {
-          // In demo mode, just navigate to login
+          // Fallback manual navigation if error occurs
           AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
         }
       }
