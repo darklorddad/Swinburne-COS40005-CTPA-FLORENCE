@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Data Service Configuration
-    data_service_url: str = "https://ds-florence-dhp.vercel.app"
+    # Defaults to localhost. Override with DATA_SERVICE_URL env var in Production/Preview.
+    data_service_url: str = "http://localhost:8000"
 
     # LLM Configuration
     llm_api_key: str

@@ -27,8 +27,6 @@ class LLMService:
         return {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {self.api_key}",
-            "HTTP-Referer": "https://florence-health.app",
-            "X-Title": "Florence Health",
         }
 
     async def chat_completion(
