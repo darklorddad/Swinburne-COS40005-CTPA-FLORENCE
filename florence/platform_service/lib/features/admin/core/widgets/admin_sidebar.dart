@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../config/admin_theme.dart';
 import '../models/admin_enums.dart';
 import '../services/permission_service.dart';
@@ -362,6 +363,43 @@ class AdminSidebar extends StatelessWidget {
               // Show help dialog or navigate
             },
           ),
+          const SizedBox(height: 8),
+          // Logout
+          _buildFooterButton(
+            context,
+            icon: Icons.logout,
+            label: 'Sign Out',
+            color: AdminTheme.errorColor,
+            onTap: () => _handleLogout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdminTheme.errorColor,
+            ),
+            child: const Text('Sign Out'),
+          ),
         ],
       ),
     );
@@ -372,7 +410,10 @@ class AdminSidebar extends StatelessWidget {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    Color? color,
   }) {
+    final itemColor = color ?? AdminTheme.textOnDark.withOpacity(0.6);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -385,14 +426,15 @@ class AdminSidebar extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: AdminTheme.textOnDark.withOpacity(0.6),
+                color: itemColor,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AdminTheme.textOnDark.withOpacity(0.6),
+                        color: itemColor,
+                        fontWeight: color != null ? FontWeight.w600 : null,
                       ),
                 ),
               ),
