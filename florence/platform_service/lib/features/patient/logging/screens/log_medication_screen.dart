@@ -75,7 +75,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
         _selectedMedicationType,
         _dosageController.text.trim(),
         _selectedTiming,
-        _selectedDateTime,
+        _selectedDateTime.toUtc(),
         _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
       );
       

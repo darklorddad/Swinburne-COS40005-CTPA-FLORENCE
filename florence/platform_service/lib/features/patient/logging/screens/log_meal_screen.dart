@@ -87,7 +87,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       // Use the repository logic
       await ref.read(monitorDataRepositoryProvider).addMeal(
         _selectedMealType.toUpperCase(),
-        _selectedDateTime,
+        _selectedDateTime.toUtc(),
         description,
         null, // Glucose before
         null, // Time before
