@@ -73,8 +73,8 @@ async def health_check():
     """Global health check endpoint."""
     return {
         "status": "healthy",
-        "service": "florence-chatbot",
-        "version": "1.0.0"
+        "service": "florence-llm-chatbot-service",
+        "version": settings.app_version
     }
 
 
