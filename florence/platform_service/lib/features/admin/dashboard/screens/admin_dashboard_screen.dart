@@ -56,23 +56,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               const SizedBox(height: 32),
 
               // Organizations Overview & Recent Activity
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Organizations Overview
-                  Expanded(
-                    flex: 2,
-                    child: _buildOrganizationsOverview(),
-                  ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Mobile/Tablet: Stack vertically
+                  if (constraints.maxWidth < 900) {
+                    return Column(
+                      children: [
+                        _buildOrganizationsOverview(),
+                        const SizedBox(height: 24),
+                        _buildRecentActivity(),
+                      ],
+                    );
+                  }
 
-                  const SizedBox(width: 24),
+                  // Desktop: Side-by-side
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Organizations Overview
+                      Expanded(
+                        flex: 2,
+                        child: _buildOrganizationsOverview(),
+                      ),
 
-                  // Recent Activity
-                  Expanded(
-                    flex: 1,
-                    child: _buildRecentActivity(),
-                  ),
-                ],
+                      const SizedBox(width: 24),
+
+                      // Recent Activity
+                      Expanded(
+                        flex: 1,
+                        child: _buildRecentActivity(),
+                      ),
+                    ],
+                  );
+                },
               ),
 
               const SizedBox(height: 32),

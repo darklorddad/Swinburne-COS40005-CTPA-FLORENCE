@@ -97,35 +97,55 @@ class _HospitalAdminDashboardScreenState
               const SizedBox(height: 32),
 
               // Two-column layout
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left column - Stats & Actions
-                  Expanded(
-                    flex: 2,
-                    child: Column(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Mobile/Tablet: Stack vertically
+                  if (constraints.maxWidth < 900) {
+                    return Column(
                       children: [
                         _buildQuickStats(),
                         const SizedBox(height: 24),
                         _buildQuickActions(),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 24),
-
-                  // Right column - Recent Activity
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      children: [
+                        const SizedBox(height: 24),
                         _buildRecentActivity(),
                         const SizedBox(height: 24),
                         _buildUpcomingAppointments(),
                       ],
-                    ),
-                  ),
-                ],
+                    );
+                  }
+
+                  // Desktop: Side-by-side
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left column - Stats & Actions
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          children: [
+                            _buildQuickStats(),
+                            const SizedBox(height: 24),
+                            _buildQuickActions(),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(width: 24),
+
+                      // Right column - Recent Activity
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          children: [
+                            _buildRecentActivity(),
+                            const SizedBox(height: 24),
+                            _buildUpcomingAppointments(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
