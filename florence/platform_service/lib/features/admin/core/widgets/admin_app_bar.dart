@@ -291,6 +291,9 @@ class _UserMenu extends StatelessWidget {
       return const SizedBox.shrink();
     }
 
+    // Check for mobile width to conditionally hide text
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return PopupMenuButton<String>(
       offset: const Offset(0, 50),
       shape: RoundedRectangleBorder(
@@ -321,33 +324,35 @@ class _UserMenu extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
-            // User Info
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  currentUser.firstName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+            // User Info - Hide on mobile
+            if (!isMobile) ...[
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    currentUser.firstName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                Text(
-                  currentUser.role.displayName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AdminTheme.textSecondaryColor,
+                  Text(
+                    currentUser.role.displayName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AdminTheme.textSecondaryColor,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 4),
-            const Icon(
-              Icons.arrow_drop_down,
-              size: 20,
-            ),
+                ],
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.arrow_drop_down,
+                size: 20,
+              ),
+            ],
           ],
         ),
       ),
