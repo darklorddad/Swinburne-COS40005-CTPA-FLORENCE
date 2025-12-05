@@ -391,10 +391,9 @@ class AdminSidebar extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
+              // Just sign out. The global auth listener in app.dart handles navigation
+              // and will clear the route stack (including this dialog).
               await Supabase.instance.client.auth.signOut();
-              if (context.mounted) {
-                Navigator.of(context).pop();
-              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AdminTheme.errorColor,
