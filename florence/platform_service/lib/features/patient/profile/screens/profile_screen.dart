@@ -31,11 +31,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _dateOfBirth = 'January 15, 1985';
   String _gender = 'Male';
   String _phoneNumber = '+60 12-345 6789';
-  String? _profileImageUrl; // Added
+  String? _profileImageUrl;
   String _emergencyContactName = 'Not set';
   String _emergencyContactPhone = 'Not set';
   String _emergencyContactRelationship = 'Not set';
-  String _diabetesType = 'Type 2';
   double _targetMin = 70.0;
   double _targetMax = 180.0;
 
@@ -145,9 +144,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return '$code $number';
   }
 
-  // Medications list
-  List<Map<String, String>> _medications = [];
-  
   // Settings
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
 
@@ -506,12 +502,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // TODO: Navigate to edit health profile screen
   }
   
-  /// Add medication
-  void _addMedication() {
-    Helpers.showInfo(context, 'Add medication feature coming soon');
-    // TODO: Navigate to add medication screen
-  }
-  
   /// Toggle glucose unit
   void _toggleGlucoseUnit() {
     setState(() {
@@ -591,10 +581,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                   // Health Profile section
                   _buildHealthProfileSection(),
-                  const SizedBox(height: 16),
-                  
-                  // Medications section
-                  _buildMedicationsSection(),
                   const SizedBox(height: 16),
                   
                   // Settings section
@@ -803,101 +789,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-  
-  /// Build medications section
-  Widget _buildMedicationsSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSectionHeader('Medications', Icons.medication),
-              TextButton.icon(
-                onPressed: _addMedication,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          if (_medications.isEmpty)
-            _buildEmptyState('No medications added yet')
-          else
-            ..._medications.asMap().entries.map((entry) {
-              final index = entry.key;
-              final med = entry.value;
-              return Column(
-                children: [
-                  if (index > 0) const Divider(height: 24),
-                  _buildMedicationItem(
-                    med['name']!,
-                    med['dosage']!,
-                    med['frequency']!,
-                  ),
-                ],
-              );
-            }).toList(),
-        ],
-      ),
-    );
-  }
-  
-  /// Build single medication item
-  Widget _buildMedicationItem(String name, String dosage, String frequency) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.medicationColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.medication,
-            color: AppTheme.medicationColor,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '$dosage • $frequency',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.more_vert,
-            color: AppTheme.textSecondaryColor,
-          ),
-          onPressed: () {
-            // TODO: Show edit/delete options
-            Helpers.showInfo(context, 'Edit medication coming soon');
-          },
-        ),
-      ],
     );
   }
   
@@ -1131,22 +1022,4 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
   
-  /// Build empty state
-  Widget _buildEmptyState(String message) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Text(
-          message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-        ),
-      ),
-    );
-  }
 }
