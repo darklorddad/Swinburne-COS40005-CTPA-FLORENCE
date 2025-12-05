@@ -153,13 +153,19 @@ class _ChartSectionState extends State<_ChartSection> {
   List<MonitorData> _filterData() {
     if (widget.allData.isEmpty) return [];
     final now = DateTime.now();
+    
+    if (_selectedRange == '1D') {
+      // For Daily, filter from start of TODAY (00:00) to show calendar day
+      final startOfDay = DateTime(now.year, now.month, now.day);
+      return widget.allData.where((d) => d.measuredAt.isAfter(startOfDay)).toList();
+    }
+
     Duration duration;
     switch (_selectedRange) {
       case '7D': duration = const Duration(days: 7); break;
       case '14D': duration = const Duration(days: 14); break;
       case '30D': duration = const Duration(days: 30); break;
-      case '1D':
-      default: duration = const Duration(hours: 24); break;
+      default: duration = const Duration(days: 7); break;
     }
     final cutoff = now.subtract(duration);
     return widget.allData.where((d) => d.measuredAt.isAfter(cutoff)).toList();
@@ -483,41 +489,45 @@ class _GlucoseTrendsSection extends StatelessWidget {
       allData: allReadings,
       builder: (range, data) {
         // Enforce a fixed time window based on selected range (1D, 7D, etc.)
-        // This ensures the X-axis is stable, evenly spaced, and correctly formatted
-        // regardless of how sparse the data points are.
         final now = DateTime.now();
-        // Snap 'now' to next hour to avoid odd minutes like 10:52am
-        final endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
         
-        late DateTime startOfWindow;
-        late double interval;
-        late DateFormat dateFormat;
+        DateTime startOfWindow;
+        DateTime endOfWindow;
+        double interval;
+        DateFormat dateFormat;
 
-        switch (range) {
-          case '1D':
-            startOfWindow = endOfWindow.subtract(const Duration(hours: 24));
-            interval = 14400000; // 4 hours
-            dateFormat = DateFormat('h a'); // e.g. 3 PM
-            break;
-          case '7D':
-            startOfWindow = endOfWindow.subtract(const Duration(days: 7));
-            interval = 86400000; // 1 day
-            dateFormat = DateFormat('M/d'); // e.g. 12/4
-            break;
-          case '14D':
-            startOfWindow = endOfWindow.subtract(const Duration(days: 14));
-            interval = 172800000; // 2 days
-            dateFormat = DateFormat('M/d');
-            break;
-          case '30D':
-            startOfWindow = endOfWindow.subtract(const Duration(days: 30));
-            interval = 432000000; // 5 days
-            dateFormat = DateFormat('M/d');
-            break;
-          default:
-            startOfWindow = endOfWindow.subtract(const Duration(hours: 24));
-            interval = 14400000;
-            dateFormat = DateFormat('h a');
+        if (range == '1D') {
+          // Fixed Today View (00:00 to 24:00)
+          startOfWindow = DateTime(now.year, now.month, now.day);
+          endOfWindow = startOfWindow.add(const Duration(days: 1));
+          interval = 14400000; // 4 hours
+          dateFormat = DateFormat('h a');
+        } else {
+          // Rolling Window for others (e.g., last 7 days ending now)
+          // Snap 'now' to next hour to avoid odd minutes
+          endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
+          
+          switch (range) {
+            case '7D':
+              startOfWindow = endOfWindow.subtract(const Duration(days: 7));
+              interval = 86400000; // 1 day
+              dateFormat = DateFormat('M/d');
+              break;
+            case '14D':
+              startOfWindow = endOfWindow.subtract(const Duration(days: 14));
+              interval = 172800000; // 2 days
+              dateFormat = DateFormat('M/d');
+              break;
+            case '30D':
+              startOfWindow = endOfWindow.subtract(const Duration(days: 30));
+              interval = 432000000; // 5 days
+              dateFormat = DateFormat('M/d');
+              break;
+            default:
+              startOfWindow = endOfWindow.subtract(const Duration(days: 7));
+              interval = 86400000;
+              dateFormat = DateFormat('M/d');
+          }
         }
 
         final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
