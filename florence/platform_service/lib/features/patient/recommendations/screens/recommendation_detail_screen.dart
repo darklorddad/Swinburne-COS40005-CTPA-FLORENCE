@@ -430,7 +430,8 @@ class _RecommendationDetailScreenState
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                Formatters.dateTime(data['timestamp']),
+                                // Ensure timestamp is treated as DateTime before converting
+                                Formatters.dateTime((data['timestamp'] as DateTime).toLocal()),
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall

@@ -158,7 +158,7 @@ class BiometricsSection extends StatelessWidget {
       value: glucose?.value.toStringAsFixed(0) ?? '--',
       unit: 'mg/dL',
       status: _getGlucoseStatus(glucose?.value, thresholds),
-      timestamp: glucose?.measuredAt,
+      timestamp: glucose?.measuredAt.toLocal(),
       icon: Icons.water_drop_outlined,
       color: _getGlucoseColor(glucose?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.trendsDetail),
@@ -172,7 +172,7 @@ class BiometricsSection extends StatelessWidget {
           : '--/--',
       unit: 'mmHg',
       status: _getBPStatus(bpSystolic?.value, bpDiastolic?.value, thresholds),
-      timestamp: bpSystolic?.measuredAt,
+      timestamp: bpSystolic?.measuredAt.toLocal(),
       icon: Icons.monitor_heart_outlined,
       color: _getBPColor(bpSystolic?.value, bpDiastolic?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.bloodPressureDetail),
@@ -184,7 +184,7 @@ class BiometricsSection extends StatelessWidget {
       value: hba1c?.value.toStringAsFixed(1) ?? '--',
       unit: '%',
       status: _getHba1cStatus(hba1c?.value, thresholds),
-      timestamp: hba1c?.measuredAt,
+      timestamp: hba1c?.measuredAt.toLocal(),
       icon: Icons.pie_chart_outline,
       color: _getHba1cColor(hba1c?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.hba1cDetail),
@@ -196,7 +196,7 @@ class BiometricsSection extends StatelessWidget {
       value: cholesterolDisplay?.value.toStringAsFixed(0) ?? '--',
       unit: 'mg/dL',
       status: _getCholesterolStatus(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
-      timestamp: cholesterolDisplay?.measuredAt,
+      timestamp: cholesterolDisplay?.measuredAt.toLocal(),
       icon: Icons.bloodtype_outlined,
       color: _getCholesterolColor(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
       onTap: () => Navigator.push(
@@ -211,7 +211,7 @@ class BiometricsSection extends StatelessWidget {
       value: latestActivity != null ? '${latestActivity!.duration}' : '--',
       unit: 'min',
       status: latestActivity != null ? 'Latest Log' : 'No Data',
-      timestamp: latestActivity?.timestamp,
+      timestamp: latestActivity?.timestamp.toLocal(),
       icon: Icons.directions_run_outlined,
       color: latestActivity != null ? AppTheme.activityColor : AppTheme.textSecondaryColor,
       onTap: () => AppRoutes.push(context, AppRoutes.activityDetail),
@@ -226,9 +226,9 @@ class BiometricsSection extends StatelessWidget {
       // Construct subtitle: "Food Name • Time"
       String timePart;
       if (hasTime) {
-        timePart = Formatters.timeAgo(latestMeal!.effectiveTime);
+        timePart = Formatters.timeAgo(latestMeal!.effectiveTime.toLocal());
       } else {
-        timePart = Formatters.relativeDate(latestMeal!.logDate);
+        timePart = Formatters.relativeDate(latestMeal!.logDate.toLocal());
       }
 
       if (desc != null && desc.isNotEmpty) {
@@ -245,7 +245,7 @@ class BiometricsSection extends StatelessWidget {
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
       status: _getMealStatus(latestMeal),
-      timestamp: latestMeal?.effectiveTime,
+      timestamp: latestMeal?.effectiveTime.toLocal(),
       subtitleOverride: dietSubtitle,
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
@@ -261,7 +261,7 @@ class BiometricsSection extends StatelessWidget {
       value: bmi?.value.toStringAsFixed(1) ?? '--',
       unit: '',
       status: _getBmiStatus(bmi?.value, thresholds),
-      timestamp: bmi?.measuredAt,
+      timestamp: bmi?.measuredAt.toLocal(),
       icon: Icons.monitor_weight_outlined,
       color: _getBmiColor(bmi?.value, thresholds),
       onTap: () => AppRoutes.push(context, AppRoutes.bmiDetail),
