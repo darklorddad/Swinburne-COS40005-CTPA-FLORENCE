@@ -34,6 +34,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final currentUser = PermissionService().currentUser;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final padding = isMobile ? 16.0 : 24.0;
 
     return AdminScaffold(
       title: 'Admin Dashboard',
@@ -41,19 +43,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       body: LoadingOverlay(
         isLoading: _isLoading,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Header
-              _buildWelcomeHeader(currentUser),
+              _buildWelcomeHeader(currentUser, isMobile),
 
-              const SizedBox(height: 32),
+              SizedBox(height: isMobile ? 24 : 32),
 
               // System Metrics
-              _buildSystemMetrics(),
+              _buildSystemMetrics(isMobile),
 
-              const SizedBox(height: 32),
+              SizedBox(height: isMobile ? 24 : 32),
 
               // Organizations Overview & Recent Activity
               LayoutBuilder(
@@ -62,9 +64,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   if (constraints.maxWidth < 900) {
                     return Column(
                       children: [
-                        _buildOrganizationsOverview(),
-                        const SizedBox(height: 24),
-                        _buildRecentActivity(),
+                        _buildOrganizationsOverview(isMobile),
+                        SizedBox(height: isMobile ? 16 : 24),
+                        _buildRecentActivity(isMobile),
                       ],
                     );
                   }
@@ -76,7 +78,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       // Organizations Overview
                       Expanded(
                         flex: 2,
-                        child: _buildOrganizationsOverview(),
+                        child: _buildOrganizationsOverview(isMobile),
                       ),
 
                       const SizedBox(width: 24),
@@ -84,17 +86,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       // Recent Activity
                       Expanded(
                         flex: 1,
-                        child: _buildRecentActivity(),
+                        child: _buildRecentActivity(isMobile),
                       ),
                     ],
                   );
                 },
               ),
 
-              const SizedBox(height: 32),
+              SizedBox(height: isMobile ? 24 : 32),
 
               // Quick Actions
-              _buildQuickActions(),
+              _buildQuickActions(isMobile),
             ],
           ),
         ),
@@ -102,7 +104,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildWelcomeHeader(dynamic currentUser) {
+  Widget _buildWelcomeHeader(dynamic currentUser, bool isMobile) {
     final now = DateTime.now();
     final hour = now.hour;
     String greeting;
@@ -122,6 +124,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           '$greeting, ${currentUser?.firstName ?? 'Admin'}!',
           style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                 fontWeight: FontWeight.w700,
+                fontSize: isMobile ? 24 : 32,
               ),
         ),
         const SizedBox(height: 4),
@@ -129,16 +132,18 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'Here\'s an overview of your system',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: AdminTheme.textSecondaryColor,
+                fontSize: isMobile ? 14 : 16,
               ),
         ),
       ],
     );
   }
 
-  Widget _buildSystemMetrics() {
+  Widget _buildSystemMetrics(bool isMobile) {
     return ResponsiveGrid(
-      minChildWidth: 250,
-      spacing: 20,
+      minChildWidth: isMobile ? 150 : 250,
+      spacing: isMobile ? 12 : 20,
+      runSpacing: isMobile ? 12 : 20,
       children: [
         StatCard(
           title: 'Organizations',
@@ -184,12 +189,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildOrganizationsOverview() {
+  Widget _buildOrganizationsOverview(bool isMobile) {
     final orgs = _authService.getAllOrganizations();
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -200,6 +205,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     'Organizations',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
+                          fontSize: isMobile ? 18 : 20,
                         ),
                   ),
                 ),
@@ -282,10 +288,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(bool isMobile) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -293,6 +299,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               'Recent Activity',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 16),
@@ -398,10 +405,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(bool isMobile) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -409,6 +416,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               'Quick Actions',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 16),
