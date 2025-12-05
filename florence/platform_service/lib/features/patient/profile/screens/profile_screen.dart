@@ -31,11 +31,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _dateOfBirth = 'January 15, 1985';
   String _gender = 'Male';
   String _phoneNumber = '+60 12-345 6789';
-  String? _profileImageUrl; // Added
+  String? _profileImageUrl;
   String _emergencyContactName = 'Not set';
   String _emergencyContactPhone = 'Not set';
   String _emergencyContactRelationship = 'Not set';
-  String _diabetesType = 'Type 2';
   double _targetMin = 70.0;
   double _targetMax = 180.0;
 
@@ -77,9 +76,74 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return ['+60', fullNumber.replaceAll(RegExp(r'\D'), '')];
   }
 
-  // Medications list
-  List<Map<String, String>> _medications = [];
-  
+  String _formatDisplayPhone(String phone) {
+    if (phone.isEmpty || phone == 'Not set') return phone;
+
+    // Sort by length desc so +60 matches before +6
+    final sortedCodes = _countryCodes
+      ..sort((a, b) => b['code']!.length.compareTo(a['code']!.length));
+
+    String? code;
+    for (final c in sortedCodes) {
+      if (phone.startsWith(c['code']!)) {
+        code = c['code'];
+        break;
+      }
+    }
+
+    if (code == null) return phone;
+
+    final number = phone.substring(code.length);
+
+    if (code == '+60') {
+      // Malaysia: +60 13-830 0886 (9 digits after +60) or +60 11-xxxx xxxx (10 digits)
+      if (number.length == 9) {
+        // e.g. 138300886 -> 13-830 0886
+        return '$code ${number.substring(0, 2)}-${number.substring(2, 5)} ${number.substring(5)}';
+      } else if (number.length >= 10) {
+        // e.g. 11xxxxxxxx -> 11-xxxx xxxx
+        return '$code ${number.substring(0, 2)}-${number.substring(2, 6)} ${number.substring(6)}';
+      }
+    } else if (code == '+1') {
+      // US/Can
+      if (number.length == 10) {
+        return '$code (${number.substring(0, 3)}) ${number.substring(3, 6)}-${number.substring(6)}';
+      }
+    } 
+    
+    // UK (+44) -> +44 7911 123456
+    else if (code == '+44') {
+      if (number.length >= 10) return '$code ${number.substring(0, 4)} ${number.substring(4)}';
+    }
+    
+    // Australia (+61) -> +61 412 345 678 (Standard mobile is 9 digits after 0)
+    else if (code == '+61') {
+      if (number.length == 9) return '$code ${number.substring(0, 3)} ${number.substring(3, 6)} ${number.substring(6)}';
+    }
+    
+    // Singapore (+65) -> +65 9123 4567 (8 digits)
+    else if (code == '+65') {
+      if (number.length == 8) return '$code ${number.substring(0, 4)} ${number.substring(4)}';
+    }
+    
+    // India (+91) -> +91 98765 43210 (10 digits)
+    else if (code == '+91') {
+      if (number.length == 10) return '$code ${number.substring(0, 5)} ${number.substring(5)}';
+    }
+    
+    // Indonesia (+62) -> +62 812-3456-7890
+    else if (code == '+62') {
+      if (number.length >= 10) return '$code ${number.substring(0, 3)}-${number.substring(3, 7)}-${number.substring(7)}';
+    }
+    
+    // Japan (+81) -> +81 90-1234-5678
+    else if (code == '+81') {
+      if (number.length == 10) return '$code ${number.substring(0, 2)}-${number.substring(2, 6)}-${number.substring(6)}';
+    }
+
+    return '$code $number';
+  }
+
   // Settings
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
 
@@ -388,10 +452,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   setState(() => isSaving = true);
                   try {
                     final apiService = ApiService();
-                    
+
+                    String cleanPhone(String num) {
+                      if (num.startsWith('0')) return num.substring(1);
+                      return num;
+                    }
                     // Combine Country Code + Number
-                    final fullPhone = '$selectedPhoneCode${phoneNumController.text.trim()}';
-                    final fullEcPhone = '$selectedEcPhoneCode${ecPhoneNumController.text.trim()}';
+                    final fullPhone = '$selectedPhoneCode${cleanPhone(phoneNumController.text.trim())}';
+                    final fullEcPhone = '$selectedEcPhoneCode${cleanPhone(ecPhoneNumController.text.trim())}';
 
                     await apiService.put('/patients/me', {
                       'name': nameController.text.trim(),
@@ -432,12 +500,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _editHealthProfile() {
     Helpers.showInfo(context, 'Edit health profile feature coming soon');
     // TODO: Navigate to edit health profile screen
-  }
-  
-  /// Add medication
-  void _addMedication() {
-    Helpers.showInfo(context, 'Add medication feature coming soon');
-    // TODO: Navigate to add medication screen
   }
   
   /// Toggle glucose unit
@@ -521,10 +583,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   _buildHealthProfileSection(),
                   const SizedBox(height: 16),
                   
-                  // Medications section
-                  _buildMedicationsSection(),
-                  const SizedBox(height: 16),
-                  
                   // Settings section
                   _buildSettingsSection(),
                   const SizedBox(height: 16),
@@ -564,80 +622,84 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           Center(
             child: Column(
               children: [
-                GestureDetector(
-                  onTap: _uploadProfilePicture,
-                  child: Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
-                          border: Border.all(color: AppTheme.borderColor),
-                        ),
-                        child: ClipOval(
-                          child: (_profileImageUrl != null &&
-                                  _profileImageUrl!.isNotEmpty)
-                              ? Image.network(
-                                  _profileImageUrl!,
-                                  fit: BoxFit.cover,
-                                  width: 100,
-                                  height: 100,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Center(
-                                      child: Text(
-                                        _userName.isNotEmpty
-                                            ? _userName[0].toUpperCase()
-                                            : 'U',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .displayMedium
-                                            ?.copyWith(
-                                              color: AppTheme.primaryBlue,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                    );
-                                  },
-                                )
-                              : Center(
-                                  child: Text(
-                                    _userName.isNotEmpty
-                                        ? _userName[0].toUpperCase()
-                                        : 'U',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .displayMedium
-                                        ?.copyWith(
-                                          color: AppTheme.primaryBlue,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
+                // Wrap GestureDetector with MouseRegion
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: _uploadProfilePicture,
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryBlue,
                             shape: BoxShape.circle,
-                            border: Border.all(
+                            color: AppTheme.primaryBlue.withOpacity(0.1),
+                            border: Border.all(color: AppTheme.borderColor),
+                          ),
+                          child: ClipOval(
+                            child: (_profileImageUrl != null &&
+                                    _profileImageUrl!.isNotEmpty)
+                                ? Image.network(
+                                    _profileImageUrl!,
+                                    fit: BoxFit.cover,
+                                    width: 100,
+                                    height: 100,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Center(
+                                        child: Text(
+                                          _userName.isNotEmpty
+                                              ? _userName[0].toUpperCase()
+                                              : 'U',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .displayMedium
+                                              ?.copyWith(
+                                                color: AppTheme.primaryBlue,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
+                                    child: Text(
+                                      _userName.isNotEmpty
+                                          ? _userName[0].toUpperCase()
+                                          : 'U',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .displayMedium
+                                          ?.copyWith(
+                                            color: AppTheme.primaryBlue,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryBlue,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 16,
                               color: Colors.white,
-                              width: 2,
                             ),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            size: 16,
-                            color: Colors.white,
-                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -670,7 +732,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 24),
           _buildInfoRow('Gender', _gender, Icons.wc),
           const Divider(height: 24),
-          _buildInfoRow('Phone Number', _phoneNumber, Icons.phone),
+          _buildInfoRow('Phone Number', _formatDisplayPhone(_phoneNumber), Icons.phone),
 
           const SizedBox(height: 40),
 
@@ -680,7 +742,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           _buildInfoRow('Name', _emergencyContactName, Icons.person),
           const Divider(height: 24),
-          _buildInfoRow('Phone Number', _emergencyContactPhone, Icons.phone),
+          _buildInfoRow('Phone Number', _formatDisplayPhone(_emergencyContactPhone), Icons.phone),
           const Divider(height: 24),
           _buildInfoRow('Relationship', _emergencyContactRelationship, Icons.people),
           const SizedBox(height: 24),
@@ -727,101 +789,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ),
         ],
       ),
-    );
-  }
-  
-  /// Build medications section
-  Widget _buildMedicationsSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSectionHeader('Medications', Icons.medication),
-              TextButton.icon(
-                onPressed: _addMedication,
-                icon: const Icon(Icons.add, size: 18),
-                label: const Text('Add'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          if (_medications.isEmpty)
-            _buildEmptyState('No medications added yet')
-          else
-            ..._medications.asMap().entries.map((entry) {
-              final index = entry.key;
-              final med = entry.value;
-              return Column(
-                children: [
-                  if (index > 0) const Divider(height: 24),
-                  _buildMedicationItem(
-                    med['name']!,
-                    med['dosage']!,
-                    med['frequency']!,
-                  ),
-                ],
-              );
-            }).toList(),
-        ],
-      ),
-    );
-  }
-  
-  /// Build single medication item
-  Widget _buildMedicationItem(String name, String dosage, String frequency) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.medicationColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            Icons.medication,
-            color: AppTheme.medicationColor,
-            size: 24,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '$dosage • $frequency',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        IconButton(
-          icon: Icon(
-            Icons.more_vert,
-            color: AppTheme.textSecondaryColor,
-          ),
-          onPressed: () {
-            // TODO: Show edit/delete options
-            Helpers.showInfo(context, 'Edit medication coming soon');
-          },
-        ),
-      ],
     );
   }
   
@@ -1055,22 +1022,4 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
   
-  /// Build empty state
-  Widget _buildEmptyState(String message) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Center(
-        child: Text(
-          message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-        ),
-      ),
-    );
-  }
 }
