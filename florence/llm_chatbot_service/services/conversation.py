@@ -4,6 +4,7 @@ Conversation history management service for storing and retrieving chat messages
 from datetime import datetime
 from typing import List, Optional
 import httpx
+from langchain_core.messages import HumanMessage, AIMessage, BaseMessage
 from config import settings
 from models.chat import ChatMessage, LLMMessage
 
@@ -104,18 +105,20 @@ class ConversationService:
             # For now, we just return 0 as the count isn't critical.
             return 0
 
-    def convert_to_llm_messages(
+    def convert_to_langchain_messages(
         self,
         chat_messages: List[ChatMessage]
-    ) -> List[LLMMessage]:
+    ) -> List[BaseMessage]:
         """
-        Convert ChatMessage objects to LLMMessage format.
+        Convert ChatMessage objects to LangChain message objects.
         """
-        return [
-            LLMMessage(role=msg.role, content=msg.content)
-            for msg in chat_messages
-            if msg.role in ["user", "assistant"]  # Exclude system messages
-        ]
+        lc_messages = []
+        for msg in chat_messages:
+            if msg.role == "user":
+                lc_messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                lc_messages.append(AIMessage(content=msg.content))
+        return lc_messages
 
     async def get_conversation_count(self, token: str) -> int:
         """

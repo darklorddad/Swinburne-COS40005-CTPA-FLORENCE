@@ -1,103 +1,43 @@
 """
 DeepSeek API integration service for LLM-powered chat responses.
 """
-import httpx
-from typing import List, Optional
+from typing import List
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import BaseMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from config import settings
-from models.chat import (
-    LLMMessage,
-    LLMRequest,
-    LLMResponse,
-)
 
 
 class LLMService:
-    """Service for interacting with the LLM API."""
+    """Service for interacting with the LLM API via LangChain."""
 
     def __init__(self):
-        """Initialize the LLM service."""
-        self.base_url = settings.llm_base_url
-        self.api_key = settings.llm_api_key
-        self.model = settings.llm_model
-        self.temperature = settings.llm_temperature
-        self.max_tokens = settings.llm_max_tokens
-
-    def _get_headers(self) -> dict:
-        """Get HTTP headers for LLM API requests."""
-        return {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {self.api_key}",
-        }
+        """Initialize the LangChain LLM service."""
+        # Initialize ChatOpenAI pointing to OpenRouter/DeepSeek
+        self.llm = ChatOpenAI(
+            base_url=settings.llm_base_url,
+            api_key=settings.llm_api_key,
+            model=settings.llm_model,
+            temperature=settings.llm_temperature or 0.7,
+            max_tokens=settings.llm_max_tokens,
+        )
 
     async def chat_completion(
         self,
-        messages: List[LLMMessage],
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
+        health_context: str,
+        history: List[BaseMessage],
+        current_message: str
     ) -> str:
         """
-        Send a chat completion request to LLM API.
-
-        Args:
-            messages: List of conversation messages
-            temperature: Optional override for temperature (0.0-1.0)
-            max_tokens: Optional override for max tokens
-
-        Returns:
-            The assistant's response content
-
-        Raises:
-            httpx.HTTPError: If API request fails
-            Exception: If response parsing fails
+        Generate a response using LangChain.
         """
-        request_data = LLMRequest(
-            model=self.model,
-            messages=messages,
-            temperature=temperature or self.temperature,
-            max_tokens=max_tokens or self.max_tokens,
-            stream=False,
-        )
-
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    f"{self.base_url}/chat/completions",
-                    headers=self._get_headers(),
-                    json=request_data.model_dump(exclude_none=True),
-                    timeout=60.0,
-                )
-
-                response.raise_for_status()
-
-                data = response.json()
-                llm_response = LLMResponse(**data)
-
-                if not llm_response.choices or len(llm_response.choices) == 0:
-                    raise Exception("No response choices returned from LLM API")
-
-                return llm_response.choices[0].message.content
-
-            except httpx.HTTPStatusError as e:
-                raise Exception(f"LLM API error: {e.response.status_code} - {e.response.text}")
-            except httpx.RequestError as e:
-                raise Exception(f"Network error calling LLM API: {str(e)}")
-            except Exception as e:
-                raise Exception(f"Error processing LLM response: {str(e)}")
-
-    def build_system_prompt(self, health_context_formatted: str) -> str:
-        """
-        Build the system prompt with health context.
-
-        Args:
-            health_context_formatted: Formatted health context string
-
-        Returns:
-            Complete system prompt for the LLM
-        """
-        return f"""You are FLORENCE, a friendly AI health assistant for chronic disease management.
+        try:
+            # Define the Prompt Template
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """You are FLORENCE, a friendly AI health assistant for chronic disease management.
 
 Patient's recent health context:
-{health_context_formatted}
+{health_context}
 
 Your role:
 - Answer questions about their health data
@@ -111,7 +51,25 @@ Important:
 - Encourage them to consult healthcare providers for concerns
 - Reference their actual data when relevant
 - Keep responses concise and clear
-- Be empathetic and supportive"""
+- Be empathetic and supportive"""),
+                MessagesPlaceholder(variable_name="history"),
+                ("human", "{input}")
+            ])
+
+            # Create the chain
+            chain = prompt | self.llm
+
+            # Invoke the chain
+            response = await chain.ainvoke({
+                "health_context": health_context,
+                "history": history,
+                "input": current_message
+            })
+
+            return response.content
+
+        except Exception as e:
+            raise Exception(f"LangChain Error: {str(e)}")
 
 
 
