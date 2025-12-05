@@ -343,6 +343,7 @@ class _DailyVolumeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final todayLogs = logs.where((log) {
+      // Ensure strict local time comparison
       final localDate = log.timestamp.toLocal();
       return localDate.year == now.year && 
              localDate.month == now.month && 
@@ -421,6 +422,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
     }
 
     for (var log in logs) {
+      // Group by Local Day
       final d = log.timestamp.toLocal();
       final dayKey = d.year * 10000 + d.month * 100 + d.day;
       if (dailyTotals.containsKey(dayKey)) {
@@ -553,6 +555,7 @@ class _ActivityTimingChart extends StatelessWidget {
     double night = 0;   // 22-5
 
     for (var log in recentLogs) {
+      // Group by Local Hour
       final h = log.timestamp.toLocal().hour;
       if (h >= 5 && h < 11) morning += log.duration;
       else if (h >= 11 && h < 17) midday += log.duration;
