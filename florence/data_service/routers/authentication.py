@@ -3,6 +3,12 @@ from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
+from supabase import create_client, Client
+from dotenv import load_dotenv
+import os
+
+# Load env vars to ensure we can create local clients
+load_dotenv()
 
 # Import the shared Supabase client
 from client import supabase
@@ -61,9 +67,14 @@ async def register_user(user_data: UserRegistration):
     if user_data.role == 'CLINICIAN' and user_data.organisation_id is None:
         raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
 
+    # Create a disposable client for auth operations to avoid polluting the global admin client
+    url: str = os.environ.get("SUPABASE_URL")
+    key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+    local_client = create_client(url, key)
+
     new_user = None
     try:
-        user_session = supabase.auth.sign_up({
+        user_session = local_client.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password,
             "options": {
@@ -175,8 +186,14 @@ async def register_admin(user_data: AdminRegistration):
 @router.post("/login")
 async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
+    
+    # Create a disposable client for login to avoid polluting the global admin client with user session headers
+    url: str = os.environ.get("SUPABASE_URL")
+    key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+    local_client = create_client(url, key)
+
     try:
-        response = supabase.auth.sign_in_with_password({
+        response = local_client.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })

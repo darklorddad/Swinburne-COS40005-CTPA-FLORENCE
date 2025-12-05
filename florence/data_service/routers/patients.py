@@ -84,7 +84,11 @@ async def get_current_patient_profile(authorization: str = Header(...)):
                         # Only fail if we really can't find it
                         print(f"ERROR: Auto-create failed and fetch failed: {e}")
 
-                print(f"DEBUG: Access denied for user_id: {user.id}. Profile not found in patient_profiles.")
+                # DEBUGGING LOGS FOR 403
+                print(f"DEBUG: Access denied for user_id: {user.id}")
+                print(f"DEBUG: Role from metadata: {role}")
+                print(f"DEBUG: Profile lookup failed even after retry.")
+                
                 raise HTTPException(status_code=403, detail=f"Access denied: User {user.id} is not a patient.")
         
         if len(profile_response.data) > 1:
