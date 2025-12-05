@@ -10,6 +10,9 @@ import os
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    # App Version
+    app_version: str = "1.0.0"
+
     # Data Service Configuration
     # Defaults to localhost. Override with DATA_SERVICE_URL env var in Production/Preview.
     data_service_url: str = "http://localhost:8000"
