@@ -7,25 +7,28 @@ import '../../../../config/routes.dart';
 class AIInsightCard extends StatelessWidget {
   final String insight;
   final VoidCallback? onTap;
+  final double aspectRatio;
   
   const AIInsightCard({
     super.key,
     required this.insight,
     this.onTap,
+    this.aspectRatio = 1.586, // Default 'Card' shape
   });
   
   @override
   Widget build(BuildContext context) {
     const double borderRadius = 24.0;
 
-    return InkWell(
-      onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 200),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: InkWell(
+        onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 const Color(0xFF1A237E), // Deep Indigo

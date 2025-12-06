@@ -4,6 +4,7 @@ import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import 'recommendation_detail_screen.dart';
 import '../services/recommendation_engine.dart';
 import '../models/recommendation_models.dart';
@@ -94,12 +95,22 @@ class _RecommendationsScreenState extends ConsumerState<RecommendationsScreen> {
               ? _buildEmptyState()
               : RefreshIndicator(
                   onRefresh: _generateNewInsights,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: activeInsights.length,
-                    itemBuilder: (context, index) {
-                      return _buildInsightCard(activeInsights[index]);
-                    },
+                  child: ListView(
+                    children: [
+                      Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 800),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              children: activeInsights
+                                  .map((insight) => _buildInsightCard(insight))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
     );

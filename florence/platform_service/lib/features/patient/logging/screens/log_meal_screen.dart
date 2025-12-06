@@ -8,6 +8,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 
@@ -143,15 +144,18 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Info card
-              _buildInfoCard(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Info card
+                  _buildInfoCard(),
               const SizedBox(height: 24),
               
               // Meal type selection

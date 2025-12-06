@@ -9,6 +9,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_providers;
 import '../../core/repositories/monitor_data_repository.dart';
@@ -162,14 +163,17 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       appBar: AppBar(
         title: const Text('Log BMI'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildInfoCard(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildInfoCard(),
               const SizedBox(height: 24),
               _buildInputSection(),
               const SizedBox(height: 24),

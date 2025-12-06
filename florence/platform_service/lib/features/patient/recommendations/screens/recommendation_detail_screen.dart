@@ -5,6 +5,7 @@ import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../config/routes.dart';
 import '../models/recommendation_models.dart';
 
@@ -115,28 +116,38 @@ class _RecommendationDetailScreenState
       appBar: AppBar(
         title: const Text('Recommendation'),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Header section
-            _buildHeader(recommendation),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header section
+                _buildHeader(recommendation),
 
-            // Why This Matters section
-            _buildWhyThisMattersSection(recommendation),
+                // Why This Matters section
+                _buildWhyThisMattersSection(recommendation),
 
-            // Action Steps section
-            _buildActionStepsSection(recommendation),
+                // Action Steps section
+                _buildActionStepsSection(recommendation),
 
-            // Related Data section
-            _buildRelatedDataSection(),
+                // Related Data section
+                _buildRelatedDataSection(),
 
-            const SizedBox(height: 100), // Space for fixed buttons
-          ],
+                const SizedBox(height: 100), // Space for fixed buttons
+              ],
+            ),
+          ),
         ),
       ),
       // Fixed action buttons at bottom
-      bottomNavigationBar: _buildActionButtons(),
+      bottomNavigationBar: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _buildActionButtons(),
+        ),
+      ),
     );
   }
 
