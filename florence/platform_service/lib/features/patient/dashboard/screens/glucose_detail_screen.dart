@@ -61,65 +61,99 @@ class GlucoseDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 1. Statistics
-                          _StatisticsSection(
-                            readings: allReadings, 
-                            threshold: effectiveThreshold,
-                            isDefault: isDefault,
-                          ),
-                      const SizedBox(height: 20),
-
-                      // 2. Annotated Line Chart
-                      _GlucoseTrendsSection(
-                        allReadings: allReadings,
-                        threshold: effectiveThreshold,
-                        isDefault: isDefault,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 3. Time in Range
-                      _TimeInRangeSection(
-                        allReadings: allReadings,
-                        threshold: effectiveThreshold,
-                        isDefault: isDefault,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 4. Modal Day
-                      _ModalDaySection(
-                        allReadings: allReadings,
-                        threshold: effectiveThreshold,
-                        isDefault: isDefault,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // 5. History List
-                      _HistorySection(
-                        allReadings: allReadings, // Pass sorted list, we will reverse it inside
-                        thresholds: thresholds,
-                      ),
-                      
-                      // Bottom Spacing to match Dashboard
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(20.0),
+                  child: context.isDesktop
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Left Column
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  _StatisticsSection(
+                                    readings: allReadings,
+                                    threshold: effectiveThreshold,
+                                    isDefault: isDefault,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _GlucoseTrendsSection(
+                                    allReadings: allReadings,
+                                    threshold: effectiveThreshold,
+                                    isDefault: isDefault,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _TimeInRangeSection(
+                                    readings: allReadings,
+                                    threshold: effectiveThreshold,
+                                    isDefault: isDefault,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 20),
+                            // Right Column
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  _ModalDaySection(
+                                    allReadings: allReadings,
+                                    threshold: effectiveThreshold,
+                                    isDefault: isDefault,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  _HistorySection(
+                                    allReadings: allReadings,
+                                    thresholds: thresholds,
+                                  ),
+                                  const SizedBox(height: 24),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _StatisticsSection(
+                              readings: allReadings,
+                              threshold: effectiveThreshold,
+                              isDefault: isDefault,
+                            ),
+                            const SizedBox(height: 20),
+                            _GlucoseTrendsSection(
+                              allReadings: allReadings,
+                              threshold: effectiveThreshold,
+                              isDefault: isDefault,
+                            ),
+                            const SizedBox(height: 20),
+                            _TimeInRangeSection(
+                              readings: allReadings,
+                              threshold: effectiveThreshold,
+                              isDefault: isDefault,
+                            ),
+                            const SizedBox(height: 20),
+                            _ModalDaySection(
+                              allReadings: allReadings,
+                              threshold: effectiveThreshold,
+                              isDefault: isDefault,
+                            ),
+                            const SizedBox(height: 20),
+                            _HistorySection(
+                              allReadings: allReadings,
+                              thresholds: thresholds,
+                            ),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
                 ),
               ),
             ),
-          ],
-        ),
-      );
+          );
     },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading glucose: $err')),
@@ -712,12 +746,12 @@ class _GlucoseTrendsSection extends StatelessWidget {
 // ============================================================================
 
 class _TimeInRangeSection extends StatelessWidget {
-  final List<MonitorData> allReadings;
+  final List<MonitorData> readings;
   final HealthThreshold? threshold;
   final bool isDefault;
 
   const _TimeInRangeSection({
-    required this.allReadings, 
+    required this.readings,
     this.threshold,
     this.isDefault = false,
   });
@@ -729,7 +763,7 @@ class _TimeInRangeSection extends StatelessWidget {
       icon: Icons.track_changes_outlined,
       infoText: 'Percentage of time your glucose is within target.\n\n'
                 'Goal: Keep "In Range" (Green) above 70%.',
-      allData: allReadings,
+      allData: readings,
       builder: (range, data) {
         if (threshold == null) {
           return const Center(child: Padding(padding: EdgeInsets.all(20), child: Text('Set target to view time in range.')));

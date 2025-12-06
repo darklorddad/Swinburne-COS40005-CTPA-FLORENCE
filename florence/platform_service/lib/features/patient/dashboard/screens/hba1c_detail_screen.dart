@@ -51,47 +51,91 @@ class HbA1cDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-               return ref.refresh(core_data.monitorDataProvider.future);
+              return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          _GaugeSection(
-                    latestReading: readings.isNotEmpty ? readings.last : null,
-                    threshold: userThreshold,
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  _TrendsSection(
-                    readings: readings,
-                    threshold: userThreshold,
-                  ),
-                  const SizedBox(height: 20),
-
-                  _GoalComparisonSection(
-                    latestReading: readings.isNotEmpty ? readings.last : null,
-                    threshold: userThreshold,
-                  ),
-                  const SizedBox(height: 20),
-                  
-                          _HistorySection(
-                            readings: readings, 
-                            targetMax: targetMax,
-                            threshold: userThreshold,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _GaugeSection(
+                                        latestReading: readings.isNotEmpty
+                                            ? readings.last
+                                            : null,
+                                        threshold: userThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _TrendsSection(
+                                        readings: readings,
+                                        threshold: userThreshold,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _GoalComparisonSection(
+                                        latestReading: readings.isNotEmpty
+                                            ? readings.last
+                                            : null,
+                                        threshold: userThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _HistorySection(
+                                        readings: readings,
+                                        targetMax: targetMax,
+                                        threshold: userThreshold,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _GaugeSection(
+                                  latestReading: readings.isNotEmpty
+                                      ? readings.last
+                                      : null,
+                                  threshold: userThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _TrendsSection(
+                                  readings: readings,
+                                  threshold: userThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _GoalComparisonSection(
+                                  latestReading: readings.isNotEmpty
+                                      ? readings.last
+                                      : null,
+                                  threshold: userThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _HistorySection(
+                                  readings: readings,
+                                  targetMax: targetMax,
+                                  threshold: userThreshold,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );

@@ -67,43 +67,74 @@ class BmiDetailScreen extends ConsumerWidget {
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // 1. Linear Gauge (Current Status)
-                          _BmiGaugeSection(
-                    latestReading: latestBmi,
-                    threshold: bmiThreshold,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 2. Progress Chart (BMI Trend)
-                  _BmiTrendSection(
-                    readings: bmiReadings,
-                    threshold: bmiThreshold,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 3. Clinical Insight (Correlation)
-                  _BmiCorrelationSection(
-                    bmiReadings: bmiReadings,
-                    hba1cReadings: hba1cReadings,
-                  ),
-                  const SizedBox(height: 20),
-
-                          // 4. History List
-                          _BmiHistorySection(
-                            readings: bmiReadings,
-                            threshold: bmiThreshold,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _BmiGaugeSection(
+                                        latestReading: latestBmi,
+                                        threshold: bmiThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _BmiTrendSection(
+                                        readings: bmiReadings,
+                                        threshold: bmiThreshold,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _BmiCorrelationSection(
+                                        bmiReadings: bmiReadings,
+                                        hba1cReadings: hba1cReadings,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _BmiHistorySection(
+                                        readings: bmiReadings,
+                                        threshold: bmiThreshold,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _BmiGaugeSection(
+                                  latestReading: latestBmi,
+                                  threshold: bmiThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _BmiTrendSection(
+                                  readings: bmiReadings,
+                                  threshold: bmiThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _BmiCorrelationSection(
+                                  bmiReadings: bmiReadings,
+                                  hba1cReadings: hba1cReadings,
+                                ),
+                                const SizedBox(height: 20),
+                                _BmiHistorySection(
+                                  readings: bmiReadings,
+                                  threshold: bmiThreshold,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );
