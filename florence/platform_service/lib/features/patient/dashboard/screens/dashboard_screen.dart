@@ -131,31 +131,33 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       // Desktop: Row (Side-by-Side), Mobile: Column (Stacked)
                       if (context.isDesktop)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: AIInsightCard(
-                                insight:
-                                    'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                                onTap: () => AppRoutes.push(
-                                    context, AppRoutes.recommendations),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: AIInsightCard(
+                                  insight:
+                                      'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                                  onTap: () => AppRoutes.push(
+                                      context, AppRoutes.recommendations),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: spacing),
-                            Expanded(
-                              child: QuickActionsGrid(
-                                onLogGlucose: () => AppRoutes.push(
-                                    context, AppRoutes.logGlucose),
-                                onLogBloodPressure: () => AppRoutes.push(
-                                    context, AppRoutes.logBloodPressure),
-                                onLogMeal: () => AppRoutes.push(
-                                    context, AppRoutes.logMeal),
-                                onLogActivity: () => AppRoutes.push(
-                                    context, AppRoutes.logActivity),
+                              const SizedBox(width: spacing),
+                              Expanded(
+                                child: QuickActionsGrid(
+                                  onLogGlucose: () => AppRoutes.push(
+                                      context, AppRoutes.logGlucose),
+                                  onLogBloodPressure: () => AppRoutes.push(
+                                      context, AppRoutes.logBloodPressure),
+                                  onLogMeal: () => AppRoutes.push(
+                                      context, AppRoutes.logMeal),
+                                  onLogActivity: () => AppRoutes.push(
+                                      context, AppRoutes.logActivity),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         )
                       else ...[
                         AIInsightCard(
