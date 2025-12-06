@@ -32,18 +32,19 @@ class QuickActionsGrid extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+    final isDesktop = context.isDesktop;
 
     // Define buttons list for reuse
     final buttons = [
-      _buildActionButton(context, 'Glucose', Icons.water_drop_rounded, AppTheme.primaryRed, onLogGlucose),
-      _buildActionButton(context, 'B.Pressure', Icons.monitor_heart_outlined, AppTheme.primaryRed, onLogBloodPressure),
-      _buildActionButton(context, 'Diet', Icons.restaurant_outlined, AppTheme.mealColor, onLogMeal),
-      _buildActionButton(context, 'Activity', Icons.directions_run_rounded, AppTheme.activityColor, onLogActivity),
-      // Extended actions for Desktop
-      _buildActionButton(context, 'Meds', Icons.medication_outlined, AppTheme.medicationColor, onLogMedication),
-      _buildActionButton(context, 'BMI', Icons.monitor_weight_outlined, AppTheme.primaryGreen, onLogBmi),
-      _buildActionButton(context, 'Cholesterol', Icons.bloodtype_outlined, AppTheme.accentPurple, onLogCholesterol),
-      _buildActionButton(context, 'HbA1c', Icons.pie_chart_outline, AppTheme.accentGold, onLogHba1c),
+      _buildActionButton(context, 'Glucose', Icons.water_drop_rounded, AppTheme.primaryRed, onLogGlucose, isExpanded: isDesktop),
+      _buildActionButton(context, 'B.Pressure', Icons.monitor_heart_outlined, AppTheme.primaryRed, onLogBloodPressure, isExpanded: isDesktop),
+      _buildActionButton(context, 'Diet', Icons.restaurant_outlined, AppTheme.mealColor, onLogMeal, isExpanded: isDesktop),
+      _buildActionButton(context, 'Activity', Icons.directions_run_rounded, AppTheme.activityColor, onLogActivity, isExpanded: isDesktop),
+      // Extended actions
+      _buildActionButton(context, 'Meds', Icons.medication_outlined, AppTheme.medicationColor, onLogMedication, isExpanded: isDesktop),
+      _buildActionButton(context, 'BMI', Icons.monitor_weight_outlined, AppTheme.primaryGreen, onLogBmi, isExpanded: isDesktop),
+      _buildActionButton(context, 'Cholesterol', Icons.bloodtype_outlined, AppTheme.accentPurple, onLogCholesterol, isExpanded: isDesktop),
+      _buildActionButton(context, 'HbA1c', Icons.pie_chart_outline, AppTheme.accentGold, onLogHba1c, isExpanded: isDesktop),
     ];
 
     return Container(
@@ -129,17 +130,16 @@ class QuickActionsGrid extends StatelessWidget {
               ),
             )
           else
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                buttons[0],
-                const SizedBox(width: 12),
-                buttons[1],
-                const SizedBox(width: 12),
-                buttons[2],
-                const SizedBox(width: 12),
-                buttons[3],
-              ],
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var i = 0; i < buttons.length; i++) ...[
+                    buttons[i],
+                    if (i < buttons.length - 1) const SizedBox(width: 12),
+                  ],
+                ],
+              ),
             ),
         ],
       ),
@@ -151,63 +151,69 @@ class QuickActionsGrid extends StatelessWidget {
     String label,
     IconData icon,
     Color color,
-    VoidCallback onTap,
-  ) {
+    VoidCallback onTap, {
+    bool isExpanded = true,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final buttonColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
     final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor.withOpacity(0.5);
 
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: buttonColor,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            border: Border.all(
-              color: borderColor,
+    Widget content = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: isExpanded ? null : 90,
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        decoration: BoxDecoration(
+          color: buttonColor,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
+          ],
+          border: Border.all(
+            color: borderColor,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
-                      fontSize: 10,
-                    ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              child: Icon(
+                icon,
+                color: color,
+                size: 24,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    fontSize: 10,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
+
+    if (isExpanded) {
+      return Expanded(child: content);
+    }
+    return content;
   }
 }
