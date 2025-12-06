@@ -417,7 +417,7 @@ class _BmiGaugeSection extends StatelessWidget {
                 height: 1.0,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
             SizedBox(
