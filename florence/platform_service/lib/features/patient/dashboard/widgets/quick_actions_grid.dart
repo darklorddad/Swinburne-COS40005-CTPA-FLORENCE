@@ -34,17 +34,15 @@ class QuickActionsGrid extends StatelessWidget {
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
     final isDesktop = context.isDesktop;
 
-    // Define buttons list for reuse
-    final buttons = [
-      _buildActionButton(context, 'Glucose', Icons.water_drop_rounded, AppTheme.primaryRed, onLogGlucose, isExpanded: isDesktop),
-      _buildActionButton(context, 'B.Pressure', Icons.monitor_heart_outlined, AppTheme.primaryRed, onLogBloodPressure, isExpanded: isDesktop),
-      _buildActionButton(context, 'Diet', Icons.restaurant_outlined, AppTheme.mealColor, onLogMeal, isExpanded: isDesktop),
-      _buildActionButton(context, 'Activity', Icons.directions_run_rounded, AppTheme.activityColor, onLogActivity, isExpanded: isDesktop),
-      // Extended actions
-      _buildActionButton(context, 'Meds', Icons.medication_outlined, AppTheme.medicationColor, onLogMedication, isExpanded: isDesktop),
-      _buildActionButton(context, 'BMI', Icons.monitor_weight_outlined, AppTheme.primaryGreen, onLogBmi, isExpanded: isDesktop),
-      _buildActionButton(context, 'Cholesterol', Icons.bloodtype_outlined, AppTheme.accentPurple, onLogCholesterol, isExpanded: isDesktop),
-      _buildActionButton(context, 'HbA1c', Icons.pie_chart_outline, AppTheme.accentGold, onLogHba1c, isExpanded: isDesktop),
+    final actions = [
+      (label: 'Glucose', icon: Icons.water_drop_rounded, color: AppTheme.primaryRed, onTap: onLogGlucose),
+      (label: 'B.Pressure', icon: Icons.monitor_heart_outlined, color: AppTheme.primaryRed, onTap: onLogBloodPressure),
+      (label: 'Diet', icon: Icons.restaurant_outlined, color: AppTheme.mealColor, onTap: onLogMeal),
+      (label: 'Activity', icon: Icons.directions_run_rounded, color: AppTheme.activityColor, onTap: onLogActivity),
+      (label: 'Meds', icon: Icons.medication_outlined, color: AppTheme.medicationColor, onTap: onLogMedication),
+      (label: 'BMI', icon: Icons.monitor_weight_outlined, color: AppTheme.primaryGreen, onTap: onLogBmi),
+      (label: 'Cholesterol', icon: Icons.bloodtype_outlined, color: AppTheme.accentPurple, onTap: onLogCholesterol),
+      (label: 'HbA1c', icon: Icons.pie_chart_outline, AppTheme.accentGold, onTap: onLogHba1c),
     ];
 
     return Container(
@@ -122,13 +120,10 @@ class QuickActionsGrid extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        buttons[0],
-                        const SizedBox(width: 12),
-                        buttons[1],
-                        const SizedBox(width: 12),
-                        buttons[2],
-                        const SizedBox(width: 12),
-                        buttons[3],
+                        for (var i = 0; i < 4; i++) ...[
+                          _buildActionButton(context, actions[i].label, actions[i].icon, actions[i].color, actions[i].onTap),
+                          if (i < 3) const SizedBox(width: 12),
+                        ],
                       ],
                     ),
                   ),
@@ -138,13 +133,10 @@ class QuickActionsGrid extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        buttons[4],
-                        const SizedBox(width: 12),
-                        buttons[5],
-                        const SizedBox(width: 12),
-                        buttons[6],
-                        const SizedBox(width: 12),
-                        buttons[7],
+                        for (var i = 4; i < 8; i++) ...[
+                          _buildActionButton(context, actions[i].label, actions[i].icon, actions[i].color, actions[i].onTap),
+                          if (i < 7) const SizedBox(width: 12),
+                        ],
                       ],
                     ),
                   ),
@@ -152,16 +144,33 @@ class QuickActionsGrid extends StatelessWidget {
               ),
             )
           else
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  for (var i = 0; i < buttons.length; i++) ...[
-                    buttons[i],
-                    if (i < buttons.length - 1) const SizedBox(width: 12),
-                  ],
-                ],
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate item width to fit exactly 4 items
+                // Available width minus 3 gaps of 12px each
+                final itemWidth = (constraints.maxWidth - (3 * 12)) / 4;
+                
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < actions.length; i++) ...[
+                        _buildActionButton(
+                          context, 
+                          actions[i].label, 
+                          actions[i].icon, 
+                          actions[i].color, 
+                          actions[i].onTap, 
+                          isExpanded: false,
+                          fixedWidth: itemWidth,
+                        ),
+                        if (i < actions.length - 1) const SizedBox(width: 12),
+                      ],
+                    ],
+                  ),
+                );
+              },
             ),
         ],
       ),
@@ -175,6 +184,7 @@ class QuickActionsGrid extends StatelessWidget {
     Color color,
     VoidCallback onTap, {
     bool isExpanded = true,
+    double? fixedWidth,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final buttonColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
@@ -184,7 +194,7 @@ class QuickActionsGrid extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
-        width: isExpanded ? null : 90,
+        width: isExpanded ? null : (fixedWidth ?? 90),
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
           color: buttonColor,
