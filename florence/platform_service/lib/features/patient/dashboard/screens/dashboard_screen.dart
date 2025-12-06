@@ -154,6 +154,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       context, AppRoutes.logMeal),
                                   onLogActivity: () => AppRoutes.push(
                                       context, AppRoutes.logActivity),
+                                  onLogMedication: () => AppRoutes.push(
+                                      context, AppRoutes.logMedication),
+                                  onLogBmi: () =>
+                                      AppRoutes.push(context, AppRoutes.logBmi),
+                                  onLogCholesterol: () => AppRoutes.push(
+                                      context, AppRoutes.logCholesterol),
+                                  onLogHba1c: () =>
+                                      AppRoutes.push(context, AppRoutes.logHba1c),
                                 ),
                               ),
                             ],
@@ -176,6 +184,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               AppRoutes.push(context, AppRoutes.logMeal),
                           onLogActivity: () =>
                               AppRoutes.push(context, AppRoutes.logActivity),
+                          onLogMedication: () => AppRoutes.push(
+                              context, AppRoutes.logMedication),
+                          onLogBmi: () =>
+                              AppRoutes.push(context, AppRoutes.logBmi),
+                          onLogCholesterol: () => AppRoutes.push(
+                              context, AppRoutes.logCholesterol),
+                          onLogHba1c: () =>
+                              AppRoutes.push(context, AppRoutes.logHba1c),
                         ),
                       ],
                       const SizedBox(height: spacing),
