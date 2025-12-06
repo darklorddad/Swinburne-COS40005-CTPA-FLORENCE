@@ -288,6 +288,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 class _QuickLogModal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    // Define all available actions
+    final actions = [
+      (label: 'Glucose', icon: Icons.water_drop_rounded, color: AppTheme.primaryRed, route: AppRoutes.logGlucose),
+      (label: 'Pressure', icon: Icons.monitor_heart_outlined, color: AppTheme.primaryRed, route: AppRoutes.logBloodPressure),
+      (label: 'Diet', icon: Icons.restaurant_outlined, color: AppTheme.mealColor, route: AppRoutes.logMeal),
+      (label: 'Activity', icon: Icons.directions_run_rounded, color: AppTheme.activityColor, route: AppRoutes.logActivity),
+      (label: 'Meds', icon: Icons.medication_outlined, color: AppTheme.medicationColor, route: AppRoutes.logMedication),
+      (label: 'BMI', icon: Icons.monitor_weight_outlined, color: AppTheme.primaryGreen, route: AppRoutes.logBmi),
+      (label: 'Cholesterol', icon: Icons.bloodtype_outlined, color: AppTheme.accentPurple, route: AppRoutes.logCholesterol),
+      (label: 'HbA1c', icon: Icons.pie_chart_outline, color: AppTheme.accentGold, route: AppRoutes.logHba1c),
+    ];
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -313,83 +325,43 @@ class _QuickLogModal extends StatelessWidget {
 
               // Title
               Text(
-                'Quick Log',
+                'What would you like to log?',
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 24),
 
-              // Action buttons
-              GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 3,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.9,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _QuickLogButton(
-                    icon: Icons.water_drop,
-                    label: 'Glucose',
-                    color: AppTheme.primaryRed,
-                    onTap: () {
-                      Navigator.pop(context);
-                      AppRoutes.push(context, AppRoutes.logGlucose);
-                    },
+              // Action buttons grid
+              Flexible(
+                child: GridView.builder(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: actions.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: 16,
+                    crossAxisSpacing: 16,
+                    childAspectRatio: 1.0,
                   ),
-              _QuickLogButton(
-                icon: Icons.bloodtype_outlined,
-                label: 'Cholesterol',
-                color: AppTheme.mealColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logCholesterol);
-                },
+                  itemBuilder: (context, index) {
+                    final action = actions[index];
+                    return _QuickLogButton(
+                      icon: action.icon,
+                      label: action.label,
+                      color: action.color,
+                      onTap: () {
+                        Navigator.pop(context);
+                        AppRoutes.push(context, action.route);
+                      },
+                    );
+                  },
+                ),
               ),
-              _QuickLogButton(
-                icon: Icons.percent,
-                label: 'HbA1c',
-                color: Colors.deepOrange, 
-                onTap: () {
-                  Navigator.pop(context);
-                  // Make sure to add this route to your AppRoutes class
-                  AppRoutes.push(context, AppRoutes.logHba1c); 
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.monitor_heart,
-                label: 'Blood Pressure',
-                color: AppTheme.primaryRed,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logBloodPressure);
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.height,
-                label: 'BMI',
-                color: AppTheme.primaryGreen,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logBmi);
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.directions_run,
-                label: 'Activity',
-                color: AppTheme.activityColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logActivity);
-                },
-              ),
+              const SizedBox(height: 16),
             ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
-      ),
+        ),
       ),
     );
   }
