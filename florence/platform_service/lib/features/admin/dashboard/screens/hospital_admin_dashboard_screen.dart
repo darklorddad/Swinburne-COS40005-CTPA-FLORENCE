@@ -67,6 +67,8 @@ class _HospitalAdminDashboardScreenState
   Widget build(BuildContext context) {
     final currentUser = _permissionService.currentUser;
     final org = currentUser?.organizationName;
+    final isMobile = MediaQuery.of(context).size.width < 600;
+    final padding = isMobile ? 16.0 : 24.0;
 
     if (org == null) {
       return const Scaffold(
@@ -82,50 +84,70 @@ class _HospitalAdminDashboardScreenState
       body: LoadingOverlay(
         isLoading: _isLoading,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(padding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Header
-              _buildWelcomeHeader(currentUser, org),
+              _buildWelcomeHeader(currentUser, org, isMobile),
 
-              const SizedBox(height: 32),
+              SizedBox(height: isMobile ? 24 : 32),
 
               // Organization Metrics
-              _buildOrganizationMetrics(),
+              _buildOrganizationMetrics(isMobile),
 
-              const SizedBox(height: 32),
+              SizedBox(height: isMobile ? 24 : 32),
 
               // Two-column layout
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Left column - Stats & Actions
-                  Expanded(
-                    flex: 2,
-                    child: Column(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  // Mobile/Tablet: Stack vertically
+                  if (constraints.maxWidth < 900) {
+                    return Column(
                       children: [
-                        _buildQuickStats(),
-                        const SizedBox(height: 24),
-                        _buildQuickActions(),
+                        _buildQuickStats(isMobile),
+                        SizedBox(height: isMobile ? 16 : 24),
+                        _buildQuickActions(isMobile),
+                        SizedBox(height: isMobile ? 16 : 24),
+                        _buildRecentActivity(isMobile),
+                        SizedBox(height: isMobile ? 16 : 24),
+                        _buildUpcomingAppointments(isMobile),
                       ],
-                    ),
-                  ),
+                    );
+                  }
 
-                  const SizedBox(width: 24),
+                  // Desktop: Side-by-side
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left column - Stats & Actions
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          children: [
+                            _buildQuickStats(isMobile),
+                            const SizedBox(height: 24),
+                            _buildQuickActions(isMobile),
+                          ],
+                        ),
+                      ),
 
-                  // Right column - Recent Activity
-                  Expanded(
-                    flex: 1,
-                    child: Column(
-                      children: [
-                        _buildRecentActivity(),
-                        const SizedBox(height: 24),
-                        _buildUpcomingAppointments(),
-                      ],
-                    ),
-                  ),
-                ],
+                      const SizedBox(width: 24),
+
+                      // Right column - Recent Activity
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          children: [
+                            _buildRecentActivity(isMobile),
+                            const SizedBox(height: 24),
+                            _buildUpcomingAppointments(isMobile),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -134,7 +156,7 @@ class _HospitalAdminDashboardScreenState
     );
   }
 
-  Widget _buildWelcomeHeader(dynamic currentUser, dynamic org) {
+  Widget _buildWelcomeHeader(dynamic currentUser, dynamic org, bool isMobile) {
     final now = DateTime.now();
     final hour = now.hour;
     String greeting;
@@ -161,6 +183,7 @@ class _HospitalAdminDashboardScreenState
                     style:
                         Theme.of(context).textTheme.headlineLarge?.copyWith(
                               fontWeight: FontWeight.w700,
+                              fontSize: isMobile ? 24 : 32,
                             ),
                   ),
                   const SizedBox(height: 4),
@@ -168,33 +191,36 @@ class _HospitalAdminDashboardScreenState
                     'Here\'s what\'s happening at ${org.name}',
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: AdminTheme.textSecondaryColor,
+                          fontSize: isMobile ? 14 : 16,
                         ),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AdminTheme.primaryIndigo.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+            if (!isMobile)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AdminTheme.primaryIndigo.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.business,
+                  size: 32,
+                  color: AdminTheme.primaryIndigo,
+                ),
               ),
-              child: const Icon(
-                Icons.business,
-                size: 32,
-                color: AdminTheme.primaryIndigo,
-              ),
-            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildOrganizationMetrics() {
+  Widget _buildOrganizationMetrics(bool isMobile) {
     return ResponsiveGrid(
-      minChildWidth: 250,
-      spacing: 20,
+      minChildWidth: isMobile ? 150 : 250,
+      spacing: isMobile ? 12 : 20,
+      runSpacing: isMobile ? 12 : 20,
       children: [
         StatCard(
           title: 'Patients',
@@ -240,10 +266,10 @@ class _HospitalAdminDashboardScreenState
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildQuickStats(bool isMobile) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -251,6 +277,7 @@ class _HospitalAdminDashboardScreenState
               'Quick Statistics',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 20),
@@ -316,10 +343,10 @@ class _HospitalAdminDashboardScreenState
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(bool isMobile) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -327,6 +354,7 @@ class _HospitalAdminDashboardScreenState
               'Quick Actions',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 16),
@@ -385,10 +413,10 @@ class _HospitalAdminDashboardScreenState
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(bool isMobile) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -396,6 +424,7 @@ class _HospitalAdminDashboardScreenState
               'Recent Activity',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 16),
@@ -492,10 +521,10 @@ class _HospitalAdminDashboardScreenState
     );
   }
 
-  Widget _buildUpcomingAppointments() {
+  Widget _buildUpcomingAppointments(bool isMobile) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -506,6 +535,7 @@ class _HospitalAdminDashboardScreenState
                     'Upcoming Appointments',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.w700,
+                          fontSize: isMobile ? 18 : 20,
                         ),
                   ),
                 ),

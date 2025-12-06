@@ -26,7 +26,7 @@ class ApiService {
   Future<dynamic> get(String endpoint) async {
     try {
       var response = await http.get(
-        Uri.parse('${Environment.apiUrl}$endpoint'),
+        Uri.parse('${Environment.dataServiceUrl}$endpoint'),
         headers: await _getHeaders(),
       );
 
@@ -34,7 +34,7 @@ class ApiService {
         try {
           await supabase.auth.refreshSession();
           response = await http.get(
-            Uri.parse('${Environment.apiUrl}$endpoint'),
+            Uri.parse('${Environment.dataServiceUrl}$endpoint'),
             headers: await _getHeaders(),
           );
         } catch (refreshError) {
@@ -47,7 +47,7 @@ class ApiService {
         debugPrint('API 403 Error ($endpoint). Retrying once...');
         await Future.delayed(const Duration(milliseconds: 500));
         response = await http.get(
-          Uri.parse('${Environment.apiUrl}$endpoint'),
+          Uri.parse('${Environment.dataServiceUrl}$endpoint'),
           headers: await _getHeaders(),
         );
       }
@@ -62,7 +62,7 @@ class ApiService {
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
     try {
       var response = await http.post(
-        Uri.parse('${Environment.apiUrl}$endpoint'),
+        Uri.parse('${Environment.dataServiceUrl}$endpoint'),
         headers: await _getHeaders(),
         body: jsonEncode(data),
       );
@@ -71,7 +71,7 @@ class ApiService {
         try {
           await supabase.auth.refreshSession();
           response = await http.post(
-            Uri.parse('${Environment.apiUrl}$endpoint'),
+            Uri.parse('${Environment.dataServiceUrl}$endpoint'),
             headers: await _getHeaders(),
             body: jsonEncode(data),
           );
@@ -90,7 +90,7 @@ class ApiService {
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
     try {
       var response = await http.put(
-        Uri.parse('${Environment.apiUrl}$endpoint'),
+        Uri.parse('${Environment.dataServiceUrl}$endpoint'),
         headers: await _getHeaders(),
         body: jsonEncode(data),
       );
@@ -99,7 +99,7 @@ class ApiService {
         try {
           await supabase.auth.refreshSession();
           response = await http.put(
-            Uri.parse('${Environment.apiUrl}$endpoint'),
+            Uri.parse('${Environment.dataServiceUrl}$endpoint'),
             headers: await _getHeaders(),
             body: jsonEncode(data),
           );
@@ -118,7 +118,7 @@ class ApiService {
   Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
     try {
       final response = await http.patch(
-        Uri.parse('${Environment.apiUrl}$endpoint'),
+        Uri.parse('${Environment.dataServiceUrl}$endpoint'),
         headers: await _getHeaders(),
         body: jsonEncode(data),
       );
@@ -132,7 +132,7 @@ class ApiService {
   Future<dynamic> delete(String endpoint) async {
     try {
       final response = await http.delete(
-        Uri.parse('${Environment.apiUrl}$endpoint'),
+        Uri.parse('${Environment.dataServiceUrl}$endpoint'),
         headers: await _getHeaders(),
       );
       return _processResponse(response);
@@ -146,7 +146,7 @@ class ApiService {
   /// Upload a file via Multipart Request
   Future<dynamic> uploadFile(String endpoint, String fieldName, List<int> fileBytes, String filename) async {
     try {
-      final uri = Uri.parse('${Environment.apiUrl}$endpoint');
+      final uri = Uri.parse('${Environment.dataServiceUrl}$endpoint');
       final request = http.MultipartRequest('POST', uri);
 
       // Add Headers (Auth)

@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 # Create FastAPI application
 app = FastAPI(
-    title="Florence Chatbot Service",
-    description="AI-powered health chatbot microservice for the Florence Digital Health Platform",
-    version="1.0.0",
+    title="Florence LLM Chatbot Service",
+    version=settings.app_version,
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -43,7 +42,7 @@ app.include_router(chat_router)
 async def startup_event():
     """Run tasks on application startup."""
     logger.info("=" * 60)
-    logger.info("Florence Chatbot Service Starting")
+    logger.info("Florence LLM Chatbot Service Starting")
     logger.info("=" * 60)
     logger.info(f"Service URL: http://{settings.service_host}:{settings.service_port}")
     logger.info(f"Data Service URL: {settings.data_service_url}")
@@ -54,23 +53,17 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Run tasks on application shutdown."""
-    logger.info("Florence Chatbot Service Shutting Down")
+    logger.info("Florence LLM Chatbot Service Shutting Down")
 
 
 @app.get("/")
 async def root():
     """Root endpoint with service information."""
     return {
-        "service": "Florence Chatbot Service",
-        "version": "1.0.0",
+        "service": "Florence LLM Chatbot Service",
+        "version": settings.app_version,
         "status": "operational",
-        "endpoints": {
-            "chat": "/chat/message",
-            "history": "/chat/history",
-            "clear_history": "/chat/history (DELETE)",
-            "health": "/chat/health",
-            "docs": "/docs",
-        }
+        "documentation": "/docs"
     }
 
 
@@ -79,8 +72,8 @@ async def health_check():
     """Global health check endpoint."""
     return {
         "status": "healthy",
-        "service": "florence-chatbot",
-        "version": "1.0.0"
+        "service": "florence-llm-chatbot-service",
+        "version": settings.app_version
     }
 
 

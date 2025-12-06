@@ -8,8 +8,7 @@ from routers import authentication, patients, clinicians, admin, chat_history
 
 app = FastAPI(
     title="Florence Data Service",
-    description="Backend API for Florence Digital Health Platform",
-    version="1.0.0",
+    version=os.getenv("APP_VERSION", "1.0.0"),
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -37,6 +36,7 @@ def root():
     """
     return {
         "service": "Florence Data Service",
+        "version": os.getenv("APP_VERSION", "1.0.0"),
         "status": "operational",
-        "version": "1.0.0"
+        "documentation": "/docs"
     }

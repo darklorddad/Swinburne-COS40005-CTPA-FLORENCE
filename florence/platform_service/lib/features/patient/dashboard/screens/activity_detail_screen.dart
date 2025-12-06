@@ -343,6 +343,7 @@ class _DailyVolumeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final todayLogs = logs.where((log) {
+      // Ensure strict local time comparison
       final localDate = log.timestamp.toLocal();
       return localDate.year == now.year && 
              localDate.month == now.month && 
@@ -421,6 +422,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
     }
 
     for (var log in logs) {
+      // Group by Local Day
       final d = log.timestamp.toLocal();
       final dayKey = d.year * 10000 + d.month * 100 + d.day;
       if (dailyTotals.containsKey(dayKey)) {
@@ -553,6 +555,7 @@ class _ActivityTimingChart extends StatelessWidget {
     double night = 0;   // 22-5
 
     for (var log in recentLogs) {
+      // Group by Local Hour
       final h = log.timestamp.toLocal().hour;
       if (h >= 5 && h < 11) morning += log.duration;
       else if (h >= 11 && h < 17) midday += log.duration;
@@ -747,14 +750,13 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
-              if (totalPages > 1)
-                Row(
-                  children: [
-                    IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
-                    Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
-                  ],
-                ),
+              Row(
+                children: [
+                  IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
+                  Text('${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),

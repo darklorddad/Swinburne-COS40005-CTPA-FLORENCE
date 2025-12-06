@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../config/admin_theme.dart';
 import '../models/admin_enums.dart';
 import '../services/permission_service.dart';
@@ -27,10 +28,11 @@ class AdminSidebar extends StatelessWidget {
     return Container(
       width: 260,
       color: AdminTheme.sidebarColor,
-      child: Column(
-        children: [
-          // Sidebar Header
-          _buildSidebarHeader(context, currentUser),
+      child: SafeArea(
+        child: Column(
+          children: [
+            // Sidebar Header
+            _buildSidebarHeader(context, currentUser),
 
           const Divider(height: 1, color: AdminTheme.sidebarHoverColor),
 
@@ -44,13 +46,13 @@ class AdminSidebar extends StatelessWidget {
                   context,
                   icon: Icons.dashboard,
                   label: 'Dashboard',
-                  route: '/admin/dashboard',
+                  route: '/admin/home',
                 ),
 
                 const SizedBox(height: 4),
 
-                // Organizations (Super Admin only)
-                SuperAdminGuard(
+                // Organizations (Global Admin only)
+                AdminGuard(
                   child: Column(
                     children: [
                       _buildSectionHeader(context, 'SYSTEM MANAGEMENT'),
@@ -72,7 +74,7 @@ class AdminSidebar extends StatelessWidget {
                   ],
                   child: Column(
                     children: [
-                      if (!permissionService.isSuperAdmin)
+                      if (!permissionService.isAdmin)
                         _buildSectionHeader(context, 'MANAGEMENT'),
                       _buildMenuItem(
                         context,
@@ -102,7 +104,7 @@ class AdminSidebar extends StatelessWidget {
 
                 // Roles & Permissions (Admin only)
                 PermissionGuard(
-                  anyRoles: [AdminRole.superAdmin, AdminRole.hospitalAdmin],
+                  anyRoles: [AdminRole.admin, AdminRole.hospitalAdmin],
                   child: Column(
                     children: [
                       _buildSectionHeader(context, 'ACCESS CONTROL'),
@@ -176,8 +178,8 @@ class AdminSidebar extends StatelessWidget {
 
                 const SizedBox(height: 4),
 
-                // Audit Logs (Super Admin only)
-                SuperAdminGuard(
+                // Audit Logs (Global Admin only)
+                AdminGuard(
                   child: Column(
                     children: [
                       _buildSectionHeader(context, 'MONITORING'),
@@ -200,7 +202,7 @@ class AdminSidebar extends StatelessWidget {
           _buildSidebarFooter(context),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildSidebarHeader(BuildContext context, dynamic currentUser) {
@@ -362,6 +364,42 @@ class AdminSidebar extends StatelessWidget {
               // Show help dialog or navigate
             },
           ),
+          const SizedBox(height: 8),
+          // Logout
+          _buildFooterButton(
+            context,
+            icon: Icons.logout,
+            label: 'Sign Out',
+            color: AdminTheme.errorColor,
+            onTap: () => _handleLogout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _handleLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sign Out'),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              // Just sign out. The global auth listener in app.dart handles navigation
+              // and will clear the route stack (including this dialog).
+              await Supabase.instance.client.auth.signOut();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AdminTheme.errorColor,
+            ),
+            child: const Text('Sign Out'),
+          ),
         ],
       ),
     );
@@ -372,7 +410,10 @@ class AdminSidebar extends StatelessWidget {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    Color? color,
   }) {
+    final itemColor = color ?? AdminTheme.textOnDark.withOpacity(0.6);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -385,14 +426,15 @@ class AdminSidebar extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: AdminTheme.textOnDark.withOpacity(0.6),
+                color: itemColor,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   label,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AdminTheme.textOnDark.withOpacity(0.6),
+                        color: itemColor,
+                        fontWeight: color != null ? FontWeight.w600 : null,
                       ),
                 ),
               ),

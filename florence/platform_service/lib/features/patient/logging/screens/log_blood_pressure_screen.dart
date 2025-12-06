@@ -58,7 +58,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
     try {
       await ref.read(monitorDataRepositoryProvider).addBloodPressure(
-        _selectedDateTime,
+        _selectedDateTime.toUtc(),
         sys,
         dia,
       );

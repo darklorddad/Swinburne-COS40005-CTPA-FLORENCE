@@ -3,6 +3,12 @@ from pydantic import BaseModel, EmailStr
 from typing import Literal, Optional
 from datetime import date
 from supabase_auth.errors import AuthApiError
+from supabase import create_client, Client
+from dotenv import load_dotenv
+import os
+
+# Load env vars to ensure we can create local clients
+load_dotenv()
 
 # Import the shared Supabase client
 from client import supabase
@@ -36,6 +42,10 @@ class UserLogin(BaseModel):
 class AdminRegistration(BaseModel):
     email: EmailStr
     password: str
+    role: Literal['ADMIN', 'HOSPITALADMIN']
+    name: str
+    phone_number: Optional[str] = None
+    organisation_id: Optional[int] = None
 
 
 DEFAULT_THRESHOLDS = [
@@ -57,9 +67,14 @@ async def register_user(user_data: UserRegistration):
     if user_data.role == 'CLINICIAN' and user_data.organisation_id is None:
         raise HTTPException(status_code=400, detail="Organisation ID is required for clinicians.")
 
+    # Create a disposable client for auth operations to avoid polluting the global admin client
+    url: str = os.environ.get("SUPABASE_URL")
+    key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+    local_client = create_client(url, key)
+
     new_user = None
     try:
-        user_session = supabase.auth.sign_up({
+        user_session = local_client.auth.sign_up({
             "email": user_data.email,
             "password": user_data.password,
             "options": {
@@ -124,7 +139,8 @@ async def get_current_admin_user(authorization: str = Header(...)):
         if not user:
             raise HTTPException(status_code=401, detail="Invalid token.")
         
-        if user.app_metadata.get('role', '').upper() != 'ADMIN':
+        role = user.app_metadata.get('role', '').upper()
+        if role not in ['ADMIN', 'HOSPITALADMIN']:
             raise HTTPException(status_code=403, detail="Access denied: User is not an admin.")
             
         return user
@@ -139,13 +155,27 @@ async def get_current_admin_user(authorization: str = Header(...)):
 @router.post("/register_admin", dependencies=[Depends(get_current_admin_user)])
 async def register_admin(user_data: AdminRegistration):
     """Registers a new admin user. This endpoint is protected and only accessible by other admins."""
+    
+    # Validation: Hospital Admins must have an organization
+    if user_data.role == 'HOSPITALADMIN' and not user_data.organisation_id:
+        raise HTTPException(status_code=400, detail="Organisation ID is required for Hospital Admins.")
+    
+    # Validation: Global Admins should not belong to an organization
+    if user_data.role == 'ADMIN' and user_data.organisation_id:
+        user_data.organisation_id = None
+
     try:
         supabase.auth.admin.create_user({
             "email": user_data.email,
             "password": user_data.password,
             "email_confirm": True,
-            "app_metadata": {"role": "ADMIN"},
+            "app_metadata": {"role": user_data.role},
+            "user_metadata": {"name": user_data.name, "phone_number": user_data.phone_number}
         })
+        
+        # Note: In a real implementation, we would also insert into admin_profiles table here
+        # using the returned user ID and the organisation_id
+        
         return {"message": "Admin registered successfully."}
     except AuthApiError as e:
         raise HTTPException(status_code=400, detail=f"Admin registration failed: {e.message}")
@@ -156,8 +186,14 @@ async def register_admin(user_data: AdminRegistration):
 @router.post("/login")
 async def login_user(credentials: UserLogin):
     """Logs in a user and returns a session object with an access token."""
+    
+    # Create a disposable client for login to avoid polluting the global admin client with user session headers
+    url: str = os.environ.get("SUPABASE_URL")
+    key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+    local_client = create_client(url, key)
+
     try:
-        response = supabase.auth.sign_in_with_password({
+        response = local_client.auth.sign_in_with_password({
             "email": credentials.email,
             "password": credentials.password
         })

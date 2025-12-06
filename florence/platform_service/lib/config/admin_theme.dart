@@ -44,9 +44,8 @@ class AdminTheme {
   // ROLE COLORS - Visual identification
   // ============================================
 
-  static const Color superAdminColor = Color(0xFF8B5CF6); // Purple
+  static const Color adminColor = Color(0xFF8B5CF6); // Purple
   static const Color hospitalAdminColor = Color(0xFF3F51B5); // Indigo
-  static const Color doctorColor = Color(0xFF059669); // Green
 
   // ============================================
   // ORGANIZATION STATUS COLORS
@@ -379,15 +378,11 @@ class AdminTheme {
   /// Get color based on admin role
   static Color getRoleColor(String role) {
     switch (role.toLowerCase()) {
-      case 'super admin':
-      case 'superadmin':
-        return superAdminColor;
+      case 'admin':
+        return adminColor;
       case 'hospital admin':
       case 'hospitaladmin':
         return hospitalAdminColor;
-      case 'doctor':
-      case 'physician':
-        return doctorColor;
       default:
         return textSecondaryColor;
     }

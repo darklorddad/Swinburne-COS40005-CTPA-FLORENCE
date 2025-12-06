@@ -16,7 +16,6 @@ from models.chat import (
     ChatMessageResponse,
     ChatHistoryResponse,
     ClearHistoryResponse,
-    LLMMessage,
 )
 
 # Configure logging
@@ -57,25 +56,20 @@ async def send_message(
         health_context = await health_service.get_health_context(token)
         health_context_formatted = health_context.format_for_prompt()
 
-        # Build system prompt with health context
-        system_prompt = llm_service.build_system_prompt(health_context_formatted)
-
-        # Prepare messages for LLM
-        messages = [LLMMessage(role="system", content=system_prompt)]
-
-        # Add conversation history if requested
+        # Prepare history for LangChain
+        lc_history = []
         if request.include_history:
-            # Fetch all history (using a large limit)
-            history = await conversation_service.get_conversation_history(token, limit=10000)
-            # Convert to LLM format (excludes system messages)
-            history_messages = conversation_service.convert_to_llm_messages(history)
-            messages.extend(history_messages)
+            # Fetch history
+            history = await conversation_service.get_conversation_history(token, limit=20) # Limit to 20 for context window efficiency
+            # Convert to LangChain format
+            lc_history = conversation_service.convert_to_langchain_messages(history)
 
-        # Add current user message
-        messages.append(LLMMessage(role="user", content=request.message))
-
-        # Call LLM API
-        assistant_content = await llm_service.chat_completion(messages)
+        # Call LLM API (LangChain handles prompt assembly)
+        assistant_content = await llm_service.chat_completion(
+            health_context=health_context_formatted,
+            history=lc_history,
+            current_message=request.message
+        )
         logger.info(f"LLM responded to patient {patient_id}")
 
         # Save assistant response with health context

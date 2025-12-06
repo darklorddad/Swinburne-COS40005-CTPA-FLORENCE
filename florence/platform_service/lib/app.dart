@@ -30,6 +30,7 @@ class _AppState extends ConsumerState<App> {
   StreamSubscription<AuthState>? _authSubscription;
   StreamSubscription<Uri>? _linkSubscription;
   final ApiService _apiService = ApiService();
+  bool _isAuthenticated = false;
 
   // Navigator key to allow navigation from outside the build context
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -37,6 +38,7 @@ class _AppState extends ConsumerState<App> {
   @override
   void initState() {
     super.initState();
+    _isAuthenticated = supabase.auth.currentSession != null;
     _setupAuthListener();
     _setupDeepLinkListener();
   }
@@ -84,7 +86,19 @@ class _AppState extends ConsumerState<App> {
     _authSubscription = supabase.auth.onAuthStateChange.listen(
       (data) {
         final event = data.event;
+        final session = data.session;
         debugPrint('[Auth Listener] Event received: $event');
+
+        // Ignore background token refreshes to prevent unwanted navigation/resets.
+        // We only skip if we are already authenticated. If we are not (e.g. during login),
+        // we must process the event to navigate to the dashboard.
+        if (event == AuthChangeEvent.tokenRefreshed && _isAuthenticated) {
+          debugPrint('[Auth Listener] Token refreshed in background. Skipping navigation.');
+          return;
+        }
+
+        // Update local auth state
+        _isAuthenticated = session != null;
 
         // This listener is the single source of truth for auth-based navigation.
         // It handles all auth events: initial session, sign in, sign out, password recovery, etc.

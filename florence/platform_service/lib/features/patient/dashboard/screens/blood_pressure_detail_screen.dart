@@ -679,7 +679,7 @@ class _FloatingBarSection extends StatelessWidget {
 
                           if (shouldSkip) return const SizedBox();
 
-                          final date = data[index].timestamp;
+                          final date = data[index].timestamp.toLocal();
                           final text = range == '1D'
                               ? DateFormat('HH:mm').format(date)
                               : DateFormat('d/M').format(date);
@@ -893,23 +893,25 @@ class _HistorySectionState extends State<_HistorySection> {
                 ],
               ),
               // Pagination Controls (Top Right)
-              if (totalPages > 1)
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
-                      icon: const Icon(Icons.chevron_left),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    IconButton(
-                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
-                      icon: const Icon(Icons.chevron_right),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -1014,7 +1016,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        ),
                        const SizedBox(height: 6),
                        Text(
-                         DateFormat('dd/MM/yy HH:mm').format(r.timestamp),
+                         DateFormat('dd/MM/yy HH:mm').format(r.timestamp.toLocal()),
                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                fontSize: 11,
                                color: AppTheme.textSecondaryColor,

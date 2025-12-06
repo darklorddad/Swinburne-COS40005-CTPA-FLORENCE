@@ -1,11 +1,11 @@
-# Florence Chatbot Microservice
+# Florence LLM Chatbot Service
 
 A dedicated multi-tenant Python microservice for AI-powered health chatbot functionality, decoupled from the Flutter frontend.
 
 ## Overview
 
 This service provides AI-powered conversational assistance for diabetes management by:
-- Managing chat logic and conversation history
+- Managing chat logic and conversation history via **LangChain**
 - Integrating with LLM providers (e.g., OpenRouter, DeepSeek) for intelligent responses
 - Fetching and aggregating patient health data
 - Ensuring strict user data isolation and security
@@ -13,7 +13,9 @@ This service provides AI-powered conversational assistance for diabetes manageme
 ## Architecture
 
 ```
-Flutter App → JWT Auth → Chatbot Service → Supabase Database
+Flutter App → JWT Auth → LLM Chatbot Service → Data Service → Supabase
+                                      ↓
+                                  LangChain
                                       ↓
                                    LLM API
 ```
@@ -90,16 +92,19 @@ chatbot_service/
 
    Ensure the `.env` file in the project root contains:
    ```env
-   # Supabase Configuration
-   SUPABASE_URL="https://your-project.supabase.co"
-   SUPABASE_SERVICE_KEY="your-service-role-key"
-   SUPABASE_ANON_KEY="your-anon-key"
+   # App Version
+   APP_VERSION="1.0.0"
+
+   # Data Service Configuration
+   # Development: http://localhost:8000
+   # Production: https://your-data-service.vercel.app
+   DATA_SERVICE_URL="http://localhost:8000"
 
    # LLM Configuration (Example: OpenRouter)
    LLM_API_KEY="your-api-key"
    LLM_BASE_URL="https://openrouter.ai/api/v1"
    LLM_MODEL="google/gemini-3-pro-preview"
-   # LLM_TEMPERATURE=0.8 (Optional)
+   # LLM_TEMPERATURE=0.7 (Optional)
    # LLM_MAX_TOKENS=1000 (Optional)
 
    # Service Configuration
@@ -393,7 +398,7 @@ Edit `services/health_data.py` → `get_health_context()` method.
 
 ### Customizing LLM Prompts
 
-Edit `services/llm.py` → `build_system_prompt()` method.
+Edit `services/llm.py` → `chat_completion()` method (LangChain Template).
 
 ## Migration from Flutter
 

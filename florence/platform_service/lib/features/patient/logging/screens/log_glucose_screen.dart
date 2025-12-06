@@ -68,7 +68,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       if (_selectedTiming == 'No Meal') {
         await repo.addGlucoseReading(GlucoseReading(
           id: '', // Backend generates ID
-          timestamp: _selectedDateTime,
+          timestamp: _selectedDateTime.toUtc(),
           value: glucoseValue,
           context: _selectedTiming,
         ));
@@ -78,12 +78,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         // Delegate complex logic to repository
         await repo.addMeal(
           _selectedMealType,
-          _selectedDateTime, // Date only used for day
+          _selectedDateTime.toUtc(), // Date only used for day
           (!isBefore && _notesController.text.trim().isNotEmpty) ? _notesController.text.trim() : null,
           isBefore ? glucoseValue : null,
-          isBefore ? _selectedDateTime : null,
+          isBefore ? _selectedDateTime.toUtc() : null,
           !isBefore ? glucoseValue : null,
-          !isBefore ? _selectedDateTime : null,
+          !isBefore ? _selectedDateTime.toUtc() : null,
         );
       }
       

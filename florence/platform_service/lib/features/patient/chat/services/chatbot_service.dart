@@ -31,7 +31,7 @@ class ChatState {
 }
 
 class ChatNotifier extends Notifier<ChatState> {
-  final String _baseUrl = Environment.chatbotServiceUrl;
+  final String _baseUrl = Environment.llmChatbotServiceUrl;
   final SupabaseClient _supabase = Supabase.instance.client;
   bool _hasLoadedHistory = false;
 
@@ -98,8 +98,8 @@ class ChatNotifier extends Notifier<ChatState> {
   }
 
   /// Retrieve conversation history
-  Future<void> loadHistory({int limit = 50}) async {
-    if (_hasLoadedHistory || state.isLoadingHistory) return;
+  Future<void> loadHistory({int limit = 50, bool force = false}) async {
+    if (!force && (_hasLoadedHistory || state.isLoadingHistory)) return;
 
     debugPrint('[Chatbot] Loading history...');
     state = state.copyWith(isLoadingHistory: true);

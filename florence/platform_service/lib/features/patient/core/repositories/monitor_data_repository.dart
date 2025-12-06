@@ -185,7 +185,8 @@ class MonitorDataRepository {
             id: id,
             timestamp: timestamp,
             value: value,
-            context: _getGlucoseContext(timestamp.hour),
+            // Convert to local to ensure '8 AM' is treated as morning, not UTC night
+            context: _getGlucoseContext(timestamp.toLocal().hour),
             isFlagged: value > 180 || value < 70,
           ));
           break;
@@ -328,8 +329,10 @@ class MonitorDataRepository {
     double? glucoseAfter,
     DateTime? timeAfter,
   ) async {
+    // FIX: Convert back to Local before extracting the YYYY-MM-DD string.
+    // This ensures that 7AM Monday (which is 11PM Sunday UTC) is logged as Monday.
     final Map<String, dynamic> payload = {
-      'log_date': logDate.toIso8601String().split('T')[0],
+      'log_date': logDate.toLocal().toIso8601String().split('T')[0],
       'meal_time': mealTime,
     };
 

@@ -721,7 +721,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
                         showTitles: true,
                         getTitlesWidget: (val, meta) {
                           if (val.toInt() >= displayData.length) return const SizedBox();
-                          final date = displayData[val.toInt()].timestamp;
+                          final date = displayData[val.toInt()].timestamp.toLocal();
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
@@ -1073,7 +1073,7 @@ class _HistorySectionState extends State<_HistorySection> {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              DateFormat('dd/MM/yy HH:mm').format(r.timestamp),
+                              DateFormat('dd/MM/yy HH:mm').format(r.timestamp.toLocal()),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                     fontSize: 11,
                                     color: AppTheme.textSecondaryColor,
