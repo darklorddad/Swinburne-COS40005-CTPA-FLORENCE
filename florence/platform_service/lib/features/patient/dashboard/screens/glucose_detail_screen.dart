@@ -61,21 +61,23 @@ class GlucoseDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1000),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 1. Statistics
-                      _StatisticsSection(
-                        readings: allReadings, 
-                        threshold: effectiveThreshold,
-                        isDefault: isDefault,
-                      ),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. Statistics
+                          _StatisticsSection(
+                            readings: allReadings, 
+                            threshold: effectiveThreshold,
+                            isDefault: isDefault,
+                          ),
                       const SizedBox(height: 20),
 
                       // 2. Annotated Line Chart
@@ -115,8 +117,10 @@ class GlucoseDetailScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          );
-        },
+          ],
+        ),
+      );
+    },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading glucose: $err')),
       ),
