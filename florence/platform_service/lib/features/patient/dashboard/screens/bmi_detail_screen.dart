@@ -589,8 +589,10 @@ class _BmiTrendSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (maxX - minX) / 4,
-                        getTitlesWidget: (val, _) {
+                        interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
+                        getTitlesWidget: (val, meta) {
+                          if (val <= meta.min || val >= meta.max) return const SizedBox.shrink();
+
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
                           final fmt = (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
@@ -749,7 +751,10 @@ class _BmiCorrelationSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        getTitlesWidget: (val, _) {
+                        interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
+                        getTitlesWidget: (val, meta) {
+                            if (val <= meta.min || val >= meta.max) return const SizedBox.shrink();
+
                             final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                             // Determine format based on range
                             final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
