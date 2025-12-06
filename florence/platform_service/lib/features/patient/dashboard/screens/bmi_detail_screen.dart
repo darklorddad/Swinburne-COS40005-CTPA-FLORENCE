@@ -609,6 +609,12 @@ class _BmiTrendSection extends StatelessWidget {
                       HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.1)),
                     ],
                   ),
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(y: minNormal, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                    ],
+                  ),
                   lineBarsData: [
                     LineChartBarData(
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
