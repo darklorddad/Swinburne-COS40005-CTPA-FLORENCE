@@ -526,7 +526,7 @@ class _BmiTrendSection extends StatelessWidget {
     return _ChartSection(
       title: 'Progress',
       icon: Icons.show_chart,
-      ranges: const ['1D', '3M', '6M', '1Y', 'ALL'],
+      ranges: const ['3M', '6M', '1Y', 'ALL'],
       infoText: 'Visualizes your BMI trends over time.\n\n'
           '• Y-Axis: BMI (kg/m²)\n'
           '• X-Axis: Time\n'
@@ -541,11 +541,7 @@ class _BmiTrendSection extends StatelessWidget {
         double minX, maxX;
         final now = DateTime.now();
 
-        if (range == '1D') {
-          final startOfDay = DateTime(now.year, now.month, now.day);
-          minX = startOfDay.millisecondsSinceEpoch.toDouble();
-          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
-        } else if (range == 'ALL') {
+        if (range == 'ALL') {
           minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
           maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
           if (minX == maxX) {
@@ -556,11 +552,10 @@ class _BmiTrendSection extends StatelessWidget {
           maxX = now.millisecondsSinceEpoch.toDouble();
           Duration duration;
           switch (range) {
-            case '1M': duration = const Duration(days: 30); break;
             case '3M': duration = const Duration(days: 90); break;
             case '6M': duration = const Duration(days: 180); break;
             case '1Y': duration = const Duration(days: 365); break;
-            default: duration = const Duration(days: 365); break;
+            default: duration = const Duration(days: 90); break; // Default 3M
           }
           minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
@@ -598,7 +593,7 @@ class _BmiTrendSection extends StatelessWidget {
                         getTitlesWidget: (val, _) {
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                          final fmt = range == '1D' ? DateFormat('HH:mm') : (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
+                          final fmt = (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
 
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
@@ -611,7 +606,7 @@ class _BmiTrendSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.2)),
+                      HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.1)),
                     ],
                   ),
                   lineBarsData: [
@@ -624,7 +619,7 @@ class _BmiTrendSection extends StatelessWidget {
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
                       ),
-                      belowBarData: BarAreaData(show: true, color: AppTheme.primaryBlue.withOpacity(0.1)),
+                      belowBarData: BarAreaData(show: false),
                     ),
                   ],
                   lineTouchData: LineTouchData(
@@ -656,7 +651,7 @@ class _BmiTrendSection extends StatelessWidget {
               children: [
                 _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                _LegendItem('Normal Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
             ),
           ],
@@ -686,25 +681,21 @@ class _BmiCorrelationSection extends StatelessWidget {
       icon: Icons.insights,
       infoText: 'Compares your BMI trends against HbA1c levels over time.\n\n'
           '• Blue Line: BMI\n'
-          '• Purple Dots: HbA1c %\n'
+          '• Purple Line: HbA1c %\n'
           '• Goal: Observe if weight changes correlate with better blood sugar control.',
       allData: bmiReadings, // Pass BMI to drive range logic
-      ranges: const ['1D', '6M', '1Y', 'ALL'],
+      ranges: const ['3M', '6M', '1Y', 'ALL'],
       builder: (range, data) {
         // 'data' here is filtered BMI readings
         if (data.isEmpty) {
           return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No BMI data for correlation.")));
         }
 
-        // Calculate X-Axis bounds based on selected range (Consistent with Trend Chart)
+        // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
 
-        if (range == '1D') {
-          final startOfDay = DateTime(now.year, now.month, now.day);
-          minX = startOfDay.millisecondsSinceEpoch.toDouble();
-          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
-        } else if (range == 'ALL') {
+        if (range == 'ALL') {
           minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
           maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
           if (minX == maxX) {
@@ -715,11 +706,10 @@ class _BmiCorrelationSection extends StatelessWidget {
           maxX = now.millisecondsSinceEpoch.toDouble();
           Duration duration;
           switch (range) {
-            case '1M': duration = const Duration(days: 30); break;
             case '3M': duration = const Duration(days: 90); break;
             case '6M': duration = const Duration(days: 180); break;
             case '1Y': duration = const Duration(days: 365); break;
-            default: duration = const Duration(days: 365); break;
+            default: duration = const Duration(days: 90); break;
           }
           minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
@@ -755,11 +745,9 @@ class _BmiCorrelationSection extends StatelessWidget {
                         showTitles: true,
                         getTitlesWidget: (val, _) {
                             final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                            // Determine format based on range, similar to BMI Trend
+                            // Determine format based on range
                             final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                            final fmt = range == '1D'
-                                ? DateFormat('HH:mm')
-                                : (durationDays > 365 ? DateFormat('MMM yy') : DateFormat('d/M'));
+                            final fmt = (durationDays > 365 ? DateFormat('MMM yy') : DateFormat('d/M'));
 
                            return Padding(
                              padding: const EdgeInsets.only(top: 8.0),
@@ -778,7 +766,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                       color: AppTheme.primaryBlue,
                       barWidth: 3,
                       isCurved: true,
-                      dotData: FlDotData(show: false),
+                      dotData: FlDotData(show: true), // Enabled dots
                     ),
                     // HbA1c Line (Purple - Scaled)
                     LineChartBarData(
@@ -787,8 +775,8 @@ class _BmiCorrelationSection extends StatelessWidget {
                         return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
                       }).toList(),
                       color: Colors.purple,
-                      barWidth: 0, 
-                      isCurved: false,
+                      barWidth: 3, // Enable line width (was 0)
+                      isCurved: true, // Enable trend line
                       dotData: FlDotData(
                         show: true, 
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple, strokeWidth: 1, strokeColor: Colors.white)
