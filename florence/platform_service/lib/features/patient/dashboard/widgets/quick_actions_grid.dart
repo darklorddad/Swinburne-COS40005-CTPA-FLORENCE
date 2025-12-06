@@ -88,6 +88,22 @@ class QuickActionsGrid extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
               ),
+              if (!context.isDesktop) ...[
+                const Spacer(),
+                Text(
+                  'Swipe',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 10,
+                      ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.arrow_forward,
+                  size: 14,
+                  color: AppTheme.textSecondaryColor,
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 20),
