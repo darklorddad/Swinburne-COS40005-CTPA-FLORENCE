@@ -10,15 +10,23 @@ class QuickActionsGrid extends StatelessWidget {
   final VoidCallback onLogBloodPressure;
   final VoidCallback onLogMeal;
   final VoidCallback onLogActivity;
-  
+  final VoidCallback onLogMedication;
+  final VoidCallback onLogBmi;
+  final VoidCallback onLogCholesterol;
+  final VoidCallback onLogHba1c;
+
   const QuickActionsGrid({
     super.key,
     required this.onLogGlucose,
     required this.onLogBloodPressure,
     required this.onLogMeal,
     required this.onLogActivity,
+    required this.onLogMedication,
+    required this.onLogBmi,
+    required this.onLogCholesterol,
+    required this.onLogHba1c,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -31,6 +39,11 @@ class QuickActionsGrid extends StatelessWidget {
       _buildActionButton(context, 'B.Pressure', Icons.monitor_heart_outlined, AppTheme.primaryRed, onLogBloodPressure),
       _buildActionButton(context, 'Diet', Icons.restaurant_outlined, AppTheme.mealColor, onLogMeal),
       _buildActionButton(context, 'Activity', Icons.directions_run_rounded, AppTheme.activityColor, onLogActivity),
+      // Extended actions for Desktop
+      _buildActionButton(context, 'Meds', Icons.medication_outlined, AppTheme.medicationColor, onLogMedication),
+      _buildActionButton(context, 'BMI', Icons.monitor_weight_outlined, AppTheme.primaryGreen, onLogBmi),
+      _buildActionButton(context, 'Cholesterol', Icons.bloodtype_outlined, AppTheme.accentPurple, onLogCholesterol),
+      _buildActionButton(context, 'HbA1c', Icons.pie_chart_outline, AppTheme.accentGold, onLogHba1c),
     ];
 
     return Container(
@@ -80,19 +93,29 @@ class QuickActionsGrid extends StatelessWidget {
           if (context.isDesktop)
             Column(
               children: [
+                // Row 1
                 Row(
                   children: [
                     buttons[0],
                     const SizedBox(width: 12),
                     buttons[1],
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
+                    const SizedBox(width: 12),
                     buttons[2],
                     const SizedBox(width: 12),
                     buttons[3],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // Row 2
+                Row(
+                  children: [
+                    buttons[4],
+                    const SizedBox(width: 12),
+                    buttons[5],
+                    const SizedBox(width: 12),
+                    buttons[6],
+                    const SizedBox(width: 12),
+                    buttons[7],
                   ],
                 ),
               ],
