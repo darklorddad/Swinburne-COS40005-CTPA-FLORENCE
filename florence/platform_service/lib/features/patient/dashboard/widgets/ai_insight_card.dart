@@ -18,15 +18,14 @@ class AIInsightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const double borderRadius = 24.0;
 
-    return AspectRatio(
-      aspectRatio: 1.586,
-      child: InkWell(
-        onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
+    return InkWell(
+      onTap: onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 200),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
                 const Color(0xFF1A237E), // Deep Indigo
@@ -122,7 +121,7 @@ class AIInsightCard extends StatelessWidget {
                       ],
                     ),
                     
-                    const Spacer(),
+                    const SizedBox(height: 24),
 
                     // Insight Content
                     Text(
@@ -143,7 +142,6 @@ class AIInsightCard extends StatelessWidget {
           ),
           ),
         ),
-      ),
-    );
+      );
   }
 }
