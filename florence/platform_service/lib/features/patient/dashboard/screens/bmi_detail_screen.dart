@@ -493,10 +493,10 @@ class _BmiGaugeSection extends StatelessWidget {
                     // 3. Warning Limit (e.g. 29.9)
                     buildLabel(overweightLimit, overweightLimit.toStringAsFixed(1)),
 
-                    // C. The Marker (User Value)
+                    // C. Marker
                     Positioned(
-                      left: getPos(bmi) - 12,
-                      top: -1, // Sits right on top of the bar
+                      left: getPos(bmi) - 14,
+                      top: -12, // Sits above the bar pointing down
                       child: Column(
                         children: [
                           Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
