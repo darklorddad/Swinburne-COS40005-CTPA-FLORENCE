@@ -20,7 +20,6 @@ logger = logging.getLogger(__name__)
 # Create FastAPI application
 app = FastAPI(
     title="Florence LLM Chatbot Service",
-    description="AI-powered health chatbot microservice for the Florence Digital Health Platform",
     version=settings.app_version,
     docs_url="/docs",
     redoc_url="/redoc",
