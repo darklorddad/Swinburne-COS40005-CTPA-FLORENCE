@@ -51,6 +51,8 @@ dependencies:
   # Markdown Support
   flutter_markdown_plus: ^1.0.5
 
+  package_info_plus: ^8.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

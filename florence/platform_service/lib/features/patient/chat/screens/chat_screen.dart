@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
@@ -202,27 +204,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Suggested questions (only show if history is empty and not loading)
-          if (!showLoading && messages.isEmpty) 
-            _buildSuggestedQuestions(),
-          
-          // Chat messages area
-          Expanded(
-            child: showLoading
-                ? _buildLoadingState(loadingText)
-                : messages.isEmpty
-                    ? _buildEmptyState()
-                    : _buildMessagesList(messages),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 900),
+          child: Column(
+            children: [
+              // Suggested questions (only show if history is empty and not loading)
+              if (!showLoading && messages.isEmpty) 
+                _buildSuggestedQuestions(),
+              
+              // Chat messages area
+              Expanded(
+                child: showLoading
+                    ? _buildLoadingState(loadingText)
+                    : messages.isEmpty
+                        ? _buildEmptyState()
+                        : _buildMessagesList(messages),
+              ),
+              
+              // Typing indicator
+              if (isTyping && !showLoading) _buildTypingIndicator(),
+              
+              // Input area
+              _buildInputArea(isEnabled: !showLoading),
+            ],
           ),
-          
-          // Typing indicator
-          if (isTyping && !showLoading) _buildTypingIndicator(),
-          
-          // Input area
-          _buildInputArea(isEnabled: !showLoading),
-        ],
+        ),
       ),
     );
   }
@@ -348,7 +355,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
+          maxWidth: math.min(MediaQuery.of(context).size.width * 0.75, 600),
         ),
         child: Column(
           crossAxisAlignment: message.isUser

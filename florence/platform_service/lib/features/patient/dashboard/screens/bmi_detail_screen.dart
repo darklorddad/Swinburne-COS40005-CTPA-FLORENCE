@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -61,13 +62,18 @@ class BmiDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // 1. Linear Gauge (Current Status)
-                  _BmiGaugeSection(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // 1. Linear Gauge (Current Status)
+                          _BmiGaugeSection(
                     latestReading: latestBmi,
                     threshold: bmiThreshold,
                   ),
@@ -87,14 +93,18 @@ class BmiDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 4. History List
-                  _BmiHistorySection(
-                    readings: bmiReadings,
-                    threshold: bmiThreshold,
+                          // 4. History List
+                          _BmiHistorySection(
+                            readings: bmiReadings,
+                            threshold: bmiThreshold,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                  ),
+              ],
             ),
           );
         },

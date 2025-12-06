@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -46,13 +47,18 @@ class DietAnalyticsScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // 1. Statistics
-                  _DietStatsSection(logs: sortedLogs),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // 1. Statistics
+                          _DietStatsSection(logs: sortedLogs),
                   const SizedBox(height: 20),
 
                   // 2. Traffic Light Calendar (New Section)
@@ -63,11 +69,15 @@ class DietAnalyticsScreen extends ConsumerWidget {
                   _DietImpactChart(logs: sortedLogs),
                   const SizedBox(height: 20),
 
-                  // 4. History List
-                  _DietHistoryList(logs: sortedLogs),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                          // 4. History List
+                          _DietHistoryList(logs: sortedLogs),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ),
+              ],
             ),
           );
         },

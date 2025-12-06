@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -60,57 +61,66 @@ class GlucoseDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // 1. Statistics
-                  _StatisticsSection(
-                    readings: allReadings, 
-                    threshold: effectiveThreshold,
-                    isDefault: isDefault,
-                  ),
-                  const SizedBox(height: 20),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 1. Statistics
+                          _StatisticsSection(
+                            readings: allReadings, 
+                            threshold: effectiveThreshold,
+                            isDefault: isDefault,
+                          ),
+                      const SizedBox(height: 20),
 
-                  // 2. Annotated Line Chart
-                  _GlucoseTrendsSection(
-                    allReadings: allReadings,
-                    threshold: effectiveThreshold,
-                    isDefault: isDefault,
-                  ),
-                  const SizedBox(height: 20),
+                      // 2. Annotated Line Chart
+                      _GlucoseTrendsSection(
+                        allReadings: allReadings,
+                        threshold: effectiveThreshold,
+                        isDefault: isDefault,
+                      ),
+                      const SizedBox(height: 20),
 
-                  // 3. Time in Range
-                  _TimeInRangeSection(
-                    allReadings: allReadings,
-                    threshold: effectiveThreshold,
-                    isDefault: isDefault,
-                  ),
-                  const SizedBox(height: 20),
+                      // 3. Time in Range
+                      _TimeInRangeSection(
+                        allReadings: allReadings,
+                        threshold: effectiveThreshold,
+                        isDefault: isDefault,
+                      ),
+                      const SizedBox(height: 20),
 
-                  // 4. Modal Day
-                  _ModalDaySection(
-                    allReadings: allReadings,
-                    threshold: effectiveThreshold,
-                    isDefault: isDefault,
-                  ),
-                  const SizedBox(height: 20),
+                      // 4. Modal Day
+                      _ModalDaySection(
+                        allReadings: allReadings,
+                        threshold: effectiveThreshold,
+                        isDefault: isDefault,
+                      ),
+                      const SizedBox(height: 20),
 
-                  // 5. History List
-                  _HistorySection(
-                    allReadings: allReadings, // Pass sorted list, we will reverse it inside
-                    thresholds: thresholds,
+                      // 5. History List
+                      _HistorySection(
+                        allReadings: allReadings, // Pass sorted list, we will reverse it inside
+                        thresholds: thresholds,
+                      ),
+                      
+                      // Bottom Spacing to match Dashboard
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  
-                  // Bottom Spacing to match Dashboard
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
-          );
-        },
+          ],
+        ),
+      );
+    },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading glucose: $err')),
       ),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
@@ -69,13 +70,18 @@ class CholesterolDetailScreen extends ConsumerWidget {
             onRefresh: () async {
                return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // 1. Ratio Donut & Targets (Overview)
-                  _RatioSection(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // 1. Ratio Donut & Targets (Overview)
+                          _RatioSection(
                     reading: latest,
                     total: totalThreshold,
                     ldl: ldlThreshold,
@@ -92,11 +98,15 @@ class CholesterolDetailScreen extends ConsumerWidget {
                   _CompositionSection(readings: readings),
                   const SizedBox(height: 20),
                   
-                  // 5. History
-                  _HistorySection(readings: readings, thresholds: thresholds),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                          // 5. History
+                          _HistorySection(readings: readings, thresholds: thresholds),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ),
+              ],
             ),
           );
         },

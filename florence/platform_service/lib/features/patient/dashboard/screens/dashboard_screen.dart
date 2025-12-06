@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../chat/services/chatbot_service.dart'; // Chat Service
@@ -120,32 +121,76 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         edgeOffset: 0,
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(spacing),
           children: [
-            // AI Insight (Main Card)
-            AIInsightCard(
-              insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-              onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-            ),
-            const SizedBox(height: spacing),
+            Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Padding(
+                  padding: const EdgeInsets.all(spacing),
+                  child: Column(
+                    children: [
+                      // Desktop: Row (Side-by-Side), Mobile: Column (Stacked)
+                      if (context.isDesktop)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: AIInsightCard(
+                                insight:
+                                    'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                                onTap: () => AppRoutes.push(
+                                    context, AppRoutes.recommendations),
+                              ),
+                            ),
+                            const SizedBox(width: spacing),
+                            Expanded(
+                              child: QuickActionsGrid(
+                                onLogGlucose: () => AppRoutes.push(
+                                    context, AppRoutes.logGlucose),
+                                onLogBloodPressure: () => AppRoutes.push(
+                                    context, AppRoutes.logBloodPressure),
+                                onLogMeal: () => AppRoutes.push(
+                                    context, AppRoutes.logMeal),
+                                onLogActivity: () => AppRoutes.push(
+                                    context, AppRoutes.logActivity),
+                              ),
+                            ),
+                          ],
+                        )
+                      else ...[
+                        AIInsightCard(
+                          insight:
+                              'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                          onTap: () => AppRoutes.push(
+                              context, AppRoutes.recommendations),
+                        ),
+                        const SizedBox(height: spacing),
+                        QuickActionsGrid(
+                          onLogGlucose: () => AppRoutes.push(
+                              context, AppRoutes.logGlucose),
+                          onLogBloodPressure: () => AppRoutes.push(
+                              context, AppRoutes.logBloodPressure),
+                          onLogMeal: () =>
+                              AppRoutes.push(context, AppRoutes.logMeal),
+                          onLogActivity: () =>
+                              AppRoutes.push(context, AppRoutes.logActivity),
+                        ),
+                      ],
+                      const SizedBox(height: spacing),
 
-            // Quick actions
-            QuickActionsGrid(
-              onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
-              onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-              onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+                      // Biometrics Section (Loaded via Riverpod)
+                      BiometricsSection(
+                        monitorData: combinedMonitorData,
+                        latestActivity: activity,
+                        latestMeal: latestMeal,
+                        thresholds: thresholds,
+                      ),
+                      const SizedBox(height: spacing),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: spacing),
-
-            // Biometrics Section (Loaded via Riverpod)
-            BiometricsSection(
-              monitorData: combinedMonitorData,
-              latestActivity: activity,
-              latestMeal: latestMeal,
-              thresholds: thresholds,
-            ),
-            const SizedBox(height: spacing),
           ],
         ),
       ),
@@ -231,47 +276,50 @@ class _QuickLogModal extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            'Quick Log',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-
-          // Action buttons
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 3,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.9,
-            physics: const NeverScrollableScrollPhysics(),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _QuickLogButton(
-                icon: Icons.water_drop,
-                label: 'Glucose',
-                color: AppTheme.primaryRed,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logGlucose);
-                },
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
+              const SizedBox(height: 24),
+
+              // Title
+              Text(
+                'Quick Log',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+
+              // Action buttons
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 3,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.9,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _QuickLogButton(
+                    icon: Icons.water_drop,
+                    label: 'Glucose',
+                    color: AppTheme.primaryRed,
+                    onTap: () {
+                      Navigator.pop(context);
+                      AppRoutes.push(context, AppRoutes.logGlucose);
+                    },
+                  ),
               _QuickLogButton(
                 icon: Icons.bloodtype_outlined,
                 label: 'Cholesterol',
@@ -322,6 +370,8 @@ class _QuickLogModal extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+      ),
+      ),
       ),
     );
   }

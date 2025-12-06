@@ -8,6 +8,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
@@ -157,15 +158,18 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Info card
-              _buildInfoCard(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Info card
+                  _buildInfoCard(),
               const SizedBox(height: 24),
 
               // Glucose value input (large and prominent)
@@ -198,6 +202,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
         ),
+      ),
+      ),
       ),
     );
   }

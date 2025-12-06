@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 
@@ -50,13 +51,18 @@ class ActivityDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  // 1. Daily Volume
-                  _DailyVolumeCard(
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        children: [
+                          // 1. Daily Volume
+                          _DailyVolumeCard(
                     logs: sortedLogs, 
                     dataColor: dataColor
                   ),
@@ -83,15 +89,19 @@ class ActivityDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // 5. History List (Consistent Design)
-                  _ActivityHistoryList(
-                    logs: sortedLogs,
-                    glucoseReadings: glucoseReadings,
-                    dataColor: dataColor,
+                          // 5. History List (Consistent Design)
+                          _ActivityHistoryList(
+                            logs: sortedLogs,
+                            glucoseReadings: glucoseReadings,
+                            dataColor: dataColor,
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                  ),
+              ],
             ),
           );
         },

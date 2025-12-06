@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
@@ -148,11 +150,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
 
   // App info
-  final String _appVersion = '1.0.0';
+  String _appVersion = '';
   
   @override
   void initState() {
     super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        // Display as "1.0.0 (1)"
+        _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
+      });
+    }
   }
 
   /// Upload Profile Picture via Backend
@@ -569,44 +582,53 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           return RefreshIndicator(
             onRefresh: () => ref.refresh(userProfileProvider.future),
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Personal info section
-                  _buildPersonalInfoSection(),
-                  const SizedBox(height: 16),
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 800),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Personal info section
+                          _buildPersonalInfoSection(),
+                      const SizedBox(height: 16),
 
-                  // Health Profile section
-                  _buildHealthProfileSection(),
-                  const SizedBox(height: 16),
-                  
-                  // Settings section
-                  _buildSettingsSection(),
-                  const SizedBox(height: 16),
-                  
-                  // About section
-                  _buildAboutSection(),
-                  const SizedBox(height: 24),
-                  
-                  // Sign out button
-                  OutlinedButton(
-                    onPressed: _handleLogout,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
-                      side: BorderSide(color: AppTheme.errorColor),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Sign Out'),
+                      // Health Profile section
+                      _buildHealthProfileSection(),
+                      const SizedBox(height: 16),
+                      
+                      // Settings section
+                      _buildSettingsSection(),
+                      const SizedBox(height: 16),
+                      
+                      // About section
+                      _buildAboutSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Sign out button
+                      OutlinedButton(
+                        onPressed: _handleLogout,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.errorColor,
+                          side: BorderSide(color: AppTheme.errorColor),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('Sign Out'),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
-          );
-        },
+          ],
+        ),
+      );
+    },
       ),
     );
   }
