@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiService {
   // Use Environment configuration
-  static String get baseUrl => Environment.apiUrl;
+  static String get baseUrl => Environment.dataServiceUrl;
 
   // Singleton instance
   static final ApiService _instance = ApiService._internal();

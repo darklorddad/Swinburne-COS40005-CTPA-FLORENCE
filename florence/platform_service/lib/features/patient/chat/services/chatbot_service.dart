@@ -31,7 +31,7 @@ class ChatState {
 }
 
 class ChatNotifier extends Notifier<ChatState> {
-  final String _baseUrl = Environment.chatbotServiceUrl;
+  final String _baseUrl = Environment.llmChatbotServiceUrl;
   final SupabaseClient _supabase = Supabase.instance.client;
   bool _hasLoadedHistory = false;
 
