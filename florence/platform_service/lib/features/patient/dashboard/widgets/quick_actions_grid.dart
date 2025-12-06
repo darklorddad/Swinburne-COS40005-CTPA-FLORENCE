@@ -6,25 +6,12 @@ import '../../../../config/theme.dart';
 /// Quick Actions Grid
 /// Grid of buttons for quick data logging
 class QuickActionsGrid extends StatelessWidget {
-  final VoidCallback onLogGlucose;
-  final VoidCallback onLogBloodPressure;
-  final VoidCallback onLogMeal;
-  final VoidCallback onLogActivity;
-  final VoidCallback onLogMedication;
-  final VoidCallback onLogBmi;
-  final VoidCallback onLogCholesterol;
-  final VoidCallback onLogHba1c;
+  // Use a simple Record definition for flexibility without importing the specific model class
+  final List<({String label, IconData icon, Color color, VoidCallback onTap})> actions;
 
   const QuickActionsGrid({
     super.key,
-    required this.onLogGlucose,
-    required this.onLogBloodPressure,
-    required this.onLogMeal,
-    required this.onLogActivity,
-    required this.onLogMedication,
-    required this.onLogBmi,
-    required this.onLogCholesterol,
-    required this.onLogHba1c,
+    required this.actions,
   });
 
   @override
@@ -33,17 +20,6 @@ class QuickActionsGrid extends StatelessWidget {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
     final isDesktop = context.isDesktop;
-
-    final actions = [
-      (label: 'Glucose', icon: Icons.water_drop_rounded, color: AppTheme.primaryRed, onTap: onLogGlucose),
-      (label: 'B.Pressure', icon: Icons.monitor_heart_outlined, color: AppTheme.primaryRed, onTap: onLogBloodPressure),
-      (label: 'Diet', icon: Icons.restaurant_outlined, color: AppTheme.mealColor, onTap: onLogMeal),
-      (label: 'Activity', icon: Icons.directions_run_rounded, color: AppTheme.activityColor, onTap: onLogActivity),
-      (label: 'Meds', icon: Icons.medication_outlined, color: AppTheme.medicationColor, onTap: onLogMedication),
-      (label: 'BMI', icon: Icons.monitor_weight_outlined, color: AppTheme.primaryGreen, onTap: onLogBmi),
-      (label: 'Cholesterol', icon: Icons.bloodtype_outlined, color: AppTheme.accentPurple, onTap: onLogCholesterol),
-      (label: 'HbA1c', icon: Icons.pie_chart_outline, color: AppTheme.accentGold, onTap: onLogHba1c),
-    ];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -116,30 +92,32 @@ class QuickActionsGrid extends StatelessWidget {
               child: Column(
                 children: [
                   // Row 1
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 0; i < 4; i++) ...[
-                          _buildActionButton(context, actions[i].label, actions[i].icon, actions[i].color, actions[i].onTap),
-                          if (i < 3) const SizedBox(width: 12),
+                  if (actions.length >= 4)
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 0; i < 4; i++) ...[
+                            _buildActionButton(context, actions[i].label, actions[i].icon, actions[i].color, actions[i].onTap),
+                            if (i < 3) const SizedBox(width: 12),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
                   const SizedBox(height: 12),
                   // Row 2
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        for (var i = 4; i < 8; i++) ...[
-                          _buildActionButton(context, actions[i].label, actions[i].icon, actions[i].color, actions[i].onTap),
-                          if (i < 7) const SizedBox(width: 12),
+                  if (actions.length > 4)
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          for (var i = 4; i < actions.length; i++) ...[
+                            _buildActionButton(context, actions[i].label, actions[i].icon, actions[i].color, actions[i].onTap),
+                            if (i < actions.length - 1) const SizedBox(width: 12),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             )
