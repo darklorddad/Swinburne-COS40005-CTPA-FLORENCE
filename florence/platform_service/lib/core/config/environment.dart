@@ -22,14 +22,18 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL (Data Service)
-  // static const String apiUrl = 'http://127.0.0.1:8000';       // Local (Chrome)
-  // static const String apiUrl = 'http://10.0.2.2:8000';        // Local (Android Emulator)
-  static const String apiUrl = 'https://dev-ds-florence-dhp.vercel.app'; // Production
+  /// Defaults to DEV. Override in CI with --dart-define=API_URL=https://prod...
+  static const String apiUrl = String.fromEnvironment(
+    'API_URL',
+    defaultValue: 'https://dev-ds-florence-dhp.vercel.app',
+  );
 
   /// Chatbot Service URL
-  // static const String chatbotServiceUrl = 'http://127.0.0.1:8001';      // Local (Chrome)
-  // static const String chatbotServiceUrl = 'http://10.0.2.2:8001';       // Local (Android Emulator)
-  static const String chatbotServiceUrl = 'https://dev-llmcs-florence-dhp.vercel.app'; // Production
+  /// Defaults to DEV. Override in CI with --dart-define=CHATBOT_URL=https://prod...
+  static const String chatbotServiceUrl = String.fromEnvironment(
+    'CHATBOT_URL',
+    defaultValue: 'https://dev-llmcs-florence-dhp.vercel.app',
+  );
 
   // ==================== SUPABASE CONFIGURATION ====================
   
