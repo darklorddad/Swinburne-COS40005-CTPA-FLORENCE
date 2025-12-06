@@ -419,53 +419,84 @@ class _BmiGaugeSection extends StatelessWidget {
             ),
             const SizedBox(height: 24),
 
-            // 3. The Visual Gauge
+            // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
             SizedBox(
-              height: 40,
+              height: 70, // Increased height to fit labels below
               child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 
-                // Dynamic Viewport: Center somewhat around the user's value
+                // Dynamic Viewport
                 final double minScale = math.min(15.0, bmi - 5);
                 final double maxScale = math.max(overweightLimit + 5.0, bmi + 5); 
                 final totalRange = maxScale - minScale;
 
+                // Helper to get pixel position
                 double getPos(double val) {
                   return ((val.clamp(minScale, maxScale) - minScale) / totalRange) * width;
                 }
 
                 // Width calculations for segments
                 final uwWidth = math.max(0.0, minNormal - minScale);
-                final normalWidth = math.max(0.0, maxNormal - minNormal); // The Green Zone
+                final normalWidth = math.max(0.0, maxNormal - minNormal);
                 final owWidth = math.max(0.0, overweightLimit - maxNormal);
+
+                // Helper for Labels
+                Widget buildLabel(double value, String text) {
+                  final pos = getPos(value);
+                  // Don't show if off-screen or too close to edges (prevents clipping)
+                  if (pos < 10 || pos > width - 10) return const SizedBox.shrink();
+                  
+                  return Positioned(
+                    left: pos - 20, // Center the 40px wide text box
+                    top: 45, // Position below the bar
+                    child: SizedBox(
+                      width: 40,
+                      child: Text(
+                        text,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
+                      ),
+                    ),
+                  );
+                }
 
                 return Stack(
                   clipBehavior: Clip.none,
                   alignment: Alignment.centerLeft,
                   children: [
-                    // The Track
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        children: [
-                          // Zone 1: Below Target (Blue)
-                          Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
-                          
-                          // Zone 2: Target Range (Green)
-                          Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
-                          
-                          // Zone 3: Above Target (Orange)
-                          Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
-                          
-                          // Zone 4: Very High (Red - Fills remainder)
-                          Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
-                        ],
+                    // A. The Track (Bar)
+                    Positioned(
+                      top: 10,
+                      left: 0, 
+                      right: 0,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 30, // Fixed height for bar
+                          child: Row(
+                            children: [
+                              Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
+                              Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
+                              Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
+                              Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    // The Marker
+
+                    // B. The Labels (Aligned to transitions)
+                    // 1. Lower Target Bound (e.g. 18.5)
+                    buildLabel(minNormal, minNormal.toStringAsFixed(1)),
+                    // 2. Upper Target Bound (e.g. 24.9)
+                    buildLabel(maxNormal, maxNormal.toStringAsFixed(1)),
+                    // 3. Warning Limit (e.g. 29.9)
+                    buildLabel(overweightLimit, overweightLimit.toStringAsFixed(1)),
+
+                    // C. The Marker (User Value)
                     Positioned(
                       left: getPos(bmi) - 12,
-                      top: -12,
+                      top: -2, // Aligned with top of bar
                       child: Column(
                         children: [
                           Icon(Icons.arrow_drop_down, size: 24, color: AppTheme.textPrimaryColor),
@@ -476,17 +507,7 @@ class _BmiGaugeSection extends StatelessWidget {
                 );
               }),
             ),
-            const SizedBox(height: 8),
-            // Scale Labels
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(minNormal.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-                Text(maxNormal.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-                Text(overweightLimit.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
             // Status Badge
             Container(
