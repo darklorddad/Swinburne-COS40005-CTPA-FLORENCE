@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../core/models/health_data_models.dart'; // Updated import
@@ -78,11 +79,11 @@ class BiometricsSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Column(
-            children: cards.map((card) => Padding(
-              padding: const EdgeInsets.only(bottom: 12.0),
-              child: card,
-            )).toList(),
+          ResponsiveCardLayout(
+            children: cards,
+            mobileColumns: 1,
+            tabletColumns: 2,
+            desktopColumns: 3,
           ),
         ],
       ),

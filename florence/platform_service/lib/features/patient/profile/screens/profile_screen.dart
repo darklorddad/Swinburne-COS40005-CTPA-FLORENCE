@@ -5,6 +5,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
@@ -581,40 +582,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           return RefreshIndicator(
             onRefresh: () => ref.refresh(userProfileProvider.future),
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Personal info section
-                  _buildPersonalInfoSection(),
-                  const SizedBox(height: 16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Personal info section
+                      _buildPersonalInfoSection(),
+                      const SizedBox(height: 16),
 
-                  // Health Profile section
-                  _buildHealthProfileSection(),
-                  const SizedBox(height: 16),
-                  
-                  // Settings section
-                  _buildSettingsSection(),
-                  const SizedBox(height: 16),
-                  
-                  // About section
-                  _buildAboutSection(),
-                  const SizedBox(height: 24),
-                  
-                  // Sign out button
-                  OutlinedButton(
-                    onPressed: _handleLogout,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
-                      side: BorderSide(color: AppTheme.errorColor),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Sign Out'),
+                      // Health Profile section
+                      _buildHealthProfileSection(),
+                      const SizedBox(height: 16),
+                      
+                      // Settings section
+                      _buildSettingsSection(),
+                      const SizedBox(height: 16),
+                      
+                      // About section
+                      _buildAboutSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Sign out button
+                      OutlinedButton(
+                        onPressed: _handleLogout,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.errorColor,
+                          side: BorderSide(color: AppTheme.errorColor),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                        ),
+                        child: const Text('Sign Out'),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
+                ),
               ),
             ),
           );

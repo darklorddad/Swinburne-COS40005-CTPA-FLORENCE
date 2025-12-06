@@ -321,29 +321,36 @@ class ResponsiveCardLayout extends StatelessWidget {
       tablet: tabletColumns,
       desktop: desktopColumns,
     );
-    
+
     if (columns == 1) {
       return Column(
         children: children.map((child) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
+            padding: EdgeInsets.only(bottom: ResponsiveSpacing.medium(context)),
             child: child,
           );
         }).toList(),
       );
     }
-    
-    return Wrap(
-      spacing: ResponsiveSpacing.medium(context),
-      runSpacing: ResponsiveSpacing.medium(context),
-      children: children.map((child) {
-        return SizedBox(
-          width: (context.screenWidth - 
-                  ResponsivePadding.page(context).horizontal - 
-                  (ResponsiveSpacing.medium(context) * (columns - 1))) / columns,
-          child: child,
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final spacing = ResponsiveSpacing.medium(context);
+        // Calculate item width based on available width in the parent
+        final itemWidth = (width - (spacing * (columns - 1))) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: children.map((child) {
+            return SizedBox(
+              width: itemWidth,
+              child: child,
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 }

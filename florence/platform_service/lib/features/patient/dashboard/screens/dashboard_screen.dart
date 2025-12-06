@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../chat/services/chatbot_service.dart'; // Chat Service
@@ -118,35 +119,40 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       body: RefreshIndicator(
         onRefresh: _handleRefresh,
         edgeOffset: 0,
-        child: ListView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(spacing),
-          children: [
-            // AI Insight (Main Card)
-            AIInsightCard(
-              insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-              onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
-            ),
-            const SizedBox(height: spacing),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(spacing),
+              children: [
+                // AI Insight (Main Card)
+                AIInsightCard(
+                  insight: 'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                  onTap: () => AppRoutes.push(context, AppRoutes.recommendations),
+                ),
+                const SizedBox(height: spacing),
 
-            // Quick actions
-            QuickActionsGrid(
-              onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
-              onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
-              onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
-              onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
-            ),
-            const SizedBox(height: spacing),
+                // Quick actions
+                QuickActionsGrid(
+                  onLogGlucose: () => AppRoutes.push(context, AppRoutes.logGlucose),
+                  onLogBloodPressure: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+                  onLogMeal: () => AppRoutes.push(context, AppRoutes.logMeal),
+                  onLogActivity: () => AppRoutes.push(context, AppRoutes.logActivity),
+                ),
+                const SizedBox(height: spacing),
 
-            // Biometrics Section (Loaded via Riverpod)
-            BiometricsSection(
-              monitorData: combinedMonitorData,
-              latestActivity: activity,
-              latestMeal: latestMeal,
-              thresholds: thresholds,
+                // Biometrics Section (Loaded via Riverpod)
+                BiometricsSection(
+                  monitorData: combinedMonitorData,
+                  latestActivity: activity,
+                  latestMeal: latestMeal,
+                  thresholds: thresholds,
+                ),
+                const SizedBox(height: spacing),
+              ],
             ),
-            const SizedBox(height: spacing),
-          ],
+          ),
         ),
       ),
     );
