@@ -61,14 +61,15 @@ class GlucoseDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(20.0),
-                  child: context.isDesktop
-                      ? Row(
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: context.isDesktop
+                        ? Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Left Column
@@ -150,6 +151,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                             const SizedBox(height: 24),
                           ],
                         ),
+                  ),
                 ),
               ),
             ),
