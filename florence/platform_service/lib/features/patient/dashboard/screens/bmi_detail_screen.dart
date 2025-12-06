@@ -306,10 +306,11 @@ class _BmiGaugeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Defaults if no threshold set
+    // Defaults if no threshold set (Standard Medical Ranges)
+    final bool hasCustomThreshold = threshold != null;
     final minNormal = threshold?.minValue ?? 18.5;
     final maxNormal = threshold?.maxValue ?? 24.9;
-    final overweightLimit = maxNormal + 5.0; // Approximation if not strict
+    final overweightLimit = maxNormal + 5.0;
 
     final bmi = latestReading?.value ?? 0.0;
     String category;
@@ -319,25 +320,25 @@ class _BmiGaugeSection extends StatelessWidget {
       category = "No Data";
       color = AppTheme.textSecondaryColor;
     } else if (bmi < minNormal) {
-      category = "Underweight";
+      category = hasCustomThreshold ? "Below Target" : "Underweight";
       color = AppTheme.primaryBlue;
     } else if (bmi <= maxNormal) {
-      category = "Normal";
+      category = hasCustomThreshold ? "On Target" : "Normal";
       color = AppTheme.primaryGreen;
     } else if (bmi <= overweightLimit) {
-      category = "Overweight";
+      category = hasCustomThreshold ? "Above Target" : "Overweight";
       color = AppTheme.warningColor;
     } else {
-      category = "Obese";
+      category = hasCustomThreshold ? "High" : "Obese";
       color = AppTheme.errorColor;
     }
 
-    final infoText = threshold != null 
-        ? 'Target BMI: ${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}\n\n'
-          '• Underweight: < ${minNormal.toStringAsFixed(1)}\n'
-          '• Normal: ${minNormal.toStringAsFixed(1)} – ${maxNormal.toStringAsFixed(1)}\n'
-          '• Overweight: > ${maxNormal.toStringAsFixed(1)}'
-        : 'Body Mass Index (BMI) Categories:\n\n'
+    final infoText = hasCustomThreshold
+        ? 'Your Personal BMI Goal:\n\n'
+          '• Target: ${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)} kg/m²\n'
+          '• Below: < ${minNormal.toStringAsFixed(1)}\n'
+          '• Above: > ${maxNormal.toStringAsFixed(1)}'
+        : 'Standard BMI Categories:\n\n'
           '• Underweight: < 18.5\n'
           '• Normal: 18.5 – 24.9\n'
           '• Overweight: 25 – 29.9\n'
@@ -425,8 +426,9 @@ class _BmiGaugeSection extends StatelessWidget {
               height: 40,
               child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
-                const minScale = 15.0;
-                final maxScale = overweightLimit + 5.0; // Approx 30 or 35
+                // Dynamic Scale: Center the view around the target
+                final double minScale = math.min(15.0, bmi - 5);
+                final double maxScale = math.max(overweightLimit + 5.0, bmi + 5);
                 final totalRange = maxScale - minScale;
 
                 double getPos(double val) {
@@ -447,10 +449,10 @@ class _BmiGaugeSection extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       child: Row(
                         children: [
-                          Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)), // Underweight
-                          Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)), // Normal
-                          Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)), // Overweight
-                          Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))), // Obese
+                          Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
+                          Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
+                          Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
+                          Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
                         ],
                       ),
                     ),
@@ -473,11 +475,9 @@ class _BmiGaugeSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text("15.0", style: Theme.of(context).textTheme.bodySmall),
                 Text(minNormal.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
                 Text(maxNormal.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
                 Text(overweightLimit.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-                Text("${(overweightLimit + 5).toInt()}+", style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
             
