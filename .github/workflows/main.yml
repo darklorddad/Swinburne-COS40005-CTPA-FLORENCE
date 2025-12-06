@@ -1,4 +1,4 @@
-name: Build and Distribute
+name: Build and Distribute (Shorebird)
 
 on:
   push:
@@ -18,39 +18,92 @@ jobs:
       # 1. Download Code
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required to check for changes against previous commits
 
       # 2. Get Version from pubspec.yaml
-      - name: Get Version from pubspec.yaml
+      - name: Get Version
         id: version
         run: echo "version=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')" >> $GITHUB_OUTPUT
 
-      # 3. Setup Java
+      # 3. Detect if Version Changed (The "Decision Maker")
+      # This checks if pubspec.yaml changed compared to the previous commit
+      - name: Check for Version Bump
+        id: check_bump
+        run: |
+          # Check if pubspec.yaml was modified in the last commit
+          if git diff --name-only HEAD^ HEAD | grep -q "pubspec.yaml"; then
+            echo "is_new_release=true" >> $GITHUB_OUTPUT
+            echo "Status: New Release detected."
+          else
+            echo "is_new_release=false" >> $GITHUB_OUTPUT
+            echo "Status: Patch detected."
+          fi
+
+      # 4. Setup Java
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 4. Setup Flutter
+      # 5. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      
-      # 5. Install Dependencies
+
+      # 6. Setup Shorebird (NEW)
+      - name: Setup Shorebird
+        uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+
+      # 7. Install Dependencies
       - name: Install Dependencies
         run: flutter pub get
 
-      # 6. Build APK
-      - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }} --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
+      # ------------------------------------------------------------------
+      # SCENARIO A: NEW RELEASE (Version changed in pubspec.yaml)
+      # This runs when you intend to push a new APK to Firebase.
+      # ------------------------------------------------------------------
+      
+      - name: Shorebird Release (Build APK)
+        if: steps.check_bump.outputs.is_new_release == 'true'
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        # We use shorebird release instead of flutter build
+        # This generates the APK and registers it with Shorebird cloud
+        run: |
+          shorebird release android --artifact=apk \
+            --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
+            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
 
-      # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
+        if: steps.check_bump.outputs.is_new_release == 'true'
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
+          # Shorebird outputs the APK in the standard flutter location
           file: florence/platform_service/build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: "Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }}) - Automated Release"
+          releaseNotes: "Full Release: Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }})"
+
+      # ------------------------------------------------------------------
+      # SCENARIO B: PATCH (Version did NOT change)
+      # This runs for small code changes.
+      # SAFETY NET: If you changed Native Code/Assets but didn't bump version, 
+      # this step will FAIL and stop the pipeline.
+      # ------------------------------------------------------------------
+
+      - name: Shorebird Patch
+        if: steps.check_bump.outputs.is_new_release == 'false'
+        env:
+          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
+        # --allow-native-changes is purposefully OMITTED. 
+        # If native changes are found, this command exits with Error 1.
+        run: |
+          shorebird patch android \
+            --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
+            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
