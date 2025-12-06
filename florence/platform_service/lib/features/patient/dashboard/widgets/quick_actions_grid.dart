@@ -42,7 +42,7 @@ class QuickActionsGrid extends StatelessWidget {
       (label: 'Meds', icon: Icons.medication_outlined, color: AppTheme.medicationColor, onTap: onLogMedication),
       (label: 'BMI', icon: Icons.monitor_weight_outlined, color: AppTheme.primaryGreen, onTap: onLogBmi),
       (label: 'Cholesterol', icon: Icons.bloodtype_outlined, color: AppTheme.accentPurple, onTap: onLogCholesterol),
-      (label: 'HbA1c', icon: Icons.pie_chart_outline, AppTheme.accentGold, onTap: onLogHba1c),
+      (label: 'HbA1c', icon: Icons.pie_chart_outline, color: AppTheme.accentGold, onTap: onLogHba1c),
     ];
 
     return Container(
