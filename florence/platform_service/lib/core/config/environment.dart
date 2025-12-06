@@ -22,16 +22,16 @@ class Environment {
   // ==================== API CONFIGURATION ====================
 
   /// Backend API URL (Data Service)
-  /// Defaults to DEV. Override in CI with --dart-define=API_URL=https://prod...
-  static const String apiUrl = String.fromEnvironment(
-    'API_URL',
+  /// Defaults to DEV. Override in CI with --dart-define=DATA_SERVICE_URL=https://prod...
+  static const String dataServiceUrl = String.fromEnvironment(
+    'DATA_SERVICE_URL',
     defaultValue: 'https://dev-ds-florence-dhp.vercel.app',
   );
 
   /// Chatbot Service URL
-  /// Defaults to DEV. Override in CI with --dart-define=CHATBOT_URL=https://prod...
-  static const String chatbotServiceUrl = String.fromEnvironment(
-    'CHATBOT_URL',
+  /// Defaults to DEV. Override in CI with --dart-define=LLM_CHATBOT_SERVICE_URL=https://prod...
+  static const String llmChatbotServiceUrl = String.fromEnvironment(
+    'LLM_CHATBOT_SERVICE_URL',
     defaultValue: 'https://dev-llmcs-florence-dhp.vercel.app',
   );
 
