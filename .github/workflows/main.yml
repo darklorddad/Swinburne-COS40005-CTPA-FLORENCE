@@ -43,7 +43,7 @@ jobs:
 
       # 6. Build APK
       - name: Build APK
-        run: flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }} --dart-define=API_URL=https://ds-florence-dhp.vercel.app --dart-define=CHATBOT_URL=https://llmcs-florence-dhp.vercel.app
+        run: flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }} --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
 
       # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
@@ -52,5 +52,5 @@ jobs:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
-          file: florence/platform_service/build/app/outputs/flutter-apk/app-debug.apk
+          file: florence/platform_service/build/app/outputs/flutter-apk/app-release.apk
           releaseNotes: "Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }}) - Automated Release"
