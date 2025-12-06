@@ -960,16 +960,16 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
               String label;
               Color color;
               if (r.value < minNormal) { 
-                label = "Underweight"; 
+                label = "LOW"; 
                 color = AppTheme.primaryBlue; 
               } else if (r.value <= maxNormal) { 
-                label = "Normal"; 
+                label = "NORMAL"; 
                 color = AppTheme.primaryGreen; 
               } else if (r.value <= overweightLimit) { 
-                label = "Overweight"; 
+                label = "HIGH"; 
                 color = AppTheme.warningColor; 
               } else { 
-                label = "Obese"; 
+                label = "VERY HIGH"; 
                 color = AppTheme.errorColor; 
               }
 
@@ -1011,11 +1011,11 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
                           child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
                       ],
                     )
