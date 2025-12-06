@@ -91,34 +91,42 @@ class QuickActionsGrid extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           if (context.isDesktop)
-            Column(
-              children: [
-                // Row 1
-                Row(
-                  children: [
-                    buttons[0],
-                    const SizedBox(width: 12),
-                    buttons[1],
-                    const SizedBox(width: 12),
-                    buttons[2],
-                    const SizedBox(width: 12),
-                    buttons[3],
-                  ],
-                ),
-                const SizedBox(height: 12),
-                // Row 2
-                Row(
-                  children: [
-                    buttons[4],
-                    const SizedBox(width: 12),
-                    buttons[5],
-                    const SizedBox(width: 12),
-                    buttons[6],
-                    const SizedBox(width: 12),
-                    buttons[7],
-                  ],
-                ),
-              ],
+            Expanded(
+              child: Column(
+                children: [
+                  // Row 1
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        buttons[0],
+                        const SizedBox(width: 12),
+                        buttons[1],
+                        const SizedBox(width: 12),
+                        buttons[2],
+                        const SizedBox(width: 12),
+                        buttons[3],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  // Row 2
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        buttons[4],
+                        const SizedBox(width: 12),
+                        buttons[5],
+                        const SizedBox(width: 12),
+                        buttons[6],
+                        const SizedBox(width: 12),
+                        buttons[7],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             )
           else
             Row(
@@ -171,6 +179,7 @@ class QuickActionsGrid extends StatelessWidget {
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),

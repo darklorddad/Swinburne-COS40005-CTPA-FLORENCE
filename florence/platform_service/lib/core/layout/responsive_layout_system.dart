@@ -305,6 +305,7 @@ class ResponsiveCardLayout extends StatelessWidget {
   final int mobileColumns;
   final int tabletColumns;
   final int desktopColumns;
+  final double? spacing;
   
   const ResponsiveCardLayout({
     super.key,
@@ -312,6 +313,7 @@ class ResponsiveCardLayout extends StatelessWidget {
     this.mobileColumns = 1,
     this.tabletColumns = 2,
     this.desktopColumns = 2,
+    this.spacing,
   });
   
   @override
@@ -322,11 +324,13 @@ class ResponsiveCardLayout extends StatelessWidget {
       desktop: desktopColumns,
     );
 
+    final effectiveSpacing = spacing ?? ResponsiveSpacing.medium(context);
+
     if (columns == 1) {
       return Column(
         children: children.map((child) {
           return Padding(
-            padding: EdgeInsets.only(bottom: ResponsiveSpacing.medium(context)),
+            padding: EdgeInsets.only(bottom: effectiveSpacing),
             child: child,
           );
         }).toList(),
@@ -336,13 +340,12 @@ class ResponsiveCardLayout extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final spacing = ResponsiveSpacing.medium(context);
         // Calculate item width based on available width in the parent
-        final itemWidth = (width - (spacing * (columns - 1))) / columns;
+        final itemWidth = (width - (effectiveSpacing * (columns - 1))) / columns;
 
         return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
+          spacing: effectiveSpacing,
+          runSpacing: effectiveSpacing,
           children: children.map((child) {
             return SizedBox(
               width: itemWidth,
