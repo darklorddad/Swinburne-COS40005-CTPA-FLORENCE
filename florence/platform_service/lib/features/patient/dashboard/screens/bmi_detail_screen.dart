@@ -306,13 +306,15 @@ class _BmiGaugeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Defaults if no threshold set (Standard Medical Ranges)
+    // 1. Setup Bounds (Standard or Custom)
     final bool hasCustomThreshold = threshold != null;
-    final minNormal = threshold?.minValue ?? 18.5;
-    final maxNormal = threshold?.maxValue ?? 24.9;
-    final overweightLimit = maxNormal + 5.0;
+    final minNormal = threshold?.minValue ?? 18.5;  // Lower Bound of Target
+    final maxNormal = threshold?.maxValue ?? 24.9;  // Upper Bound of Target
+    final overweightLimit = maxNormal + 5.0;        // Dynamic Warning Zone
 
     final bmi = latestReading?.value ?? 0.0;
+    
+    // 2. Determine Text Label & Indicator Color based on position relative to Target
     String category;
     Color color;
 
@@ -350,7 +352,7 @@ class _BmiGaugeSection extends StatelessWidget {
       infoText: infoText,
       child: Column(
         children: [
-          // 1. Target Range Display (Top)
+          // Target Range Header
           InkWell(
             onTap: () => Navigator.of(context).pushNamed('/profile'),
             borderRadius: BorderRadius.circular(12),
@@ -361,9 +363,7 @@ class _BmiGaugeSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.primaryGreen.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
-                ),
+                border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
               ),
               child: Column(
                 children: [
@@ -372,7 +372,7 @@ class _BmiGaugeSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                          const Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
                           const SizedBox(width: 8),
                           Text(
                             'Target Range',
@@ -392,8 +392,8 @@ class _BmiGaugeSection extends StatelessWidget {
                     children: [
                       Text('BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text(
-                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}', 
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
@@ -408,7 +408,6 @@ class _BmiGaugeSection extends StatelessWidget {
               child: Text("No BMI data recorded."),
             )
           else ...[
-            // 2. Value (Moved Above Chart)
             Text(
               bmi.toStringAsFixed(1),
               style: TextStyle(
@@ -418,17 +417,17 @@ class _BmiGaugeSection extends StatelessWidget {
                 height: 1.0,
               ),
             ),
-            
             const SizedBox(height: 24),
 
-            // 3. Linear Gauge (Middle)
+            // 3. The Visual Gauge
             SizedBox(
               height: 40,
               child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
-                // Dynamic Scale: Center the view around the target
+                
+                // Dynamic Viewport: Center somewhat around the user's value
                 final double minScale = math.min(15.0, bmi - 5);
-                final double maxScale = math.max(overweightLimit + 5.0, bmi + 5);
+                final double maxScale = math.max(overweightLimit + 5.0, bmi + 5); 
                 final totalRange = maxScale - minScale;
 
                 double getPos(double val) {
@@ -437,26 +436,33 @@ class _BmiGaugeSection extends StatelessWidget {
 
                 // Width calculations for segments
                 final uwWidth = math.max(0.0, minNormal - minScale);
-                final normalWidth = math.max(0.0, maxNormal - minNormal);
+                final normalWidth = math.max(0.0, maxNormal - minNormal); // The Green Zone
                 final owWidth = math.max(0.0, overweightLimit - maxNormal);
 
                 return Stack(
                   clipBehavior: Clip.none,
                   alignment: Alignment.centerLeft,
                   children: [
-                    // Track
+                    // The Track
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: Row(
                         children: [
+                          // Zone 1: Below Target (Blue)
                           Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
+                          
+                          // Zone 2: Target Range (Green)
                           Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
+                          
+                          // Zone 3: Above Target (Orange)
                           Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
+                          
+                          // Zone 4: Very High (Red - Fills remainder)
                           Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
                         ],
                       ),
                     ),
-                    // Marker
+                    // The Marker
                     Positioned(
                       left: getPos(bmi) - 12,
                       top: -12,
@@ -480,10 +486,9 @@ class _BmiGaugeSection extends StatelessWidget {
                 Text(overweightLimit.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
-            
             const SizedBox(height: 24),
 
-            // 4. Status Badge (Below Chart)
+            // Status Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
