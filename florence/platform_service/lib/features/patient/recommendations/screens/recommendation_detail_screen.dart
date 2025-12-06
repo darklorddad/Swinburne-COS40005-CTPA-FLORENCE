@@ -116,10 +116,10 @@ class _RecommendationDetailScreenState
       appBar: AppBar(
         title: const Text('Recommendation'),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [

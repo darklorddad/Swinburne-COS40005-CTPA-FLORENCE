@@ -582,19 +582,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           return RefreshIndicator(
             onRefresh: () => ref.refresh(userProfileProvider.future),
-            child: ListView(
+            child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Personal info section
-                          _buildPersonalInfoSection(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Personal info section
+                        _buildPersonalInfoSection(),
                       const SizedBox(height: 16),
 
                       // Health Profile section
@@ -625,9 +624,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        );
     },
       ),
     );
