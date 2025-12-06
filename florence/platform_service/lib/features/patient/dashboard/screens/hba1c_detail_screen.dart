@@ -91,6 +91,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  ),
               ],
             ),
           );

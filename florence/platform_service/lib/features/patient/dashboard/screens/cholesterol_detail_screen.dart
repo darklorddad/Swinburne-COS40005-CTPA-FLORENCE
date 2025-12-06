@@ -105,6 +105,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  ),
               ],
             ),
           );

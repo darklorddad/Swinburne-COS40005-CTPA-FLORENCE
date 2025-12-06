@@ -145,6 +145,7 @@ class AIInsightCard extends StatelessWidget {
           ),
           ),
         ),
+        ),
       );
   }
 }

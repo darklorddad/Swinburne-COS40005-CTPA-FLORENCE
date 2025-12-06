@@ -193,6 +193,8 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
           ),
         ),
       ),
+      ),
+      ),
     );
   }
 

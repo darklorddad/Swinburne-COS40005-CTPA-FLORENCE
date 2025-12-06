@@ -203,6 +203,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           ),
         ),
       ),
+      ),
+      ),
     );
   }
 

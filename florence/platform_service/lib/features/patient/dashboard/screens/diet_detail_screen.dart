@@ -76,6 +76,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  ),
               ],
             ),
           );

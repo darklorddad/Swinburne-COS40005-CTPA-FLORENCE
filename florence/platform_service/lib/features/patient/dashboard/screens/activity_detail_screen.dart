@@ -100,6 +100,7 @@ class ActivityDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  ),
               ],
             ),
           );

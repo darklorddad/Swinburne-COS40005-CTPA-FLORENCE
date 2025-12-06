@@ -194,6 +194,8 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
           ),
         ),
       ),
+      ),
+      ),
     );
   }
   

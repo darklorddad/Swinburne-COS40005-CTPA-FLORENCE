@@ -109,6 +109,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  ),
               ],
             ),
           );
