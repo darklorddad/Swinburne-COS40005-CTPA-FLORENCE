@@ -42,11 +42,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final weekStart = todayStart.subtract(const Duration(days: 7));
 
     for (var notification in filteredNotifications) {
-      if (notification.createdAt.isAfter(todayStart)) {
+      // FIX: Convert to local time before comparing against local day buckets
+      final localCreatedAt = notification.createdAt.toLocal();
+
+      if (localCreatedAt.isAfter(todayStart)) {
         today.add(notification);
-      } else if (notification.createdAt.isAfter(yesterdayStart)) {
+      } else if (localCreatedAt.isAfter(yesterdayStart)) {
         yesterday.add(notification);
-      } else if (notification.createdAt.isAfter(weekStart)) {
+      } else if (localCreatedAt.isAfter(weekStart)) {
         thisWeek.add(notification);
       } else {
         older.add(notification);

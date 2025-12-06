@@ -750,7 +750,7 @@ class _RecommendationDetailScreenState
     } else if (diff.inDays < 7) {
       return '${diff.inDays}d ago';
     } else {
-      return Formatters.date(time);
+      return Formatters.date(time.toLocal());
     }
   }
 }
