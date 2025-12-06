@@ -1019,7 +1019,7 @@ class _HistorySectionState extends State<_HistorySection> {
               ]),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           ...currentItems.map((item) {
             // Unique Status Logic for Glucose
             // LOW (< Min) = Critical/Red
