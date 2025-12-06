@@ -90,6 +90,12 @@ class QuickActionsGrid extends StatelessWidget {
               ),
               if (!context.isDesktop) ...[
                 const Spacer(),
+                Icon(
+                  Icons.arrow_back,
+                  size: 12,
+                  color: AppTheme.textSecondaryColor,
+                ),
+                const SizedBox(width: 4),
                 Text(
                   'Swipe',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -100,7 +106,7 @@ class QuickActionsGrid extends StatelessWidget {
                 const SizedBox(width: 4),
                 Icon(
                   Icons.arrow_forward,
-                  size: 14,
+                  size: 12,
                   color: AppTheme.textSecondaryColor,
                 ),
               ],
