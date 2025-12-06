@@ -279,47 +279,50 @@ class _QuickLogModal extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Handle bar
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey.shade300,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            'Quick Log',
-            style: Theme.of(
-              context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 24),
-
-          // Action buttons
-          GridView.count(
-            shrinkWrap: true,
-            crossAxisCount: 3,
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.9,
-            physics: const NeverScrollableScrollPhysics(),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _QuickLogButton(
-                icon: Icons.water_drop,
-                label: 'Glucose',
-                color: AppTheme.primaryRed,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logGlucose);
-                },
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
+              const SizedBox(height: 24),
+
+              // Title
+              Text(
+                'Quick Log',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 24),
+
+              // Action buttons
+              GridView.count(
+                shrinkWrap: true,
+                crossAxisCount: 3,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 0.9,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  _QuickLogButton(
+                    icon: Icons.water_drop,
+                    label: 'Glucose',
+                    color: AppTheme.primaryRed,
+                    onTap: () {
+                      Navigator.pop(context);
+                      AppRoutes.push(context, AppRoutes.logGlucose);
+                    },
+                  ),
               _QuickLogButton(
                 icon: Icons.bloodtype_outlined,
                 label: 'Cholesterol',
@@ -370,6 +373,8 @@ class _QuickLogModal extends StatelessWidget {
           ),
           const SizedBox(height: 16),
         ],
+      ),
+      ),
       ),
     );
   }
