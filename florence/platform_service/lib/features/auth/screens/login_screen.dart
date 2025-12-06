@@ -119,13 +119,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final isDesktop = Helpers.isDesktop(context);
     final maxWidth = isDesktop ? 400.0 : double.infinity;
     
+    // Manual handling of bottom insets to fix mobile web keyboard glitch
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
+      resizeToAvoidBottomInset: false,
+      body: Padding(
+        padding: EdgeInsets.only(bottom: bottomInset),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -215,6 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
