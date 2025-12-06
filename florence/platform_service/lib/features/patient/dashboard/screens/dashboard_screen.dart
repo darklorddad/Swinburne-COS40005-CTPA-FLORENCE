@@ -87,11 +87,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   List<_QuickActionItem> _getQuickActions() {
     return [
-      const _QuickActionItem('Glucose', Icons.water_drop_rounded, Color(0xFFEF5350), AppRoutes.logGlucose), // Red
-      const _QuickActionItem('Pressure', Icons.monitor_heart_outlined, Color(0xFFEC407A), AppRoutes.logBloodPressure), // Pink
+      const _QuickActionItem('Glucose', Icons.water_drop_rounded, Color(0xFF039BE5), AppRoutes.logGlucose), // Light Blue
+      const _QuickActionItem('B.Pressure', Icons.monitor_heart_outlined, Color(0xFFEF5350), AppRoutes.logBloodPressure), // Red
       const _QuickActionItem('Diet', Icons.restaurant_outlined, Color(0xFFFFA726), AppRoutes.logMeal), // Orange
       const _QuickActionItem('Activity', Icons.directions_run_rounded, Color(0xFF66BB6A), AppRoutes.logActivity), // Green
-      const _QuickActionItem('Meds', Icons.medication_outlined, Color(0xFF42A5F5), AppRoutes.logMedication), // Blue
+      const _QuickActionItem('Meds', Icons.medication_outlined, Color(0xFF5C6BC0), AppRoutes.logMedication), // Indigo
       const _QuickActionItem('BMI', Icons.monitor_weight_outlined, Color(0xFF26A69A), AppRoutes.logBmi), // Teal
       const _QuickActionItem('Cholesterol', Icons.bloodtype_outlined, Color(0xFFAB47BC), AppRoutes.logCholesterol), // Purple
       const _QuickActionItem('HbA1c', Icons.pie_chart_outline, Color(0xFFFFCA28), AppRoutes.logHba1c), // Amber
