@@ -1,10 +1,9 @@
-name: Build and Distribute (Auto-Detect)
+name: Production Distribution (Smart)
 
 on:
   push:
     branches:
-      - production
-      - development
+      - production  # <--- ONLY runs on Production
   workflow_dispatch:
 
 jobs:
@@ -26,11 +25,10 @@ jobs:
       - name: Detect Release vs Patch
         id: decision
         run: |
-          # 1. Get the current version from pubspec.yaml
+          # 1. Get current version
           CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')
           
-          # 2. Get the previous version from the last commit
-          # Note: We use "|| echo" to handle the very first commit case gracefully
+          # 2. Get previous version (handle first commit case)
           PREV_VERSION=$(git show HEAD^:florence/platform_service/pubspec.yaml 2>/dev/null | grep '^version:' | sed 's/version:[ ]*//' || echo "0.0.0")
 
           echo "Previous: $PREV_VERSION"
@@ -39,17 +37,10 @@ jobs:
           # 3. Compare
           if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
             echo "is_release=true" >> $GITHUB_OUTPUT
-            echo "Status: 🚀 Version Change Detected. Mode: FULL RELEASE (Firebase + Shorebird)"
+            echo "Status: 🚀 Version Change Detected. Mode: FULL RELEASE"
           else
             echo "is_release=false" >> $GITHUB_OUTPUT
-            echo "Status: 🩹 No Version Change. Mode: PATCH (Shorebird Only)"
-          fi
-          
-          # 4. Check Branch (Prod vs Dev)
-          if [[ "${{ github.ref }}" == "refs/heads/production" ]]; then
-             echo "is_prod=true" >> $GITHUB_OUTPUT
-          else
-             echo "is_prod=false" >> $GITHUB_OUTPUT
+            echo "Status: 🩹 No Version Change. Mode: PATCH"
           fi
 
       - name: Set up JDK 17
@@ -72,8 +63,7 @@ jobs:
         run: flutter pub get
 
       # ==================================================================
-      # PATH 1: FULL RELEASE
-      # Triggered ONLY if you bumped the version number
+      # SCENARIO A: FULL RELEASE (Version Changed)
       # ==================================================================
       - name: Shorebird Release (Build APK)
         if: steps.decision.outputs.is_release == 'true'
@@ -92,32 +82,16 @@ jobs:
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
           file: florence/platform_service/build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: "New Release ${{ steps.decision.outputs.version }} - Requires Reinstall"
+          releaseNotes: "Full Release ${{ steps.decision.outputs.version }} - Please Reinstall"
 
       # ==================================================================
-      # PATH 2: PATCH (Production)
-      # Triggered if version is SAME and branch is PRODUCTION
+      # SCENARIO B: PATCH (Version SAME)
       # ==================================================================
       - name: Shorebird Patch (Live)
-        if: steps.decision.outputs.is_release == 'false' && steps.decision.outputs.is_prod == 'true'
+        if: steps.decision.outputs.is_release == 'false'
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
-        # Note: If you changed Native Code but forgot to bump version, 
-        # this command will FAIL. This is your safety net.
         run: |
           shorebird patch android \
-            --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
-            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
-
-      # ==================================================================
-      # PATH 3: PATCH (Staging/Dev)
-      # Triggered if version is SAME and branch is NOT Production
-      # ==================================================================
-      - name: Shorebird Patch (Staging)
-        if: steps.decision.outputs.is_release == 'false' && steps.decision.outputs.is_prod == 'false'
-        env:
-          SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
-        run: |
-          shorebird patch android --staging \
             --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
             --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
