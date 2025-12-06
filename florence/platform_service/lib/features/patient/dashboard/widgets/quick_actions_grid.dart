@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../config/theme.dart';
 
@@ -23,6 +24,14 @@ class QuickActionsGrid extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    // Define buttons list for reuse
+    final buttons = [
+      _buildActionButton(context, 'Glucose', Icons.water_drop_rounded, AppTheme.primaryRed, onLogGlucose),
+      _buildActionButton(context, 'B.Pressure', Icons.monitor_heart_outlined, AppTheme.primaryRed, onLogBloodPressure),
+      _buildActionButton(context, 'Diet', Icons.restaurant_outlined, AppTheme.mealColor, onLogMeal),
+      _buildActionButton(context, 'Activity', Icons.directions_run_rounded, AppTheme.activityColor, onLogActivity),
+    ];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -68,42 +77,39 @@ class QuickActionsGrid extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildActionButton(
-                context,
-                'Glucose',
-                Icons.water_drop_rounded,
-                AppTheme.primaryRed,
-                onLogGlucose,
-              ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                context,
-                'B.Pressure',
-                Icons.monitor_heart_outlined,
-                AppTheme.primaryRed,
-                onLogBloodPressure,
-              ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                context,
-                'Diet',
-                Icons.restaurant_outlined,
-                AppTheme.mealColor,
-                onLogMeal,
-              ),
-              const SizedBox(width: 12),
-              _buildActionButton(
-                context,
-                'Activity',
-                Icons.directions_run_rounded,
-                AppTheme.activityColor,
-                onLogActivity,
-              ),
-            ],
-          ),
+          if (context.isDesktop)
+            Column(
+              children: [
+                Row(
+                  children: [
+                    buttons[0],
+                    const SizedBox(width: 12),
+                    buttons[1],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    buttons[2],
+                    const SizedBox(width: 12),
+                    buttons[3],
+                  ],
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                buttons[0],
+                const SizedBox(width: 12),
+                buttons[1],
+                const SizedBox(width: 12),
+                buttons[2],
+                const SizedBox(width: 12),
+                buttons[3],
+              ],
+            ),
         ],
       ),
     );
