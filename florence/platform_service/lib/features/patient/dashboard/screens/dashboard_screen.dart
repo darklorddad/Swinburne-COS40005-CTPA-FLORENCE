@@ -135,10 +135,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              // Use a wider aspect ratio on desktop (e.g. 2.2) so it 
-                              // matches the "Card" feel without becoming a massive tower.
                               child: AIInsightCard(
-                                aspectRatio: 2.2, 
                                 insight:
                                     'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                                 onTap: () => AppRoutes.push(
