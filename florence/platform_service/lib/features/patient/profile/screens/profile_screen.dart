@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
@@ -148,11 +149,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
 
   // App info
-  final String _appVersion = '1.0.0';
+  String _appVersion = '';
   
   @override
   void initState() {
     super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        // Display as "1.0.0 (1)"
+        _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
+      });
+    }
   }
 
   /// Upload Profile Picture via Backend
