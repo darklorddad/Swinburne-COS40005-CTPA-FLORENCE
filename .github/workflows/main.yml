@@ -43,7 +43,7 @@ jobs:
 
       # 6. Build APK
       - name: Build APK
-        run: flutter build apk --debug --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }}
+        run: flutter build apk --release --build-name=${{ steps.version.outputs.version }} --build-number=${{ github.run_number }} --dart-define=API_URL=https://ds-florence-dhp.vercel.app --dart-define=CHATBOT_URL=https://llmcs-florence-dhp.vercel.app
 
       # 7. Upload to Firebase
       - name: Upload to Firebase App Distribution
