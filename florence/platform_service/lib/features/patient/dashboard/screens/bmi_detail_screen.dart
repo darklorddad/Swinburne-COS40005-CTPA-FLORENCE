@@ -421,7 +421,7 @@ class _BmiGaugeSection extends StatelessWidget {
 
             // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
             SizedBox(
-              height: 70, // Increased height to fit labels below
+              height: 80, // Increased overall container height
               child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 
@@ -448,7 +448,7 @@ class _BmiGaugeSection extends StatelessWidget {
                   
                   return Positioned(
                     left: pos - 20, // Center the 40px wide text box
-                    top: 45, // Position below the bar
+                    top: 60, // Adjusted for thicker bar
                     child: SizedBox(
                       width: 40,
                       child: Text(
@@ -466,13 +466,13 @@ class _BmiGaugeSection extends StatelessWidget {
                   children: [
                     // A. The Track (Bar)
                     Positioned(
-                      top: 10,
+                      top: 15, // Pushed down to make room for marker
                       left: 0, 
                       right: 0,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: SizedBox(
-                          height: 30, // Fixed height for bar
+                          height: 40, // RESTORED HEIGHT
                           child: Row(
                             children: [
                               Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
@@ -496,10 +496,10 @@ class _BmiGaugeSection extends StatelessWidget {
                     // C. The Marker (User Value)
                     Positioned(
                       left: getPos(bmi) - 12,
-                      top: -2, // Aligned with top of bar
+                      top: -1, // Sits right on top of the bar
                       child: Column(
                         children: [
-                          Icon(Icons.arrow_drop_down, size: 24, color: AppTheme.textPrimaryColor),
+                          Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
                         ],
                       ),
                     ),
@@ -588,12 +588,19 @@ class _BmiTrendSection extends StatelessWidget {
 
         // Dynamic Y Axis with Safe Zone visibility
         final vals = data.map((e) => e.value);
-        double minY = vals.reduce(math.min) - 2;
-        double maxY = vals.reduce(math.max) + 2;
         
-        // Ensure safe zone is visible
-        minY = math.min(minY, minNormal - 0.5);
-        maxY = math.max(maxY, maxNormal + 1.0);
+        // Calculate bounds from data
+        double dataMin = vals.reduce(math.min);
+        double dataMax = vals.reduce(math.max);
+        
+        // ADD BUFFER (Top & Bottom)
+        // Ensure there is space above the highest point and below the lowest point
+        double minY = dataMin - 3.0;
+        double maxY = dataMax + 3.0;
+        
+        // Ensure safe zone (Target Range) is also visible
+        minY = math.min(minY, minNormal - 2.0);
+        maxY = math.max(maxY, maxNormal + 2.0);
 
         return Column(
           children: [
