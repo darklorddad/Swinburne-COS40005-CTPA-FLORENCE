@@ -172,7 +172,6 @@ flutter_*.log
 
 # Miscellaneous
 *.class
-*.lock
 *.log
 *.pyc
 *.swp
