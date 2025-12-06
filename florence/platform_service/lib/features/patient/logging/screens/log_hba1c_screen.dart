@@ -181,6 +181,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       ),
       ),
       ),
+      ),
     );
   }
   

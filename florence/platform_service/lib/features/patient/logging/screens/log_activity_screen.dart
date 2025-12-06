@@ -166,6 +166,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       ),
       ),
       ),
+      ),
     );
   }
   

@@ -188,6 +188,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       ),
       ),
       ),
+      ),
     );
   }
   
