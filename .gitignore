@@ -304,6 +304,7 @@ app.*.symbols
 .svn/
 .swiftpm/
 migrate_working_dir/
+Documents/Basil's Doc/
 
 # IntelliJ related
 *.iml
