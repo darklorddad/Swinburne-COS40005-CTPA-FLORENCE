@@ -277,6 +277,7 @@ class DatePickerField extends StatelessWidget {
       initialDate: selectedDate ?? DateTime.now(),
       firstDate: firstDate ?? DateTime(1900),
       lastDate: lastDate ?? DateTime.now(),
+      initialEntryMode: DatePickerEntryMode.calendar,
     );
     
     if (picked != null) {
@@ -318,17 +319,15 @@ class TimePickerField extends StatelessWidget {
     this.validator,
   });
   
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.period == DayPeriod.am ? 'AM' : 'PM';
-    return '$hour:$minute $period';
+  String _formatTime(BuildContext context, TimeOfDay time) {
+    return MaterialLocalizations.of(context).formatTimeOfDay(time);
   }
   
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: selectedTime ?? TimeOfDay.now(),
+      initialEntryMode: TimePickerEntryMode.dial,
     );
     
     if (picked != null) {
@@ -342,7 +341,7 @@ class TimePickerField extends StatelessWidget {
       label: label,
       hint: hint,
       controller: TextEditingController(
-        text: selectedTime != null ? _formatTime(selectedTime!) : '',
+        text: selectedTime != null ? _formatTime(context, selectedTime!) : '',
       ),
       validator: validator,
       readOnly: true,
