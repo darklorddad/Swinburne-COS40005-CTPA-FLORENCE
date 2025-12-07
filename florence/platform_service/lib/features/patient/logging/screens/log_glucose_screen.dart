@@ -167,55 +167,60 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              AppRoutes.push(context, AppRoutes.trendsDetail);
-            },
-            tooltip: 'View History',
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                AppRoutes.push(context, AppRoutes.trendsDetail);
+              },
+              tooltip: 'View History',
+            ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Info & Target card
-                    _buildInfoCard(glucoseThreshold),
-                    const SizedBox(height: 20),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Info & Target card
+                      _buildInfoCard(glucoseThreshold),
+                      const SizedBox(height: 20),
 
-                    // Glucose value input (large and prominent)
-                    _buildGlucoseInput(glucoseColor, glucoseThreshold),
-                    const SizedBox(height: 20),
+                      // Glucose value input (large and prominent)
+                      _buildGlucoseInput(glucoseColor, glucoseThreshold),
+                      const SizedBox(height: 20),
 
-                    // Date and time
-                    _buildDateTimeSection(),
-                    const SizedBox(height: 24),
+                      // Date and time
+                      _buildDateTimeSection(),
+                      const SizedBox(height: 24),
 
-                    // Context selection
-                    _buildContextSection(),
-                    const SizedBox(height: 24),
+                      // Context selection
+                      _buildContextSection(),
+                      const SizedBox(height: 24),
 
-                    // Notes (optional)
-                    _buildNotesSection(),
-                    const SizedBox(height: 32),
+                      // Notes (optional)
+                      _buildNotesSection(),
+                      const SizedBox(height: 32),
 
-                    // Save button
-                    PrimaryButton(
-                      text: 'Save Reading',
-                      onPressed: _isLoading ? null : _handleSave,
-                      isLoading: _isLoading,
-                      width: double.infinity,
-                    ),
-                  ],
+                      // Save button
+                      PrimaryButton(
+                        text: 'Save Reading',
+                        onPressed: _isLoading ? null : _handleSave,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -354,7 +359,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: borderColor,
-          width: hasInput ? 1.5 : 1,
+          width: 2.0, // Constant width to prevent jumping
         ),
         boxShadow: [
           BoxShadow(
