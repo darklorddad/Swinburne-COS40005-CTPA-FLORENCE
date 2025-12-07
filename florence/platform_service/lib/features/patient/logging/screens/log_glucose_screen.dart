@@ -425,45 +425,61 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           SizedBox(
             height: 32,
             child: Center(
-              child: Container(
-                constraints: const BoxConstraints(minWidth: 120),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: (glucoseColor ?? AppTheme.textSecondaryColor)
-                      .withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: (glucoseColor ?? AppTheme.textSecondaryColor)
-                        .withOpacity(0.3),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (glucoseColor == null) ...[
-                      Icon(
-                        Icons.edit,
-                        size: 14,
-                        color: AppTheme.textSecondaryColor,
+              child: Builder(
+                builder: (context) {
+                  // Determine State
+                  final statusText = glucoseColor != null
+                      ? _getGlucoseStatus(
+                              double.tryParse(_glucoseController.text), threshold)
+                          .toUpperCase()
+                      : 'ENTER READING';
+
+                  // Determine Icon
+                  IconData statusIcon;
+                  if (glucoseColor == null) {
+                    statusIcon = Icons.edit;
+                  } else if (statusText == 'LOW') {
+                    statusIcon = Icons.arrow_downward;
+                  } else if (statusText == 'HIGH') {
+                    statusIcon = Icons.arrow_upward;
+                  } else {
+                    statusIcon = Icons.check;
+                  }
+
+                  final displayColor =
+                      glucoseColor ?? AppTheme.textSecondaryColor;
+
+                  return Container(
+                    width: 140, // Fixed width for consistency
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: displayColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: displayColor.withOpacity(0.3),
                       ),
-                      const SizedBox(width: 6),
-                    ],
-                    Text(
-                      glucoseColor != null
-                          ? _getGlucoseStatus(
-                                  double.tryParse(_glucoseController.text),
-                                  threshold)
-                              .toUpperCase()
-                          : 'ENTER READING',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: glucoseColor ?? AppTheme.textSecondaryColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                      textAlign: TextAlign.center,
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          statusIcon,
+                          size: 14,
+                          color: displayColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          statusText,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: displayColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ),
