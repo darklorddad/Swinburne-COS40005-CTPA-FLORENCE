@@ -421,33 +421,38 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
           const SizedBox(height: 16),
 
-          // Status indicator (Reserved space to prevent jumping)
+          // Status indicator (Always visible)
           SizedBox(
             height: 32,
-            child: hasInput 
-              ? Center(
-                  child: Container(
-                    constraints: const BoxConstraints(minWidth: 100),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: glucoseColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: glucoseColor.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      _getGlucoseStatus(
-                              double.tryParse(_glucoseController.text), threshold)
-                          .toUpperCase(),
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: glucoseColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
+            child: Center(
+              child: Container(
+                constraints: const BoxConstraints(minWidth: 100),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (glucoseColor ?? AppTheme.textSecondaryColor)
+                      .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: (glucoseColor ?? AppTheme.textSecondaryColor)
+                        .withOpacity(0.3),
                   ),
-                )
-              : const SizedBox.shrink(),
+                ),
+                child: Text(
+                  glucoseColor != null
+                      ? _getGlucoseStatus(
+                              double.tryParse(_glucoseController.text),
+                              threshold)
+                          .toUpperCase()
+                      : 'ENTER VALUE',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: glucoseColor ?? AppTheme.textSecondaryColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
           ),
         ],
       ),
