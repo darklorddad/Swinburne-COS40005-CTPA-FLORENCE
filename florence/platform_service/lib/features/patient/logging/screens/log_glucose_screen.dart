@@ -238,13 +238,14 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Build glucose input
   Widget _buildGlucoseInput(Color? glucoseColor) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: glucoseColor?.withOpacity(0.1) ?? Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
+        color: glucoseColor?.withOpacity(0.05) ??
+            Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: glucoseColor?.withOpacity(0.3) ?? Colors.grey.shade300,
-          width: 2,
+          color: glucoseColor ?? AppTheme.borderColor,
+          width: 1,
         ),
       ),
       child: Column(
@@ -584,11 +585,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     if (value == null) return null;
 
     if (value < 70) {
-      return AppTheme.glucoseLow;
+      return AppTheme.errorColor; // Low is Critical (Red)
     } else if (value > 180) {
-      return AppTheme.glucoseHigh;
+      return AppTheme.errorColor; // High is Critical (Red)
     } else {
-      return AppTheme.glucoseNormal;
+      return AppTheme.primaryGreen; // Normal (Green)
     }
   }
 
