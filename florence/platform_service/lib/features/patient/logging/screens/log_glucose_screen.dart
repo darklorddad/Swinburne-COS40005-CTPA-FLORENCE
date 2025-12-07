@@ -167,15 +167,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              AppRoutes.push(context, AppRoutes.trendsDetail);
-            },
-            tooltip: 'View History',
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                AppRoutes.push(context, AppRoutes.trendsDetail);
+              },
+              tooltip: 'View History',
+            ),
           ),
-          // Ensure right spacing matches standard margins (16.0)
-          const SizedBox(width: 16),
         ],
       ),
       body: GestureDetector(
@@ -358,11 +359,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: borderColor,
-          width: 1.0, // Consistent thin border to match app theme
+          width: 1.0, // Fixed width to prevent displacement
         ),
         boxShadow: [
           BoxShadow(
-            color: (glucoseColor ?? Colors.black).withOpacity(0.03),
+            color: Colors.black.withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
