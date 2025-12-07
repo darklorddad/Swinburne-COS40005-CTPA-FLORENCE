@@ -426,7 +426,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             height: 32,
             child: Center(
               child: Container(
-                constraints: const BoxConstraints(minWidth: 100),
+                constraints: const BoxConstraints(minWidth: 120),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
                   color: (glucoseColor ?? AppTheme.textSecondaryColor)
@@ -437,19 +437,32 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         .withOpacity(0.3),
                   ),
                 ),
-                child: Text(
-                  glucoseColor != null
-                      ? _getGlucoseStatus(
-                              double.tryParse(_glucoseController.text),
-                              threshold)
-                          .toUpperCase()
-                      : 'ENTER VALUE',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: glucoseColor ?? AppTheme.textSecondaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (glucoseColor == null) ...[
+                      Icon(
+                        Icons.edit,
+                        size: 14,
+                        color: AppTheme.textSecondaryColor,
                       ),
-                  textAlign: TextAlign.center,
+                      const SizedBox(width: 6),
+                    ],
+                    Text(
+                      glucoseColor != null
+                          ? _getGlucoseStatus(
+                                  double.tryParse(_glucoseController.text),
+                                  threshold)
+                              .toUpperCase()
+                          : 'ENTER READING',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: glucoseColor ?? AppTheme.textSecondaryColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             ),
