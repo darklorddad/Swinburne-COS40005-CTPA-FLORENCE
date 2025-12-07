@@ -383,8 +383,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           // Large glucose input
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
                 width: 150,
@@ -410,14 +409,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Padding(
-                padding: const EdgeInsets.only(top: 10.0), // Visual vertical centering
-                child: Text(
-                  'mg/dL',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                ),
+              Text(
+                'mg/dL',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
               ),
             ],
           ),
