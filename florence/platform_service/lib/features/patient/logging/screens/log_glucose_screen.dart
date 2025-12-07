@@ -110,35 +110,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     }
   }
 
-  /// Show date time picker
-  Future<void> _selectDateTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-    );
-
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-
-      if (time != null && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
@@ -510,53 +481,45 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          InkWell(
-            onTap: _selectDateTime,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.borderColor,
+          Row(
+            children: [
+              Expanded(
+                child: DatePickerField(
+                  label: 'Date',
+                  selectedDate: _selectedDateTime,
+                  lastDate: DateTime.now(),
+                  onDateSelected: (date) {
+                    setState(() {
+                      _selectedDateTime = DateTime(
+                        date.year,
+                        date.month,
+                        date.day,
+                        _selectedDateTime.hour,
+                        _selectedDateTime.minute,
+                      );
+                    });
+                  },
                 ),
               ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: AppTheme.primaryBlue,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.textSecondaryColor,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ],
+              const SizedBox(width: 16),
+              Expanded(
+                child: TimePickerField(
+                  label: 'Time',
+                  selectedTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                  onTimeSelected: (time) {
+                    setState(() {
+                      _selectedDateTime = DateTime(
+                        _selectedDateTime.year,
+                        _selectedDateTime.month,
+                        _selectedDateTime.day,
+                        time.hour,
+                        time.minute,
+                      );
+                    });
+                  },
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
