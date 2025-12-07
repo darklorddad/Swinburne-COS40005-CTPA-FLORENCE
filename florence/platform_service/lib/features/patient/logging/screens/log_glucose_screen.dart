@@ -173,11 +173,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
                       // Date and time
                       _buildDateTimeSection(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
                       // Context selection
                       _buildContextSection(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
                       // Notes (optional)
                       _buildNotesSection(),
