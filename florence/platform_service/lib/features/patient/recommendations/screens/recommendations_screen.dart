@@ -69,23 +69,26 @@ class _RecommendationsScreenState extends ConsumerState<RecommendationsScreen> {
       appBar: AppBar(
         title: const Text('Health Insights'),
         actions: [
-          IconButton(
-            icon: _isGenerating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Icon(Icons.refresh),
-            onPressed: _isGenerating
-                ? null
-                : () async {
-                    await _generateNewInsights();
-                  },
-            tooltip: 'Refresh Insights',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: _isGenerating
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.refresh),
+              onPressed: _isGenerating
+                  ? null
+                  : () async {
+                      await _generateNewInsights();
+                    },
+              tooltip: 'Refresh Insights',
+            ),
           ),
         ],
       ),

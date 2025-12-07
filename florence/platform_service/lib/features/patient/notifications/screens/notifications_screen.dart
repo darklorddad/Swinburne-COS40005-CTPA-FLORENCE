@@ -94,18 +94,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             tooltip: 'Mark all as read',
           ),
           // Clear all
-          IconButton(
-            icon: const Icon(Icons.clear_all),
-            onPressed: () async {
-              final confirmed = await _showConfirmDialog(
-                'Clear All Notifications',
-                'Are you sure you want to clear all notifications?',
-              );
-              if (confirmed) {
-                notifier.clearAll();
-              }
-            },
-            tooltip: 'Clear all',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: const Icon(Icons.clear_all),
+              onPressed: () async {
+                final confirmed = await _showConfirmDialog(
+                  'Clear All Notifications',
+                  'Are you sure you want to clear all notifications?',
+                );
+                if (confirmed) {
+                  notifier.clearAll();
+                }
+              },
+              tooltip: 'Clear all',
+            ),
           ),
         ],
       ),

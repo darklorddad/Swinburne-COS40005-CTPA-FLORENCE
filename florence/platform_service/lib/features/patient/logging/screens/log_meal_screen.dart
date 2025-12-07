@@ -135,12 +135,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       appBar: AppBar(
         title: const Text('Log Meal'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              Helpers.showInfo(context, 'Meal history coming soon');
-            },
-            tooltip: 'View History',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                Helpers.showInfo(context, 'Meal history coming soon');
+              },
+              tooltip: 'View History',
+            ),
           ),
         ],
       ),

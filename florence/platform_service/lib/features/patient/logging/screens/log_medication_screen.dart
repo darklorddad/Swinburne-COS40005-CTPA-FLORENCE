@@ -132,12 +132,15 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       appBar: AppBar(
         title: const Text('Log Medication'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              Helpers.showInfo(context, 'Medication history coming soon');
-            },
-            tooltip: 'View History',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                Helpers.showInfo(context, 'Medication history coming soon');
+              },
+              tooltip: 'View History',
+            ),
           ),
         ],
       ),
