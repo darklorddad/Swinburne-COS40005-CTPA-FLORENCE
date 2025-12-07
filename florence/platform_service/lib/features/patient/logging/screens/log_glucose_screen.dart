@@ -220,8 +220,25 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   Widget _buildInfoCard(HealthThreshold? threshold) {
     final min = threshold?.minValue ?? 70;
     final max = threshold?.maxValue ?? 180;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
 
-    return BaseCard(
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         children: [
           Row(
@@ -243,35 +260,65 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryGreen.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: AppTheme.primaryGreen.withOpacity(0.3),
+          // Target Range Box (Matching Analytics Overview Style)
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.profile),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
               ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Your Target Range',
-                  style: TextStyle(
-                    color: AppTheme.primaryGreen.withOpacity(0.9),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 12,
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.track_changes,
+                            size: 18,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Target Range',
+                            style: TextStyle(
+                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                      ),
+                    ],
                   ),
-                ),
-                Text(
-                  '${min.toInt()} - ${max.toInt()} mg/dL',
-                  style: const TextStyle(
-                    color: AppTheme.primaryGreen,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Glucose', 
+                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
+                      ),
+                      Text(
+                        '${min.toInt()} - ${max.toInt()} mg/dL',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],
@@ -316,8 +363,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           // Large glucose input
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
                 width: 150,
@@ -579,10 +625,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final min = threshold?.minValue ?? 70;
     final max = threshold?.maxValue ?? 180;
 
-    if (value < min || value > max) {
-      return AppTheme.errorColor; // Outside Target (Red)
+    if (value < min) {
+      return AppTheme.warningColor; // Low (Amber)
+    } else if (value > max) {
+      return AppTheme.errorColor; // High (Red)
     } else {
-      return AppTheme.primaryGreen; // In Target (Green)
+      return AppTheme.primaryGreen; // Normal (Green)
     }
   }
 
