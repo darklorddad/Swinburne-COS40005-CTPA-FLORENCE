@@ -179,8 +179,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Target info card
-                    _buildTargetCard(glucoseThreshold),
+                    // Info & Target card
+                    _buildInfoCard(glucoseThreshold),
                     const SizedBox(height: 24),
 
                     // Glucose value input (large and prominent)
@@ -216,50 +216,63 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     );
   }
 
-  /// Build target range card (matches analytics style)
-  Widget _buildTargetCard(HealthThreshold? threshold) {
+  /// Build info card with target range
+  Widget _buildInfoCard(HealthThreshold? threshold) {
     final min = threshold?.minValue ?? 70;
     final max = threshold?.maxValue ?? 180;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryGreen.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppTheme.primaryGreen.withOpacity(0.3),
-        ),
-      ),
+    return BaseCard(
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.track_changes,
-                    size: 18,
-                    color: AppTheme.primaryGreen,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Target Range',
-                    style: TextStyle(
-                      color: AppTheme.primaryGreen.withOpacity(0.9),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
+              const Icon(
+                Icons.info_outline,
+                color: AppTheme.infoColor,
+                size: 24,
               ),
-              Text(
-                '${min.toInt()} - ${max.toInt()} mg/dL',
-                style: const TextStyle(
-                  color: AppTheme.primaryGreen,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Record your blood glucose reading to track your health trends',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.infoColor,
+                      ),
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryGreen.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: AppTheme.primaryGreen.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Your Target Range',
+                  style: TextStyle(
+                    color: AppTheme.primaryGreen.withOpacity(0.9),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
+                  ),
+                ),
+                Text(
+                  '${min.toInt()} - ${max.toInt()} mg/dL',
+                  style: const TextStyle(
+                    color: AppTheme.primaryGreen,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -268,16 +281,26 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   /// Build glucose input
   Widget _buildGlucoseInput(Color? glucoseColor, HealthThreshold? threshold) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: glucoseColor?.withOpacity(0.05) ??
-            Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(12),
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: glucoseColor ?? AppTheme.borderColor,
-          width: glucoseColor != null ? 2 : 1,
+          color: borderColor,
+          width: glucoseColor != null ? 1.5 : 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -335,14 +358,18 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: glucoseColor,
+                color: glucoseColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: glucoseColor.withOpacity(0.3)),
               ),
               child: Text(
-                _getGlucoseStatus(double.tryParse(_glucoseController.text), threshold),
+                _getGlucoseStatus(
+                        double.tryParse(_glucoseController.text), threshold)
+                    .toUpperCase(),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
+                      color: glucoseColor,
                       fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
               ),
             ),
