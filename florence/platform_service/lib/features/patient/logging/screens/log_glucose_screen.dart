@@ -463,6 +463,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -481,18 +482,36 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Date and Time',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 16),
+          // Header matching Dashboard Cards
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Date and Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
+                flex: 3, // Give more space to Date
                 child: DatePickerField(
                   label: 'Date',
                   selectedDate: _selectedDateTime,
@@ -511,14 +530,19 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                'at',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
+              // Pad top to align "at" with the input field center (accounting for label height)
+              Padding(
+                padding: const EdgeInsets.only(top: 44.0),
+                child: Text(
+                  'at',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
+                flex: 2,
                 child: TimePickerField(
                   label: 'Time',
                   selectedTime: TimeOfDay.fromDateTime(_selectedDateTime),
