@@ -157,15 +157,24 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log Glucose'),
+        elevation: 0,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: AppTheme.getBorderColor(context),
+            height: 1.0,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
             onPressed: () {
-              // TODO: Show glucose history
-              Helpers.showInfo(context, 'History feature coming soon');
+              AppRoutes.push(context, AppRoutes.trendsDetail);
             },
             tooltip: 'View History',
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
@@ -173,7 +182,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -181,11 +190,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   children: [
                     // Info & Target card
                     _buildInfoCard(glucoseThreshold),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // Glucose value input (large and prominent)
                     _buildGlucoseInput(glucoseColor, glucoseThreshold),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
 
                     // Date and time
                     _buildDateTimeSection(),
@@ -251,7 +260,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Record your blood glucose reading to track your health trends',
+                  'Record your blood glucose reading to track your health trends.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.infoColor,
                       ),
@@ -329,8 +338,14 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Build glucose input
   Widget _buildGlucoseInput(Color? glucoseColor, HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    
+    // Tint the whole card background based on status
+    final containerColor = glucoseColor != null 
+        ? glucoseColor.withOpacity(0.05) 
+        : (isDark ? AppTheme.midnightSurface : Colors.white);
+        
     final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
+    final hasInput = glucoseColor != null;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -339,11 +354,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: borderColor,
-          width: glucoseColor != null ? 1.5 : 1,
+          width: hasInput ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: (glucoseColor ?? Colors.black).withOpacity(0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -363,7 +378,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           // Large glucose input
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
               SizedBox(
                 width: 150,
@@ -398,28 +414,36 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
 
-          // Status indicator
-          if (glucoseColor != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: glucoseColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: glucoseColor.withOpacity(0.3)),
-              ),
-              child: Text(
-                _getGlucoseStatus(
-                        double.tryParse(_glucoseController.text), threshold)
-                    .toUpperCase(),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: glucoseColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+          const SizedBox(height: 16),
+
+          // Status indicator (Reserved space to prevent jumping)
+          SizedBox(
+            height: 32,
+            child: hasInput 
+              ? Center(
+                  child: Container(
+                    constraints: const BoxConstraints(minWidth: 100),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: glucoseColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: glucoseColor.withOpacity(0.3)),
                     ),
-              ),
-            ),
-          ],
+                    child: Text(
+                      _getGlucoseStatus(
+                              double.tryParse(_glucoseController.text), threshold)
+                          .toUpperCase(),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: glucoseColor,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
