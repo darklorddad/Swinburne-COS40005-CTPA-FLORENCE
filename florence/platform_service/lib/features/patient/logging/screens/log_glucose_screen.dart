@@ -507,59 +507,37 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 3, // Give more space to Date
-                child: DatePickerField(
-                  label: 'Date',
-                  selectedDate: _selectedDateTime,
-                  lastDate: DateTime.now(),
-                  onDateSelected: (date) {
-                    setState(() {
-                      _selectedDateTime = DateTime(
-                        date.year,
-                        date.month,
-                        date.day,
-                        _selectedDateTime.hour,
-                        _selectedDateTime.minute,
-                      );
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Pad top to align "at" with the input field center (accounting for label height)
-              Padding(
-                padding: const EdgeInsets.only(top: 44.0),
-                child: Text(
-                  'at',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 2,
-                child: TimePickerField(
-                  label: 'Time',
-                  selectedTime: TimeOfDay.fromDateTime(_selectedDateTime),
-                  onTimeSelected: (time) {
-                    setState(() {
-                      _selectedDateTime = DateTime(
-                        _selectedDateTime.year,
-                        _selectedDateTime.month,
-                        _selectedDateTime.day,
-                        time.hour,
-                        time.minute,
-                      );
-                    });
-                  },
-                ),
-              ),
-            ],
+          DatePickerField(
+            label: 'Date',
+            selectedDate: _selectedDateTime,
+            lastDate: DateTime.now(),
+            onDateSelected: (date) {
+              setState(() {
+                _selectedDateTime = DateTime(
+                  date.year,
+                  date.month,
+                  date.day,
+                  _selectedDateTime.hour,
+                  _selectedDateTime.minute,
+                );
+              });
+            },
+          ),
+          const SizedBox(height: 16),
+          TimePickerField(
+            label: 'Time',
+            selectedTime: TimeOfDay.fromDateTime(_selectedDateTime),
+            onTimeSelected: (time) {
+              setState(() {
+                _selectedDateTime = DateTime(
+                  _selectedDateTime.year,
+                  _selectedDateTime.month,
+                  _selectedDateTime.day,
+                  time.hour,
+                  time.minute,
+                );
+              });
+            },
           ),
         ],
       ),
