@@ -142,7 +142,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
-    final glucoseColor = _getGlucoseColor(glucoseValue);
+    
+    // Fetch thresholds
+    final healthData = ref.watch(monitorDataProvider).asData?.value;
+    HealthThreshold? glucoseThreshold;
+    try {
+      glucoseThreshold = healthData?.healthThresholds.firstWhere(
+        (t) => t.dataType == MonitorDataType.GLUCOSE
+      );
+    } catch (_) {}
+
+    final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold);
 
     return Scaffold(
       appBar: AppBar(
@@ -169,66 +179,87 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Info card
-                    _buildInfoCard(),
-              const SizedBox(height: 24),
+                    // Target info card
+                    _buildTargetCard(glucoseThreshold),
+                    const SizedBox(height: 24),
 
-              // Glucose value input (large and prominent)
-              _buildGlucoseInput(glucoseColor),
-              const SizedBox(height: 24),
+                    // Glucose value input (large and prominent)
+                    _buildGlucoseInput(glucoseColor, glucoseThreshold),
+                    const SizedBox(height: 24),
 
-              // Date and time
-              _buildDateTimeSection(),
-              const SizedBox(height: 24),
+                    // Date and time
+                    _buildDateTimeSection(),
+                    const SizedBox(height: 24),
 
-              // Context selection
-              _buildContextSection(),
-              const SizedBox(height: 24),
+                    // Context selection
+                    _buildContextSection(),
+                    const SizedBox(height: 24),
 
-              // Notes (optional)
-              _buildNotesSection(),
-              const SizedBox(height: 32),
+                    // Notes (optional)
+                    _buildNotesSection(),
+                    const SizedBox(height: 32),
 
-              // Save button
-              PrimaryButton(
-                text: 'Save Reading',
-                onPressed: _isLoading ? null : _handleSave,
-                isLoading: _isLoading,
-                width: double.infinity,
+                    // Save button
+                    PrimaryButton(
+                      text: 'Save Reading',
+                      onPressed: _isLoading ? null : _handleSave,
+                      isLoading: _isLoading,
+                      width: double.infinity,
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-
-              // Reference ranges
-              _buildReferenceRanges(),
-            ],
+            ),
           ),
         ),
-      ),
-      ),
-      ),
       ),
     );
   }
 
-  /// Build info card
-  Widget _buildInfoCard() {
-    return BaseCard(
-      // backgroundColor: AppTheme.infoColor.withOpacity(0.1),
-      child: Row(
+  /// Build target range card (matches analytics style)
+  Widget _buildTargetCard(HealthThreshold? threshold) {
+    final min = threshold?.minValue ?? 70;
+    final max = threshold?.maxValue ?? 180;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryGreen.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.primaryGreen.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
         children: [
-          Icon(
-            Icons.info_outline,
-            color: AppTheme.infoColor,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Record your blood glucose reading to track your health trends',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.infoColor,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.track_changes,
+                    size: 18,
+                    color: AppTheme.primaryGreen,
                   ),
-            ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Target Range',
+                    style: TextStyle(
+                      color: AppTheme.primaryGreen.withOpacity(0.9),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                '${min.toInt()} - ${max.toInt()} mg/dL',
+                style: const TextStyle(
+                  color: AppTheme.primaryGreen,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -236,7 +267,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   /// Build glucose input
-  Widget _buildGlucoseInput(Color? glucoseColor) {
+  Widget _buildGlucoseInput(Color? glucoseColor, HealthThreshold? threshold) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -308,7 +339,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                _getGlucoseStatus(double.tryParse(_glucoseController.text)),
+                _getGlucoseStatus(double.tryParse(_glucoseController.text), threshold),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -514,92 +545,30 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     );
   }
 
-  /// Build reference ranges
-  Widget _buildReferenceRanges() {
-    return BaseCard(
-      // backgroundColor: Colors.grey.shade50,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Reference Ranges',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 12),
-          _buildRangeItem(
-            'Normal',
-            '70-180 mg/dL',
-            AppTheme.primaryGreen,
-          ),
-          const SizedBox(height: 8),
-          _buildRangeItem(
-            'Low',
-            'Below 70 mg/dL',
-            AppTheme.errorColor,
-          ),
-          const SizedBox(height: 8),
-          _buildRangeItem(
-            'High',
-            'Above 180 mg/dL',
-            AppTheme.errorColor,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build single range item
-  Widget _buildRangeItem(String label, String range, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const Spacer(),
-        Text(
-          range,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-        ),
-      ],
-    );
-  }
-
-  /// Get glucose color based on value
-  Color? _getGlucoseColor(double? value) {
+  /// Get glucose color based on value and user thresholds
+  Color? _getGlucoseColor(double? value, HealthThreshold? threshold) {
     if (value == null) return null;
+    
+    final min = threshold?.minValue ?? 70;
+    final max = threshold?.maxValue ?? 180;
 
-    if (value < 70) {
-      return AppTheme.errorColor; // Low is Critical (Red)
-    } else if (value > 180) {
-      return AppTheme.errorColor; // High is Critical (Red)
+    if (value < min || value > max) {
+      return AppTheme.errorColor; // Outside Target (Red)
     } else {
-      return AppTheme.primaryGreen; // Normal (Green)
+      return AppTheme.primaryGreen; // In Target (Green)
     }
   }
 
   /// Get glucose status text
-  String _getGlucoseStatus(double? value) {
+  String _getGlucoseStatus(double? value, HealthThreshold? threshold) {
     if (value == null) return '';
+    
+    final min = threshold?.minValue ?? 70;
+    final max = threshold?.maxValue ?? 180;
 
-    if (value < 70) {
+    if (value < min) {
       return 'Low';
-    } else if (value > 180) {
+    } else if (value > max) {
       return 'High';
     } else {
       return 'Normal';
