@@ -252,10 +252,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           onPressed: () => AppRoutes.push(context, AppRoutes.chat),
           tooltip: 'AI Health Assistant',
         ),
-        IconButton(
-          icon: const Icon(Icons.person_outline),
-          onPressed: () => AppRoutes.push(context, AppRoutes.profile),
-          tooltip: 'Profile',
+        Padding(
+          padding: const EdgeInsets.only(right: 4.5),
+          child: IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => AppRoutes.push(context, AppRoutes.profile),
+            tooltip: 'Profile',
+          ),
         ),
       ],
       elevation: 0,
