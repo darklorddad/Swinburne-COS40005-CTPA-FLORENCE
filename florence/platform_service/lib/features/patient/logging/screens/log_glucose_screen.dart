@@ -410,31 +410,32 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                'mg/dL',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(top: 10.0), // Visual vertical centering
+                child: Text(
+                  'mg/dL',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                ),
               ),
             ],
           ),
 
           const SizedBox(height: 16),
 
-          // Status indicator (Always visible)
+          // Status indicator (Always visible, fixed size)
           SizedBox(
             height: 32,
             child: Center(
               child: Builder(
                 builder: (context) {
-                  // Determine State
                   final statusText = glucoseColor != null
                       ? _getGlucoseStatus(
                               double.tryParse(_glucoseController.text), threshold)
                           .toUpperCase()
                       : 'ENTER READING';
 
-                  // Determine Icon
                   IconData statusIcon;
                   if (glucoseColor == null) {
                     statusIcon = Icons.edit;
@@ -450,8 +451,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       glucoseColor ?? AppTheme.textSecondaryColor;
 
                   return Container(
-                    width: 140, // Fixed width for consistency
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    width: 140, // Fixed width
+                    height: 32, // Fixed height
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: displayColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -461,6 +463,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           statusIcon,
