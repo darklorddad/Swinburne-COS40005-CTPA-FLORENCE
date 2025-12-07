@@ -168,7 +168,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: 4.5),
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
