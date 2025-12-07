@@ -245,7 +245,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: glucoseColor ?? AppTheme.borderColor,
-          width: 1,
+          width: glucoseColor != null ? 2 : 1,
         ),
       ),
       child: Column(
@@ -302,7 +302,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           if (glucoseColor != null) ...[
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: glucoseColor,
                 borderRadius: BorderRadius.circular(20),
@@ -531,19 +531,19 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           _buildRangeItem(
             'Normal',
             '70-180 mg/dL',
-            AppTheme.glucoseNormal,
+            AppTheme.primaryGreen,
           ),
           const SizedBox(height: 8),
           _buildRangeItem(
             'Low',
             'Below 70 mg/dL',
-            AppTheme.glucoseLow,
+            AppTheme.errorColor,
           ),
           const SizedBox(height: 8),
           _buildRangeItem(
             'High',
             'Above 180 mg/dL',
-            AppTheme.glucoseHigh,
+            AppTheme.errorColor,
           ),
         ],
       ),
@@ -598,11 +598,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     if (value == null) return '';
 
     if (value < 70) {
-      return 'Low - Eat something!';
+      return 'Low';
     } else if (value > 180) {
-      return 'High - Consider activity';
+      return 'High';
     } else {
-      return 'Normal - Great job!';
+      return 'Normal';
     }
   }
 }
