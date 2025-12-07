@@ -507,39 +507,111 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          DatePickerField(
+          _buildDateTimePicker(
             label: 'Date',
-            selectedDate: _selectedDateTime,
-            lastDate: DateTime.now(),
-            onDateSelected: (date) {
-              setState(() {
-                _selectedDateTime = DateTime(
-                  date.year,
-                  date.month,
-                  date.day,
-                  _selectedDateTime.hour,
-                  _selectedDateTime.minute,
-                );
-              });
+            value: Formatters.date(_selectedDateTime),
+            icon: Icons.calendar_today_outlined,
+            onTap: () async {
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: _selectedDateTime,
+                firstDate: DateTime(2000),
+                lastDate: DateTime.now(),
+                initialEntryMode: DatePickerEntryMode.calendar,
+              );
+              if (picked != null) {
+                setState(() {
+                  _selectedDateTime = DateTime(
+                    picked.year,
+                    picked.month,
+                    picked.day,
+                    _selectedDateTime.hour,
+                    _selectedDateTime.minute,
+                  );
+                });
+              }
             },
           ),
           const SizedBox(height: 16),
-          TimePickerField(
+          _buildDateTimePicker(
             label: 'Time',
-            selectedTime: TimeOfDay.fromDateTime(_selectedDateTime),
-            onTimeSelected: (time) {
-              setState(() {
-                _selectedDateTime = DateTime(
-                  _selectedDateTime.year,
-                  _selectedDateTime.month,
-                  _selectedDateTime.day,
-                  time.hour,
-                  time.minute,
-                );
-              });
+            value: Formatters.time(_selectedDateTime),
+            icon: Icons.access_time_outlined,
+            onTap: () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                initialEntryMode: TimePickerEntryMode.dial,
+              );
+              if (picked != null) {
+                setState(() {
+                  _selectedDateTime = DateTime(
+                    _selectedDateTime.year,
+                    _selectedDateTime.month,
+                    _selectedDateTime.day,
+                    picked.hour,
+                    picked.minute,
+                  );
+                });
+              }
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDateTimePicker({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : AppTheme.backgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color:
+                isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+          ],
+        ),
       ),
     );
   }
