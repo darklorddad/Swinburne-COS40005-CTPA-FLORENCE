@@ -734,13 +734,24 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 final itemBorderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
                 final rightBorderColor = (isSelected || nextIsSelected) ? AppTheme.primaryBlue : AppTheme.borderColor;
 
+                BorderRadius itemRadius;
+                if (isFirst) {
+                  itemRadius = const BorderRadius.horizontal(left: Radius.circular(12));
+                } else if (isLast) {
+                  itemRadius = const BorderRadius.horizontal(right: Radius.circular(12));
+                } else {
+                  itemRadius = BorderRadius.zero;
+                }
+
                 return Expanded(
                   child: InkWell(
                     onTap: () => setState(() => _selectedTiming = option),
+                    borderRadius: itemRadius,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
                       decoration: BoxDecoration(
                         color: isSelected ? AppTheme.primaryBlue : null,
+                        borderRadius: itemRadius,
                         border: Border(
                           top: BorderSide(color: itemBorderColor),
                           bottom: BorderSide(color: itemBorderColor),
@@ -807,13 +818,24 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             final itemBorderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
                             final rightBorderColor = (isSelected || nextIsSelected) ? AppTheme.primaryBlue : AppTheme.borderColor;
 
+                            BorderRadius itemRadius;
+                            if (isFirst) {
+                              itemRadius = const BorderRadius.horizontal(left: Radius.circular(12));
+                            } else if (isLast) {
+                              itemRadius = const BorderRadius.horizontal(right: Radius.circular(12));
+                            } else {
+                              itemRadius = BorderRadius.zero;
+                            }
+
                             return Expanded(
                               child: InkWell(
                                 onTap: () => setState(() => _selectedMealType = option['value']),
+                                borderRadius: itemRadius,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   decoration: BoxDecoration(
                                     color: isSelected ? AppTheme.primaryBlue : null,
+                                    borderRadius: itemRadius,
                                     border: Border(
                                       top: BorderSide(color: itemBorderColor),
                                       bottom: BorderSide(color: itemBorderColor),
