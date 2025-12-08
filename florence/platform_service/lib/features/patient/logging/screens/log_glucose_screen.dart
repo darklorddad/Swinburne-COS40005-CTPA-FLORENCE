@@ -543,8 +543,15 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 builder: (context, child) {
                   return Theme(
                     data: Theme.of(context).copyWith(
+                      // Override tertiary colors so AM/PM selector is Blue, not Red
+                      colorScheme: Theme.of(context).colorScheme.copyWith(
+                        tertiary: AppTheme.primaryBlue,
+                        onTertiary: Colors.white,
+                        tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
+                        onTertiaryContainer: AppTheme.primaryBlue,
+                      ),
+                      // Fix input field background to make cursor visible
                       timePickerTheme: TimePickerThemeData(
-                        // Use light background for active fields so blue cursor is visible
                         hourMinuteColor: MaterialStateColor.resolveWith((states) {
                           return states.contains(MaterialState.selected)
                               ? AppTheme.primaryBlue.withOpacity(0.1)
