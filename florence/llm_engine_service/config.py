@@ -6,7 +6,6 @@ from typing import Optional
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Florence LLM Engine Service"
     APP_VERSION: str = "1.0.0"
-    APP_ENV: str = "development"
     
     # --- Integration Config ---
     # Default to local, override in Vercel for Prod/Preview

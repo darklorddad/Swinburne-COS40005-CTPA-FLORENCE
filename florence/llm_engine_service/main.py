@@ -28,7 +28,6 @@ def root():
     return {
         "service": settings.PROJECT_NAME, 
         "version": settings.APP_VERSION,
-        "env": settings.APP_ENV,
         "status": "operational"
     }
 
