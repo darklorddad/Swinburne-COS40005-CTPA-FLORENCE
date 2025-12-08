@@ -696,19 +696,48 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           const SizedBox(height: 20),
 
           // 1. Timing Selection (No Meal, Before, After)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _timingOptions.map((timing) {
+          Row(
+            children: _timingOptions.asMap().entries.map((entry) {
+              final index = entry.key;
+              final timing = entry.value;
               final isSelected = timing == _selectedTiming;
-              return ChoiceChip(
-                label: Text(timing),
-                selected: isSelected,
-                onSelected: (_) => setState(() => _selectedTiming = timing),
-                selectedColor: AppTheme.primaryBlue,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    left: index == 0 ? 0 : 4,
+                    right: index == _timingOptions.length - 1 ? 0 : 4,
+                  ),
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedTiming = timing),
+                    borderRadius: BorderRadius.circular(12),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppTheme.primaryBlue
+                            : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
+                          width: 1,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        timing,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
                 ),
               );
             }).toList(),
@@ -718,7 +747,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           if (_selectedTiming != 'No Meal') ...[
             const SizedBox(height: 16),
             const Divider(),
-            const SizedBox(height: 8),
+            const SizedBox(height: 16),
             Text(
               'Select Meal',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -726,24 +755,49 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _mealTypeOptions.map((meal) {
+            Row(
+              children: _mealTypeOptions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final meal = entry.value;
                 final isSelected = meal == _selectedMealType;
                 final displayLabel = meal[0] + meal.substring(1).toLowerCase();
 
-                return ChoiceChip(
-                  label: Text(displayLabel),
-                  selected: isSelected,
-                  onSelected: (_) => setState(() => _selectedMealType = meal),
-                  selectedColor:
-                      AppTheme.primaryBlue,
-                  labelStyle: TextStyle(
-                    color:
-                        isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                return Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      left: index == 0 ? 0 : 4,
+                      right: index == _mealTypeOptions.length - 1 ? 0 : 4,
+                    ),
+                    child: InkWell(
+                      onTap: () => setState(() => _selectedMealType = meal),
+                      borderRadius: BorderRadius.circular(12),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.primaryBlue
+                              : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
+                            width: 1,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          displayLabel,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
                   ),
                 );
               }).toList(),
