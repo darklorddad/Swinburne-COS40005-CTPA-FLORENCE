@@ -72,7 +72,8 @@ jobs:
         run: |
           shorebird release android --artifact=apk \
             --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
-            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
+            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app \
+            --dart-define=LLM_ENGINE_SERVICE_URL=https://llmes-florence-dhp.vercel.app
 
       - name: Upload to Firebase
         if: steps.decision.outputs.is_release == 'true'
@@ -94,4 +95,5 @@ jobs:
         run: |
           shorebird patch android \
             --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
-            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
+            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app \
+            --dart-define=LLM_ENGINE_SERVICE_URL=https://llmes-florence-dhp.vercel.app

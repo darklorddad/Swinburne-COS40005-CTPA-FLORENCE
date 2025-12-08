@@ -136,7 +136,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Returns map with 'calories' and 'description'
   Future<Map<String, dynamic>?> _analyzeMeal(String imageUrl) async {
     try {
-      final llmUrl = '${Environment.llmChatbotServiceUrl}/nutrition/analyze';
+      final llmUrl = '${Environment.llmEngineServiceUrl}/nutrition/analyze';
       final session = Supabase.instance.client.auth.currentSession;
       
       final response = await http.post(
