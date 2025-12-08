@@ -540,6 +540,31 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               final picked = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      timePickerTheme: TimePickerThemeData(
+                        // Use light background for active fields so blue cursor is visible
+                        hourMinuteColor: MaterialStateColor.resolveWith((states) {
+                          return states.contains(MaterialState.selected)
+                              ? AppTheme.primaryBlue.withOpacity(0.1)
+                              : Colors.grey.shade100;
+                        }),
+                        hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
+                          return states.contains(MaterialState.selected)
+                              ? AppTheme.primaryBlue
+                              : AppTheme.textPrimaryColor;
+                        }),
+                      ),
+                      textSelectionTheme: TextSelectionThemeData(
+                        cursorColor: AppTheme.primaryBlue,
+                        selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
+                        selectionHandleColor: AppTheme.primaryBlue,
+                      ),
+                    ),
+                    child: child!,
+                  );
+                },
               );
               if (picked != null) {
                 setState(() {
