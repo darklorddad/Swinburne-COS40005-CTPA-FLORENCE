@@ -907,9 +907,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Meal Details (Optional)',
+                          'Meal Details',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Optional',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondaryColor,
                               ),
                         ),
                       ],
