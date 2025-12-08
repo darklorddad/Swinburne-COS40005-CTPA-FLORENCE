@@ -772,8 +772,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
             child: _selectedTiming == 'No Meal'
-                ? const SizedBox.shrink()
+                ? const SizedBox(width: double.infinity)
                 : Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
