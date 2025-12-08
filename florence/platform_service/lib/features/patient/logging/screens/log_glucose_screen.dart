@@ -177,9 +177,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
                       // Context selection
                       _buildContextSection(),
-                      const SizedBox(height: 20),
-
-                      // Notes (optional)
+                      
+                      // Notes (optional) - Padding/Spacing handled internally for animation
                       _buildNotesSection(),
                       const SizedBox(height: 32),
 
@@ -190,6 +189,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         isLoading: _isLoading,
                         width: double.infinity,
                       ),
+                      // Extra padding for bottom safe area / gesture bar
+                      SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
                     ],
                   ),
                 ),
@@ -389,7 +390,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Status indicator (Always visible, fixed size)
           SizedBox(
@@ -507,129 +508,132 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          _buildDateTimePicker(
-            label: 'Date',
-            value: Formatters.date(_selectedDateTime),
-            icon: Icons.calendar_today_outlined,
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _selectedDateTime,
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now(),
-              );
-              if (picked != null) {
-                setState(() {
-                  _selectedDateTime = DateTime(
-                    picked.year,
-                    picked.month,
-                    picked.day,
-                    _selectedDateTime.hour,
-                    _selectedDateTime.minute,
-                  );
-                });
-              }
-            },
-          ),
-          const SizedBox(height: 16),
-          _buildDateTimePicker(
-            label: 'Time',
-            value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
-            icon: Icons.access_time_outlined,
-            onTap: () async {
-              final picked = await showTimePicker(
-                context: context,
-                initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-                builder: (context, child) {
-                  return Theme(
-                    data: Theme.of(context).copyWith(
-                      // Override tertiary colors so AM/PM selector is Blue, not Red
-                      colorScheme: Theme.of(context).colorScheme.copyWith(
-                        tertiary: AppTheme.primaryBlue,
-                        onTertiary: Colors.white,
-                        tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
-                        onTertiaryContainer: AppTheme.primaryBlue,
-                      ),
-                      // Fix input field background to make cursor visible
-                      timePickerTheme: TimePickerThemeData(
-                        hourMinuteColor: MaterialStateColor.resolveWith((states) {
-                          return states.contains(MaterialState.selected)
-                              ? AppTheme.primaryBlue.withOpacity(0.1)
-                              : Colors.grey.shade100;
-                        }),
-                        hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
-                          return states.contains(MaterialState.selected)
-                              ? AppTheme.primaryBlue
-                              : AppTheme.textPrimaryColor;
-                        }),
-                      ),
-                      textSelectionTheme: TextSelectionThemeData(
-                        cursorColor: AppTheme.primaryBlue,
-                        selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
-                        selectionHandleColor: AppTheme.primaryBlue,
-                      ),
-                    ),
-                    child: child!,
-                  );
-                },
-              );
-              if (picked != null) {
-                setState(() {
-                  _selectedDateTime = DateTime(
-                    _selectedDateTime.year,
-                    _selectedDateTime.month,
-                    _selectedDateTime.day,
-                    picked.hour,
-                    picked.minute,
-                  );
-                });
-              }
-            },
+          
+          // Combined Date & Time Container
+          Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_selectedDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          _selectedDateTime.hour,
+                          _selectedDateTime.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            // Override tertiary colors so AM/PM selector is Blue, not Red
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                              tertiary: AppTheme.primaryBlue,
+                              onTertiary: Colors.white,
+                              tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
+                              onTertiaryContainer: AppTheme.primaryBlue,
+                            ),
+                            // Fix input field background to make cursor visible
+                            timePickerTheme: TimePickerThemeData(
+                              hourMinuteColor: MaterialStateColor.resolveWith((states) {
+                                return states.contains(MaterialState.selected)
+                                    ? AppTheme.primaryBlue.withOpacity(0.1)
+                                    : Colors.grey.shade100;
+                              }),
+                              hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
+                                return states.contains(MaterialState.selected)
+                                    ? AppTheme.primaryBlue
+                                    : AppTheme.textPrimaryColor;
+                              }),
+                            ),
+                            textSelectionTheme: TextSelectionThemeData(
+                              cursorColor: AppTheme.primaryBlue,
+                              selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
+                              selectionHandleColor: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDateTimePicker({
+  Widget _buildCompactPickerItem({
     required String label,
     required String value,
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          color: isDark
-              ? Colors.white.withOpacity(0.05)
-              : AppTheme.backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color:
-                isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
-          ),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
             Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
             const SizedBox(width: 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
                 children: [
                   Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    '$label:',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: AppTheme.textSecondaryColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w500,
                         ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(width: 8),
                   Text(
                     value,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -743,66 +747,73 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             }).toList(),
           ),
 
-          // 2. Meal Type Selection (Only if Before/After is selected)
-          if (_selectedTiming != 'No Meal') ...[
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 16),
-            Text(
-              'Select Meal',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: _mealTypeOptions.asMap().entries.map((entry) {
-                final index = entry.key;
-                final meal = entry.value;
-                final isSelected = meal == _selectedMealType;
-                final displayLabel = meal[0] + meal.substring(1).toLowerCase();
+          // 2. Meal Type Selection (Animated)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: _selectedTiming == 'No Meal' 
+              ? const SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 20),
+                    Text(
+                      'Select Meal',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: _mealTypeOptions.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final meal = entry.value;
+                        final isSelected = meal == _selectedMealType;
+                        final displayLabel = meal[0] + meal.substring(1).toLowerCase();
 
-                return Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.only(
-                      left: index == 0 ? 0 : 4,
-                      right: index == _mealTypeOptions.length - 1 ? 0 : 4,
-                    ),
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedMealType = meal),
-                      borderRadius: BorderRadius.circular(12),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.primaryBlue
-                              : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
-                            width: 1,
+                        return Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                              left: index == 0 ? 0 : 4,
+                              right: index == _mealTypeOptions.length - 1 ? 0 : 4,
+                            ),
+                            child: InkWell(
+                              onTap: () => setState(() => _selectedMealType = meal),
+                              borderRadius: BorderRadius.circular(12),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppTheme.primaryBlue
+                                      : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
+                                    width: 1,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  displayLabel,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 12,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          displayLabel,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 12,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                        );
+                      }).toList(),
                     ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+                  ],
+                ),
+          ),
         ],
       ),
     );
@@ -810,64 +821,80 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   /// Build notes section
   Widget _buildNotesSection() {
-    // Only show notes if "After Meal" is selected
-    if (_selectedTiming != 'After Meal') return const SizedBox.shrink();
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+    final inputFillColor = isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: _selectedTiming != 'After Meal'
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.only(top: 20), // Add spacing here instead of parent
+              child: Container(
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.menu_book,
-                  size: 24,
-                  color: titleIconColor,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Meal Details',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                  color: containerColor,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: titleIconColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.menu_book,
+                            size: 24,
+                            color: titleIconColor,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Meal Details',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    Container(
+                      decoration: BoxDecoration(
+                        color: inputFillColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppTheme.borderColor),
+                      ),
+                      child: CustomTextField(
+                        controller: _notesController,
+                        hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
+                        maxLines: 3,
+                        textInputAction: TextInputAction.done,
+                        // CustomTextField usually has a border, ensure it blends
+                        enabled: true, 
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          
-          CustomTextField(
-            controller: _notesController,
-            hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
-            maxLines: 3,
-            textInputAction: TextInputAction.done,
-          ),
-        ],
-      ),
+            ),
     );
   }
 
