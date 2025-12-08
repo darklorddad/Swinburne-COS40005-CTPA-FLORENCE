@@ -719,6 +719,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderColor),
             ),
             clipBehavior: Clip.antiAlias,
             child: Row(
@@ -730,37 +731,36 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 final isLast = index == _timingOptions.length - 1;
                 
                 final nextIsSelected = !isLast && _timingOptions[index + 1] == _selectedTiming;
-                
-                final itemBorderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
-                final rightBorderColor = (isSelected || nextIsSelected) ? AppTheme.primaryBlue : AppTheme.borderColor;
 
-                BorderRadius itemRadius;
-                if (isFirst) {
-                  itemRadius = const BorderRadius.horizontal(left: Radius.circular(12));
-                } else if (isLast) {
-                  itemRadius = const BorderRadius.horizontal(right: Radius.circular(12));
+                // Logic for border and radius to avoid non-uniform border radius crash
+                BoxDecoration decoration;
+                if (isSelected) {
+                  // Selected: Uniform Border + Radius (Safe)
+                  BorderRadius itemRadius = BorderRadius.zero;
+                  if (isFirst) itemRadius = const BorderRadius.horizontal(left: Radius.circular(12));
+                  if (isLast) itemRadius = const BorderRadius.horizontal(right: Radius.circular(12));
+                  
+                  decoration = BoxDecoration(
+                    color: AppTheme.primaryBlue,
+                    borderRadius: itemRadius,
+                    border: Border.all(color: AppTheme.primaryBlue),
+                  );
                 } else {
-                  itemRadius = BorderRadius.zero;
+                  // Unselected: Right Divider Only + NO Radius (Safe)
+                  final showDivider = !isLast && !nextIsSelected;
+                  decoration = BoxDecoration(
+                    border: showDivider 
+                        ? Border(right: BorderSide(color: AppTheme.borderColor)) 
+                        : null,
+                  );
                 }
 
                 return Expanded(
                   child: InkWell(
                     onTap: () => setState(() => _selectedTiming = option),
-                    borderRadius: itemRadius,
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.primaryBlue : null,
-                        borderRadius: itemRadius,
-                        border: Border(
-                          top: BorderSide(color: itemBorderColor),
-                          bottom: BorderSide(color: itemBorderColor),
-                          left: isFirst ? BorderSide(color: itemBorderColor) : BorderSide.none,
-                          right: isLast 
-                              ? BorderSide(color: itemBorderColor)
-                              : BorderSide(color: rightBorderColor),
-                        ),
-                      ),
+                      decoration: decoration,
                       alignment: Alignment.center,
                       child: Text(
                         option,
@@ -803,6 +803,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         decoration: BoxDecoration(
                           color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.borderColor),
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: Row(
@@ -815,36 +816,33 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             
                             final nextIsSelected = !isLast && _mealTypeOptions[index + 1]['value'] == _selectedMealType;
                             
-                            final itemBorderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
-                            final rightBorderColor = (isSelected || nextIsSelected) ? AppTheme.primaryBlue : AppTheme.borderColor;
-
-                            BorderRadius itemRadius;
-                            if (isFirst) {
-                              itemRadius = const BorderRadius.horizontal(left: Radius.circular(12));
-                            } else if (isLast) {
-                              itemRadius = const BorderRadius.horizontal(right: Radius.circular(12));
+                            // Logic for border and radius
+                            BoxDecoration decoration;
+                            if (isSelected) {
+                              BorderRadius itemRadius = BorderRadius.zero;
+                              if (isFirst) itemRadius = const BorderRadius.horizontal(left: Radius.circular(12));
+                              if (isLast) itemRadius = const BorderRadius.horizontal(right: Radius.circular(12));
+                              
+                              decoration = BoxDecoration(
+                                color: AppTheme.primaryBlue,
+                                borderRadius: itemRadius,
+                                border: Border.all(color: AppTheme.primaryBlue),
+                              );
                             } else {
-                              itemRadius = BorderRadius.zero;
+                              final showDivider = !isLast && !nextIsSelected;
+                              decoration = BoxDecoration(
+                                border: showDivider 
+                                    ? Border(right: BorderSide(color: AppTheme.borderColor)) 
+                                    : null,
+                              );
                             }
 
                             return Expanded(
                               child: InkWell(
                                 onTap: () => setState(() => _selectedMealType = option['value']),
-                                borderRadius: itemRadius,
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(vertical: 16),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? AppTheme.primaryBlue : null,
-                                    borderRadius: itemRadius,
-                                    border: Border(
-                                      top: BorderSide(color: itemBorderColor),
-                                      bottom: BorderSide(color: itemBorderColor),
-                                      left: isFirst ? BorderSide(color: itemBorderColor) : BorderSide.none,
-                                      right: isLast 
-                                          ? BorderSide(color: itemBorderColor)
-                                          : BorderSide(color: rightBorderColor),
-                                    ),
-                                  ),
+                                  decoration: decoration,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
