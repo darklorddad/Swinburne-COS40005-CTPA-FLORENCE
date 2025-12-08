@@ -517,7 +517,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 initialDate: _selectedDateTime,
                 firstDate: DateTime(2000),
                 lastDate: DateTime.now(),
-                initialEntryMode: DatePickerEntryMode.calendar,
               );
               if (picked != null) {
                 setState(() {
@@ -541,7 +540,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               final picked = await showTimePicker(
                 context: context,
                 initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-                initialEntryMode: TimePickerEntryMode.dial,
               );
               if (picked != null) {
                 setState(() {
