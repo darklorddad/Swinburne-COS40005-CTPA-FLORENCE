@@ -720,24 +720,19 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            foregroundDecoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.borderColor),
-            ),
             clipBehavior: Clip.antiAlias,
             child: Row(
               children: _timingOptions.asMap().entries.map((entry) {
                 final index = entry.key;
                 final option = entry.value;
                 final isSelected = _selectedTiming == option;
+                final isFirst = index == 0;
                 final isLast = index == _timingOptions.length - 1;
-
-                // Determine if we need a right border (divider)
-                final nextSelected = !isLast && _timingOptions[index + 1] == _selectedTiming;
-                final showDivider = !isLast && !isSelected && !nextSelected;
-
-                // Always reserve space for the border to prevent layout shift
-                final borderColor = showDivider ? AppTheme.borderColor : Colors.transparent;
+                
+                final nextIsSelected = !isLast && _timingOptions[index + 1] == _selectedTiming;
+                
+                final itemBorderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
+                final rightBorderColor = (isSelected || nextIsSelected) ? AppTheme.primaryBlue : AppTheme.borderColor;
 
                 return Expanded(
                   child: InkWell(
@@ -747,10 +742,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       decoration: BoxDecoration(
                         color: isSelected ? AppTheme.primaryBlue : null,
                         border: Border(
-                          right: BorderSide(
-                            color: isLast ? Colors.transparent : borderColor,
-                            width: 1,
-                          ),
+                          top: BorderSide(color: itemBorderColor),
+                          bottom: BorderSide(color: itemBorderColor),
+                          left: isFirst ? BorderSide(color: itemBorderColor) : BorderSide.none,
+                          right: isLast 
+                              ? BorderSide(color: itemBorderColor)
+                              : BorderSide(color: rightBorderColor),
                         ),
                       ),
                       alignment: Alignment.center,
