@@ -793,22 +793,19 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        foregroundDecoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.borderColor),
-                        ),
                         clipBehavior: Clip.antiAlias,
                         child: Row(
                           children: _mealTypeOptions.asMap().entries.map((entry) {
                             final index = entry.key;
                             final option = entry.value;
                             final isSelected = _selectedMealType == option['value'];
+                            final isFirst = index == 0;
                             final isLast = index == _mealTypeOptions.length - 1;
                             
-                            // Determine if we need a right border (divider)
-                            // Show divider if: Not last AND Not Selected AND Next is Not Selected
-                            final nextSelected = !isLast && _mealTypeOptions[index + 1]['value'] == _selectedMealType;
-                            final showDivider = !isLast && !isSelected && !nextSelected;
+                            final nextIsSelected = !isLast && _mealTypeOptions[index + 1]['value'] == _selectedMealType;
+                            
+                            final itemBorderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
+                            final rightBorderColor = (isSelected || nextIsSelected) ? AppTheme.primaryBlue : AppTheme.borderColor;
 
                             return Expanded(
                               child: InkWell(
@@ -818,10 +815,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                   decoration: BoxDecoration(
                                     color: isSelected ? AppTheme.primaryBlue : null,
                                     border: Border(
-                                      right: BorderSide(
-                                        color: showDivider ? AppTheme.borderColor : Colors.transparent,
-                                        width: 1,
-                                      ),
+                                      top: BorderSide(color: itemBorderColor),
+                                      bottom: BorderSide(color: itemBorderColor),
+                                      left: isFirst ? BorderSide(color: itemBorderColor) : BorderSide.none,
+                                      right: isLast 
+                                          ? BorderSide(color: itemBorderColor)
+                                          : BorderSide(color: rightBorderColor),
                                     ),
                                   ),
                                   child: Column(
