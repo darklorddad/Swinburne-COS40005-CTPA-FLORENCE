@@ -5,15 +5,19 @@ from typing import Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Florence LLM Engine"
-    APP_ENV: str = "development" # development, preview, production
+    APP_ENV: str = "development"
     
-    # --- Integration Configuration ---
+    # --- Integration Config ---
+    # Default to local, override in Vercel for Prod/Preview
     DATA_SERVICE_URL: str = "http://localhost:8000"
 
-    # --- LLM Configuration ---
-    # Vercel will inject these in Prod/Preview. Local uses .env
+    # --- LLM Config ---
+    # Required: API Key & URL
     LLM_API_KEY: str
     LLM_BASE_URL: str = "https://openrouter.ai/api/v1"
+    
+    # Optional: If not set in ENV, these remain None
+    # This allows the Provider (OpenRouter) to decide the defaults
     LLM_MODEL: str = "google/gemini-2.0-flash-lite-preview-02-05:free"
     LLM_TEMPERATURE: Optional[float] = None
     LLM_MAX_TOKENS: Optional[int] = None

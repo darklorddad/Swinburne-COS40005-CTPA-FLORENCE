@@ -1,8 +1,7 @@
-fastapi==0.115.6
-uvicorn[standard]==0.34.0
-pydantic==2.10.6
-pydantic-settings==2.7.0
-langchain-core==0.3.21
-langchain-openai==0.2.10
-httpx==0.28.1
-python-multipart==0.0.12
+fastapi
+uvicorn[standard]
+pydantic-settings
+langchain-core
+langchain-openai
+httpx
+python-multipart

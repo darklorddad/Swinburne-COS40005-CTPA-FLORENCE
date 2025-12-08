@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict
 
 class FoodAnalysisRequest(BaseModel):
     image_url: str
@@ -7,4 +7,4 @@ class FoodAnalysisRequest(BaseModel):
 class FoodAnalysisResponse(BaseModel):
     calories: Optional[int]
     description: str
-    macronutrients: Optional[dict] = None
+    macronutrients: Optional[Dict[str, str]] = None

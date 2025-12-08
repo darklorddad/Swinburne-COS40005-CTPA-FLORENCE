@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 
-# --- Feature Imports ---
-# As you add features (Chat, Risk, etc.), import their routers here
+# Import Feature Routers
 from features.nutrition.router import router as nutrition_router
 
 app = FastAPI(
@@ -12,7 +11,6 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS - Allow everything for simplicity in this setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,9 +19,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- Register Routes ---
-# This structure keeps main.py clean. 
-# It just aggregates modules.
+# Register Features
 app.include_router(nutrition_router, prefix="/nutrition", tags=["Nutrition"])
 
 @app.get("/")

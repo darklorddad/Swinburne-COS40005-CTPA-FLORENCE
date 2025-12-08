@@ -5,14 +5,15 @@ from .models import FoodAnalysisResponse
 
 class NutritionService:
     def __init__(self):
-        # We explicitly request 0.1 here because we need deterministic JSON output.
-        # This overrides the "Provider Default" just for this specific feature.
-        self.llm = LLMFactory.create(temperature=0.1)
+        # No arguments passed. Uses Provider Defaults for everything.
+        self.llm = LLMFactory.create()
 
     async def analyze_food_image(self, image_url: str) -> FoodAnalysisResponse:
+        # We rely on the System Prompt to guide the LLM's behavior
+        # instead of forcing a low temperature setting.
         system_prompt = """You are a nutrition expert AI. 
         Analyze the food image provided.
-        Return ONLY a raw JSON object (no markdown, no backticks).
+        Return ONLY a raw JSON object. Do not use markdown code blocks.
         
         Schema:
         {
