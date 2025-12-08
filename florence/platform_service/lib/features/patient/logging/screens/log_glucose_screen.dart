@@ -428,7 +428,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     height: 32, // Fixed height
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: displayColor.withOpacity(0.1),
+                      color: glucoseColor == null
+                          ? (isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : AppTheme.backgroundColor)
+                          : displayColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: displayColor.withOpacity(0.3),
