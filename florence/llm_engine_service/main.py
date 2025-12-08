@@ -28,7 +28,8 @@ def root():
     return {
         "service": settings.PROJECT_NAME, 
         "version": settings.APP_VERSION,
-        "status": "operational"
+        "status": "operational",
+        "documentation": "/docs"
     }
 
 if __name__ == "__main__":
