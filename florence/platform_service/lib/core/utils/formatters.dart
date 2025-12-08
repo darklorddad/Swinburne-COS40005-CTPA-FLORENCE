@@ -40,19 +40,23 @@ class Formatters {
   
   /// Format: Today, Yesterday, or date
   static String relativeDate(DateTime dateTime) {
+    // Ensure we work with local time for day comparison
+    final localDateTime = dateTime.toLocal();
+    
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final yesterday = today.subtract(const Duration(days: 1));
-    final dateOnly = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    // Use components from the local time
+    final dateOnly = DateTime(localDateTime.year, localDateTime.month, localDateTime.day);
     
     if (dateOnly == today) {
       return 'Today';
     } else if (dateOnly == yesterday) {
       return 'Yesterday';
     } else if (dateOnly.isAfter(today.subtract(const Duration(days: 7)))) {
-      return DateFormat('EEEE').format(dateTime); // Monday, Tuesday, etc.
+      return DateFormat('EEEE').format(localDateTime); // Monday, Tuesday, etc.
     } else {
-      return date(dateTime);
+      return date(localDateTime);
     }
   }
   

@@ -84,6 +84,7 @@ class BiometricsSection extends StatelessWidget {
             mobileColumns: 1,
             tabletColumns: 2,
             desktopColumns: 3,
+            spacing: 12.0,
           ),
         ],
       ),

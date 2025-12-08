@@ -56,51 +56,77 @@ class ActivityDetailScreen extends ConsumerWidget {
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // 1. Daily Volume
-                          _DailyVolumeCard(
-                    logs: sortedLogs, 
-                    dataColor: dataColor
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 2. Streak Heatmap
-                  _StreakHeatmap(
-                    logs: sortedLogs,
-                    dataColor: dataColor,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 3. Weekly Consistency
-                  _WeeklyConsistencyChart(
-                    logs: sortedLogs, 
-                    dataColor: dataColor
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 4. Activity Timing (Last 28 Days)
-                  _ActivityTimingChart(
-                    logs: sortedLogs, 
-                    dataColor: dataColor
-                  ),
-                  const SizedBox(height: 20),
-
-                          // 5. History List (Consistent Design)
-                          _ActivityHistoryList(
-                            logs: sortedLogs,
-                            glucoseReadings: glucoseReadings,
-                            dataColor: dataColor,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _DailyVolumeCard(
+                                          logs: sortedLogs,
+                                          dataColor: dataColor),
+                                      const SizedBox(height: 20),
+                                      _StreakHeatmap(
+                                        logs: sortedLogs,
+                                        dataColor: dataColor,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _WeeklyConsistencyChart(
+                                          logs: sortedLogs,
+                                          dataColor: dataColor),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _ActivityTimingChart(
+                                          logs: sortedLogs,
+                                          dataColor: dataColor),
+                                      const SizedBox(height: 20),
+                                      _ActivityHistoryList(
+                                        logs: sortedLogs,
+                                        glucoseReadings: glucoseReadings,
+                                        dataColor: dataColor,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _DailyVolumeCard(
+                                    logs: sortedLogs, dataColor: dataColor),
+                                const SizedBox(height: 20),
+                                _StreakHeatmap(
+                                  logs: sortedLogs,
+                                  dataColor: dataColor,
+                                ),
+                                const SizedBox(height: 20),
+                                _WeeklyConsistencyChart(
+                                    logs: sortedLogs, dataColor: dataColor),
+                                const SizedBox(height: 20),
+                                _ActivityTimingChart(
+                                    logs: sortedLogs, dataColor: dataColor),
+                                const SizedBox(height: 20),
+                                _ActivityHistoryList(
+                                  logs: sortedLogs,
+                                  glucoseReadings: glucoseReadings,
+                                  dataColor: dataColor,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );

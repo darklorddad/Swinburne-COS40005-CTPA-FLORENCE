@@ -35,6 +35,13 @@ class Environment {
     defaultValue: 'https://dev-llmcs-florence-dhp.vercel.app',
   );
 
+  /// LLM Engine Service URL
+  /// Defaults to DEV. Override in CI with --dart-define=LLM_ENGINE_SERVICE_URL=https://prod...
+  static const String llmEngineServiceUrl = String.fromEnvironment(
+    'LLM_ENGINE_SERVICE_URL',
+    defaultValue: 'https://dev-llmes-florence-dhp.vercel.app',
+  );
+
   // ==================== SUPABASE CONFIGURATION ====================
   
   // IMPORTANT: Replace these with your actual Supabase project URL and Anon Key

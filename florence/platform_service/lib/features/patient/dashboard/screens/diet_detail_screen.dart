@@ -52,31 +52,50 @@ class DietAnalyticsScreen extends ConsumerWidget {
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // 1. Statistics
-                          _DietStatsSection(logs: sortedLogs),
-                  const SizedBox(height: 20),
-
-                  // 2. Traffic Light Calendar (New Section)
-                  _TrafficLightCalendar(logs: sortedLogs),
-                  const SizedBox(height: 20),
-
-                  // 3. Impact Chart
-                  _DietImpactChart(logs: sortedLogs),
-                  const SizedBox(height: 20),
-
-                          // 4. History List
-                          _DietHistoryList(logs: sortedLogs),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _DietStatsSection(logs: sortedLogs),
+                                      const SizedBox(height: 20),
+                                      _TrafficLightCalendar(logs: sortedLogs),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _DietImpactChart(logs: sortedLogs),
+                                      const SizedBox(height: 20),
+                                      _DietHistoryList(logs: sortedLogs),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _DietStatsSection(logs: sortedLogs),
+                                const SizedBox(height: 20),
+                                _TrafficLightCalendar(logs: sortedLogs),
+                                const SizedBox(height: 20),
+                                _DietImpactChart(logs: sortedLogs),
+                                const SizedBox(height: 20),
+                                _DietHistoryList(logs: sortedLogs),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );

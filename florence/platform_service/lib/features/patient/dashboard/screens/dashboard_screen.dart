@@ -15,6 +15,16 @@ import '../widgets/ai_insight_card.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
 
+// Model for Quick Actions to ensure consistency between Grid and Modal
+class _QuickActionItem {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final String route;
+
+  const _QuickActionItem(this.label, this.icon, this.color, this.route);
+}
+
 /// Home Dashboard Screen
 /// Main hub showing health summary, quick actions, and insights
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -67,7 +77,25 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Show quick log modal
   void _showQuickLogModal() {
-    Helpers.showBottomSheet(context, child: _QuickLogModal());
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _QuickLogModal(actions: _getQuickActions()),
+    );
+  }
+
+  List<_QuickActionItem> _getQuickActions() {
+    return [
+      const _QuickActionItem('Glucose', Icons.water_drop_rounded, Color(0xFFEF5350), AppRoutes.logGlucose), // Red
+      const _QuickActionItem('B.Pressure', Icons.monitor_heart_outlined, Color(0xFFF50057), AppRoutes.logBloodPressure), // Magenta
+      const _QuickActionItem('Diet', Icons.restaurant_outlined, Color(0xFFFFA726), AppRoutes.logMeal), // Orange
+      const _QuickActionItem('Activity', Icons.directions_run_rounded, Color(0xFF66BB6A), AppRoutes.logActivity), // Green
+      const _QuickActionItem('Meds', Icons.medication_outlined, Color(0xFF42A5F5), AppRoutes.logMedication), // Blue
+      const _QuickActionItem('BMI', Icons.monitor_weight_outlined, Color(0xFF26A69A), AppRoutes.logBmi), // Teal
+      const _QuickActionItem('Cholesterol', Icons.bloodtype_outlined, Color(0xFFAB47BC), AppRoutes.logCholesterol), // Purple
+      const _QuickActionItem('HbA1c', Icons.pie_chart_outline, Color(0xFFFFCA28), AppRoutes.logHba1c), // Amber
+    ];
   }
 
   @override
@@ -131,31 +159,31 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       // Desktop: Row (Side-by-Side), Mobile: Column (Stacked)
                       if (context.isDesktop)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: AIInsightCard(
-                                insight:
-                                    'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
-                                onTap: () => AppRoutes.push(
-                                    context, AppRoutes.recommendations),
+                        IntrinsicHeight(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Expanded(
+                                child: AIInsightCard(
+                                  insight:
+                                      'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
+                                  onTap: () => AppRoutes.push(
+                                      context, AppRoutes.recommendations),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: spacing),
-                            Expanded(
-                              child: QuickActionsGrid(
-                                onLogGlucose: () => AppRoutes.push(
-                                    context, AppRoutes.logGlucose),
-                                onLogBloodPressure: () => AppRoutes.push(
-                                    context, AppRoutes.logBloodPressure),
-                                onLogMeal: () => AppRoutes.push(
-                                    context, AppRoutes.logMeal),
-                                onLogActivity: () => AppRoutes.push(
-                                    context, AppRoutes.logActivity),
+                              const SizedBox(width: spacing),
+                              Expanded(
+                                child: QuickActionsGrid(
+                                  actions: _getQuickActions().map((a) => (
+                                    label: a.label,
+                                    icon: a.icon,
+                                    color: a.color,
+                                    onTap: () => AppRoutes.push(context, a.route)
+                                  )).toList(),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         )
                       else ...[
                         AIInsightCard(
@@ -166,14 +194,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         const SizedBox(height: spacing),
                         QuickActionsGrid(
-                          onLogGlucose: () => AppRoutes.push(
-                              context, AppRoutes.logGlucose),
-                          onLogBloodPressure: () => AppRoutes.push(
-                              context, AppRoutes.logBloodPressure),
-                          onLogMeal: () =>
-                              AppRoutes.push(context, AppRoutes.logMeal),
-                          onLogActivity: () =>
-                              AppRoutes.push(context, AppRoutes.logActivity),
+                          actions: _getQuickActions().map((a) => (
+                            label: a.label,
+                            icon: a.icon,
+                            color: a.color,
+                            onTap: () => AppRoutes.push(context, a.route)
+                          )).toList(),
                         ),
                       ],
                       const SizedBox(height: spacing),
@@ -226,10 +252,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           onPressed: () => AppRoutes.push(context, AppRoutes.chat),
           tooltip: 'AI Health Assistant',
         ),
-        IconButton(
-          icon: const Icon(Icons.person_outline),
-          onPressed: () => AppRoutes.push(context, AppRoutes.profile),
-          tooltip: 'Profile',
+        Padding(
+          padding: const EdgeInsets.only(right: 4.5),
+          child: IconButton(
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => AppRoutes.push(context, AppRoutes.profile),
+            tooltip: 'Profile',
+          ),
         ),
       ],
       elevation: 0,
@@ -268,21 +297,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
 /// Quick log modal
 class _QuickLogModal extends StatelessWidget {
+  final List<_QuickActionItem> actions;
+
+  const _QuickLogModal({required this.actions});
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: MainAxisSize.min, // Prevents taking full height
             children: [
-              // Handle bar
+              // Handle
               Container(
                 width: 40,
                 height: 4,
@@ -295,125 +327,96 @@ class _QuickLogModal extends StatelessWidget {
 
               // Title
               Text(
-                'Quick Log',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                'Log Health Data',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const SizedBox(height: 24),
 
-              // Action buttons
-              GridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 3,
-                mainAxisSpacing: 16,
-                crossAxisSpacing: 16,
-                childAspectRatio: 0.9,
-                physics: const NeverScrollableScrollPhysics(),
-                children: [
-                  _QuickLogButton(
-                    icon: Icons.water_drop,
-                    label: 'Glucose',
-                    color: AppTheme.primaryRed,
+              // Actions Grid
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                alignment: WrapAlignment.center,
+                children: actions.map((action) {
+                  return _ModalActionButton(
+                    action: action,
                     onTap: () {
                       Navigator.pop(context);
-                      AppRoutes.push(context, AppRoutes.logGlucose);
+                      AppRoutes.push(context, action.route);
                     },
-                  ),
-              _QuickLogButton(
-                icon: Icons.bloodtype_outlined,
-                label: 'Cholesterol',
-                color: AppTheme.mealColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logCholesterol);
-                },
+                  );
+                }).toList(),
               ),
-              _QuickLogButton(
-                icon: Icons.percent,
-                label: 'HbA1c',
-                color: Colors.deepOrange, 
-                onTap: () {
-                  Navigator.pop(context);
-                  // Make sure to add this route to your AppRoutes class
-                  AppRoutes.push(context, AppRoutes.logHba1c); 
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.monitor_heart,
-                label: 'Blood Pressure',
-                color: AppTheme.primaryRed,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logBloodPressure);
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.height,
-                label: 'BMI',
-                color: AppTheme.primaryGreen,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logBmi);
-                },
-              ),
-              _QuickLogButton(
-                icon: Icons.directions_run,
-                label: 'Activity',
-                color: AppTheme.activityColor,
-                onTap: () {
-                  Navigator.pop(context);
-                  AppRoutes.push(context, AppRoutes.logActivity);
-                },
-              ),
+              const SizedBox(height: 8),
             ],
           ),
-          const SizedBox(height: 16),
-        ],
-      ),
-      ),
+        ),
       ),
     );
   }
 }
 
-/// Quick log button widget
-class _QuickLogButton extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
+class _ModalActionButton extends StatelessWidget {
+  final _QuickActionItem action;
   final VoidCallback onTap;
 
-  const _QuickLogButton({
-    required this.icon,
-    required this.label,
-    required this.color,
+  const _ModalActionButton({
+    required this.action,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final width = (MediaQuery.of(context).size.width - 48 - 48) / 4; // Approx 4 items per row minus spacing
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
+        width: width.clamp(70.0, 100.0), // Min 70, Max 100
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: action.color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3), width: 2),
+          border: Border.all(
+            color: action.color.withOpacity(0.2),
+            width: 1,
+          ),
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 36, color: color),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: action.color.withOpacity(0.2),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                action.icon,
+                color: action.color,
+                size: 24,
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
-              label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
-                  ),
+              action.label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

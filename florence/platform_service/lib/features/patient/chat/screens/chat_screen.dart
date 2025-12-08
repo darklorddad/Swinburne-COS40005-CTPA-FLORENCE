@@ -204,32 +204,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: Column(
-            children: [
-              // Suggested questions (only show if history is empty and not loading)
-              if (!showLoading && messages.isEmpty) 
-                _buildSuggestedQuestions(),
-              
-              // Chat messages area
-              Expanded(
-                child: showLoading
-                    ? _buildLoadingState(loadingText)
-                    : messages.isEmpty
-                        ? _buildEmptyState()
-                        : _buildMessagesList(messages),
-              ),
-              
-              // Typing indicator
-              if (isTyping && !showLoading) _buildTypingIndicator(),
-              
-              // Input area
-              _buildInputArea(isEnabled: !showLoading),
-            ],
+      body: Column(
+        children: [
+          // Suggested questions (only show if history is empty and not loading)
+          if (!showLoading && messages.isEmpty) 
+            _buildSuggestedQuestions(),
+          
+          // Chat messages area
+          Expanded(
+            child: showLoading
+                ? _buildLoadingState(loadingText)
+                : messages.isEmpty
+                    ? _buildEmptyState()
+                    : _buildMessagesList(messages),
           ),
-        ),
+          
+          // Typing indicator
+          if (isTyping && !showLoading) _buildTypingIndicator(),
+          
+          // Input area
+          _buildInputArea(isEnabled: !showLoading),
+        ],
       ),
     );
   }
@@ -350,14 +345,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   
   /// Build single message bubble
   Widget _buildMessageBubble(ChatMessage message) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        constraints: BoxConstraints(
-          maxWidth: math.min(MediaQuery.of(context).size.width * 0.75, 600),
-        ),
-        child: Column(
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 900),
+        child: Align(
+          alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            constraints: BoxConstraints(
+              maxWidth: math.min(MediaQuery.of(context).size.width * 0.75, 600),
+            ),
+            child: Column(
           crossAxisAlignment: message.isUser
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
@@ -414,6 +412,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ],
         ),
+      ),
+      ),
       ),
     );
   }
@@ -484,14 +484,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ),
       ),
       child: SafeArea(
-        child: Opacity(
-          opacity: isEnabled ? 1.0 : 0.5,
-          child: AbsorbPointer(
-            absorbing: !isEnabled,
-            child: Row(
-              children: [
-                // Text input
-                Expanded(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 900),
+            child: Opacity(
+              opacity: isEnabled ? 1.0 : 0.5,
+              child: AbsorbPointer(
+                absorbing: !isEnabled,
+                child: Row(
+                  children: [
+                    // Text input
+                    Expanded(
                   child: Container(
                     decoration: BoxDecoration(
                       color: AppTheme.backgroundColor,
@@ -552,6 +555,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
         ),
+        ),
+      ),
       ),
     );
   }

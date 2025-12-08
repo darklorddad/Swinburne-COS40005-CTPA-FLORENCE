@@ -1,109 +1,99 @@
-name: Build and Distribute (Shorebird)
+name: Production Distribution (Smart)
 
 on:
   push:
     branches:
-      - production
+      - production  # <--- ONLY runs on Production
   workflow_dispatch:
 
 jobs:
   build_and_distribute:
     runs-on: ubuntu-latest
-    
     defaults:
       run:
         working-directory: ./florence/platform_service
 
     steps:
-      # 1. Download Code
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required to check for changes against previous commits
+          fetch-depth: 0 # Required to compare versions
 
-      # 2. Get Version from pubspec.yaml
-      - name: Get Version
-        id: version
-        run: echo "version=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')" >> $GITHUB_OUTPUT
-
-      # 3. Detect if Version Changed (The "Decision Maker")
-      # This checks if pubspec.yaml changed compared to the previous commit
-      - name: Check for Version Bump
-        id: check_bump
+      # ----------------------------------------------------------------
+      # INTELLIGENT DECISION MAKER
+      # ----------------------------------------------------------------
+      - name: Detect Release vs Patch
+        id: decision
         run: |
-          # Check if pubspec.yaml was modified in the last commit
-          if git diff --name-only HEAD^ HEAD | grep -q "pubspec.yaml"; then
-            echo "is_new_release=true" >> $GITHUB_OUTPUT
-            echo "Status: New Release detected."
+          # 1. Get current version
+          CURRENT_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version:[ ]*//')
+          
+          # 2. Get previous version (handle first commit case)
+          PREV_VERSION=$(git show HEAD^:florence/platform_service/pubspec.yaml 2>/dev/null | grep '^version:' | sed 's/version:[ ]*//' || echo "0.0.0")
+
+          echo "Previous: $PREV_VERSION"
+          echo "Current:  $CURRENT_VERSION"
+
+          # 3. Compare
+          if [ "$CURRENT_VERSION" != "$PREV_VERSION" ]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "Status: 🚀 Version Change Detected. Mode: FULL RELEASE"
           else
-            echo "is_new_release=false" >> $GITHUB_OUTPUT
-            echo "Status: Patch detected."
+            echo "is_release=false" >> $GITHUB_OUTPUT
+            echo "Status: 🩹 No Version Change. Mode: PATCH"
           fi
 
-      # 4. Setup Java
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 5. Setup Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
 
-      # 6. Setup Shorebird (NEW)
       - name: Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
         with:
           cache: true
 
-      # 7. Install Dependencies
       - name: Install Dependencies
         run: flutter pub get
 
-      # ------------------------------------------------------------------
-      # SCENARIO A: NEW RELEASE (Version changed in pubspec.yaml)
-      # This runs when you intend to push a new APK to Firebase.
-      # ------------------------------------------------------------------
-      
+      # ==================================================================
+      # SCENARIO A: FULL RELEASE (Version Changed)
+      # ==================================================================
       - name: Shorebird Release (Build APK)
-        if: steps.check_bump.outputs.is_new_release == 'true'
+        if: steps.decision.outputs.is_release == 'true'
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
-        # We use shorebird release instead of flutter build
-        # This generates the APK and registers it with Shorebird cloud
         run: |
           shorebird release android --artifact=apk \
             --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
-            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
+            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app \
+            --dart-define=LLM_ENGINE_SERVICE_URL=https://llmes-florence-dhp.vercel.app
 
-      - name: Upload to Firebase App Distribution
-        if: steps.check_bump.outputs.is_new_release == 'true'
+      - name: Upload to Firebase
+        if: steps.decision.outputs.is_release == 'true'
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFileContent: ${{ secrets.CREDENTIAL_FILE_CONTENT }}
           groups: testers
-          # Shorebird outputs the APK in the standard flutter location
           file: florence/platform_service/build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: "Full Release: Version ${{ steps.version.outputs.version }} (Build ${{ github.run_number }})"
+          releaseNotes: "Full Release ${{ steps.decision.outputs.version }} - Please Reinstall"
 
-      # ------------------------------------------------------------------
-      # SCENARIO B: PATCH (Version did NOT change)
-      # This runs for small code changes.
-      # SAFETY NET: If you changed Native Code/Assets but didn't bump version, 
-      # this step will FAIL and stop the pipeline.
-      # ------------------------------------------------------------------
-
-      - name: Shorebird Patch
-        if: steps.check_bump.outputs.is_new_release == 'false'
+      # ==================================================================
+      # SCENARIO B: PATCH (Version SAME)
+      # ==================================================================
+      - name: Shorebird Patch (Live)
+        if: steps.decision.outputs.is_release == 'false'
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
-        # --allow-native-changes is purposefully OMITTED. 
-        # If native changes are found, this command exits with Error 1.
         run: |
           shorebird patch android \
             --dart-define=DATA_SERVICE_URL=https://ds-florence-dhp.vercel.app \
-            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app
+            --dart-define=LLM_CHATBOT_SERVICE_URL=https://llmcs-florence-dhp.vercel.app \
+            --dart-define=LLM_ENGINE_SERVICE_URL=https://llmes-florence-dhp.vercel.app

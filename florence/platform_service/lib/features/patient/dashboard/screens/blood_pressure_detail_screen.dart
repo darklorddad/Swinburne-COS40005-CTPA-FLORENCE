@@ -64,52 +64,88 @@ class BloodPressureDetailScreen extends ConsumerWidget {
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
-                      child: Column(
-                        children: [
-                          // 1. Statistics
-                          _StatisticsSection(
-                  readings: readings, 
-                  sysThreshold: sysThreshold, 
-                  diaThreshold: diaThreshold,
-                  isDefault: isDefault,
-                ),
-                const SizedBox(height: 20),
-
-                // 2. Dual Trend Chart
-                _DualTrendSection(
-                  readings: readings,
-                  sysThreshold: sysThreshold,
-                  diaThreshold: diaThreshold,
-                ),
-                const SizedBox(height: 20),
-
-                // 3. Floating Bar (Pulse Pressure / Daily Range)
-                _FloatingBarSection(readings: readings),
-                const SizedBox(height: 20),
-
-                // 4. Scatter Plot
-                _ScatterSection(
-                  readings: readings,
-                  sysThreshold: sysThreshold,
-                  diaThreshold: diaThreshold,
-                ),
-                const SizedBox(height: 20),
-
-                          // 5. History List
-                          _HistorySection(
-                            readings: readings,
-                            sysThreshold: sysThreshold,
-                            diaThreshold: diaThreshold,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _StatisticsSection(
+                                        readings: readings,
+                                        sysThreshold: sysThreshold,
+                                        diaThreshold: diaThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _DualTrendSection(
+                                        readings: readings,
+                                        sysThreshold: sysThreshold,
+                                        diaThreshold: diaThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _FloatingBarSection(readings: readings),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _ScatterSection(
+                                        readings: readings,
+                                        sysThreshold: sysThreshold,
+                                        diaThreshold: diaThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _HistorySection(
+                                        readings: readings,
+                                        sysThreshold: sysThreshold,
+                                        diaThreshold: diaThreshold,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _StatisticsSection(
+                                  readings: readings,
+                                  sysThreshold: sysThreshold,
+                                  diaThreshold: diaThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _DualTrendSection(
+                                  readings: readings,
+                                  sysThreshold: sysThreshold,
+                                  diaThreshold: diaThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _FloatingBarSection(readings: readings),
+                                const SizedBox(height: 20),
+                                _ScatterSection(
+                                  readings: readings,
+                                  sysThreshold: sysThreshold,
+                                  diaThreshold: diaThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _HistorySection(
+                                  readings: readings,
+                                  sysThreshold: sysThreshold,
+                                  diaThreshold: diaThreshold,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );

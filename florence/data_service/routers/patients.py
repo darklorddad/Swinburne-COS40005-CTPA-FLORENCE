@@ -437,3 +437,34 @@ async def upload_patient_avatar(
     except Exception as e:
         print(f"Upload Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+
+@router.post("/me/meal-photo", summary="Upload meal photo")
+async def upload_meal_photo(
+    file: UploadFile = File(...),
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Uploads a meal photo to Storage."""
+    try:
+        user_id = patient_profile['user_id']
+        file_ext = file.filename.split('.')[-1]
+        
+        # Create filename: Meal_Photos/{user_id}/{timestamp}.{ext}
+        filename = f"Meal_Photos/{user_id}/{int(time.time())}.{file_ext}"
+        
+        file_content = await file.read()
+
+        # 1. Upload to Supabase Storage
+        res = supabase.storage.from_("Bucket").upload(
+            file=file_content,
+            path=filename,
+            file_options={"content-type": file.content_type, "upsert": "true"}
+        )
+
+        # 2. Get Public URL
+        public_url = supabase.storage.from_("Bucket").get_public_url(filename)
+
+        return {"url": public_url}
+
+    except Exception as e:
+        print(f"Upload Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")

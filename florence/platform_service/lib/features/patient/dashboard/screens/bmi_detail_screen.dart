@@ -67,43 +67,74 @@ class BmiDetailScreen extends ConsumerWidget {
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // 1. Linear Gauge (Current Status)
-                          _BmiGaugeSection(
-                    latestReading: latestBmi,
-                    threshold: bmiThreshold,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 2. Progress Chart (BMI Trend)
-                  _BmiTrendSection(
-                    readings: bmiReadings,
-                    threshold: bmiThreshold,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // 3. Clinical Insight (Correlation)
-                  _BmiCorrelationSection(
-                    bmiReadings: bmiReadings,
-                    hba1cReadings: hba1cReadings,
-                  ),
-                  const SizedBox(height: 20),
-
-                          // 4. History List
-                          _BmiHistorySection(
-                            readings: bmiReadings,
-                            threshold: bmiThreshold,
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _BmiGaugeSection(
+                                        latestReading: latestBmi,
+                                        threshold: bmiThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _BmiTrendSection(
+                                        readings: bmiReadings,
+                                        threshold: bmiThreshold,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _BmiCorrelationSection(
+                                        bmiReadings: bmiReadings,
+                                        hba1cReadings: hba1cReadings,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _BmiHistorySection(
+                                        readings: bmiReadings,
+                                        threshold: bmiThreshold,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _BmiGaugeSection(
+                                  latestReading: latestBmi,
+                                  threshold: bmiThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _BmiTrendSection(
+                                  readings: bmiReadings,
+                                  threshold: bmiThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _BmiCorrelationSection(
+                                  bmiReadings: bmiReadings,
+                                  hba1cReadings: hba1cReadings,
+                                ),
+                                const SizedBox(height: 20),
+                                _BmiHistorySection(
+                                  readings: bmiReadings,
+                                  threshold: bmiThreshold,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );
@@ -275,12 +306,15 @@ class _BmiGaugeSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Defaults if no threshold set
-    final minNormal = threshold?.minValue ?? 18.5;
-    final maxNormal = threshold?.maxValue ?? 24.9;
-    final overweightLimit = maxNormal + 5.0; // Approximation if not strict
+    // 1. Setup Bounds (Standard or Custom)
+    final bool hasCustomThreshold = threshold != null;
+    final minNormal = threshold?.minValue ?? 18.5;  // Lower Bound of Target
+    final maxNormal = threshold?.maxValue ?? 24.9;  // Upper Bound of Target
+    final overweightLimit = maxNormal + 5.0;        // Dynamic Warning Zone
 
     final bmi = latestReading?.value ?? 0.0;
+    
+    // 2. Determine Text Label & Indicator Color based on position relative to Target
     String category;
     Color color;
 
@@ -288,25 +322,25 @@ class _BmiGaugeSection extends StatelessWidget {
       category = "No Data";
       color = AppTheme.textSecondaryColor;
     } else if (bmi < minNormal) {
-      category = "Underweight";
+      category = hasCustomThreshold ? "Below Target" : "Underweight";
       color = AppTheme.primaryBlue;
     } else if (bmi <= maxNormal) {
-      category = "Normal";
+      category = hasCustomThreshold ? "On Target" : "Normal";
       color = AppTheme.primaryGreen;
     } else if (bmi <= overweightLimit) {
-      category = "Overweight";
+      category = hasCustomThreshold ? "Above Target" : "Overweight";
       color = AppTheme.warningColor;
     } else {
-      category = "Obese";
+      category = hasCustomThreshold ? "High" : "Obese";
       color = AppTheme.errorColor;
     }
 
-    final infoText = threshold != null 
-        ? 'Target BMI: ${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}\n\n'
-          '• Underweight: < ${minNormal.toStringAsFixed(1)}\n'
-          '• Normal: ${minNormal.toStringAsFixed(1)} – ${maxNormal.toStringAsFixed(1)}\n'
-          '• Overweight: > ${maxNormal.toStringAsFixed(1)}'
-        : 'Body Mass Index (BMI) Categories:\n\n'
+    final infoText = hasCustomThreshold
+        ? 'Your Personal BMI Goal:\n\n'
+          '• Target: ${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)} kg/m²\n'
+          '• Below: < ${minNormal.toStringAsFixed(1)}\n'
+          '• Above: > ${maxNormal.toStringAsFixed(1)}'
+        : 'Standard BMI Categories:\n\n'
           '• Underweight: < 18.5\n'
           '• Normal: 18.5 – 24.9\n'
           '• Overweight: 25 – 29.9\n'
@@ -318,7 +352,7 @@ class _BmiGaugeSection extends StatelessWidget {
       infoText: infoText,
       child: Column(
         children: [
-          // 1. Target Range Display (Top)
+          // Target Range Header
           InkWell(
             onTap: () => Navigator.of(context).pushNamed('/profile'),
             borderRadius: BorderRadius.circular(12),
@@ -329,9 +363,7 @@ class _BmiGaugeSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.primaryGreen.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
-                ),
+                border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
               ),
               child: Column(
                 children: [
@@ -340,7 +372,7 @@ class _BmiGaugeSection extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
+                          const Icon(Icons.track_changes, size: 18, color: AppTheme.primaryGreen),
                           const SizedBox(width: 8),
                           Text(
                             'Target Range',
@@ -360,8 +392,8 @@ class _BmiGaugeSection extends StatelessWidget {
                     children: [
                       Text('BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text(
-                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}', 
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
@@ -376,7 +408,6 @@ class _BmiGaugeSection extends StatelessWidget {
               child: Text("No BMI data recorded."),
             )
           else ...[
-            // 2. Value (Moved Above Chart)
             Text(
               bmi.toStringAsFixed(1),
               style: TextStyle(
@@ -386,18 +417,20 @@ class _BmiGaugeSection extends StatelessWidget {
                 height: 1.0,
               ),
             ),
-            
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // 3. Linear Gauge (Middle)
+            // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
             SizedBox(
-              height: 40,
+              height: 80, // Increased overall container height
               child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
-                const minScale = 15.0;
-                final maxScale = overweightLimit + 5.0; // Approx 30 or 35
+                
+                // Dynamic Viewport
+                final double minScale = math.min(15.0, bmi - 5);
+                final double maxScale = math.max(overweightLimit + 5.0, bmi + 5); 
                 final totalRange = maxScale - minScale;
 
+                // Helper to get pixel position
                 double getPos(double val) {
                   return ((val.clamp(minScale, maxScale) - minScale) / totalRange) * width;
                 }
@@ -407,29 +440,66 @@ class _BmiGaugeSection extends StatelessWidget {
                 final normalWidth = math.max(0.0, maxNormal - minNormal);
                 final owWidth = math.max(0.0, overweightLimit - maxNormal);
 
+                // Helper for Labels
+                Widget buildLabel(double value, String text) {
+                  final pos = getPos(value);
+                  // Don't show if off-screen or too close to edges (prevents clipping)
+                  if (pos < 10 || pos > width - 10) return const SizedBox.shrink();
+                  
+                  return Positioned(
+                    left: pos - 20, // Center the 40px wide text box
+                    top: 60, // Adjusted for thicker bar
+                    child: SizedBox(
+                      width: 40,
+                      child: Text(
+                        text,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 10),
+                      ),
+                    ),
+                  );
+                }
+
                 return Stack(
                   clipBehavior: Clip.none,
                   alignment: Alignment.centerLeft,
                   children: [
-                    // Track
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Row(
-                        children: [
-                          Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)), // Underweight
-                          Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)), // Normal
-                          Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)), // Overweight
-                          Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))), // Obese
-                        ],
+                    // A. The Track (Bar)
+                    Positioned(
+                      top: 15, // Pushed down to make room for marker
+                      left: 0, 
+                      right: 0,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: SizedBox(
+                          height: 40, // RESTORED HEIGHT
+                          child: Row(
+                            children: [
+                              Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
+                              Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
+                              Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
+                              Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                    // Marker
+
+                    // B. The Labels (Aligned to transitions)
+                    // 1. Lower Target Bound (e.g. 18.5)
+                    buildLabel(minNormal, minNormal.toStringAsFixed(1)),
+                    // 2. Upper Target Bound (e.g. 24.9)
+                    buildLabel(maxNormal, maxNormal.toStringAsFixed(1)),
+                    // 3. Warning Limit (e.g. 29.9)
+                    buildLabel(overweightLimit, overweightLimit.toStringAsFixed(1)),
+
+                    // C. Marker
                     Positioned(
-                      left: getPos(bmi) - 12,
-                      top: -12,
+                      left: getPos(bmi) - 14,
+                      top: -12, // Sits above the bar pointing down
                       child: Column(
                         children: [
-                          Icon(Icons.arrow_drop_down, size: 24, color: AppTheme.textPrimaryColor),
+                          Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
                         ],
                       ),
                     ),
@@ -437,22 +507,9 @@ class _BmiGaugeSection extends StatelessWidget {
                 );
               }),
             ),
-            const SizedBox(height: 8),
-            // Scale Labels
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("15.0", style: Theme.of(context).textTheme.bodySmall),
-                Text(minNormal.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-                Text(maxNormal.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-                Text(overweightLimit.toStringAsFixed(1), style: Theme.of(context).textTheme.bodySmall),
-                Text("${(overweightLimit + 5).toInt()}+", style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-            
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
 
-            // 4. Status Badge (Below Chart)
+            // Status Badge
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
@@ -495,7 +552,7 @@ class _BmiTrendSection extends StatelessWidget {
     return _ChartSection(
       title: 'Progress',
       icon: Icons.show_chart,
-      ranges: const ['1D', '3M', '6M', '1Y', 'ALL'],
+      ranges: const ['3M', '6M', '1Y', 'ALL'],
       infoText: 'Visualizes your BMI trends over time.\n\n'
           '• Y-Axis: BMI (kg/m²)\n'
           '• X-Axis: Time\n'
@@ -510,11 +567,7 @@ class _BmiTrendSection extends StatelessWidget {
         double minX, maxX;
         final now = DateTime.now();
 
-        if (range == '1D') {
-          final startOfDay = DateTime(now.year, now.month, now.day);
-          minX = startOfDay.millisecondsSinceEpoch.toDouble();
-          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
-        } else if (range == 'ALL') {
+        if (range == 'ALL') {
           minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
           maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
           if (minX == maxX) {
@@ -525,23 +578,29 @@ class _BmiTrendSection extends StatelessWidget {
           maxX = now.millisecondsSinceEpoch.toDouble();
           Duration duration;
           switch (range) {
-            case '1M': duration = const Duration(days: 30); break;
             case '3M': duration = const Duration(days: 90); break;
             case '6M': duration = const Duration(days: 180); break;
             case '1Y': duration = const Duration(days: 365); break;
-            default: duration = const Duration(days: 365); break;
+            default: duration = const Duration(days: 90); break; // Default 3M
           }
           minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
 
         // Dynamic Y Axis with Safe Zone visibility
         final vals = data.map((e) => e.value);
-        double minY = vals.reduce(math.min) - 2;
-        double maxY = vals.reduce(math.max) + 2;
         
-        // Ensure safe zone is visible
-        minY = math.min(minY, minNormal - 0.5);
-        maxY = math.max(maxY, maxNormal + 1.0);
+        // Calculate bounds from data
+        double dataMin = vals.reduce(math.min);
+        double dataMax = vals.reduce(math.max);
+        
+        // ADD BUFFER (Top & Bottom)
+        // Ensure there is space above the highest point and below the lowest point
+        double minY = dataMin - 3.0;
+        double maxY = dataMax + 3.0;
+        
+        // Ensure safe zone (Target Range) is also visible
+        minY = math.min(minY, minNormal - 2.0);
+        maxY = math.max(maxY, maxNormal + 2.0);
 
         return Column(
           children: [
@@ -563,11 +622,13 @@ class _BmiTrendSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (maxX - minX) / 4,
-                        getTitlesWidget: (val, _) {
+                        interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
+                        getTitlesWidget: (val, meta) {
+                          if (val <= meta.min || val >= meta.max) return const SizedBox.shrink();
+
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                          final fmt = range == '1D' ? DateFormat('HH:mm') : (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
+                          final fmt = (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
 
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
@@ -580,7 +641,13 @@ class _BmiTrendSection extends StatelessWidget {
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.2)),
+                      HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.1)),
+                    ],
+                  ),
+                  extraLinesData: ExtraLinesData(
+                    horizontalLines: [
+                      HorizontalLine(y: minNormal, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
                   ),
                   lineBarsData: [
@@ -593,7 +660,7 @@ class _BmiTrendSection extends StatelessWidget {
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
                       ),
-                      belowBarData: BarAreaData(show: true, color: AppTheme.primaryBlue.withOpacity(0.1)),
+                      belowBarData: BarAreaData(show: false),
                     ),
                   ],
                   lineTouchData: LineTouchData(
@@ -625,7 +692,7 @@ class _BmiTrendSection extends StatelessWidget {
               children: [
                 _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                _LegendItem('Normal Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
             ),
           ],
@@ -655,25 +722,21 @@ class _BmiCorrelationSection extends StatelessWidget {
       icon: Icons.insights,
       infoText: 'Compares your BMI trends against HbA1c levels over time.\n\n'
           '• Blue Line: BMI\n'
-          '• Purple Dots: HbA1c %\n'
+          '• Purple Line: HbA1c %\n'
           '• Goal: Observe if weight changes correlate with better blood sugar control.',
       allData: bmiReadings, // Pass BMI to drive range logic
-      ranges: const ['1D', '6M', '1Y', 'ALL'],
+      ranges: const ['3M', '6M', '1Y', 'ALL'],
       builder: (range, data) {
         // 'data' here is filtered BMI readings
         if (data.isEmpty) {
           return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No BMI data for correlation.")));
         }
 
-        // Calculate X-Axis bounds based on selected range (Consistent with Trend Chart)
+        // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
 
-        if (range == '1D') {
-          final startOfDay = DateTime(now.year, now.month, now.day);
-          minX = startOfDay.millisecondsSinceEpoch.toDouble();
-          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
-        } else if (range == 'ALL') {
+        if (range == 'ALL') {
           minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
           maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
           if (minX == maxX) {
@@ -684,11 +747,10 @@ class _BmiCorrelationSection extends StatelessWidget {
           maxX = now.millisecondsSinceEpoch.toDouble();
           Duration duration;
           switch (range) {
-            case '1M': duration = const Duration(days: 30); break;
             case '3M': duration = const Duration(days: 90); break;
             case '6M': duration = const Duration(days: 180); break;
             case '1Y': duration = const Duration(days: 365); break;
-            default: duration = const Duration(days: 365); break;
+            default: duration = const Duration(days: 90); break;
           }
           minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
@@ -722,13 +784,14 @@ class _BmiCorrelationSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        getTitlesWidget: (val, _) {
+                        interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
+                        getTitlesWidget: (val, meta) {
+                            if (val <= meta.min || val >= meta.max) return const SizedBox.shrink();
+
                             final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                            // Determine format based on range, similar to BMI Trend
+                            // Determine format based on range
                             final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                            final fmt = range == '1D'
-                                ? DateFormat('HH:mm')
-                                : (durationDays > 365 ? DateFormat('MMM yy') : DateFormat('d/M'));
+                            final fmt = (durationDays > 365 ? DateFormat('MMM yy') : DateFormat('d/M'));
 
                            return Padding(
                              padding: const EdgeInsets.only(top: 8.0),
@@ -747,7 +810,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                       color: AppTheme.primaryBlue,
                       barWidth: 3,
                       isCurved: true,
-                      dotData: FlDotData(show: false),
+                      dotData: FlDotData(show: true), // Enabled dots
                     ),
                     // HbA1c Line (Purple - Scaled)
                     LineChartBarData(
@@ -756,8 +819,8 @@ class _BmiCorrelationSection extends StatelessWidget {
                         return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
                       }).toList(),
                       color: Colors.purple,
-                      barWidth: 0, 
-                      isCurved: false,
+                      barWidth: 3, // Enable line width (was 0)
+                      isCurved: true, // Enable trend line
                       dotData: FlDotData(
                         show: true, 
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple, strokeWidth: 1, strokeColor: Colors.white)
@@ -930,16 +993,16 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
               String label;
               Color color;
               if (r.value < minNormal) { 
-                label = "Underweight"; 
+                label = "LOW"; 
                 color = AppTheme.primaryBlue; 
               } else if (r.value <= maxNormal) { 
-                label = "Normal"; 
+                label = "NORMAL"; 
                 color = AppTheme.primaryGreen; 
               } else if (r.value <= overweightLimit) { 
-                label = "Overweight"; 
+                label = "HIGH"; 
                 color = AppTheme.warningColor; 
               } else { 
-                label = "Obese"; 
+                label = "VERY HIGH"; 
                 color = AppTheme.errorColor; 
               }
 
@@ -981,11 +1044,11 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
                           child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Text(DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
                       ],
                     )

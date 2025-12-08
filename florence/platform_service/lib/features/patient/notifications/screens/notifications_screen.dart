@@ -42,11 +42,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final weekStart = todayStart.subtract(const Duration(days: 7));
 
     for (var notification in filteredNotifications) {
-      if (notification.createdAt.isAfter(todayStart)) {
+      // FIX: Convert to local time before comparing against local day buckets
+      final localCreatedAt = notification.createdAt.toLocal();
+
+      if (localCreatedAt.isAfter(todayStart)) {
         today.add(notification);
-      } else if (notification.createdAt.isAfter(yesterdayStart)) {
+      } else if (localCreatedAt.isAfter(yesterdayStart)) {
         yesterday.add(notification);
-      } else if (notification.createdAt.isAfter(weekStart)) {
+      } else if (localCreatedAt.isAfter(weekStart)) {
         thisWeek.add(notification);
       } else {
         older.add(notification);
@@ -91,18 +94,21 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             tooltip: 'Mark all as read',
           ),
           // Clear all
-          IconButton(
-            icon: const Icon(Icons.clear_all),
-            onPressed: () async {
-              final confirmed = await _showConfirmDialog(
-                'Clear All Notifications',
-                'Are you sure you want to clear all notifications?',
-              );
-              if (confirmed) {
-                notifier.clearAll();
-              }
-            },
-            tooltip: 'Clear all',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: const Icon(Icons.clear_all),
+              onPressed: () async {
+                final confirmed = await _showConfirmDialog(
+                  'Clear All Notifications',
+                  'Are you sure you want to clear all notifications?',
+                );
+                if (confirmed) {
+                  notifier.clearAll();
+                }
+              },
+              tooltip: 'Clear all',
+            ),
           ),
         ],
       ),

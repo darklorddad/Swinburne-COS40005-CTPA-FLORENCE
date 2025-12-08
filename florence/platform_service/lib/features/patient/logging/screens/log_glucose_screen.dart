@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/config/environment.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -26,8 +34,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _glucoseController = TextEditingController();
   final _notesController = TextEditingController();
+  final _caloriesController = TextEditingController();
 
   // State
+  XFile? _selectedImage;
+  Uint8List? _imageBytes;
+  String? _uploadedImageUrl;
+  bool _isAnalyzing = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   String _selectedTiming = 'No Meal';
@@ -39,17 +52,109 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     'After Meal',
   ];
 
-  final List<String> _mealTypeOptions = [
-    'BREAKFAST',
-    'LUNCH',
-    'DINNER',
+  final List<Map<String, dynamic>> _mealTypeOptions = [
+    {'value': 'BREAKFAST', 'label': 'Breakfast', 'icon': Icons.wb_sunny_outlined},
+    {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy_outlined},
+    {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay_outlined},
   ];
 
   @override
   void dispose() {
     _glucoseController.dispose();
     _notesController.dispose();
+    _caloriesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showImageSourcePicker() async {
+    final picker = ImagePicker();
+    
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
+                  if (image != null) _processImage(image);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+                  if (image != null) _processImage(image);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processImage(XFile image) async {
+    final bytes = await image.readAsBytes();
+    setState(() {
+      _selectedImage = image;
+      _imageBytes = bytes;
+      _isAnalyzing = true; // Show loading state while uploading
+    });
+
+    try {
+      // Upload to Supabase via Data Service
+      final apiService = ApiService();
+      final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
+      
+      if (mounted) {
+        setState(() => _uploadedImageUrl = uploadRes['url']);
+      }
+    } catch (e) {
+      if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
+      setState(() {
+        _selectedImage = null;
+        _imageBytes = null;
+      }); // Reset on failure
+    } finally {
+      if (mounted) setState(() => _isAnalyzing = false);
+    }
+  }
+
+  /// Returns map with 'calories' and 'description'
+  Future<Map<String, dynamic>?> _analyzeMeal(String imageUrl) async {
+    try {
+      final llmUrl = '${Environment.llmEngineServiceUrl}/nutrition/analyze';
+      final session = Supabase.instance.client.auth.currentSession;
+      
+      final response = await http.post(
+        Uri.parse(llmUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${session?.accessToken}',
+        },
+        body: jsonEncode({'image_url': imageUrl}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint("Analysis error: $e");
+    }
+    return null;
   }
 
   /// Handle save
@@ -63,28 +168,56 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     
     try {
       final glucoseValue = double.parse(_glucoseController.text);
-      // Use the repository provider
       final repo = ref.read(monitorDataRepositoryProvider);
 
       if (_selectedTiming == 'No Meal') {
         await repo.addGlucoseReading(GlucoseReading(
-          id: '', // Backend generates ID
+          id: '',
           timestamp: _selectedDateTime.toUtc(),
           value: glucoseValue,
           context: _selectedTiming,
         ));
       } 
       else {
+        // === AI LOGIC START ===
+        // If we have an image but NO calories, perform AI analysis before saving
+        int? finalCalories = int.tryParse(_caloriesController.text);
+        String? finalNotes = _notesController.text.trim();
+
+        if (_uploadedImageUrl != null && finalCalories == null) {
+          // Notify user
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Analyzing meal photo to estimate calories...')),
+          );
+          
+          final analysis = await _analyzeMeal(_uploadedImageUrl!);
+          
+          if (analysis != null) {
+            if (analysis['calories'] != null) {
+              finalCalories = analysis['calories'];
+            }
+            if (analysis['description'] != null) {
+              final desc = analysis['description'];
+              finalNotes = finalNotes != null && finalNotes.isNotEmpty 
+                  ? '$finalNotes\n\nAI: $desc' 
+                  : desc;
+            }
+          }
+        }
+        // === AI LOGIC END ===
+
         final isBefore = _selectedTiming == 'Before Meal';
-        // Delegate complex logic to repository
+        
         await repo.addMeal(
           _selectedMealType,
-          _selectedDateTime.toUtc(), // Date only used for day
-          (!isBefore && _notesController.text.trim().isNotEmpty) ? _notesController.text.trim() : null,
+          _selectedDateTime.toUtc(),
+          (!isBefore && finalNotes != null && finalNotes.isNotEmpty) ? finalNotes : null,
           isBefore ? glucoseValue : null,
           isBefore ? _selectedDateTime.toUtc() : null,
           !isBefore ? glucoseValue : null,
           !isBefore ? _selectedDateTime.toUtc() : null,
+          finalCalories,
+          _uploadedImageUrl,
         );
       }
       
@@ -110,122 +243,201 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     }
   }
 
-  /// Show date time picker
-  Future<void> _selectDateTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-    );
-
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-
-      if (time != null && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
-    final glucoseColor = _getGlucoseColor(glucoseValue);
+    
+    // Fetch thresholds
+    final healthData = ref.watch(monitorDataProvider).asData?.value;
+    HealthThreshold? glucoseThreshold;
+    try {
+      glucoseThreshold = healthData?.healthThresholds.firstWhere(
+        (t) => t.dataType == MonitorDataType.GLUCOSE
+      );
+    } catch (_) {}
+
+    final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log Glucose'),
+        elevation: 0,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: AppTheme.getBorderColor(context),
+            height: 1.0,
+          ),
+        ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              // TODO: Show glucose history
-              Helpers.showInfo(context, 'History feature coming soon');
-            },
-            tooltip: 'View History',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                AppRoutes.push(context, AppRoutes.trendsDetail);
+              },
+              tooltip: 'View History',
+            ),
           ),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Info card
-                  _buildInfoCard(),
-              const SizedBox(height: 24),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Info & Target card
+                      _buildInfoCard(glucoseThreshold),
+                      const SizedBox(height: 20),
 
-              // Glucose value input (large and prominent)
-              _buildGlucoseInput(glucoseColor),
-              const SizedBox(height: 24),
+                      // Glucose value input (large and prominent)
+                      _buildGlucoseInput(glucoseColor, glucoseThreshold),
+                      const SizedBox(height: 20),
 
-              // Date and time
-              _buildDateTimeSection(),
-              const SizedBox(height: 24),
+                      // Date and time
+                      _buildDateTimeSection(),
+                      const SizedBox(height: 20),
 
-              // Context selection
-              _buildContextSection(),
-              const SizedBox(height: 24),
+                      // Context selection
+                      _buildContextSection(),
+                      
+                      // Notes (optional) - Padding/Spacing handled internally for animation
+                      _buildNotesSection(),
+                      const SizedBox(height: 32),
 
-              // Notes (optional)
-              _buildNotesSection(),
-              const SizedBox(height: 32),
-
-              // Save button
-              PrimaryButton(
-                text: 'Save Reading',
-                onPressed: _isLoading ? null : _handleSave,
-                isLoading: _isLoading,
-                width: double.infinity,
+                      // Save button
+                      PrimaryButton(
+                        text: 'Save Reading',
+                        onPressed: _isLoading ? null : _handleSave,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                      ),
+                      // Extra padding for bottom safe area / gesture bar
+                      SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 16),
-
-              // Reference ranges
-              _buildReferenceRanges(),
-            ],
+            ),
           ),
         ),
-      ),
-      ),
       ),
     );
   }
 
-  /// Build info card
-  Widget _buildInfoCard() {
-    return BaseCard(
-      // backgroundColor: AppTheme.infoColor.withOpacity(0.1),
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            color: AppTheme.infoColor,
-            size: 24,
+  /// Build info card with target range
+  Widget _buildInfoCard(HealthThreshold? threshold) {
+    final min = threshold?.minValue ?? 70;
+    final max = threshold?.maxValue ?? 180;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Record your blood glucose reading to track your health trends',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.infoColor,
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: AppTheme.infoColor,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Record your blood glucose reading to track your health trends.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.infoColor,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Target Range Box (Matching Analytics Overview Style)
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.profile),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.track_changes,
+                            size: 18,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Target Range',
+                            style: TextStyle(
+                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Glucose', 
+                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
+                      ),
+                      Text(
+                        '${min.toInt()} - ${max.toInt()} mg/dL',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -234,16 +446,33 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   /// Build glucose input
-  Widget _buildGlucoseInput(Color? glucoseColor) {
+  Widget _buildGlucoseInput(Color? glucoseColor, HealthThreshold? threshold) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Tint the whole card background based on status
+    final containerColor = glucoseColor != null 
+        ? glucoseColor.withOpacity(0.05) 
+        : (isDark ? AppTheme.midnightSurface : Colors.white);
+        
+    final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
+    final hasInput = glucoseColor != null;
+
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: glucoseColor?.withOpacity(0.1) ?? Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(16),
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: glucoseColor?.withOpacity(0.3) ?? Colors.grey.shade300,
-          width: 2,
+          color: borderColor,
+          width: 1.0, // Fixed width to prevent displacement
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -259,8 +488,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           // Large glucose input
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               SizedBox(
                 width: 150,
@@ -269,16 +497,22 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   validator: Validators.glucose,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  textInputAction: TextInputAction.done,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                         fontSize: 64,
                         fontWeight: FontWeight.bold,
                         color: glucoseColor ?? AppTheme.textPrimaryColor,
                       ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                     hintText: '---',
-                    hintStyle: TextStyle(
+                    hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
                   ),
@@ -295,24 +529,74 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             ],
           ),
 
-          // Status indicator
-          if (glucoseColor != null) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: glucoseColor,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                _getGlucoseStatus(double.tryParse(_glucoseController.text)),
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+          const SizedBox(height: 20),
+
+          // Status indicator (Always visible, fixed size)
+          SizedBox(
+            height: 32,
+            child: Center(
+              child: Builder(
+                builder: (context) {
+                  final statusText = glucoseColor != null
+                      ? _getGlucoseStatus(
+                              double.tryParse(_glucoseController.text), threshold)
+                          .toUpperCase()
+                      : 'ENTER READING';
+
+                  IconData statusIcon;
+                  if (glucoseColor == null) {
+                    statusIcon = Icons.edit;
+                  } else if (statusText == 'LOW') {
+                    statusIcon = Icons.arrow_downward;
+                  } else if (statusText == 'HIGH') {
+                    statusIcon = Icons.arrow_upward;
+                  } else {
+                    statusIcon = Icons.check;
+                  }
+
+                  final displayColor =
+                      glucoseColor ?? AppTheme.textSecondaryColor;
+
+                  return Container(
+                    width: 140, // Fixed width
+                    height: 32, // Fixed height
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: glucoseColor == null
+                          ? (isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : AppTheme.backgroundColor)
+                          : displayColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: displayColor.withOpacity(0.3),
+                      ),
                     ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          statusIcon,
+                          size: 14,
+                          color: displayColor,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          statusText,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: displayColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
@@ -320,73 +604,152 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   /// Build date time section
   Widget _buildDateTimeSection() {
-    return BaseCard(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header matching Dashboard Cards
           Row(
             children: [
-              Icon(
-                Icons.calendar_today,
-                size: 20,
-                color: AppTheme.primaryBlue,
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: titleIconColor,
+                  size: 24,
+                ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               Text(
-                'Date & Time',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                'Date and Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: _selectDateTime,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.borderColor,
+          const SizedBox(height: 20),
+          
+          // Combined Date & Time Container
+          Container(
+            decoration: BoxDecoration(
+              color: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_selectedDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    // Steal focus to a temporary node to prevent automatic restoration to the text field
+                    FocusScope.of(context).requestFocus(FocusNode());
+
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          _selectedDateTime.hour,
+                          _selectedDateTime.minute,
+                        );
+                      });
+                    }
+                  },
                 ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.access_time,
-                    color: AppTheme.primaryBlue,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.textSecondaryColor,
-                                  ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                ],
-              ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            // Override tertiary colors so AM/PM selector is Blue, not Red
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                              tertiary: AppTheme.primaryBlue,
+                              onTertiary: Colors.white,
+                              tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
+                              onTertiaryContainer: AppTheme.primaryBlue,
+                            ),
+                            // Fix input field background to make cursor visible
+                            timePickerTheme: TimePickerThemeData(
+                              hourMinuteColor: MaterialStateColor.resolveWith((states) {
+                                return states.contains(MaterialState.selected)
+                                    ? AppTheme.primaryBlue.withOpacity(0.1)
+                                    : Colors.grey.shade100;
+                              }),
+                              hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
+                                return states.contains(MaterialState.selected)
+                                    ? AppTheme.primaryBlue
+                                    : AppTheme.textPrimaryColor;
+                              }),
+                            ),
+                            textSelectionTheme: TextSelectionThemeData(
+                              cursorColor: AppTheme.primaryBlue,
+                              selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
+                              selectionHandleColor: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -394,80 +757,236 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     );
   }
 
+  Widget _buildCompactPickerItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    '$label:',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Build context section
   Widget _buildContextSection() {
-    return BaseCard(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.restaurant, size: 20, color: AppTheme.primaryBlue),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.restaurant,
+                  size: 24,
+                  color: titleIconColor,
+                ),
+              ),
+              const SizedBox(width: 12),
               Text(
                 'Context',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // 1. Timing Selection (No Meal, Before, After)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _timingOptions.map((timing) {
-              final isSelected = timing == _selectedTiming;
-              return ChoiceChip(
-                label: Text(timing),
-                selected: isSelected,
-                onSelected: (_) => setState(() => _selectedTiming = timing),
-                selectedColor: AppTheme.primaryBlue,
-                labelStyle: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              );
-            }).toList(),
-          ),
-
-          // 2. Meal Type Selection (Only if Before/After is selected)
-          if (_selectedTiming != 'No Meal') ...[
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 8),
-            Text(
-              'Select Meal',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.bold),
+          // 1. Timing Selection (Merged Segmented Control)
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _mealTypeOptions.map((meal) {
-                final isSelected = meal == _selectedMealType;
-                final displayLabel = meal[0] + meal.substring(1).toLowerCase();
+            child: Row(
+              children: _timingOptions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final option = entry.value;
+                final isSelected = _selectedTiming == option;
+                final isFirst = index == 0;
+                final isLast = index == _timingOptions.length - 1;
+                
+                final borderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
+                final fillColor = isSelected ? AppTheme.primaryBlue : Colors.transparent;
 
-                return ChoiceChip(
-                  label: Text(displayLabel),
-                  selected: isSelected,
-                  onSelected: (_) => setState(() => _selectedMealType = meal),
-                  selectedColor:
-                      AppTheme.primaryBlue,
-                  labelStyle: TextStyle(
-                    color:
-                        isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                // Calculate Radius
+                BorderRadius radius = BorderRadius.zero;
+                if (isFirst) {
+                  radius = const BorderRadius.horizontal(left: Radius.circular(12));
+                } else if (isLast) {
+                  radius = const BorderRadius.horizontal(right: Radius.circular(12));
+                }
+
+                return Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedTiming = option),
+                    borderRadius: radius,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: fillColor,
+                        borderRadius: radius,
+                        // Use Border.all to prevent "Non-uniform border" crash
+                        border: Border.all(color: borderColor),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        option,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
                   ),
                 );
               }).toList(),
             ),
-          ],
+          ),
+
+          // 2. Meal Type Selection (Animated)
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _selectedTiming == 'No Meal'
+                ? const SizedBox(width: double.infinity)
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      // Subsection Header
+                      Text(
+                        'Select Meal',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondaryColor,
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      // Merged Segmented Control Style
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: _mealTypeOptions.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final option = entry.value;
+                            final isSelected = _selectedMealType == option['value'];
+                            final isFirst = index == 0;
+                            final isLast = index == _mealTypeOptions.length - 1;
+                            
+                            final borderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
+                            final fillColor = isSelected ? AppTheme.primaryBlue : Colors.transparent;
+
+                            // Calculate Radius
+                            BorderRadius radius = BorderRadius.zero;
+                            if (isFirst) {
+                              radius = const BorderRadius.horizontal(left: Radius.circular(12));
+                            } else if (isLast) {
+                              radius = const BorderRadius.horizontal(right: Radius.circular(12));
+                            }
+
+                            return Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _selectedMealType = option['value']),
+                                borderRadius: radius,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: fillColor,
+                                    borderRadius: radius,
+                                    border: Border.all(color: borderColor),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        option['icon'],
+                                        size: 20,
+                                        color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        option['label'],
+                                        style: TextStyle(
+                                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          fontSize: 12,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ],
       ),
     );
@@ -475,131 +994,189 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   /// Build notes section
   Widget _buildNotesSection() {
-    // Only show notes if "After Meal" is selected
-    if (_selectedTiming != 'After Meal') return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.menu_book,
-                size: 20,
-                color: AppTheme.primaryBlue,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Meal Details',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      alignment: Alignment.topCenter, // Ensure animation flows downwards
+      child: _selectedTiming != 'After Meal'
+          ? const SizedBox.shrink()
+          : Padding(
+              padding: const EdgeInsets.only(top: 20),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: containerColor,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          CustomTextField(
-            controller: _notesController,
-            hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
-            maxLines: 3,
-            textInputAction: TextInputAction.done,
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build reference ranges
-  Widget _buildReferenceRanges() {
-    return BaseCard(
-      // backgroundColor: Colors.grey.shade50,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Reference Ranges',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  ],
                 ),
-          ),
-          const SizedBox(height: 12),
-          _buildRangeItem(
-            'Normal',
-            '70-180 mg/dL',
-            AppTheme.glucoseNormal,
-          ),
-          const SizedBox(height: 8),
-          _buildRangeItem(
-            'Low',
-            'Below 70 mg/dL',
-            AppTheme.glucoseLow,
-          ),
-          const SizedBox(height: 8),
-          _buildRangeItem(
-            'High',
-            'Above 180 mg/dL',
-            AppTheme.glucoseHigh,
-          ),
-        ],
-      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: titleIconColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.menu_book,
+                            size: 24,
+                            color: titleIconColor,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Meal Details',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Optional',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Image Picker
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _isAnalyzing ? null : _showImageSourcePicker,
+                                icon: _isAnalyzing 
+                                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
+                                    : const Icon(Icons.camera_alt_outlined),
+                                label: Text(_isAnalyzing ? 'Uploading...' : (_selectedImage == null ? 'Add Meal Photo' : 'Change Photo')),
+                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_imageBytes != null) ...[
+                          const SizedBox(height: 12),
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(_imageBytes!, height: 150, width: double.infinity, fit: BoxFit.cover),
+                              ),
+                              IconButton(
+                                onPressed: () => setState(() {
+                                  _selectedImage = null;
+                                  _imageBytes = null;
+                                  _uploadedImageUrl = null;
+                                }), 
+                                icon: const Icon(Icons.close, color: Colors.white),
+                                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                              )
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+
+                        // Calories Input
+                        TextFormField(
+                          controller: _caloriesController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Calories (kcal)',
+                            hintText: 'e.g. 500',
+                            helperText: _selectedImage != null ? 'Leave blank to auto-estimate from photo' : 'Optional',
+                            helperStyle: TextStyle(
+                              color: _selectedImage != null ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                              fontWeight: _selectedImage != null ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                            filled: true,
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _notesController,
+                          maxLines: 3,
+                          textInputAction: TextInputAction.done,
+                          decoration: InputDecoration(
+                            hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
+                            hintStyle: const TextStyle(color: Colors.grey),
+                            filled: true,
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: AppTheme.primaryBlue,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 
-  /// Build single range item
-  Widget _buildRangeItem(String label, String range, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const Spacer(),
-        Text(
-          range,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondaryColor,
-              ),
-        ),
-      ],
-    );
-  }
-
-  /// Get glucose color based on value
-  Color? _getGlucoseColor(double? value) {
+  /// Get glucose color based on value and user thresholds
+  Color? _getGlucoseColor(double? value, HealthThreshold? threshold) {
     if (value == null) return null;
+    
+    final min = threshold?.minValue ?? 70;
+    final max = threshold?.maxValue ?? 180;
 
-    if (value < 70) {
-      return AppTheme.glucoseLow;
-    } else if (value > 180) {
-      return AppTheme.glucoseHigh;
+    if (value < min) {
+      return AppTheme.warningColor; // Low (Amber)
+    } else if (value > max) {
+      return AppTheme.errorColor; // High (Red)
     } else {
-      return AppTheme.glucoseNormal;
+      return AppTheme.primaryGreen; // Normal (Green)
     }
   }
 
   /// Get glucose status text
-  String _getGlucoseStatus(double? value) {
+  String _getGlucoseStatus(double? value, HealthThreshold? threshold) {
     if (value == null) return '';
+    
+    final min = threshold?.minValue ?? 70;
+    final max = threshold?.maxValue ?? 180;
 
-    if (value < 70) {
-      return 'Low - Eat something!';
-    } else if (value > 180) {
-      return 'High - Consider activity';
+    if (value < min) {
+      return 'Low';
+    } else if (value > max) {
+      return 'High';
     } else {
-      return 'Normal - Great job!';
+      return 'Normal';
     }
   }
 }

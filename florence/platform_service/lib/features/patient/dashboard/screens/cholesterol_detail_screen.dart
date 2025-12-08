@@ -68,44 +68,76 @@ class CholesterolDetailScreen extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-               return ref.refresh(core_data.monitorDataProvider.future);
+              return ref.refresh(core_data.monitorDataProvider.future);
             },
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               children: [
                 Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1000),
+                    constraints: const BoxConstraints(maxWidth: 1200),
                     child: Padding(
                       padding: const EdgeInsets.all(20),
-                      child: Column(
-                        children: [
-                          // 1. Ratio Donut & Targets (Overview)
-                          _RatioSection(
-                    reading: latest,
-                    total: totalThreshold,
-                    ldl: ldlThreshold,
-                    hdl: hdlThreshold,
-                    tri: triThreshold,
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // 3. Bullet Graph (LDL Target)
-                  _LdlTargetSection(reading: latest, target: ldlThreshold?.maxValue),
-                  const SizedBox(height: 20),
-
-                  // 4. Stacked Bar (Composition)
-                  _CompositionSection(readings: readings),
-                  const SizedBox(height: 20),
-                  
-                          // 5. History
-                          _HistorySection(readings: readings, thresholds: thresholds),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _RatioSection(
+                                        reading: latest,
+                                        total: totalThreshold,
+                                        ldl: ldlThreshold,
+                                        hdl: hdlThreshold,
+                                        tri: triThreshold,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _CompositionSection(readings: readings),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 20),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _LdlTargetSection(
+                                          reading: latest,
+                                          target: ldlThreshold?.maxValue),
+                                      const SizedBox(height: 20),
+                                      _HistorySection(
+                                          readings: readings,
+                                          thresholds: thresholds),
+                                      const SizedBox(height: 24),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              children: [
+                                _RatioSection(
+                                  reading: latest,
+                                  total: totalThreshold,
+                                  ldl: ldlThreshold,
+                                  hdl: hdlThreshold,
+                                  tri: triThreshold,
+                                ),
+                                const SizedBox(height: 20),
+                                _LdlTargetSection(
+                                    reading: latest,
+                                    target: ldlThreshold?.maxValue),
+                                const SizedBox(height: 20),
+                                _CompositionSection(readings: readings),
+                                const SizedBox(height: 20),
+                                _HistorySection(
+                                    readings: readings, thresholds: thresholds),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
                     ),
                   ),
-                  ),
+                ),
               ],
             ),
           );

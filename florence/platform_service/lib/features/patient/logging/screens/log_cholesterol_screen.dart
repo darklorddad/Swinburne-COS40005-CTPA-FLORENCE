@@ -136,17 +136,18 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       appBar: AppBar(
         title: const Text('Log Cholesterol'),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildInfoCard(),
+      body: SingleChildScrollView(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildInfoCard(),
               const SizedBox(height: 24),
               _buildInputSection(),
               const SizedBox(height: 24),
@@ -161,6 +162,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             ],
           ),
         ),
+      ),
       ),
       ),
       ),

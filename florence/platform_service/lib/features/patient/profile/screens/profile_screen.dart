@@ -545,10 +545,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Profile & Settings'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _handleLogout,
-            tooltip: 'Sign Out',
+          Padding(
+            padding: const EdgeInsets.only(right: 4.5),
+            child: IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _handleLogout,
+              tooltip: 'Sign Out',
+            ),
           ),
         ],
       ),
@@ -582,19 +585,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
           return RefreshIndicator(
             onRefresh: () => ref.refresh(userProfileProvider.future),
-            child: ListView(
+            child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              children: [
-                Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 800),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Personal info section
-                          _buildPersonalInfoSection(),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Personal info section
+                        _buildPersonalInfoSection(),
                       const SizedBox(height: 16),
 
                       // Health Profile section
@@ -625,9 +627,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        );
     },
       ),
     );
