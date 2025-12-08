@@ -319,7 +319,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     // Tint the whole card background based on status
     final containerColor = glucoseColor != null 
         ? glucoseColor.withOpacity(0.05) 
-        : (isDark ? AppTheme.midnightSurface : AppTheme.backgroundColor);
+        : (isDark ? AppTheme.midnightSurface : Colors.white);
         
     final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
     final hasInput = glucoseColor != null;
@@ -370,10 +370,15 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         fontWeight: FontWeight.bold,
                         color: glucoseColor ?? AppTheme.textPrimaryColor,
                       ),
-                  decoration: const InputDecoration(
-                    border: InputBorder.none,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                     hintText: '---',
-                    hintStyle: TextStyle(
+                    hintStyle: const TextStyle(
                       color: Colors.grey,
                     ),
                   ),
