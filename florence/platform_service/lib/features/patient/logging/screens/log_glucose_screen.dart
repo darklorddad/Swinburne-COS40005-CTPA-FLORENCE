@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -36,6 +37,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   // State
   XFile? _selectedImage;
+  Uint8List? _imageBytes;
   String? _uploadedImageUrl;
   bool _isAnalyzing = false;
   bool _isLoading = false;
@@ -104,15 +106,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   Future<void> _processImage(XFile image) async {
+    final bytes = await image.readAsBytes();
     setState(() {
       _selectedImage = image;
+      _imageBytes = bytes;
       _isAnalyzing = true; // Show loading state while uploading
     });
 
     try {
       // Upload to Supabase via Data Service
       final apiService = ApiService();
-      final bytes = await image.readAsBytes();
       final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
       
       if (mounted) {
@@ -120,7 +123,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
-      setState(() => _selectedImage = null); // Reset on failure
+      setState(() {
+        _selectedImage = null;
+        _imageBytes = null;
+      }); // Reset on failure
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
@@ -1067,18 +1073,19 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             ),
                           ],
                         ),
-                        if (_selectedImage != null) ...[
+                        if (_imageBytes != null) ...[
                           const SizedBox(height: 12),
                           Stack(
                             alignment: Alignment.topRight,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.file(File(_selectedImage!.path), height: 150, width: double.infinity, fit: BoxFit.cover),
+                                child: Image.memory(_imageBytes!, height: 150, width: double.infinity, fit: BoxFit.cover),
                               ),
                               IconButton(
                                 onPressed: () => setState(() {
                                   _selectedImage = null;
+                                  _imageBytes = null;
                                   _uploadedImageUrl = null;
                                 }), 
                                 icon: const Icon(Icons.close, color: Colors.white),
