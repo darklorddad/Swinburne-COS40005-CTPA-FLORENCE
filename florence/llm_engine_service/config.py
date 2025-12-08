@@ -5,6 +5,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Florence LLM Engine"
+    APP_VERSION: str = "1.0.0"
     APP_ENV: str = "development"
     
     # --- Integration Config ---
