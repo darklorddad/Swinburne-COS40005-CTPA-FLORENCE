@@ -719,6 +719,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
+            ),
+            foregroundDecoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: AppTheme.borderColor),
             ),
             clipBehavior: Clip.antiAlias,
@@ -792,6 +795,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         decoration: BoxDecoration(
                           color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                           borderRadius: BorderRadius.circular(12),
+                        ),
+                        foregroundDecoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: AppTheme.borderColor),
                         ),
                         clipBehavior: Clip.antiAlias,
@@ -814,9 +820,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                   padding: const EdgeInsets.symmetric(vertical: 16),
                                   decoration: BoxDecoration(
                                     color: isSelected ? AppTheme.primaryBlue : null,
-                                    border: showDivider
-                                        ? Border(right: BorderSide(color: AppTheme.borderColor, width: 1))
-                                        : null,
+                                    border: Border(
+                                      right: BorderSide(
+                                        color: showDivider ? AppTheme.borderColor : Colors.transparent,
+                                        width: 1,
+                                      ),
+                                    ),
                                   ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
