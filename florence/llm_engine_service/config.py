@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Florence LLM Engine"
+    PROJECT_NAME: str = "Florence LLM Engine Service"
     APP_VERSION: str = "1.0.0"
     APP_ENV: str = "development"
     
