@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/config/environment.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -135,7 +136,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Returns map with 'calories' and 'description'
   Future<Map<String, dynamic>?> _analyzeMeal(String imageUrl) async {
     try {
-      const llmUrl = 'http://localhost:8001/nutrition/analyze';
+      final llmUrl = '${Environment.llmChatbotServiceUrl}/nutrition/analyze';
       final session = Supabase.instance.client.auth.currentSession;
       
       final response = await http.post(
