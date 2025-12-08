@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/services/api_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
@@ -26,8 +32,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _formKey = GlobalKey<FormState>();
   final _glucoseController = TextEditingController();
   final _notesController = TextEditingController();
+  final _caloriesController = TextEditingController();
 
   // State
+  XFile? _selectedImage;
+  String? _uploadedImageUrl;
+  bool _isAnalyzing = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   String _selectedTiming = 'No Meal';
@@ -49,7 +59,95 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   void dispose() {
     _glucoseController.dispose();
     _notesController.dispose();
+    _caloriesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showImageSourcePicker() async {
+    final picker = ImagePicker();
+    
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
+                  if (image != null) _processImage(image);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+                  if (image != null) _processImage(image);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processImage(XFile image) async {
+    setState(() {
+      _selectedImage = image;
+      _isAnalyzing = true; // Show loading state while uploading
+    });
+
+    try {
+      // Upload to Supabase via Data Service
+      final apiService = ApiService();
+      final bytes = await image.readAsBytes();
+      final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
+      
+      if (mounted) {
+        setState(() => _uploadedImageUrl = uploadRes['url']);
+      }
+    } catch (e) {
+      if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
+      setState(() => _selectedImage = null); // Reset on failure
+    } finally {
+      if (mounted) setState(() => _isAnalyzing = false);
+    }
+  }
+
+  /// Returns map with 'calories' and 'description'
+  Future<Map<String, dynamic>?> _analyzeMeal(String imageUrl) async {
+    try {
+      const llmUrl = 'http://localhost:8001/nutrition/analyze';
+      final session = Supabase.instance.client.auth.currentSession;
+      
+      final response = await http.post(
+        Uri.parse(llmUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${session?.accessToken}',
+        },
+        body: jsonEncode({'image_url': imageUrl}),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint("Analysis error: $e");
+    }
+    return null;
   }
 
   /// Handle save
@@ -63,28 +161,56 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     
     try {
       final glucoseValue = double.parse(_glucoseController.text);
-      // Use the repository provider
       final repo = ref.read(monitorDataRepositoryProvider);
 
       if (_selectedTiming == 'No Meal') {
         await repo.addGlucoseReading(GlucoseReading(
-          id: '', // Backend generates ID
+          id: '',
           timestamp: _selectedDateTime.toUtc(),
           value: glucoseValue,
           context: _selectedTiming,
         ));
       } 
       else {
+        // === AI LOGIC START ===
+        // If we have an image but NO calories, perform AI analysis before saving
+        int? finalCalories = int.tryParse(_caloriesController.text);
+        String? finalNotes = _notesController.text.trim();
+
+        if (_uploadedImageUrl != null && finalCalories == null) {
+          // Notify user
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Analyzing meal photo to estimate calories...')),
+          );
+          
+          final analysis = await _analyzeMeal(_uploadedImageUrl!);
+          
+          if (analysis != null) {
+            if (analysis['calories'] != null) {
+              finalCalories = analysis['calories'];
+            }
+            if (analysis['description'] != null) {
+              final desc = analysis['description'];
+              finalNotes = finalNotes != null && finalNotes.isNotEmpty 
+                  ? '$finalNotes\n\nAI: $desc' 
+                  : desc;
+            }
+          }
+        }
+        // === AI LOGIC END ===
+
         final isBefore = _selectedTiming == 'Before Meal';
-        // Delegate complex logic to repository
+        
         await repo.addMeal(
           _selectedMealType,
-          _selectedDateTime.toUtc(), // Date only used for day
-          (!isBefore && _notesController.text.trim().isNotEmpty) ? _notesController.text.trim() : null,
+          _selectedDateTime.toUtc(),
+          (!isBefore && finalNotes != null && finalNotes.isNotEmpty) ? finalNotes : null,
           isBefore ? glucoseValue : null,
           isBefore ? _selectedDateTime.toUtc() : null,
           !isBefore ? glucoseValue : null,
           !isBefore ? _selectedDateTime.toUtc() : null,
+          finalCalories,
+          _uploadedImageUrl,
         );
       }
       
@@ -926,6 +1052,63 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Image Picker
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _isAnalyzing ? null : _showImageSourcePicker,
+                                icon: _isAnalyzing 
+                                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
+                                    : const Icon(Icons.camera_alt_outlined),
+                                label: Text(_isAnalyzing ? 'Uploading...' : (_selectedImage == null ? 'Add Meal Photo' : 'Change Photo')),
+                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_selectedImage != null) ...[
+                          const SizedBox(height: 12),
+                          Stack(
+                            alignment: Alignment.topRight,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(File(_selectedImage!.path), height: 150, width: double.infinity, fit: BoxFit.cover),
+                              ),
+                              IconButton(
+                                onPressed: () => setState(() {
+                                  _selectedImage = null;
+                                  _uploadedImageUrl = null;
+                                }), 
+                                icon: const Icon(Icons.close, color: Colors.white),
+                                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+                              )
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+
+                        // Calories Input
+                        TextFormField(
+                          controller: _caloriesController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: 'Calories (kcal)',
+                            hintText: 'e.g. 500',
+                            helperText: _selectedImage != null ? 'Leave blank to auto-estimate from photo' : 'Optional',
+                            helperStyle: TextStyle(
+                              color: _selectedImage != null ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                              fontWeight: _selectedImage != null ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                            filled: true,
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
