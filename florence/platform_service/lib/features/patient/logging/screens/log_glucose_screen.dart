@@ -527,6 +527,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   value: Formatters.date(_selectedDateTime),
                   icon: Icons.calendar_today_outlined,
                   onTap: () async {
+                    Helpers.hideKeyboard(context);
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: _selectedDateTime,
@@ -552,6 +553,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
                   icon: Icons.access_time_outlined,
                   onTap: () async {
+                    Helpers.hideKeyboard(context);
                     final picked = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
@@ -772,63 +774,63 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             ),
                       ),
                       const SizedBox(height: 12),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (int i = 0; i < _mealTypeOptions.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 12),
-                            Expanded(
+                      
+                      // Merged Segmented Control Style
+                      Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.borderColor),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Row(
+                          children: _mealTypeOptions.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final option = entry.value;
+                            final isSelected = _selectedMealType == option['value'];
+                            final isLast = index == _mealTypeOptions.length - 1;
+                            
+                            // Determine if we need a right border (divider)
+                            // Show divider if: Not last AND Not Selected AND Next is Not Selected
+                            final nextSelected = !isLast && _mealTypeOptions[index + 1]['value'] == _selectedMealType;
+                            final showDivider = !isLast && !isSelected && !nextSelected;
+
+                            return Expanded(
                               child: InkWell(
-                                onTap: () => setState(() => _selectedMealType = _mealTypeOptions[i]['value']),
-                                borderRadius: BorderRadius.circular(12),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                                onTap: () => setState(() => _selectedMealType = option['value']),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
                                   decoration: BoxDecoration(
-                                    color: _selectedMealType == _mealTypeOptions[i]['value']
-                                        ? AppTheme.primaryBlue
-                                        : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: _selectedMealType == _mealTypeOptions[i]['value']
-                                          ? AppTheme.primaryBlue
-                                          : AppTheme.borderColor,
-                                      width: 1,
-                                    ),
+                                    color: isSelected ? AppTheme.primaryBlue : null,
+                                    border: showDivider
+                                        ? Border(right: BorderSide(color: AppTheme.borderColor, width: 1))
+                                        : null,
                                   ),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        _mealTypeOptions[i]['icon'],
+                                        option['icon'],
                                         size: 20,
-                                        color: _selectedMealType == _mealTypeOptions[i]['value']
-                                            ? Colors.white
-                                            : AppTheme.textSecondaryColor,
+                                        color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
-                                        _mealTypeOptions[i]['label'],
+                                        option['label'],
                                         style: TextStyle(
-                                          color: _selectedMealType == _mealTypeOptions[i]['value']
-                                              ? Colors.white
-                                              : AppTheme.textPrimaryColor,
-                                          fontWeight: _selectedMealType == _mealTypeOptions[i]['value']
-                                              ? FontWeight.bold
-                                              : FontWeight.normal,
-                                          fontSize: 11,
+                                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          fontSize: 12,
                                         ),
                                         textAlign: TextAlign.center,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ],
+                            );
+                          }).toList(),
+                        ),
                       ),
                     ],
                   ),
@@ -844,15 +846,15 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
-    final inputFillColor = isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor;
 
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
+      alignment: Alignment.topCenter, // Ensure animation flows downwards
       child: _selectedTiming != 'After Meal'
           ? const SizedBox.shrink()
           : Padding(
-              padding: const EdgeInsets.only(top: 20), // Add spacing here instead of parent
+              padding: const EdgeInsets.only(top: 20),
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -898,7 +900,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     // Override theme to match the grey fill style of other inputs in this screen
                     Theme(
                       data: Theme.of(context).copyWith(
-                        // CustomTextField uses dividerColor for enabledBorder
                         dividerColor: AppTheme.borderColor,
                         inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
                           fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -907,7 +908,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       ),
                       child: CustomTextField(
                         controller: _notesController,
-                        hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
+                        hint: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
                         maxLines: 3,
                         textInputAction: TextInputAction.done,
                       ),
