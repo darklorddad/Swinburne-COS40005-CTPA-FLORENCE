@@ -364,6 +364,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   validator: Validators.glucose,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
+                  textInputAction: TextInputAction.done,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                         fontSize: 64,
@@ -536,9 +537,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   value: Formatters.date(_selectedDateTime),
                   icon: Icons.calendar_today_outlined,
                   onTap: () async {
-                    Helpers.hideKeyboard(context);
-                    await Future.delayed(const Duration(milliseconds: 100)); // Prevent focus restoration bug
-                    if (!context.mounted) return;
+                    // Steal focus to a temporary node to prevent automatic restoration to the text field
+                    FocusScope.of(context).requestFocus(FocusNode());
 
                     final picked = await showDatePicker(
                       context: context,
@@ -565,9 +565,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
                   icon: Icons.access_time_outlined,
                   onTap: () async {
-                    Helpers.hideKeyboard(context);
-                    await Future.delayed(const Duration(milliseconds: 100)); // Prevent focus restoration bug
-                    if (!context.mounted) return;
+                    FocusScope.of(context).requestFocus(FocusNode());
 
                     final picked = await showTimePicker(
                       context: context,
