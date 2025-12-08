@@ -1,4 +1,4 @@
-### darklorddad's
+# darklorddad's
 .aider*
 dld*
 
@@ -8,8 +8,7 @@ dld*
 Documents/Computing-Technology-Project-A/Documentation-(Due-Week-13)/
 Documents/Computing-Technology-Project-A/Individual/Semester-1-Peer-Review-(Due-Week-13)/
 Documents/Computing-Technology-Project-A/Individual/Worklog-1-(Due-Week-6)/
-Documents/Computing-Technology-Project-A/Individual/Worklog-2-(Due-Week-13)/Submission/
-Documents/Computing-Technology-Project-A/Individual/Worklog-2-(Due-Week-13)/COS40005-EAT40005-Worklog-2-102777801.docx
+Documents/Computing-Technology-Project-A/Individual/Worklog-2-(Due-Week-13)/
 Documents/Computing-Technology-Project-A/Poster/FYP-Showcase-Poster-Group-7/
 Documents/Computing-Technology-Project-A/Project-progress-discussions/
 Documents/Computing-Technology-Project-A/Project-progress-discussions-2/
@@ -36,135 +35,15 @@ Documents/COS40005-or-EAT40005-(S2,-2025)/General/Group-List.xlsx
 Documents/COS40005-or-EAT40005-(S2,-2025)/Project-selection.jpg
 Documents/Computing-Technology-Project-A/Individual/Research-Report-(Due-Week-6)/
 
-#SQL
-*.sql
-
 # Environment variables (API keys, database credentials, secret tokens and etc. goes here)
 .env
 
+*.sql
 *.tmp
 supabase/
 .claude/
 CLAUDE.md
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
-
-# ==> Flutter & Dart
-#
-# General Flutter/Dart generated files
-.flutter-plugins
-.flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/build/
-/ios/.symlinks/
-/ios/Flutter/App.framework
-/ios/Flutter/engine.framework
-/ios/Flutter/flutter_assets/
-/ios/Flutter/.last_build_id
-/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
-/android/app/build/
-/android/.gradle/
-#
-# Dart Build Tools
-.dart_tool/
-#
-# Local settings and properties
-/android/local.properties
-/ios/local.properties
-
-# ==> Common IDEs
-#
-# IntelliJ / Android Studio
-.idea/
-*.iws
-*.iml
-*.ipr
-#
-# VS Code
-.vscode/
-#
-# Xcode
-/ios/Runner.xcworkspace/contents.xcworkspacedata
-/ios/Runner.xcworkspace/xcshareddata/
-/ios/Runner.xcodeproj/project.xcworkspace/
-/ios/Runner.xcodeproj/xcuserdata/
-
-# ==> Operating System Files
-#
-# macOS
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-Icon?
-ehthumbs.db
-#
-# Windows
-Thumbs.db
-Desktop.ini
-
-# ==> Logs & Crash Reports
-#
-# General log files
-*.log
-#
-# Flutter crash reports
-flutter_*.log
-
-# ==> Secrets (Optional but highly recommended)
-#
-# If you have a file for API keys or secrets (e.g., a .env file), add it here
-# .env
-.aider*
+*.bkp
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -288,55 +167,6 @@ app.*.symbols
 !/dev/ci/**/Gemfile.lock
 .env
 .env
-
---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
-Documents/Basil's Doc/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
-.flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
-
-# Symbolication related
-app.*.symbols
-
-# Obfuscation related
-app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
