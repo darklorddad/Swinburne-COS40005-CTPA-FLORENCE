@@ -327,8 +327,10 @@ class MonitorDataRepository {
     double? glucoseBefore,
     DateTime? timeBefore,
     double? glucoseAfter,
-    DateTime? timeAfter,
-  ) async {
+    DateTime? timeAfter, [
+    int? calories,
+    String? photoUrl,
+  ]) async {
     // FIX: Convert back to Local before extracting the YYYY-MM-DD string.
     // This ensures that 7AM Monday (which is 11PM Sunday UTC) is logged as Monday.
     final Map<String, dynamic> payload = {
@@ -340,6 +342,9 @@ class MonitorDataRepository {
     if (mealDesc != null && mealDesc.isNotEmpty) {
       payload['meal_desc'] = mealDesc;
     }
+
+    if (calories != null) payload['calories'] = calories;
+    if (photoUrl != null) payload['photo_url'] = photoUrl;
 
     // Add glucose data to payload if present
     if (glucoseBefore != null) {
