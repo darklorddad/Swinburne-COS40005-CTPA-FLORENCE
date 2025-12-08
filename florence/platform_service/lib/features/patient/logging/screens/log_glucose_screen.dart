@@ -319,7 +319,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     // Tint the whole card background based on status
     final containerColor = glucoseColor != null 
         ? glucoseColor.withOpacity(0.05) 
-        : (isDark ? AppTheme.midnightSurface : Colors.white);
+        : (isDark ? AppTheme.midnightSurface : AppTheme.backgroundColor);
         
     final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
     final hasInput = glucoseColor != null;
