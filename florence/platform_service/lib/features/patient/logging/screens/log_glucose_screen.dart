@@ -916,21 +916,37 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     ),
                     const SizedBox(height: 20),
                     
-                    // Override theme to match the grey fill style of other inputs in this screen
-                    Theme(
-                      data: Theme.of(context).copyWith(
-                        dividerColor: AppTheme.borderColor,
-                        inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
-                          fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                          filled: true,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Notes (Optional)',
+                          style: Theme.of(context).textTheme.labelLarge,
                         ),
-                      ),
-                      child: CustomTextField(
-                        controller: _notesController,
-                        hint: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
-                        maxLines: 3,
-                        textInputAction: TextInputAction.done,
-                      ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _notesController,
+                          maxLines: 3,
+                          textInputAction: TextInputAction.done,
+                          decoration: InputDecoration(
+                            hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
+                            hintStyle: const TextStyle(color: Colors.grey),
+                            filled: true,
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: const BorderSide(
+                                color: AppTheme.primaryBlue,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
