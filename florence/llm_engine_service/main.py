@@ -30,8 +30,8 @@ app.include_router(nutrition_router, prefix="/nutrition", tags=["Nutrition"])
 def root():
     return {
         "service": settings.PROJECT_NAME, 
-        "status": "operational",
-        "documentation": "/docs"
+        "env": settings.APP_ENV,
+        "status": "operational"
     }
 
 if __name__ == "__main__":

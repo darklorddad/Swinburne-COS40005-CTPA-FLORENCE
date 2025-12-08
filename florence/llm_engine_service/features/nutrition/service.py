@@ -1,12 +1,12 @@
 import json
 from langchain_core.messages import HumanMessage, SystemMessage
-from ...core.llm import get_llm_client
+from ...core.llm_factory import LLMFactory
 from .models import FoodAnalysisResponse
 
 class NutritionService:
     def __init__(self):
-        # Low temp for factual data extraction
-        self.llm = get_llm_client(temperature=0.1)
+        # specific low temp for factual analysis
+        self.llm = LLMFactory.create(temperature=0.1)
 
     async def analyze_food_image(self, image_url: str) -> FoodAnalysisResponse:
         system_prompt = """You are a nutrition expert AI. 
@@ -46,8 +46,8 @@ class NutritionService:
             return FoodAnalysisResponse(**data)
             
         except Exception as e:
-            print(f"Nutrition Analysis Error: {e}")
+            print(f"Analysis Error: {e}")
             return FoodAnalysisResponse(
                 calories=None,
-                description="Could not analyze image. Please try again."
+                description="Analysis failed. Please try again."
             )
