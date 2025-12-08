@@ -537,6 +537,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   icon: Icons.calendar_today_outlined,
                   onTap: () async {
                     Helpers.hideKeyboard(context);
+                    await Future.delayed(const Duration(milliseconds: 100)); // Prevent focus restoration bug
+                    if (!context.mounted) return;
+
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: _selectedDateTime,
@@ -563,6 +566,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   icon: Icons.access_time_outlined,
                   onTap: () async {
                     Helpers.hideKeyboard(context);
+                    await Future.delayed(const Duration(milliseconds: 100)); // Prevent focus restoration bug
+                    if (!context.mounted) return;
+
                     final picked = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
