@@ -733,6 +733,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 final nextSelected = !isLast && _timingOptions[index + 1] == _selectedTiming;
                 final showDivider = !isLast && !isSelected && !nextSelected;
 
+                // Always reserve space for the border to prevent layout shift
+                final borderColor = showDivider ? AppTheme.borderColor : Colors.transparent;
+
                 return Expanded(
                   child: InkWell(
                     onTap: () => setState(() => _selectedTiming = option),
@@ -740,9 +743,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
                       decoration: BoxDecoration(
                         color: isSelected ? AppTheme.primaryBlue : null,
-                        border: showDivider
-                            ? Border(right: BorderSide(color: AppTheme.borderColor, width: 1))
-                            : null,
+                        border: Border(
+                          right: BorderSide(
+                            color: isLast ? Colors.transparent : borderColor,
+                            width: 1,
+                          ),
+                        ),
                       ),
                       alignment: Alignment.center,
                       child: Text(
