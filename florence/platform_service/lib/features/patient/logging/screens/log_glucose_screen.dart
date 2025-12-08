@@ -714,58 +714,51 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           ),
           const SizedBox(height: 20),
 
-          // 1. Timing Selection (Distinct Cards)
-          Row(
-            children: [
-              for (int i = 0; i < _timingOptions.length; i++) ...[
-                if (i > 0) const SizedBox(width: 12),
-                Expanded(
+          // 1. Timing Selection (Merged Segmented Control)
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.borderColor),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Row(
+              children: _timingOptions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final option = entry.value;
+                final isSelected = _selectedTiming == option;
+                final isLast = index == _timingOptions.length - 1;
+
+                // Determine if we need a right border (divider)
+                final nextSelected = !isLast && _timingOptions[index + 1] == _selectedTiming;
+                final showDivider = !isLast && !isSelected && !nextSelected;
+
+                return Expanded(
                   child: InkWell(
-                    onTap: () => setState(() => _selectedTiming = _timingOptions[i]),
-                    borderRadius: BorderRadius.circular(12),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
+                    onTap: () => setState(() => _selectedTiming = option),
+                    child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
                       decoration: BoxDecoration(
-                        color: _selectedTiming == _timingOptions[i]
-                            ? AppTheme.primaryBlue
-                            : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: _selectedTiming == _timingOptions[i]
-                              ? AppTheme.primaryBlue
-                              : AppTheme.borderColor,
-                          width: 1,
-                        ),
-                        boxShadow: _selectedTiming == _timingOptions[i]
-                            ? [
-                                BoxShadow(
-                                  color: AppTheme.primaryBlue.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]
+                        color: isSelected ? AppTheme.primaryBlue : null,
+                        border: showDivider
+                            ? Border(right: BorderSide(color: AppTheme.borderColor, width: 1))
                             : null,
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        _timingOptions[i],
+                        option,
                         style: TextStyle(
-                          color: _selectedTiming == _timingOptions[i]
-                              ? Colors.white
-                              : AppTheme.textPrimaryColor,
-                          fontWeight: _selectedTiming == _timingOptions[i]
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                           fontSize: 12,
                         ),
                         textAlign: TextAlign.center,
                       ),
                     ),
                   ),
-                ),
-              ],
-            ],
+                );
+              }).toList(),
+            ),
           ),
 
           // 2. Meal Type Selection (Animated)
