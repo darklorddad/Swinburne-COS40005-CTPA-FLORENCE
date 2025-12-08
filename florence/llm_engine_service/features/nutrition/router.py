@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
-from .models import FoodAnalysisRequest, FoodAnalysisResponse
-from .service import NutritionService
+from features.nutrition.models import FoodAnalysisRequest, FoodAnalysisResponse
+from features.nutrition.service import NutritionService
 
 router = APIRouter()
 

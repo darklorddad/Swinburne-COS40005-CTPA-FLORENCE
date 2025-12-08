@@ -1,7 +1,7 @@
 import json
 from langchain_core.messages import HumanMessage, SystemMessage
-from ...core.llm_factory import LLMFactory
-from .models import FoodAnalysisResponse
+from core.llm_factory import LLMFactory
+from features.nutrition.models import FoodAnalysisResponse
 
 class NutritionService:
     def __init__(self):
