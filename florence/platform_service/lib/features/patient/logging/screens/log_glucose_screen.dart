@@ -534,7 +534,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           const SizedBox(height: 16),
           _buildDateTimePicker(
             label: 'Time',
-            value: Formatters.time(_selectedDateTime),
+            value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
             icon: Icons.access_time_outlined,
             onTap: () async {
               final picked = await showTimePicker(
