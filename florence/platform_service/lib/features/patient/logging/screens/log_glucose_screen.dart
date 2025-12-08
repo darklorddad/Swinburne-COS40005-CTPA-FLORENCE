@@ -715,63 +715,56 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           const SizedBox(height: 20),
 
           // 1. Timing Selection (Merged Segmented Control)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
+          Container(
+            decoration: BoxDecoration(
               color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              child: Row(
-                children: _timingOptions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final option = entry.value;
-                  final isSelected = _selectedTiming == option;
-                  final isFirst = index == 0;
-                  final isLast = index == _timingOptions.length - 1;
-                  
-                  final nextIsSelected = !isLast && _timingOptions[index + 1] == _selectedTiming;
-                  
-                  final grey = AppTheme.borderColor;
-                  final blue = AppTheme.primaryBlue;
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: _timingOptions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final option = entry.value;
+                final isSelected = _selectedTiming == option;
+                final isFirst = index == 0;
+                final isLast = index == _timingOptions.length - 1;
+                
+                final borderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
+                final fillColor = isSelected ? AppTheme.primaryBlue : Colors.transparent;
 
-                  // Define borders without borderRadius (handled by parent ClipRRect)
-                  BoxDecoration decoration;
-                  if (isSelected) {
-                    decoration = BoxDecoration(
-                      color: blue,
-                      border: Border.all(color: blue),
-                    );
-                  } else {
-                    decoration = BoxDecoration(
-                      border: Border(
-                        top: BorderSide(color: grey),
-                        bottom: BorderSide(color: grey),
-                        left: isFirst ? BorderSide(color: grey) : BorderSide.none,
-                        // Draw right border if it's the last item OR a divider is needed
-                        right: (isLast || !nextIsSelected) ? BorderSide(color: grey) : BorderSide.none,
+                // Calculate Radius
+                BorderRadius radius = BorderRadius.zero;
+                if (isFirst) {
+                  radius = const BorderRadius.horizontal(left: Radius.circular(12));
+                } else if (isLast) {
+                  radius = const BorderRadius.horizontal(right: Radius.circular(12));
+                }
+
+                return Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedTiming = option),
+                    borderRadius: radius,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
+                      decoration: BoxDecoration(
+                        color: fillColor,
+                        borderRadius: radius,
+                        // Use Border.all to prevent "Non-uniform border" crash
+                        border: Border.all(color: borderColor),
                       ),
-                    );
-                  }
-
-                  return Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _selectedTiming = option),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 4),
-                        decoration: decoration,
-                        alignment: Alignment.center,
-                        child: Text(
-                          option,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 12,
-                          ),
-                          textAlign: TextAlign.center,
+                      alignment: Alignment.center,
+                      child: Text(
+                        option,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 12,
                         ),
+                        textAlign: TextAlign.center,
                       ),
                     ),
-                  );
-                }).toList(),
-              ),
+                  ),
+                );
+              }).toList(),
             ),
           ),
 
@@ -796,71 +789,65 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       const SizedBox(height: 12),
                       
                       // Merged Segmented Control Style
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
+                      Container(
+                        decoration: BoxDecoration(
                           color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                          child: Row(
-                            children: _mealTypeOptions.asMap().entries.map((entry) {
-                              final index = entry.key;
-                              final option = entry.value;
-                              final isSelected = _selectedMealType == option['value'];
-                              final isFirst = index == 0;
-                              final isLast = index == _mealTypeOptions.length - 1;
-                              
-                              final nextIsSelected = !isLast && _mealTypeOptions[index + 1]['value'] == _selectedMealType;
-                              
-                              final grey = AppTheme.borderColor;
-                              final blue = AppTheme.primaryBlue;
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: _mealTypeOptions.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final option = entry.value;
+                            final isSelected = _selectedMealType == option['value'];
+                            final isFirst = index == 0;
+                            final isLast = index == _mealTypeOptions.length - 1;
+                            
+                            final borderColor = isSelected ? AppTheme.primaryBlue : AppTheme.borderColor;
+                            final fillColor = isSelected ? AppTheme.primaryBlue : Colors.transparent;
 
-                              BoxDecoration decoration;
-                              if (isSelected) {
-                                decoration = BoxDecoration(
-                                  color: blue,
-                                  border: Border.all(color: blue),
-                                );
-                              } else {
-                                decoration = BoxDecoration(
-                                  border: Border(
-                                    top: BorderSide(color: grey),
-                                    bottom: BorderSide(color: grey),
-                                    left: isFirst ? BorderSide(color: grey) : BorderSide.none,
-                                    right: (isLast || !nextIsSelected) ? BorderSide(color: grey) : BorderSide.none,
+                            // Calculate Radius
+                            BorderRadius radius = BorderRadius.zero;
+                            if (isFirst) {
+                              radius = const BorderRadius.horizontal(left: Radius.circular(12));
+                            } else if (isLast) {
+                              radius = const BorderRadius.horizontal(right: Radius.circular(12));
+                            }
+
+                            return Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _selectedMealType = option['value']),
+                                borderRadius: radius,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: fillColor,
+                                    borderRadius: radius,
+                                    border: Border.all(color: borderColor),
                                   ),
-                                );
-                              }
-
-                              return Expanded(
-                                child: InkWell(
-                                  onTap: () => setState(() => _selectedMealType = option['value']),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                    decoration: decoration,
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          option['icon'],
-                                          size: 20,
-                                          color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        option['icon'],
+                                        size: 20,
+                                        color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        option['label'],
+                                        style: TextStyle(
+                                          color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          fontSize: 12,
                                         ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          option['label'],
-                                          style: TextStyle(
-                                            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                            fontSize: 12,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              );
-                            }).toList(),
-                          ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ),
                     ],
