@@ -39,10 +39,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     'After Meal',
   ];
 
-  final List<String> _mealTypeOptions = [
-    'BREAKFAST',
-    'LUNCH',
-    'DINNER',
+  final List<Map<String, dynamic>> _mealTypeOptions = [
+    {'value': 'BREAKFAST', 'label': 'Breakfast', 'icon': Icons.wb_sunny_outlined},
+    {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy_outlined},
+    {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay_outlined},
   ];
 
   @override
@@ -757,64 +757,87 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
-            child: _selectedTiming == 'No Meal' 
-              ? const SizedBox.shrink()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 20),
-                    Text(
-                      'Select Meal',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                          fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        for (int i = 0; i < _mealTypeOptions.length; i++) ...[
-                          if (i > 0) const SizedBox(width: 12),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _selectedMealType = _mealTypeOptions[i]),
-                              borderRadius: BorderRadius.circular(12),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                                decoration: BoxDecoration(
-                                  color: _selectedMealType == _mealTypeOptions[i]
-                                      ? AppTheme.primaryBlue
-                                      : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: _selectedMealType == _mealTypeOptions[i]
-                                        ? AppTheme.primaryBlue
-                                        : AppTheme.borderColor,
-                                    width: 1,
-                                  ),
+            child: _selectedTiming == 'No Meal'
+                ? const SizedBox.shrink()
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20),
+                      // Subsection Header
+                      Row(
+                        children: [
+                          Icon(Icons.restaurant_menu, size: 16, color: AppTheme.textSecondaryColor),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Meal Type',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppTheme.textSecondaryColor,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  _mealTypeOptions[i][0] + _mealTypeOptions[i].substring(1).toLowerCase(),
-                                  style: TextStyle(
-                                    color: _selectedMealType == _mealTypeOptions[i]
-                                        ? Colors.white
-                                        : AppTheme.textPrimaryColor,
-                                    fontWeight: _selectedMealType == _mealTypeOptions[i]
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    fontSize: 12,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (int i = 0; i < _mealTypeOptions.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 12),
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => setState(() => _selectedMealType = _mealTypeOptions[i]['value']),
+                                borderRadius: BorderRadius.circular(12),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+                                  decoration: BoxDecoration(
+                                    color: _selectedMealType == _mealTypeOptions[i]['value']
+                                        ? AppTheme.primaryBlue
+                                        : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: _selectedMealType == _mealTypeOptions[i]['value']
+                                          ? AppTheme.primaryBlue
+                                          : AppTheme.borderColor,
+                                      width: 1,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        _mealTypeOptions[i]['icon'],
+                                        size: 20,
+                                        color: _selectedMealType == _mealTypeOptions[i]['value']
+                                            ? Colors.white
+                                            : AppTheme.textSecondaryColor,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        _mealTypeOptions[i]['label'],
+                                        style: TextStyle(
+                                          color: _selectedMealType == _mealTypeOptions[i]['value']
+                                              ? Colors.white
+                                              : AppTheme.textPrimaryColor,
+                                          fontWeight: _selectedMealType == _mealTypeOptions[i]['value']
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          fontSize: 11,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -878,11 +901,28 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     ),
                     const SizedBox(height: 20),
                     
-                    CustomTextField(
-                      controller: _notesController,
-                      hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
-                      maxLines: 3,
-                      textInputAction: TextInputAction.done,
+                    // Override theme to match the grey fill style of other inputs in this screen
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        inputDecorationTheme: Theme.of(context).inputDecorationTheme.copyWith(
+                          fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppTheme.borderColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: AppTheme.borderColor),
+                          ),
+                        ),
+                      ),
+                      child: CustomTextField(
+                        controller: _notesController,
+                        hint: 'What did you eat? (e.g. Rice, Chicken, Salad)',
+                        maxLines: 3,
+                        textInputAction: TextInputAction.done,
+                      ),
                     ),
                   ],
                 ),
