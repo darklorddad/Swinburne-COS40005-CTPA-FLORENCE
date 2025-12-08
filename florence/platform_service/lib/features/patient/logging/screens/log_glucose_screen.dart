@@ -907,7 +907,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Meal Details',
+                          'Meal Details (Optional)',
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.bold,
                               ),
@@ -919,11 +919,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Notes (Optional)',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
