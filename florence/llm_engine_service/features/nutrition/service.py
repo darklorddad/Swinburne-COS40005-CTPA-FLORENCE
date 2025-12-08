@@ -5,7 +5,8 @@ from .models import FoodAnalysisResponse
 
 class NutritionService:
     def __init__(self):
-        # specific low temp for factual analysis
+        # We explicitly request 0.1 here because we need deterministic JSON output.
+        # This overrides the "Provider Default" just for this specific feature.
         self.llm = LLMFactory.create(temperature=0.1)
 
     async def analyze_food_image(self, image_url: str) -> FoodAnalysisResponse:
