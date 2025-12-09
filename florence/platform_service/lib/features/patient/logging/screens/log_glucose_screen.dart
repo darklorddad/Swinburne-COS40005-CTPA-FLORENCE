@@ -1140,7 +1140,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             IconButton(
                               icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
-                              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
                               padding: EdgeInsets.zero,
                             ),
                           ],
