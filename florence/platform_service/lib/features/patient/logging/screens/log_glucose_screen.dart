@@ -1097,7 +1097,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.only(left: 12, right: 4, top: 2, bottom: 2),
+                              padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
                               decoration: BoxDecoration(
                                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(24),
@@ -1105,6 +1105,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
                                     'Auto',
@@ -1112,19 +1113,24 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                       fontWeight: FontWeight.w600,
                                       color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
                                       fontSize: 13,
+                                      height: 1.0,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Transform.scale(
-                                    scale: 0.8,
-                                    child: Switch(
-                                      value: _useAiAutofill,
-                                      activeColor: Colors.white,
-                                      activeTrackColor: AppTheme.primaryBlue,
-                                      inactiveThumbColor: Colors.white,
-                                      inactiveTrackColor: Colors.grey.shade300,
-                                      trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
-                                      onChanged: (val) => setState(() => _useAiAutofill = val),
+                                  SizedBox(
+                                    height: 24,
+                                    width: 40,
+                                    child: Transform.scale(
+                                      scale: 0.8,
+                                      child: Switch(
+                                        value: _useAiAutofill,
+                                        activeColor: Colors.white,
+                                        activeTrackColor: AppTheme.primaryBlue,
+                                        inactiveThumbColor: Colors.white,
+                                        inactiveTrackColor: Colors.grey.shade300,
+                                        trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                        onChanged: (val) => setState(() => _useAiAutofill = val),
+                                      ),
                                     ),
                                   ),
                                 ],
