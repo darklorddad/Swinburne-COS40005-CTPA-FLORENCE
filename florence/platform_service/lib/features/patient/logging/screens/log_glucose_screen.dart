@@ -154,17 +154,23 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         if (_useAiAutofill) {
           final analysis = await _analyzeMeal(url);
           if (mounted && analysis != null) {
-            if (analysis['calories'] != null) {
+            bool updated = false;
+
+            // Only autofill if the user hasn't typed anything
+            if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
               _caloriesController.text = analysis['calories'].toString();
+              updated = true;
             }
-            if (analysis['description'] != null) {
+            
+            if (analysis['description'] != null && _notesController.text.isEmpty) {
               final desc = analysis['description'];
-              // Only overwrite if empty to avoid deleting user text
-              if (_notesController.text.isEmpty) {
-                _notesController.text = 'AI: $desc';
-              }
+              _notesController.text = 'AI: $desc';
+              updated = true;
             }
-            Helpers.showSuccess(context, 'Meal details auto-filled!');
+            
+            if (updated) {
+              Helpers.showSuccess(context, 'Meal details auto-filled!');
+            }
           }
         }
       }
@@ -1147,10 +1153,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           decoration: InputDecoration(
                             labelText: 'Calories (kcal)',
                             hintText: 'e.g. 500',
-                            helperText: _selectedImage != null ? 'Leave blank to auto-estimate from photo' : 'Optional',
+                            helperText: (_selectedImage != null && _useAiAutofill) ? 'Leave blank for AI estimate' : 'Optional',
                             helperStyle: TextStyle(
-                              color: _selectedImage != null ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-                              fontWeight: _selectedImage != null ? FontWeight.w600 : FontWeight.normal,
+                              color: (_selectedImage != null && _useAiAutofill) ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                              fontWeight: (_selectedImage != null && _useAiAutofill) ? FontWeight.w600 : FontWeight.normal,
                             ),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -1167,6 +1173,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           decoration: InputDecoration(
                             hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
                             hintStyle: const TextStyle(color: Colors.grey),
+                            helperText: (_selectedImage != null && _useAiAutofill) ? 'Leave blank for AI description' : null,
+                            helperStyle: const TextStyle(
+                              color: AppTheme.primaryBlue,
+                              fontWeight: FontWeight.w600,
+                            ),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(
