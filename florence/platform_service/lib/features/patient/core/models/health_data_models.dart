@@ -116,6 +116,8 @@ class DailyPatientLog {
   final DateTime? glucoseAfterMealTime;
   final DateTime logDate;
   final String mealTime; // 'BREAKFAST', 'LUNCH', 'DINNER'
+  final int? calories;
+  final String? photoUrl;
 
   DateTime get effectiveTime => glucoseBeforeMealTime ?? glucoseAfterMealTime ?? logDate;
 
@@ -128,6 +130,8 @@ class DailyPatientLog {
     this.glucoseAfterMeal,
     this.glucoseBeforeMealTime,
     this.glucoseAfterMealTime,
+    this.calories,
+    this.photoUrl,
   });
 
   Map<String, dynamic> toJson() {
@@ -140,6 +144,8 @@ class DailyPatientLog {
       'glucose_after_meal_time': glucoseAfterMealTime?.toIso8601String(),
       'log_date': logDate.toIso8601String(),
       'meal_time': mealTime,
+      'calories': calories,
+      'photo_url': photoUrl,
     };
   }
 
@@ -153,6 +159,8 @@ class DailyPatientLog {
       glucoseAfterMeal: json['glucose_after_meal'] != null ? (json['glucose_after_meal'] as num).toDouble() : null,
       glucoseBeforeMealTime: json['glucose_before_meal_time'] != null ? DateTime.parse(json['glucose_before_meal_time'] as String) : null,
       glucoseAfterMealTime: json['glucose_after_meal_time'] != null ? DateTime.parse(json['glucose_after_meal_time'] as String) : null,
+      calories: json['calories'] as int?,
+      photoUrl: json['photo_url'] as String?,
     );
   }
 }
