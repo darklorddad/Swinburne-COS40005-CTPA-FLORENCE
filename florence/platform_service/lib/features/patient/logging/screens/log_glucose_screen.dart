@@ -1096,26 +1096,43 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         // AI Toggle Switch Group
                         Row(
                           children: [
-                            Text(
-                              'Auto',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: AppTheme.textSecondaryColor,
+                            Container(
+                              padding: const EdgeInsets.only(left: 12, right: 4, top: 2, bottom: 2),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: AppTheme.borderColor),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Auto',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                                      fontSize: 13,
+                                    ),
                                   ),
-                            ),
-                            const SizedBox(width: 8),
-                            Transform.scale(
-                              scale: 1.0, // Bigger switch
-                              child: Switch(
-                                value: _useAiAutofill,
-                                activeColor: Colors.white,
-                                activeTrackColor: AppTheme.primaryBlue,
-                                onChanged: (val) => setState(() => _useAiAutofill = val),
+                                  const SizedBox(width: 8),
+                                  Transform.scale(
+                                    scale: 0.8,
+                                    child: Switch(
+                                      value: _useAiAutofill,
+                                      activeColor: Colors.white,
+                                      activeTrackColor: AppTheme.primaryBlue,
+                                      inactiveThumbColor: Colors.white,
+                                      inactiveTrackColor: Colors.grey.shade300,
+                                      trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                      onChanged: (val) => setState(() => _useAiAutofill = val),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
                             IconButton(
-                              icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
+                              icon: const Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
