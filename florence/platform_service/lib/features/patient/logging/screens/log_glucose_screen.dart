@@ -1029,7 +1029,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      alignment: Alignment.topCenter, // Ensure animation flows downwards
+      alignment: Alignment.topCenter,
       child: _selectedTiming != 'After Meal'
           ? const SizedBox.shrink()
           : Padding(
@@ -1051,7 +1051,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -1066,38 +1068,45 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          'Meal Details',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Meal Details',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            Text(
+                              'Optional',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textSecondaryColor,
+                                  ),
+                            ),
+                          ],
                         ),
                         const Spacer(),
                         // AI Toggle Switch
                         Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.info_outline, size: 18, color: AppTheme.primaryBlue),
-                              onPressed: _showAiInfoDialog,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
-                            ),
-                            const SizedBox(width: 8),
                             Text(
-                              'AI Auto-Fill',
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              'Auto',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppTheme.primaryBlue,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.bold,
                                   ),
                             ),
                             const SizedBox(width: 4),
-                            Transform.scale(
-                              scale: 0.8,
-                              child: Switch(
-                                value: _useAiAutofill,
-                                activeColor: AppTheme.primaryBlue,
-                                onChanged: (val) => setState(() => _useAiAutofill = val),
-                              ),
+                            Switch(
+                              value: _useAiAutofill,
+                              activeColor: AppTheme.primaryBlue,
+                              onChanged: (val) => setState(() => _useAiAutofill = val),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondaryColor),
+                              onPressed: _showAiInfoDialog,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
                           ],
                         ),
@@ -1108,42 +1117,72 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Image Picker
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _isAnalyzing ? null : _showImageSourcePicker,
-                                icon: _isAnalyzing 
-                                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
-                                    : const Icon(Icons.camera_alt_outlined),
-                                label: Text(_isAnalyzing ? 'Uploading...' : (_selectedImage == null ? 'Add Meal Photo' : 'Change Photo')),
-                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-                              ),
+                        // Image Picker Box
+                        InkWell(
+                          onTap: _isAnalyzing ? null : _showImageSourcePicker,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            height: 160,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.borderColor),
                             ),
-                          ],
-                        ),
-                        if (_imageBytes != null) ...[
-                          const SizedBox(height: 12),
-                          Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.memory(_imageBytes!, height: 150, width: double.infinity, fit: BoxFit.cover),
-                              ),
-                              IconButton(
-                                onPressed: () => setState(() {
-                                  _selectedImage = null;
-                                  _imageBytes = null;
-                                  _uploadedImageUrl = null;
-                                }), 
-                                icon: const Icon(Icons.close, color: Colors.white),
-                                style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                              )
-                            ],
+                            child: _imageBytes != null
+                                ? Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                                      ),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: IconButton(
+                                          onPressed: () => setState(() {
+                                            _selectedImage = null;
+                                            _imageBytes = null;
+                                            _uploadedImageUrl = null;
+                                          }), 
+                                          icon: const Icon(Icons.close, color: Colors.white),
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: Colors.black54,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity: VisualDensity.compact,
+                                          ),
+                                        ),
+                                      ),
+                                      if (_isAnalyzing)
+                                        Container(
+                                          color: Colors.black45,
+                                          child: const Center(
+                                            child: CircularProgressIndicator(color: Colors.white),
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_a_photo_outlined,
+                                        size: 32,
+                                        color: AppTheme.primaryBlue,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _isAnalyzing ? 'Uploading...' : 'Add Meal Photo',
+                                        style: TextStyle(
+                                          color: AppTheme.primaryBlue,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                           ),
-                        ],
+                        ),
                         const SizedBox(height: 16),
 
                         // Calories Input
@@ -1153,11 +1192,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           decoration: InputDecoration(
                             labelText: 'Calories (kcal)',
                             hintText: 'e.g. 500',
-                            helperText: (_selectedImage != null && _useAiAutofill) ? 'Leave blank for AI estimate' : 'Optional',
-                            helperStyle: TextStyle(
-                              color: (_selectedImage != null && _useAiAutofill) ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-                              fontWeight: (_selectedImage != null && _useAiAutofill) ? FontWeight.w600 : FontWeight.normal,
-                            ),
+                            // Removed optional text from here
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -1166,6 +1201,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                         const SizedBox(height: 16),
 
+                        // Notes Input
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
@@ -1173,8 +1209,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           decoration: InputDecoration(
                             hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
                             hintStyle: const TextStyle(color: Colors.grey),
-                            helperText: (_selectedImage != null && _useAiAutofill) ? 'Leave blank for AI description' : null,
-                            helperStyle: const TextStyle(
+                            // Moved helper text here
+                            helperText: (_imageBytes != null && _useAiAutofill) ? 'Leave blank for AI auto-estimate' : null,
+                            helperStyle: TextStyle(
                               color: AppTheme.primaryBlue,
                               fontWeight: FontWeight.w600,
                             ),
