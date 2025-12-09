@@ -1092,26 +1092,33 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           ],
                         ),
                         const Spacer(),
-                        // AI Toggle Switch
+                        
+                        // AI Toggle Switch Group
                         Row(
                           children: [
                             Text(
                               'Auto',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     fontWeight: FontWeight.w600,
+                                    color: AppTheme.textSecondaryColor,
                                   ),
                             ),
-                            const SizedBox(width: 4),
-                            Switch(
-                              value: _useAiAutofill,
-                              activeColor: Colors.white,
-                              activeTrackColor: AppTheme.primaryBlue,
-                              onChanged: (val) => setState(() => _useAiAutofill = val),
+                            const SizedBox(width: 8),
+                            Transform.scale(
+                              scale: 1.0, // Bigger switch
+                              child: Switch(
+                                value: _useAiAutofill,
+                                activeColor: Colors.white,
+                                activeTrackColor: AppTheme.primaryBlue,
+                                onChanged: (val) => setState(() => _useAiAutofill = val),
+                              ),
                             ),
+                            const SizedBox(width: 4),
                             IconButton(
                               icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
-                              // Default padding ensures good hitbox
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
                             ),
                           ],
                         ),
@@ -1122,7 +1129,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Image Picker Box
+                        // Image Picker Box (Less pronounced)
                         InkWell(
                           onTap: _isAnalyzing ? null : _showImageSourcePicker,
                           borderRadius: BorderRadius.circular(12),
@@ -1173,15 +1180,15 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                     children: [
                                       Icon(
                                         Icons.add_a_photo_outlined,
-                                        size: 32,
-                                        color: AppTheme.primaryBlue,
+                                        size: 28,
+                                        color: AppTheme.textSecondaryColor,
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         _isAnalyzing ? 'Uploading...' : 'Add Meal Photo',
                                         style: TextStyle(
-                                          color: AppTheme.textPrimaryColor, // Neutral color
-                                          fontWeight: FontWeight.w600,
+                                          color: AppTheme.textSecondaryColor,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ],
@@ -1190,16 +1197,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Calories Input
+                        // Calories Input (Styled like hint)
                         TextFormField(
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'Calories (kcal)',
-                            hintText: 'e.g. 500',
+                            hintText: 'Calories (kcal)',
+                            hintStyle: const TextStyle(color: Colors.grey),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            // Ensure icon spacing is consistent with standard input
                             prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
                           ),
                         ),
@@ -1228,7 +1236,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             ),
                           ),
                         ),
-                        // Helper Text (Outside for precise alignment)
+                        
+                        // Helper Text (Condition based on Image AND Toggle)
+                        // Shows "Leave blank..." hint if:
+                        // 1. Image is present (bytes != null)
+                        // 2. Auto toggle is ON (_useAiAutofill)
+                        // 3. User hasn't typed anything yet (optional UX choice, keeping it simple for now)
                         if (_imageBytes != null && _useAiAutofill) ...[
                           const SizedBox(height: 6),
                           Padding(
