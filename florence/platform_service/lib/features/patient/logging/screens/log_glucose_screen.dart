@@ -1097,7 +1097,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+                              padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
                               decoration: BoxDecoration(
                                 color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
                                 borderRadius: BorderRadius.circular(24),
@@ -1112,16 +1112,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
                                       color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-                                      fontSize: 13,
+                                      fontSize: 14,
                                       height: 1.0,
                                     ),
                                   ),
                                   const SizedBox(width: 8),
                                   SizedBox(
-                                    height: 24,
-                                    width: 40,
+                                    height: 28,
+                                    width: 44,
                                     child: Transform.scale(
-                                      scale: 0.8,
+                                      scale: 0.9,
                                       child: Switch(
                                         value: _useAiAutofill,
                                         activeColor: Colors.white,
@@ -1147,7 +1147,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
