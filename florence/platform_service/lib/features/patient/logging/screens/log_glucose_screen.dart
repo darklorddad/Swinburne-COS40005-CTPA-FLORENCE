@@ -1111,7 +1111,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                     'Auto',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: _useAiAutofill ? AppTheme.textPrimaryColor : AppTheme.textSecondaryColor,
+                                      color: AppTheme.textSecondaryColor,
                                       fontSize: 14,
                                       height: 1.0,
                                     ),
@@ -1203,13 +1203,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                       Icon(
                                         Icons.add_a_photo_outlined,
                                         size: 28,
-                                        color: Colors.grey,
+                                        color: AppTheme.textSecondaryColor,
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         _isAnalyzing ? 'Uploading...' : 'Add Meal Photo',
                                         style: TextStyle(
-                                          color: Colors.grey,
+                                          color: AppTheme.textSecondaryColor,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
@@ -1256,7 +1256,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
                             hintText: 'What did you eat?',
-                            hintStyle: const TextStyle(color: Colors.grey),
+                            hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(
