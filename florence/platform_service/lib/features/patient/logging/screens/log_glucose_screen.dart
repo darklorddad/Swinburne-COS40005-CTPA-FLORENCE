@@ -1136,18 +1136,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: 4),
                             IconButton(
-                              icon: const Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondaryColor),
+                              icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
                             ),
                           ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                     
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1218,31 +1216,45 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                        // Calories Input (Styled like hint)
+                        // Calories Section
+                        Text(
+                          'Calories',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            hintText: 'Calories (kcal)',
-                            hintStyle: const TextStyle(color: Colors.grey),
+                            hintText: 'e.g. 500',
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            // Ensure icon spacing is consistent with standard input
                             prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
-                        // Notes Input
+                        // Meal Description Section
+                        Text(
+                          'Meal Description',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
                           textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
-                            hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
+                            hintText: 'What did you eat?',
                             hintStyle: const TextStyle(color: Colors.grey),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
