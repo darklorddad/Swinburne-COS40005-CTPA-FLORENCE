@@ -1145,7 +1145,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
