@@ -42,6 +42,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   String? _uploadedImageUrl;
   bool _isAnalyzing = false;
   bool _isLoading = false;
+  bool _useAiAutofill = true; // Default to enabled
   DateTime _selectedDateTime = DateTime.now();
   String _selectedTiming = 'No Meal';
   String _selectedMealType = 'BREAKFAST';
@@ -64,6 +65,32 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     _notesController.dispose();
     _caloriesController.dispose();
     super.dispose();
+  }
+
+  void _showAiInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Text('AI Auto-Fill'),
+          ],
+        ),
+        content: const Text(
+          'When enabled, uploading a meal photo will automatically trigger our AI engine.\n\n'
+          'It will analyze the image to estimate calories and generate a description for your notes.\n\n'
+          'Disable this if you prefer to enter details manually.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showImageSourcePicker() async {
@@ -120,7 +147,26 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
       
       if (mounted) {
-        setState(() => _uploadedImageUrl = uploadRes['url']);
+        final url = uploadRes['url'];
+        setState(() => _uploadedImageUrl = url);
+
+        // TRIGGER AI IF ENABLED
+        if (_useAiAutofill) {
+          final analysis = await _analyzeMeal(url);
+          if (mounted && analysis != null) {
+            if (analysis['calories'] != null) {
+              _caloriesController.text = analysis['calories'].toString();
+            }
+            if (analysis['description'] != null) {
+              final desc = analysis['description'];
+              // Only overwrite if empty to avoid deleting user text
+              if (_notesController.text.isEmpty) {
+                _notesController.text = 'AI: $desc';
+              }
+            }
+            Helpers.showSuccess(context, 'Meal details auto-filled!');
+          }
+        }
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
@@ -179,39 +225,14 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         ));
       } 
       else {
-        // === AI LOGIC START ===
-        // If we have an image but NO calories, perform AI analysis before saving
-        int? finalCalories = int.tryParse(_caloriesController.text);
-        String? finalNotes = _notesController.text.trim();
-
-        if (_uploadedImageUrl != null && finalCalories == null) {
-          // Notify user
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Analyzing meal photo to estimate calories...')),
-          );
-          
-          final analysis = await _analyzeMeal(_uploadedImageUrl!);
-          
-          if (analysis != null) {
-            if (analysis['calories'] != null) {
-              finalCalories = analysis['calories'];
-            }
-            if (analysis['description'] != null) {
-              final desc = analysis['description'];
-              finalNotes = finalNotes != null && finalNotes.isNotEmpty 
-                  ? '$finalNotes\n\nAI: $desc' 
-                  : desc;
-            }
-          }
-        }
-        // === AI LOGIC END ===
-
         final isBefore = _selectedTiming == 'Before Meal';
+        final finalNotes = _notesController.text.trim();
+        final finalCalories = int.tryParse(_caloriesController.text);
         
         await repo.addMeal(
           _selectedMealType,
           _selectedDateTime.toUtc(),
-          (!isBefore && finalNotes != null && finalNotes.isNotEmpty) ? finalNotes : null,
+          (!isBefore && finalNotes.isNotEmpty) ? finalNotes : null,
           isBefore ? glucoseValue : null,
           isBefore ? _selectedDateTime.toUtc() : null,
           !isBefore ? glucoseValue : null,
@@ -1046,11 +1067,33 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                               ),
                         ),
                         const Spacer(),
-                        Text(
-                          'Optional',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.textSecondaryColor,
+                        // AI Toggle Switch
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.info_outline, size: 18, color: AppTheme.primaryBlue),
+                              onPressed: _showAiInfoDialog,
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'AI Auto-Fill',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.primaryBlue,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
+                            const SizedBox(width: 4),
+                            Transform.scale(
+                              scale: 0.8,
+                              child: Switch(
+                                value: _useAiAutofill,
+                                activeColor: AppTheme.primaryBlue,
+                                onChanged: (val) => setState(() => _useAiAutofill = val),
                               ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
