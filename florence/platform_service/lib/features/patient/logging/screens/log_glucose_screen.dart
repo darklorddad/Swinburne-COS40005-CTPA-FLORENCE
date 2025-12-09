@@ -1137,10 +1137,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Standard IconButton without constraints for matching hitbox
                             IconButton(
                               icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
+                              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                              padding: EdgeInsets.zero,
                             ),
                           ],
                         ),
