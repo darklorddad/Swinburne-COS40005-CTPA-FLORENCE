@@ -1129,6 +1129,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                         inactiveThumbColor: Colors.white,
                                         inactiveTrackColor: Colors.grey.shade300,
                                         trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                         onChanged: (val) => setState(() => _useAiAutofill = val),
                                       ),
                                     ),
@@ -1140,7 +1141,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             IconButton(
                               icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
-                              constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+                              visualDensity: VisualDensity.compact,
+                              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
                               padding: EdgeInsets.zero,
                             ),
                           ],
