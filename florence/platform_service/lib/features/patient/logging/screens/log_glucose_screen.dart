@@ -1111,7 +1111,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                     'Auto',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                                      color: _useAiAutofill ? AppTheme.textPrimaryColor : AppTheme.textSecondaryColor,
                                       fontSize: 14,
                                       height: 1.0,
                                     ),
@@ -1136,7 +1136,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 ],
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 8),
+                            // Standard IconButton without constraints for matching hitbox
                             IconButton(
                               icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
@@ -1145,12 +1146,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20), // Standard spacing 20px
                     
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Image Picker Box (Less pronounced)
+                        // Image Picker Box
                         InkWell(
                           onTap: _isAnalyzing ? null : _showImageSourcePicker,
                           borderRadius: BorderRadius.circular(12),
