@@ -1181,13 +1181,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                       Icon(
                                         Icons.add_a_photo_outlined,
                                         size: 28,
-                                        color: AppTheme.textSecondaryColor,
+                                        color: Colors.grey,
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
                                         _isAnalyzing ? 'Uploading...' : 'Add Meal Photo',
                                         style: TextStyle(
-                                          color: AppTheme.textSecondaryColor,
+                                          color: Colors.grey,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
