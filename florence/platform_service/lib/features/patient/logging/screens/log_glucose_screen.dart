@@ -1098,21 +1098,20 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             Text(
                               'Auto',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.primaryBlue,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.w600,
                                   ),
                             ),
                             const SizedBox(width: 4),
                             Switch(
                               value: _useAiAutofill,
-                              activeColor: AppTheme.primaryBlue,
+                              activeColor: Colors.white,
+                              activeTrackColor: AppTheme.primaryBlue,
                               onChanged: (val) => setState(() => _useAiAutofill = val),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondaryColor),
+                              icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                               onPressed: _showAiInfoDialog,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+                              // Default padding ensures good hitbox
                             ),
                           ],
                         ),
@@ -1181,7 +1180,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                       Text(
                                         _isAnalyzing ? 'Uploading...' : 'Add Meal Photo',
                                         style: TextStyle(
-                                          color: AppTheme.primaryBlue,
+                                          color: AppTheme.textPrimaryColor, // Neutral color
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
@@ -1198,7 +1197,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           decoration: InputDecoration(
                             labelText: 'Calories (kcal)',
                             hintText: 'e.g. 500',
-                            // Removed optional text from here
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
@@ -1215,12 +1213,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           decoration: InputDecoration(
                             hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
                             hintStyle: const TextStyle(color: Colors.grey),
-                            // Moved helper text here
-                            helperText: (_imageBytes != null && _useAiAutofill) ? 'Leave blank for AI auto-estimate' : null,
-                            helperStyle: TextStyle(
-                              color: AppTheme.primaryBlue,
-                              fontWeight: FontWeight.w600,
-                            ),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(
@@ -1236,6 +1228,21 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             ),
                           ),
                         ),
+                        // Helper Text (Outside for precise alignment)
+                        if (_imageBytes != null && _useAiAutofill) ...[
+                          const SizedBox(height: 6),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Text(
+                              'Leave blank for auto-estimate',
+                              style: TextStyle(
+                                color: AppTheme.primaryBlue,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
