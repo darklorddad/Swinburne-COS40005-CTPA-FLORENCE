@@ -68,6 +68,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   void _showAiInfoDialog() {
+    // Unfocus text fields to prevent keyboard popping up when dialog closes
+    FocusScope.of(context).requestFocus(FocusNode());
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -94,6 +97,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   Future<void> _showImageSourcePicker() async {
+    // Unfocus text fields to prevent keyboard popping up when sheet closes
+    FocusScope.of(context).requestFocus(FocusNode());
+
     final picker = ImagePicker();
     
     await showModalBottomSheet(
