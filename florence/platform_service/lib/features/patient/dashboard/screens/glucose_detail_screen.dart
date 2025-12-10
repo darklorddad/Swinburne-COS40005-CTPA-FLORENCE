@@ -77,99 +77,101 @@ class GlucoseDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: context.isDesktop
-                        ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Left Column
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _StatisticsSection(
-                                    readings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left Column
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _StatisticsSection(
+                                        readings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _GlucoseTrendsSection(
+                                        allReadings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _TimeInRangeSection(
+                                        readings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 20),
-                                  _GlucoseTrendsSection(
-                                    allReadings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
+                                ),
+                                const SizedBox(width: 20),
+                                // Right Column
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _ModalDaySection(
+                                        allReadings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _HistorySection(
+                                        allReadings: allReadings,
+                                        thresholds: thresholds,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
                                   ),
-                                  const SizedBox(height: 20),
-                                  _TimeInRangeSection(
-                                    readings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _StatisticsSection(
+                                  readings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _GlucoseTrendsSection(
+                                  allReadings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _TimeInRangeSection(
+                                  readings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _ModalDaySection(
+                                  allReadings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _HistorySection(
+                                  allReadings: allReadings,
+                                  thresholds: thresholds,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
                             ),
-                            const SizedBox(width: 20),
-                            // Right Column
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _ModalDaySection(
-                                    allReadings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  _HistorySection(
-                                    allReadings: allReadings,
-                                    thresholds: thresholds,
-                                  ),
-                                  const SizedBox(height: 24),
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _StatisticsSection(
-                              readings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _GlucoseTrendsSection(
-                              allReadings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _TimeInRangeSection(
-                              readings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _ModalDaySection(
-                              allReadings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _HistorySection(
-                              allReadings: allReadings,
-                              thresholds: thresholds,
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           );
     },
