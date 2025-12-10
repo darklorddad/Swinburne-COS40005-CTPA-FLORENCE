@@ -1230,10 +1230,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                         ),
                                       ),
                                       if (_isAnalyzing)
-                                        Container(
-                                          color: Colors.black45,
-                                          child: const Center(
-                                            child: CircularProgressIndicator(color: Colors.white),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Container(
+                                            color: Colors.black45,
+                                            child: const Center(
+                                              child: CircularProgressIndicator(color: Colors.white),
+                                            ),
                                           ),
                                         ),
                                     ],
