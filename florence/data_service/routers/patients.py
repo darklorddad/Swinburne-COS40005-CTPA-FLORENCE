@@ -438,26 +438,6 @@ async def upload_patient_avatar(
         print(f"Upload Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
 
-@router.delete("/me/meal-photo", summary="Delete meal photo")
-async def delete_meal_photo(
-    path: str,
-    patient_profile: dict = Depends(get_current_patient_profile)
-):
-    """Deletes a meal photo from Storage."""
-    try:
-        user_id = patient_profile['user_id']
-        
-        # Security check: Ensure path belongs to user
-        if not path.startswith(f"Meal_Photos/{user_id}/"):
-             raise HTTPException(status_code=403, detail="Access denied to this file.")
-
-        res = supabase.storage.from_("Bucket").remove([path])
-        return {"message": "File deleted"}
-
-    except Exception as e:
-        print(f"Delete Error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete image: {str(e)}")
-
 @router.post("/me/meal-photo", summary="Upload meal photo")
 async def upload_meal_photo(
     file: UploadFile = File(...),
@@ -483,7 +463,7 @@ async def upload_meal_photo(
         # 2. Get Public URL
         public_url = supabase.storage.from_("Bucket").get_public_url(filename)
 
-        return {"url": public_url, "path": filename}
+        return {"url": public_url}
 
     except Exception as e:
         print(f"Upload Error: {str(e)}")
