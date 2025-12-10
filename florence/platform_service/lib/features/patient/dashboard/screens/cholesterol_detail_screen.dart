@@ -986,9 +986,14 @@ class _HistorySectionState extends State<_HistorySection> {
           ),
           const SizedBox(height: 20),
           if (currentItems.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('No records found'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
             )
           else
             ...currentItems.map((r) {

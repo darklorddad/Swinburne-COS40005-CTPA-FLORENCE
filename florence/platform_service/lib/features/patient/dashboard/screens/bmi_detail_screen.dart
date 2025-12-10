@@ -990,9 +990,14 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
           const SizedBox(height: 20),
 
           if (currentItems.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: Text("No history available")),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  "No history available",
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
             )
           else
             ...currentItems.map((r) {
