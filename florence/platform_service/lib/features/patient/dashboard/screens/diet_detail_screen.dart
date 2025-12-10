@@ -623,10 +623,6 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                     decoration: BoxDecoration(
                       color: statusColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: statusColor.withOpacity(0.3), 
-                        width: 1
-                      ),
                     ),
                     child: Text(
                       deltaText ?? displayMealTime,

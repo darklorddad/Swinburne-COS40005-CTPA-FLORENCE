@@ -1052,7 +1052,13 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                           child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
                         ),
                         const SizedBox(height: 6),
-                        Text(DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
+                        Text(
+                          DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
                       ],
                     )
                   ],
