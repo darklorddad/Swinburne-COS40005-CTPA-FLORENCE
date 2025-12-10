@@ -1032,7 +1032,7 @@ class _HistorySectionState extends State<_HistorySection> {
               // Navigation arrows
               Row(children: [
                 IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
-                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
               ]),
             ],

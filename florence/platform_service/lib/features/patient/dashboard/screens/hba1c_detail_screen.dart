@@ -960,7 +960,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
-                      '${_currentPage + 1}/$totalPages',
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
