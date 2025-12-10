@@ -197,10 +197,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             onPressed: showLoading ? null : _confirmClearHistory,
             tooltip: 'Clear History',
           ),
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: _showInfoDialog,
-            tooltip: 'About AI Assistant',
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: _showInfoDialog,
+              tooltip: 'About AI Assistant',
+            ),
           ),
         ],
       ),
