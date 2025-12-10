@@ -1097,7 +1097,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
+                              padding: const EdgeInsets.fromLTRB(12, 6, 6, 6),
                               decoration: BoxDecoration(
                                 color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                                 borderRadius: BorderRadius.circular(24),
