@@ -753,15 +753,9 @@ class _CompositionSectionState extends State<_CompositionSection> {
             ),
           ),
 
-          if (displayData.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(32),
-              child: Text('No detailed data available'),
-            )
-          else
-            SizedBox(
-              height: 250,
-              child: BarChart(
+          SizedBox(
+            height: 250,
+            child: BarChart(
                 BarChartData(
                   maxY: maxY,
                   alignment: BarChartAlignment.spaceAround,

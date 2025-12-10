@@ -570,20 +570,22 @@ class _BmiTrendSection extends StatelessWidget {
           '• Green Band: Normal BMI Range ($minNormal - $maxNormal).',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) {
-          return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No data available for this period.")));
-        }
-
         // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
 
         if (range == 'ALL') {
-          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-          if (minX == maxX) {
-            minX -= 2629743000; // -1 Month
-            maxX += 2629743000; // +1 Month
+          if (data.isNotEmpty) {
+            minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+            maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+            if (minX == maxX) {
+              minX -= 2629743000; // -1 Month
+              maxX += 2629743000; // +1 Month
+            }
+          } else {
+            // Default 3M view if ALL is empty
+            maxX = now.millisecondsSinceEpoch.toDouble();
+            minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
           }
         } else {
           maxX = now.millisecondsSinceEpoch.toDouble();
@@ -597,21 +599,20 @@ class _BmiTrendSection extends StatelessWidget {
           minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
 
-        // Dynamic Y Axis with Safe Zone visibility
-        final vals = data.map((e) => e.value);
-        
-        // Calculate bounds from data
-        double dataMin = vals.reduce(math.min);
-        double dataMax = vals.reduce(math.max);
-        
-        // ADD BUFFER (Top & Bottom)
-        // Ensure there is space above the highest point and below the lowest point
-        double minY = dataMin - 3.0;
-        double maxY = dataMax + 3.0;
-        
-        // Ensure safe zone (Target Range) is also visible
-        minY = math.min(minY, minNormal - 2.0);
-        maxY = math.max(maxY, maxNormal + 2.0);
+        double minY, maxY;
+        if (data.isNotEmpty) {
+          final vals = data.map((e) => e.value);
+          double dataMin = vals.reduce(math.min);
+          double dataMax = vals.reduce(math.max);
+          minY = dataMin - 3.0;
+          maxY = dataMax + 3.0;
+          minY = math.min(minY, minNormal - 2.0);
+          maxY = math.max(maxY, maxNormal + 2.0);
+        } else {
+          // Default empty bounds
+          minY = minNormal - 5.0;
+          maxY = maxNormal + 5.0;
+        }
 
         return Column(
           children: [
@@ -738,21 +739,21 @@ class _BmiCorrelationSection extends StatelessWidget {
       allData: bmiReadings, // Pass BMI to drive range logic
       ranges: const ['3M', '6M', '1Y', 'ALL'],
       builder: (range, data) {
-        // 'data' here is filtered BMI readings
-        if (data.isEmpty) {
-          return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No BMI data for correlation.")));
-        }
-
         // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
 
         if (range == 'ALL') {
-          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-          if (minX == maxX) {
-            minX -= 2629743000; // -1 Month
-            maxX += 2629743000; // +1 Month
+          if (data.isNotEmpty) {
+            minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+            maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+            if (minX == maxX) {
+              minX -= 2629743000; // -1 Month
+              maxX += 2629743000; // +1 Month
+            }
+          } else {
+            maxX = now.millisecondsSinceEpoch.toDouble();
+            minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
           }
         } else {
           maxX = now.millisecondsSinceEpoch.toDouble();
