@@ -502,12 +502,8 @@ class _BmiGaugeSection extends StatelessWidget {
                     if (latestReading != null)
                       Positioned(
                         left: getPos(bmi) - 14,
-                        top: -12, // Sits above the bar pointing down
-                        child: Column(
-                          children: [
-                            Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
-                          ],
-                        ),
+                        top: -4, // Overlaps the bar
+                        child: Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
                       ),
                   ],
                 );
