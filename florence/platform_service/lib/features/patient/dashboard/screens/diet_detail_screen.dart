@@ -25,6 +25,16 @@ class DietAnalyticsScreen extends ConsumerWidget {
         title: const Text('Diet Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logMeal),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -75,7 +85,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                                       _DietImpactChart(logs: sortedLogs),
                                       const SizedBox(height: 20),
                                       _DietHistoryList(logs: sortedLogs),
-                                      const SizedBox(height: 24),
+                                      SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                                     ],
                                   ),
                                 ),
@@ -90,7 +100,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                                 _DietImpactChart(logs: sortedLogs),
                                 const SizedBox(height: 20),
                                 _DietHistoryList(logs: sortedLogs),
-                                const SizedBox(height: 24),
+                                SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                               ],
                             ),
                     ),

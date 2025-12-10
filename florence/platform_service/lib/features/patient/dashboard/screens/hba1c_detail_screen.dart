@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -24,6 +25,16 @@ class HbA1cDetailScreen extends ConsumerWidget {
         title: const Text('HbA1c Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logHba1c),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -98,7 +109,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
                                         targetMax: targetMax,
                                         threshold: userThreshold,
                                       ),
-                                      const SizedBox(height: 24),
+                                      SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                                     ],
                                   ),
                                 ),
@@ -130,7 +141,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
                                   targetMax: targetMax,
                                   threshold: userThreshold,
                                 ),
-                                const SizedBox(height: 24),
+                                SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                               ],
                             ),
                     ),

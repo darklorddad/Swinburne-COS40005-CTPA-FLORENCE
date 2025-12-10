@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -22,6 +23,16 @@ class CholesterolDetailScreen extends ConsumerWidget {
         title: const Text('Cholesterol Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logCholesterol),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -108,7 +119,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                                       _HistorySection(
                                           readings: readings,
                                           thresholds: thresholds),
-                                      const SizedBox(height: 24),
+                                      SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                                     ],
                                   ),
                                 ),
@@ -132,7 +143,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                                 const SizedBox(height: 20),
                                 _HistorySection(
                                     readings: readings, thresholds: thresholds),
-                                const SizedBox(height: 24),
+                                SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
                               ],
                             ),
                     ),
