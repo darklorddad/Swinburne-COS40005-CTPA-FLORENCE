@@ -1016,7 +1016,7 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                   color: containerColor,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: color.withOpacity(0.3)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
