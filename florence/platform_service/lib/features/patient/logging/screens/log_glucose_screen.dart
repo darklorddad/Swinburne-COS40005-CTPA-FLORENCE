@@ -40,6 +40,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   XFile? _selectedImage;
   Uint8List? _imageBytes;
   String? _uploadedImageUrl;
+  String? _uploadedImagePath; // Track path for deletion
+  bool _isSaved = false; // Track if form was saved
   bool _isAnalyzing = false;
   bool _isLoading = false;
   bool _useAiAutofill = true; // Default to enabled
@@ -61,10 +63,23 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   @override
   void dispose() {
+    // Cleanup orphan image if exiting without saving
+    if (!_isSaved && _uploadedImagePath != null) {
+      _deleteImage(_uploadedImagePath!);
+    }
     _glucoseController.dispose();
     _notesController.dispose();
     _caloriesController.dispose();
     super.dispose();
+  }
+
+  Future<void> _deleteImage(String path) async {
+    try {
+      final api = ApiService();
+      await api.delete('/patients/me/meal-photo?path=${Uri.encodeComponent(path)}');
+    } catch (e) {
+      debugPrint("Failed to cleanup image: $e");
+    }
   }
 
   void _showAiInfoDialog() {
@@ -174,6 +189,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   Future<void> _processImage(XFile image) async {
     final bytes = await image.readAsBytes();
+    
+    // Cleanup previous image if exists (Replacement)
+    if (_uploadedImagePath != null) {
+      _deleteImage(_uploadedImagePath!);
+    }
+
     setState(() {
       _selectedImage = image;
       _imageBytes = bytes;
@@ -187,7 +208,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       
       if (mounted) {
         final url = uploadRes['url'];
-        setState(() => _uploadedImageUrl = url);
+        final path = uploadRes['path'];
+        setState(() {
+          _uploadedImageUrl = url;
+          _uploadedImagePath = path;
+        });
 
         // TRIGGER AI IF ENABLED
         if (_useAiAutofill) {
@@ -294,6 +319,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       
       // Invalidate provider to refresh dashboard
       ref.invalidate(monitorDataProvider);
+
+      _isSaved = true; // Prevent deletion on dispose
 
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');
@@ -1221,11 +1248,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                         top: 8,
                                         right: 8,
                                         child: IconButton(
-                                          onPressed: () => setState(() {
-                                            _selectedImage = null;
-                                            _imageBytes = null;
-                                            _uploadedImageUrl = null;
-                                          }), 
+                                          onPressed: () {
+                                            if (_uploadedImagePath != null) {
+                                              _deleteImage(_uploadedImagePath!);
+                                            }
+                                            setState(() {
+                                              _selectedImage = null;
+                                              _imageBytes = null;
+                                              _uploadedImageUrl = null;
+                                              _uploadedImagePath = null;
+                                            });
+                                          },
                                           icon: const Icon(Icons.close, color: Colors.white),
                                           style: IconButton.styleFrom(
                                             backgroundColor: Colors.black54,
