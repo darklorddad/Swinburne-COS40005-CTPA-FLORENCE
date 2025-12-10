@@ -202,29 +202,31 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     });
 
     try {
-      // Upload to Supabase via Data Service
+      // 1. Upload to Supabase via Data Service
       final apiService = ApiService();
       final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
       
-      if (mounted) {
-        final url = uploadRes['url'];
-        final path = uploadRes['path'];
-        setState(() {
-          _uploadedImageUrl = url;
-          _uploadedImagePath = path;
-        });
+      if (!mounted) return;
 
-        // TRIGGER AI IF ENABLED
-        if (_useAiAutofill) {
+      final url = uploadRes['url'];
+      final path = uploadRes['path'];
+      setState(() {
+        _uploadedImageUrl = url;
+        _uploadedImagePath = path;
+      });
+
+      // 2. Trigger AI Analysis (Isolated Try-Catch)
+      if (_useAiAutofill) {
+        try {
           // Optimisation: Skip AI analysis if both fields are already filled
           if (_caloriesController.text.isNotEmpty && _notesController.text.isNotEmpty) {
             Helpers.showInfo(context, 'Fields already filled. AI analysis skipped.');
           } else {
             final analysis = await _analyzeMeal(url);
+            
             if (mounted && analysis != null) {
               bool updated = false;
 
-              // Only autofill if the user hasn't typed anything
               if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
                 _caloriesController.text = analysis['calories'].toString();
                 updated = true;
@@ -238,17 +240,31 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               
               if (updated) {
                 Helpers.showSuccess(context, 'Meal details auto-filled!');
+              } else {
+                // Analysis ran but returned null/empty (e.g. "Not food")
+                Helpers.showInfo(context, 'Could not identify meal. Please enter details manually.');
               }
+            } else if (mounted) {
+               // Analysis returned null (API error handled inside _analyzeMeal usually returns null)
+               Helpers.showWarning(context, 'AI analysis unavailable. Please enter details manually.');
             }
+          }
+        } catch (aiError) {
+          // AI Failed: Do NOT clear image. Just warn user.
+          if (mounted) {
+            Helpers.showWarning(context, 'AI connection failed. Image uploaded successfully.');
           }
         }
       }
     } catch (e) {
+      // Upload Failed: Clear image state since it didn't persist
       if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
       setState(() {
         _selectedImage = null;
         _imageBytes = null;
-      }); // Reset on failure
+        _uploadedImageUrl = null;
+        _uploadedImagePath = null;
+      }); 
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
