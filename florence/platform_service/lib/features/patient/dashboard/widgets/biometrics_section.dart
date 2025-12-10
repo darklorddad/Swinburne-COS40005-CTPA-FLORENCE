@@ -220,35 +220,13 @@ class BiometricsSection extends StatelessWidget {
     ));
 
     // Diet (Always show)
-    String? dietSubtitle;
-    if (latestMeal != null) {
-      final desc = latestMeal!.mealDesc;
-      final hasTime = latestMeal!.glucoseBeforeMealTime != null || latestMeal!.glucoseAfterMealTime != null;
-      
-      // Construct subtitle: "Food Name • Time"
-      String timePart;
-      if (hasTime) {
-        timePart = Formatters.timeAgo(latestMeal!.effectiveTime.toLocal());
-      } else {
-        timePart = Formatters.relativeDate(latestMeal!.logDate.toLocal());
-      }
-
-      if (desc != null && desc.isNotEmpty) {
-        dietSubtitle = '$desc • $timePart';
-      } else if (!hasTime) {
-        dietSubtitle = timePart; // Just date if no specific time and no desc
-      } else {
-        dietSubtitle = null; // Default to CompactHealthCard's timeago
-      }
-    }
-
     cards.add(CompactHealthCard(
       label: 'Diet',
       value: latestMeal != null ? _formatMealTime(latestMeal!.mealTime) : '--',
       unit: '',
       status: _getMealStatus(latestMeal),
       timestamp: latestMeal?.effectiveTime.toLocal(),
-      subtitleOverride: dietSubtitle,
+      subtitleOverride: null, // Use default "Last updated: ..."
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
       onTap: () => Navigator.push(
