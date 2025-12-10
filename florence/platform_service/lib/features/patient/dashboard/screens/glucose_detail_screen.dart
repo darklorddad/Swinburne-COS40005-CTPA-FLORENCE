@@ -1038,7 +1038,18 @@ class _HistorySectionState extends State<_HistorySection> {
             ],
           ),
           const SizedBox(height: 20),
-          ...currentItems.map((item) {
+          if (currentItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            )
+          else
+            ...currentItems.map((item) {
             // Unique Status Logic for Glucose
             // LOW (< Min) = Critical/Red
             // HIGH (> Max) = Warning/Amber
