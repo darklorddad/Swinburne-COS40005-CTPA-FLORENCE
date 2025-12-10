@@ -1272,8 +1272,22 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                           borderRadius: BorderRadius.circular(12),
                                           child: Container(
                                             color: Colors.black45,
-                                            child: const Center(
-                                              child: CircularProgressIndicator(color: Colors.white),
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const CircularProgressIndicator(color: Colors.white),
+                                                const SizedBox(height: 12),
+                                                Text(
+                                                  _useAiAutofill ? 'Analyzing...' : 'Uploading...',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                    shadows: [
+                                                      Shadow(blurRadius: 4, color: Colors.black54),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ),
                                         ),
