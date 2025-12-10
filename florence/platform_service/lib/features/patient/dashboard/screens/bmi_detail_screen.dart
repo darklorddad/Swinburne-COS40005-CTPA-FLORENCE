@@ -413,27 +413,21 @@ class _BmiGaugeSection extends StatelessWidget {
             ),
           ),
 
-          if (latestReading == null)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text("No BMI data recorded."),
-            )
-          else ...[
-            Text(
-              bmi.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
-                height: 1.0,
-              ),
+          Text(
+            latestReading != null ? bmi.toStringAsFixed(1) : '--',
+            style: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimaryColor,
+              height: 1.0,
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: 16),
 
-            // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
-            SizedBox(
-              height: 80, // Increased overall container height
-              child: LayoutBuilder(builder: (context, constraints) {
+          // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
+          SizedBox(
+            height: 80, // Increased overall container height
+            child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 
                 // Dynamic Viewport
@@ -504,16 +498,17 @@ class _BmiGaugeSection extends StatelessWidget {
                     // 3. Warning Limit (e.g. 29.9)
                     buildLabel(overweightLimit, overweightLimit.toStringAsFixed(1)),
 
-                    // C. Marker
-                    Positioned(
-                      left: getPos(bmi) - 14,
-                      top: -12, // Sits above the bar pointing down
-                      child: Column(
-                        children: [
-                          Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
-                        ],
+                    // C. Marker (Only show if we have data)
+                    if (latestReading != null)
+                      Positioned(
+                        left: getPos(bmi) - 14,
+                        top: -12, // Sits above the bar pointing down
+                        child: Column(
+                          children: [
+                            Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 );
               }),
@@ -537,7 +532,6 @@ class _BmiGaugeSection extends StatelessWidget {
                 ),
               ),
             ),
-          ],
         ],
       ),
     );

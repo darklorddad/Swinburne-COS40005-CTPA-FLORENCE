@@ -759,15 +759,9 @@ class _GoalComparisonSection extends StatelessWidget {
                 'Right Bar: Your Goal Max',
       child: Column(
         children: [
-          if (latestReading == null)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('No HbA1c data recorded yet.'),
-            )
-          else
-            SizedBox(
-              height: 220,
-              child: BarChart(
+          SizedBox(
+            height: 220,
+            child: BarChart(
                 BarChartData(
                   maxY: maxY,
                   minY: 0,
@@ -846,7 +840,7 @@ class _GoalComparisonSection extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 16),
-          if (latestReading != null)
+          if (latestReading != null && latestReading!.value > 0)
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

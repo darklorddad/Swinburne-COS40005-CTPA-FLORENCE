@@ -611,19 +611,11 @@ class _ActivityTimingChart extends StatelessWidget {
     }
 
     final total = morning + midday + evening + night;
-    if (total == 0) {
-      return _ActivityCard(
-        title: 'Activity Timing',
-        icon: Icons.schedule,
-        infoText: 'When you are most active.',
-        child: const Padding(
-          padding: EdgeInsets.all(20), 
-          child: Center(child: Text('No activity in the last 28 days'))
-        ),
-      );
-    }
+    // Removed "No activity" text return to allow empty chart rendering
 
-    final maxVal = [morning, midday, evening, night].reduce(math.max);
+    final maxVal = total > 0 
+        ? [morning, midday, evening, night].reduce(math.max) 
+        : 0.0;
     final maxY = maxVal > 0 ? (maxVal / 10).ceil() * 10.0 + 10 : 60.0;
 
     final dataPoints = [
