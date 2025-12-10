@@ -25,6 +25,16 @@ class DietAnalyticsScreen extends ConsumerWidget {
         title: const Text('Diet Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logMeal),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -169,9 +179,9 @@ class _DietStatsSection extends StatelessWidget {
             child: _buildStatBox(
               context, 
               'Total Logs', 
-              '$total', 
+              total > 0 ? '$total' : '--', 
               'meals', 
-              AppTheme.primaryGreen
+              total > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
           const SizedBox(width: 12),
@@ -471,7 +481,15 @@ class _DietHistoryListState extends State<_DietHistoryList> {
           ),
           const SizedBox(height: 20),
           if (currentItems.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('No meals logged yet'))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            )
           else
             ...currentItems.map((log) => _buildLogItem(context, log)),
         ],

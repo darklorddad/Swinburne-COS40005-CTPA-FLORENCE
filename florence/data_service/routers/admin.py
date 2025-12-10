@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 from datetime import date
 
@@ -125,3 +125,4 @@ async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinici
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to assign clinician: {str(e)}")
+

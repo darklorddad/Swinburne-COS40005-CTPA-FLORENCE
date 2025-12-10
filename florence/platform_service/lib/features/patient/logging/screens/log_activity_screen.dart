@@ -117,12 +117,15 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       appBar: AppBar(
         title: const Text('Log Activity'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              AppRoutes.push(context, AppRoutes.activityDetail);
-            },
-            tooltip: 'View History',
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                AppRoutes.push(context, AppRoutes.activityDetail);
+              },
+              tooltip: 'View History',
+            ),
           ),
         ],
       ),
@@ -160,6 +163,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 isLoading: _isLoading,
                 width: double.infinity,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

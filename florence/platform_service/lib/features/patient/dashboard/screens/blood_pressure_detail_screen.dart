@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -24,6 +25,16 @@ class BloodPressureDetailScreen extends ConsumerWidget {
         title: const Text('Blood Pressure Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -435,11 +446,11 @@ class _StatisticsSection extends StatelessWidget {
             // Stats Grid
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys.toStringAsFixed(0), 'mmHg', AppTheme.primaryRed)),
+                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys > 0 ? avgSys.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryRed)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia.toStringAsFixed(0), 'mmHg', AppTheme.primaryBlue)),
+                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia > 0 ? avgDia.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryBlue)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse.toStringAsFixed(0), 'mmHg', AppTheme.textSecondaryColor)),
+                Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse > 0 ? avgPulse.toStringAsFixed(0) : '--', 'mmHg', AppTheme.textSecondaryColor)),
               ],
             ),
           ],
@@ -667,18 +678,6 @@ class _FloatingBarSection extends StatelessWidget {
                 '• Bar Height: Difference between Systolic and Diastolic.',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(40.0),
-            child: Center(
-              child: Text(
-                'No data available for this period',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          );
-        }
-
         // For bar chart, too many points look bad. Limit or aggregate if needed.
         // Here we simply show the data points available in range.
         

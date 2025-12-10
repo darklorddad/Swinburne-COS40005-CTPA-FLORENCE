@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -22,6 +23,16 @@ class CholesterolDetailScreen extends ConsumerWidget {
         title: const Text('Cholesterol Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logCholesterol),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -742,15 +753,9 @@ class _CompositionSectionState extends State<_CompositionSection> {
             ),
           ),
 
-          if (displayData.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(32),
-              child: Text('No detailed data available'),
-            )
-          else
-            SizedBox(
-              height: 250,
-              child: BarChart(
+          SizedBox(
+            height: 250,
+            child: BarChart(
                 BarChartData(
                   maxY: maxY,
                   alignment: BarChartAlignment.spaceAround,
@@ -953,10 +958,9 @@ class _HistorySectionState extends State<_HistorySection> {
                 ],
               ),
               // Pagination Controls
-              if (totalPages > 0)
-                Row(
-                  children: [
-                    IconButton(
+              Row(
+                children: [
+                  IconButton(
                       onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
                       icon: const Icon(Icons.chevron_left),
                       padding: EdgeInsets.zero,
@@ -965,7 +969,7 @@ class _HistorySectionState extends State<_HistorySection> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
-                        '${_currentPage + 1}/$totalPages',
+                        '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -981,9 +985,14 @@ class _HistorySectionState extends State<_HistorySection> {
           ),
           const SizedBox(height: 20),
           if (currentItems.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('No records found'),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
             )
           else
             ...currentItems.map((r) {

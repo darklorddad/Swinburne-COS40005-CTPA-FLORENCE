@@ -211,7 +211,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         latestMeal: latestMeal,
                         thresholds: thresholds,
                       ),
-                      const SizedBox(height: spacing),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -253,7 +253,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           tooltip: 'AI Health Assistant',
         ),
         Padding(
-          padding: const EdgeInsets.only(right: 4.5),
+          padding: const EdgeInsets.only(right: 4),
           child: IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () => AppRoutes.push(context, AppRoutes.profile),

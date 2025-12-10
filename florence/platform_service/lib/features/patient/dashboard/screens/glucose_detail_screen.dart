@@ -5,6 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/routes.dart';
+import '../../../../config/routes.dart';
+import '../../../../config/routes.dart';
+import '../../../../config/routes.dart';
+import '../../../../config/routes.dart';
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -25,6 +31,16 @@ class GlucoseDetailScreen extends ConsumerWidget {
         title: const Text('Glucose Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logGlucose),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -61,99 +77,101 @@ class GlucoseDetailScreen extends ConsumerWidget {
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
             },
-            child: SingleChildScrollView(
+            child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: context.isDesktop
-                        ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Left Column
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _StatisticsSection(
-                                    readings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
+              children: [
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1200),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: context.isDesktop
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Left Column
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _StatisticsSection(
+                                        readings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _GlucoseTrendsSection(
+                                        allReadings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _TimeInRangeSection(
+                                        readings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 20),
-                                  _GlucoseTrendsSection(
-                                    allReadings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
+                                ),
+                                const SizedBox(width: 20),
+                                // Right Column
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      _ModalDaySection(
+                                        allReadings: allReadings,
+                                        threshold: effectiveThreshold,
+                                        isDefault: isDefault,
+                                      ),
+                                      const SizedBox(height: 20),
+                                      _HistorySection(
+                                        allReadings: allReadings,
+                                        thresholds: thresholds,
+                                      ),
+                                      const SizedBox(height: 24),
+                                    ],
                                   ),
-                                  const SizedBox(height: 20),
-                                  _TimeInRangeSection(
-                                    readings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _StatisticsSection(
+                                  readings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _GlucoseTrendsSection(
+                                  allReadings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _TimeInRangeSection(
+                                  readings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _ModalDaySection(
+                                  allReadings: allReadings,
+                                  threshold: effectiveThreshold,
+                                  isDefault: isDefault,
+                                ),
+                                const SizedBox(height: 20),
+                                _HistorySection(
+                                  allReadings: allReadings,
+                                  thresholds: thresholds,
+                                ),
+                                const SizedBox(height: 24),
+                              ],
                             ),
-                            const SizedBox(width: 20),
-                            // Right Column
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _ModalDaySection(
-                                    allReadings: allReadings,
-                                    threshold: effectiveThreshold,
-                                    isDefault: isDefault,
-                                  ),
-                                  const SizedBox(height: 20),
-                                  _HistorySection(
-                                    allReadings: allReadings,
-                                    thresholds: thresholds,
-                                  ),
-                                  const SizedBox(height: 24),
-                                ],
-                              ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _StatisticsSection(
-                              readings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _GlucoseTrendsSection(
-                              allReadings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _TimeInRangeSection(
-                              readings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _ModalDaySection(
-                              allReadings: allReadings,
-                              threshold: effectiveThreshold,
-                              isDefault: isDefault,
-                            ),
-                            const SizedBox(height: 20),
-                            _HistorySection(
-                              allReadings: allReadings,
-                              thresholds: thresholds,
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           );
     },
@@ -456,11 +474,11 @@ class _StatisticsSection extends StatelessWidget {
             // Statistics Row
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Average', '${(stats['avg'] as double).toStringAsFixed(0)}', 'mg/dL', Colors.blue)),
+                Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', 'mg/dL', Colors.blue)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'GMI', '${(stats['gmi'] as double).toStringAsFixed(1)}', '%', Colors.purple)),
+                Expanded(child: _buildStatBox(context, 'GMI', (stats['gmi'] as double) > 0 ? (stats['gmi'] as double).toStringAsFixed(1) : '--', '%', Colors.purple)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Variability', '${(stats['cv'] as double).toStringAsFixed(1)}', '%', threshold != null ? ((stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor) : AppTheme.textSecondaryColor)),
+                Expanded(child: _buildStatBox(context, 'Variability', (stats['cv'] as double) > 0 ? (stats['cv'] as double).toStringAsFixed(1) : '--', '%', threshold != null ? ((stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor) : AppTheme.textSecondaryColor)),
               ],
             ),
           ],
@@ -1014,13 +1032,24 @@ class _HistorySectionState extends State<_HistorySection> {
               // Navigation arrows
               Row(children: [
                 IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
-                Text('${_currentPage + 1}/$totalPages', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
                 IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
               ]),
             ],
           ),
           const SizedBox(height: 20),
-          ...currentItems.map((item) {
+          if (currentItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            )
+          else
+            ...currentItems.map((item) {
             // Unique Status Logic for Glucose
             // LOW (< Min) = Critical/Red
             // HIGH (> Max) = Warning/Amber

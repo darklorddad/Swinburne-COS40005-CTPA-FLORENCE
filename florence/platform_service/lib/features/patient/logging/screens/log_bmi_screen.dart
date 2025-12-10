@@ -190,6 +190,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                 isLoading: _isLoading,
                 width: double.infinity,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

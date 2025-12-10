@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -25,6 +26,16 @@ class ActivityDetailScreen extends ConsumerWidget {
         title: const Text('Activity Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logActivity),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -600,19 +611,11 @@ class _ActivityTimingChart extends StatelessWidget {
     }
 
     final total = morning + midday + evening + night;
-    if (total == 0) {
-      return _ActivityCard(
-        title: 'Activity Timing',
-        icon: Icons.schedule,
-        infoText: 'When you are most active.',
-        child: const Padding(
-          padding: EdgeInsets.all(20), 
-          child: Center(child: Text('No activity in the last 28 days'))
-        ),
-      );
-    }
+    // Removed "No activity" text return to allow empty chart rendering
 
-    final maxVal = [morning, midday, evening, night].reduce(math.max);
+    final maxVal = total > 0 
+        ? [morning, midday, evening, night].reduce(math.max) 
+        : 0.0;
     final maxY = maxVal > 0 ? (maxVal / 10).ceil() * 10.0 + 10 : 60.0;
 
     final dataPoints = [
@@ -797,7 +800,15 @@ class _ActivityHistoryListState extends State<_ActivityHistoryList> {
           ),
           const SizedBox(height: 20),
           if (currentItems.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('No activity logs found'))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            )
           else
             ...currentItems.map((log) => _buildLogItem(context, log)),
         ],

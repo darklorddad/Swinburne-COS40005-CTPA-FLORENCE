@@ -39,9 +39,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   // State
   XFile? _selectedImage;
   Uint8List? _imageBytes;
-  String? _uploadedImageUrl;
+  // _uploadedImageUrl is now set ONLY after hitting Save
   bool _isAnalyzing = false;
   bool _isLoading = false;
+  bool _useAiAutofill = true; // Default to enabled
   DateTime _selectedDateTime = DateTime.now();
   String _selectedTiming = 'No Meal';
   String _selectedMealType = 'BREAKFAST';
@@ -66,40 +67,104 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     super.dispose();
   }
 
+  void _showAiInfoDialog() {
+    // Unfocus text fields to prevent keyboard popping up when dialog closes
+    FocusScope.of(context).requestFocus(FocusNode());
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Text('AI Auto-Fill'),
+          ],
+        ),
+        content: const Text(
+          'When enabled, selecting a meal photo will automatically trigger our AI engine to estimate calories and generate a description.\n\n'
+          'Note: Analysis only happens when the image is first selected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showImageSourcePicker() async {
+    // Unfocus text fields to prevent keyboard popping up when sheet closes
+    FocusScope.of(context).requestFocus(FocusNode());
+
     final picker = ImagePicker();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.textPrimaryColor;
     
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('Take Photo'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
-                  if (image != null) _processImage(image);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
-                  if (image != null) _processImage(image);
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                // Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt, color: AppTheme.primaryBlue, size: 20),
+                  ),
+                  title: Text('Take Photo', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
+                    if (image != null) _processImage(image);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentPurple.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.photo_library, color: AppTheme.accentPurple, size: 20),
+                  ),
+                  title: Text('Choose from Gallery', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+                    if (image != null) _processImage(image);
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -108,48 +173,90 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   Future<void> _processImage(XFile image) async {
     final bytes = await image.readAsBytes();
+    
     setState(() {
       _selectedImage = image;
       _imageBytes = bytes;
-      _isAnalyzing = true; // Show loading state while uploading
+      _isAnalyzing = true;
     });
 
+    // If Auto is OFF, we stop here. We upload later on Save.
+    if (!_useAiAutofill) {
+      setState(() => _isAnalyzing = false);
+      return;
+    }
+
+    // Optimization: Skip AI if fields are full
+    if (_caloriesController.text.isNotEmpty && _notesController.text.isNotEmpty) {
+      Helpers.showInfo(context, 'Fields already filled. AI analysis skipped.');
+      setState(() => _isAnalyzing = false);
+      return;
+    }
+
     try {
-      // Upload to Supabase via Data Service
-      final apiService = ApiService();
-      final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
+      // Send BYTES directly to LLM Service (No database upload yet)
+      final analysis = await _analyzeMeal(bytes, image.name);
       
-      if (mounted) {
-        setState(() => _uploadedImageUrl = uploadRes['url']);
+      if (mounted && analysis != null) {
+        bool updated = false;
+
+        if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
+          _caloriesController.text = analysis['calories'].toString();
+          updated = true;
+        }
+        
+        if (analysis['description'] != null && _notesController.text.isEmpty) {
+          final desc = analysis['description'];
+          _notesController.text = desc;
+          updated = true;
+        }
+        
+        if (updated) {
+          Helpers.showSuccess(context, 'Meal details auto-filled!');
+        } else {
+          Helpers.showInfo(context, 'Could not identify meal. Please enter details manually.');
+        }
+      } else if (mounted) {
+         Helpers.showWarning(context, 'AI analysis unavailable. Please enter details manually.');
       }
     } catch (e) {
-      if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
-      setState(() {
-        _selectedImage = null;
-        _imageBytes = null;
-      }); // Reset on failure
+      if (mounted) {
+        Helpers.showWarning(context, 'AI analysis failed: $e');
+      }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
   /// Returns map with 'calories' and 'description'
-  Future<Map<String, dynamic>?> _analyzeMeal(String imageUrl) async {
+  Future<Map<String, dynamic>?> _analyzeMeal(Uint8List imageBytes, String filename) async {
     try {
       final llmUrl = '${Environment.llmEngineServiceUrl}/nutrition/analyze';
       final session = Supabase.instance.client.auth.currentSession;
       
-      final response = await http.post(
-        Uri.parse(llmUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${session?.accessToken}',
-        },
-        body: jsonEncode({'image_url': imageUrl}),
+      final request = http.MultipartRequest('POST', Uri.parse(llmUrl));
+      
+      // Add Headers
+      request.headers.addAll({
+        'Authorization': 'Bearer ${session?.accessToken}',
+      });
+
+      // Add File
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          imageBytes,
+          filename: filename,
+        ),
       );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
+      } else {
+        debugPrint("Analysis failed: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       debugPrint("Analysis error: $e");
@@ -170,6 +277,20 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       final glucoseValue = double.parse(_glucoseController.text);
       final repo = ref.read(monitorDataRepositoryProvider);
 
+      // 1. Upload Image (If selected but not yet uploaded)
+      String? finalImageUrl;
+      if (_imageBytes != null && _selectedImage != null) {
+        final apiService = ApiService();
+        // Upload now!
+        final uploadRes = await apiService.uploadFile(
+          '/patients/me/meal-photo', 
+          'file', 
+          _imageBytes!, 
+          _selectedImage!.name
+        );
+        finalImageUrl = uploadRes['url'];
+      }
+
       if (_selectedTiming == 'No Meal') {
         await repo.addGlucoseReading(GlucoseReading(
           id: '',
@@ -179,45 +300,20 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         ));
       } 
       else {
-        // === AI LOGIC START ===
-        // If we have an image but NO calories, perform AI analysis before saving
-        int? finalCalories = int.tryParse(_caloriesController.text);
-        String? finalNotes = _notesController.text.trim();
-
-        if (_uploadedImageUrl != null && finalCalories == null) {
-          // Notify user
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Analyzing meal photo to estimate calories...')),
-          );
-          
-          final analysis = await _analyzeMeal(_uploadedImageUrl!);
-          
-          if (analysis != null) {
-            if (analysis['calories'] != null) {
-              finalCalories = analysis['calories'];
-            }
-            if (analysis['description'] != null) {
-              final desc = analysis['description'];
-              finalNotes = finalNotes != null && finalNotes.isNotEmpty 
-                  ? '$finalNotes\n\nAI: $desc' 
-                  : desc;
-            }
-          }
-        }
-        // === AI LOGIC END ===
-
         final isBefore = _selectedTiming == 'Before Meal';
+        final finalNotes = _notesController.text.trim();
+        final finalCalories = int.tryParse(_caloriesController.text);
         
         await repo.addMeal(
           _selectedMealType,
           _selectedDateTime.toUtc(),
-          (!isBefore && finalNotes != null && finalNotes.isNotEmpty) ? finalNotes : null,
+          (!isBefore && finalNotes.isNotEmpty) ? finalNotes : null,
           isBefore ? glucoseValue : null,
           isBefore ? _selectedDateTime.toUtc() : null,
           !isBefore ? glucoseValue : null,
           !isBefore ? _selectedDateTime.toUtc() : null,
           finalCalories,
-          _uploadedImageUrl,
+          finalImageUrl, // Use the newly uploaded URL
         );
       }
       
@@ -272,7 +368,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4.5),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
@@ -322,8 +418,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         isLoading: _isLoading,
                         width: double.infinity,
                       ),
-                      // Extra padding for bottom safe area / gesture bar
-                      SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
@@ -1002,7 +1097,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      alignment: Alignment.topCenter, // Ensure animation flows downwards
+      alignment: Alignment.topCenter,
       child: _selectedTiming != 'After Meal'
           ? const SizedBox.shrink()
           : Padding(
@@ -1024,7 +1119,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Container(
                           padding: const EdgeInsets.all(10),
@@ -1039,91 +1136,256 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text(
-                          'Meal Details',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Meal Details',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                            ),
+                            Text(
+                              'Optional',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.textSecondaryColor,
+                                  ),
+                            ),
+                          ],
                         ),
                         const Spacer(),
-                        Text(
-                          'Optional',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: AppTheme.textSecondaryColor,
+                        
+                        // AI Toggle Switch Group
+                        Row(
+                          children: [
+                            GestureDetector(
+                              onTap: () => setState(() => _useAiAutofill = !_useAiAutofill),
+                              child: Container(
+                                padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+                                decoration: BoxDecoration(
+                                  color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(
+                                    color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Auto',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                                        fontSize: 14,
+                                        height: 1.0,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    SizedBox(
+                                      height: 28,
+                                      width: 44,
+                                      child: Transform.scale(
+                                        scale: 0.9,
+                                        child: Switch(
+                                          value: _useAiAutofill,
+                                          activeColor: Colors.white,
+                                          activeTrackColor: AppTheme.primaryBlue,
+                                          inactiveThumbColor: Colors.white,
+                                          inactiveTrackColor: Colors.grey.shade300,
+                                          trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          onChanged: (val) => setState(() => _useAiAutofill = val),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                              icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
+                              onPressed: _showAiInfoDialog,
+                              visualDensity: VisualDensity.compact,
+                              constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                              padding: EdgeInsets.zero,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 20), // Standard spacing 20px
                     
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Image Picker
+                        // Image Picker Box
+                        InkWell(
+                          onTap: _isAnalyzing ? null : _showImageSourcePicker,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            height: 160,
+                            width: double.infinity,
+                            decoration: BoxDecoration(
+                              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppTheme.borderColor),
+                            ),
+                            child: _imageBytes != null
+                                ? Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(12),
+                                        child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                                      ),
+                                      Positioned(
+                                        top: 8,
+                                        right: 8,
+                                        child: IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              _selectedImage = null;
+                                              _imageBytes = null;
+                                            });
+                                          },
+                                          icon: const Icon(Icons.close, color: Colors.white),
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: Colors.black54,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity: VisualDensity.compact,
+                                          ),
+                                        ),
+                                      ),
+                                      if (_isAnalyzing)
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Container(
+                                            color: Colors.black45,
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const CircularProgressIndicator(color: Colors.white),
+                                                const SizedBox(height: 12),
+                                                Text(
+                                                  _useAiAutofill ? 'Analyzing...' : 'Uploading...',
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.w600,
+                                                    shadows: [
+                                                      Shadow(blurRadius: 4, color: Colors.black54),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_a_photo_outlined,
+                                        size: 28,
+                                        color: AppTheme.textSecondaryColor,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        'Add Meal Photo',
+                                        style: TextStyle(
+                                          color: AppTheme.textSecondaryColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      if (_useAiAutofill) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Analysis runs on selection',
+                                          style: TextStyle(
+                                            color: AppTheme.primaryBlue,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Calories Section
                         Row(
                           children: [
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _isAnalyzing ? null : _showImageSourcePicker,
-                                icon: _isAnalyzing 
-                                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) 
-                                    : const Icon(Icons.camera_alt_outlined),
-                                label: Text(_isAnalyzing ? 'Uploading...' : (_selectedImage == null ? 'Add Meal Photo' : 'Change Photo')),
-                                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
-                              ),
+                            Text(
+                              'Calories (kcal)',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                             ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'Leave blank for auto-estimate',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
-                        if (_imageBytes != null) ...[
-                          const SizedBox(height: 12),
-                          Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.memory(_imageBytes!, height: 150, width: double.infinity, fit: BoxFit.cover),
-                              ),
-                              IconButton(
-                                onPressed: () => setState(() {
-                                  _selectedImage = null;
-                                  _imageBytes = null;
-                                  _uploadedImageUrl = null;
-                                }), 
-                                icon: const Icon(Icons.close, color: Colors.white),
-                                style: IconButton.styleFrom(backgroundColor: Colors.black54),
-                              )
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: 16),
-
-                        // Calories Input
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'Calories (kcal)',
                             hintText: 'e.g. 500',
-                            helperText: _selectedImage != null ? 'Leave blank to auto-estimate from photo' : 'Optional',
-                            helperStyle: TextStyle(
-                              color: _selectedImage != null ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-                              fontWeight: _selectedImage != null ? FontWeight.w600 : FontWeight.normal,
-                            ),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                             prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
 
+                        // Meal Description Section
+                        Row(
+                          children: [
+                            Text(
+                              'Meal Description',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                            ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'Leave blank for auto-estimate',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
                           textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
-                            hintText: 'What did you eat? Feel free to add details like "no veggie" or "60g carbs".',
-                            hintStyle: const TextStyle(color: Colors.grey),
+                            hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                            hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(

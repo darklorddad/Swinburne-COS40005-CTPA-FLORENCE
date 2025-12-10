@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -24,6 +25,16 @@ class BmiDetailScreen extends ConsumerWidget {
         title: const Text('BMI Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logBmi),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -402,27 +413,21 @@ class _BmiGaugeSection extends StatelessWidget {
             ),
           ),
 
-          if (latestReading == null)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text("No BMI data recorded."),
-            )
-          else ...[
-            Text(
-              bmi.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 48,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimaryColor,
-                height: 1.0,
-              ),
+          Text(
+            latestReading != null ? bmi.toStringAsFixed(1) : '--',
+            style: TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimaryColor,
+              height: 1.0,
             ),
-            const SizedBox(height: 16),
+          ),
+          const SizedBox(height: 16),
 
-            // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
-            SizedBox(
-              height: 80, // Increased overall container height
-              child: LayoutBuilder(builder: (context, constraints) {
+          // 3. The Visual Gauge & Labels (Combined in LayoutBuilder)
+          SizedBox(
+            height: 80, // Increased overall container height
+            child: LayoutBuilder(builder: (context, constraints) {
                 final width = constraints.maxWidth;
                 
                 // Dynamic Viewport
@@ -493,16 +498,13 @@ class _BmiGaugeSection extends StatelessWidget {
                     // 3. Warning Limit (e.g. 29.9)
                     buildLabel(overweightLimit, overweightLimit.toStringAsFixed(1)),
 
-                    // C. Marker
-                    Positioned(
-                      left: getPos(bmi) - 14,
-                      top: -12, // Sits above the bar pointing down
-                      child: Column(
-                        children: [
-                          Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
-                        ],
+                    // C. Marker (Only show if we have data)
+                    if (latestReading != null)
+                      Positioned(
+                        left: getPos(bmi) - 14,
+                        top: -4, // Overlaps the bar
+                        child: Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
                       ),
-                    ),
                   ],
                 );
               }),
@@ -526,7 +528,6 @@ class _BmiGaugeSection extends StatelessWidget {
                 ),
               ),
             ),
-          ],
         ],
       ),
     );
@@ -559,20 +560,22 @@ class _BmiTrendSection extends StatelessWidget {
           '• Green Band: Normal BMI Range ($minNormal - $maxNormal).',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) {
-          return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No data available for this period.")));
-        }
-
         // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
 
         if (range == 'ALL') {
-          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-          if (minX == maxX) {
-            minX -= 2629743000; // -1 Month
-            maxX += 2629743000; // +1 Month
+          if (data.isNotEmpty) {
+            minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+            maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+            if (minX == maxX) {
+              minX -= 2629743000; // -1 Month
+              maxX += 2629743000; // +1 Month
+            }
+          } else {
+            // Default 3M view if ALL is empty
+            maxX = now.millisecondsSinceEpoch.toDouble();
+            minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
           }
         } else {
           maxX = now.millisecondsSinceEpoch.toDouble();
@@ -586,21 +589,20 @@ class _BmiTrendSection extends StatelessWidget {
           minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
 
-        // Dynamic Y Axis with Safe Zone visibility
-        final vals = data.map((e) => e.value);
-        
-        // Calculate bounds from data
-        double dataMin = vals.reduce(math.min);
-        double dataMax = vals.reduce(math.max);
-        
-        // ADD BUFFER (Top & Bottom)
-        // Ensure there is space above the highest point and below the lowest point
-        double minY = dataMin - 3.0;
-        double maxY = dataMax + 3.0;
-        
-        // Ensure safe zone (Target Range) is also visible
-        minY = math.min(minY, minNormal - 2.0);
-        maxY = math.max(maxY, maxNormal + 2.0);
+        double minY, maxY;
+        if (data.isNotEmpty) {
+          final vals = data.map((e) => e.value);
+          double dataMin = vals.reduce(math.min);
+          double dataMax = vals.reduce(math.max);
+          minY = dataMin - 3.0;
+          maxY = dataMax + 3.0;
+          minY = math.min(minY, minNormal - 2.0);
+          maxY = math.max(maxY, maxNormal + 2.0);
+        } else {
+          // Default empty bounds
+          minY = minNormal - 5.0;
+          maxY = maxNormal + 5.0;
+        }
 
         return Column(
           children: [
@@ -727,21 +729,21 @@ class _BmiCorrelationSection extends StatelessWidget {
       allData: bmiReadings, // Pass BMI to drive range logic
       ranges: const ['3M', '6M', '1Y', 'ALL'],
       builder: (range, data) {
-        // 'data' here is filtered BMI readings
-        if (data.isEmpty) {
-          return const Padding(padding: EdgeInsets.all(20), child: Center(child: Text("No BMI data for correlation.")));
-        }
-
         // Calculate X-Axis bounds based on selected range
         double minX, maxX;
         final now = DateTime.now();
 
         if (range == 'ALL') {
-          minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-          maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-          if (minX == maxX) {
-            minX -= 2629743000; // -1 Month
-            maxX += 2629743000; // +1 Month
+          if (data.isNotEmpty) {
+            minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
+            maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
+            if (minX == maxX) {
+              minX -= 2629743000; // -1 Month
+              maxX += 2629743000; // +1 Month
+            }
+          } else {
+            maxX = now.millisecondsSinceEpoch.toDouble();
+            minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
           }
         } else {
           maxX = now.millisecondsSinceEpoch.toDouble();
@@ -955,10 +957,9 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                   ),
                 ],
               ),
-              if (totalPages > 0)
-                Row(
-                  children: [
-                    IconButton(
+              Row(
+                children: [
+                  IconButton(
                       onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
                       icon: const Icon(Icons.chevron_left),
                       padding: EdgeInsets.zero,
@@ -967,7 +968,7 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: Text(
-                        '${_currentPage + 1}/$totalPages',
+                        '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
@@ -984,9 +985,14 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
           const SizedBox(height: 20),
 
           if (currentItems.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Center(child: Text("No history available")),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  "No history available",
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
             )
           else
             ...currentItems.map((r) {

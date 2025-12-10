@@ -546,7 +546,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         title: const Text('Profile & Settings'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4.5),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.logout),
               onPressed: _handleLogout,

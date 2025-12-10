@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
@@ -24,6 +25,16 @@ class HbA1cDetailScreen extends ConsumerWidget {
         title: const Text('HbA1c Analytics'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => AppRoutes.push(context, AppRoutes.logHba1c),
+              tooltip: 'Add Log',
+            ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(
@@ -748,15 +759,9 @@ class _GoalComparisonSection extends StatelessWidget {
                 'Right Bar: Your Goal Max',
       child: Column(
         children: [
-          if (latestReading == null)
-            const Padding(
-              padding: EdgeInsets.all(20),
-              child: Text('No HbA1c data recorded yet.'),
-            )
-          else
-            SizedBox(
-              height: 220,
-              child: BarChart(
+          SizedBox(
+            height: 220,
+            child: BarChart(
                 BarChartData(
                   maxY: maxY,
                   minY: 0,
@@ -835,7 +840,7 @@ class _GoalComparisonSection extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 16),
-          if (latestReading != null)
+          if (latestReading != null && latestReading!.value > 0)
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -955,7 +960,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     child: Text(
-                      '${_currentPage + 1}/$totalPages',
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -974,13 +979,15 @@ class _HistorySectionState extends State<_HistorySection> {
           if (currentItems.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No records found',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
               ),
-            ),
-          
-          ...currentItems.map((r) {
+            )
+          else
+            ...currentItems.map((r) {
              // Determine status color
              String statusText;
              Color statusColor;

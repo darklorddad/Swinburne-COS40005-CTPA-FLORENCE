@@ -175,6 +175,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                 isLoading: _isLoading,
                 width: double.infinity,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

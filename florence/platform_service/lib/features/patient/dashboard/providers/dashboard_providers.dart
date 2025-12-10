@@ -29,6 +29,8 @@ final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((re
         glucoseAfterMeal: m.glucoseAfter,
         glucoseBeforeMealTime: m.glucoseBeforeTime,
         glucoseAfterMealTime: m.glucoseAfterTime,
+        calories: m.calories,
+        photoUrl: m.photoUrl,
       )).toList();
   });
 }, isAutoDispose: true);
