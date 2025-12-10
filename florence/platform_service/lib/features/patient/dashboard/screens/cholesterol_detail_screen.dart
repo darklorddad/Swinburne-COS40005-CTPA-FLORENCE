@@ -119,7 +119,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                                       _HistorySection(
                                           readings: readings,
                                           thresholds: thresholds),
-                                      SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
+                                      const SizedBox(height: 24),
                                     ],
                                   ),
                                 ),
@@ -143,7 +143,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
                                 const SizedBox(height: 20),
                                 _HistorySection(
                                     readings: readings, thresholds: thresholds),
-                                SizedBox(height: 20 + MediaQuery.of(context).padding.bottom),
+                                const SizedBox(height: 24),
                               ],
                             ),
                     ),
