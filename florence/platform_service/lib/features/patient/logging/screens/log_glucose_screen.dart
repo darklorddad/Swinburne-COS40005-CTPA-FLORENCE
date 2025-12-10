@@ -418,8 +418,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         isLoading: _isLoading,
                         width: double.infinity,
                       ),
-                      // Extra padding for bottom safe area / gesture bar
-                      SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
