@@ -179,9 +179,9 @@ class _DietStatsSection extends StatelessWidget {
             child: _buildStatBox(
               context, 
               'Total Logs', 
-              '$total', 
+              total > 0 ? '$total' : '--', 
               'meals', 
-              AppTheme.primaryGreen
+              total > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
           const SizedBox(width: 12),
