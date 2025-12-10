@@ -481,7 +481,15 @@ class _DietHistoryListState extends State<_DietHistoryList> {
           ),
           const SizedBox(height: 20),
           if (currentItems.isEmpty)
-            const Padding(padding: EdgeInsets.all(16), child: Text('No meals logged yet'))
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            )
           else
             ...currentItems.map((log) => _buildLogItem(context, log)),
         ],

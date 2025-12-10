@@ -979,13 +979,15 @@ class _HistorySectionState extends State<_HistorySection> {
           if (currentItems.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Text(
-                'No records found',
-                style: TextStyle(color: AppTheme.textSecondaryColor),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
               ),
-            ),
-          
-          ...currentItems.map((r) {
+            )
+          else
+            ...currentItems.map((r) {
              // Determine status color
              String statusText;
              Color statusColor;
