@@ -159,6 +159,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                 isLoading: _isLoading,
                 width: double.infinity,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

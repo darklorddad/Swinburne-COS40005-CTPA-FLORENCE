@@ -138,6 +138,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                 isLoading: _isLoading,
                 width: double.infinity,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),

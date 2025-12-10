@@ -136,7 +136,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         title: const Text('Log Meal'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4.5),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
@@ -185,6 +185,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 isLoading: _isLoading,
                 width: double.infinity,
               ),
+              const SizedBox(height: 24),
             ],
           ),
         ),
