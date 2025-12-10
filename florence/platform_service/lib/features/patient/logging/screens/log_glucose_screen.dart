@@ -101,38 +101,71 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     FocusScope.of(context).requestFocus(FocusNode());
 
     final picker = ImagePicker();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final textColor = isDark ? Colors.white : AppTheme.textPrimaryColor;
     
     await showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_camera),
-                title: const Text('Take Photo'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
-                  if (image != null) _processImage(image);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
-                  if (image != null) _processImage(image);
-                },
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 8),
+                // Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt, color: AppTheme.primaryBlue, size: 20),
+                  ),
+                  title: Text('Take Photo', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
+                    if (image != null) _processImage(image);
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accentPurple.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.photo_library, color: AppTheme.accentPurple, size: 20),
+                  ),
+                  title: Text('Choose from Gallery', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
+                    if (image != null) _processImage(image);
+                  },
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
           ),
         ),
       ),
@@ -1228,12 +1261,27 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         const SizedBox(height: 20),
 
                         // Calories Section
-                        Text(
-                          'Calories (kcal)',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                        Row(
+                          children: [
+                            Text(
+                              'Calories (kcal)',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                            ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'Leave blank for auto-estimate',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
@@ -1280,26 +1328,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             ),
                           ),
                         ),
-                        
-                        // Helper Text (Condition based on Image AND Toggle)
-                        // Shows "Leave blank..." hint if:
-                        // 1. Image is present (bytes != null)
-                        // 2. Auto toggle is ON (_useAiAutofill)
-                        // 3. User hasn't typed anything yet (optional UX choice, keeping it simple for now)
-                        if (_imageBytes != null && _useAiAutofill) ...[
-                          const SizedBox(height: 6),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 4),
-                            child: Text(
-                              'Leave blank for auto-estimate',
-                              style: TextStyle(
-                                color: AppTheme.primaryBlue,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ],
