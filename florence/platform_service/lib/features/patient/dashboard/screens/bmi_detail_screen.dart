@@ -109,7 +109,7 @@ class BmiDetailScreen extends ConsumerWidget {
                                         hba1cReadings: hba1cReadings,
                                       ),
                                       const SizedBox(height: 20),
-                                      _BmiHistorySection(
+                                      _HistorySection(
                                         readings: bmiReadings,
                                         threshold: bmiThreshold,
                                       ),
@@ -136,7 +136,7 @@ class BmiDetailScreen extends ConsumerWidget {
                                   hba1cReadings: hba1cReadings,
                                 ),
                                 const SizedBox(height: 20),
-                                _BmiHistorySection(
+                                _HistorySection(
                                   readings: bmiReadings,
                                   threshold: bmiThreshold,
                                 ),
@@ -889,17 +889,17 @@ class _BmiCorrelationSection extends StatelessWidget {
 // 4. HISTORY LIST
 // ============================================================================
 
-class _BmiHistorySection extends StatefulWidget {
+class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
   final HealthThreshold? threshold;
 
-  const _BmiHistorySection({required this.readings, this.threshold});
+  const _HistorySection({required this.readings, this.threshold});
 
   @override
-  State<_BmiHistorySection> createState() => _BmiHistorySectionState();
+  State<_HistorySection> createState() => _HistorySectionState();
 }
 
-class _BmiHistorySectionState extends State<_BmiHistorySection> {
+class _HistorySectionState extends State<_HistorySection> {
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 

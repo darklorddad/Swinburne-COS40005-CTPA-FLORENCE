@@ -106,7 +106,6 @@ class HbA1cDetailScreen extends ConsumerWidget {
                                       const SizedBox(height: 20),
                                       _HistorySection(
                                         readings: readings,
-                                        targetMax: targetMax,
                                         threshold: userThreshold,
                                       ),
                                       const SizedBox(height: 24),
@@ -138,7 +137,6 @@ class HbA1cDetailScreen extends ConsumerWidget {
                                 const SizedBox(height: 20),
                                 _HistorySection(
                                   readings: readings,
-                                  targetMax: targetMax,
                                   threshold: userThreshold,
                                 ),
                                 const SizedBox(height: 24),
@@ -881,10 +879,9 @@ class _GoalComparisonSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final double? targetMax;
   final HealthThreshold? threshold;
 
-  const _HistorySection({required this.readings, this.targetMax, this.threshold});
+  const _HistorySection({required this.readings, this.threshold});
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();

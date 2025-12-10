@@ -121,7 +121,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                       const SizedBox(height: 20),
                                       _HistorySection(
                                         allReadings: allReadings,
-                                        thresholds: thresholds,
+                                        threshold: effectiveThreshold,
                                       ),
                                       const SizedBox(height: 24),
                                     ],
@@ -158,7 +158,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                 const SizedBox(height: 20),
                                 _HistorySection(
                                   allReadings: allReadings,
-                                  thresholds: thresholds,
+                                  threshold: effectiveThreshold,
                                 ),
                                 const SizedBox(height: 24),
                               ],
@@ -969,9 +969,9 @@ class _ModalDaySection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> allReadings;
-  final List<HealthThreshold> thresholds;
+  final HealthThreshold? threshold;
 
-  const _HistorySection({required this.allReadings, required this.thresholds});
+  const _HistorySection({required this.allReadings, this.threshold});
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();
@@ -999,10 +999,7 @@ class _HistorySectionState extends State<_HistorySection> {
     final currentItems = sortedReadings.sublist(start, end);
 
     // Get threshold from backend data (no fallback)
-    HealthThreshold? t;
-    try {
-      t = widget.thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
-    } catch (_) {}
+    final t = widget.threshold;
 
     return Container(
       padding: const EdgeInsets.all(20),
