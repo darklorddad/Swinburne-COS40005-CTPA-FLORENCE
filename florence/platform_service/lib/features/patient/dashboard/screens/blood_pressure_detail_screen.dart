@@ -446,11 +446,11 @@ class _StatisticsSection extends StatelessWidget {
             // Stats Grid
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys.toStringAsFixed(0), 'mmHg', AppTheme.primaryRed)),
+                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys > 0 ? avgSys.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryRed)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia.toStringAsFixed(0), 'mmHg', AppTheme.primaryBlue)),
+                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia > 0 ? avgDia.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryBlue)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse.toStringAsFixed(0), 'mmHg', AppTheme.textSecondaryColor)),
+                Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse > 0 ? avgPulse.toStringAsFixed(0) : '--', 'mmHg', AppTheme.textSecondaryColor)),
               ],
             ),
           ],

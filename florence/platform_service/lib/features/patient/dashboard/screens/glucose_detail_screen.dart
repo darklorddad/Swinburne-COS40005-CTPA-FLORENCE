@@ -474,11 +474,11 @@ class _StatisticsSection extends StatelessWidget {
             // Statistics Row
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Average', '${(stats['avg'] as double).toStringAsFixed(0)}', 'mg/dL', Colors.blue)),
+                Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', 'mg/dL', Colors.blue)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'GMI', '${(stats['gmi'] as double).toStringAsFixed(1)}', '%', Colors.purple)),
+                Expanded(child: _buildStatBox(context, 'GMI', (stats['gmi'] as double) > 0 ? (stats['gmi'] as double).toStringAsFixed(1) : '--', '%', Colors.purple)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Variability', '${(stats['cv'] as double).toStringAsFixed(1)}', '%', threshold != null ? ((stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor) : AppTheme.textSecondaryColor)),
+                Expanded(child: _buildStatBox(context, 'Variability', (stats['cv'] as double) > 0 ? (stats['cv'] as double).toStringAsFixed(1) : '--', '%', threshold != null ? ((stats['cv'] as double) < 36 ? AppTheme.successColor : AppTheme.warningColor) : AppTheme.textSecondaryColor)),
               ],
             ),
           ],
