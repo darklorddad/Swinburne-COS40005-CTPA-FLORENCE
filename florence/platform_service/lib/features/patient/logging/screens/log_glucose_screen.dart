@@ -1297,14 +1297,23 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                       ),
                                       const SizedBox(height: 8),
                                       Text(
-                                        _isAnalyzing 
-                                            ? (_useAiAutofill ? 'Analyzing...' : 'Uploading...') 
-                                            : 'Add Meal Photo',
+                                        'Add Meal Photo',
                                         style: TextStyle(
                                           color: AppTheme.textSecondaryColor,
                                           fontWeight: FontWeight.w500,
                                         ),
                                       ),
+                                      if (_useAiAutofill) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Analysis runs on selection',
+                                          style: TextStyle(
+                                            color: AppTheme.primaryBlue,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                           ),
