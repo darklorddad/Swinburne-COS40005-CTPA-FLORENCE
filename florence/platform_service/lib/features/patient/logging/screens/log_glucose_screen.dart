@@ -191,24 +191,29 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
         // TRIGGER AI IF ENABLED
         if (_useAiAutofill) {
-          final analysis = await _analyzeMeal(url);
-          if (mounted && analysis != null) {
-            bool updated = false;
+          // Optimisation: Skip AI analysis if both fields are already filled
+          if (_caloriesController.text.isNotEmpty && _notesController.text.isNotEmpty) {
+            Helpers.showInfo(context, 'Fields already filled. AI analysis skipped.');
+          } else {
+            final analysis = await _analyzeMeal(url);
+            if (mounted && analysis != null) {
+              bool updated = false;
 
-            // Only autofill if the user hasn't typed anything
-            if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
-              _caloriesController.text = analysis['calories'].toString();
-              updated = true;
-            }
-            
-            if (analysis['description'] != null && _notesController.text.isEmpty) {
-              final desc = analysis['description'];
-              _notesController.text = desc;
-              updated = true;
-            }
-            
-            if (updated) {
-              Helpers.showSuccess(context, 'Meal details auto-filled!');
+              // Only autofill if the user hasn't typed anything
+              if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
+                _caloriesController.text = analysis['calories'].toString();
+                updated = true;
+              }
+              
+              if (analysis['description'] != null && _notesController.text.isEmpty) {
+                final desc = analysis['description'];
+                _notesController.text = desc;
+                updated = true;
+              }
+              
+              if (updated) {
+                Helpers.showSuccess(context, 'Meal details auto-filled!');
+              }
             }
           }
         }
