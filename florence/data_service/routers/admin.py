@@ -140,63 +140,69 @@ async def cleanup_orphaned_images():
             .neq('photo_url', 'null')\
             .execute()
         
-        # Create a set of valid filenames for O(1) lookup
-        # Extract filename from URL: ".../171500.jpg" -> "171500.jpg"
-        valid_files = set()
+        # Create a set of valid unique paths: "user_id/filename.ext"
+        # We need to extract the user_id and filename from the full URL.
+        # URL format usually: .../Meal_Photos/USER_ID/FILENAME.ext
+        valid_paths = set()
+        
         for record in logs_response.data:
-            if record.get('photo_url'):
-                # Extract the end of the path
-                filename = record['photo_url'].split('/')[-1]
-                valid_files.add(filename)
+            url = record.get('photo_url')
+            if url and "Meal_Photos/" in url:
+                try:
+                    # Split by 'Meal_Photos/' and take the part after it
+                    # e.g., "USER_123/179999.jpg"
+                    relative_path = url.split("Meal_Photos/")[-1]
+                    # Decode URL encoding just in case (though rare for numeric IDs)
+                    from urllib.parse import unquote
+                    valid_paths.add(unquote(relative_path))
+                except:
+                    continue
 
         # 2. List all User Folders in 'Meal_Photos' bucket
-        # Note: This listing logic depends on how many users you have. 
-        # For production with thousands of users, you'd paginate this.
         top_level = supabase.storage.from_("Bucket").list("Meal_Photos")
         
         deleted_count = 0
         errors = []
 
         # Threshold: 1 hour ago (UTC)
-        # Files newer than this are ignored (might be currently uploading)
         threshold_time = datetime.now(timezone.utc) - timedelta(hours=1)
 
         for folder in top_level:
             if folder['name'] == '.emptyFolderPlaceholder': continue
             
             user_id = folder['name']
-            user_path = f"Meal_Photos/{user_id}"
+            user_path_prefix = f"Meal_Photos/{user_id}"
             
             # List files inside user folder
-            user_files = supabase.storage.from_("Bucket").list(user_path)
+            user_files = supabase.storage.from_("Bucket").list(user_path_prefix)
             
             for file in user_files:
                 file_name = file['name']
                 
-                # Check creation time (Supabase returns ISO string)
-                # Format: '2025-01-20T10:00:00.000Z'
+                # Construct the unique identifier key: "USER_ID/FILENAME"
+                # This must match what we extracted from the DB URL above
+                unique_key = f"{user_id}/{file_name}"
+
+                # Check creation time
                 try:
-                    # Handle Z for UTC
                     created_at_str = file['created_at'].replace('Z', '+00:00')
                     created_at = datetime.fromisoformat(created_at_str)
                     
-                    # Skip if file is too new (Active upload safety buffer)
                     if created_at > threshold_time:
                         continue
                 except:
-                    # If date parsing fails, skip to be safe
                     continue
 
-                # 3. Compare: If file exists in storage but NOT in DB list
-                if file_name not in valid_files:
-                    full_path = f"{user_path}/{file_name}"
-                    print(f"Deleting orphan: {full_path}")
+                # 3. Compare: If file exists in storage but this specific User/File combo is NOT in DB
+                if unique_key not in valid_paths:
+                    full_delete_path = f"{user_path_prefix}/{file_name}"
+                    print(f"Deleting orphan: {full_delete_path}")
                     
                     try:
-                        supabase.storage.from_("Bucket").remove([full_path])
+                        supabase.storage.from_("Bucket").remove([full_delete_path])
                         deleted_count += 1
                     except Exception as del_err:
-                        errors.append(f"Failed to delete {full_path}: {str(del_err)}")
+                        errors.append(f"Failed to delete {full_delete_path}: {str(del_err)}")
 
         return {
             "message": "Cleanup complete",
