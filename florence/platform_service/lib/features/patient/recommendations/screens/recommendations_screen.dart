@@ -70,7 +70,7 @@ class _RecommendationsScreenState extends ConsumerState<RecommendationsScreen> {
         title: const Text('Health Insights'),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 4.5),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: _isGenerating
                   ? const SizedBox(
@@ -106,9 +106,11 @@ class _RecommendationsScreenState extends ConsumerState<RecommendationsScreen> {
                           child: Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
-                              children: activeInsights
-                                  .map((insight) => _buildInsightCard(insight))
-                                  .toList(),
+                              children: [
+                                ...activeInsights
+                                    .map((insight) => _buildInsightCard(insight)),
+                                const SizedBox(height: 24),
+                              ],
                             ),
                           ),
                         ),

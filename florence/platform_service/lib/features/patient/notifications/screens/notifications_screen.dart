@@ -95,7 +95,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
           // Clear all
           Padding(
-            padding: const EdgeInsets.only(right: 4.5),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.clear_all),
               onPressed: () async {
@@ -120,6 +120,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday, notifier),
                 if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek, notifier),
                 if (older.isNotEmpty) _buildGroup('Older', older, notifier),
+                const SizedBox(height: 24),
               ],
             ),
     );
