@@ -570,7 +570,7 @@ class _DietHistoryListState extends State<_DietHistoryList> {
                       valueText,
                       style: TextStyle(
                         fontWeight: FontWeight.normal,
-                        fontSize: 18,
+                        fontSize: 20,
                         color: AppTheme.textPrimaryColor,
                       ),
                     ),
