@@ -82,9 +82,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           ],
         ),
         content: const Text(
-          'When enabled, uploading a meal photo will automatically trigger our AI engine.\n\n'
-          'It will analyze the image to estimate calories and generate a description for your notes.\n\n'
-          'Disable this if you prefer to enter details manually.',
+          'When enabled, selecting a meal photo will automatically trigger our AI engine to estimate calories and generate a description.\n\n'
+          'Note: Analysis only happens when the image is first selected.',
         ),
         actions: [
           TextButton(
