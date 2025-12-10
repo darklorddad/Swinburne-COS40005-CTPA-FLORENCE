@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
-from datetime import date, datetime, timedelta, timezone
+from datetime import date
 
 from client import supabase
 from routers.authentication import get_current_admin_user
@@ -126,89 +126,3 @@ async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinici
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to assign clinician: {str(e)}")
 
-@router.delete("/maintenance/cleanup-images", summary="Garbage collect orphaned images")
-async def cleanup_orphaned_images():
-    """
-    Scans for images in Storage that are not linked to any DB record and deletes them.
-    Safety: Only deletes images older than 1 hour to avoid race conditions with active uploads.
-    """
-    try:
-        # 1. Get all valid photo URLs from the database
-        # We only care about the path part, assuming URL structure: .../Meal_Photos/USER_ID/FILENAME
-        logs_response = supabase.table('daily_patient_logs')\
-            .select('photo_url')\
-            .neq('photo_url', 'null')\
-            .execute()
-        
-        # Create a set of valid unique paths: "user_id/filename.ext"
-        # We need to extract the user_id and filename from the full URL.
-        # URL format usually: .../Meal_Photos/USER_ID/FILENAME.ext
-        valid_paths = set()
-        
-        for record in logs_response.data:
-            url = record.get('photo_url')
-            if url and "Meal_Photos/" in url:
-                try:
-                    # Split by 'Meal_Photos/' and take the part after it
-                    # e.g., "USER_123/179999.jpg"
-                    relative_path = url.split("Meal_Photos/")[-1]
-                    # Decode URL encoding just in case (though rare for numeric IDs)
-                    from urllib.parse import unquote
-                    valid_paths.add(unquote(relative_path))
-                except:
-                    continue
-
-        # 2. List all User Folders in 'Meal_Photos' bucket
-        top_level = supabase.storage.from_("Bucket").list("Meal_Photos")
-        
-        deleted_count = 0
-        errors = []
-
-        # Threshold: 1 hour ago (UTC)
-        threshold_time = datetime.now(timezone.utc) - timedelta(hours=1)
-
-        for folder in top_level:
-            if folder['name'] == '.emptyFolderPlaceholder': continue
-            
-            user_id = folder['name']
-            user_path_prefix = f"Meal_Photos/{user_id}"
-            
-            # List files inside user folder
-            user_files = supabase.storage.from_("Bucket").list(user_path_prefix)
-            
-            for file in user_files:
-                file_name = file['name']
-                
-                # Construct the unique identifier key: "USER_ID/FILENAME"
-                # This must match what we extracted from the DB URL above
-                unique_key = f"{user_id}/{file_name}"
-
-                # Check creation time
-                try:
-                    created_at_str = file['created_at'].replace('Z', '+00:00')
-                    created_at = datetime.fromisoformat(created_at_str)
-                    
-                    if created_at > threshold_time:
-                        continue
-                except:
-                    continue
-
-                # 3. Compare: If file exists in storage but this specific User/File combo is NOT in DB
-                if unique_key not in valid_paths:
-                    full_delete_path = f"{user_path_prefix}/{file_name}"
-                    print(f"Deleting orphan: {full_delete_path}")
-                    
-                    try:
-                        supabase.storage.from_("Bucket").remove([full_delete_path])
-                        deleted_count += 1
-                    except Exception as del_err:
-                        errors.append(f"Failed to delete {full_delete_path}: {str(del_err)}")
-
-        return {
-            "message": "Cleanup complete",
-            "deleted_count": deleted_count,
-            "errors": errors
-        }
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cleanup failed: {str(e)}")
