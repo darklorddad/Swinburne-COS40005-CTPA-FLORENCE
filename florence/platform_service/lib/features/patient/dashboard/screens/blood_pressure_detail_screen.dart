@@ -564,9 +564,9 @@ class _DualTrendSection extends StatelessWidget {
                           }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                          // 1D shows Time (HH:mm), others show Date (d/M)
+                          // 1D shows Time (h a), others show Date (d/M)
                           final text = range == '1D' 
-                              ? DateFormat('HH:mm').format(date) 
+                              ? DateFormat('h a').format(date) 
                               : DateFormat('d/M').format(date);
                           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
                         },
@@ -726,7 +726,7 @@ class _FloatingBarSection extends StatelessWidget {
 
                           final date = data[index].timestamp.toLocal();
                           final text = range == '1D'
-                              ? DateFormat('HH:mm').format(date)
+                              ? DateFormat('h a').format(date)
                               : DateFormat('d/M').format(date);
 
                           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));

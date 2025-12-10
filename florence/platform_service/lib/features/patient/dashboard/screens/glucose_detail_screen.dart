@@ -575,22 +575,22 @@ class _GlucoseTrendsSection extends StatelessWidget {
             case '7D':
               startOfWindow = endOfWindow.subtract(const Duration(days: 7));
               interval = 86400000; // 1 day
-              dateFormat = DateFormat('M/d');
+              dateFormat = DateFormat('d/M');
               break;
             case '14D':
               startOfWindow = endOfWindow.subtract(const Duration(days: 14));
               interval = 172800000; // 2 days
-              dateFormat = DateFormat('M/d');
+              dateFormat = DateFormat('d/M');
               break;
             case '30D':
               startOfWindow = endOfWindow.subtract(const Duration(days: 30));
               interval = 432000000; // 5 days
-              dateFormat = DateFormat('M/d');
+              dateFormat = DateFormat('d/M');
               break;
             default:
               startOfWindow = endOfWindow.subtract(const Duration(days: 7));
               interval = 86400000;
-              dateFormat = DateFormat('M/d');
+              dateFormat = DateFormat('d/M');
           }
         }
 

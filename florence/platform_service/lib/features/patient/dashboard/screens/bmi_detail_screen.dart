@@ -630,6 +630,7 @@ class _BmiTrendSection extends StatelessWidget {
 
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
+                          // Use 'd/M' for consistency (was already correct, just ensuring context)
                           final fmt = (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
 
                           return Padding(
