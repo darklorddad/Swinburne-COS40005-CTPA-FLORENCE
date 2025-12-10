@@ -203,7 +203,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             
             if (analysis['description'] != null && _notesController.text.isEmpty) {
               final desc = analysis['description'];
-              _notesController.text = 'AI: $desc';
+              _notesController.text = desc;
               updated = true;
             }
             
