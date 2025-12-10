@@ -473,7 +473,13 @@ class _DietHistoryListState extends State<_DietHistoryList> {
               Row(
                 children: [
                   IconButton(onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null, icon: const Icon(Icons.chevron_left)),
-                  Text('${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                   IconButton(onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null, icon: const Icon(Icons.chevron_right)),
                 ],
               ),
