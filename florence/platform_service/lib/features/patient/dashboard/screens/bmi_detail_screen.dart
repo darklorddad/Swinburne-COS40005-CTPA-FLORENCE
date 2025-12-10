@@ -961,10 +961,9 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                   ),
                 ],
               ),
-              if (totalPages > 0)
-                Row(
-                  children: [
-                    IconButton(
+              Row(
+                children: [
+                  IconButton(
                       onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
                       icon: const Icon(Icons.chevron_left),
                       padding: EdgeInsets.zero,
