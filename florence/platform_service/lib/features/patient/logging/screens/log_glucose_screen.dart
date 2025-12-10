@@ -1099,7 +1099,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             GestureDetector(
                               onTap: () => setState(() => _useAiAutofill = !_useAiAutofill),
                               child: Container(
-                                padding: const EdgeInsets.fromLTRB(12, 4, 4, 4),
+                                padding: const EdgeInsets.fromLTRB(12, 6, 8, 6),
                                 decoration: BoxDecoration(
                                   color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                                   borderRadius: BorderRadius.circular(24),
