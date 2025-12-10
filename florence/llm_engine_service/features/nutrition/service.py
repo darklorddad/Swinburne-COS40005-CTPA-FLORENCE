@@ -1,16 +1,17 @@
 import json
+import base64
 from langchain_core.messages import HumanMessage, SystemMessage
 from core.llm_factory import LLMFactory
 from features.nutrition.models import FoodAnalysisResponse
 
 class NutritionService:
     def __init__(self):
-        # No arguments passed. Uses Provider Defaults for everything.
         self.llm = LLMFactory.create()
 
-    async def analyze_food_image(self, image_url: str) -> FoodAnalysisResponse:
-        # We rely on the System Prompt to guide the LLM's behavior
-        # instead of forcing a low temperature setting.
+    async def analyze_food_image(self, image_bytes: bytes) -> FoodAnalysisResponse:
+        # Encode bytes to base64 string
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        
         system_prompt = """You are a nutrition expert AI. 
         Analyze the food image provided.
         Return ONLY a raw JSON object. Do not use markdown code blocks.
@@ -29,9 +30,10 @@ class NutritionService:
         If not food, return {"calories": 0, "description": "Not food detected", "macronutrients": null}
         """
 
+        # Send as Data URI
         message = HumanMessage(
             content=[
-                {"type": "image_url", "image_url": {"url": image_url}},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}},
             ]
         )
 

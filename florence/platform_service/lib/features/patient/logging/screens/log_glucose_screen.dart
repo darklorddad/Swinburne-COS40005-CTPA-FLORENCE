@@ -39,9 +39,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   // State
   XFile? _selectedImage;
   Uint8List? _imageBytes;
-  String? _uploadedImageUrl;
-  String? _uploadedImagePath; // Track path for deletion
-  bool _isSaved = false; // Track if form was saved
+  // _uploadedImageUrl is now set ONLY after hitting Save
   bool _isAnalyzing = false;
   bool _isLoading = false;
   bool _useAiAutofill = true; // Default to enabled
@@ -63,23 +61,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   @override
   void dispose() {
-    // Cleanup orphan image if exiting without saving
-    if (!_isSaved && _uploadedImagePath != null) {
-      _deleteImage(_uploadedImagePath!);
-    }
     _glucoseController.dispose();
     _notesController.dispose();
     _caloriesController.dispose();
     super.dispose();
-  }
-
-  Future<void> _deleteImage(String path) async {
-    try {
-      final api = ApiService();
-      await api.delete('/patients/me/meal-photo?path=${Uri.encodeComponent(path)}');
-    } catch (e) {
-      debugPrint("Failed to cleanup image: $e");
-    }
   }
 
   void _showAiInfoDialog() {
@@ -190,103 +175,89 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   Future<void> _processImage(XFile image) async {
     final bytes = await image.readAsBytes();
     
-    // Cleanup previous image if exists (Replacement)
-    if (_uploadedImagePath != null) {
-      _deleteImage(_uploadedImagePath!);
-    }
-
     setState(() {
       _selectedImage = image;
       _imageBytes = bytes;
-      _isAnalyzing = true; // Show loading state while uploading
+      _isAnalyzing = true;
     });
 
+    // If Auto is OFF, we stop here. We upload later on Save.
+    if (!_useAiAutofill) {
+      setState(() => _isAnalyzing = false);
+      return;
+    }
+
+    // Optimization: Skip AI if fields are full
+    if (_caloriesController.text.isNotEmpty && _notesController.text.isNotEmpty) {
+      Helpers.showInfo(context, 'Fields already filled. AI analysis skipped.');
+      setState(() => _isAnalyzing = false);
+      return;
+    }
+
     try {
-      // 1. Upload to Supabase via Data Service
-      final apiService = ApiService();
-      final uploadRes = await apiService.uploadFile('/patients/me/meal-photo', 'file', bytes, image.name);
+      // Send BYTES directly to LLM Service (No database upload yet)
+      final analysis = await _analyzeMeal(bytes, image.name);
       
-      if (!mounted) return;
+      if (mounted && analysis != null) {
+        bool updated = false;
 
-      final url = uploadRes['url'];
-      final path = uploadRes['path'];
-      setState(() {
-        _uploadedImageUrl = url;
-        _uploadedImagePath = path;
-      });
-
-      // 2. Trigger AI Analysis (Isolated Try-Catch)
-      if (_useAiAutofill) {
-        try {
-          // Optimisation: Skip AI analysis if both fields are already filled
-          if (_caloriesController.text.isNotEmpty && _notesController.text.isNotEmpty) {
-            Helpers.showInfo(context, 'Fields already filled. AI analysis skipped.');
-          } else {
-            final analysis = await _analyzeMeal(url);
-            
-            if (mounted && analysis != null) {
-              bool updated = false;
-
-              if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
-                _caloriesController.text = analysis['calories'].toString();
-                updated = true;
-              }
-              
-              if (analysis['description'] != null && _notesController.text.isEmpty) {
-                final desc = analysis['description'];
-                _notesController.text = desc;
-                updated = true;
-              }
-              
-              if (updated) {
-                Helpers.showSuccess(context, 'Meal details auto-filled!');
-              } else {
-                // Analysis ran but returned null/empty (e.g. "Not food")
-                Helpers.showInfo(context, 'Could not identify meal. Please enter details manually.');
-              }
-            } else if (mounted) {
-               // Analysis returned null (API error handled inside _analyzeMeal usually returns null)
-               Helpers.showWarning(context, 'AI analysis unavailable. Please enter details manually.');
-            }
-          }
-        } catch (aiError) {
-          // AI Failed: Do NOT clear image. Just warn user.
-          if (mounted) {
-            Helpers.showWarning(context, 'AI connection failed. Image uploaded successfully.');
-          }
+        if (analysis['calories'] != null && _caloriesController.text.isEmpty) {
+          _caloriesController.text = analysis['calories'].toString();
+          updated = true;
         }
+        
+        if (analysis['description'] != null && _notesController.text.isEmpty) {
+          final desc = analysis['description'];
+          _notesController.text = desc;
+          updated = true;
+        }
+        
+        if (updated) {
+          Helpers.showSuccess(context, 'Meal details auto-filled!');
+        } else {
+          Helpers.showInfo(context, 'Could not identify meal. Please enter details manually.');
+        }
+      } else if (mounted) {
+         Helpers.showWarning(context, 'AI analysis unavailable. Please enter details manually.');
       }
     } catch (e) {
-      // Upload Failed: Clear image state since it didn't persist
-      if (mounted) Helpers.showError(context, 'Failed to upload image: $e');
-      setState(() {
-        _selectedImage = null;
-        _imageBytes = null;
-        _uploadedImageUrl = null;
-        _uploadedImagePath = null;
-      }); 
+      if (mounted) {
+        Helpers.showWarning(context, 'AI analysis failed: $e');
+      }
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
   /// Returns map with 'calories' and 'description'
-  Future<Map<String, dynamic>?> _analyzeMeal(String imageUrl) async {
+  Future<Map<String, dynamic>?> _analyzeMeal(Uint8List imageBytes, String filename) async {
     try {
       final llmUrl = '${Environment.llmEngineServiceUrl}/nutrition/analyze';
       final session = Supabase.instance.client.auth.currentSession;
       
-      final response = await http.post(
-        Uri.parse(llmUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${session?.accessToken}',
-        },
-        body: jsonEncode({'image_url': imageUrl}),
+      final request = http.MultipartRequest('POST', Uri.parse(llmUrl));
+      
+      // Add Headers
+      request.headers.addAll({
+        'Authorization': 'Bearer ${session?.accessToken}',
+      });
+
+      // Add File
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          imageBytes,
+          filename: filename,
+        ),
       );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
+      } else {
+        debugPrint("Analysis failed: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       debugPrint("Analysis error: $e");
@@ -306,6 +277,20 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     try {
       final glucoseValue = double.parse(_glucoseController.text);
       final repo = ref.read(monitorDataRepositoryProvider);
+
+      // 1. Upload Image (If selected but not yet uploaded)
+      String? finalImageUrl;
+      if (_imageBytes != null && _selectedImage != null) {
+        final apiService = ApiService();
+        // Upload now!
+        final uploadRes = await apiService.uploadFile(
+          '/patients/me/meal-photo', 
+          'file', 
+          _imageBytes!, 
+          _selectedImage!.name
+        );
+        finalImageUrl = uploadRes['url'];
+      }
 
       if (_selectedTiming == 'No Meal') {
         await repo.addGlucoseReading(GlucoseReading(
@@ -329,14 +314,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           !isBefore ? glucoseValue : null,
           !isBefore ? _selectedDateTime.toUtc() : null,
           finalCalories,
-          _uploadedImageUrl,
+          finalImageUrl, // Use the newly uploaded URL
         );
       }
       
       // Invalidate provider to refresh dashboard
       ref.invalidate(monitorDataProvider);
-
-      _isSaved = true; // Prevent deletion on dispose
 
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');
@@ -1265,14 +1248,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                         right: 8,
                                         child: IconButton(
                                           onPressed: () {
-                                            if (_uploadedImagePath != null) {
-                                              _deleteImage(_uploadedImagePath!);
-                                            }
                                             setState(() {
                                               _selectedImage = null;
                                               _imageBytes = null;
-                                              _uploadedImageUrl = null;
-                                              _uploadedImagePath = null;
                                             });
                                           },
                                           icon: const Icon(Icons.close, color: Colors.white),
