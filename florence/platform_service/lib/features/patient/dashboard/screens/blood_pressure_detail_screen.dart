@@ -678,18 +678,6 @@ class _FloatingBarSection extends StatelessWidget {
                 '• Bar Height: Difference between Systolic and Diastolic.',
       allData: readings,
       builder: (range, data) {
-        if (data.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(40.0),
-            child: Center(
-              child: Text(
-                'No data available for this period',
-                style: TextStyle(color: Colors.grey),
-              ),
-            ),
-          );
-        }
-
         // For bar chart, too many points look bad. Limit or aggregate if needed.
         // Here we simply show the data points available in range.
         
