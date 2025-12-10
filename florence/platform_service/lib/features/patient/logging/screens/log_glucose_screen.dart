@@ -1097,11 +1097,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.fromLTRB(16, 6, 6, 6),
+                              padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
                               decoration: BoxDecoration(
                                 color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                                 borderRadius: BorderRadius.circular(24),
-                                border: Border.all(color: AppTheme.borderColor),
+                                border: Border.all(
+                                  color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor,
+                                ),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -1111,7 +1113,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                     'Auto',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w600,
-                                      color: AppTheme.textSecondaryColor,
+                                      color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
                                       fontSize: 14,
                                       height: 1.0,
                                     ),
@@ -1258,7 +1260,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           maxLines: 3,
                           textInputAction: TextInputAction.done,
                           decoration: InputDecoration(
-                            hintText: 'What did you eat?',
+                            hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
