@@ -954,8 +954,6 @@ class _HistorySectionState extends State<_HistorySection> {
                   IconButton(
                     onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
                     icon: const Icon(Icons.chevron_left),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -967,8 +965,6 @@ class _HistorySectionState extends State<_HistorySection> {
                   IconButton(
                     onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
                     icon: const Icon(Icons.chevron_right),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),

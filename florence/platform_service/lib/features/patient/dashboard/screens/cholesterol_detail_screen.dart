@@ -961,26 +961,22 @@ class _HistorySectionState extends State<_HistorySection> {
               Row(
                 children: [
                   IconButton(
-                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
-                      icon: const Icon(Icons.chevron_left),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
-                      icon: const Icon(Icons.chevron_right),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
