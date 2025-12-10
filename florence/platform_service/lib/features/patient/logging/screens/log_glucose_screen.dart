@@ -1298,12 +1298,27 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         const SizedBox(height: 20),
 
                         // Meal Description Section
-                        Text(
-                          'Meal Description',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                        Row(
+                          children: [
+                            Text(
+                              'Meal Description',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                            ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'Leave blank for auto-estimate',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
+                            ],
+                          ],
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
