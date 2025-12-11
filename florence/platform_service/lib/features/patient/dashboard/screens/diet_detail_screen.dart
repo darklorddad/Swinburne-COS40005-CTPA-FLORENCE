@@ -29,58 +29,10 @@ class DietAnalyticsScreen extends ConsumerWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                popupMenuTheme: PopupMenuThemeData(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 4,
-                  color: Theme.of(context).cardColor,
-                ),
-              ),
-              child: PopupMenuButton<String>(
-                icon: const Icon(Icons.add),
-                tooltip: 'Add Log',
-                onSelected: (value) {
-                  if (value == 'glucose') AppRoutes.push(context, AppRoutes.logGlucose);
-                  if (value == 'meal') AppRoutes.push(context, AppRoutes.logMeal);
-                },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  PopupMenuItem<String>(
-                    value: 'glucose',
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryRed.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.water_drop, color: AppTheme.primaryRed, size: 18),
-                        ),
-                        const SizedBox(width: 12),
-                        Text('Log w/ Glucose', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                  PopupMenuItem<String>(
-                    value: 'meal',
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppTheme.mealColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(Icons.restaurant, color: AppTheme.mealColor, size: 18),
-                        ),
-                        const SizedBox(width: 12),
-                        Text('Log Meal Only', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+            child: IconButton(
+              icon: const Icon(Icons.add),
+              onPressed: () => _showLogOptions(context),
+              tooltip: 'Add Log',
             ),
           ),
         ],
@@ -173,6 +125,122 @@ class DietAnalyticsScreen extends ConsumerWidget {
       default: return 0;
     }
   }
+
+  void _showLogOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppTheme.midnightSurface : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Text(
+                    'Log Diet',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildLogOption(
+                    context,
+                    title: 'Log w/ Glucose',
+                    subtitle: 'Measure impact of food on your levels',
+                    icon: Icons.water_drop_rounded,
+                    color: AppTheme.primaryRed,
+                    onTap: () {
+                      Navigator.pop(context);
+                      AppRoutes.push(context, AppRoutes.logGlucose);
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLogOption(
+                    context,
+                    title: 'Log Meal Only',
+                    subtitle: 'Quickly record what you ate',
+                    icon: Icons.restaurant_rounded,
+                    color: AppTheme.mealColor,
+                    onTap: () {
+                      Navigator.pop(context);
+                      AppRoutes.push(context, AppRoutes.logMeal);
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildLogOption(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppTheme.getBorderColor(context)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ============================================================================
@@ -235,7 +303,7 @@ class _DietStatsSection extends StatelessWidget {
               context, 
               'Stable Meals', 
               pairCount > 0 ? '$stablePercentage%' : '--', 
-              '< 30 spike', 
+              'target', 
               stableCount > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
@@ -701,7 +769,7 @@ class _HistorySectionState extends State<_HistorySection> {
             ),
           ),
 
-          const SizedBox(width: 32), // Increased spacing
+          const SizedBox(width: 24), // Increased spacing
 
           // RIGHT: Delta/Type & Time
           Column(
@@ -867,36 +935,31 @@ class _TrafficLightCalendar extends StatelessWidget {
     final Map<int, int> dayLogCount = {};
 
     for (var log in logs) {
-      // Use logDate as the source of truth for the "Day"
-      // Convert UTC to Local before stripping time to ensure correct day bucket
       final localDate = log.logDate.toLocal();
       final dateKey = DateTime(localDate.year, localDate.month, localDate.day).millisecondsSinceEpoch;
-      
-      // Count logs
       dayLogCount[dateKey] = (dayLogCount[dateKey] ?? 0) + 1;
 
-      // Calculate spike
       if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
         final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
-        
-        // Keep the HIGHEST spike of the day (worst case scenario dictates the color)
         if (!dayMaxSpike.containsKey(dateKey) || spike > dayMaxSpike[dateKey]!) {
           dayMaxSpike[dateKey] = spike;
         }
       }
-      // If no glucose data, we simply don't add to dayMaxSpike. 
-      // The builder handles `maxSpike == null` as the Neutral/Blue state.
     }
 
-    // 2. Logic to Align Grid to Monday
-    final currentWeekday = today.weekday; // 1=Mon...7=Sun
-    final startOfCurrentWeek = today.subtract(Duration(days: currentWeekday - 1));
-    final startDate = startOfCurrentWeek.subtract(const Duration(days: 21)); // Go back 3 weeks
+    // 2. Logic to Show EXACTLY 28 Past Days (ending Today)
+    // We calculate back 27 days from today.
+    final startDate = today.subtract(const Duration(days: 27));
+    
+    // Calculate empty slots needed at start to align with Monday
+    // Mon=1 -> 0 empty. Tue=2 -> 1 empty. etc.
+    final emptySlots = startDate.weekday - 1; 
+    final totalCells = 28 + emptySlots;
 
     return _DietCard(
       title: 'Consistency Calendar',
       icon: Icons.calendar_view_month,
-      infoText: 'A 4-week view of your diet control.\n\n'
+      infoText: 'A 28-day view of your diet control.\n\n'
                 '• Green: Controlled (Max spike < 30)\n'
                 '• Yellow: Moderate (Max spike 30-50)\n'
                 '• Red: High Spike (Max spike > 50)\n'
@@ -926,7 +989,7 @@ class _TrafficLightCalendar extends StatelessWidget {
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: 28,
+            itemCount: totalCells,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 7,
               mainAxisSpacing: 8,
@@ -934,13 +997,13 @@ class _TrafficLightCalendar extends StatelessWidget {
               childAspectRatio: 1,
             ),
             itemBuilder: (context, index) {
-              final date = startDate.add(Duration(days: index));
-              
-              final isFuture = date.isAfter(today);
-              if (isFuture) {
-                return const SizedBox(); // Hide future days completely
+              // Empty leading slots for alignment
+              if (index < emptySlots) {
+                return const SizedBox();
               }
 
+              final dayIndex = index - emptySlots;
+              final date = startDate.add(Duration(days: dayIndex));
               final dateKey = date.millisecondsSinceEpoch;
               final hasLog = dayLogCount.containsKey(dateKey);
               final maxSpike = dayMaxSpike[dateKey];
@@ -978,7 +1041,7 @@ class _TrafficLightCalendar extends StatelessWidget {
               // Border Logic
               Border? border;
               if (isToday) {
-                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.5); // Highlight Today
+                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.0); // Highlight Today
               } else if (!hasLog) {
                 border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1);
               }
