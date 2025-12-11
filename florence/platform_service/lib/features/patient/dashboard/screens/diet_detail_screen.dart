@@ -955,7 +955,11 @@ class _TrafficLightCalendar extends StatelessWidget {
     // Calculate empty slots needed at start to align with Monday
     // Mon=1 -> 0 empty. Tue=2 -> 1 empty. etc.
     final emptySlots = startDate.weekday - 1; 
-    final totalCells = 28 + emptySlots;
+    
+    // Calculate total cells to fill complete rows (multiple of 7)
+    // e.g. if we have 28 days + 2 empty slots = 30 cells -> round up to 35 (5 rows)
+    final rawTotal = 28 + emptySlots;
+    final totalCells = (rawTotal / 7).ceil() * 7;
 
     return _DietCard(
       title: 'Consistency Calendar',
@@ -998,21 +1002,33 @@ class _TrafficLightCalendar extends StatelessWidget {
               childAspectRatio: 1,
             ),
             itemBuilder: (context, index) {
-              // Empty leading slots for alignment
-              if (index < emptySlots) {
+              // Helper for empty grid cells (Leading or Trailing)
+              Widget buildEmptyCell() {
                 return Container(
                   decoration: BoxDecoration(
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppTheme.getBorderColor(context).withOpacity(0.2), 
+                      color: AppTheme.getBorderColor(context).withOpacity(0.5), // Visible border
                       width: 1
                     ),
                   ),
                 );
               }
 
+              // 1. Leading Empty Slots
+              if (index < emptySlots) {
+                return buildEmptyCell();
+              }
+
               final dayIndex = index - emptySlots;
+
+              // 2. Trailing Empty Slots (Fillers after Today to complete the row)
+              if (dayIndex >= 28) {
+                return buildEmptyCell();
+              }
+
+              // 3. Actual Data Days
               final date = startDate.add(Duration(days: dayIndex));
               final dateKey = date.millisecondsSinceEpoch;
               final hasLog = dayLogCount.containsKey(dateKey);
