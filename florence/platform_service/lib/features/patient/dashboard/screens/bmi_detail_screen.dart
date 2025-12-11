@@ -646,7 +646,11 @@ class _BmiTrendSection extends StatelessWidget {
                         showTitles: true,
                         interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
                         getTitlesWidget: (val, meta) {
-                          if (val <= meta.min || val >= meta.max) return const SizedBox.shrink();
+                          // Prevent edge labels from clipping strictly at the bounds
+                          final tolerance = (meta.max - meta.min) * 0.05; // 5% margin
+                          if (val <= meta.min + tolerance || val >= meta.max - tolerance) {
+                            return const SizedBox.shrink();
+                          }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
@@ -685,7 +689,8 @@ class _BmiTrendSection extends StatelessWidget {
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
                       isCurved: true,
                       color: AppTheme.primaryBlue,
-                      barWidth: 3,
+                      barWidth: 2,
+                      isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
