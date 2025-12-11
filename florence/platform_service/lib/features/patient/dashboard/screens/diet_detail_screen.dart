@@ -163,8 +163,9 @@ class _DietStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Complete Pairs (Quality Metric)
+    // 1. Stable Meals % (Quality Metric: Spike < 30mg/dL)
     final total = logs.length;
+    int stableCount = 0;
     int pairCount = 0;
     
     // 2. Avg Spike
@@ -173,13 +174,18 @@ class _DietStatsSection extends StatelessWidget {
     
     for (var log in logs) {
       if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
-        totalSpike += (log.glucoseAfterMeal! - log.glucoseBeforeMeal!);
+        final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
+        totalSpike += spike;
         spikeCount++;
         pairCount++;
+        
+        if (spike < 30) {
+          stableCount++;
+        }
       }
     }
     
-    final pairPercentage = total > 0 ? (pairCount / total * 100).toStringAsFixed(0) : '0';
+    final stablePercentage = pairCount > 0 ? (stableCount / pairCount * 100).toStringAsFixed(0) : '0';
     final avgSpike = spikeCount > 0 ? totalSpike / spikeCount : 0.0;
 
     // 3. Avg Calories
@@ -204,10 +210,10 @@ class _DietStatsSection extends StatelessWidget {
           Expanded(
             child: _buildStatBox(
               context, 
-              'Complete Pairs', 
-              total > 0 ? '$pairPercentage%' : '--', 
-              'of logs', 
-              pairCount > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
+              'Stable Meals', 
+              pairCount > 0 ? '$stablePercentage%' : '--', 
+              'target < 30', 
+              stableCount > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
           const SizedBox(width: 12),
@@ -907,17 +913,7 @@ class _TrafficLightCalendar extends StatelessWidget {
             itemBuilder: (context, index) {
               final date = startDate.add(Duration(days: index));
               
-              // Handle Future Dates (Hide Cell)
-              if (date.isAfter(today)) {
-                return Container(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.3), width: 1),
-                  ),
-                );
-              }
-
+              final isFuture = date.isAfter(today);
               final dateKey = date.millisecondsSinceEpoch;
               final hasLog = dayLogCount.containsKey(dateKey);
               final maxSpike = dayMaxSpike[dateKey];
@@ -926,7 +922,11 @@ class _TrafficLightCalendar extends StatelessWidget {
               Color textColor;
               String tooltip;
 
-              if (!hasLog) {
+              if (isFuture) {
+                cellColor = Colors.transparent;
+                textColor = AppTheme.textSecondaryColor.withOpacity(0.2); // Faint text
+                tooltip = 'Future';
+              } else if (!hasLog) {
                 cellColor = Colors.transparent;
                 textColor = AppTheme.textSecondaryColor.withOpacity(0.5);
                 tooltip = 'No logs';
@@ -955,7 +955,9 @@ class _TrafficLightCalendar extends StatelessWidget {
               // Border Logic
               Border? border;
               if (isToday) {
-                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.5);
+                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.0); // Reduced width
+              } else if (isFuture) {
+                border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.2), width: 1, style: BorderStyle.solid); // Faint placeholder
               } else if (!hasLog) {
                 border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1);
               }
