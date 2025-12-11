@@ -623,6 +623,9 @@ class _BmiTrendSection extends StatelessWidget {
         minY = (minY / 5).floor() * 5.0;
         maxY = (maxY / 5).ceil() * 5.0;
 
+        // Prevent zero-height chart if values are identical
+        if (maxY == minY) maxY += 5.0;
+
         // Calculate dynamic interval for X-axis
         final interval = (maxX - minX) / (context.isMobile ? 2.5 : 4);
 
