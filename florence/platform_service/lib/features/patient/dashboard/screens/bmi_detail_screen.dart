@@ -623,6 +623,9 @@ class _BmiTrendSection extends StatelessWidget {
         minY = (minY / 5).floor() * 5.0;
         maxY = (maxY / 5).ceil() * 5.0;
 
+        // Calculate dynamic interval for X-axis
+        final interval = (maxX - minX) / (context.isMobile ? 3 : 5);
+
         return Column(
           children: [
             SizedBox(
@@ -635,6 +638,7 @@ class _BmiTrendSection extends StatelessWidget {
                     show: true,
                     drawVerticalLine: true,
                     horizontalInterval: 5,
+                    verticalInterval: interval,
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
@@ -645,7 +649,7 @@ class _BmiTrendSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
+                        interval: interval,
                         getTitlesWidget: (val, meta) {
                           // Prevent edge labels from clipping strictly at the bounds
                           final tolerance = (meta.max - meta.min) * 0.05; // 5% margin
@@ -657,7 +661,9 @@ class _BmiTrendSection extends StatelessWidget {
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
                           
                           DateFormat fmt;
-                          if (durationDays > 90) {
+                          if (durationDays > 365) {
+                            fmt = DateFormat('yyyy');
+                          } else if (durationDays > 90) {
                             fmt = DateFormat('MMM y');
                           } else if (durationDays < 2) {
                             fmt = DateFormat('h a'); // Show time if span is very short
