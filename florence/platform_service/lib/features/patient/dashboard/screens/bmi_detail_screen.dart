@@ -626,8 +626,10 @@ class _BmiTrendSection extends StatelessWidget {
         // Prevent zero-height chart if values are identical
         if (maxY == minY) maxY += 5.0;
 
-        // Calculate dynamic interval for X-axis
-        final interval = (maxX - minX) / (context.isMobile ? 2.5 : 4);
+        // Calculate interval (Fixed 4h for Daily, Dynamic for others)
+        final interval = range == '1D' 
+            ? 14400000.0 // 4 hours in ms
+            : (maxX - minX) / (context.isMobile ? 2.5 : 4);
 
         return Column(
           children: [
@@ -757,8 +759,8 @@ class _BmiTrendSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
               children: [
                 _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
