@@ -839,9 +839,29 @@ class _BmiCorrelationSection extends StatelessWidget {
           r.measuredAt.isBefore(endDt.add(const Duration(days: 7)))
         ).toList();
 
-        // Normalize Y-Axis: Map HbA1c (4-12) to fit visually within BMI range (15-40)
-        // y_chart = ((hba1c - 4) / 8) * 25 + 15
+        // Dynamic Y-Axis Calculation to prevent clipping
+        double minY = 15;
+        double maxY = 40;
         
+        if (data.isNotEmpty) {
+          final bmis = data.map((e) => e.value);
+          final minBmi = bmis.reduce(math.min);
+          final maxBmi = bmis.reduce(math.max);
+          
+          if (minBmi < 15) minY = minBmi - 2;
+          if (maxBmi > 40) maxY = maxBmi + 2;
+        }
+
+        // Snap to nearest 5
+        minY = (minY / 5).floor() * 5.0;
+        maxY = (maxY / 5).ceil() * 5.0;
+        if (maxY == minY) maxY += 5.0;
+
+        // Constants for HbA1c Scaling (map 4.0-12.0% to minY-maxY)
+        final double hba1cMin = 4.0;
+        final double hba1cRange = 8.0; // 12 - 4
+        final double chartRange = maxY - minY;
+
         return Column(
           children: [
             SizedBox(
@@ -850,7 +870,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                 LineChartData(
                   clipData: const FlClipData.all(),
                   minX: minX, maxX: maxX,
-                  minY: 15, maxY: 40, // BMI Scale
+                  minY: minY, maxY: maxY,
                   
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
@@ -899,7 +919,8 @@ class _BmiCorrelationSection extends StatelessWidget {
                     // HbA1c Line (Purple - Scaled)
                     LineChartBarData(
                       spots: displayHba1c.map((r) {
-                        final scaledY = ((r.value - 4) / 8) * 25 + 15;
+                        // Dynamic scaling based on the calculated chart bounds
+                        final scaledY = ((r.value - hba1cMin) / hba1cRange) * chartRange + minY;
                         return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
                       }).toList(),
                       color: Colors.purple,
@@ -952,7 +973,8 @@ class _BmiCorrelationSection extends StatelessWidget {
                               ],
                             );
                           } else {
-                            final realVal = ((spot.y - 15)/25)*8 + 4;
+                            // Reverse the scaling logic to show actual HbA1c value
+                            final realVal = ((spot.y - minY) / chartRange) * hba1cRange + hba1cMin;
                             return LineTooltipItem(
                               '$dateStr\n',
                               const TextStyle(color: Colors.white70, fontSize: 10),
