@@ -288,8 +288,10 @@ class _DietImpactChart extends StatelessWidget {
     for (var log in recentLogs) {
       if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
         final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
-        if (dataMap.containsKey(log.mealTime)) {
-          dataMap[log.mealTime]!.add(spike);
+        // Normalize key to Uppercase to match dataMap keys strictly
+        final key = log.mealTime.toUpperCase();
+        if (dataMap.containsKey(key)) {
+          dataMap[key]!.add(spike);
         }
       }
     }
