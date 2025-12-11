@@ -868,7 +868,7 @@ class _TrafficLightCalendar extends StatelessWidget {
                 // Logged but no glucose data
                 cellColor = AppTheme.primaryBlue;
                 textColor = Colors.white;
-                tooltip = 'Meal logged (No Glucose)';
+                tooltip = 'Meal logged (Incomplete Pair)';
               } else if (maxSpike > 50) {
                 cellColor = AppTheme.errorColor;
                 textColor = Colors.white;
@@ -886,15 +886,21 @@ class _TrafficLightCalendar extends StatelessWidget {
               // Highlight "Today"
               final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
 
+              // Border Logic: Today gets priority
+              Border? border;
+              if (isToday) {
+                border = Border.all(color: AppTheme.textPrimaryColor, width: 2);
+              } else if (!hasLog) {
+                border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1);
+              }
+
               return Tooltip(
                 message: '${DateFormat('MMM d').format(date)}\n$tooltip',
                 child: Container(
                   decoration: BoxDecoration(
                     color: cellColor,
                     borderRadius: BorderRadius.circular(8),
-                    border: !hasLog 
-                      ? Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1)
-                      : (isToday ? Border.all(color: AppTheme.textPrimaryColor, width: 2) : null),
+                    border: border,
                   ),
                   alignment: Alignment.center,
                   child: hasLog ? Text(
@@ -924,7 +930,7 @@ class _TrafficLightCalendar extends StatelessWidget {
             runSpacing: 8,
             children: [
               _LegendDot(color: AppTheme.textSecondaryColor.withOpacity(0.5), label: 'No Data', isOutline: true),
-              _LegendDot(color: AppTheme.primaryBlue, label: 'No Glucose'),
+              _LegendDot(color: AppTheme.primaryBlue, label: 'No Pair'),
               _LegendDot(color: AppTheme.primaryGreen, label: 'Good'),
               _LegendDot(color: AppTheme.warningColor, label: 'Fair'),
               _LegendDot(color: AppTheme.errorColor, label: 'High Spike'),
