@@ -951,7 +951,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                             // Match color of the line being touched
                             return FlDotCirclePainter(
                               radius: 4, 
-                              color: barData.barRods[0].spots[index].bar.color ?? AppTheme.primaryBlue, 
+                              color: barData.color ?? AppTheme.primaryBlue, 
                               strokeColor: Colors.white
                             );
                           }),
