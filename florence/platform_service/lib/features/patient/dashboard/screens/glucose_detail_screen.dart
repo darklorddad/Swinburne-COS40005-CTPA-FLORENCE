@@ -949,10 +949,10 @@ class _ModalDaySection extends StatelessWidget {
             // Legend
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (threshold != null) ...[
-                _buildLegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
                 const SizedBox(width: 12),
               ],
-              _buildLegendItem('Daily Traces', AppTheme.textSecondaryColor, isDashed: false),
+              const _LegendItem('Daily Traces', AppTheme.textSecondaryColor),
             ]),
           ],
         );
