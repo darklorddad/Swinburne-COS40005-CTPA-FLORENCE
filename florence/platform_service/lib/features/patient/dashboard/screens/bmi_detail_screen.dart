@@ -624,7 +624,7 @@ class _BmiTrendSection extends StatelessWidget {
         maxY = (maxY / 5).ceil() * 5.0;
 
         // Calculate dynamic interval for X-axis
-        final interval = (maxX - minX) / (context.isMobile ? 3 : 5);
+        final interval = (maxX - minX) / (context.isMobile ? 2.5 : 4);
 
         return Column(
           children: [
@@ -673,7 +673,13 @@ class _BmiTrendSection extends StatelessWidget {
 
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(fmt.format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            child: Text(
+                              fmt.format(date),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                            ),
                           );
                         },
                       ),
