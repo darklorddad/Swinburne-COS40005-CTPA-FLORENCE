@@ -547,6 +547,8 @@ class _TrendsSectionState extends State<_TrendsSection> {
       title: 'HbA1c Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your HbA1c levels over time.\n\n'
+                '• Y-Axis: HbA1c (%)\n'
+                '• X-Axis: Time\n'
                 '• Green Band: Normal Range\n'
                 '• Dotted Line: Your personal target',
       child: Column(
