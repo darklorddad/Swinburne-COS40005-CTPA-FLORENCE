@@ -400,14 +400,14 @@ class _GaugeSection extends StatelessWidget {
                   const Positioned(
                     left: 0,
                     child: FractionalTranslation(
-                      translation: Offset(-0.5, 0),
+                      translation: Offset(-0.3, 0),
                       child: Text('2.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
                     ),
                   ),
                   const Positioned(
                     right: 0,
                     child: FractionalTranslation(
-                      translation: Offset(0.5, 0),
+                      translation: Offset(0.3, 0),
                       child: Text('15.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
                     ),
                   ),
