@@ -703,7 +703,6 @@ class _BmiTrendSection extends StatelessWidget {
                       isCurved: true,
                       color: AppTheme.primaryBlue,
                       barWidth: 2,
-                      isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
@@ -896,6 +895,21 @@ class _BmiCorrelationSection extends StatelessWidget {
                     ),
                   ],
                   lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) {
+                            // Match color of the line being touched
+                            return FlDotCirclePainter(
+                              radius: 4, 
+                              color: barData.barRods[0].spots[index].bar.color ?? AppTheme.primaryBlue, 
+                              strokeColor: Colors.white
+                            );
+                          }),
+                        );
+                      }).toList();
+                    },
                     touchTooltipData: LineTouchTooltipData(
                       getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (spots) {
