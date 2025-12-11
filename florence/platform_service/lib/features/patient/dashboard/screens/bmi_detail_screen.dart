@@ -732,6 +732,8 @@ class _BmiTrendSection extends StatelessWidget {
                     },
                     touchTooltipData: LineTouchTooltipData(
                       getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
