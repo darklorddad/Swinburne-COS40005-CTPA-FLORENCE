@@ -100,7 +100,7 @@ class ActivityDetailScreen extends ConsumerWidget {
                                           logs: sortedLogs,
                                           dataColor: dataColor),
                                       const SizedBox(height: 20),
-                                      _ActivityHistoryList(
+                                      _HistorySection(
                                         logs: sortedLogs,
                                         glucoseReadings: glucoseReadings,
                                         dataColor: dataColor,
@@ -127,7 +127,7 @@ class ActivityDetailScreen extends ConsumerWidget {
                                 _ActivityTimingChart(
                                     logs: sortedLogs, dataColor: dataColor),
                                 const SizedBox(height: 20),
-                                _ActivityHistoryList(
+                                _HistorySection(
                                   logs: sortedLogs,
                                   glucoseReadings: glucoseReadings,
                                   dataColor: dataColor,
@@ -726,22 +726,22 @@ class _TimingPoint {
 // 4. HISTORY & GLUCOSE IMPACT (CONSISTENT LAYOUT)
 // ============================================================================
 
-class _ActivityHistoryList extends StatefulWidget {
+class _HistorySection extends StatefulWidget {
   final List<ActivityLog> logs;
   final List<MonitorData> glucoseReadings;
   final Color dataColor;
 
-  const _ActivityHistoryList({
+  const _HistorySection({
     required this.logs,
     required this.glucoseReadings,
     required this.dataColor,
   });
 
   @override
-  State<_ActivityHistoryList> createState() => _ActivityHistoryListState();
+  State<_HistorySection> createState() => _HistorySectionState();
 }
 
-class _ActivityHistoryListState extends State<_ActivityHistoryList> {
+class _HistorySectionState extends State<_HistorySection> {
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 

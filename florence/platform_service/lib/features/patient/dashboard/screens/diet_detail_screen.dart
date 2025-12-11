@@ -84,7 +84,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                                     children: [
                                       _DietImpactChart(logs: sortedLogs),
                                       const SizedBox(height: 20),
-                                      _DietHistoryList(logs: sortedLogs),
+                                      _HistorySection(logs: sortedLogs),
                                       const SizedBox(height: 24),
                                     ],
                                   ),
@@ -99,7 +99,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                                 const SizedBox(height: 20),
                                 _DietImpactChart(logs: sortedLogs),
                                 const SizedBox(height: 20),
-                                _DietHistoryList(logs: sortedLogs),
+                                _HistorySection(logs: sortedLogs),
                                 const SizedBox(height: 24),
                               ],
                             ),
@@ -414,16 +414,16 @@ class _DietImpactChart extends StatelessWidget {
 // 3. HISTORY LIST
 // ============================================================================
 
-class _DietHistoryList extends StatefulWidget {
+class _HistorySection extends StatefulWidget {
   final List<DailyPatientLog> logs;
 
-  const _DietHistoryList({required this.logs});
+  const _HistorySection({required this.logs});
 
   @override
-  State<_DietHistoryList> createState() => _DietHistoryListState();
+  State<_HistorySection> createState() => _HistorySectionState();
 }
 
-class _DietHistoryListState extends State<_DietHistoryList> {
+class _HistorySectionState extends State<_HistorySection> {
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
