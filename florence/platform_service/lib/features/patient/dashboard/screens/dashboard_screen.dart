@@ -37,6 +37,8 @@ class DashboardScreen extends ConsumerStatefulWidget {
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   // Local state for welcome message only
   bool _hasShownWelcomeMessage = false;
+  // Track pull-to-refresh state to prevent double loading indicators
+  bool _isPullRefreshing = false;
 
   @override
   void initState() {
@@ -62,17 +64,24 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   /// Handle refresh
   Future<void> _handleRefresh() async {
-    ref.invalidate(chatProvider);
+    setState(() => _isPullRefreshing = true);
+    try {
+      ref.invalidate(chatProvider);
 
-    // 1. Fetch Profile First ("Prime" the backend)
-    // This ensures the profile record exists and prevents race conditions on the heavy queries
-    await ref.refresh(userProfileProvider.future);
+      // 1. Fetch Profile First ("Prime" the backend)
+      // This ensures the profile record exists and prevents race conditions on the heavy queries
+      await ref.refresh(userProfileProvider.future);
 
-    // 2. Fetch Data & Chat in Parallel (Safe now)
-    await Future.wait([
-      ref.refresh(core_data.monitorDataProvider.future),
-      _safeLoadChatHistory(force: true), 
-    ]);
+      // 2. Fetch Data & Chat in Parallel (Safe now)
+      await Future.wait([
+        ref.refresh(core_data.monitorDataProvider.future),
+        _safeLoadChatHistory(force: true),
+      ]);
+    } finally {
+      if (mounted) {
+        setState(() => _isPullRefreshing = false);
+      }
+    }
   }
 
   /// Show quick log modal
@@ -228,7 +237,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   AppBar _buildAppBar(BuildContext context) {
     final monitorDataAsync = ref.watch(monitorDataProvider);
     final activityAsync = ref.watch(latestActivityProvider);
-    final isLoading = monitorDataAsync.isLoading || activityAsync.isLoading;
+    // Only show linear progress if loading AND NOT controlled by pull-to-refresh
+    final isLoading = (monitorDataAsync.isLoading || activityAsync.isLoading) && !_isPullRefreshing;
     final borderColor = AppTheme.getBorderColor(context);
 
     return AppBar(
