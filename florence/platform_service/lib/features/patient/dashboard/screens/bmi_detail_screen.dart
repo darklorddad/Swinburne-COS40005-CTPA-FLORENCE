@@ -634,6 +634,7 @@ class _BmiTrendSection extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
+                    horizontalInterval: 5,
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
@@ -745,7 +746,7 @@ class _BmiTrendSection extends StatelessWidget {
               children: [
                 const _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
+                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
             ),
           ],
