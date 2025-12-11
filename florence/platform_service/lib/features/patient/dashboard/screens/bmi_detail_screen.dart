@@ -872,9 +872,10 @@ class _BmiCorrelationSection extends StatelessWidget {
                     LineChartBarData(
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
                       color: AppTheme.primaryBlue,
-                      barWidth: 3,
+                      barWidth: 2,
                       isCurved: true,
-                      dotData: FlDotData(show: true), // Enabled dots
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(show: true),
                     ),
                     // HbA1c Line (Purple - Scaled)
                     LineChartBarData(
@@ -883,8 +884,9 @@ class _BmiCorrelationSection extends StatelessWidget {
                         return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
                       }).toList(),
                       color: Colors.purple,
-                      barWidth: 3, // Enable line width (was 0)
-                      isCurved: true, // Enable trend line
+                      barWidth: 2,
+                      isCurved: true,
+                      isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true, 
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple, strokeWidth: 1, strokeColor: Colors.white)
