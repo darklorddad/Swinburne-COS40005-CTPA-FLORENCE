@@ -633,8 +633,9 @@ class _BmiTrendSection extends StatelessWidget {
                   minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
                     show: true,
-                    drawVerticalLine: false,
+                    drawVerticalLine: true,
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
@@ -689,7 +690,17 @@ class _BmiTrendSection extends StatelessWidget {
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
                       ),
-                      belowBarData: BarAreaData(show: false),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppTheme.primaryBlue.withOpacity(0.1),
+                            AppTheme.primaryBlue.withOpacity(0.0),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                   lineTouchData: LineTouchData(
