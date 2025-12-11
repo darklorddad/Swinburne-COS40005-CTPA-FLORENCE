@@ -392,13 +392,25 @@ class _GaugeSection extends StatelessWidget {
             ),
 
             // 2. Scale Labels
-            const SizedBox(
-              width: 230,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            SizedBox(
+              width: chartRadius * 2,
+              height: 24,
+              child: Stack(
                 children: [
-                  Text('2.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                  Text('15.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const Positioned(
+                    left: 0,
+                    child: FractionalTranslation(
+                      translation: Offset(-0.5, 0),
+                      child: Text('2.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ),
+                  ),
+                  const Positioned(
+                    right: 0,
+                    child: FractionalTranslation(
+                      translation: Offset(0.5, 0),
+                      child: Text('15.0%', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ),
+                  ),
                 ],
               ),
             ),
