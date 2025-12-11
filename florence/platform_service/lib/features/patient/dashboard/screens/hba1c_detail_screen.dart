@@ -416,7 +416,7 @@ class _GaugeSection extends StatelessWidget {
                     Text(
                       val > 0 ? val.toStringAsFixed(1) : '--',
                       style: TextStyle(
-                        fontSize: 32,
+                        fontSize: 48,
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimaryColor,
                         height: 1.0,

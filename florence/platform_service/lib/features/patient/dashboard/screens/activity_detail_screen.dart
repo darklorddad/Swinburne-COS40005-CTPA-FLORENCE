@@ -418,7 +418,7 @@ class _DailyVolumeCard extends StatelessWidget {
             style: Theme.of(context).textTheme.displayLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: displayColor,
-              fontSize: 64,
+              fontSize: 48,
             ),
           ),
           const SizedBox(width: 8),

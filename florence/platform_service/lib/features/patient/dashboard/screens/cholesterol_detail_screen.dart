@@ -441,10 +441,11 @@ class _RatioSection extends StatelessWidget {
                     ),
                     Text(
                       ratio > 0 ? ratio.toStringAsFixed(1) : '--',
-                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryColor,
-                          ),
+                      style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Container(
