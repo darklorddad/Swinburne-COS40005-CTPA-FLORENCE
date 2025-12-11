@@ -883,7 +883,12 @@ class _BmiCorrelationSection extends StatelessWidget {
                       isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true,
-                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                          radius: 3,
+                          color: AppTheme.primaryBlue,
+                          strokeColor: Colors.white,
+                          strokeWidth: 1.5,
+                        ),
                       ),
                     ),
                     // HbA1c Line (Purple - Scaled)
@@ -897,8 +902,13 @@ class _BmiCorrelationSection extends StatelessWidget {
                       isCurved: true,
                       isStrokeCapRound: true,
                       dotData: FlDotData(
-                        show: true, 
-                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: Colors.purple, strokeColor: Colors.white, strokeWidth: 1.5)
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                          radius: 3,
+                          color: Colors.purple,
+                          strokeColor: Colors.white,
+                          strokeWidth: 1.5,
+                        ),
                       ),
                     ),
                   ],
