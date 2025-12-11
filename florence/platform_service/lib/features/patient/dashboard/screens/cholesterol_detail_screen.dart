@@ -881,25 +881,6 @@ class _HistorySectionState extends State<_HistorySection> {
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
-  Color _getStatusColor(double? value, MonitorDataType type) {
-    if (value == null) return AppTheme.textSecondaryColor;
-    
-    try {
-      final t = widget.thresholds.firstWhere((t) => t.dataType == type);
-      
-      if (type == MonitorDataType.CHOLESTEROL_HDL) {
-        // HDL: Higher is better. Low is bad.
-        return value < t.minValue ? AppTheme.errorColor : AppTheme.primaryGreen;
-      } else {
-        // LDL/Total/Tri: Lower is better. High is bad.
-        return value > t.maxValue ? AppTheme.errorColor : AppTheme.primaryGreen;
-      }
-    } catch (_) {
-      // No threshold found: Return neutral color
-      return AppTheme.textPrimaryColor;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

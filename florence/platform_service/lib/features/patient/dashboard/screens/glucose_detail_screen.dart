@@ -752,8 +752,6 @@ class _GlucoseTrendsSection extends StatelessWidget {
       },
     );
   }
-
-  static Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
 }
 
 // ============================================================================
