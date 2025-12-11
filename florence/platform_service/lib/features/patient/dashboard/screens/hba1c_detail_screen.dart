@@ -58,8 +58,6 @@ class HbA1cDetailScreen extends ConsumerWidget {
             userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.HBA1C);
           } catch (_) {}
 
-          final targetMax = userThreshold?.maxValue;
-
           return RefreshIndicator(
             onRefresh: () async {
               return ref.refresh(core_data.monitorDataProvider.future);
