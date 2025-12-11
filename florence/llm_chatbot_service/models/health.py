@@ -35,6 +35,7 @@ class DailyLog(BaseModel):
     glucose_after_meal: Optional[float] = None
     glucose_before_meal_time: Optional[datetime] = None
     glucose_after_meal_time: Optional[datetime] = None
+    calories: Optional[int] = None
 
 
 class HealthContext(BaseModel):

@@ -159,6 +159,8 @@ class HealthDataService:
                 entry = f"- {d.log_date.strftime('%Y-%m-%d')} {d.meal_time}:"
                 if d.meal_desc:
                     entry += f" {d.meal_desc}"
+                if d.calories:
+                    entry += f" [{d.calories} kcal]"
                 if d.glucose_before_meal:
                     entry += f" (Before: {d.glucose_before_meal})"
                 if d.glucose_after_meal:

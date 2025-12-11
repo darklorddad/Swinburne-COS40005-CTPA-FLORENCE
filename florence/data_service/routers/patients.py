@@ -152,6 +152,8 @@ class DailyLogCreate(BaseModel):
     glucose_before_meal_time: Optional[datetime] = None
     glucose_after_meal_time: Optional[datetime] = None
     meal_desc: Optional[str] = None
+    calories: Optional[int] = None
+    photo_url: Optional[str] = None
 
     @model_validator(mode='before')
     @classmethod
@@ -159,9 +161,11 @@ class DailyLogCreate(BaseModel):
         before = values.get('glucose_before_meal')
         after = values.get('glucose_after_meal')
         desc = values.get('meal_desc')
+        calories = values.get('calories')
+        photo = values.get('photo_url')
         
-        if before is None and after is None and desc is None:
-            raise ValueError('You must provide at least a glucose reading OR a meal description.')
+        if before is None and after is None and desc is None and calories is None and photo is None:
+            raise ValueError('You must provide at least a glucose reading, meal description, calories, or photo.')
         return values
 
 class ActivityLogCreate(BaseModel):
