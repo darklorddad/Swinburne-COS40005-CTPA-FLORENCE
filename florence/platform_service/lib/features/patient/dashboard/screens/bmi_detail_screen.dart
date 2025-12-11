@@ -967,7 +967,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                               const TextStyle(color: Colors.white70, fontSize: 10),
                               children: [
                                 TextSpan(
-                                  text: "BMI: ${spot.y.toStringAsFixed(1)}",
+                                  text: "BMI: ${spot.y.toStringAsFixed(1)} kg/m²",
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                               ],
