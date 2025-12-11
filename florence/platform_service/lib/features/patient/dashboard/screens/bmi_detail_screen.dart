@@ -1147,7 +1147,7 @@ class _LegendItem extends StatelessWidget {
   final bool isCircle;
   final bool isDashed;
 
-  const _LegendItem(this.label, this.color, {super.key, this.isBox = false, this.isCircle = false, this.isDashed = false});
+  const _LegendItem(this.label, this.color, {this.isBox = false, this.isCircle = false, this.isDashed = false});
 
   @override
   Widget build(BuildContext context) {
