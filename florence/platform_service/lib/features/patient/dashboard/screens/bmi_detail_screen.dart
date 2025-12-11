@@ -576,33 +576,36 @@ class _BmiTrendSection extends StatelessWidget {
           '• Green Band: Normal BMI Range ($minNormal - $maxNormal).',
       allData: readings,
       builder: (range, data) {
-        // Calculate X-Axis bounds based on selected range
+        // Calculate X-Axis bounds with "Snap to Day/Hour" logic
         double minX, maxX;
         final now = DateTime.now();
+        
+        // Snap end time to next hour for clean grid lines
+        final endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
 
         if (range == 'ALL') {
           if (data.isNotEmpty) {
             minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-            maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-            if (minX == maxX) {
-              minX -= 2629743000; // -1 Month
-              maxX += 2629743000; // +1 Month
+            maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
+            
+            // Ensure meaningful span if only 1 data point
+            if (maxX - minX < 86400000) { // < 1 day
+               minX -= 2629743000; // -1 Month buffer
             }
           } else {
-            // Default 3M view if ALL is empty
-            maxX = now.millisecondsSinceEpoch.toDouble();
-            minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
+            maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
+            minX = endOfWindow.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
           }
         } else {
-          maxX = now.millisecondsSinceEpoch.toDouble();
+          maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
           Duration duration;
           switch (range) {
             case '3M': duration = const Duration(days: 90); break;
             case '6M': duration = const Duration(days: 180); break;
             case '1Y': duration = const Duration(days: 365); break;
-            default: duration = const Duration(days: 90); break; // Default 3M
+            default: duration = const Duration(days: 90); break;
           }
-          minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
+          minX = endOfWindow.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
 
         double minY, maxY;
@@ -668,9 +671,10 @@ class _BmiTrendSection extends StatelessWidget {
                           
                           DateFormat fmt;
                           if (durationDays > 365) {
-                            fmt = DateFormat('yyyy');
-                          } else if (durationDays > 90) {
-                            fmt = DateFormat('MMM y');
+                            fmt = DateFormat('MMM yy');
+                          } else if (durationDays >= 90) { 
+                            // 3M view (90 days) should show Month (e.g. "Jan", "Feb")
+                            fmt = DateFormat('MMM');
                           } else if (durationDays < 2) {
                             fmt = DateFormat('h a'); // Show time if span is very short
                           } else {
