@@ -645,8 +645,15 @@ class _BmiTrendSection extends StatelessWidget {
 
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                          // Use 'd/M' for consistency (was already correct, just ensuring context)
-                          final fmt = (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
+                          
+                          DateFormat fmt;
+                          if (durationDays > 90) {
+                            fmt = DateFormat('MMM y');
+                          } else if (durationDays < 2) {
+                            fmt = DateFormat('h a'); // Show time if span is very short
+                          } else {
+                            fmt = DateFormat('d/M');
+                          }
 
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
@@ -692,7 +699,7 @@ class _BmiTrendSection extends StatelessWidget {
                             const TextStyle(color: Colors.white70, fontSize: 10),
                             children: [
                               TextSpan(
-                                text: spot.y.toStringAsFixed(1),
+                                text: '${spot.y.toStringAsFixed(1)} kg/m²',
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ],
