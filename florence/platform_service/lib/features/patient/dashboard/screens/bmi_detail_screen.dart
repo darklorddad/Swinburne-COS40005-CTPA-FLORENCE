@@ -200,11 +200,12 @@ class _ChartSectionState extends State<_ChartSection> {
     Duration duration;
     switch (_selectedRange) {
       case '1D': duration = const Duration(days: 1); break;
-      case '1M': duration = const Duration(days: 30); break;
+      case '7D': duration = const Duration(days: 7); break;
+      case '30D': duration = const Duration(days: 30); break;
       case '3M': duration = const Duration(days: 90); break;
       case '6M': duration = const Duration(days: 180); break;
       case '1Y': duration = const Duration(days: 365); break;
-      default: duration = const Duration(days: 365); break;
+      default: duration = const Duration(days: 90); break;
     }
     final cutoff = now.subtract(duration);
     return widget.allData.where((d) => d.measuredAt.isAfter(cutoff)).toList();
