@@ -566,7 +566,7 @@ class _BmiTrendSection extends StatelessWidget {
     final maxNormal = threshold?.maxValue ?? 24.9;
 
     return _ChartSection(
-      title: 'Progress',
+      title: 'BMI Trends',
       icon: Icons.show_chart,
       ranges: const ['3M', '6M', '1Y', 'ALL'],
       infoText: 'Visualizes your BMI trends over time.\n\n'
@@ -618,6 +618,10 @@ class _BmiTrendSection extends StatelessWidget {
           minY = minNormal - 5.0;
           maxY = maxNormal + 5.0;
         }
+
+        // Snap to nearest 5
+        minY = (minY / 5).floor() * 5.0;
+        maxY = (maxY / 5).ceil() * 5.0;
 
         return Column(
           children: [
@@ -695,7 +699,7 @@ class _BmiTrendSection extends StatelessWidget {
                         return touchedSpots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                           return LineTooltipItem(
-                            '${DateFormat('MMM d').format(date)}\n',
+                            '${DateFormat('MMM d, y').format(date)}\n',
                             const TextStyle(color: Colors.white70, fontSize: 10),
                             children: [
                               TextSpan(
