@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -564,12 +565,16 @@ class _HistorySectionState extends State<_HistorySection> {
           if (log.photoUrl != null && log.photoUrl!.isNotEmpty) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                log.photoUrl!,
+              child: CachedNetworkImage(
+                imageUrl: log.photoUrl!,
                 width: 48,
                 height: 48,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => Container(
+                placeholder: (context, url) => Container(
+                  color: Colors.grey.shade200,
+                  child: const Icon(Icons.image, size: 20, color: Colors.grey),
+                ),
+                errorWidget: (context, url, error) => Container(
                   width: 48,
                   height: 48,
                   color: Colors.grey.shade200,
