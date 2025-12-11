@@ -294,8 +294,9 @@ class _DietStatsSection extends StatelessWidget {
       title: 'Overview',
       icon: Icons.analytics_outlined,
       infoText: 'Key statistics from your meal logs.\n\n'
-                ' Avg Spike: Average rise in glucose after meals.\n'
-                ' Avg Calories: Average estimated calories per logged meal.',
+                '• Stable Meals: % of meals with healthy glucose rise (<30mg/dL).\n'
+                '• Avg Spike: Average rise in glucose after meals.\n'
+                '• Avg Calories: Average estimated calories per logged meal.',
       child: Row(
         children: [
           Expanded(
@@ -999,7 +1000,16 @@ class _TrafficLightCalendar extends StatelessWidget {
             itemBuilder: (context, index) {
               // Empty leading slots for alignment
               if (index < emptySlots) {
-                return const SizedBox();
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppTheme.getBorderColor(context).withOpacity(0.2), 
+                      width: 1
+                    ),
+                  ),
+                );
               }
 
               final dayIndex = index - emptySlots;
