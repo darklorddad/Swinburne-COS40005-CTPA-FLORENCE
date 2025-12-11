@@ -393,7 +393,7 @@ class MealLog {
       'calories': calories,
       'protein': protein,
       'fat': fat,
-      'photoUrl': photoUrl,
+      'photo_url': photoUrl, // Fixed to snake_case
       'notes': notes,
       'tags': tags,
     };
@@ -409,7 +409,7 @@ class MealLog {
       calories: json['calories'] as int,
       protein: json['protein'] != null ? (json['protein'] as num).toDouble() : null,
       fat: json['fat'] != null ? (json['fat'] as num).toDouble() : null,
-      photoUrl: json['photoUrl'] as String?,
+      photoUrl: json['photo_url'] as String?, // Fixed to snake_case
       notes: json['notes'] as String?,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
       glucoseBefore: json['glucose_before_meal'] != null ? (json['glucose_before_meal'] as num).toDouble() : null,
