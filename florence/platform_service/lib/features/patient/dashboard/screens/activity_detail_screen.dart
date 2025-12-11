@@ -427,7 +427,7 @@ class _DailyVolumeCard extends StatelessWidget {
             children: [
               Text(
                 'minutes',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.bold,
                 ),
