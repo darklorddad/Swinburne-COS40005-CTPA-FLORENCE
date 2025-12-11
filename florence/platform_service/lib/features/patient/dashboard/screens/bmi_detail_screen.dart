@@ -876,7 +876,10 @@ class _BmiCorrelationSection extends StatelessWidget {
                       barWidth: 2,
                       isCurved: true,
                       isStrokeCapRound: true,
-                      dotData: FlDotData(show: true),
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
+                      ),
                     ),
                     // HbA1c Line (Purple - Scaled)
                     LineChartBarData(
@@ -890,7 +893,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                       isStrokeCapRound: true,
                       dotData: FlDotData(
                         show: true, 
-                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple, strokeWidth: 1, strokeColor: Colors.white)
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: Colors.purple, strokeColor: Colors.white, strokeWidth: 1.5)
                       ),
                     ),
                   ],
@@ -915,7 +918,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                       getTooltipItems: (spots) {
                         return spots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                          final dateStr = DateFormat('MMM d').format(date);
+                          final dateStr = DateFormat('MMM d, y').format(date);
                           
                           if (spot.barIndex == 0) {
                             return LineTooltipItem(
