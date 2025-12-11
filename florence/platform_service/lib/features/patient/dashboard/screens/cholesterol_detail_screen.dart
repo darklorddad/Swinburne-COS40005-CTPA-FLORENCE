@@ -473,9 +473,9 @@ class _RatioSection extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _LegendItem('HDL (Good)', AppTheme.primaryGreen),
+                  const _LegendItem('HDL (Good)', AppTheme.primaryGreen, isBox: true),
                   const SizedBox(width: 16),
-                  _LegendItem('Non-HDL', AppTheme.errorColor),
+                  const _LegendItem('Non-HDL', AppTheme.errorColor, isBox: true),
                 ],
               ),
             ),
@@ -850,11 +850,11 @@ class _CompositionSectionState extends State<_CompositionSection> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _LegendItem('HDL', AppTheme.primaryGreen),
+              const _LegendItem('HDL', AppTheme.primaryGreen, isBox: true),
               const SizedBox(width: 16),
-              _LegendItem('LDL', AppTheme.errorColor),
+              const _LegendItem('LDL', AppTheme.errorColor, isBox: true),
               const SizedBox(width: 16),
-              _LegendItem('VLDL', Colors.orange),
+              const _LegendItem('VLDL', Colors.orange, isBox: true),
             ],
           ),
         ],
@@ -1293,22 +1293,27 @@ class _CholesterolCard extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
-  const _LegendItem(this.label, this.color);
+  final bool isBox;
+  final bool isCircle;
+  final bool isDashed;
+
+  const _LegendItem(this.label, this.color, {this.isBox = false, this.isCircle = false, this.isDashed = false});
+
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          width: 12, 
-          height: 12, 
-          decoration: BoxDecoration(
-            color: color, 
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+        if (isBox)
+          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
+        else if (isCircle)
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+        else if (isDashed)
+          SizedBox(width: 16, height: 2, child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color)]))
+        else
+          Container(width: 12, height: 2, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 11)),
       ],
     );
   }
