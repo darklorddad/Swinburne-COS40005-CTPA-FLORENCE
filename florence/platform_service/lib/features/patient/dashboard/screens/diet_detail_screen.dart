@@ -29,10 +29,35 @@ class DietAnalyticsScreen extends ConsumerWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
+            child: PopupMenuButton<String>(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logMeal),
               tooltip: 'Add Log',
+              onSelected: (value) {
+                if (value == 'glucose') AppRoutes.push(context, AppRoutes.logGlucose);
+                if (value == 'meal') AppRoutes.push(context, AppRoutes.logMeal);
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'glucose',
+                  child: Row(
+                    children: [
+                      Icon(Icons.water_drop_outlined, color: AppTheme.primaryRed),
+                      SizedBox(width: 12),
+                      Text('Log w/ Glucose'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'meal',
+                  child: Row(
+                    children: [
+                      Icon(Icons.restaurant_outlined, color: AppTheme.mealColor),
+                      SizedBox(width: 12),
+                      Text('Log Meal Only'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -138,18 +163,23 @@ class _DietStatsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Total logs
+    // 1. Complete Pairs (Quality Metric)
     final total = logs.length;
-
+    int pairCount = 0;
+    
     // 2. Avg Spike
     double totalSpike = 0;
     int spikeCount = 0;
+    
     for (var log in logs) {
       if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
         totalSpike += (log.glucoseAfterMeal! - log.glucoseBeforeMeal!);
         spikeCount++;
+        pairCount++;
       }
     }
+    
+    final pairPercentage = total > 0 ? (pairCount / total * 100).toStringAsFixed(0) : '0';
     final avgSpike = spikeCount > 0 ? totalSpike / spikeCount : 0.0;
 
     // 3. Avg Calories
@@ -174,10 +204,10 @@ class _DietStatsSection extends StatelessWidget {
           Expanded(
             child: _buildStatBox(
               context, 
-              'Total Logs', 
-              total > 0 ? '$total' : '--', 
-              'meals', 
-              total > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
+              'Complete Pairs', 
+              total > 0 ? '$pairPercentage%' : '--', 
+              'of logs', 
+              pairCount > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
           const SizedBox(width: 12),
@@ -642,6 +672,8 @@ class _HistorySectionState extends State<_HistorySection> {
             ),
           ),
 
+          const SizedBox(width: 24), // Increased spacing
+
           // RIGHT: Delta/Type & Time
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -920,13 +952,18 @@ class _TrafficLightCalendar extends StatelessWidget {
               // Highlight "Today"
               final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
 
-              // Border Logic: Today gets priority
+              // Border Logic
               Border? border;
               if (isToday) {
-                border = Border.all(color: AppTheme.textPrimaryColor, width: 2);
+                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.5);
               } else if (!hasLog) {
                 border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1);
               }
+
+              // Text Color Logic (If today + no log, match the border color)
+              final effectiveTextColor = (isToday && !hasLog) 
+                  ? AppTheme.textPrimaryColor 
+                  : textColor;
 
               return Tooltip(
                 message: '${DateFormat('MMM d').format(date)}\n$tooltip',
@@ -937,17 +974,11 @@ class _TrafficLightCalendar extends StatelessWidget {
                     border: border,
                   ),
                   alignment: Alignment.center,
-                  child: hasLog ? Text(
+                  child: Text(
                     '${date.day}',
                     style: TextStyle(
-                      color: textColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ) : Text(
-                    '${date.day}',
-                    style: TextStyle(
-                      color: textColor,
+                      color: effectiveTextColor,
+                      fontWeight: hasLog || isToday ? FontWeight.bold : FontWeight.normal,
                       fontSize: 12,
                     ),
                   ),
