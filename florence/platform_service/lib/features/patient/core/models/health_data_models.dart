@@ -145,7 +145,7 @@ class DailyPatientLog {
       'log_date': logDate.toIso8601String(),
       'meal_time': mealTime,
       'calories': calories,
-      'photo_url': photoUrl,
+      'photo_url': photoUrl, // Ensure snake_case
     };
   }
 
@@ -160,7 +160,7 @@ class DailyPatientLog {
       glucoseBeforeMealTime: json['glucose_before_meal_time'] != null ? DateTime.parse(json['glucose_before_meal_time'] as String) : null,
       glucoseAfterMealTime: json['glucose_after_meal_time'] != null ? DateTime.parse(json['glucose_after_meal_time'] as String) : null,
       calories: json['calories'] as int?,
-      photoUrl: json['photo_url'] as String?,
+      photoUrl: json['photo_url'] as String?, // Ensure snake_case
     );
   }
 }
