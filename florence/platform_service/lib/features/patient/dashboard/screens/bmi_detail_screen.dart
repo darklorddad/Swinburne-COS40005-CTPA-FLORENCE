@@ -704,6 +704,14 @@ class _BmiTrendSection extends StatelessWidget {
                     ),
                   ],
                   lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
+                        );
+                      }).toList();
+                    },
                     touchTooltipData: LineTouchTooltipData(
                       getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
                       getTooltipItems: (touchedSpots) {
