@@ -151,28 +151,23 @@ class _DietStatsSection extends StatelessWidget {
     }
     final avgSpike = spikeCount > 0 ? totalSpike / spikeCount : 0.0;
 
-    // 3. Most Frequent Meal Type
-    final typeCounts = <String, int>{};
+    // 3. Avg Calories
+    int totalCalories = 0;
+    int calorieCount = 0;
     for (var log in logs) {
-      final t = log.mealTime.toUpperCase();
-      typeCounts[t] = (typeCounts[t] ?? 0) + 1;
-    }
-    
-    String topType = '-';
-    if (typeCounts.isNotEmpty) {
-      topType = typeCounts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-      // Capitalize format
-      if (topType.isNotEmpty) {
-        topType = topType[0].toUpperCase() + topType.substring(1).toLowerCase();
+      if (log.calories != null && log.calories! > 0) {
+        totalCalories += log.calories!;
+        calorieCount++;
       }
     }
+    final avgCalories = calorieCount > 0 ? totalCalories ~/ calorieCount : 0;
 
     return _DietCard(
       title: 'Overview',
       icon: Icons.analytics_outlined,
       infoText: 'Key statistics from your meal logs.\n\n'
                 ' Avg Spike: Average rise in glucose after meals.\n'
-                ' Top Meal: Most frequently logged meal time.',
+                ' Avg Calories: Average estimated calories per logged meal.',
       child: Row(
         children: [
           Expanded(
@@ -198,10 +193,10 @@ class _DietStatsSection extends StatelessWidget {
           Expanded(
             child: _buildStatBox(
               context, 
-              'Top Meal', 
-              topType, 
-              '', 
-              AppTheme.primaryGreen
+              'Avg Calories', 
+              avgCalories > 0 ? '$avgCalories' : '--', 
+              'kcal', 
+              avgCalories > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
         ],
@@ -565,6 +560,26 @@ class _HistorySectionState extends State<_HistorySection> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
+          // NEW: Photo Thumbnail
+          if (log.photoUrl != null && log.photoUrl!.isNotEmpty) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                log.photoUrl!,
+                width: 48,
+                height: 48,
+                fit: BoxFit.cover,
+                errorBuilder: (c, e, s) => Container(
+                  width: 48,
+                  height: 48,
+                  color: Colors.grey.shade200,
+                  child: const Icon(Icons.broken_image, size: 20, color: Colors.grey),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
+
           // LEFT: Value & Name
           Expanded(
             child: Column(
@@ -595,14 +610,28 @@ class _HistorySectionState extends State<_HistorySection> {
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  mealName,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondaryColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        mealName,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (log.calories != null && log.calories! > 0)
+                      Text(
+                        ' • ${log.calories} kcal',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontSize: 11,
+                        ),
+                      ),
+                  ],
                 ),
               ],
             ),
