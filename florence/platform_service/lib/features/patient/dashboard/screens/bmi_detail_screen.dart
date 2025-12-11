@@ -771,7 +771,7 @@ class _BmiTrendSection extends StatelessWidget {
             Wrap(
               spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
               children: [
-                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
               ],
             ),
           ],
@@ -1003,7 +1003,7 @@ class _BmiCorrelationSection extends StatelessWidget {
               children: [
                 const _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                const _LegendItem('HbA1c %', Colors.purple, isCircle: true),
+                const _LegendItem('HbA1c', Colors.purple, isCircle: true),
               ],
             ),
           ],
