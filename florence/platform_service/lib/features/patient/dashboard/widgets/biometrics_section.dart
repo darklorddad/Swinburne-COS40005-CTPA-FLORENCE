@@ -239,7 +239,7 @@ class BiometricsSection extends StatelessWidget {
     cards.add(CompactHealthCard(
       label: 'BMI',
       value: bmi?.value.toStringAsFixed(1) ?? '--',
-      unit: '',
+      unit: 'kg/m²',
       status: _getBmiStatus(bmi?.value, thresholds),
       timestamp: bmi?.measuredAt.toLocal(),
       icon: Icons.monitor_weight_outlined,

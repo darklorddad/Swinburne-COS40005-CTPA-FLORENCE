@@ -403,7 +403,7 @@ class _BmiGaugeSection extends StatelessWidget {
                     children: [
                       Text('BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text(
-                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}',
+                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)} kg/m²',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                       ),
                     ],
@@ -413,14 +413,29 @@ class _BmiGaugeSection extends StatelessWidget {
             ),
           ),
 
-          Text(
-            latestReading != null ? bmi.toStringAsFixed(1) : '--',
-            style: TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimaryColor,
-              height: 1.0,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                latestReading != null ? bmi.toStringAsFixed(1) : '--',
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryColor,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'kg/m²',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
