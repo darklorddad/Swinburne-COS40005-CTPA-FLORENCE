@@ -693,9 +693,9 @@ class _BmiTrendSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
+                const _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
               ],
             ),
           ],
@@ -873,9 +873,9 @@ class _BmiCorrelationSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
+                const _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                _LegendItem('HbA1c %', Colors.purple, isCircle: true),
+                const _LegendItem('HbA1c %', Colors.purple, isCircle: true),
               ],
             ),
           ],
@@ -1145,8 +1145,9 @@ class _LegendItem extends StatelessWidget {
   final Color color;
   final bool isBox;
   final bool isCircle;
+  final bool isDashed;
 
-  const _LegendItem(this.label, this.color, {super.key, this.isBox = false, this.isCircle = false});
+  const _LegendItem(this.label, this.color, {super.key, this.isBox = false, this.isCircle = false, this.isDashed = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1157,6 +1158,8 @@ class _LegendItem extends StatelessWidget {
           Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
         else if (isCircle)
           Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+        else if (isDashed)
+          SizedBox(width: 16, height: 2, child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color)]))
         else
           Container(width: 12, height: 2, color: color),
         const SizedBox(width: 4),

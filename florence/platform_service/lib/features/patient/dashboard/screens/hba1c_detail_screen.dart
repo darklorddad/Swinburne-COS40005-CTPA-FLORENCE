@@ -688,11 +688,11 @@ class _TrendsSectionState extends State<_TrendsSection> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('Low', AppTheme.warningColor.withOpacity(0.5)),
+                const _LegendItem('Low', AppTheme.warningColor, isBox: true),
                 const SizedBox(width: 16),
-                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5)),
+                const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
                 const SizedBox(width: 16),
-                _LegendItem('High', AppTheme.errorColor.withOpacity(0.5)),
+                const _LegendItem('High', AppTheme.errorColor, isBox: true),
               ],
             )
           ]
@@ -1191,39 +1191,27 @@ class _HbA1cCard extends StatelessWidget {
 class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
+  final bool isBox;
+  final bool isCircle;
   final bool isDashed;
-  
-  const _LegendItem(this.label, this.color, {this.isDashed = false});
-  
+
+  const _LegendItem(this.label, this.color, {this.isBox = false, this.isCircle = false, this.isDashed = false});
+
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (isDashed)
-          SizedBox(
-            width: 16,
-            height: 2,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(width: 4, height: 2, color: color),
-                Container(width: 4, height: 2, color: color),
-                Container(width: 4, height: 2, color: color),
-              ],
-            ),
-          )
+        if (isBox)
+          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
+        else if (isCircle)
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+        else if (isDashed)
+          SizedBox(width: 16, height: 2, child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color)]))
         else
-          Container(
-            width: 12, 
-            height: 12, 
-            decoration: BoxDecoration(
-              color: color, 
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11)),
+          Container(width: 12, height: 2, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 11)),
       ],
     );
   }
