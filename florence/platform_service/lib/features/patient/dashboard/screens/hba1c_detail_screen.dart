@@ -210,7 +210,7 @@ class _GaugeSection extends StatelessWidget {
 
     // Chart Dimensions
     const double chartRadius = 110.0; 
-    const double sectionWidth = 20.0;
+    const double sectionWidth = 30.0;
     const double centerRadius = chartRadius - sectionWidth; 
     // Needle length: reach almost to the end of the bar
     const double needleLength = centerRadius + sectionWidth - 2;
