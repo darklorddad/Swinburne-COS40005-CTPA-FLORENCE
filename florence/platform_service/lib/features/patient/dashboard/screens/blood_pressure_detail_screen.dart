@@ -1080,24 +1080,6 @@ class _HistorySectionState extends State<_HistorySection> {
 }
 
 
-Widget _buildLegendItem(String label, Color color, {bool isBox = false, bool isCircle = false, bool isDashed = false}) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (isBox)
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
-      else if (isCircle)
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
-      else if (isDashed)
-        Container(width: 2, height: 12, color: color)
-      else
-        Container(width: 12, height: 2, color: color),
-      const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontSize: 11)),
-    ],
-  );
-}
-
 class _LegendItem extends StatelessWidget {
   final String label;
   final Color color;
