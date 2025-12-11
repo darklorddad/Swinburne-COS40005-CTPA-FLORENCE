@@ -102,7 +102,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final picker = ImagePicker();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final backgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final textColor = isDark ? Colors.white : AppTheme.textPrimaryColor;
     
     await showModalBottomSheet(
       context: context,
@@ -114,55 +113,49 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const SizedBox(height: 8),
-                // Handle
                 Container(
                   width: 40,
                   height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white24 : Colors.grey.shade300,
+                    color: Colors.grey.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 16),
-                
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.camera_alt, color: AppTheme.primaryBlue, size: 20),
-                  ),
-                  title: Text('Take Photo', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                Text(
+                  'Add Photo',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 24),
+                _buildPhotoOption(
+                  context,
+                  title: 'Take Photo',
+                  icon: Icons.camera_alt_rounded,
+                  color: AppTheme.primaryBlue,
                   onTap: () async {
                     Navigator.pop(context);
                     final image = await picker.pickImage(source: ImageSource.camera, maxWidth: 800);
                     if (image != null) _processImage(image);
                   },
                 ),
-                ListTile(
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.accentPurple.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.photo_library, color: AppTheme.accentPurple, size: 20),
-                  ),
-                  title: Text('Choose from Gallery', style: TextStyle(color: textColor, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 12),
+                _buildPhotoOption(
+                  context,
+                  title: 'Choose from Gallery',
+                  icon: Icons.photo_library_rounded,
+                  color: AppTheme.accentPurple,
                   onTap: () async {
                     Navigator.pop(context);
                     final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 800);
                     if (image != null) _processImage(image);
                   },
                 ),
-                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -226,6 +219,46 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
+  }
+
+  Widget _buildPhotoOption(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          border: Border.all(color: AppTheme.getBorderColor(context)),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Returns map with 'calories' and 'description'
