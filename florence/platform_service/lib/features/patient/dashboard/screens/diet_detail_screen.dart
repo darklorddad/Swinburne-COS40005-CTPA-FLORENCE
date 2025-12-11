@@ -29,35 +29,58 @@ class DietAnalyticsScreen extends ConsumerWidget {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.add),
-              tooltip: 'Add Log',
-              onSelected: (value) {
-                if (value == 'glucose') AppRoutes.push(context, AppRoutes.logGlucose);
-                if (value == 'meal') AppRoutes.push(context, AppRoutes.logMeal);
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                const PopupMenuItem<String>(
-                  value: 'glucose',
-                  child: Row(
-                    children: [
-                      Icon(Icons.water_drop_outlined, color: AppTheme.primaryRed),
-                      SizedBox(width: 12),
-                      Text('Log w/ Glucose'),
-                    ],
-                  ),
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                popupMenuTheme: PopupMenuThemeData(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 4,
+                  color: Theme.of(context).cardColor,
                 ),
-                const PopupMenuItem<String>(
-                  value: 'meal',
-                  child: Row(
-                    children: [
-                      Icon(Icons.restaurant_outlined, color: AppTheme.mealColor),
-                      SizedBox(width: 12),
-                      Text('Log Meal Only'),
-                    ],
+              ),
+              child: PopupMenuButton<String>(
+                icon: const Icon(Icons.add),
+                tooltip: 'Add Log',
+                onSelected: (value) {
+                  if (value == 'glucose') AppRoutes.push(context, AppRoutes.logGlucose);
+                  if (value == 'meal') AppRoutes.push(context, AppRoutes.logMeal);
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(
+                    value: 'glucose',
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryRed.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.water_drop, color: AppTheme.primaryRed, size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Text('Log w/ Glucose', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  PopupMenuItem<String>(
+                    value: 'meal',
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.mealColor.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.restaurant, color: AppTheme.mealColor, size: 18),
+                        ),
+                        const SizedBox(width: 12),
+                        Text('Log Meal Only', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -212,7 +235,7 @@ class _DietStatsSection extends StatelessWidget {
               context, 
               'Stable Meals', 
               pairCount > 0 ? '$stablePercentage%' : '--', 
-              'target < 30', 
+              '< 30 spike', 
               stableCount > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor
             )
           ),
@@ -678,7 +701,7 @@ class _HistorySectionState extends State<_HistorySection> {
             ),
           ),
 
-          const SizedBox(width: 24), // Increased spacing
+          const SizedBox(width: 32), // Increased spacing
 
           // RIGHT: Delta/Type & Time
           Column(
@@ -914,6 +937,10 @@ class _TrafficLightCalendar extends StatelessWidget {
               final date = startDate.add(Duration(days: index));
               
               final isFuture = date.isAfter(today);
+              if (isFuture) {
+                return const SizedBox(); // Hide future days completely
+              }
+
               final dateKey = date.millisecondsSinceEpoch;
               final hasLog = dayLogCount.containsKey(dateKey);
               final maxSpike = dayMaxSpike[dateKey];
@@ -922,11 +949,7 @@ class _TrafficLightCalendar extends StatelessWidget {
               Color textColor;
               String tooltip;
 
-              if (isFuture) {
-                cellColor = Colors.transparent;
-                textColor = AppTheme.textSecondaryColor.withOpacity(0.2); // Faint text
-                tooltip = 'Future';
-              } else if (!hasLog) {
+              if (!hasLog) {
                 cellColor = Colors.transparent;
                 textColor = AppTheme.textSecondaryColor.withOpacity(0.5);
                 tooltip = 'No logs';
@@ -955,9 +978,7 @@ class _TrafficLightCalendar extends StatelessWidget {
               // Border Logic
               Border? border;
               if (isToday) {
-                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.0); // Reduced width
-              } else if (isFuture) {
-                border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.2), width: 1, style: BorderStyle.solid); // Faint placeholder
+                border = Border.all(color: AppTheme.textPrimaryColor, width: 1.5); // Highlight Today
               } else if (!hasLog) {
                 border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1);
               }
