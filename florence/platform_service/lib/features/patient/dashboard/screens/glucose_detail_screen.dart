@@ -120,7 +120,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 20),
                                       _HistorySection(
-                                        allReadings: allReadings,
+                                        readings: allReadings,
                                         threshold: effectiveThreshold,
                                       ),
                                       const SizedBox(height: 24),
@@ -157,7 +157,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 20),
                                 _HistorySection(
-                                  allReadings: allReadings,
+                                  readings: allReadings,
                                   threshold: effectiveThreshold,
                                 ),
                                 const SizedBox(height: 24),
@@ -968,10 +968,10 @@ class _ModalDaySection extends StatelessWidget {
 // ============================================================================
 
 class _HistorySection extends StatefulWidget {
-  final List<MonitorData> allReadings;
+  final List<MonitorData> readings;
   final HealthThreshold? threshold;
 
-  const _HistorySection({required this.allReadings, this.threshold});
+  const _HistorySection({required this.readings, this.threshold});
 
   @override
   State<_HistorySection> createState() => _HistorySectionState();
@@ -988,7 +988,7 @@ class _HistorySectionState extends State<_HistorySection> {
     final borderColor = AppTheme.getBorderColor(context);
 
     // Data is passed sorted ASC by parent. Reverse it here for Latest First.
-    final sortedReadings = widget.allReadings.reversed.toList();
+    final sortedReadings = widget.readings.reversed.toList();
 
     final totalItems = sortedReadings.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
