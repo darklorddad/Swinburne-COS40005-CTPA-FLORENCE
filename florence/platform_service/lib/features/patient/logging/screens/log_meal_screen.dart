@@ -33,7 +33,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _formKey = GlobalKey<FormState>();
   final _mealNameController = TextEditingController();
   final _caloriesController = TextEditingController();
-  final _notesController = TextEditingController();
   
   // State
   bool _isLoading = false;
@@ -69,7 +68,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   void dispose() {
     _mealNameController.dispose();
     _caloriesController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 
@@ -805,21 +803,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
-            ),
-          ),
-          const SizedBox(height: 20),
-          
-          Text('Notes (Optional)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 14)),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _notesController,
-            maxLines: 3,
-            decoration: InputDecoration(
-              hintText: 'How did you feel?',
-              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
           ),
         ],
