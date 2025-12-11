@@ -756,8 +756,6 @@ class _BmiTrendSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
-                const SizedBox(width: 16),
                 _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
               ],
             ),
