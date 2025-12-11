@@ -18,6 +18,7 @@ import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
+import '../../dashboard/screens/diet_detail_screen.dart'; // For navigation
 
 /// Log Meal Screen
 /// Allows users to record meals, photos, and calories
@@ -225,7 +226,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
          Helpers.showWarning(context, 'AI analysis unavailable. Please enter details manually.');
       }
     } catch (e) {
-      if (mounted) Helpers.showWarning(context, 'AI analysis failed: $e');
+      debugPrint("Analysis error: $e");
     } finally {
       if (mounted) setState(() => _isAnalyzing = false);
     }
@@ -335,6 +336,16 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DietAnalyticsScreen())),
+              tooltip: 'View History',
+            ),
+          ),
+        ],
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
@@ -353,20 +364,16 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                       _buildInfoCard(),
                       const SizedBox(height: 24),
                       
-                      // Meal Photo & AI
-                      _buildPhotoSection(),
+                      // Date & Time (Moved up as requested)
+                      _buildDateTimeSection(),
                       const SizedBox(height: 24),
 
-                      // Context (Time)
-                      _buildContextSection(),
+                      // Meal Type
+                      _buildMealTypeSection(),
                       const SizedBox(height: 24),
                       
-                      // Inputs
-                      _buildInputSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Date
-                      _buildDateTimeSection(),
+                      // Combined Meal Details (Photo + Inputs)
+                      _buildMealDetailsSection(),
                       const SizedBox(height: 32),
                       
                       // Save
@@ -390,22 +397,26 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   
   Widget _buildInfoCard() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue; // App blue
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
+        color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
+        border: Border.all(color: borderColor),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
-          const Icon(Icons.restaurant, color: AppTheme.mealColor, size: 24),
+          Icon(Icons.info_outline, color: titleIconColor, size: 24), // Info icon
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               'Log your meals to track calories and identify patterns.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.mealColor),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.infoColor),
             ),
           ),
         ],
@@ -413,10 +424,208 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     );
   }
 
-  Widget _buildPhotoSection() {
+  Widget _buildDateTimeSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: titleIconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.calendar_today, color: titleIconColor, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Text('Date & Time', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Combined container
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
+            ),
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(picked.year, picked.month, picked.day, _selectedDateTime.hour, _selectedDateTime.minute);
+                      });
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today_outlined, color: AppTheme.textSecondaryColor, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text('Date:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondaryColor, fontWeight: FontWeight.w500)),
+                              const SizedBox(width: 8),
+                              Text(Formatters.date(_selectedDateTime), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+                      ],
+                    ),
+                  ),
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                InkWell(
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
+                      });
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.access_time_outlined, color: AppTheme.textSecondaryColor, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Text('Time:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondaryColor, fontWeight: FontWeight.w500)),
+                              const SizedBox(width: 8),
+                              Text(Formatters.time(_selectedDateTime), style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealTypeSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: titleIconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                child: Icon(Icons.restaurant, size: 24, color: titleIconColor),
+              ),
+              const SizedBox(width: 12),
+              Text('Meal Type', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Segmented Control
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: _mealTypeOptions.asMap().entries.map((entry) {
+                final index = entry.key;
+                final option = entry.value;
+                final isSelectedNorm = _selectedMealType.toUpperCase() == option['name'].toUpperCase();
+                
+                final isFirst = index == 0;
+                final isLast = index == _mealTypeOptions.length - 1;
+                BorderRadius radius = BorderRadius.zero;
+                if (isFirst) radius = const BorderRadius.horizontal(left: Radius.circular(12));
+                else if (isLast) radius = const BorderRadius.horizontal(right: Radius.circular(12));
+
+                return Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _selectedMealType = option['name']),
+                    borderRadius: radius,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: isSelectedNorm ? AppTheme.primaryBlue : Colors.transparent,
+                        borderRadius: radius,
+                        border: Border.all(color: isSelectedNorm ? AppTheme.primaryBlue : AppTheme.borderColor),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(option['icon'], size: 20, color: isSelectedNorm ? Colors.white : AppTheme.textSecondaryColor),
+                          const SizedBox(height: 6),
+                          Text(
+                            option['name'],
+                            style: TextStyle(
+                              color: isSelectedNorm ? Colors.white : AppTheme.textPrimaryColor,
+                              fontWeight: isSelectedNorm ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMealDetailsSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -436,11 +645,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.mealColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                    child: const Icon(Icons.camera_alt_outlined, size: 24, color: AppTheme.mealColor),
+                    decoration: BoxDecoration(color: titleIconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    child: Icon(Icons.menu_book, size: 24, color: titleIconColor),
                   ),
                   const SizedBox(width: 12),
-                  Text('Meal Photo', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text('Meal Details', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
               // AI Toggle
@@ -490,6 +699,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             ],
           ),
           const SizedBox(height: 20),
+          
+          // Photo Picker
           InkWell(
             onTap: _isAnalyzing ? null : _showImageSourcePicker,
             borderRadius: BorderRadius.circular(12),
@@ -545,146 +756,70 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContextSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Meal Type', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
+          
+          const SizedBox(height: 24),
+          
+          // Inputs
           Row(
-            children: _mealTypeOptions.asMap().entries.map((entry) {
-              final index = entry.key;
-              final option = entry.value;
-              final isSelected = _selectedMealType == option['name'].toUpperCase();
-              
-              // Normalize selection check
-              final isSelectedNorm = _selectedMealType.toUpperCase() == option['name'].toUpperCase();
-
-              final isFirst = index == 0;
-              final isLast = index == _mealTypeOptions.length - 1;
-              BorderRadius radius = BorderRadius.zero;
-              if (isFirst) radius = const BorderRadius.horizontal(left: Radius.circular(12));
-              else if (isLast) radius = const BorderRadius.horizontal(right: Radius.circular(12));
-
-              return Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _selectedMealType = option['name']),
-                  borderRadius: radius,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: isSelectedNorm ? AppTheme.primaryBlue : Colors.transparent,
-                      borderRadius: radius,
-                      border: Border.all(color: isSelectedNorm ? AppTheme.primaryBlue : AppTheme.borderColor),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(option['icon'], size: 20, color: isSelectedNorm ? Colors.white : AppTheme.textSecondaryColor),
-                        const SizedBox(height: 6),
-                        Text(
-                          option['name'],
-                          style: TextStyle(
-                            color: isSelectedNorm ? Colors.white : AppTheme.textPrimaryColor,
-                            fontWeight: isSelectedNorm ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
+            children: [
+              Text('Meal Name', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 14)),
+              if (_useAiAutofill) ...[
+                const SizedBox(width: 8),
+                const Text('Leave blank for auto-estimate', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, fontWeight: FontWeight.w500)),
+              ],
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputSection() {
-    return BaseCard(
-      child: Column(
-        children: [
-          CustomTextField(
-            label: 'Meal Name',
-            hint: 'e.g. Chicken rice, Salad',
+          const SizedBox(height: 8),
+          TextFormField(
             controller: _mealNameController,
             validator: (v) => Validators.required(v, fieldName: 'Meal name'),
-            prefixIcon: const Icon(Icons.restaurant_menu),
             textCapitalization: TextCapitalization.sentences,
+            decoration: InputDecoration(
+              hintText: 'e.g. Chicken rice, Salad',
+              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              prefixIcon: const Icon(Icons.restaurant_menu),
+            ),
           ),
           const SizedBox(height: 20),
-          CustomTextField(
-            label: 'Calories (kcal)',
-            hint: 'e.g. 500',
+          
+          Row(
+            children: [
+              Text('Calories (kcal)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 14)),
+              if (_useAiAutofill) ...[
+                const SizedBox(width: 8),
+                const Text('Leave blank for auto-estimate', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, fontWeight: FontWeight.w500)),
+              ],
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
             controller: _caloriesController,
             keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
-            helperText: _useAiAutofill ? 'Leave blank for AI estimate' : null,
+            decoration: InputDecoration(
+              hintText: 'e.g. 500',
+              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
+            ),
           ),
           const SizedBox(height: 20),
-          CustomTextField(
-            label: 'Notes (Optional)',
-            hint: 'How did you feel?',
+          
+          Text('Notes (Optional)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 14)),
+          const SizedBox(height: 8),
+          TextFormField(
             controller: _notesController,
             maxLines: 3,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDateTimeSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Date & Time', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: _selectDateTime,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.access_time, color: AppTheme.mealColor),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(Formatters.date(_selectedDateTime), style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
-                        Text(Formatters.time(_selectedDateTime), style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.textSecondaryColor)),
-                      ],
-                    ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
-                ],
-              ),
+            decoration: InputDecoration(
+              hintText: 'How did you feel?',
+              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
             ),
           ),
         ],
