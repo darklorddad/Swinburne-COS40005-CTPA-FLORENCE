@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timezone
 from langchain_core.messages import HumanMessage, SystemMessage
+from config import settings as global_settings
 from core.llm_factory import LLMFactory
 from features.recommendations.rec_config import recommendation_settings
 from features.recommendations.models import (
@@ -84,9 +85,13 @@ class RecommendationService:
     def __init__(self):
         # temperature=0.3: grounded clinical outputs with slight variation across calls
         # model: isolated per-feature config — does not affect chatbot or nutrition
+        model = (
+            recommendation_settings.RECOMMENDATION_LLM_MODEL
+            or global_settings.LLM_MODEL
+        )
         self.llm = LLMFactory.create(
             temperature=0.3,
-            model=recommendation_settings.RECOMMENDATION_LLM_MODEL,
+            model=model,
             max_tokens=recommendation_settings.RECOMMENDATION_LLM_MAX_TOKENS,
         )
 

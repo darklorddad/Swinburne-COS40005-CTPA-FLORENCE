@@ -3,12 +3,13 @@
 ## This is also just a temporary config file for the Recommendations feature. In a larger application, this project have the a bigger oppurtunity to have a more centralized configuration management system, but for this project, this approach keeps things simple and modular for testing and development purposes.
 
 from pathlib import Path
+from typing import Optional
 from pydantic_settings import BaseSettings
 
 
 class RecommendationSettings(BaseSettings):
-    # Separate env vars — changing these does NOT affect the chatbot or nutrition feature
-    RECOMMENDATION_LLM_MODEL: str = "google/gemini-3-pro-preview"  # mirrors chatbot default
+    # Optional override — if unset, service.py falls back to global LLM_MODEL (same as nutrition)
+    RECOMMENDATION_LLM_MODEL: Optional[str] = None
     RECOMMENDATION_LLM_MAX_TOKENS: int = 2048  # enough for 2-6 recs; within free credit limit
 
     class Config:
