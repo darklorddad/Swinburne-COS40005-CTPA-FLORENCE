@@ -6,7 +6,8 @@ dld*
 .claude*
 Claude/
 Basilagas21/
-
+# Personal files (Basil's)
+.vscode/
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Contains sensitive information such as name, student ID, email and etc.
