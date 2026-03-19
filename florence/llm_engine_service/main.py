@@ -4,6 +4,7 @@ from config import settings
 
 # Import Feature Routers
 from features.nutrition.router import router as nutrition_router
+from features.recommendations.router import router as recommendations_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -22,6 +23,7 @@ app.add_middleware(
 
 # Register Features
 app.include_router(nutrition_router, prefix="/nutrition", tags=["Nutrition"])
+app.include_router(recommendations_router, prefix="/recommendations", tags=["Recommendations"])
 
 @app.get("/")
 def root():

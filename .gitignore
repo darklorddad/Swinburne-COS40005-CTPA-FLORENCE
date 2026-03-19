@@ -2,6 +2,12 @@
 .aider*
 dld*
 
+# Basilagas21
+.claude*
+Claude/
+Basilagas21/
+# Personal files (Basil's)
+.vscode/
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 # Contains sensitive information such as name, student ID, email and etc.
@@ -41,8 +47,6 @@ Documents/Computing-Technology-Project-A/Individual/Research-Report-(Due-Week-6)
 *.sql
 *.tmp
 supabase/
-.claude/
-CLAUDE.md
 *.bkp
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
