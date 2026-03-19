@@ -380,6 +380,7 @@ class _RecommendationsScreenState
                         if (active.isNotEmpty)
                           SliverToBoxAdapter(child: _buildTopInsight(active, c)),
                         SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, c)),
+                        SliverToBoxAdapter(child: _buildRefreshBtn(c)),
                         // Phase 2: Filter pills
                         if (active.isNotEmpty)
                           SliverToBoxAdapter(child: _buildFilterPills(active, c)),
@@ -391,7 +392,6 @@ class _RecommendationsScreenState
                             childCount: filtered.length,
                           ),
                         ),
-                        SliverToBoxAdapter(child: _buildRefreshBtn(c)),
                         const SliverToBoxAdapter(child: SizedBox(height: 40)),
                       ],
                     ),
