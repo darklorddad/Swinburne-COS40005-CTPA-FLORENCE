@@ -14,6 +14,7 @@ import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
+import '../widgets/todays_medications_card.dart';
 
 // Model for Quick Actions to ensure consistency between Grid and Modal
 class _QuickActionItem {
@@ -181,6 +182,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                               const SizedBox(width: spacing),
+                              const Expanded(
+                                child: TodaysMedicationsCard(),
+                              ),
+                              const SizedBox(width: spacing),
                               Expanded(
                                 child: QuickActionsGrid(
                                   actions: _getQuickActions().map((a) => (
@@ -201,6 +206,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           onTap: () => AppRoutes.push(
                               context, AppRoutes.recommendations),
                         ),
+                        const SizedBox(height: spacing),
+                        const TodaysMedicationsCard(),
                         const SizedBox(height: spacing),
                         QuickActionsGrid(
                           actions: _getQuickActions().map((a) => (
@@ -434,5 +441,3 @@ class _ModalActionButton extends StatelessWidget {
     );
   }
 }
-
-
