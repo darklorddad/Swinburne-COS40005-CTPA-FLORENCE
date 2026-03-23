@@ -28,6 +28,20 @@ class MedicationRepository {
     
     await _apiService.post('/patients/me/medication-intake', payload);
   }
+
+  /// Fetches all medications for the current patient.
+  Future<List<PatientMedication>> getPatientMedications() async {
+    final response = await _apiService.get('/patients/me/medications');
+    if (response is List) {
+      return response.map((json) => PatientMedication.fromJson(json as Map<String, dynamic>)).toList();
+    }
+    return [];
+  }
+
+  /// Adds a new medication for the current patient.
+  Future<void> addPatientMedication(Map<String, dynamic> data) async {
+    await _apiService.post('/patients/me/medications', data);
+  }
 }
 
 /// Provider for the MedicationRepository.
