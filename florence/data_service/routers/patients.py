@@ -1,9 +1,9 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
 from pydantic import BaseModel, model_validator, Field, EmailStr
-from typing import Optional
+from typing import Optional, Literal
 from supabase_auth.errors import AuthApiError
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from enum import Enum
 
 import time
@@ -172,6 +172,20 @@ class ActivityLogCreate(BaseModel):
     activity_description: str
     duration_minutes: int
     performed_at: datetime
+
+class MedicationCreate(BaseModel):
+    medication_id: int
+    frequency_id: int
+    amount: str
+    medication_type: Optional[str] = None
+    timing_instruction: Optional[str] = "ANYTIME"
+    notes: Optional[str] = None
+
+class MedicationIntakeCreate(BaseModel):
+    patient_medication_id: int
+    status: Literal['TAKEN', 'SKIPPED', 'LATE'] = 'TAKEN'
+    taken_at: Optional[datetime] = None
+    notes: Optional[str] = None
 
 # --- Router Definition ---
 
@@ -374,6 +388,88 @@ async def add_own_activity_log(
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to log activity: {str(e)}")
+
+@router.get("/me/medications", summary="Get my medications")
+async def get_own_medications(patient_profile: dict = Depends(get_current_patient_profile)):
+    """
+    Fetches all records from patient_medications for the authenticated patient.
+    Includes joined details from medication_dictionary and dosage_frequencies.
+    """
+    try:
+        response = supabase.table('patient_medications').select(
+            "*, medication_dictionary(brand_name, generic_name), dosage_frequencies(patient_text)"
+        ).eq('patient_id', patient_profile['id']).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve medications: {str(e)}")
+
+@router.post("/me/medications", summary="Add a medication to my profile")
+async def add_own_medication(
+    data: MedicationCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Inserts a new row into patient_medications for the authenticated patient."""
+    insert_dict = data.model_dump(mode='json')
+    insert_dict['patient_id'] = patient_profile['id']
+    try:
+        response = supabase.table('patient_medications').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to add medication: {str(e)}")
+
+@router.get("/me/medication-schedule", summary="Get medication schedule and logs for a date")
+async def get_medication_schedule(
+    target_date: Optional[date] = None,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Fetches active medications and intake logs for a specific date.
+    Returns a combined dictionary for the frontend.
+    """
+    if target_date is None:
+        target_date = date.today()
+    
+    try:
+        # Fetch medications
+        meds_res = supabase.table('patient_medications').select(
+            "*, medication_dictionary(brand_name, generic_name), dosage_frequencies(patient_text)"
+        ).eq('patient_id', patient_profile['id']).execute()
+        
+        # Fetch logs for the specific date
+        # We filter logs where taken_at falls within the 24h window of target_date
+        start_time = datetime.combine(target_date, datetime.min.time()).isoformat()
+        end_time = datetime.combine(target_date + timedelta(days=1), datetime.min.time()).isoformat()
+
+        logs_res = supabase.table('medication_intake_logs').select("*")\
+            .eq('patient_id', patient_profile['id'])\
+            .gte('taken_at', start_time)\
+            .lt('taken_at', end_time)\
+            .execute()
+        
+        return {
+            "medications": meds_res.data,
+            "todays_logs": logs_res.data
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve medication schedule: {str(e)}")
+
+@router.post("/me/medication-intake", summary="Log a medication intake event")
+async def log_medication_intake(
+    data: MedicationIntakeCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Records a medication intake event. Defaults taken_at to current UTC if not provided."""
+    insert_dict = data.model_dump(mode='json')
+    insert_dict['patient_id'] = patient_profile['id']
+    
+    if insert_dict.get('taken_at') is None:
+        insert_dict['taken_at'] = datetime.now().isoformat()
+        
+    try:
+        response = supabase.table('medication_intake_logs').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to log medication intake: {str(e)}")
 
 @router.post("/me/avatar", summary="Upload profile picture")
 async def upload_patient_avatar(
