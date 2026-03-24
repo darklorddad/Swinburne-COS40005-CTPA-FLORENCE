@@ -29,7 +29,7 @@ class _MedicationSwipeableSectionState extends State<MedicationSwipeableSection>
       children: [
         // Swipeable Area
         SizedBox(
-          height: 380, // Fixed height to ensure consistency in the dashboard grid
+          height: 550, // Increased height to prevent RenderFlex overflow
           child: PageView(
             controller: _pageController,
             onPageChanged: (index) {

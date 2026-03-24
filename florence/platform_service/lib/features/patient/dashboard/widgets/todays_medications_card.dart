@@ -64,20 +64,22 @@ class TodaysMedicationsCard extends ConsumerWidget {
           const SizedBox(height: 20),
 
           // Content
-          scheduleAsync.when(
-            data: (schedule) => _buildMedicationList(context, ref, schedule),
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: CircularProgressIndicator(),
+          Expanded(
+            child: scheduleAsync.when(
+              data: (schedule) => _buildMedicationList(context, ref, schedule),
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CircularProgressIndicator(),
+                ),
               ),
-            ),
-            error: (err, stack) => Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  "Unable to load schedule",
-                  style: TextStyle(color: AppTheme.errorColor),
+              error: (err, stack) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Text(
+                    "Unable to load schedule",
+                    style: TextStyle(color: AppTheme.errorColor),
+                  ),
                 ),
               ),
             ),
@@ -105,8 +107,6 @@ class TodaysMedicationsCard extends ConsumerWidget {
     }
 
     return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
       itemCount: schedule.medications.length,
       itemBuilder: (context, index) {
         final med = schedule.medications[index];
