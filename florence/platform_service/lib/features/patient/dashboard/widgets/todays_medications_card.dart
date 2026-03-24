@@ -7,85 +7,40 @@ import '../../core/repositories/medication_repository.dart';
 import '../providers/dashboard_providers.dart';
 
 /// A card widget for the dashboard that displays the patient's medication schedule for today.
-/// Designed for one-thumb accessibility with large tap targets.
+/// Stripped of its own container styling to fit within MedicationSection.
 class TodaysMedicationsCard extends ConsumerWidget {
   const TodaysMedicationsCard({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+  Widget build(BuildContext context) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.medication_outlined,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                "Today's Medications",
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+              // Content
+              Expanded(
+                child: scheduleAsync.when(
+                  data: (schedule) => _buildMedicationList(context, ref, schedule),
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  error: (err, stack) => Center(
+                    child: Text(
+                      "Unable to load schedule",
+                      style: TextStyle(color: AppTheme.errorColor),
                     ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Content
-          Expanded(
-            child: scheduleAsync.when(
-              data: (schedule) => _buildMedicationList(context, ref, schedule),
-              loading: () => const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-              error: (err, stack) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Text(
-                    "Unable to load schedule",
-                    style: TextStyle(color: AppTheme.errorColor),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -95,13 +50,10 @@ class TodaysMedicationsCard extends ConsumerWidget {
     MedicationScheduleResponse schedule,
   ) {
     if (schedule.medications.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Center(
-          child: Text(
-            "No medications scheduled for today",
-            style: TextStyle(color: AppTheme.textSecondaryColor),
-          ),
+      return Center(
+        child: Text(
+          "No medications scheduled for today",
+          style: TextStyle(color: AppTheme.textSecondaryColor),
         ),
       );
     }

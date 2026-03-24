@@ -13,8 +13,7 @@ import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
-import '../widgets/medication_desktop_tabs.dart';
-import '../widgets/medication_swipeable_section.dart';
+import '../widgets/medication_section.dart';
 
 // Model for Quick Actions to ensure consistency between Grid and Modal
 class _QuickActionItem {
@@ -183,7 +182,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               ),
                               const SizedBox(width: spacing),
                               const Expanded(
-                                child: MedicationDesktopTabs(),
+                                child: MedicationSection(),
                               ),
                               const SizedBox(width: spacing),
                               Expanded(
@@ -207,7 +206,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               context, AppRoutes.recommendations),
                         ),
                         const SizedBox(height: spacing),
-                        const MedicationSwipeableSection(),
+                        const MedicationSection(),
                         const SizedBox(height: spacing),
                         QuickActionsGrid(
                           actions: _getQuickActions().map((a) => (

@@ -7,72 +7,30 @@ import '../../core/providers/medication_providers.dart';
 import '../../core/repositories/medication_repository.dart';
 
 /// A card for the dashboard that displays the patient's medication cabinet.
-/// Allows viewing active medications and adding new ones.
+/// Stripped of its own container styling to fit within MedicationSection.
 class MedicationCabinetCard extends ConsumerWidget {
   const MedicationCabinetCard({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final medsAsync = ref.watch(patientMedicationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: titleIconColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.medical_services_outlined,
-                      color: titleIconColor,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    "Med Cabinet",
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-              IconButton(
-                icon: const Icon(Icons.add_circle_outline),
-                color: AppTheme.primaryBlue,
-                onPressed: () => AppRoutes.push(context, AppRoutes.addMedication),
-                tooltip: 'Add Medication',
-              ),
-            ],
+          // Header Action Only
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              icon: const Icon(Icons.add_circle_outline, size: 20),
+              label: const Text("Add Medication"),
+              style: TextButton.styleFrom(foregroundColor: AppTheme.primaryBlue),
+              onPressed: () => AppRoutes.push(context, AppRoutes.addMedication),
+            ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
 
           // Content
           Expanded(
