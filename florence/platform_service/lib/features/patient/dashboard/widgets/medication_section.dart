@@ -371,7 +371,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
 }
 
 // ==========================================
-// 4. MEDICATION CABINET VIEW (Private)
+// 3. MEDICATION CABINET VIEW (Private)
 // ==========================================
 
 class _MedicationCabinetView extends ConsumerWidget {
@@ -488,7 +488,7 @@ class _MedicationCabinetView extends ConsumerWidget {
 }
 
 // ==========================================
-// 5. MEDICATION FORM MODAL (Private)
+// 4. MEDICATION FORM MODAL (Private)
 // ==========================================
 
 class _MedicationFormDialog extends ConsumerStatefulWidget {
@@ -508,7 +508,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
   
-  dynamic _selectedDictionaryItem; // Holds the dictionary object if they pick a verified one
+  Map<String, dynamic>? _selectedDictionaryItem; // Holds the dictionary object if they pick a verified one
   dynamic _selectedFrequency;      // Holds the frequency object
   
   String _selectedType = 'TABLET';
@@ -543,7 +543,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
       // 2. Build the payload matching the Database Schema
       final Map<String, dynamic> payload = {
-        'medication_id': isCustom ? null : _selectedDictionaryItem['id'],
+        'medication_id': isCustom ? null : _selectedDictionaryItem!['id'],
         'custom_medication_name': isCustom ? _nameController.text.trim() : null,
         'frequency_id': _selectedFrequency?['id'],
         'amount': _amountController.text.trim(),
@@ -610,14 +610,16 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                 dictAsync.when(
                   loading: () => const LinearProgressIndicator(),
                   error: (e, s) => const Text("Error loading dictionary"),
-                  data: (dictionary) {
-                    return Autocomplete<dynamic>(
-                      displayStringForOption: (option) => option['brand_name'] ?? option['generic_name'],
+                  data: (dictionaryList) {
+                    final dictionary = dictionaryList.cast<Map<String, dynamic>>();
+
+                    return Autocomplete<Map<String, dynamic>>(
+                      displayStringForOption: (option) => (option['brand_name'] ?? option['generic_name']).toString(),
                       optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text.isEmpty) return const Iterable<dynamic>.empty();
+                        if (textEditingValue.text.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
                         return dictionary.where((med) {
-                          final brand = (med['brand_name'] ?? '').toLowerCase();
-                          final generic = (med['generic_name'] ?? '').toLowerCase();
+                          final brand = (med['brand_name']?.toString() ?? '').toLowerCase();
+                          final generic = (med['generic_name']?.toString() ?? '').toLowerCase();
                           final query = textEditingValue.text.toLowerCase();
                           return brand.contains(query) || generic.contains(query);
                         });
@@ -631,7 +633,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           _nameController.text = controller.text;
                           // If they alter the text after selecting, wipe the dictionary selection so it becomes custom
                           if (_selectedDictionaryItem != null && 
-                              controller.text != _selectedDictionaryItem['brand_name']) {
+                              controller.text != _selectedDictionaryItem!['brand_name']) {
                             _selectedDictionaryItem = null; 
                           }
                         });
