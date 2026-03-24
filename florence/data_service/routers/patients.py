@@ -423,37 +423,59 @@ async def add_own_medication(
 
 @router.get("/me/medication-schedule", summary="Get medication schedule and logs for a date")
 async def get_medication_schedule(
-    target_date: Optional[date] = None,
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Fetches active medications and intake logs for a specific date.
-    Returns a combined dictionary for the frontend.
+    Fetches active medications and intake logs.
+    Calculates log counts based on daily/weekly frequency.
     """
-    if target_date is None:
-        target_date = date.today()
-    
     try:
-        # Fetch medications
-        meds_res = supabase.table('patient_medications').select(
-            "*, medication_dictionary(brand_name, generic_name), dosage_frequencies(patient_text)"
-        ).eq('patient_id', patient_profile['id']).execute()
-        
-        # Fetch logs for the specific date
-        # We filter logs where taken_at falls within the 24h window of target_date
-        start_time = datetime.combine(target_date, datetime.min.time()).isoformat()
-        end_time = datetime.combine(target_date + timedelta(days=1), datetime.min.time()).isoformat()
+        # 1. Date calculations
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        week_ago_str = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
 
-        logs_res = supabase.table('medication_intake_logs').select("*")\
-            .eq('patient_id', patient_profile['id'])\
-            .gte('taken_at', start_time)\
-            .lt('taken_at', end_time)\
+        # 2. Fetch active medications
+        meds_res = supabase.table("patient_medications") \
+            .select("*, medication_dictionary(*), dosage_frequencies(*)") \
+            .eq("patient_id", patient_profile['id']) \
+            .eq("status", "CURRENT") \
             .execute()
-        
-        return {
-            "medications": meds_res.data,
-            "todays_logs": logs_res.data
-        }
+        meds = meds_res.data
+
+        # 3. Fetch intake logs for the last 7 days
+        logs_res = supabase.table("medication_intake_logs") \
+            .select("*") \
+            .eq("patient_id", patient_profile['id']) \
+            .gte("taken_at", f"{week_ago_str}T00:00:00") \
+            .lte("taken_at", f"{today_str}T23:59:59") \
+            .execute()
+        logs = logs_res.data
+
+        # 4. Map the logs to the medications
+        schedule = []
+        for med in meds:
+            # Safely check frequency text for "week"
+            freq = med.get("dosage_frequencies") or {}
+            patient_text = (freq.get("patient_text") or "").lower()
+            is_weekly = "week" in patient_text
+
+            # Filter logs specific to this medication
+            med_logs = [l for l in logs if l["patient_medication_id"] == med["id"]]
+            
+            if is_weekly:
+                # For weekly, count any log in the last 7 days
+                times_logged = len(med_logs)
+            else:
+                # For daily, count only logs from TODAY
+                times_logged = len([l for l in med_logs if l["taken_at"].startswith(today_str)])
+
+            schedule.append({
+                "medication": med,
+                "times_logged": times_logged,
+                "is_weekly": is_weekly
+            })
+
+        return schedule
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve medication schedule: {str(e)}")
 

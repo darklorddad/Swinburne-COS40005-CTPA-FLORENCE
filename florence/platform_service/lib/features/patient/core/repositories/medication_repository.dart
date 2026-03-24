@@ -8,11 +8,18 @@ class MedicationRepository {
 
   MedicationRepository(this._apiService);
 
-  /// Fetches the medication schedule and intake logs for a specific date.
-  Future<MedicationScheduleResponse> getMedicationSchedule(DateTime date) async {
-    final dateStr = date.toIso8601String().split('T')[0];
-    final response = await _apiService.get('/patients/me/medication-schedule?target_date=$dateStr');
-    return MedicationScheduleResponse.fromJson(response as Map<String, dynamic>);
+  /// Fetches the compiled daily/weekly schedule with log counts.
+  Future<List<dynamic>> getMedicationSchedule() async {
+    try {
+      final response = await _apiService.get('/patients/me/medication-schedule');
+      if (response is List) {
+        return response;
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching schedule: $e");
+      return [];
+    }
   }
 
   /// Records a medication intake event.

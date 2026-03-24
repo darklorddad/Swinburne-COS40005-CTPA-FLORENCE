@@ -23,6 +23,12 @@ final dosageFrequenciesProvider = FutureProvider.autoDispose<List<dynamic>>((ref
   return repository.getDosageFrequencies(); 
 });
 
+/// Provider for the daily medication schedule and intake logs.
+final todaysScheduleProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getMedicationSchedule();
+});
+
 // ==========================================
 // 2. MAIN EXPORTED WIDGET (The Header)
 // ==========================================
@@ -153,54 +159,58 @@ class _TodaysMedicationsView extends ConsumerWidget {
     }).join(' ');
   }
 
-  int _getDosesPerDay(PatientMedication med) {
-    // Try to get frequency from the linked dictionary or fallback to a default
-    final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString() ?? 
-                     med.medicationDictionary['frequency_text']?.toString();
-    
-    if (freqText == null) return 1;
-    final lower = freqText.toLowerCase();
-    if (lower.contains('twice') || lower == 'bid' || lower.contains('2 times')) return 2;
-    if (lower.contains('three') || lower == 'tid' || lower.contains('3 times')) return 3;
-    if (lower.contains('four') || lower == 'qid' || lower.contains('4 times')) return 4;
-    return 1;
+  LinearGradient _getGradient(bool isTaken, bool isLate, bool isDark) {
+    if (isTaken) {
+      return LinearGradient(
+        colors: isDark 
+          ? [Colors.green.withOpacity(0.2), Colors.green.withOpacity(0.05)]
+          : [Colors.green.shade50, Colors.green.shade100],
+      );
+    } else if (isLate) {
+      return LinearGradient(
+        colors: isDark 
+          ? [Colors.orange.withOpacity(0.2), Colors.yellow.withOpacity(0.05)]
+          : [Colors.orange.shade50, Colors.yellow.shade50],
+      );
+    } else {
+      return LinearGradient(
+        colors: isDark 
+          ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
+          : [Colors.grey.shade100, Colors.grey.shade200],
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
+    final scheduleAsync = ref.watch(todaysScheduleProvider);
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: scheduleAsync.when(
-        data: (schedule) {
-          if (schedule.medications.isEmpty) {
-            return Center(
-              child: Text(
-                "No medications scheduled for today",
-                style: TextStyle(color: AppTheme.textSecondaryColor),
-              ),
-            );
-          }
+        data: (scheduleItems) {
+          if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
 
           List<Widget> loggableItems = [];
+          
+          for (var item in scheduleItems) {
+            // 1. Unpack the new API structure
+            final med = PatientMedication.fromJson(item['medication']);
+            final int timesLogged = item['times_logged'] ?? 0;
+            final bool isWeekly = item['is_weekly'] ?? false;
+            
+            // 2. THE BUG FIX: Doses equal the exact length of the timings array!
+            int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
+            bool isLate = false; // Add real late logic here based on time if desired
 
-          for (var med in schedule.medications) {
-            int totalDoses = _getDosesPerDay(med);
-            final logs = schedule.todaysLogs.where((l) => l.patientMedicationId == med.id).toList();
-            int timesLoggedToday = logs.length;
-
+            // 3. Generate a row for every dose
             for (int i = 1; i <= totalDoses; i++) {
-              final MedicationIntakeLog? log = i <= timesLoggedToday ? logs[i - 1] : null;
-              final bool isTaken = log != null;
-              final bool isLate = !isTaken && _checkIfOverdue(med, i, totalDoses);
-
+              bool isTaken = i <= timesLogged; // Connects to real DB logs!
               loggableItems.add(
-                _buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate),
+                _buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly),
               );
             }
           }
-
           return ListView(children: loggableItems);
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -222,6 +232,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
     int total,
     bool isTaken,
     bool isLate,
+    bool isWeekly,
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final String brandName = med.medicationDictionary['brand_name'] ?? 
@@ -229,7 +240,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
                              'Unknown';
     final String type = (med.medicationType ?? 'Pill').toLowerCase();
     
-    // Pull the specific timing from the array (fallback to first item if mismatch)
+    // Pull specific timing from the array safely
     String rawTiming = 'ANYTIME';
     if (med.timingInstructions.isNotEmpty) {
       int tIndex = (index - 1) < med.timingInstructions.length ? (index - 1) : (med.timingInstructions.length - 1);
@@ -238,10 +249,6 @@ class _TodaysMedicationsView extends ConsumerWidget {
     final String timing = _formatTiming(rawTiming);
     final String amount = med.amount;
 
-    // Weekly Logic
-    final String frequencyText = (med.medicationDictionary['dosage_frequencies']?['patient_text'] ?? '').toString().toLowerCase();
-    final bool isWeekly = frequencyText.contains('week');
-
     // Dynamic Display String
     String contentText = total > 1 
       ? "${_getOrdinal(index)} $brandName - $amount $type - $timing"
@@ -249,28 +256,6 @@ class _TodaysMedicationsView extends ConsumerWidget {
 
     if (isWeekly && isTaken) {
       contentText = "$brandName (Taken for this week)";
-    }
-
-    // Gradient Selection
-    LinearGradient backgroundGradient;
-    if (isTaken) {
-      backgroundGradient = LinearGradient(
-        colors: isDark 
-          ? [Colors.green.withOpacity(0.2), Colors.green.withOpacity(0.05)]
-          : [Colors.green.shade50, Colors.green.shade100],
-      );
-    } else if (isLate) {
-      backgroundGradient = LinearGradient(
-        colors: isDark 
-          ? [Colors.orange.withOpacity(0.2), Colors.yellow.withOpacity(0.05)]
-          : [Colors.orange.shade50, Colors.yellow.shade50],
-      );
-    } else {
-      backgroundGradient = LinearGradient(
-        colors: isDark 
-          ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
-          : [Colors.grey.shade100, Colors.grey.shade200],
-      );
     }
 
     return Padding(
@@ -282,7 +267,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            gradient: backgroundGradient,
+            gradient: _getGradient(isTaken, isLate, isDark),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -327,25 +312,6 @@ class _TodaysMedicationsView extends ConsumerWidget {
     );
   }
 
-  bool _checkIfOverdue(PatientMedication med, int doseIndex, int totalDoses) {
-    final hour = DateTime.now().hour;
-    
-    // Extract timing for this specific dose
-    String timing = 'ANYTIME';
-    if (med.timingInstructions.isNotEmpty) {
-      int tIndex = (doseIndex - 1) < med.timingInstructions.length ? (doseIndex - 1) : (med.timingInstructions.length - 1);
-      timing = med.timingInstructions[tIndex].toUpperCase();
-    }
-
-    if (totalDoses == 1) {
-      if ((timing == 'BEFORE_MEAL' || timing == 'BREAKFAST' || timing == 'BEFORE_BREAKFAST') && hour >= 14) return true;
-    } else {
-      if (doseIndex == 1 && hour >= 12) return true;
-      if (doseIndex == 2 && totalDoses == 2 && hour >= 20) return true;
-    }
-    return false;
-  }
-
   void _handleToggle(BuildContext context, WidgetRef ref, PatientMedication med, bool currentlyTaken) {
     showDialog(
       context: context,
@@ -354,7 +320,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
         title: Text(currentlyTaken ? "Unlog Medication?" : "Log Medication?"),
         content: Text(currentlyTaken 
           ? "This will mark the dose as not taken. Continue?" 
-          : "Confirm that you have taken your medication."),
+          : "Confirm that you have taken your dose."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
@@ -367,7 +333,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
                 } else {
                   await repo.logMedicationIntake(med.id, 'TAKEN');
                 }
-                ref.invalidate(dailyMedicationScheduleProvider);
+                ref.invalidate(todaysScheduleProvider);
                 if (context.mounted) {
                   Helpers.showSuccess(context, currentlyTaken ? "Medication unlogged" : "Medication logged");
                 }
@@ -528,7 +494,7 @@ class _MedicationCabinetView extends ConsumerWidget {
               try {
                 await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
                 ref.invalidate(patientMedicationsProvider);
-                ref.invalidate(dailyMedicationScheduleProvider);
+                ref.invalidate(todaysScheduleProvider);
                 if (context.mounted) {
                   Helpers.showSuccess(context, "Medication stopped");
                 }
@@ -660,7 +626,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
         }
         
         ref.invalidate(patientMedicationsProvider);
-        ref.invalidate(dailyMedicationScheduleProvider);
+        ref.invalidate(todaysScheduleProvider);
         
         if (mounted) {
           Navigator.pop(context);
