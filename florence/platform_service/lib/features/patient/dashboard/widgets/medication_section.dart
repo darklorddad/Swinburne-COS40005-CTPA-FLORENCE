@@ -228,13 +228,28 @@ class _TodaysMedicationsView extends ConsumerWidget {
                              med.customMedicationName ?? 
                              'Unknown';
     final String type = (med.medicationType ?? 'Pill').toLowerCase();
-    final String timing = _formatTiming(med.timingInstruction);
+    
+    // Pull the specific timing from the array (fallback to first item if mismatch)
+    String rawTiming = 'ANYTIME';
+    if (med.timingInstructions.isNotEmpty) {
+      int tIndex = (index - 1) < med.timingInstructions.length ? (index - 1) : (med.timingInstructions.length - 1);
+      rawTiming = med.timingInstructions[tIndex];
+    }
+    final String timing = _formatTiming(rawTiming);
     final String amount = med.amount;
 
-    // Dynamic Display String: "First Panadol - 2 tablets - After Breakfast"
-    final String contentText = total > 1 
+    // Weekly Logic
+    final String frequencyText = (med.medicationDictionary['dosage_frequencies']?['patient_text'] ?? '').toString().toLowerCase();
+    final bool isWeekly = frequencyText.contains('week');
+
+    // Dynamic Display String
+    String contentText = total > 1 
       ? "${_getOrdinal(index)} $brandName - $amount $type - $timing"
       : "$brandName - $amount $type - $timing";
+
+    if (isWeekly && isTaken) {
+      contentText = "$brandName (Taken for this week)";
+    }
 
     // Gradient Selection
     LinearGradient backgroundGradient;
@@ -314,9 +329,16 @@ class _TodaysMedicationsView extends ConsumerWidget {
 
   bool _checkIfOverdue(PatientMedication med, int doseIndex, int totalDoses) {
     final hour = DateTime.now().hour;
+    
+    // Extract timing for this specific dose
+    String timing = 'ANYTIME';
+    if (med.timingInstructions.isNotEmpty) {
+      int tIndex = (doseIndex - 1) < med.timingInstructions.length ? (doseIndex - 1) : (med.timingInstructions.length - 1);
+      timing = med.timingInstructions[tIndex].toUpperCase();
+    }
+
     if (totalDoses == 1) {
-      final instruction = med.timingInstruction?.toUpperCase();
-      if ((instruction == 'BEFORE_MEAL' || instruction == 'BREAKFAST' || instruction == 'BEFORE_BREAKFAST') && hour >= 14) return true;
+      if ((timing == 'BEFORE_MEAL' || timing == 'BREAKFAST' || timing == 'BEFORE_BREAKFAST') && hour >= 14) return true;
     } else {
       if (doseIndex == 1 && hour >= 12) return true;
       if (doseIndex == 2 && totalDoses == 2 && hour >= 20) return true;
@@ -465,7 +487,7 @@ class _MedicationCabinetView extends ConsumerWidget {
                 children: [
                   Text(brandName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 2),
-                  Text("${med.amount} • ${med.timingInstruction ?? 'Anytime'}", style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13)),
+                  Text("${med.amount} • ${med.timingInstructions.first.replaceAll('_', ' ')}", style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13)),
                 ],
               ),
             ),
@@ -550,7 +572,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   dynamic _selectedFrequency;      // Holds the frequency object
   
   String _selectedType = 'TABLET';
-  String _selectedTiming = 'ANYTIME';
+  List<String> _selectedTimings = ['ANYTIME'];
 
   // Fixed lists based on database schema constraints
   final List<String> _medicationTypes = ['TABLET', 'CAPSULE', 'INJECTION', 'LIQUID', 'INHALER', 'OTHER'];
@@ -562,6 +584,31 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
     'WITH_SNACK', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'
   ];
 
+  // Helper to calculate doses based on selected frequency
+  int _getDosesFromFrequency(dynamic freq) {
+    if (freq == null) return 1;
+    final text = (freq['patient_text'] ?? freq['latin_code']).toString().toLowerCase();
+    if (text.contains('twice') || text == 'bid' || text.contains('2 times')) return 2;
+    if (text.contains('three') || text == 'tid' || text.contains('3 times')) return 3;
+    if (text.contains('four') || text == 'qid' || text.contains('4 times')) return 4;
+    return 1;
+  }
+
+  void _onFrequencyChanged(dynamic val) {
+    setState(() {
+      _selectedFrequency = val;
+      int requiredDoses = _getDosesFromFrequency(val);
+      
+      // Grow or shrink the timings list based on frequency
+      while (_selectedTimings.length < requiredDoses) {
+        _selectedTimings.add('ANYTIME');
+      }
+      if (_selectedTimings.length > requiredDoses) {
+        _selectedTimings = _selectedTimings.sublist(0, requiredDoses);
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -571,18 +618,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                              med.customMedicationName ?? '';
       _amountController.text = med.amount;
       
-      // FIX: Ensure the type exists in our list, otherwise default to TABLET
       _selectedType = _medicationTypes.contains(med.medicationType) 
           ? med.medicationType! 
           : 'TABLET';
 
-      // FIX: Ensure the timing exists in our list, otherwise default to ANYTIME
-      // This prevents the "AFTER_MEAL" crash
-      _selectedTiming = _timingInstructions.contains(med.timingInstruction) 
-          ? med.timingInstruction! 
-          : 'ANYTIME';
-      
-      // Note: Frequency matching happens in build when data is loaded
+      if (med.timingInstructions.isNotEmpty) {
+        _selectedTimings = List<String>.from(med.timingInstructions);
+      }
     }
   }
 
@@ -605,7 +647,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
         'frequency_id': _selectedFrequency?['id'],
         'amount': _amountController.text.trim(),
         'medication_type': _selectedType,
-        'timing_instruction': _selectedTiming,
+        'timing_instructions': _selectedTimings,
         'status': 'CURRENT',
       };
 
@@ -666,6 +708,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
         borderSide: const BorderSide(color: Colors.redAccent, width: 2),
       ),
     );
+  }
+
+  // Helper to format ordinals (1st, 2nd)
+  String _getOrdinalLabel(int index) {
+    const ordinals = ["1st", "2nd", "3rd", "4th", "5th"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "${index}th";
   }
 
   @override
@@ -797,7 +846,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                 
                 const SizedBox(height: 16),
 
-                // 2. AMOUNT & FREQUENCY ROW
+                // 2. AMOUNT, TYPE & FREQUENCY ROW
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -811,12 +860,44 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           TextFormField(
                             controller: _amountController,
                             validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1 pill"),
+                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 10ml"),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Type", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return DropdownButtonFormField<String>(
+                                value: _selectedType,
+                                isExpanded: true,
+                                dropdownColor: menuBackgroundColor,
+                                borderRadius: BorderRadius.circular(16),
+                                elevation: 4,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                decoration: _getCustomInputDecoration(context, hint: "Type"),
+                                items: _medicationTypes.map((t) => DropdownMenuItem(
+                                  value: t, 
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                    child: Text(t, overflow: TextOverflow.ellipsis),
+                                  )
+                                )).toList(),
+                                onChanged: (val) => setState(() => _selectedType = val!),
+                              );
+                            }
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     Expanded(
                       flex: 3,
                       child: Column(
@@ -847,7 +928,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                                     borderRadius: BorderRadius.circular(16),
                                     elevation: 4,
                                     icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                                    decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
+                                    decoration: _getCustomInputDecoration(context, hint: "Select freq"),
                                     items: frequencies.map((f) {
                                       return DropdownMenuItem(
                                         value: f, 
@@ -860,7 +941,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                                         )
                                       );
                                     }).toList(),
-                                    onChanged: (val) => setState(() => _selectedFrequency = val),
+                                    onChanged: _onFrequencyChanged,
                                   );
                                 }
                               );
@@ -873,52 +954,30 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                 ),
 
                 const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
 
-                // 3. TYPE & TIMING ROW
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Type", style: TextStyle(fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 8),
-                          LayoutBuilder(
-                            builder: (context, constraints) {
-                              return DropdownButtonFormField<String>(
-                                value: _selectedType,
-                                isExpanded: true,
-                                dropdownColor: menuBackgroundColor,
-                                borderRadius: BorderRadius.circular(16),
-                                elevation: 4,
-                                icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                                decoration: _getCustomInputDecoration(context, hint: "Type"),
-                                items: _medicationTypes.map((t) => DropdownMenuItem(
-                                  value: t, 
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
-                                    child: Text(t, overflow: TextOverflow.ellipsis),
-                                  )
-                                )).toList(),
-                                onChanged: (val) => setState(() => _selectedType = val!),
-                              );
-                            }
+                // 3. DYNAMIC TIMING DROPDOWNS
+                const Text("Specific Timings", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                
+                ...List.generate(_selectedTimings.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            "${_selectedTimings.length > 1 ? _getOrdinalLabel(index + 1) : 'Daily'} Dose:", 
+                            style: TextStyle(color: AppTheme.textSecondaryColor, fontWeight: FontWeight.w600)
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Timing", style: TextStyle(fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 8),
-                          LayoutBuilder(
+                        ),
+                        Expanded(
+                          child: LayoutBuilder(
                             builder: (context, constraints) {
                               return DropdownButtonFormField<String>(
-                                value: _selectedTiming,
+                                value: _selectedTimings[index],
                                 isExpanded: true,
                                 dropdownColor: menuBackgroundColor,
                                 borderRadius: BorderRadius.circular(16),
@@ -938,15 +997,17 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                                     )
                                   );
                                 }).toList(),
-                                onChanged: (val) => setState(() => _selectedTiming = val!),
+                                onChanged: (val) {
+                                  setState(() => _selectedTimings[index] = val!);
+                                },
                               );
                             }
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                }),
                 
                 const SizedBox(height: 24),
                 
