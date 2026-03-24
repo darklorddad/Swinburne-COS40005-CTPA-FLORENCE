@@ -441,8 +441,7 @@ class _RatioSection extends StatelessWidget {
                     ),
                     Text(
                       ratio > 0 ? ratio.toStringAsFixed(1) : '--',
-                      style: TextStyle(
-                        fontSize: 48,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppTheme.textPrimaryColor,
                       ),
