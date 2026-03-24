@@ -42,6 +42,18 @@ class MedicationRepository {
   Future<void> addPatientMedication(Map<String, dynamic> data) async {
     await _apiService.post('/patients/me/medications', data);
   }
+
+  /// Fetches the global medication dictionary for search/autocomplete.
+  Future<List<dynamic>> getMedicationDictionary() async {
+    final response = await _apiService.get('/medications/dictionary');
+    return response as List<dynamic>;
+  }
+
+  /// Fetches the available dosage frequencies.
+  Future<List<dynamic>> getDosageFrequencies() async {
+    final response = await _apiService.get('/medications/frequencies');
+    return response as List<dynamic>;
+  }
 }
 
 /// Provider for the MedicationRepository.

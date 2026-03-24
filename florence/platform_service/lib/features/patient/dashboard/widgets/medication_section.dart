@@ -8,7 +8,23 @@ import '../../core/repositories/medication_repository.dart';
 import '../providers/dashboard_providers.dart';
 
 // ==========================================
-// 1. MAIN EXPORTED WIDGET (The Header)
+// 1. PROVIDERS
+// ==========================================
+
+/// Fetch the medication dictionary for the Autocomplete
+final medicationDictionaryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getMedicationDictionary(); 
+});
+
+/// Fetch the dosage frequencies
+final dosageFrequenciesProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getDosageFrequencies(); 
+});
+
+// ==========================================
+// 2. MAIN EXPORTED WIDGET (The Header)
 // ==========================================
 
 /// A unified, seamless section for medication management.
@@ -115,7 +131,7 @@ class MedicationSection extends StatelessWidget {
 }
 
 // ==========================================
-// 2. TODAY'S SCHEDULE VIEW (Private)
+// 3. TODAY'S SCHEDULE VIEW (Private)
 // ==========================================
 
 class _TodaysMedicationsView extends ConsumerWidget {
@@ -355,7 +371,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
 }
 
 // ==========================================
-// 3. MEDICATION CABINET VIEW (Private)
+// 4. MEDICATION CABINET VIEW (Private)
 // ==========================================
 
 class _MedicationCabinetView extends ConsumerWidget {
@@ -472,90 +488,287 @@ class _MedicationCabinetView extends ConsumerWidget {
 }
 
 // ==========================================
-// 4. MEDICATION FORM MODAL (Private)
+// 5. MEDICATION FORM MODAL (Private)
 // ==========================================
 
-class _MedicationFormDialog extends StatefulWidget {
+class _MedicationFormDialog extends ConsumerStatefulWidget {
   final bool isEdit;
   final PatientMedication? medication;
 
   const _MedicationFormDialog({required this.isEdit, this.medication});
 
   @override
-  State<_MedicationFormDialog> createState() => _MedicationFormDialogState();
+  ConsumerState<_MedicationFormDialog> createState() => _MedicationFormDialogState();
 }
 
-class _MedicationFormDialogState extends State<_MedicationFormDialog> {
+class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _amountController;
-  int? _selectedMedicationId;
-  int? _selectedFrequencyId;
-  String? _selectedType;
-  String? _selectedTiming;
+  
+  // State Variables
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  
+  dynamic _selectedDictionaryItem; // Holds the dictionary object if they pick a verified one
+  dynamic _selectedFrequency;      // Holds the frequency object
+  
+  String _selectedType = 'TABLET';
+  String _selectedTiming = 'ANYTIME';
+
+  // Fixed lists based on database schema constraints
+  final List<String> _medicationTypes = ['TABLET', 'CAPSULE', 'INJECTION', 'LIQUID', 'INHALER', 'OTHER'];
+  final List<String> _timingInstructions = ['BEFORE_MEAL', 'AFTER_MEAL', 'WITH_MEAL', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'];
 
   @override
   void initState() {
     super.initState();
-    _amountController = TextEditingController(text: widget.isEdit ? widget.medication?.amount : '');
     if (widget.isEdit && widget.medication != null) {
-      _selectedMedicationId = widget.medication!.medicationDictionary['id'];
-      _selectedType = widget.medication!.medicationType;
-      _selectedTiming = widget.medication!.timingInstruction;
+      _nameController.text = widget.medication!.medicationDictionary['brand_name'] ?? '';
+      _amountController.text = widget.medication!.amount;
+      _selectedType = widget.medication!.medicationType ?? 'TABLET';
+      _selectedTiming = widget.medication!.timingInstruction ?? 'ANYTIME';
     }
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
     _amountController.dispose();
     super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      // 1. Determine if it's a Dictionary Med or a Custom Med
+      final bool isCustom = _selectedDictionaryItem == null;
+
+      // 2. Build the payload matching the Database Schema
+      final Map<String, dynamic> payload = {
+        'medication_id': isCustom ? null : _selectedDictionaryItem['id'],
+        'custom_medication_name': isCustom ? _nameController.text.trim() : null,
+        'frequency_id': _selectedFrequency?['id'],
+        'amount': _amountController.text.trim(),
+        'medication_type': _selectedType,
+        'timing_instruction': _selectedTiming,
+        'status': 'CURRENT',
+      };
+
+      try {
+        await ref.read(medicationRepositoryProvider).addPatientMedication(payload);
+        ref.invalidate(patientMedicationsProvider);
+        ref.invalidate(dailyMedicationScheduleProvider);
+        
+        if (mounted) {
+          Navigator.pop(context);
+          Helpers.showSuccess(context, widget.isEdit ? 'Medication updated' : 'Medication added');
+        }
+      } catch (e) {
+        if (mounted) {
+          Helpers.showError(context, 'Failed to save medication');
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    // Fetch data for dropdowns
+    final dictAsync = ref.watch(medicationDictionaryProvider);
+    final freqAsync = ref.watch(dosageFrequenciesProvider);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: isDark ? AppTheme.midnightSurface : Colors.white,
       child: Container(
         width: 500,
         padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Header
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(widget.isEdit ? "Edit Medication" : "Add Medication", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      widget.isEdit ? "Edit Medication" : "Add Medication", 
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)
+                    ),
                     IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
                   ],
                 ),
                 const Divider(),
                 const SizedBox(height: 16),
+                
+                // 1. MEDICATION NAME (Autocomplete / Custom)
                 const Text("Medication Name", style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
-                TextFormField(
-                  decoration: InputDecoration(
-                    hintText: "Search or enter medication...",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  ),
+                dictAsync.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (e, s) => const Text("Error loading dictionary"),
+                  data: (dictionary) {
+                    return Autocomplete<dynamic>(
+                      displayStringForOption: (option) => option['brand_name'] ?? option['generic_name'],
+                      optionsBuilder: (TextEditingValue textEditingValue) {
+                        if (textEditingValue.text.isEmpty) return const Iterable<dynamic>.empty();
+                        return dictionary.where((med) {
+                          final brand = (med['brand_name'] ?? '').toLowerCase();
+                          final generic = (med['generic_name'] ?? '').toLowerCase();
+                          final query = textEditingValue.text.toLowerCase();
+                          return brand.contains(query) || generic.contains(query);
+                        });
+                      },
+                      onSelected: (selection) {
+                        setState(() => _selectedDictionaryItem = selection);
+                      },
+                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                        // Keep our local controller in sync so we can read the raw text for custom meds
+                        controller.addListener(() {
+                          _nameController.text = controller.text;
+                          // If they alter the text after selecting, wipe the dictionary selection so it becomes custom
+                          if (_selectedDictionaryItem != null && 
+                              controller.text != _selectedDictionaryItem['brand_name']) {
+                            _selectedDictionaryItem = null; 
+                          }
+                        });
+                        
+                        return TextFormField(
+                          controller: controller,
+                          focusNode: focusNode,
+                          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                          decoration: InputDecoration(
+                            hintText: "Search dictionary or type custom name...",
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            suffixIcon: const Icon(Icons.search),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
+                
+                const SizedBox(height: 16),
+
+                // 2. AMOUNT & FREQUENCY ROW
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Amount", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _amountController,
+                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                            decoration: InputDecoration(
+                              hintText: "e.g. 1 pill",
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          freqAsync.when(
+                            loading: () => const CircularProgressIndicator(),
+                            error: (e, s) => const Text("Error"),
+                            data: (frequencies) => DropdownButtonFormField<dynamic>(
+                              value: _selectedFrequency,
+                              validator: (val) => val == null ? 'Required' : null,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              ),
+                              items: frequencies.map((f) {
+                                return DropdownMenuItem(value: f, child: Text(f['patient_text'] ?? f['latin_code']));
+                              }).toList(),
+                              onChanged: (val) => setState(() => _selectedFrequency = val),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // 3. TYPE & TIMING ROW
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Type", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedType,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            items: _medicationTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                            onChanged: (val) => setState(() => _selectedType = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Timing", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedTiming,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            items: _timingInstructions.map((t) {
+                              final formatted = t.replaceAll('_', ' ').toLowerCase();
+                              return DropdownMenuItem(value: t, child: Text(formatted[0].toUpperCase() + formatted.substring(1)));
+                            }).toList(),
+                            onChanged: (val) => setState(() => _selectedTiming = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                
                 const SizedBox(height: 24),
+                
+                // Actions
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
+                      onPressed: _submitForm,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryBlue,
                         foregroundColor: Colors.white,
                         elevation: 0,
+                        shadowColor: Colors.transparent,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
