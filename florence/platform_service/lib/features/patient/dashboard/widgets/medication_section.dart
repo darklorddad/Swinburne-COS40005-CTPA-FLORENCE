@@ -432,17 +432,27 @@ class _MedicationCabinetView extends ConsumerWidget {
     );
   }
 
-  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, PatientMedication med) {
-    // SAFE CHECK: Prioritise dictionary brand name, then custom name
-    final String brandName = med.medicationDictionary['brand_name'] ?? 
-                             med.customMedicationName ?? 
-                             'Unknown';
+  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med) {
+    final String brandName = med.medicationDictionary['brand_name'] ??
+        med.customMedicationName ??
+        'Unknown';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Standardised Grey Gradient
+    final LinearGradient backgroundGradient = isDark
+        ? LinearGradient(colors: [
+            Colors.white.withOpacity(0.05),
+            Colors.white.withOpacity(0.02)
+          ])
+        : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.03) : AppTheme.backgroundColor.withOpacity(0.5),
+          // FIX: Applied Gradient instead of color
+          gradient: backgroundGradient,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -451,22 +461,46 @@ class _MedicationCabinetView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(brandName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(
+                    brandName,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 2),
-                  Text("${med.amount} • ${med.timingInstructions.first.replaceAll('_', ' ')}", style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13)),
+                  Text(
+                    "${med.amount}  ${med.medicationType ?? 'Pill'}",
+                    style: TextStyle(
+                        color: AppTheme.textSecondaryColor, fontSize: 13),
+                  ),
                 ],
               ),
             ),
             PopupMenuButton<String>(
               icon: const Icon(Icons.more_vert, color: Colors.grey),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
               onSelected: (value) {
-                if (value == 'edit') _showFormModal(context, isEdit: true, med: med);
-                else if (value == 'stop') _confirmStop(context, ref, med, brandName);
+                if (value == 'edit') {
+                  _showFormModal(context, isEdit: true, med: med);
+                } else if (value == 'stop') {
+                  _confirmStop(context, ref, med, brandName);
+                }
               },
               itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
-                const PopupMenuItem(value: 'stop', child: Row(children: [Icon(Icons.stop_circle, size: 18, color: Colors.red), SizedBox(width: 8), Text('Stop', style: TextStyle(color: Colors.red))])),
+                const PopupMenuItem(
+                    value: 'edit',
+                    child: Row(children: [
+                      Icon(Icons.edit, size: 18),
+                      SizedBox(width: 8),
+                      Text('Edit')
+                    ])),
+                const PopupMenuItem(
+                    value: 'stop',
+                    child: Row(children: [
+                      Icon(Icons.stop_circle, size: 18, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Stop', style: TextStyle(color: Colors.red))
+                    ])),
               ],
             ),
           ],

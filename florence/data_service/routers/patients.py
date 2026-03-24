@@ -182,6 +182,16 @@ class MedicationCreate(BaseModel):
     timing_instructions: List[str] = ["ANYTIME"]
     notes: Optional[str] = None
 
+class PatientMedicationUpdate(BaseModel):
+    """Fields allowed for partial updates on patient medications."""
+    medication_id: Optional[int] = None
+    custom_medication_name: Optional[str] = None
+    frequency_id: Optional[int] = None
+    amount: Optional[str] = None
+    medication_type: Optional[str] = None
+    timing_instructions: Optional[List[str]] = None
+    status: Optional[str] = None
+
 class MedicationIntakeCreate(BaseModel):
     patient_medication_id: int
     status: Literal['TAKEN', 'SKIPPED', 'LATE'] = 'TAKEN'
@@ -420,6 +430,33 @@ async def add_own_medication(
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add medication: {str(e)}")
+
+@router.patch("/me/medications/{med_id}", summary="Update a medication entry")
+async def update_patient_medication(
+    med_id: int, 
+    med_update: PatientMedicationUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Updates a specific medication entry for the authenticated patient."""
+    try:
+        update_data = med_update.model_dump(exclude_unset=True)
+        if not update_data:
+             raise HTTPException(status_code=400, detail="No fields provided for update")
+
+        response = supabase.table("patient_medications") \
+            .update(update_data) \
+            .eq("id", med_id) \
+            .eq("patient_id", patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Medication not found or access denied")
+            
+        return response.data[0]
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 @router.get("/me/medication-schedule", summary="Get medication schedule and logs for a date")
 async def get_medication_schedule(
