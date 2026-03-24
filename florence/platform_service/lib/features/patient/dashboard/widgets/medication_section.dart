@@ -371,7 +371,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
 }
 
 // ==========================================
-// 3. MEDICATION CABINET VIEW (Private)
+// 4. MEDICATION CABINET VIEW (Private)
 // ==========================================
 
 class _MedicationCabinetView extends ConsumerWidget {
@@ -569,9 +569,46 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
     }
   }
 
+  // ==========================================
+  // STYLING HELPER FOR ALL INPUTS
+  // ==========================================
+  InputDecoration _getCustomInputDecoration(BuildContext context, {required String hint, Widget? suffixIcon}) {
+    final borderColor = AppTheme.getBorderColor(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: AppTheme.textSecondaryColor.withOpacity(0.6), fontSize: 14),
+      filled: true,
+      fillColor: isDark ? Colors.white.withOpacity(0.02) : AppTheme.backgroundColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      suffixIcon: suffixIcon,
+      // Default Border
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      // Active/Typing Border
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+      ),
+      // Error Border
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final menuBackgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
     
     // Fetch data for dropdowns
     final dictAsync = ref.watch(medicationDictionaryProvider);
@@ -579,7 +616,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      backgroundColor: isDark ? AppTheme.midnightSurface : Colors.white,
+      backgroundColor: menuBackgroundColor,
       child: Container(
         width: 500,
         padding: const EdgeInsets.all(24),
@@ -642,11 +679,10 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           controller: controller,
                           focusNode: focusNode,
                           validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                          decoration: InputDecoration(
-                            hintText: "Search dictionary or type custom name...",
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            suffixIcon: const Icon(Icons.search),
+                          decoration: _getCustomInputDecoration(
+                            context, 
+                            hint: "Search dictionary or type custom name...", 
+                            suffixIcon: const Icon(Icons.search)
                           ),
                         );
                       },
@@ -658,6 +694,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
                 // 2. AMOUNT & FREQUENCY ROW
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       flex: 2,
@@ -669,11 +706,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           TextFormField(
                             controller: _amountController,
                             validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                            decoration: InputDecoration(
-                              hintText: "e.g. 1 pill",
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
+                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1 pill"),
                           ),
                         ],
                       ),
@@ -687,15 +720,16 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
                           freqAsync.when(
-                            loading: () => const CircularProgressIndicator(),
+                            loading: () => const Center(child: CircularProgressIndicator()),
                             error: (e, s) => const Text("Error"),
                             data: (frequencies) => DropdownButtonFormField<dynamic>(
                               value: _selectedFrequency,
                               validator: (val) => val == null ? 'Required' : null,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                              ),
+                              dropdownColor: menuBackgroundColor,
+                              borderRadius: BorderRadius.circular(16),
+                              elevation: 4,
+                              icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                              decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
                               items: frequencies.map((f) {
                                 return DropdownMenuItem(value: f, child: Text(f['patient_text'] ?? f['latin_code']));
                               }).toList(),
@@ -712,6 +746,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
                 // 3. TYPE & TIMING ROW
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: Column(
@@ -721,10 +756,11 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
                             value: _selectedType,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
+                            dropdownColor: menuBackgroundColor,
+                            borderRadius: BorderRadius.circular(16),
+                            elevation: 4,
+                            icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                            decoration: _getCustomInputDecoration(context, hint: "Type"),
                             items: _medicationTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
                             onChanged: (val) => setState(() => _selectedType = val!),
                           ),
@@ -740,10 +776,11 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
                             value: _selectedTiming,
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
+                            dropdownColor: menuBackgroundColor,
+                            borderRadius: BorderRadius.circular(16),
+                            elevation: 4,
+                            icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                            decoration: _getCustomInputDecoration(context, hint: "Timing"),
                             items: _timingInstructions.map((t) {
                               final formatted = t.replaceAll('_', ' ').toLowerCase();
                               return DropdownMenuItem(value: t, child: Text(formatted[0].toUpperCase() + formatted.substring(1)));
