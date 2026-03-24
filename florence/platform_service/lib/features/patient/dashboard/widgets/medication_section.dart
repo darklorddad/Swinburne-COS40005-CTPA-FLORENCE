@@ -56,35 +56,24 @@ class MedicationSection extends StatelessWidget {
                   labelColor: AppTheme.primaryBlue,
                   unselectedLabelColor: AppTheme.textSecondaryColor,
                   labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  overlayColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
-                    if (states.contains(WidgetState.hovered)) {
-                      return AppTheme.primaryBlue.withOpacity(0.04);
-                    }
-                    return null; 
-                  }),
-                  tabs: [
+                  
+                  // COMPLETELY REMOVES HOVER AND RIPPLE EFFECTS
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  splashFactory: NoSplash.splashFactory,
+                  
+                  tabs: const [
                     Tab(
                       height: 56,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border(
-                            right: BorderSide(
-                              color: borderColor.withOpacity(0.6), 
-                              width: 1,
-                            ),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.calendar_today_outlined, size: 18),
-                            SizedBox(width: 8),
-                            Text("Today's Schedule"),
-                          ],
-                        ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text("Today's Schedule"),
+                        ],
                       ),
                     ),
-                    const Tab(
+                    Tab(
                       height: 56,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
