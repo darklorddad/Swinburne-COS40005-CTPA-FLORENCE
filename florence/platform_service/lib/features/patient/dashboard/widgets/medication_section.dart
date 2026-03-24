@@ -394,7 +394,9 @@ class _MedicationCabinetView extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
               foregroundColor: AppTheme.primaryBlue,
-              elevation: 0, hoverElevation: 0, focusElevation: 0, highlightElevation: 0,
+              // FIX: Use elevation 0 and a transparent shadow to prevent shifting on hover
+              elevation: 0,
+              shadowColor: Colors.transparent,
               splashFactory: NoSplash.splashFactory,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
