@@ -16,22 +16,10 @@ class MedicationCabinetCard extends ConsumerWidget {
     final medsAsync = ref.watch(patientMedicationsProvider);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      padding: const EdgeInsets.all(20),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch, // Stretches button to full width
         children: [
-          // Header Action Only
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton.icon(
-              icon: const Icon(Icons.add_circle_outline, size: 20),
-              label: const Text("Add Medication"),
-              style: TextButton.styleFrom(foregroundColor: AppTheme.primaryBlue),
-              onPressed: () => AppRoutes.push(context, AppRoutes.addMedication),
-            ),
-          ),
-          const SizedBox(height: 8),
-
           // Content
           Expanded(
             child: medsAsync.when(
@@ -44,6 +32,24 @@ class MedicationCabinetCard extends ConsumerWidget {
                 ),
               ),
             ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Add Medication Button at the bottom
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text("Add New Medication"),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
+              foregroundColor: AppTheme.primaryBlue,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () => AppRoutes.push(context, AppRoutes.addMedication),
           ),
         ],
       ),
@@ -112,7 +118,16 @@ class MedicationCabinetCard extends ConsumerWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.grey),
+              onSelected: (value) {
+                // TODO: Implement edit/stop logic
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                const PopupMenuItem(value: 'stop', child: Text('Stop Medication')),
+              ],
+            ),
           ],
         ),
       ),

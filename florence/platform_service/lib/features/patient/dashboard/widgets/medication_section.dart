@@ -33,21 +33,33 @@ class MedicationSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Seamless Header (Tabs)
-            Padding(
-              padding: const EdgeInsets.only(top: 8, left: 8, right: 8),
+            // Seamless Header (Tabs) with Icons and Even Split
+            Container(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: borderColor)),
+              ),
               child: TabBar(
                 dividerColor: Colors.transparent,
+                // TabBarIndicatorSize.tab forces each tab to take exactly half the width
+                indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
                   color: AppTheme.primaryBlue,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
                 ),
                 labelColor: Colors.white,
                 unselectedLabelColor: AppTheme.textSecondaryColor,
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                 tabs: const [
-                  Tab(text: "Today's Schedule"),
-                  Tab(text: "Cabinet"),
+                  Tab(
+                    iconMargin: EdgeInsets.only(bottom: 4),
+                    icon: Icon(Icons.calendar_today_outlined, size: 20),
+                    text: "Today's Schedule",
+                  ),
+                  Tab(
+                    iconMargin: EdgeInsets.only(bottom: 4),
+                    icon: Icon(Icons.medical_information_outlined, size: 20),
+                    text: "Cabinet",
+                  ),
                 ],
               ),
             ),

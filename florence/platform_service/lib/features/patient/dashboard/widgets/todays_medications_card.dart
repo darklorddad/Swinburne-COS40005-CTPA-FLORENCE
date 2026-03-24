@@ -54,115 +54,166 @@ class TodaysMedicationsCard extends ConsumerWidget {
       );
     }
 
-    return ListView.builder(
-      itemCount: schedule.medications.length,
-      itemBuilder: (context, index) {
-        final med = schedule.medications[index];
-        // Find if there's a log for this medication today
-        final log = schedule.todaysLogs.cast<MedicationIntakeLog?>().firstWhere(
-              (l) => l?.patientMedicationId == med.id,
-              orElse: () => null,
-            );
+    // Unroll the medications based on frequency
+    List<Widget> loggableItems = [];
 
-        return _buildMedicationRow(context, ref, med, log);
-      },
-    );
-  }
+    for (var med in schedule.medications) {
+      // Determine frequency from the dosage frequency patient text or amount
+      // For MVP, we'll parse the amount or default to 1
+      int frequency = 1;
+      final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString().toLowerCase() ?? '';
+      
+      if (freqText.contains('twice') || freqText.contains('2 times')) {
+        frequency = 2;
+      } else if (freqText.contains('three') || freqText.contains('3 times')) {
+        frequency = 3;
+      } else if (freqText.contains('four') || freqText.contains('4 times')) {
+        frequency = 4;
+      }
 
-  Widget _buildMedicationRow(
-    BuildContext context,
-    WidgetRef ref,
-    PatientMedication med,
-    MedicationIntakeLog? log,
-  ) {
-    final bool isTaken = log?.status == 'TAKEN' || log?.status == 'LATE';
-    final bool isSkipped = log?.status == 'SKIPPED';
-    final bool isOverdue = !isTaken && !isSkipped && _checkIfOverdue(med);
+      // Find logs for this medication today
+      final logs = schedule.todaysLogs.where((l) => l.patientMedicationId == med.id).toList();
 
-    IconData trailingIcon;
-    Color iconColor;
-    String? subtext;
+      for (int i = 1; i <= frequency; i++) {
+        // Check if this specific dose index has been logged
+        // This is a simplified check assuming logs are sequential
+        final MedicationIntakeLog? log = logs.length >= i ? logs[i - 1] : null;
 
-    if (isTaken) {
-      trailingIcon = Icons.check_circle;
-      iconColor = AppTheme.primaryGreen;
-      if (log?.status == 'LATE') subtext = "Logged late";
-    } else if (isSkipped) {
-      trailingIcon = Icons.block;
-      iconColor = AppTheme.textSecondaryColor;
-      subtext = "Skipped";
-    } else if (isOverdue) {
-      trailingIcon = Icons.error_outline;
-      iconColor = AppTheme.warningColor;
-      subtext = "Overdue";
-    } else {
-      trailingIcon = Icons.radio_button_unchecked;
-      iconColor = AppTheme.textSecondaryColor;
+        loggableItems.add(
+          _buildDoseRow(
+            context: context,
+            ref: ref,
+            med: med,
+            log: log,
+            doseIndex: i,
+            totalDoses: frequency,
+          ),
+        );
+      }
     }
 
+    return ListView(children: loggableItems);
+  }
+
+  Widget _buildDoseRow({
+    required BuildContext context,
+    required WidgetRef ref,
+    required PatientMedication med,
+    required MedicationIntakeLog? log,
+    required int doseIndex,
+    required int totalDoses,
+  }) {
+    final bool isTaken = log?.status == 'TAKEN' || log?.status == 'LATE';
+    final bool isSkipped = log?.status == 'SKIPPED';
+    final bool isLogged = isTaken || isSkipped;
+    final bool isOverdue = !isLogged && _checkIfOverdue(med, doseIndex, totalDoses);
+
+    final String brandName = med.medicationDictionary['brand_name'] ?? 'Unknown Medication';
+    final String displayName = totalDoses > 1 ? "$doseIndex. $brandName" : brandName;
+    
+    Color statusColor = AppTheme.textSecondaryColor;
+    if (isTaken) statusColor = AppTheme.primaryGreen;
+    if (isSkipped) statusColor = AppTheme.textSecondaryColor;
+    if (isOverdue) statusColor = AppTheme.warningColor;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: InkWell(
-        onTap: (isTaken || isSkipped)
-            ? null
-            : () => _handleTap(context, ref, med, isOverdue),
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white.withOpacity(0.03)
-                : AppTheme.backgroundColor.withOpacity(0.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      med.medicationDictionary['brand_name'] ?? 'Unknown Medication',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withOpacity(0.03)
+              : AppTheme.backgroundColor.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(16),
+          border: isLogged ? Border.all(color: statusColor.withOpacity(0.5)) : null,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    displayName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      decoration: isLogged ? TextDecoration.lineThrough : null,
+                      color: isLogged ? AppTheme.textSecondaryColor : null,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "${med.amount} • ${med.timingInstruction ?? 'Anytime'}",
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "${med.amount} • ${med.timingInstruction ?? 'Anytime'}",
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 13,
+                    ),
+                  ),
+                  if (isOverdue)
+                    const Text(
+                      "Overdue",
                       style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 13,
+                        color: AppTheme.warningColor,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    if (subtext != null)
-                      Text(
-                        subtext,
-                        style: TextStyle(
-                          color: iconColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                  ],
-                ),
+                ],
               ),
-              Icon(trailingIcon, color: iconColor, size: 28),
-            ],
-          ),
+            ),
+            if (isLogged)
+              Row(
+                children: [
+                  Icon(
+                    isTaken ? Icons.check_circle : Icons.block,
+                    color: statusColor,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isTaken ? "Taken" : "Skipped",
+                    style: TextStyle(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              )
+            else
+              ElevatedButton(
+                onPressed: () => _handleTap(context, ref, med, isOverdue),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryBlue,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Text("Log"),
+              ),
+          ],
         ),
       ),
     );
   }
 
-  bool _checkIfOverdue(PatientMedication med) {
-    final instruction = med.timingInstruction?.toUpperCase();
+  bool _checkIfOverdue(PatientMedication med, int doseIndex, int totalDoses) {
     final hour = DateTime.now().hour;
-    // MVP Logic: If it's a morning/pre-meal med and it's past 2 PM, it's overdue.
-    if ((instruction == 'BEFORE_MEAL' || instruction == 'BREAKFAST') && hour >= 14) {
-      return true;
+    
+    // Simple logic for overdue doses based on index and total doses
+    if (totalDoses == 1) {
+      final instruction = med.timingInstruction?.toUpperCase();
+      if ((instruction == 'BEFORE_MEAL' || instruction == 'BREAKFAST') && hour >= 14) {
+        return true;
+      }
+    } else {
+      // For multi-dose, approximate times
+      if (doseIndex == 1 && hour >= 12) return true; // Morning dose overdue after noon
+      if (doseIndex == 2 && totalDoses == 2 && hour >= 20) return true; // Evening dose overdue after 8pm
     }
+    
     return false;
   }
 
@@ -175,7 +226,6 @@ class TodaysMedicationsCard extends ConsumerWidget {
     if (isOverdue) {
       _showMissedDoseSheet(context, ref, med);
     } else {
-      // Immediate log for pending
       try {
         await ref.read(medicationRepositoryProvider).logMedicationIntake(med.id, 'TAKEN');
         ref.invalidate(dailyMedicationScheduleProvider);
@@ -218,15 +268,8 @@ class TodaysMedicationsCard extends ConsumerWidget {
                 ListTile(
                   leading: const Icon(Icons.history, color: AppTheme.primaryGreen),
                   title: const Text("I took it on time"),
-                  subtitle: const Text("Log as taken at 8:00 AM"),
-                  onTap: () => _logAndRefresh(context, ref, med.id, 'TAKEN',
-                      timestamp: DateTime(
-                        DateTime.now().year,
-                        DateTime.now().month,
-                        DateTime.now().day,
-                        8,
-                        0,
-                      )),
+                  subtitle: const Text("Log as taken earlier"),
+                  onTap: () => _logAndRefresh(context, ref, med.id, 'TAKEN'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.done, color: AppTheme.primaryBlue),
