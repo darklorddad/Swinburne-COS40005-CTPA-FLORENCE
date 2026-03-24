@@ -371,7 +371,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
 }
 
 // ==========================================
-// 4. MEDICATION CABINET VIEW (Private)
+// 3. MEDICATION CABINET VIEW (Private)
 // ==========================================
 
 class _MedicationCabinetView extends ConsumerWidget {
@@ -609,6 +609,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final menuBackgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
     
     // Fetch data for dropdowns
     final dictAsync = ref.watch(medicationDictionaryProvider);
@@ -650,42 +651,82 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                   data: (dictionaryList) {
                     final dictionary = dictionaryList.cast<Map<String, dynamic>>();
 
-                    return Autocomplete<Map<String, dynamic>>(
-                      displayStringForOption: (option) => (option['brand_name'] ?? option['generic_name']).toString(),
-                      optionsBuilder: (TextEditingValue textEditingValue) {
-                        if (textEditingValue.text.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
-                        return dictionary.where((med) {
-                          final brand = (med['brand_name']?.toString() ?? '').toLowerCase();
-                          final generic = (med['generic_name']?.toString() ?? '').toLowerCase();
-                          final query = textEditingValue.text.toLowerCase();
-                          return brand.contains(query) || generic.contains(query);
-                        });
-                      },
-                      onSelected: (selection) {
-                        setState(() => _selectedDictionaryItem = selection);
-                      },
-                      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
-                        // Keep our local controller in sync so we can read the raw text for custom meds
-                        controller.addListener(() {
-                          _nameController.text = controller.text;
-                          // If they alter the text after selecting, wipe the dictionary selection so it becomes custom
-                          if (_selectedDictionaryItem != null && 
-                              controller.text != _selectedDictionaryItem!['brand_name']) {
-                            _selectedDictionaryItem = null; 
-                          }
-                        });
-                        
-                        return TextFormField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                          decoration: _getCustomInputDecoration(
-                            context, 
-                            hint: "Search dictionary or type custom name...", 
-                            suffixIcon: const Icon(Icons.search)
-                          ),
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Autocomplete<Map<String, dynamic>>(
+                          displayStringForOption: (option) => (option['brand_name'] ?? option['generic_name']).toString(),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
+                            return dictionary.where((med) {
+                              final brand = (med['brand_name']?.toString() ?? '').toLowerCase();
+                              final generic = (med['generic_name']?.toString() ?? '').toLowerCase();
+                              final query = textEditingValue.text.toLowerCase();
+                              return brand.contains(query) || generic.contains(query);
+                            });
+                          },
+                          onSelected: (selection) {
+                            setState(() => _selectedDictionaryItem = selection);
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                color: menuBackgroundColor,
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: borderColor),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: constraints.maxWidth, 
+                                    maxHeight: 250,
+                                  ),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder: (context, index) {
+                                      final option = options.elementAt(index);
+                                      final name = option['brand_name'] ?? option['generic_name'];
+                                      return InkWell(
+                                        onTap: () => onSelected(option),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                                          child: Text(name.toString()),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                            // Keep our local controller in sync so we can read the raw text for custom meds
+                            controller.addListener(() {
+                              _nameController.text = controller.text;
+                              // If they alter the text after selecting, wipe the dictionary selection so it becomes custom
+                              if (_selectedDictionaryItem != null && 
+                                  controller.text != _selectedDictionaryItem!['brand_name']) {
+                                _selectedDictionaryItem = null; 
+                              }
+                            });
+                            
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                              decoration: _getCustomInputDecoration(
+                                context, 
+                                hint: "Search dictionary or type custom name...", 
+                                suffixIcon: const Icon(Icons.search)
+                              ),
+                            );
+                          },
                         );
-                      },
+                      }
                     );
                   },
                 ),
@@ -724,6 +765,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                             error: (e, s) => const Text("Error"),
                             data: (frequencies) => DropdownButtonFormField<dynamic>(
                               value: _selectedFrequency,
+                              isExpanded: true,
                               validator: (val) => val == null ? 'Required' : null,
                               dropdownColor: menuBackgroundColor,
                               borderRadius: BorderRadius.circular(16),
@@ -731,7 +773,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                               icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
                               decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
                               items: frequencies.map((f) {
-                                return DropdownMenuItem(value: f, child: Text(f['patient_text'] ?? f['latin_code']));
+                                return DropdownMenuItem(
+                                  value: f, 
+                                  child: Text(
+                                    f['patient_text'] ?? f['latin_code'],
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                );
                               }).toList(),
                               onChanged: (val) => setState(() => _selectedFrequency = val),
                             ),
@@ -756,12 +804,16 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
                             value: _selectedType,
+                            isExpanded: true,
                             dropdownColor: menuBackgroundColor,
                             borderRadius: BorderRadius.circular(16),
                             elevation: 4,
                             icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
                             decoration: _getCustomInputDecoration(context, hint: "Type"),
-                            items: _medicationTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                            items: _medicationTypes.map((t) => DropdownMenuItem(
+                              value: t, 
+                              child: Text(t, overflow: TextOverflow.ellipsis)
+                            )).toList(),
                             onChanged: (val) => setState(() => _selectedType = val!),
                           ),
                         ],
@@ -776,6 +828,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           const SizedBox(height: 8),
                           DropdownButtonFormField<String>(
                             value: _selectedTiming,
+                            isExpanded: true,
                             dropdownColor: menuBackgroundColor,
                             borderRadius: BorderRadius.circular(16),
                             elevation: 4,
@@ -783,7 +836,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                             decoration: _getCustomInputDecoration(context, hint: "Timing"),
                             items: _timingInstructions.map((t) {
                               final formatted = t.replaceAll('_', ' ').toLowerCase();
-                              return DropdownMenuItem(value: t, child: Text(formatted[0].toUpperCase() + formatted.substring(1)));
+                              return DropdownMenuItem(
+                                value: t, 
+                                child: Text(
+                                  formatted[0].toUpperCase() + formatted.substring(1),
+                                  overflow: TextOverflow.ellipsis,
+                                )
+                              );
                             }).toList(),
                             onChanged: (val) => setState(() => _selectedTiming = val!),
                           ),
