@@ -568,3 +568,23 @@ async def upload_meal_photo(
     except Exception as e:
         print(f"Upload Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+
+# --- Global Medication Endpoints ---
+
+@router.get("/medications/dictionary", summary="Get global medication dictionary")
+async def get_medication_dictionary():
+    """Retrieves all verified medications from the global dictionary."""
+    try:
+        response = supabase.table("medication_dictionary").select("*").order("brand_name").execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/medications/frequencies", summary="Get available dosage frequencies")
+async def get_dosage_frequencies():
+    """Retrieves all available dosage frequencies."""
+    try:
+        response = supabase.table("dosage_frequencies").select("*").execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

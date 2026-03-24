@@ -45,14 +45,30 @@ class MedicationRepository {
 
   /// Fetches the global medication dictionary for search/autocomplete.
   Future<List<dynamic>> getMedicationDictionary() async {
-    final response = await _apiService.get('/medications/dictionary');
-    return response as List<dynamic>;
+    try {
+      final response = await _apiService.get('/patients/medications/dictionary');
+      if (response is List) {
+        return response;
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching medication dictionary: $e");
+      return [];
+    }
   }
 
   /// Fetches the available dosage frequencies.
   Future<List<dynamic>> getDosageFrequencies() async {
-    final response = await _apiService.get('/medications/frequencies');
-    return response as List<dynamic>;
+    try {
+      final response = await _apiService.get('/patients/medications/frequencies');
+      if (response is List) {
+        return response;
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching dosage frequencies: $e");
+      return [];
+    }
   }
 }
 
