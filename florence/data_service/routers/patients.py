@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
 from pydantic import BaseModel, model_validator, Field, EmailStr
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from supabase_auth.errors import AuthApiError
 from datetime import datetime, date, timedelta
 from enum import Enum
@@ -179,7 +179,7 @@ class MedicationCreate(BaseModel):
     frequency_id: int
     amount: str
     medication_type: Optional[str] = None
-    timing_instruction: Optional[str] = "ANYTIME"
+    timing_instructions: List[str] = ["ANYTIME"]
     notes: Optional[str] = None
 
 class MedicationIntakeCreate(BaseModel):
