@@ -174,7 +174,8 @@ class ActivityLogCreate(BaseModel):
     performed_at: datetime
 
 class MedicationCreate(BaseModel):
-    medication_id: int
+    medication_id: Optional[int] = None
+    custom_medication_name: Optional[str] = None
     frequency_id: int
     amount: str
     medication_type: Optional[str] = None
@@ -409,6 +410,9 @@ async def add_own_medication(
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """Inserts a new row into patient_medications for the authenticated patient."""
+    if not data.medication_id and not data.custom_medication_name:
+        raise HTTPException(status_code=400, detail="Must provide either medication_id or custom_medication_name")
+
     insert_dict = data.model_dump(mode='json')
     insert_dict['patient_id'] = patient_profile['id']
     try:
