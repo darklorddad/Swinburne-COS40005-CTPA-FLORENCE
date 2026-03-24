@@ -11,6 +11,16 @@ import '../providers/dashboard_providers.dart';
 class TodaysMedicationsCard extends ConsumerWidget {
   const TodaysMedicationsCard({super.key});
 
+  /// Helper to convert frequency text/code from DB to an integer
+  int _getDosesPerDay(String? frequencyStr) {
+    if (frequencyStr == null) return 1;
+    final lower = frequencyStr.toLowerCase();
+    if (lower.contains('twice') || lower == 'bid' || lower.contains('2 times')) return 2;
+    if (lower.contains('three') || lower == 'tid' || lower.contains('3 times')) return 3;
+    if (lower.contains('four') || lower == 'qid' || lower.contains('4 times')) return 4;
+    return 1; // Default to Once a day
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
@@ -58,26 +68,18 @@ class TodaysMedicationsCard extends ConsumerWidget {
     List<Widget> loggableItems = [];
 
     for (var med in schedule.medications) {
-      // Determine frequency from the dosage frequency patient text or amount
-      // For MVP, we'll parse the amount or default to 1
-      int frequency = 1;
-      final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString().toLowerCase() ?? '';
-      
-      if (freqText.contains('twice') || freqText.contains('2 times')) {
-        frequency = 2;
-      } else if (freqText.contains('three') || freqText.contains('3 times')) {
-        frequency = 3;
-      } else if (freqText.contains('four') || freqText.contains('4 times')) {
-        frequency = 4;
-      }
+      // 1. Get total required doses based on frequency table
+      final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString() ?? 'Once a day';
+      int totalDoses = _getDosesPerDay(freqText);
 
-      // Find logs for this medication today
+      // 2. Find logs for this medication today
       final logs = schedule.todaysLogs.where((l) => l.patientMedicationId == med.id).toList();
+      int timesLoggedToday = logs.length;
 
-      for (int i = 1; i <= frequency; i++) {
-        // Check if this specific dose index has been logged
-        // This is a simplified check assuming logs are sequential
-        final MedicationIntakeLog? log = logs.length >= i ? logs[i - 1] : null;
+      for (int i = 1; i <= totalDoses; i++) {
+        // If the loop index (i) is less than or equal to logs, this specific dose is completed.
+        final MedicationIntakeLog? log = i <= timesLoggedToday ? logs[i - 1] : null;
+        final bool isLogged = log != null;
 
         loggableItems.add(
           _buildDoseRow(
@@ -86,7 +88,8 @@ class TodaysMedicationsCard extends ConsumerWidget {
             med: med,
             log: log,
             doseIndex: i,
-            totalDoses: frequency,
+            totalDoses: totalDoses,
+            isLogged: isLogged,
           ),
         );
       }
@@ -102,15 +105,24 @@ class TodaysMedicationsCard extends ConsumerWidget {
     required MedicationIntakeLog? log,
     required int doseIndex,
     required int totalDoses,
+    required bool isLogged,
   }) {
     final bool isTaken = log?.status == 'TAKEN' || log?.status == 'LATE';
     final bool isSkipped = log?.status == 'SKIPPED';
-    final bool isLogged = isTaken || isSkipped;
     final bool isOverdue = !isLogged && _checkIfOverdue(med, doseIndex, totalDoses);
 
     final String brandName = med.medicationDictionary['brand_name'] ?? 'Unknown Medication';
     final String displayName = totalDoses > 1 ? "$doseIndex. $brandName" : brandName;
     
+    // Formatting medication_type (e.g., 'TABLET' -> 'Tablet')
+    String rawType = med.medicationType ?? 'PILL';
+    final String type = rawType[0].toUpperCase() + rawType.substring(1).toLowerCase(); 
+    
+    // Formatting timing_instruction (e.g., 'AFTER_MEAL' -> 'After Meal')
+    String rawTiming = med.timingInstruction ?? 'ANYTIME';
+    final String timingInstruction = rawTiming.replaceAll('_', ' ').split(' ').map((word) => 
+        word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '').join(' ');
+
     Color statusColor = AppTheme.textSecondaryColor;
     if (isTaken) statusColor = AppTheme.primaryGreen;
     if (isSkipped) statusColor = AppTheme.textSecondaryColor;
@@ -144,9 +156,9 @@ class TodaysMedicationsCard extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "${med.amount} • ${med.timingInstruction ?? 'Anytime'}",
+                    "$type • $timingInstruction",
                     style: TextStyle(
-                      color: AppTheme.textSecondaryColor,
+                      color: isLogged ? AppTheme.textSecondaryColor.withOpacity(0.7) : AppTheme.textSecondaryColor,
                       fontSize: 13,
                     ),
                   ),
