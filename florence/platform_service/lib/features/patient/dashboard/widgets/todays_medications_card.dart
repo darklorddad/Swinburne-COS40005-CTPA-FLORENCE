@@ -12,35 +12,31 @@ class TodaysMedicationsCard extends ConsumerWidget {
   const TodaysMedicationsCard({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
 
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Content
-              Expanded(
-                child: scheduleAsync.when(
-                  data: (schedule) => _buildMedicationList(context, ref, schedule),
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
-                  error: (err, stack) => Center(
-                    child: Text(
-                      "Unable to load schedule",
-                      style: TextStyle(color: AppTheme.errorColor),
-                    ),
-                  ),
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Content
+          Expanded(
+            child: scheduleAsync.when(
+              data: (schedule) => _buildMedicationList(context, ref, schedule),
+              loading: () => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              error: (err, stack) => Center(
+                child: Text(
+                  "Unable to load schedule",
+                  style: TextStyle(color: AppTheme.errorColor),
                 ),
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
