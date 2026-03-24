@@ -371,7 +371,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
 }
 
 // ==========================================
-// 3. MEDICATION CABINET VIEW (Private)
+// 4. MEDICATION CABINET VIEW (Private)
 // ==========================================
 
 class _MedicationCabinetView extends ConsumerWidget {
@@ -763,25 +763,32 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           freqAsync.when(
                             loading: () => const Center(child: CircularProgressIndicator()),
                             error: (e, s) => const Text("Error"),
-                            data: (frequencies) => DropdownButtonFormField<dynamic>(
-                              value: _selectedFrequency,
-                              isExpanded: true,
-                              validator: (val) => val == null ? 'Required' : null,
-                              dropdownColor: menuBackgroundColor,
-                              borderRadius: BorderRadius.circular(16),
-                              elevation: 4,
-                              icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                              decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
-                              items: frequencies.map((f) {
-                                return DropdownMenuItem(
-                                  value: f, 
-                                  child: Text(
-                                    f['patient_text'] ?? f['latin_code'],
-                                    overflow: TextOverflow.ellipsis,
-                                  )
+                            data: (frequencies) => LayoutBuilder(
+                              builder: (context, constraints) {
+                                return DropdownButtonFormField<dynamic>(
+                                  value: _selectedFrequency,
+                                  isExpanded: true,
+                                  validator: (val) => val == null ? 'Required' : null,
+                                  dropdownColor: menuBackgroundColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  elevation: 4,
+                                  icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                  decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
+                                  items: frequencies.map((f) {
+                                    return DropdownMenuItem(
+                                      value: f, 
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                        child: Text(
+                                          f['patient_text'] ?? f['latin_code'],
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      )
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) => setState(() => _selectedFrequency = val),
                                 );
-                              }).toList(),
-                              onChanged: (val) => setState(() => _selectedFrequency = val),
+                              }
                             ),
                           ),
                         ],
@@ -802,19 +809,26 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                         children: [
                           const Text("Type", style: TextStyle(fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: _selectedType,
-                            isExpanded: true,
-                            dropdownColor: menuBackgroundColor,
-                            borderRadius: BorderRadius.circular(16),
-                            elevation: 4,
-                            icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                            decoration: _getCustomInputDecoration(context, hint: "Type"),
-                            items: _medicationTypes.map((t) => DropdownMenuItem(
-                              value: t, 
-                              child: Text(t, overflow: TextOverflow.ellipsis)
-                            )).toList(),
-                            onChanged: (val) => setState(() => _selectedType = val!),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return DropdownButtonFormField<String>(
+                                value: _selectedType,
+                                isExpanded: true,
+                                dropdownColor: menuBackgroundColor,
+                                borderRadius: BorderRadius.circular(16),
+                                elevation: 4,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                decoration: _getCustomInputDecoration(context, hint: "Type"),
+                                items: _medicationTypes.map((t) => DropdownMenuItem(
+                                  value: t, 
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                    child: Text(t, overflow: TextOverflow.ellipsis),
+                                  )
+                                )).toList(),
+                                onChanged: (val) => setState(() => _selectedType = val!),
+                              );
+                            }
                           ),
                         ],
                       ),
@@ -826,25 +840,32 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                         children: [
                           const Text("Timing", style: TextStyle(fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
-                          DropdownButtonFormField<String>(
-                            value: _selectedTiming,
-                            isExpanded: true,
-                            dropdownColor: menuBackgroundColor,
-                            borderRadius: BorderRadius.circular(16),
-                            elevation: 4,
-                            icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                            decoration: _getCustomInputDecoration(context, hint: "Timing"),
-                            items: _timingInstructions.map((t) {
-                              final formatted = t.replaceAll('_', ' ').toLowerCase();
-                              return DropdownMenuItem(
-                                value: t, 
-                                child: Text(
-                                  formatted[0].toUpperCase() + formatted.substring(1),
-                                  overflow: TextOverflow.ellipsis,
-                                )
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return DropdownButtonFormField<String>(
+                                value: _selectedTiming,
+                                isExpanded: true,
+                                dropdownColor: menuBackgroundColor,
+                                borderRadius: BorderRadius.circular(16),
+                                elevation: 4,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                decoration: _getCustomInputDecoration(context, hint: "Timing"),
+                                items: _timingInstructions.map((t) {
+                                  final formatted = t.replaceAll('_', ' ').toLowerCase();
+                                  return DropdownMenuItem(
+                                    value: t, 
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                      child: Text(
+                                        formatted[0].toUpperCase() + formatted.substring(1),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  );
+                                }).toList(),
+                                onChanged: (val) => setState(() => _selectedTiming = val!),
                               );
-                            }).toList(),
-                            onChanged: (val) => setState(() => _selectedTiming = val!),
+                            }
                           ),
                         ],
                       ),
