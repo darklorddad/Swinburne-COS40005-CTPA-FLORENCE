@@ -9,9 +9,18 @@ class MedicationRepository {
   MedicationRepository(this._apiService);
 
   /// Fetches the compiled daily/weekly schedule with log counts.
-  Future<List<dynamic>> getMedicationSchedule() async {
+  /// Accepts an optional [targetDate] to fetch the schedule for a specific day.
+  Future<List<dynamic>> getMedicationSchedule([DateTime? targetDate]) async {
     try {
-      final response = await _apiService.get('/patients/me/medication-schedule');
+      String endpoint = '/patients/me/medication-schedule';
+      
+      // If a date is passed, format it and append it as a query parameter
+      if (targetDate != null) {
+        final dateStr = targetDate.toIso8601String().split('T')[0];
+        endpoint += '?target_date=$dateStr';
+      }
+
+      final response = await _apiService.get(endpoint);
       if (response is List) {
         return response;
       }
