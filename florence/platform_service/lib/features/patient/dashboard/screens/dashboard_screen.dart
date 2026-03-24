@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../core/utils/helpers.dart';
 import '../../../../shared/widgets/notification_bell.dart';
 import '../../chat/services/chatbot_service.dart'; // Chat Service
 import '../../core/models/health_data_models.dart';
@@ -14,6 +13,7 @@ import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
 import '../widgets/biometrics_section.dart';
 import '../widgets/quick_actions_grid.dart';
+import '../widgets/medication_section.dart';
 
 // Model for Quick Actions to ensure consistency between Grid and Modal
 class _QuickActionItem {
@@ -100,7 +100,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       const _QuickActionItem('B.Pressure', Icons.monitor_heart_outlined, Color(0xFFF50057), AppRoutes.logBloodPressure), // Magenta
       const _QuickActionItem('Diet', Icons.restaurant_outlined, Color(0xFFFFA726), AppRoutes.logMeal), // Orange
       const _QuickActionItem('Activity', Icons.directions_run_rounded, Color(0xFF66BB6A), AppRoutes.logActivity), // Green
-      const _QuickActionItem('Meds', Icons.medication_outlined, Color(0xFF42A5F5), AppRoutes.logMedication), // Blue
+      const _QuickActionItem('Meds', Icons.medication_outlined, Color(0xFF42A5F5), AppRoutes.addMedication), // Blue
       const _QuickActionItem('BMI', Icons.monitor_weight_outlined, Color(0xFF26A69A), AppRoutes.logBmi), // Teal
       const _QuickActionItem('Cholesterol', Icons.bloodtype_outlined, Color(0xFFAB47BC), AppRoutes.logCholesterol), // Purple
       const _QuickActionItem('HbA1c', Icons.pie_chart_outline, Color(0xFFFFCA28), AppRoutes.logHba1c), // Amber
@@ -181,6 +181,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                               const SizedBox(width: spacing),
+                              const Expanded(
+                                child: MedicationSection(),
+                              ),
+                              const SizedBox(width: spacing),
                               Expanded(
                                 child: QuickActionsGrid(
                                   actions: _getQuickActions().map((a) => (
@@ -201,6 +205,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           onTap: () => AppRoutes.push(
                               context, AppRoutes.recommendations),
                         ),
+                        const SizedBox(height: spacing),
+                        const MedicationSection(),
                         const SizedBox(height: spacing),
                         QuickActionsGrid(
                           actions: _getQuickActions().map((a) => (
@@ -434,5 +440,3 @@ class _ModalActionButton extends StatelessWidget {
     );
   }
 }
-
-

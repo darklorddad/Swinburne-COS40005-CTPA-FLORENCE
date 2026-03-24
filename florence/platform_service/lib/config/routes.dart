@@ -12,7 +12,7 @@ import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
 import '../features/patient/logging/screens/log_cholesterol_screen.dart';
 import '../features/patient/logging/screens/log_glucose_screen.dart';
 import '../features/patient/logging/screens/log_activity_screen.dart';
-import '../features/patient/logging/screens/log_medication_screen.dart';
+import '../features/patient/medications/screens/add_medication_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
@@ -59,7 +59,7 @@ class AppRoutes {
   static const String logGlucose = '/log/glucose';
   static const String logMeal = '/log/meal';
   static const String logActivity = '/log/activity';
-  static const String logMedication = '/log/medication';
+  static const String addMedication = '/add-medication';
   static const String logBloodPressure = '/log/blood-pressure';
   static const String logCholesterol = '/log/cholesterol';
   static const String logBmi = '/log/bmi';
@@ -135,8 +135,8 @@ class AppRoutes {
       case logActivity:
         return _buildRoute(const LogActivityScreen(), settings);
 
-      case logMedication:
-        return _buildRoute(const LogMedicationScreen(), settings);
+      case addMedication:
+        return _buildRoute(const AddMedicationScreen(), settings);
 
       case logBloodPressure:
         return _buildRoute(const LogBloodPressureScreen(), settings);
