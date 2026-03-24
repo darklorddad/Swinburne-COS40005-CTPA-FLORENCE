@@ -39,7 +39,7 @@ class _AppState extends ConsumerState<App> {
   void initState() {
     super.initState();
     _isAuthenticated = supabase.auth.currentSession != null;
-    // _setupAuthListener();
+    _setupAuthListener();
     _setupDeepLinkListener();
   }
 
@@ -286,7 +286,7 @@ class _AppState extends ConsumerState<App> {
         themeMode: themeMode,
 
         // Routing
-        initialRoute: AppRoutes.adminDashboard,
+        initialRoute: AppRoutes.splash,
         onGenerateRoute: AppRoutes.generateRoute,
       ),
     );
