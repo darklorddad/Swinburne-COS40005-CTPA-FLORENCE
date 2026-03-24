@@ -38,7 +38,8 @@ final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((re
 }, isAutoDispose: true);
 
 /// Provider for the daily medication schedule and intake logs.
-final dailyMedicationScheduleProvider = FutureProvider<MedicationScheduleResponse>((ref) async {
+/// Updated to return List<dynamic> to match the repository's lean implementation.
+final dailyMedicationScheduleProvider = FutureProvider<List<dynamic>>((ref) async {
   final repository = ref.watch(medicationRepositoryProvider);
   return repository.getMedicationSchedule(DateTime.now());
 }, isAutoDispose: true);
