@@ -137,6 +137,22 @@ class MedicationSection extends StatelessWidget {
 class _TodaysMedicationsView extends ConsumerWidget {
   const _TodaysMedicationsView();
 
+  // Helper to convert index to Ordinal string
+  String _getOrdinal(int index) {
+    const ordinals = ["First", "Second", "Third", "Fourth", "Fifth"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "$index.";
+  }
+
+  // Helper to format Timing Instructions
+  String _formatTiming(String? raw) {
+    if (raw == null) return "Anytime";
+    return raw.replaceAll('_', ' ').toLowerCase().split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(' ');
+  }
+
   int _getDosesPerDay(PatientMedication med) {
     // Try to get frequency from the linked dictionary or fallback to a default
     final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString() ?? 
@@ -176,8 +192,13 @@ class _TodaysMedicationsView extends ConsumerWidget {
 
             for (int i = 1; i <= totalDoses; i++) {
               final MedicationIntakeLog? log = i <= timesLoggedToday ? logs[i - 1] : null;
+              final bool isTaken = log != null;
+              // Logic: if current_time > meal_time and not logged. 
+              // For MVP, we use a simplified check.
+              final bool isLate = !isTaken && _checkIfOverdue(med, i, totalDoses);
+
               loggableItems.add(
-                _buildDoseRow(context, ref, med, log, i, totalDoses),
+                _buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate),
               );
             }
           }
@@ -195,105 +216,107 @@ class _TodaysMedicationsView extends ConsumerWidget {
     );
   }
 
-  Widget _buildDoseRow(
+  Widget _buildMedicationRow(
     BuildContext context,
     WidgetRef ref,
     PatientMedication med,
-    MedicationIntakeLog? log,
-    int doseIndex,
-    int totalDoses,
+    int index,
+    int total,
+    bool isTaken,
+    bool isLate,
   ) {
-    final bool isTaken = log?.status == 'TAKEN' || log?.status == 'LATE';
-    final bool isSkipped = log?.status == 'SKIPPED';
-    final bool isLogged = isTaken || isSkipped;
-    final bool isOverdue = !isLogged && _checkIfOverdue(med, doseIndex, totalDoses);
-
-    // SAFE CHECK: Prioritise dictionary brand name, then custom name
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final String brandName = med.medicationDictionary['brand_name'] ?? 
                              med.customMedicationName ?? 
-                             'Unknown Medication';
-    final String displayName = totalDoses > 1 ? "$doseIndex. $brandName" : brandName;
-    
-    String rawType = med.medicationType ?? 'PILL';
-    final String type = rawType[0].toUpperCase() + rawType.substring(1).toLowerCase(); 
-    
-    String rawTiming = med.timingInstruction ?? 'ANYTIME';
-    final String timingInstruction = rawTiming.replaceAll('_', ' ').split(' ').map((word) => 
-        word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '').join(' ');
+                             'Unknown';
+    final String type = (med.medicationType ?? 'Pill').toLowerCase();
+    final String timing = _formatTiming(med.timingInstruction);
 
-    Color statusColor = AppTheme.textSecondaryColor;
-    if (isTaken) statusColor = AppTheme.primaryGreen;
-    if (isSkipped) statusColor = AppTheme.textSecondaryColor;
-    if (isOverdue) statusColor = AppTheme.warningColor;
+    // Dynamic Display String
+    final String contentText = total > 1 
+      ? "${_getOrdinal(index)} $brandName - $type - $timing"
+      : "$brandName - $type - $timing";
+
+    // Gradient Selection
+    LinearGradient backgroundGradient;
+    if (isTaken) {
+      backgroundGradient = LinearGradient(
+        colors: isDark 
+          ? [Colors.green.withOpacity(0.2), Colors.green.withOpacity(0.05)]
+          : [Colors.green.shade50, Colors.green.shade100],
+      );
+    } else if (isLate) {
+      backgroundGradient = LinearGradient(
+        colors: isDark 
+          ? [Colors.orange.withOpacity(0.2), Colors.yellow.withOpacity(0.05)]
+          : [Colors.orange.shade50, Colors.yellow.shade50],
+      );
+    } else {
+      backgroundGradient = LinearGradient(
+        colors: isDark 
+          ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
+          : [Colors.grey.shade100, Colors.grey.shade200],
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withOpacity(0.03)
-              : AppTheme.backgroundColor.withOpacity(0.5),
+          gradient: backgroundGradient,
           borderRadius: BorderRadius.circular(16),
-          border: isLogged ? Border.all(color: statusColor.withOpacity(0.5)) : null,
         ),
         child: Row(
           children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      decoration: isLogged ? TextDecoration.lineThrough : null,
-                      color: isLogged ? AppTheme.textSecondaryColor : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "$type • $timingInstruction",
-                    style: TextStyle(
-                      color: isLogged ? AppTheme.textSecondaryColor.withOpacity(0.7) : AppTheme.textSecondaryColor,
-                      fontSize: 13,
-                    ),
-                  ),
-                  if (isOverdue)
-                    const Text(
-                      "Overdue",
-                      style: TextStyle(
-                        color: AppTheme.warningColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
+              child: Text(
+                contentText,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: isTaken ? Colors.grey : (isDark ? Colors.white : Colors.black87),
+                  decoration: isTaken ? TextDecoration.lineThrough : null,
+                ),
               ),
             ),
-            if (isLogged)
-              Row(
-                children: [
-                  Icon(isTaken ? Icons.check_circle : Icons.block, color: statusColor, size: 28),
-                  const SizedBox(width: 4),
-                  Text(
-                    isTaken ? "Taken" : "Skipped",
-                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )
-            else
-              ElevatedButton(
-                onPressed: () => _handleLogTap(context, ref, med, isOverdue),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+            if (isLate && !isTaken)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Text(
+                  "Late", 
+                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)
                 ),
-                child: const Text("Log"),
               ),
+            if (isTaken)
+              const Padding(
+                padding: EdgeInsets.only(right: 8),
+                child: Text(
+                  "Taken", 
+                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)
+                ),
+              ),
+            
+            // Radial Tick Button
+            GestureDetector(
+              onTap: () => _handleToggle(context, ref, med, isTaken),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isTaken ? Colors.green : Colors.transparent,
+                  border: Border.all(
+                    color: isTaken ? Colors.green : Colors.grey.withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+                child: isTaken 
+                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                  : null,
+              ),
+            ),
           ],
         ),
       ),
@@ -304,7 +327,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
     final hour = DateTime.now().hour;
     if (totalDoses == 1) {
       final instruction = med.timingInstruction?.toUpperCase();
-      if ((instruction == 'BEFORE_MEAL' || instruction == 'BREAKFAST') && hour >= 14) return true;
+      if ((instruction == 'BEFORE_MEAL' || instruction == 'BREAKFAST' || instruction == 'BEFORE_BREAKFAST') && hour >= 14) return true;
     } else {
       if (doseIndex == 1 && hour >= 12) return true;
       if (doseIndex == 2 && totalDoses == 2 && hour >= 20) return true;
@@ -312,70 +335,42 @@ class _TodaysMedicationsView extends ConsumerWidget {
     return false;
   }
 
-  Future<void> _handleLogTap(BuildContext context, WidgetRef ref, PatientMedication med, bool isOverdue) async {
-    if (isOverdue) {
-      _showMissedDoseSheet(context, ref, med);
-    } else {
-      try {
-        await ref.read(medicationRepositoryProvider).logMedicationIntake(med.id, 'TAKEN');
-        ref.invalidate(dailyMedicationScheduleProvider);
-        if (context.mounted) Helpers.showSuccess(context, "Medication logged");
-      } catch (e) {
-        if (context.mounted) Helpers.showError(context, "Failed to log medication");
-      }
-    }
-  }
-
-  void _showMissedDoseSheet(BuildContext context, WidgetRef ref, PatientMedication med) {
-    showModalBottomSheet(
+  void _handleToggle(BuildContext context, WidgetRef ref, PatientMedication med, bool currentlyTaken) {
+    showDialog(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("Missed Dose?", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(
-                med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Medication', 
-                style: TextStyle(color: AppTheme.textSecondaryColor)
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.history, color: AppTheme.primaryGreen),
-                title: const Text("I took it on time"),
-                onTap: () => _logAndRefresh(context, ref, med.id, 'TAKEN'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.done, color: AppTheme.primaryBlue),
-                title: const Text("Taking it right now"),
-                onTap: () => _logAndRefresh(context, ref, med.id, 'LATE'),
-              ),
-              ListTile(
-                leading: Icon(Icons.close, color: AppTheme.textSecondaryColor),
-                title: const Text("Skip this dose"),
-                onTap: () => _logAndRefresh(context, ref, med.id, 'SKIPPED'),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(currentlyTaken ? "Unlog Medication?" : "Log Medication?"),
+        content: Text(currentlyTaken 
+          ? "Are you sure you want to mark this as not taken?" 
+          : "Confirm that you have taken your medication."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (currentlyTaken) {
+                // TODO: Implement unlog logic in repository if needed
+              } else {
+                try {
+                  await ref.read(medicationRepositoryProvider).logMedicationIntake(med.id, 'TAKEN');
+                  ref.invalidate(dailyMedicationScheduleProvider);
+                  if (context.mounted) Helpers.showSuccess(context, "Medication logged");
+                } catch (e) {
+                  if (context.mounted) Helpers.showError(context, "Failed to log medication");
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: currentlyTaken ? Colors.grey : Colors.green,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text("Confirm"),
           ),
-        ),
+        ],
       ),
     );
-  }
-
-  Future<void> _logAndRefresh(BuildContext context, WidgetRef ref, int medId, String status) async {
-    try {
-      await ref.read(medicationRepositoryProvider).logMedicationIntake(medId, status);
-      ref.invalidate(dailyMedicationScheduleProvider);
-      if (context.mounted) {
-        Navigator.pop(context);
-        Helpers.showSuccess(context, "Schedule updated");
-      }
-    } catch (e) {
-      if (context.mounted) Helpers.showError(context, "Failed to update schedule");
-    }
   }
 }
 
@@ -528,7 +523,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
   // Fixed lists based on database schema constraints
   final List<String> _medicationTypes = ['TABLET', 'CAPSULE', 'INJECTION', 'LIQUID', 'INHALER', 'OTHER'];
-  final List<String> _timingInstructions = ['BEFORE_MEAL', 'AFTER_MEAL', 'WITH_MEAL', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'];
+  final List<String> _timingInstructions = [
+    'BEFORE_BREAKFAST', 'WITH_BREAKFAST', 'AFTER_BREAKFAST',
+    'BEFORE_LUNCH', 'WITH_LUNCH', 'AFTER_LUNCH',
+    'BEFORE_DINNER', 'WITH_DINNER', 'AFTER_DINNER',
+    'BEFORE_SUPPER', 'WITH_SUPPER', 'AFTER_SUPPER',
+    'WITH_SNACK', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'
+  ];
 
   @override
   void initState() {
