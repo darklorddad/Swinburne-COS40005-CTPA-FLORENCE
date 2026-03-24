@@ -37,43 +37,66 @@ class MedicationSection extends StatelessWidget {
           children: [
             // 50/50 Split Seamless Header
             Container(
-              color: isDark ? Colors.white.withOpacity(0.02) : AppTheme.backgroundColor,
-              child: TabBar(
-                dividerColor: borderColor, // Creates a clean separator line under the tabs
-                indicatorSize: TabBarIndicatorSize.tab, // Forces exact 50/50 width
-                indicator: BoxDecoration(
-                  color: containerColor, // Matches the card background for a seamless look
-                  border: const Border(
-                    top: BorderSide(color: AppTheme.primaryBlue, width: 3), // Blue highlight on top
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withOpacity(0.02) : AppTheme.backgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
+              ),
+              // ClipRRect prevents the transparent hover box from bleeding out of the corners
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
+                child: TabBar(
+                  dividerColor: borderColor, // Creates a clean separator line under the tabs
+                  indicatorSize: TabBarIndicatorSize.tab, // Forces exact 50/50 width
+                  indicator: BoxDecoration(
+                    color: containerColor, // Matches the card background for a seamless look
+                    border: const Border(
+                      top: BorderSide(color: AppTheme.primaryBlue, width: 3), // Blue highlight on top
+                    ),
                   ),
+                  labelColor: AppTheme.primaryBlue,
+                  unselectedLabelColor: AppTheme.textSecondaryColor,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  overlayColor: WidgetStateProperty.resolveWith<Color?>((Set<WidgetState> states) {
+                    if (states.contains(WidgetState.hovered)) {
+                      return AppTheme.primaryBlue.withOpacity(0.04);
+                    }
+                    return null; 
+                  }),
+                  tabs: [
+                    Tab(
+                      height: 56,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            right: BorderSide(
+                              color: borderColor.withOpacity(0.6), 
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.calendar_today_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text("Today's Schedule"),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const Tab(
+                      height: 56,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.medical_information_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text("Cabinet"),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                labelColor: AppTheme.primaryBlue,
-                unselectedLabelColor: AppTheme.textSecondaryColor,
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                tabs: const [
-                  Tab(
-                    height: 56,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.calendar_today_outlined, size: 18),
-                        SizedBox(width: 8),
-                        Text("Today's Schedule"),
-                      ],
-                    ),
-                  ),
-                  Tab(
-                    height: 56,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.medical_information_outlined, size: 18),
-                        SizedBox(width: 8),
-                        Text("Cabinet"),
-                      ],
-                    ),
-                  ),
-                ],
               ),
             ),
             
