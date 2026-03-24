@@ -137,9 +137,13 @@ class MedicationSection extends StatelessWidget {
 class _TodaysMedicationsView extends ConsumerWidget {
   const _TodaysMedicationsView();
 
-  int _getDosesPerDay(String? frequencyStr) {
-    if (frequencyStr == null) return 1;
-    final lower = frequencyStr.toLowerCase();
+  int _getDosesPerDay(PatientMedication med) {
+    // Try to get frequency from the linked dictionary or fallback to a default
+    final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString() ?? 
+                     med.medicationDictionary['frequency_text']?.toString();
+    
+    if (freqText == null) return 1;
+    final lower = freqText.toLowerCase();
     if (lower.contains('twice') || lower == 'bid' || lower.contains('2 times')) return 2;
     if (lower.contains('three') || lower == 'tid' || lower.contains('3 times')) return 3;
     if (lower.contains('four') || lower == 'qid' || lower.contains('4 times')) return 4;
@@ -166,8 +170,7 @@ class _TodaysMedicationsView extends ConsumerWidget {
           List<Widget> loggableItems = [];
 
           for (var med in schedule.medications) {
-            final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString() ?? 'Once a day';
-            int totalDoses = _getDosesPerDay(freqText);
+            int totalDoses = _getDosesPerDay(med);
             final logs = schedule.todaysLogs.where((l) => l.patientMedicationId == med.id).toList();
             int timesLoggedToday = logs.length;
 
@@ -205,7 +208,10 @@ class _TodaysMedicationsView extends ConsumerWidget {
     final bool isLogged = isTaken || isSkipped;
     final bool isOverdue = !isLogged && _checkIfOverdue(med, doseIndex, totalDoses);
 
-    final String brandName = med.medicationDictionary['brand_name'] ?? 'Unknown Medication';
+    // SAFE CHECK: Prioritise dictionary brand name, then custom name
+    final String brandName = med.medicationDictionary['brand_name'] ?? 
+                             med.customMedicationName ?? 
+                             'Unknown Medication';
     final String displayName = totalDoses > 1 ? "$doseIndex. $brandName" : brandName;
     
     String rawType = med.medicationType ?? 'PILL';
@@ -332,7 +338,10 @@ class _TodaysMedicationsView extends ConsumerWidget {
             children: [
               Text("Missed Dose?", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text(med.medicationDictionary['brand_name'] ?? 'Medication', style: TextStyle(color: AppTheme.textSecondaryColor)),
+              Text(
+                med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Medication', 
+                style: TextStyle(color: AppTheme.textSecondaryColor)
+              ),
               const SizedBox(height: 20),
               ListTile(
                 leading: const Icon(Icons.history, color: AppTheme.primaryGreen),
@@ -424,7 +433,10 @@ class _MedicationCabinetView extends ConsumerWidget {
   }
 
   Widget _buildCabinetRow(BuildContext context, WidgetRef ref, PatientMedication med) {
-    final String brandName = med.medicationDictionary['brand_name'] ?? 'Unknown';
+    // SAFE CHECK: Prioritise dictionary brand name, then custom name
+    final String brandName = med.medicationDictionary['brand_name'] ?? 
+                             med.customMedicationName ?? 
+                             'Unknown';
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Container(
@@ -488,7 +500,7 @@ class _MedicationCabinetView extends ConsumerWidget {
 }
 
 // ==========================================
-// 4. MEDICATION FORM MODAL (Private)
+// 5. MEDICATION FORM MODAL (Private)
 // ==========================================
 
 class _MedicationFormDialog extends ConsumerStatefulWidget {
@@ -522,7 +534,9 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   void initState() {
     super.initState();
     if (widget.isEdit && widget.medication != null) {
-      _nameController.text = widget.medication!.medicationDictionary['brand_name'] ?? '';
+      // SAFE CHECK: Pre-fill name from dictionary or custom field
+      _nameController.text = widget.medication!.medicationDictionary['brand_name'] ?? 
+                             widget.medication!.customMedicationName ?? '';
       _amountController.text = widget.medication!.amount;
       _selectedType = widget.medication!.medicationType ?? 'TABLET';
       _selectedTiming = widget.medication!.timingInstruction ?? 'ANYTIME';
