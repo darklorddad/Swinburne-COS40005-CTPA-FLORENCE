@@ -193,8 +193,6 @@ class _TodaysMedicationsView extends ConsumerWidget {
             for (int i = 1; i <= totalDoses; i++) {
               final MedicationIntakeLog? log = i <= timesLoggedToday ? logs[i - 1] : null;
               final bool isTaken = log != null;
-              // Logic: if current_time > meal_time and not logged. 
-              // For MVP, we use a simplified check.
               final bool isLate = !isTaken && _checkIfOverdue(med, i, totalDoses);
 
               loggableItems.add(
@@ -231,11 +229,12 @@ class _TodaysMedicationsView extends ConsumerWidget {
                              'Unknown';
     final String type = (med.medicationType ?? 'Pill').toLowerCase();
     final String timing = _formatTiming(med.timingInstruction);
+    final String amount = med.amount;
 
-    // Dynamic Display String
+    // Dynamic Display String: "First Panadol - 2 tablets - After Breakfast"
     final String contentText = total > 1 
-      ? "${_getOrdinal(index)} $brandName - $type - $timing"
-      : "$brandName - $type - $timing";
+      ? "${_getOrdinal(index)} $brandName - $amount $type - $timing"
+      : "$brandName - $amount $type - $timing";
 
     // Gradient Selection
     LinearGradient backgroundGradient;
@@ -261,49 +260,39 @@ class _TodaysMedicationsView extends ConsumerWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        decoration: BoxDecoration(
-          gradient: backgroundGradient,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                contentText,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: isTaken ? Colors.grey : (isDark ? Colors.white : Colors.black87),
-                  decoration: isTaken ? TextDecoration.lineThrough : null,
-                ),
-              ),
-            ),
-            if (isLate && !isTaken)
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
+      child: InkWell(
+        onTap: () => _handleToggle(context, ref, med, isTaken),
+        borderRadius: BorderRadius.circular(16),
+        mouseCursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: backgroundGradient,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Expanded(
                 child: Text(
-                  "Late", 
-                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12)
+                  contentText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: isTaken ? Colors.grey : (isDark ? Colors.white : Colors.black87),
+                    decoration: isTaken ? TextDecoration.lineThrough : null,
+                  ),
                 ),
               ),
-            if (isTaken)
-              const Padding(
-                padding: EdgeInsets.only(right: 8),
-                child: Text(
-                  "Taken", 
-                  style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)
-                ),
-              ),
-            
-            // Radial Tick Button
-            GestureDetector(
-              onTap: () => _handleToggle(context, ref, med, isTaken),
-              child: AnimatedContainer(
+              if (isLate && !isTaken)
+                const _StatusLabel(text: "Late", color: Colors.orange),
+              if (isTaken)
+                const _StatusLabel(text: "Taken", color: Colors.green),
+              
+              // Radial Tick Button
+              AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                width: 32,
-                height: 32,
+                width: 24,
+                height: 24,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isTaken ? Colors.green : Colors.transparent,
@@ -313,11 +302,11 @@ class _TodaysMedicationsView extends ConsumerWidget {
                   ),
                 ),
                 child: isTaken 
-                  ? const Icon(Icons.check, color: Colors.white, size: 20)
+                  ? const Icon(Icons.check, color: Colors.white, size: 16)
                   : null,
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -342,22 +331,27 @@ class _TodaysMedicationsView extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(currentlyTaken ? "Unlog Medication?" : "Log Medication?"),
         content: Text(currentlyTaken 
-          ? "Are you sure you want to mark this as not taken?" 
+          ? "This will mark the dose as not taken. Continue?" 
           : "Confirm that you have taken your medication."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              if (currentlyTaken) {
-                // TODO: Implement unlog logic in repository if needed
-              } else {
-                try {
-                  await ref.read(medicationRepositoryProvider).logMedicationIntake(med.id, 'TAKEN');
-                  ref.invalidate(dailyMedicationScheduleProvider);
-                  if (context.mounted) Helpers.showSuccess(context, "Medication logged");
-                } catch (e) {
-                  if (context.mounted) Helpers.showError(context, "Failed to log medication");
+              final repo = ref.read(medicationRepositoryProvider);
+              try {
+                if (currentlyTaken) {
+                  await repo.unlogMedicationIntake(med.id);
+                } else {
+                  await repo.logMedicationIntake(med.id, 'TAKEN');
+                }
+                ref.invalidate(dailyMedicationScheduleProvider);
+                if (context.mounted) {
+                  Helpers.showSuccess(context, currentlyTaken ? "Medication unlogged" : "Medication logged");
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Helpers.showError(context, "Failed to update schedule");
                 }
               }
             },
@@ -369,6 +363,29 @@ class _TodaysMedicationsView extends ConsumerWidget {
             child: const Text("Confirm"),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Small helper for status text labels
+class _StatusLabel extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _StatusLabel({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
       ),
     );
   }
@@ -414,7 +431,6 @@ class _MedicationCabinetView extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
               foregroundColor: AppTheme.primaryBlue,
-              // FIX: Use elevation 0 and a transparent shadow to prevent shifting on hover
               elevation: 0,
               shadowColor: Colors.transparent,
               splashFactory: NoSplash.splashFactory,
@@ -428,7 +444,6 @@ class _MedicationCabinetView extends ConsumerWidget {
   }
 
   Widget _buildCabinetRow(BuildContext context, WidgetRef ref, PatientMedication med) {
-    // SAFE CHECK: Prioritise dictionary brand name, then custom name
     final String brandName = med.medicationDictionary['brand_name'] ?? 
                              med.customMedicationName ?? 
                              'Unknown';
@@ -484,7 +499,21 @@ class _MedicationCabinetView extends ConsumerWidget {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
+                ref.invalidate(patientMedicationsProvider);
+                ref.invalidate(dailyMedicationScheduleProvider);
+                if (context.mounted) {
+                  Helpers.showSuccess(context, "Medication stopped");
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Helpers.showError(context, "Failed to stop medication");
+                }
+              }
+            },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, elevation: 0),
             child: const Text("Stop Medication"),
           ),
@@ -535,12 +564,14 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   void initState() {
     super.initState();
     if (widget.isEdit && widget.medication != null) {
-      // SAFE CHECK: Pre-fill name from dictionary or custom field
-      _nameController.text = widget.medication!.medicationDictionary['brand_name'] ?? 
-                             widget.medication!.customMedicationName ?? '';
-      _amountController.text = widget.medication!.amount;
-      _selectedType = widget.medication!.medicationType ?? 'TABLET';
-      _selectedTiming = widget.medication!.timingInstruction ?? 'ANYTIME';
+      final med = widget.medication!;
+      _nameController.text = med.medicationDictionary['brand_name'] ?? 
+                             med.customMedicationName ?? '';
+      _amountController.text = med.amount;
+      _selectedType = med.medicationType ?? 'TABLET';
+      _selectedTiming = med.timingInstruction ?? 'ANYTIME';
+      
+      // Note: Frequency matching happens in build when data is loaded
     }
   }
 
@@ -558,7 +589,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
       // 2. Build the payload matching the Database Schema
       final Map<String, dynamic> payload = {
-        'medication_id': isCustom ? null : _selectedDictionaryItem!['id'],
+        'medication_id': isCustom ? (widget.isEdit ? widget.medication!.medicationId : null) : _selectedDictionaryItem!['id'],
         'custom_medication_name': isCustom ? _nameController.text.trim() : null,
         'frequency_id': _selectedFrequency?['id'],
         'amount': _amountController.text.trim(),
@@ -568,7 +599,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
       };
 
       try {
-        await ref.read(medicationRepositoryProvider).addPatientMedication(payload);
+        final repo = ref.read(medicationRepositoryProvider);
+        if (widget.isEdit) {
+          await repo.updatePatientMedication(widget.medication!.id, payload);
+        } else {
+          await repo.addPatientMedication(payload);
+        }
+        
         ref.invalidate(patientMedicationsProvider);
         ref.invalidate(dailyMedicationScheduleProvider);
         
@@ -669,6 +706,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Autocomplete<Map<String, dynamic>>(
+                          initialValue: TextEditingValue(text: _nameController.text),
                           displayStringForOption: (option) => (option['brand_name'] ?? option['generic_name']).toString(),
                           optionsBuilder: (TextEditingValue textEditingValue) {
                             if (textEditingValue.text.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
@@ -778,33 +816,44 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           freqAsync.when(
                             loading: () => const Center(child: CircularProgressIndicator()),
                             error: (e, s) => const Text("Error"),
-                            data: (frequencies) => LayoutBuilder(
-                              builder: (context, constraints) {
-                                return DropdownButtonFormField<dynamic>(
-                                  value: _selectedFrequency,
-                                  isExpanded: true,
-                                  validator: (val) => val == null ? 'Required' : null,
-                                  dropdownColor: menuBackgroundColor,
-                                  borderRadius: BorderRadius.circular(16),
-                                  elevation: 4,
-                                  icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                                  decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
-                                  items: frequencies.map((f) {
-                                    return DropdownMenuItem(
-                                      value: f, 
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
-                                        child: Text(
-                                          f['patient_text'] ?? f['latin_code'],
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      )
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) => setState(() => _selectedFrequency = val),
-                                );
+                            data: (frequencies) {
+                              // Match frequency if editing
+                              if (widget.isEdit && _selectedFrequency == null) {
+                                try {
+                                  _selectedFrequency = frequencies.firstWhere(
+                                    (f) => f['id'] == widget.medication!.frequencyId
+                                  );
+                                } catch (_) {}
                               }
-                            ),
+
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return DropdownButtonFormField<dynamic>(
+                                    value: _selectedFrequency,
+                                    isExpanded: true,
+                                    validator: (val) => val == null ? 'Required' : null,
+                                    dropdownColor: menuBackgroundColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    elevation: 4,
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                    decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
+                                    items: frequencies.map((f) {
+                                      return DropdownMenuItem(
+                                        value: f, 
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                          child: Text(
+                                            f['patient_text'] ?? f['latin_code'],
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        )
+                                      );
+                                    }).toList(),
+                                    onChanged: (val) => setState(() => _selectedFrequency = val),
+                                  );
+                                }
+                              );
+                            },
                           ),
                         ],
                       ),

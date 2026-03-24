@@ -29,6 +29,11 @@ class MedicationRepository {
     await _apiService.post('/patients/me/medication-intake', payload);
   }
 
+  /// Deletes the most recent intake log for today for a specific medication.
+  Future<void> unlogMedicationIntake(int patientMedicationId) async {
+    await _apiService.delete('/patients/me/medication-intake/$patientMedicationId');
+  }
+
   /// Fetches all medications for the current patient.
   Future<List<PatientMedication>> getPatientMedications() async {
     final response = await _apiService.get('/patients/me/medications');
@@ -41,6 +46,16 @@ class MedicationRepository {
   /// Adds a new medication for the current patient.
   Future<void> addPatientMedication(Map<String, dynamic> data) async {
     await _apiService.post('/patients/me/medications', data);
+  }
+
+  /// Updates an existing medication.
+  Future<void> updatePatientMedication(int id, Map<String, dynamic> data) async {
+    await _apiService.patch('/patients/me/medications/$id', data);
+  }
+
+  /// Updates the status of a medication (e.g., to 'PAST').
+  Future<void> updateMedicationStatus(int id, String status) async {
+    await _apiService.patch('/patients/me/medications/$id', {'status': status});
   }
 
   /// Fetches the global medication dictionary for search/autocomplete.
