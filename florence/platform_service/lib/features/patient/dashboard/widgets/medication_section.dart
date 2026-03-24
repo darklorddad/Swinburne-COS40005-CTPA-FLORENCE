@@ -431,6 +431,7 @@ class _MedicationCabinetView extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
               foregroundColor: AppTheme.primaryBlue,
+              // FIX: Use elevation 0 and a transparent shadow to prevent shifting on hover
               elevation: 0,
               shadowColor: Colors.transparent,
               splashFactory: NoSplash.splashFactory,
@@ -444,6 +445,7 @@ class _MedicationCabinetView extends ConsumerWidget {
   }
 
   Widget _buildCabinetRow(BuildContext context, WidgetRef ref, PatientMedication med) {
+    // SAFE CHECK: Prioritise dictionary brand name, then custom name
     final String brandName = med.medicationDictionary['brand_name'] ?? 
                              med.customMedicationName ?? 
                              'Unknown';
@@ -568,8 +570,17 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
       _nameController.text = med.medicationDictionary['brand_name'] ?? 
                              med.customMedicationName ?? '';
       _amountController.text = med.amount;
-      _selectedType = med.medicationType ?? 'TABLET';
-      _selectedTiming = med.timingInstruction ?? 'ANYTIME';
+      
+      // FIX: Ensure the type exists in our list, otherwise default to TABLET
+      _selectedType = _medicationTypes.contains(med.medicationType) 
+          ? med.medicationType! 
+          : 'TABLET';
+
+      // FIX: Ensure the timing exists in our list, otherwise default to ANYTIME
+      // This prevents the "AFTER_MEAL" crash
+      _selectedTiming = _timingInstructions.contains(med.timingInstruction) 
+          ? med.timingInstruction! 
+          : 'ANYTIME';
       
       // Note: Frequency matching happens in build when data is loaded
     }

@@ -475,6 +475,33 @@ async def log_medication_intake(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to log medication intake: {str(e)}")
 
+@router.delete("/me/medication-intake/{patient_medication_id}", summary="Unlog today's medication intake")
+async def unlog_medication(
+    patient_medication_id: int,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Deletes the medication intake log for the specified medication created today."""
+    try:
+        today = date.today().isoformat()
+        
+        # Query Supabase for a log for this med, on this day, for this patient
+        response = supabase.table("medication_intake_logs") \
+            .delete() \
+            .eq("patient_id", patient_profile['id']) \
+            .eq("patient_medication_id", patient_medication_id) \
+            .gte("taken_at", f"{today}T00:00:00") \
+            .lte("taken_at", f"{today}T23:59:59") \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="No log found for today to delete")
+            
+        return {"status": "success", "message": "Log removed"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/me/avatar", summary="Upload profile picture")
 async def upload_patient_avatar(
     file: UploadFile = File(...),
