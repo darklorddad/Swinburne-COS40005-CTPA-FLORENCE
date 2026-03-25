@@ -443,6 +443,16 @@ async def update_patient_medication(
         if not update_data:
              raise HTTPException(status_code=400, detail="No fields provided for update")
 
+        # --- THE FIX: ENFORCE THE CONSTRAINT BEFORE SUPABASE ---
+        # If they are saving a Custom Medication, wipe the Dictionary ID
+        if 'custom_medication_name' in update_data and update_data['custom_medication_name'] is not None:
+            update_data['medication_id'] = None
+            
+        # If they are saving a Dictionary Medication, wipe the Custom Name
+        elif 'medication_id' in update_data and update_data['medication_id'] is not None:
+            update_data['custom_medication_name'] = None
+        # -------------------------------------------------------
+
         response = supabase.table("patient_medications") \
             .update(update_data) \
             .eq("id", med_id) \

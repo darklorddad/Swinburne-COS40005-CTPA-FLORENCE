@@ -734,14 +734,20 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
     super.initState();
     if (widget.isEdit && widget.medication != null) {
       final med = widget.medication!;
-      _nameController.text = med.medicationDictionary['brand_name'] ?? 
-                             med.customMedicationName ?? '';
-      _amountController.text = med.amount;
       
-      _selectedType = _medicationTypes.contains(med.medicationType) 
-          ? med.medicationType! 
-          : 'TABLET';
+      _nameController.text = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? "";
+      _amountController.text = med.amount;
+      _selectedType = _medicationTypes.contains(med.medicationType) ? med.medicationType! : 'TABLET';
+      
+      // --- THE FIX: RESTORE DICTIONARY ITEM ---
+      // If the medication has an ID, re-assign it to the selected item
+      // so the app knows it is a Verified Medication, not a Custom one!
+      if (med.medicationDictionary['id'] != null) {
+        _selectedDictionaryItem = med.medicationDictionary;
+      }
+      // ----------------------------------------
 
+      // Restore the array of timings
       if (med.timingInstructions.isNotEmpty) {
         _selectedTimings = List<String>.from(med.timingInstructions);
       }
