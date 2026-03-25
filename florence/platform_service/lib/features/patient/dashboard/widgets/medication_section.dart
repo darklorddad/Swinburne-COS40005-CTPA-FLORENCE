@@ -398,20 +398,47 @@ class _MedicationCabinetView extends ConsumerWidget {
           Expanded(
             child: medsAsync.when(
               data: (meds) {
-                final activeMeds = meds.where((m) => m.status != 'PAST').toList();
-                if (activeMeds.isEmpty) {
-                  return Center(child: Text("No active medications", style: TextStyle(color: AppTheme.textSecondaryColor)));
+                if (meds.isEmpty) {
+                  return Center(
+                    child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)),
+                  );
                 }
-                return ListView.builder(
-                  itemCount: activeMeds.length,
-                  itemBuilder: (context, index) => _buildCabinetRow(context, ref, activeMeds[index]),
+
+                // Split medications by status
+                final activeMeds = meds.where((m) => m.status != 'PAST').toList();
+                final pastMeds = meds.where((m) => m.status == 'PAST').toList();
+
+                return ListView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    // ACTIVE SECTION
+                    if (activeMeds.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12.0, left: 4.0),
+                        child: Text("Active Medications", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      ...activeMeds.map((med) => _buildCabinetRow(context, ref, med, isActive: true)),
+                    ],
+
+                    // PAST SECTION
+                    if (pastMeds.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12.0, left: 4.0),
+                        child: Text("Past History", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      ...pastMeds.map((med) => _buildCabinetRow(context, ref, med, isActive: false)),
+                    ],
+                  ],
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text("Unable to load cabinet", style: TextStyle(color: AppTheme.errorColor))),
+              error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
             ),
           ),
+          
           const SizedBox(height: 12),
+          
           ElevatedButton.icon(
             icon: const Icon(Icons.add_circle_outline),
             label: const Text("Add New Medication"),
@@ -419,9 +446,7 @@ class _MedicationCabinetView extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
               foregroundColor: AppTheme.primaryBlue,
-              // FIX: Use elevation 0 and a transparent shadow to prevent shifting on hover
-              elevation: 0,
-              shadowColor: Colors.transparent,
+              elevation: 0, shadowColor: Colors.transparent,
               splashFactory: NoSplash.splashFactory,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -432,114 +457,125 @@ class _MedicationCabinetView extends ConsumerWidget {
     );
   }
 
-  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med) {
-    final String brandName = med.medicationDictionary['brand_name'] ??
-        med.customMedicationName ??
-        'Unknown';
+  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med, {required bool isActive}) {
+    final String brandName = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Unknown';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Standardised Grey Gradient
     final LinearGradient backgroundGradient = isDark
-        ? LinearGradient(colors: [
-            Colors.white.withOpacity(0.05),
-            Colors.white.withOpacity(0.02)
-          ])
+        ? LinearGradient(colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)])
         : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          // FIX: Applied Gradient instead of color
-          gradient: backgroundGradient,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    brandName,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    "${med.amount}  ${med.medicationType ?? 'Pill'}",
-                    style: TextStyle(
-                        color: AppTheme.textSecondaryColor, fontSize: 13),
-                  ),
+      // Opacity fades out past medications slightly
+      child: Opacity(
+        opacity: isActive ? 1.0 : 0.6,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: backgroundGradient,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      brandName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 16,
+                        decoration: isActive ? null : TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${med.amount}  ${med.medicationType ?? 'Pill'}",
+                      style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showFormModal(context, isEdit: true, med: med);
+                  } else if (value == 'stop') {
+                    _confirmStop(context, ref, med, brandName);
+                  } else if (value == 'restart') {
+                    _confirmRestart(context, ref, med, brandName);
+                  }
+                },
+                itemBuilder: (context) => [
+                  // Show Edit for both active and past (so they can adjust dose before restarting)
+                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
+                  
+                  // Toggle Stop / Restart based on status
+                  if (isActive)
+                    const PopupMenuItem(value: 'stop', child: Row(children: [Icon(Icons.stop_circle, size: 18, color: Colors.red), SizedBox(width: 8), Text('Stop', style: TextStyle(color: Colors.red))]))
+                  else
+                    const PopupMenuItem(value: 'restart', child: Row(children: [Icon(Icons.play_circle, size: 18, color: Colors.green), SizedBox(width: 8), Text('Restart', style: TextStyle(color: Colors.green))])),
                 ],
               ),
-            ),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.grey),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-              onSelected: (value) {
-                if (value == 'edit') {
-                  _showFormModal(context, isEdit: true, med: med);
-                } else if (value == 'stop') {
-                  _confirmStop(context, ref, med, brandName);
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(children: [
-                      Icon(Icons.edit, size: 18),
-                      SizedBox(width: 8),
-                      Text('Edit')
-                    ])),
-                const PopupMenuItem(
-                    value: 'stop',
-                    child: Row(children: [
-                      Icon(Icons.stop_circle, size: 18, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('Stop', style: TextStyle(color: Colors.red))
-                    ])),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _showFormModal(BuildContext context, {required bool isEdit, PatientMedication? med}) {
+  void _showFormModal(BuildContext context, {required bool isEdit, dynamic med}) {
     showDialog(context: context, builder: (context) => _MedicationFormDialog(isEdit: isEdit, medication: med));
   }
 
-  void _confirmStop(BuildContext context, WidgetRef ref, PatientMedication med, String medName) {
+  void _confirmStop(BuildContext context, WidgetRef ref, dynamic med, String medName) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Stop Medication"),
-        content: Text("Are you sure you want to stop taking $medName? It will be moved to your past records."),
+        content: Text("Are you sure you want to stop taking $medName? It will be moved to your history."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
+              await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
+              ref.invalidate(patientMedicationsProvider);
+              ref.invalidate(todaysScheduleProvider); // Refresh schedule to remove it
               Navigator.pop(context);
-              try {
-                await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
-                ref.invalidate(patientMedicationsProvider);
-                ref.invalidate(todaysScheduleProvider);
-                if (context.mounted) {
-                  Helpers.showSuccess(context, "Medication stopped");
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  Helpers.showError(context, "Failed to stop medication");
-                }
-              }
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, elevation: 0),
             child: const Text("Stop Medication"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Logic to restart a past medication
+  void _confirmRestart(BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Restart Medication"),
+        content: Text("Do you want to move $medName back to your active medications and schedule?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'CURRENT');
+              ref.invalidate(patientMedicationsProvider);
+              ref.invalidate(todaysScheduleProvider); // Refresh schedule to add it back
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0),
+            child: const Text("Restart Medication"),
           ),
         ],
       ),
