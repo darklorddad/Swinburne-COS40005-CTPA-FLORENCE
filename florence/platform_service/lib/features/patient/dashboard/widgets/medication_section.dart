@@ -13,19 +13,22 @@ import '../providers/dashboard_providers.dart';
 // ==========================================
 
 /// Fetch the medication dictionary for the Autocomplete
-final medicationDictionaryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+/// Removed .autoDispose to cache dictionary data
+final medicationDictionaryProvider = FutureProvider<List<dynamic>>((ref) async {
   final repository = ref.watch(medicationRepositoryProvider);
   return repository.getMedicationDictionary(); 
 });
 
 /// Fetch the dosage frequencies
-final dosageFrequenciesProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+/// Removed .autoDispose to cache frequency data
+final dosageFrequenciesProvider = FutureProvider<List<dynamic>>((ref) async {
   final repository = ref.watch(medicationRepositoryProvider);
   return repository.getDosageFrequencies(); 
 });
 
 /// Provider for the daily medication schedule and intake logs.
-final todaysScheduleProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+/// Removed .autoDispose to ensure the schedule persists when switching tabs.
+final todaysScheduleProvider = FutureProvider<List<dynamic>>((ref) async {
   final repository = ref.watch(medicationRepositoryProvider);
   return repository.getMedicationSchedule();
 });
@@ -150,8 +153,11 @@ class _TodaysMedicationsView extends ConsumerStatefulWidget {
   ConsumerState<_TodaysMedicationsView> createState() => _TodaysMedicationsViewState();
 }
 
-class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> {
+class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> with AutomaticKeepAliveClientMixin {
   ScheduleFilter _currentFilter = ScheduleFilter.all;
+
+  @override
+  bool get wantKeepAlive => true;
 
   // Helper to convert index to Ordinal string
   String _getOrdinal(int index) {
@@ -193,6 +199,7 @@ class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> 
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final scheduleAsync = ref.watch(todaysScheduleProvider);
 
     return Padding(
@@ -215,6 +222,7 @@ class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> 
           // SCHEDULE LIST
           Expanded(
             child: scheduleAsync.when(
+              skipLoadingOnReload: true,
               data: (scheduleItems) {
                 if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
 
@@ -445,11 +453,15 @@ class _MedicationCabinetView extends ConsumerStatefulWidget {
   ConsumerState<_MedicationCabinetView> createState() => _MedicationCabinetViewState();
 }
 
-class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> {
+class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> with AutomaticKeepAliveClientMixin {
   CabinetFilter _currentFilter = CabinetFilter.active;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
     final medsAsync = ref.watch(patientMedicationsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -473,6 +485,7 @@ class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> 
           // CABINET LIST
           Expanded(
             child: medsAsync.when(
+              skipLoadingOnReload: true,
               data: (meds) {
                 if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
 
