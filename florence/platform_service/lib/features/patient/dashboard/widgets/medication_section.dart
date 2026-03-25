@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/models/medication_models.dart';
@@ -137,11 +138,20 @@ class MedicationSection extends StatelessWidget {
 }
 
 // ==========================================
-// 3. TODAY'S SCHEDULE VIEW (Private)
+// 3. TODAY'S SCHEDULE VIEW (Filtered)
 // ==========================================
 
-class _TodaysMedicationsView extends ConsumerWidget {
+enum ScheduleFilter { all, pending, taken }
+
+class _TodaysMedicationsView extends ConsumerStatefulWidget {
   const _TodaysMedicationsView();
+
+  @override
+  ConsumerState<_TodaysMedicationsView> createState() => _TodaysMedicationsViewState();
+}
+
+class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> {
+  ScheduleFilter _currentFilter = ScheduleFilter.all;
 
   // Helper to convert index to Ordinal string
   String _getOrdinal(int index) {
@@ -182,45 +192,88 @@ class _TodaysMedicationsView extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final scheduleAsync = ref.watch(todaysScheduleProvider);
 
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: scheduleAsync.when(
-        data: (scheduleItems) {
-          if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
-
-          List<Widget> loggableItems = [];
-          
-          for (var item in scheduleItems) {
-            // 1. Unpack the new API structure
-            final med = PatientMedication.fromJson(item['medication']);
-            final int timesLogged = item['times_logged'] ?? 0;
-            final bool isWeekly = item['is_weekly'] ?? false;
-            
-            // 2. THE BUG FIX: Doses equal the exact length of the timings array!
-            int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
-            bool isLate = false; // Add real late logic here based on time if desired
-
-            // 3. Generate a row for every dose
-            for (int i = 1; i <= totalDoses; i++) {
-              bool isTaken = i <= timesLogged; // Connects to real DB logs!
-              loggableItems.add(
-                _buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly),
-              );
-            }
-          }
-          return ListView(children: loggableItems);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
-          child: Text(
-            "Unable to load schedule",
-            style: TextStyle(color: AppTheme.errorColor),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // FILTER ROW
+          Row(
+            children: [
+              _buildFilterChip("All", ScheduleFilter.all),
+              const SizedBox(width: 8),
+              _buildFilterChip("Pending", ScheduleFilter.pending),
+              const SizedBox(width: 8),
+              _buildFilterChip("Taken", ScheduleFilter.taken),
+            ],
           ),
-        ),
+          const SizedBox(height: 16),
+
+          // SCHEDULE LIST
+          Expanded(
+            child: scheduleAsync.when(
+              data: (scheduleItems) {
+                if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
+
+                List<Widget> loggableItems = [];
+                
+                for (var item in scheduleItems) {
+                  final med = PatientMedication.fromJson(item['medication']);
+                  final int timesLogged = item['times_logged'] ?? 0;
+                  final bool isWeekly = item['is_weekly'] ?? false;
+                  
+                  int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
+                  bool isLate = false; 
+
+                  for (int i = 1; i <= totalDoses; i++) {
+                    bool isTaken = i <= timesLogged;
+                    
+                    // APPLY FILTER LOGIC
+                    bool shouldShow = true;
+                    if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
+                    if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
+
+                    if (shouldShow) {
+                      loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
+                    }
+                  }
+                }
+
+                if (loggableItems.isEmpty) {
+                  return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+                }
+
+                return ListView(physics: const BouncingScrollPhysics(), children: loggableItems);
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => const Center(child: Text("Error loading schedule")),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, ScheduleFilter filterValue) {
+    final isSelected = _currentFilter == filterValue;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) setState(() => _currentFilter = filterValue);
+      },
+      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      showCheckmark: false,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+      side: BorderSide.none,
     );
   }
 
@@ -380,56 +433,66 @@ class _StatusLabel extends StatelessWidget {
 }
 
 // ==========================================
-// 4. MEDICATION CABINET VIEW (Private)
+// 4. MEDICATION CABINET VIEW (Filtered)
 // ==========================================
 
-class _MedicationCabinetView extends ConsumerWidget {
+enum CabinetFilter { active, past, all }
+
+class _MedicationCabinetView extends ConsumerStatefulWidget {
   const _MedicationCabinetView();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MedicationCabinetView> createState() => _MedicationCabinetViewState();
+}
+
+class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> {
+  CabinetFilter _currentFilter = CabinetFilter.active;
+
+  @override
+  Widget build(BuildContext context) {
     final medsAsync = ref.watch(patientMedicationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // FILTER ROW
+          Row(
+            children: [
+              _buildFilterChip("Active", CabinetFilter.active),
+              const SizedBox(width: 8),
+              _buildFilterChip("Past", CabinetFilter.past),
+              const SizedBox(width: 8),
+              _buildFilterChip("All", CabinetFilter.all),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // CABINET LIST
           Expanded(
             child: medsAsync.when(
               data: (meds) {
-                if (meds.isEmpty) {
-                  return Center(
-                    child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)),
-                  );
-                }
+                if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
 
-                // Split medications by status
-                final activeMeds = meds.where((m) => m.status != 'PAST').toList();
-                final pastMeds = meds.where((m) => m.status == 'PAST').toList();
+                // Apply Filter Logic
+                final filteredMeds = meds.where((m) {
+                  if (_currentFilter == CabinetFilter.active) return m.status != 'PAST';
+                  if (_currentFilter == CabinetFilter.past) return m.status == 'PAST';
+                  return true; // All
+                }).toList();
 
-                return ListView(
+                if (filteredMeds.isEmpty) return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+
+                return ListView.builder(
                   physics: const BouncingScrollPhysics(),
-                  children: [
-                    // ACTIVE SECTION
-                    if (activeMeds.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 12.0, left: 4.0),
-                        child: Text("Active Medications", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                      ...activeMeds.map((med) => _buildCabinetRow(context, ref, med, isActive: true)),
-                    ],
-
-                    // PAST SECTION
-                    if (pastMeds.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 12.0, left: 4.0),
-                        child: Text("Past History", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      ),
-                      ...pastMeds.map((med) => _buildCabinetRow(context, ref, med, isActive: false)),
-                    ],
-                  ],
+                  itemCount: filteredMeds.length,
+                  itemBuilder: (context, index) {
+                    final med = filteredMeds[index];
+                    final isActive = med.status != 'PAST';
+                    return _buildCabinetRow(context, ref, med, isActive: isActive);
+                  },
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -439,6 +502,7 @@ class _MedicationCabinetView extends ConsumerWidget {
           
           const SizedBox(height: 12),
           
+          // ADD BUTTON
           ElevatedButton.icon(
             icon: const Icon(Icons.add_circle_outline),
             label: const Text("Add New Medication"),
@@ -454,6 +518,26 @@ class _MedicationCabinetView extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFilterChip(String label, CabinetFilter filterValue) {
+    final isSelected = _currentFilter == filterValue;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) setState(() => _currentFilter = filterValue);
+      },
+      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      showCheckmark: false,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+      side: BorderSide.none,
     );
   }
 
@@ -896,7 +980,16 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           TextFormField(
                             controller: _amountController,
                             validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 10ml"),
+                            
+                            // 1. Pops up the number keyboard on mobile
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            
+                            // 2. ONLY allows digits and a single decimal point
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                            ],
+                            
+                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 1.5"),
                           ),
                         ],
                       ),
