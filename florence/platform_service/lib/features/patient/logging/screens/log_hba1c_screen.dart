@@ -137,171 +137,187 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   
   @override
   Widget build(BuildContext context) {
+    final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
+
+    // Fetch thresholds
+    final healthData = ref.watch(monitorDataProvider).asData?.value;
+    HealthThreshold? hba1cThreshold;
+    try {
+      hba1cThreshold = healthData?.healthThresholds.firstWhere(
+        (t) => t.dataType == MonitorDataType.HBA1C
+      );
+    } catch (_) {}
+
+    final hba1cColor = _getHba1cColor(hba1cValue, hba1cThreshold);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log HbA1c'),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Info card
-                    _buildInfoCard(),
-              const SizedBox(height: 24),
-              
-              // Input
-              _buildInputSection(),
-              const SizedBox(height: 24),
-              
-              // Date
-              _buildDateTimeSection(),
-              const SizedBox(height: 24),
-
-              // Reference Range
-              _buildReferenceRanges(),
-              const SizedBox(height: 32),
-              
-              // Save button
-              PrimaryButton(
-                text: 'Save Reading',
-                onPressed: _isLoading ? null : _handleSave,
-                isLoading: _isLoading,
-                width: double.infinity,
-              ),
-              const SizedBox(height: 24),
-            ],
+        elevation: 0,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: AppTheme.getBorderColor(context),
+            height: 1.0,
           ),
         ),
-      ),
-      ),
-      ),
-      ),
-    );
-  }
-  
-  /// Build info card
-  Widget _buildInfoCard() {
-    return const BaseCard(
-      child: Row(
-        children: [
-          Icon(
-            Icons.info_outline,
-            color: AppTheme.primaryBlue,
-            size: 24,
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'HbA1c reflects your average blood sugar level over the past 2-3 months.',
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                AppRoutes.push(context, AppRoutes.hba1cDetail);
+              },
+              tooltip: 'View History',
             ),
           ),
         ],
       ),
-    );
-  }
-  
-  /// Build input section
-  Widget _buildInputSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'HbA1c Level (%)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 16),
-          
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _hba1cController,
-                  validator: Validators.hba1c,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: Theme.of(context).textTheme.displayMedium,
-                  decoration: const InputDecoration(
-                    hintText: '5.7',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Info & Target card
+                      _buildInfoCard(hba1cThreshold),
+                      const SizedBox(height: 20),
+
+                      // Input Section
+                      _buildInputSection(hba1cColor, hba1cThreshold),
+                      const SizedBox(height: 20),
+
+                      // Date and time
+                      _buildDateTimeSection(),
+                      const SizedBox(height: 32),
+
+                      // Save button
+                      PrimaryButton(
+                        text: 'Save Reading',
+                        onPressed: _isLoading ? null : _handleSave,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(HealthThreshold? threshold) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: AppTheme.infoColor,
+                size: 24,
+              ),
               const SizedBox(width: 12),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+              Expanded(
                 child: Text(
-                  '%',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: AppTheme.textSecondaryColor,
+                  'HbA1c reflects your average blood sugar level over the past 2-3 months.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.infoColor,
                       ),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build date time section
-  Widget _buildDateTimeSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Date Measured',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
           const SizedBox(height: 16),
-          
+          // Target Range Box
           InkWell(
-            onTap: _selectDateTime,
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.profile),
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.all(16),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
+                color: AppTheme.primaryGreen.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                ),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.calendar_today, color: AppTheme.primaryBlue),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                        ),
-                      ],
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.track_changes,
+                            size: 18,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Target Range',
+                            style: TextStyle(
+                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                      ),
+                    ],
                   ),
-                  const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'HbA1c', 
+                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
+                      ),
+                      Text(
+                        threshold != null 
+                          ? '${threshold.minValue.toStringAsFixed(1)} - ${threshold.maxValue.toStringAsFixed(1)}%'
+                          : '4.0 - 7.0%',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -310,44 +326,291 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       ),
     );
   }
-  
-  /// Build reference ranges
-  Widget _buildReferenceRanges() {
-    return BaseCard(
+
+  Widget _buildInputSection(Color? hba1cColor, HealthThreshold? threshold) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = hba1cColor != null 
+        ? hba1cColor.withOpacity(0.05) 
+        : (isDark ? AppTheme.midnightSurface : Colors.white);
+    final borderColor = hba1cColor ?? AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'General Reference Ranges',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Icon(
+                  Icons.pie_chart_outline,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'HbA1c Level (%)',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
-          
-          _buildRangeItem('Normal', 'Below 5.7%', AppTheme.primaryGreen),
-          const SizedBox(height: 8),
-          _buildRangeItem('Prediabetes', '5.7% - 6.4%', AppTheme.warningColor),
-          const SizedBox(height: 8),
-          _buildRangeItem('Diabetes', '6.5% or higher', AppTheme.errorColor),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _hba1cController,
+                  validator: Validators.hba1c,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: hba1cColor ?? AppTheme.textPrimaryColor,
+                      ),
+                  decoration: InputDecoration(
+                    hintText: '---',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '%',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          if (hba1cColor != null) ...[
+            const SizedBox(height: 20),
+            Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: hba1cColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: hba1cColor.withOpacity(0.2)),
+                ),
+                child: Text(
+                  _getHba1cStatus(
+                    double.tryParse(_hba1cController.text.replaceAll(',', '.')),
+                    threshold,
+                  ).toUpperCase(),
+                  style: TextStyle(
+                    color: hba1cColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
-  
-  Widget _buildRangeItem(String label, String range, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 12),
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        const Spacer(),
-        Text(range, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-      ],
+
+  Widget _buildDateTimeSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Date and Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_selectedDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          _selectedDateTime.hour,
+                          _selectedDateTime.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildCompactPickerItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    '$label:',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color? _getHba1cColor(double? value, HealthThreshold? threshold) {
+    if (value == null) return null;
+    final min = threshold?.minValue ?? 4.0;
+    final max = threshold?.maxValue ?? 7.0;
+
+    if (value > max) return AppTheme.errorColor;
+    if (value < min) return AppTheme.warningColor;
+    return AppTheme.primaryGreen;
+  }
+
+  String _getHba1cStatus(double? value, HealthThreshold? threshold) {
+    if (value == null) return '';
+    final min = threshold?.minValue ?? 4.0;
+    final max = threshold?.maxValue ?? 7.0;
+
+    if (value > max) return 'High';
+    if (value < min) return 'Low';
+    return 'Normal';
   }
 }
