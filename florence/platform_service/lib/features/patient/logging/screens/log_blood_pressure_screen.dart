@@ -354,35 +354,48 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Systolic
-              SizedBox(
-                width: 100,
-                child: TextFormField(
-                  controller: _systolicController,
-                  validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.next,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: bpColor ?? AppTheme.textPrimaryColor,
-                      ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    hintText: '---',
-                    hintStyle: const TextStyle(color: Colors.grey),
+              Column(
+                children: [
+                  Text(
+                    'SYS',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 110,
+                    child: TextFormField(
+                      controller: _systolicController,
+                      validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.next,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: bpColor ?? AppTheme.textPrimaryColor,
+                          ),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        hintText: '---',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
               ),
               
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.fromLTRB(8, 24, 8, 0),
                 child: Text(
                   '/',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
@@ -394,39 +407,55 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               ),
 
               // Diastolic
-              SizedBox(
-                width: 100,
-                child: TextFormField(
-                  controller: _diastolicController,
-                  validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  textInputAction: TextInputAction.done,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: bpColor ?? AppTheme.textPrimaryColor,
-                      ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    hintText: '---',
-                    hintStyle: const TextStyle(color: Colors.grey),
+              Column(
+                children: [
+                  Text(
+                    'DIA',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
                   ),
-                  onChanged: (_) => setState(() {}),
-                ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: 110,
+                    child: TextFormField(
+                      controller: _diastolicController,
+                      validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.done,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: bpColor ?? AppTheme.textPrimaryColor,
+                          ),
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        hintText: '---',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                      ),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
               ),
               
               const SizedBox(width: 8),
-              Text(
-                'mmHg',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(top: 24),
+                child: Text(
+                  'mmHg',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                ),
               ),
             ],
           ),
