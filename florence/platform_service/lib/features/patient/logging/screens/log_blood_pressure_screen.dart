@@ -319,14 +319,16 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         ? bpColor.withOpacity(0.05) 
         : (isDark ? AppTheme.midnightSurface : Colors.white);
     final borderColor = bpColor ?? AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -336,85 +338,158 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+          Text(
+            'Blood Pressure Level',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.w600,
                 ),
-                child: Icon(
-                  Icons.monitor_heart,
-                  color: titleIconColor,
-                  size: 24,
+          ),
+          const SizedBox(height: 16),
+
+          // Large BP input
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Systolic
+              SizedBox(
+                width: 100,
+                child: TextFormField(
+                  controller: _systolicController,
+                  validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textInputAction: TextInputAction.next,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: bpColor ?? AppTheme.textPrimaryColor,
+                      ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    hintText: '---',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                  ),
+                  onChanged: (_) => setState(() {}),
                 ),
               ),
-              const SizedBox(width: 12),
+              
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  '/',
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 48,
+                        fontWeight: FontWeight.w300,
+                        color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                      ),
+                ),
+              ),
+
+              // Diastolic
+              SizedBox(
+                width: 100,
+                child: TextFormField(
+                  controller: _diastolicController,
+                  validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textInputAction: TextInputAction.done,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: bpColor ?? AppTheme.textPrimaryColor,
+                      ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    hintText: '---',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                ),
+              ),
+              
+              const SizedBox(width: 8),
               Text(
-                'Blood Pressure (mmHg)',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+                'mmHg',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTheme.textSecondaryColor,
                     ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: CustomTextField(
-                  label: 'Systolic',
-                  hint: 'e.g., 120',
-                  controller: _systolicController,
-                  validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.arrow_upward),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: CustomTextField(
-                  label: 'Diastolic',
-                  hint: 'e.g., 80',
-                  controller: _diastolicController,
-                  validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.arrow_downward),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-            ],
-          ),
-          if (bpColor != null) ...[
-            const SizedBox(height: 20),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: bpColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: bpColor.withOpacity(0.2)),
-                ),
-                child: Text(
-                  _getBPStatus(
-                    double.tryParse(_systolicController.text),
-                    double.tryParse(_diastolicController.text),
-                    sysT,
-                    diaT,
-                  ).toUpperCase(),
-                  style: TextStyle(
-                    color: bpColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
+
+          const SizedBox(height: 20),
+
+          // Status indicator (Always visible, fixed size)
+          SizedBox(
+            height: 32,
+            child: Center(
+              child: Builder(
+                builder: (context) {
+                  final sysValue = double.tryParse(_systolicController.text);
+                  final diaValue = double.tryParse(_diastolicController.text);
+                  final statusText = bpColor != null
+                      ? _getBPStatus(sysValue, diaValue, sysT, diaT).toUpperCase()
+                      : 'ENTER READING';
+
+                  IconData statusIcon;
+                  if (bpColor == null) {
+                    statusIcon = Icons.edit;
+                  } else if (statusText == 'LOW') {
+                    statusIcon = Icons.arrow_downward;
+                  } else if (statusText == 'ELEVATED') {
+                    statusIcon = Icons.arrow_upward;
+                  } else {
+                    statusIcon = Icons.check;
+                  }
+
+                  final displayColor = bpColor ?? AppTheme.textSecondaryColor;
+
+                  return Container(
+                    width: 140, // Fixed width
+                    height: 32, // Fixed height
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: bpColor == null
+                          ? (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor)
+                          : displayColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: displayColor.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusIcon, size: 14, color: displayColor),
+                        const SizedBox(width: 6),
+                        Text(
+                          statusText,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                color: displayColor,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
