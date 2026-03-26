@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
 from pydantic import BaseModel, model_validator, Field, EmailStr
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from supabase_auth.errors import AuthApiError
 from datetime import datetime, date, timedelta
 from enum import Enum
@@ -179,8 +179,18 @@ class MedicationCreate(BaseModel):
     frequency_id: int
     amount: str
     medication_type: Optional[str] = None
-    timing_instruction: Optional[str] = "ANYTIME"
+    timing_instructions: List[str] = ["ANYTIME"]
     notes: Optional[str] = None
+
+class PatientMedicationUpdate(BaseModel):
+    """Fields allowed for partial updates on patient medications."""
+    medication_id: Optional[int] = None
+    custom_medication_name: Optional[str] = None
+    frequency_id: Optional[int] = None
+    amount: Optional[str] = None
+    medication_type: Optional[str] = None
+    timing_instructions: Optional[List[str]] = None
+    status: Optional[str] = None
 
 class MedicationIntakeCreate(BaseModel):
     patient_medication_id: int
@@ -421,39 +431,98 @@ async def add_own_medication(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add medication: {str(e)}")
 
+@router.patch("/me/medications/{med_id}", summary="Update a medication entry")
+async def update_patient_medication(
+    med_id: int, 
+    med_update: PatientMedicationUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Updates a specific medication entry for the authenticated patient."""
+    try:
+        update_data = med_update.model_dump(exclude_unset=True)
+        if not update_data:
+             raise HTTPException(status_code=400, detail="No fields provided for update")
+
+        # --- THE FIX: ENFORCE THE CONSTRAINT BEFORE SUPABASE ---
+        # If they are saving a Custom Medication, wipe the Dictionary ID
+        if 'custom_medication_name' in update_data and update_data['custom_medication_name'] is not None:
+            update_data['medication_id'] = None
+            
+        # If they are saving a Dictionary Medication, wipe the Custom Name
+        elif 'medication_id' in update_data and update_data['medication_id'] is not None:
+            update_data['custom_medication_name'] = None
+        # -------------------------------------------------------
+
+        response = supabase.table("patient_medications") \
+            .update(update_data) \
+            .eq("id", med_id) \
+            .eq("patient_id", patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Medication not found or access denied")
+            
+        return response.data[0]
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/me/medication-schedule", summary="Get medication schedule and logs for a date")
 async def get_medication_schedule(
-    target_date: Optional[date] = None,
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
-    Fetches active medications and intake logs for a specific date.
-    Returns a combined dictionary for the frontend.
+    Fetches active medications and intake logs.
+    Calculates log counts based on daily/weekly frequency.
     """
-    if target_date is None:
-        target_date = date.today()
-    
     try:
-        # Fetch medications
-        meds_res = supabase.table('patient_medications').select(
-            "*, medication_dictionary(brand_name, generic_name), dosage_frequencies(patient_text)"
-        ).eq('patient_id', patient_profile['id']).execute()
-        
-        # Fetch logs for the specific date
-        # We filter logs where taken_at falls within the 24h window of target_date
-        start_time = datetime.combine(target_date, datetime.min.time()).isoformat()
-        end_time = datetime.combine(target_date + timedelta(days=1), datetime.min.time()).isoformat()
+        # 1. Date calculations
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        week_ago_str = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
 
-        logs_res = supabase.table('medication_intake_logs').select("*")\
-            .eq('patient_id', patient_profile['id'])\
-            .gte('taken_at', start_time)\
-            .lt('taken_at', end_time)\
+        # 2. Fetch active medications
+        meds_res = supabase.table("patient_medications") \
+            .select("*, medication_dictionary(*), dosage_frequencies(*)") \
+            .eq("patient_id", patient_profile['id']) \
+            .eq("status", "CURRENT") \
             .execute()
-        
-        return {
-            "medications": meds_res.data,
-            "todays_logs": logs_res.data
-        }
+        meds = meds_res.data
+
+        # 3. Fetch intake logs for the last 7 days
+        logs_res = supabase.table("medication_intake_logs") \
+            .select("*") \
+            .eq("patient_id", patient_profile['id']) \
+            .gte("taken_at", f"{week_ago_str}T00:00:00") \
+            .lte("taken_at", f"{today_str}T23:59:59") \
+            .execute()
+        logs = logs_res.data
+
+        # 4. Map the logs to the medications
+        schedule = []
+        for med in meds:
+            # Safely check frequency text for "week"
+            freq = med.get("dosage_frequencies") or {}
+            patient_text = (freq.get("patient_text") or "").lower()
+            is_weekly = "week" in patient_text
+
+            # Filter logs specific to this medication
+            med_logs = [l for l in logs if l["patient_medication_id"] == med["id"]]
+            
+            if is_weekly:
+                # For weekly, count any log in the last 7 days
+                times_logged = len(med_logs)
+            else:
+                # For daily, count only logs from TODAY
+                times_logged = len([l for l in med_logs if l["taken_at"].startswith(today_str)])
+
+            schedule.append({
+                "medication": med,
+                "times_logged": times_logged,
+                "is_weekly": is_weekly
+            })
+
+        return schedule
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve medication schedule: {str(e)}")
 
@@ -474,6 +543,33 @@ async def log_medication_intake(
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to log medication intake: {str(e)}")
+
+@router.delete("/me/medication-intake/{patient_medication_id}", summary="Unlog today's medication intake")
+async def unlog_medication(
+    patient_medication_id: int,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Deletes the medication intake log for the specified medication created today."""
+    try:
+        today = date.today().isoformat()
+        
+        # Query Supabase for a log for this med, on this day, for this patient
+        response = supabase.table("medication_intake_logs") \
+            .delete() \
+            .eq("patient_id", patient_profile['id']) \
+            .eq("patient_medication_id", patient_medication_id) \
+            .gte("taken_at", f"{today}T00:00:00") \
+            .lte("taken_at", f"{today}T23:59:59") \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="No log found for today to delete")
+            
+        return {"status": "success", "message": "Log removed"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/me/avatar", summary="Upload profile picture")
 async def upload_patient_avatar(

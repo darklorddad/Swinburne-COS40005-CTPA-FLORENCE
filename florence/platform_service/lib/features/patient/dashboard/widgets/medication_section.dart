@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/models/medication_models.dart';
@@ -12,15 +13,24 @@ import '../providers/dashboard_providers.dart';
 // ==========================================
 
 /// Fetch the medication dictionary for the Autocomplete
-final medicationDictionaryProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+/// Removed .autoDispose to cache dictionary data
+final medicationDictionaryProvider = FutureProvider<List<dynamic>>((ref) async {
   final repository = ref.watch(medicationRepositoryProvider);
   return repository.getMedicationDictionary(); 
 });
 
 /// Fetch the dosage frequencies
-final dosageFrequenciesProvider = FutureProvider.autoDispose<List<dynamic>>((ref) async {
+/// Removed .autoDispose to cache frequency data
+final dosageFrequenciesProvider = FutureProvider<List<dynamic>>((ref) async {
   final repository = ref.watch(medicationRepositoryProvider);
   return repository.getDosageFrequencies(); 
+});
+
+/// Provider for the daily medication schedule and intake logs.
+/// Removed .autoDispose to ensure the schedule persists when switching tabs.
+final todaysScheduleProvider = FutureProvider<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getMedicationSchedule();
 });
 
 // ==========================================
@@ -131,232 +141,230 @@ class MedicationSection extends StatelessWidget {
 }
 
 // ==========================================
-// 3. TODAY'S SCHEDULE VIEW (Private)
+// 3. TODAY'S SCHEDULE VIEW (Filtered)
 // ==========================================
 
-class _TodaysMedicationsView extends ConsumerWidget {
+enum ScheduleFilter { all, pending, taken }
+
+class _TodaysMedicationsView extends ConsumerStatefulWidget {
   const _TodaysMedicationsView();
 
-  int _getDosesPerDay(PatientMedication med) {
-    // Try to get frequency from the linked dictionary or fallback to a default
-    final freqText = med.medicationDictionary['dosage_frequencies']?['patient_text']?.toString() ?? 
-                     med.medicationDictionary['frequency_text']?.toString();
-    
-    if (freqText == null) return 1;
-    final lower = freqText.toLowerCase();
-    if (lower.contains('twice') || lower == 'bid' || lower.contains('2 times')) return 2;
-    if (lower.contains('three') || lower == 'tid' || lower.contains('3 times')) return 3;
-    if (lower.contains('four') || lower == 'qid' || lower.contains('4 times')) return 4;
-    return 1;
+  @override
+  ConsumerState<_TodaysMedicationsView> createState() => _TodaysMedicationsViewState();
+}
+
+class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> with AutomaticKeepAliveClientMixin {
+  ScheduleFilter _currentFilter = ScheduleFilter.all;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  // Helper to convert index to Ordinal string
+  String _getOrdinal(int index) {
+    const ordinals = ["First", "Second", "Third", "Fourth", "Fifth"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "$index.";
+  }
+
+  // Helper to format Timing Instructions
+  String _formatTiming(String? raw) {
+    if (raw == null) return "Anytime";
+    return raw.replaceAll('_', ' ').toLowerCase().split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(' ');
+  }
+
+  LinearGradient _getGradient(bool isTaken, bool isLate, bool isDark) {
+    if (isTaken) {
+      return LinearGradient(
+        colors: isDark 
+          ? [Colors.green.withOpacity(0.2), Colors.green.withOpacity(0.05)]
+          : [Colors.green.shade50, Colors.green.shade100],
+      );
+    } else if (isLate) {
+      return LinearGradient(
+        colors: isDark 
+          ? [Colors.orange.withOpacity(0.2), Colors.yellow.withOpacity(0.05)]
+          : [Colors.orange.shade50, Colors.yellow.shade50],
+      );
+    } else {
+      return LinearGradient(
+        colors: isDark 
+          ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
+          : [Colors.grey.shade100, Colors.grey.shade200],
+      );
+    }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final scheduleAsync = ref.watch(dailyMedicationScheduleProvider);
+  Widget build(BuildContext context) {
+    super.build(context);
+    final scheduleAsync = ref.watch(todaysScheduleProvider);
 
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: scheduleAsync.when(
-        data: (schedule) {
-          if (schedule.medications.isEmpty) {
-            return Center(
-              child: Text(
-                "No medications scheduled for today",
-                style: TextStyle(color: AppTheme.textSecondaryColor),
-              ),
-            );
-          }
-
-          List<Widget> loggableItems = [];
-
-          for (var med in schedule.medications) {
-            int totalDoses = _getDosesPerDay(med);
-            final logs = schedule.todaysLogs.where((l) => l.patientMedicationId == med.id).toList();
-            int timesLoggedToday = logs.length;
-
-            for (int i = 1; i <= totalDoses; i++) {
-              final MedicationIntakeLog? log = i <= timesLoggedToday ? logs[i - 1] : null;
-              loggableItems.add(
-                _buildDoseRow(context, ref, med, log, i, totalDoses),
-              );
-            }
-          }
-
-          return ListView(children: loggableItems);
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(
-          child: Text(
-            "Unable to load schedule",
-            style: TextStyle(color: AppTheme.errorColor),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // FILTER ROW
+          Row(
+            children: [
+              _buildFilterChip("All", ScheduleFilter.all),
+              const SizedBox(width: 8),
+              _buildFilterChip("Pending", ScheduleFilter.pending),
+              const SizedBox(width: 8),
+              _buildFilterChip("Taken", ScheduleFilter.taken),
+            ],
           ),
-        ),
+          const SizedBox(height: 16),
+
+          // SCHEDULE LIST
+          Expanded(
+            child: scheduleAsync.when(
+              skipLoadingOnReload: true,
+              data: (scheduleItems) {
+                if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
+
+                List<Widget> loggableItems = [];
+                
+                for (var item in scheduleItems) {
+                  final med = PatientMedication.fromJson(item['medication']);
+                  final int timesLogged = item['times_logged'] ?? 0;
+                  final bool isWeekly = item['is_weekly'] ?? false;
+                  
+                  int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
+                  bool isLate = false; 
+
+                  for (int i = 1; i <= totalDoses; i++) {
+                    bool isTaken = i <= timesLogged;
+                    
+                    // APPLY FILTER LOGIC
+                    bool shouldShow = true;
+                    if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
+                    if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
+
+                    if (shouldShow) {
+                      loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
+                    }
+                  }
+                }
+
+                if (loggableItems.isEmpty) {
+                  return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+                }
+
+                return ListView(physics: const BouncingScrollPhysics(), children: loggableItems);
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => const Center(child: Text("Error loading schedule")),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildDoseRow(
+  Widget _buildFilterChip(String label, ScheduleFilter filterValue) {
+    final isSelected = _currentFilter == filterValue;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) setState(() => _currentFilter = filterValue);
+      },
+      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      showCheckmark: false,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+      side: BorderSide.none,
+    );
+  }
+
+  Widget _buildMedicationRow(
     BuildContext context,
     WidgetRef ref,
     PatientMedication med,
-    MedicationIntakeLog? log,
-    int doseIndex,
-    int totalDoses,
+    int index,
+    int total,
+    bool isTaken,
+    bool isLate,
+    bool isWeekly,
   ) {
-    final bool isTaken = log?.status == 'TAKEN' || log?.status == 'LATE';
-    final bool isSkipped = log?.status == 'SKIPPED';
-    final bool isLogged = isTaken || isSkipped;
-    final bool isOverdue = !isLogged && _checkIfOverdue(med, doseIndex, totalDoses);
-
-    // SAFE CHECK: Prioritise dictionary brand name, then custom name
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final String brandName = med.medicationDictionary['brand_name'] ?? 
                              med.customMedicationName ?? 
-                             'Unknown Medication';
-    final String displayName = totalDoses > 1 ? "$doseIndex. $brandName" : brandName;
+                             'Unknown';
+    final String type = (med.medicationType ?? 'Pill').toLowerCase();
     
-    String rawType = med.medicationType ?? 'PILL';
-    final String type = rawType[0].toUpperCase() + rawType.substring(1).toLowerCase(); 
-    
-    String rawTiming = med.timingInstruction ?? 'ANYTIME';
-    final String timingInstruction = rawTiming.replaceAll('_', ' ').split(' ').map((word) => 
-        word.isNotEmpty ? word[0].toUpperCase() + word.substring(1).toLowerCase() : '').join(' ');
+    // Pull specific timing from the array safely
+    String rawTiming = 'ANYTIME';
+    if (med.timingInstructions.isNotEmpty) {
+      int tIndex = (index - 1) < med.timingInstructions.length ? (index - 1) : (med.timingInstructions.length - 1);
+      rawTiming = med.timingInstructions[tIndex];
+    }
+    final String timing = _formatTiming(rawTiming);
+    final String amount = med.amount;
 
-    Color statusColor = AppTheme.textSecondaryColor;
-    if (isTaken) statusColor = AppTheme.primaryGreen;
-    if (isSkipped) statusColor = AppTheme.textSecondaryColor;
-    if (isOverdue) statusColor = AppTheme.warningColor;
+    // Dynamic Display String
+    String contentText = total > 1 
+      ? "${_getOrdinal(index)} $brandName - $amount $type - $timing"
+      : "$brandName - $amount $type - $timing";
+
+    if (isWeekly && isTaken) {
+      contentText = "$brandName (Taken for this week)";
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.white.withOpacity(0.03)
-              : AppTheme.backgroundColor.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(16),
-          border: isLogged ? Border.all(color: statusColor.withOpacity(0.5)) : null,
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      decoration: isLogged ? TextDecoration.lineThrough : null,
-                      color: isLogged ? AppTheme.textSecondaryColor : null,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "$type • $timingInstruction",
-                    style: TextStyle(
-                      color: isLogged ? AppTheme.textSecondaryColor.withOpacity(0.7) : AppTheme.textSecondaryColor,
-                      fontSize: 13,
-                    ),
-                  ),
-                  if (isOverdue)
-                    const Text(
-                      "Overdue",
-                      style: TextStyle(
-                        color: AppTheme.warningColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (isLogged)
-              Row(
-                children: [
-                  Icon(isTaken ? Icons.check_circle : Icons.block, color: statusColor, size: 28),
-                  const SizedBox(width: 4),
-                  Text(
-                    isTaken ? "Taken" : "Skipped",
-                    style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              )
-            else
-              ElevatedButton(
-                onPressed: () => _handleLogTap(context, ref, med, isOverdue),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryBlue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: const Text("Log"),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  bool _checkIfOverdue(PatientMedication med, int doseIndex, int totalDoses) {
-    final hour = DateTime.now().hour;
-    if (totalDoses == 1) {
-      final instruction = med.timingInstruction?.toUpperCase();
-      if ((instruction == 'BEFORE_MEAL' || instruction == 'BREAKFAST') && hour >= 14) return true;
-    } else {
-      if (doseIndex == 1 && hour >= 12) return true;
-      if (doseIndex == 2 && totalDoses == 2 && hour >= 20) return true;
-    }
-    return false;
-  }
-
-  Future<void> _handleLogTap(BuildContext context, WidgetRef ref, PatientMedication med, bool isOverdue) async {
-    if (isOverdue) {
-      _showMissedDoseSheet(context, ref, med);
-    } else {
-      try {
-        await ref.read(medicationRepositoryProvider).logMedicationIntake(med.id, 'TAKEN');
-        ref.invalidate(dailyMedicationScheduleProvider);
-        if (context.mounted) Helpers.showSuccess(context, "Medication logged");
-      } catch (e) {
-        if (context.mounted) Helpers.showError(context, "Failed to log medication");
-      }
-    }
-  }
-
-  void _showMissedDoseSheet(BuildContext context, WidgetRef ref, PatientMedication med) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      child: InkWell(
+        onTap: () => _handleToggle(context, ref, med, isTaken),
+        borderRadius: BorderRadius.circular(16),
+        mouseCursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: _getGradient(isTaken, isLate, isDark),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
             children: [
-              Text("Missed Dose?", style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Text(
-                med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Medication', 
-                style: TextStyle(color: AppTheme.textSecondaryColor)
+              Expanded(
+                child: Text(
+                  contentText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: isTaken ? Colors.grey : (isDark ? Colors.white : Colors.black87),
+                    decoration: isTaken ? TextDecoration.lineThrough : null,
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.history, color: AppTheme.primaryGreen),
-                title: const Text("I took it on time"),
-                onTap: () => _logAndRefresh(context, ref, med.id, 'TAKEN'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.done, color: AppTheme.primaryBlue),
-                title: const Text("Taking it right now"),
-                onTap: () => _logAndRefresh(context, ref, med.id, 'LATE'),
-              ),
-              ListTile(
-                leading: Icon(Icons.close, color: AppTheme.textSecondaryColor),
-                title: const Text("Skip this dose"),
-                onTap: () => _logAndRefresh(context, ref, med.id, 'SKIPPED'),
+              if (isLate && !isTaken)
+                const _StatusLabel(text: "Late", color: Colors.orange),
+              if (isTaken)
+                const _StatusLabel(text: "Taken", color: Colors.green),
+              
+              // Radial Tick Button
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isTaken ? Colors.green : Colors.transparent,
+                  border: Border.all(
+                    color: isTaken ? Colors.green : Colors.grey.withOpacity(0.5),
+                    width: 2,
+                  ),
+                ),
+                child: isTaken 
+                  ? const Icon(Icons.check, color: Colors.white, size: 16)
+                  : null,
               ),
             ],
           ),
@@ -365,53 +373,149 @@ class _TodaysMedicationsView extends ConsumerWidget {
     );
   }
 
-  Future<void> _logAndRefresh(BuildContext context, WidgetRef ref, int medId, String status) async {
-    try {
-      await ref.read(medicationRepositoryProvider).logMedicationIntake(medId, status);
-      ref.invalidate(dailyMedicationScheduleProvider);
-      if (context.mounted) {
-        Navigator.pop(context);
-        Helpers.showSuccess(context, "Schedule updated");
-      }
-    } catch (e) {
-      if (context.mounted) Helpers.showError(context, "Failed to update schedule");
-    }
+  void _handleToggle(BuildContext context, WidgetRef ref, PatientMedication med, bool currentlyTaken) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(currentlyTaken ? "Unlog Medication?" : "Log Medication?"),
+        content: Text(currentlyTaken 
+          ? "This will mark the dose as not taken. Continue?" 
+          : "Confirm that you have taken your dose."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final repo = ref.read(medicationRepositoryProvider);
+              try {
+                if (currentlyTaken) {
+                  await repo.unlogMedicationIntake(med.id);
+                } else {
+                  await repo.logMedicationIntake(med.id, 'TAKEN');
+                }
+                ref.invalidate(todaysScheduleProvider);
+                if (context.mounted) {
+                  Helpers.showSuccess(context, currentlyTaken ? "Medication unlogged" : "Medication logged");
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Helpers.showError(context, "Failed to update schedule");
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: currentlyTaken ? Colors.grey : Colors.green,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text("Confirm"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small helper for status text labels
+class _StatusLabel extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _StatusLabel({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
   }
 }
 
 // ==========================================
-// 4. MEDICATION CABINET VIEW (Private)
+// 4. MEDICATION CABINET VIEW (Filtered)
 // ==========================================
 
-class _MedicationCabinetView extends ConsumerWidget {
+enum CabinetFilter { active, past, all }
+
+class _MedicationCabinetView extends ConsumerStatefulWidget {
   const _MedicationCabinetView();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_MedicationCabinetView> createState() => _MedicationCabinetViewState();
+}
+
+class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> with AutomaticKeepAliveClientMixin {
+  CabinetFilter _currentFilter = CabinetFilter.active;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
     final medsAsync = ref.watch(patientMedicationsProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // FILTER ROW
+          Row(
+            children: [
+              _buildFilterChip("Active", CabinetFilter.active),
+              const SizedBox(width: 8),
+              _buildFilterChip("Past", CabinetFilter.past),
+              const SizedBox(width: 8),
+              _buildFilterChip("All", CabinetFilter.all),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // CABINET LIST
           Expanded(
             child: medsAsync.when(
+              skipLoadingOnReload: true,
               data: (meds) {
-                final activeMeds = meds.where((m) => m.status != 'PAST').toList();
-                if (activeMeds.isEmpty) {
-                  return Center(child: Text("No active medications", style: TextStyle(color: AppTheme.textSecondaryColor)));
-                }
+                if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
+
+                // Apply Filter Logic
+                final filteredMeds = meds.where((m) {
+                  if (_currentFilter == CabinetFilter.active) return m.status != 'PAST';
+                  if (_currentFilter == CabinetFilter.past) return m.status == 'PAST';
+                  return true; // All
+                }).toList();
+
+                if (filteredMeds.isEmpty) return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+
                 return ListView.builder(
-                  itemCount: activeMeds.length,
-                  itemBuilder: (context, index) => _buildCabinetRow(context, ref, activeMeds[index]),
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: filteredMeds.length,
+                  itemBuilder: (context, index) {
+                    final med = filteredMeds[index];
+                    final isActive = med.status != 'PAST';
+                    return _buildCabinetRow(context, ref, med, isActive: isActive);
+                  },
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text("Unable to load cabinet", style: TextStyle(color: AppTheme.errorColor))),
+              error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
             ),
           ),
+          
           const SizedBox(height: 12),
+          
+          // ADD BUTTON
           ElevatedButton.icon(
             icon: const Icon(Icons.add_circle_outline),
             label: const Text("Add New Medication"),
@@ -419,9 +523,7 @@ class _MedicationCabinetView extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(vertical: 16),
               backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
               foregroundColor: AppTheme.primaryBlue,
-              // FIX: Use elevation 0 and a transparent shadow to prevent shifting on hover
-              elevation: 0,
-              shadowColor: Colors.transparent,
+              elevation: 0, shadowColor: Colors.transparent,
               splashFactory: NoSplash.splashFactory,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -432,66 +534,145 @@ class _MedicationCabinetView extends ConsumerWidget {
     );
   }
 
-  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, PatientMedication med) {
-    // SAFE CHECK: Prioritise dictionary brand name, then custom name
-    final String brandName = med.medicationDictionary['brand_name'] ?? 
-                             med.customMedicationName ?? 
-                             'Unknown';
+  Widget _buildFilterChip(String label, CabinetFilter filterValue) {
+    final isSelected = _currentFilter == filterValue;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) setState(() => _currentFilter = filterValue);
+      },
+      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      showCheckmark: false,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+      side: BorderSide.none,
+    );
+  }
+
+  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med, {required bool isActive}) {
+    final String brandName = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Unknown';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Standardised Grey Gradient
+    final LinearGradient backgroundGradient = isDark
+        ? LinearGradient(colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)])
+        : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]);
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.03) : AppTheme.backgroundColor.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(brandName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  const SizedBox(height: 2),
-                  Text("${med.amount} • ${med.timingInstruction ?? 'Anytime'}", style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13)),
+      // Opacity fades out past medications slightly
+      child: Opacity(
+        opacity: isActive ? 1.0 : 0.6,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: backgroundGradient,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      brandName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 16,
+                        decoration: isActive ? null : TextDecoration.lineThrough,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${med.amount}  ${med.medicationType ?? 'Pill'}",
+                      style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.grey),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onSelected: (value) {
+                  if (value == 'edit') {
+                    _showFormModal(context, isEdit: true, med: med);
+                  } else if (value == 'stop') {
+                    _confirmStop(context, ref, med, brandName);
+                  } else if (value == 'restart') {
+                    _confirmRestart(context, ref, med, brandName);
+                  }
+                },
+                itemBuilder: (context) => [
+                  // Show Edit for both active and past (so they can adjust dose before restarting)
+                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
+                  
+                  // Toggle Stop / Restart based on status
+                  if (isActive)
+                    const PopupMenuItem(value: 'stop', child: Row(children: [Icon(Icons.stop_circle, size: 18, color: Colors.red), SizedBox(width: 8), Text('Stop', style: TextStyle(color: Colors.red))]))
+                  else
+                    const PopupMenuItem(value: 'restart', child: Row(children: [Icon(Icons.play_circle, size: 18, color: Colors.green), SizedBox(width: 8), Text('Restart', style: TextStyle(color: Colors.green))])),
                 ],
               ),
-            ),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert, color: Colors.grey),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              onSelected: (value) {
-                if (value == 'edit') _showFormModal(context, isEdit: true, med: med);
-                else if (value == 'stop') _confirmStop(context, ref, med, brandName);
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
-                const PopupMenuItem(value: 'stop', child: Row(children: [Icon(Icons.stop_circle, size: 18, color: Colors.red), SizedBox(width: 8), Text('Stop', style: TextStyle(color: Colors.red))])),
-              ],
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  void _showFormModal(BuildContext context, {required bool isEdit, PatientMedication? med}) {
+  void _showFormModal(BuildContext context, {required bool isEdit, dynamic med}) {
     showDialog(context: context, builder: (context) => _MedicationFormDialog(isEdit: isEdit, medication: med));
   }
 
-  void _confirmStop(BuildContext context, WidgetRef ref, PatientMedication med, String medName) {
+  void _confirmStop(BuildContext context, WidgetRef ref, dynamic med, String medName) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text("Stop Medication"),
-        content: Text("Are you sure you want to stop taking $medName? It will be moved to your past records."),
+        content: Text("Are you sure you want to stop taking $medName? It will be moved to your history."),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
+              ref.invalidate(patientMedicationsProvider);
+              ref.invalidate(todaysScheduleProvider); // Refresh schedule to remove it
+              Navigator.pop(context);
+            },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, elevation: 0),
             child: const Text("Stop Medication"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Logic to restart a past medication
+  void _confirmRestart(BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Restart Medication"),
+        content: Text("Do you want to move $medName back to your active medications and schedule?"),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'CURRENT');
+              ref.invalidate(patientMedicationsProvider);
+              ref.invalidate(todaysScheduleProvider); // Refresh schedule to add it back
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0),
+            child: const Text("Restart Medication"),
           ),
         ],
       ),
@@ -524,22 +705,65 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
   dynamic _selectedFrequency;      // Holds the frequency object
   
   String _selectedType = 'TABLET';
-  String _selectedTiming = 'ANYTIME';
+  List<String> _selectedTimings = ['ANYTIME'];
 
   // Fixed lists based on database schema constraints
   final List<String> _medicationTypes = ['TABLET', 'CAPSULE', 'INJECTION', 'LIQUID', 'INHALER', 'OTHER'];
-  final List<String> _timingInstructions = ['BEFORE_MEAL', 'AFTER_MEAL', 'WITH_MEAL', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'];
+  final List<String> _timingInstructions = [
+    'BEFORE_BREAKFAST', 'WITH_BREAKFAST', 'AFTER_BREAKFAST',
+    'BEFORE_LUNCH', 'WITH_LUNCH', 'AFTER_LUNCH',
+    'BEFORE_DINNER', 'WITH_DINNER', 'AFTER_DINNER',
+    'BEFORE_SUPPER', 'WITH_SUPPER', 'AFTER_SUPPER',
+    'WITH_SNACK', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'
+  ];
+
+  // Helper to calculate doses based on selected frequency
+  int _getDosesFromFrequency(dynamic freq) {
+    if (freq == null) return 1;
+    final text = (freq['patient_text'] ?? freq['latin_code']).toString().toLowerCase();
+    if (text.contains('twice') || text == 'bid' || text.contains('2 times')) return 2;
+    if (text.contains('three') || text == 'tid' || text.contains('3 times')) return 3;
+    if (text.contains('four') || text == 'qid' || text.contains('4 times')) return 4;
+    return 1;
+  }
+
+  void _onFrequencyChanged(dynamic val) {
+    setState(() {
+      _selectedFrequency = val;
+      int requiredDoses = _getDosesFromFrequency(val);
+      
+      // Grow or shrink the timings list based on frequency
+      while (_selectedTimings.length < requiredDoses) {
+        _selectedTimings.add('ANYTIME');
+      }
+      if (_selectedTimings.length > requiredDoses) {
+        _selectedTimings = _selectedTimings.sublist(0, requiredDoses);
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     if (widget.isEdit && widget.medication != null) {
-      // SAFE CHECK: Pre-fill name from dictionary or custom field
-      _nameController.text = widget.medication!.medicationDictionary['brand_name'] ?? 
-                             widget.medication!.customMedicationName ?? '';
-      _amountController.text = widget.medication!.amount;
-      _selectedType = widget.medication!.medicationType ?? 'TABLET';
-      _selectedTiming = widget.medication!.timingInstruction ?? 'ANYTIME';
+      final med = widget.medication!;
+      
+      _nameController.text = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? "";
+      _amountController.text = med.amount;
+      _selectedType = _medicationTypes.contains(med.medicationType) ? med.medicationType! : 'TABLET';
+      
+      // --- THE FIX: RESTORE DICTIONARY ITEM ---
+      // If the medication has an ID, re-assign it to the selected item
+      // so the app knows it is a Verified Medication, not a Custom one!
+      if (med.medicationDictionary['id'] != null) {
+        _selectedDictionaryItem = med.medicationDictionary;
+      }
+      // ----------------------------------------
+
+      // Restore the array of timings
+      if (med.timingInstructions.isNotEmpty) {
+        _selectedTimings = List<String>.from(med.timingInstructions);
+      }
     }
   }
 
@@ -557,19 +781,25 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
 
       // 2. Build the payload matching the Database Schema
       final Map<String, dynamic> payload = {
-        'medication_id': isCustom ? null : _selectedDictionaryItem!['id'],
+        'medication_id': isCustom ? (widget.isEdit ? widget.medication!.medicationId : null) : _selectedDictionaryItem!['id'],
         'custom_medication_name': isCustom ? _nameController.text.trim() : null,
         'frequency_id': _selectedFrequency?['id'],
         'amount': _amountController.text.trim(),
         'medication_type': _selectedType,
-        'timing_instruction': _selectedTiming,
+        'timing_instructions': _selectedTimings,
         'status': 'CURRENT',
       };
 
       try {
-        await ref.read(medicationRepositoryProvider).addPatientMedication(payload);
+        final repo = ref.read(medicationRepositoryProvider);
+        if (widget.isEdit) {
+          await repo.updatePatientMedication(widget.medication!.id, payload);
+        } else {
+          await repo.addPatientMedication(payload);
+        }
+        
         ref.invalidate(patientMedicationsProvider);
-        ref.invalidate(dailyMedicationScheduleProvider);
+        ref.invalidate(todaysScheduleProvider);
         
         if (mounted) {
           Navigator.pop(context);
@@ -617,6 +847,13 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
         borderSide: const BorderSide(color: Colors.redAccent, width: 2),
       ),
     );
+  }
+
+  // Helper to format ordinals (1st, 2nd)
+  String _getOrdinalLabel(int index) {
+    const ordinals = ["1st", "2nd", "3rd", "4th", "5th"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "${index}th";
   }
 
   @override
@@ -668,6 +905,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Autocomplete<Map<String, dynamic>>(
+                          initialValue: TextEditingValue(text: _nameController.text),
                           displayStringForOption: (option) => (option['brand_name'] ?? option['generic_name']).toString(),
                           optionsBuilder: (TextEditingValue textEditingValue) {
                             if (textEditingValue.text.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
@@ -747,7 +985,7 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                 
                 const SizedBox(height: 16),
 
-                // 2. AMOUNT & FREQUENCY ROW
+                // 2. AMOUNT, TYPE & FREQUENCY ROW
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -761,63 +999,23 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                           TextFormField(
                             controller: _amountController,
                             validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1 pill"),
+                            
+                            // 1. Pops up the number keyboard on mobile
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            
+                            // 2. ONLY allows digits and a single decimal point
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                            ],
+                            
+                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 1.5"),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 8),
-                          freqAsync.when(
-                            loading: () => const Center(child: CircularProgressIndicator()),
-                            error: (e, s) => const Text("Error"),
-                            data: (frequencies) => LayoutBuilder(
-                              builder: (context, constraints) {
-                                return DropdownButtonFormField<dynamic>(
-                                  value: _selectedFrequency,
-                                  isExpanded: true,
-                                  validator: (val) => val == null ? 'Required' : null,
-                                  dropdownColor: menuBackgroundColor,
-                                  borderRadius: BorderRadius.circular(16),
-                                  elevation: 4,
-                                  icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                                  decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
-                                  items: frequencies.map((f) {
-                                    return DropdownMenuItem(
-                                      value: f, 
-                                      child: ConstrainedBox(
-                                        constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
-                                        child: Text(
-                                          f['patient_text'] ?? f['latin_code'],
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      )
-                                    );
-                                  }).toList(),
-                                  onChanged: (val) => setState(() => _selectedFrequency = val),
-                                );
-                              }
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                // 3. TYPE & TIMING ROW
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
+                      flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -847,17 +1045,87 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
                     Expanded(
+                      flex: 3,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text("Timing", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
                           const SizedBox(height: 8),
-                          LayoutBuilder(
+                          freqAsync.when(
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (e, s) => const Text("Error"),
+                            data: (frequencies) {
+                              // Match frequency if editing
+                              if (widget.isEdit && _selectedFrequency == null) {
+                                try {
+                                  _selectedFrequency = frequencies.firstWhere(
+                                    (f) => f['id'] == widget.medication!.frequencyId
+                                  );
+                                } catch (_) {}
+                              }
+
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  return DropdownButtonFormField<dynamic>(
+                                    value: _selectedFrequency,
+                                    isExpanded: true,
+                                    validator: (val) => val == null ? 'Required' : null,
+                                    dropdownColor: menuBackgroundColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    elevation: 4,
+                                    icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                    decoration: _getCustomInputDecoration(context, hint: "Select freq"),
+                                    items: frequencies.map((f) {
+                                      return DropdownMenuItem(
+                                        value: f, 
+                                        child: ConstrainedBox(
+                                          constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                          child: Text(
+                                            f['patient_text'] ?? f['latin_code'],
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        )
+                                      );
+                                    }).toList(),
+                                    onChanged: _onFrequencyChanged,
+                                  );
+                                }
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+
+                // 3. DYNAMIC TIMING DROPDOWNS
+                const Text("Specific Timings", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                
+                ...List.generate(_selectedTimings.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            "${_selectedTimings.length > 1 ? _getOrdinalLabel(index + 1) : 'Daily'} Dose:", 
+                            style: TextStyle(color: AppTheme.textSecondaryColor, fontWeight: FontWeight.w600)
+                          ),
+                        ),
+                        Expanded(
+                          child: LayoutBuilder(
                             builder: (context, constraints) {
                               return DropdownButtonFormField<String>(
-                                value: _selectedTiming,
+                                value: _selectedTimings[index],
                                 isExpanded: true,
                                 dropdownColor: menuBackgroundColor,
                                 borderRadius: BorderRadius.circular(16),
@@ -877,15 +1145,17 @@ class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
                                     )
                                   );
                                 }).toList(),
-                                onChanged: (val) => setState(() => _selectedTiming = val!),
+                                onChanged: (val) {
+                                  setState(() => _selectedTimings[index] = val!);
+                                },
                               );
                             }
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                }),
                 
                 const SizedBox(height: 24),
                 

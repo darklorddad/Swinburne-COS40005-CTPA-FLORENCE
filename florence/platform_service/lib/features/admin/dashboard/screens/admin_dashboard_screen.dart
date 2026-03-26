@@ -35,69 +35,78 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     final currentUser = PermissionService().currentUser;
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final padding = isMobile ? 16.0 : 24.0;
+    final padding = isMobile ? 16.0 : 32.0;
 
     return AdminScaffold(
       title: 'Admin Dashboard',
       currentRoute: AdminRoutes.adminDashboard,
       body: LoadingOverlay(
         isLoading: _isLoading,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Header
-              _buildWelcomeHeader(currentUser, isMobile),
+        // 1. IMPROVEMENT: Center and Constrain the maximum width of the dashboard
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1200), // Standard desktop container width
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(padding),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Welcome Header
+                  _buildWelcomeHeader(currentUser, isMobile),
 
-              SizedBox(height: isMobile ? 24 : 32),
+                  SizedBox(height: isMobile ? 24 : 32),
 
-              // System Metrics
-              _buildSystemMetrics(isMobile),
+                  // System Metrics (Top KPI Cards)
+                  _buildSystemMetrics(isMobile),
 
-              SizedBox(height: isMobile ? 24 : 32),
+                  SizedBox(height: isMobile ? 24 : 32),
 
-              // Organizations Overview & Recent Activity
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  // Mobile/Tablet: Stack vertically
-                  if (constraints.maxWidth < 900) {
-                    return Column(
-                      children: [
-                        _buildOrganizationsOverview(isMobile),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildRecentActivity(isMobile),
-                      ],
-                    );
-                  }
+                  // 2. IMPROVEMENT: Better Desktop Layout Structure
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      // Mobile/Tablet: Stack vertically
+                      if (constraints.maxWidth < 900) {
+                        return Column(
+                          children: [
+                            _buildQuickActions(isMobile),
+                            SizedBox(height: isMobile ? 16 : 24),
+                            _buildOrganizationsOverview(isMobile),
+                            SizedBox(height: isMobile ? 16 : 24),
+                            _buildRecentActivity(isMobile),
+                          ],
+                        );
+                      }
 
-                  // Desktop: Side-by-side
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Organizations Overview
-                      Expanded(
-                        flex: 2,
-                        child: _buildOrganizationsOverview(isMobile),
-                      ),
+                      // Desktop: 2-Column Asymmetric Grid
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Left Column: Primary Content (Organizations)
+                          Expanded(
+                            flex: 7, // Takes up ~60% of the space
+                            child: _buildOrganizationsOverview(isMobile),
+                          ),
 
-                      const SizedBox(width: 24),
+                          const SizedBox(width: 24),
 
-                      // Recent Activity
-                      Expanded(
-                        flex: 1,
-                        child: _buildRecentActivity(isMobile),
-                      ),
-                    ],
-                  );
-                },
+                          // Right Column: Actions & Secondary Content
+                          Expanded(
+                            flex: 4, // Takes up ~40% of the space
+                            child: Column(
+                              children: [
+                                _buildQuickActions(isMobile),
+                                const SizedBox(height: 24),
+                                _buildRecentActivity(isMobile),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
               ),
-
-              SizedBox(height: isMobile ? 24 : 32),
-
-              // Quick Actions
-              _buildQuickActions(isMobile),
-            ],
+            ),
           ),
         ),
       ),
@@ -156,7 +165,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           },
         ),
         StatCard(
-          title: 'Total Users',
+          title: 'Total Professionals',
           value: _systemMetrics['totalUsers'].toString(),
           icon: Icons.people,
           color: AdminTheme.accentTeal,
@@ -420,13 +429,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
             ),
             const SizedBox(height: 16),
+            // 3. IMPROVEMENT: Use Wrap to keep buttons flowing naturally in the tighter column
             Wrap(
-              spacing: 12,
+              spacing: 8,
               runSpacing: 12,
               children: [
                 _buildActionButton(
                   icon: Icons.add_business,
-                  label: 'Create Organization',
+                  label: 'New Organization',
                   onPressed: () {
                     AdminRoutes.push(context, AdminRoutes.createOrganization);
                   },
@@ -439,29 +449,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   },
                 ),
                 _buildActionButton(
-                  icon: Icons.admin_panel_settings,
-                  label: 'Manage Roles',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.roles);
-                  },
-                ),
-                _buildActionButton(
                   icon: Icons.history,
-                  label: 'View Audit Logs',
+                  label: 'Audit Logs',
                   onPressed: () {
                     AdminRoutes.push(context, AdminRoutes.auditLogs);
                   },
                 ),
                 _buildActionButton(
-                  icon: Icons.medication,
-                  label: 'Manage Medications',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.medications);
-                  },
-                ),
-                _buildActionButton(
                   icon: Icons.settings,
-                  label: 'System Settings',
+                  label: 'Settings',
                   onPressed: () {
                     AdminRoutes.push(context, AdminRoutes.settings);
                   },
@@ -481,10 +477,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }) {
     return ElevatedButton.icon(
       onPressed: onPressed,
-      icon: Icon(icon, size: 18),
+      icon: Icon(icon, size: 16),
       label: Text(label),
       style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        // Slightly tighter padding to fit the new column layout
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        elevation: 0, // Flattening it slightly looks more modern inside a card
+        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+        foregroundColor: Theme.of(context).primaryColor,
       ),
     );
   }

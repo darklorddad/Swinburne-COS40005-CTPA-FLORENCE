@@ -8,11 +8,27 @@ class MedicationRepository {
 
   MedicationRepository(this._apiService);
 
-  /// Fetches the medication schedule and intake logs for a specific date.
-  Future<MedicationScheduleResponse> getMedicationSchedule(DateTime date) async {
-    final dateStr = date.toIso8601String().split('T')[0];
-    final response = await _apiService.get('/patients/me/medication-schedule?target_date=$dateStr');
-    return MedicationScheduleResponse.fromJson(response as Map<String, dynamic>);
+  /// Fetches the compiled daily/weekly schedule with log counts.
+  /// Accepts an optional [targetDate] to fetch the schedule for a specific day.
+  Future<List<dynamic>> getMedicationSchedule([DateTime? targetDate]) async {
+    try {
+      String endpoint = '/patients/me/medication-schedule';
+      
+      // If a date is passed, format it and append it as a query parameter
+      if (targetDate != null) {
+        final dateStr = targetDate.toIso8601String().split('T')[0];
+        endpoint += '?target_date=$dateStr';
+      }
+
+      final response = await _apiService.get(endpoint);
+      if (response is List) {
+        return response;
+      }
+      return [];
+    } catch (e) {
+      print("Error fetching schedule: $e");
+      return [];
+    }
   }
 
   /// Records a medication intake event.
@@ -29,6 +45,11 @@ class MedicationRepository {
     await _apiService.post('/patients/me/medication-intake', payload);
   }
 
+  /// Deletes the most recent intake log for today for a specific medication.
+  Future<void> unlogMedicationIntake(int patientMedicationId) async {
+    await _apiService.delete('/patients/me/medication-intake/$patientMedicationId');
+  }
+
   /// Fetches all medications for the current patient.
   Future<List<PatientMedication>> getPatientMedications() async {
     final response = await _apiService.get('/patients/me/medications');
@@ -41,6 +62,16 @@ class MedicationRepository {
   /// Adds a new medication for the current patient.
   Future<void> addPatientMedication(Map<String, dynamic> data) async {
     await _apiService.post('/patients/me/medications', data);
+  }
+
+  /// Updates an existing medication.
+  Future<void> updatePatientMedication(int id, Map<String, dynamic> data) async {
+    await _apiService.patch('/patients/me/medications/$id', data);
+  }
+
+  /// Updates the status of a medication (e.g., to 'PAST').
+  Future<void> updateMedicationStatus(int id, String status) async {
+    await _apiService.patch('/patients/me/medications/$id', {'status': status});
   }
 
   /// Fetches the global medication dictionary for search/autocomplete.

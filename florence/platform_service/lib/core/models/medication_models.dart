@@ -35,7 +35,7 @@ class PatientMedication {
   final int frequencyId;
   final String amount;
   final String? medicationType;
-  final String? timingInstruction;
+  final List<String> timingInstructions;
   final String status;
   final Map<String, dynamic> medicationDictionary;
 
@@ -47,7 +47,7 @@ class PatientMedication {
     required this.frequencyId,
     required this.amount,
     this.medicationType,
-    this.timingInstruction,
+    required this.timingInstructions,
     required this.status,
     required this.medicationDictionary,
   });
@@ -61,7 +61,11 @@ class PatientMedication {
       frequencyId: json['frequency_id'] as int,
       amount: json['amount'] as String,
       medicationType: json['medication_type'] as String?,
-      timingInstruction: json['timing_instruction'] as String?,
+      // SAFE CHECK: Parse the SQL Array into a Dart List of Strings
+      timingInstructions: (json['timing_instructions'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ?? 
+          ['ANYTIME'],
       status: json['status'] as String,
       // SAFE CHECK: Handle null dictionary for custom medications by providing a fallback map
       medicationDictionary: json['medication_dictionary'] != null 
