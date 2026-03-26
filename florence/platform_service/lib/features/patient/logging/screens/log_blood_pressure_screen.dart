@@ -366,7 +366,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    width: 110,
+                    width: 130,
                     child: TextFormField(
                       controller: _systolicController,
                       validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
@@ -419,7 +419,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   ),
                   const SizedBox(height: 8),
                   SizedBox(
-                    width: 110,
+                    width: 130,
                     child: TextFormField(
                       controller: _diastolicController,
                       validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
