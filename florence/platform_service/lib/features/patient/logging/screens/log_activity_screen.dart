@@ -116,6 +116,15 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Log Activity'),
+        elevation: 0,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: AppTheme.getBorderColor(context),
+            height: 1.0,
+          ),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 4),
@@ -129,68 +138,84 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Info card
-                    _buildInfoCard(),
-              const SizedBox(height: 24),
-              
-              // Activity Description
-              _buildDescriptionSection(),
-              const SizedBox(height: 24),
-              
-              // Duration
-              _buildDurationSection(),
-              const SizedBox(height: 24),
-              
-              // Date and time
-              _buildDateTimeSection(),
-              const SizedBox(height: 32),
-                   
-              // Save button
-              PrimaryButton(
-                text: 'Save Activity',
-                onPressed: _isLoading ? null : _handleSave,
-                isLoading: _isLoading,
-                width: double.infinity,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Info card
+                      _buildInfoCard(),
+                      const SizedBox(height: 20),
+
+                      // Activity Details Section
+                      _buildActivityDetailsSection(),
+                      const SizedBox(height: 20),
+
+                      // Date and time
+                      _buildDateTimeSection(),
+                      const SizedBox(height: 32),
+
+                      // Save button
+                      PrimaryButton(
+                        text: 'Save Activity',
+                        onPressed: _isLoading ? null : _handleSave,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
           ),
         ),
       ),
-      ),
-      ),
-      ),
     );
   }
-  
+
   /// Build info card
   Widget _buildInfoCard() {
-    return BaseCard(
-      // backgroundColor: AppTheme.activityColor.withOpacity(0.1),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Row(
         children: [
           Icon(
-            Icons.directions_run,
-            color: AppTheme.activityColor,
+            Icons.info_outline,
+            color: titleIconColor,
             size: 24,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'Track your physical activities to see how they affect your glucose',
+              'Track your physical activities to see how they affect your glucose.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.activityColor,
+                    color: AppTheme.infoColor,
                   ),
             ),
           ),
@@ -198,98 +223,229 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       ),
     );
   }
-  
-  /// Build activity name section
-  Widget _buildDescriptionSection() {
-    return CustomTextField(
-      label: 'Activity Description',
-      hint: 'e.g., Morning jog, Gym workout, Cleaning',
-      controller: _descriptionController,
-      validator: Validators.required,
-      textCapitalization: TextCapitalization.sentences,
-      prefixIcon: const Icon(Icons.description_outlined),
-    );
-  }
-  
-  /// Build duration section
-  Widget _buildDurationSection() {
-    return BaseCard(
+
+  /// Build activity details section
+  Widget _buildActivityDetailsSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Duration',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
+                child: Icon(
+                  Icons.directions_run,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Activity Details',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          
+          const SizedBox(height: 24),
           CustomTextField(
+            label: 'Activity Description',
+            hint: 'e.g., Morning jog, Gym workout, Cleaning',
+            controller: _descriptionController,
+            validator: Validators.required,
+            textCapitalization: TextCapitalization.sentences,
+            prefixIcon: const Icon(Icons.description_outlined),
+          ),
+          const SizedBox(height: 20),
+          CustomTextField(
+            label: 'Duration (minutes)',
+            hint: 'e.g., 30',
             controller: _durationController,
             validator: Validators.activityDuration,
             keyboardType: TextInputType.number,
-            hint: 'Duration in minutes',
-            prefixIcon: const Icon(Icons.timer),
+            prefixIcon: const Icon(Icons.timer_outlined),
           ),
         ],
       ),
     );
   }
-  
+
   /// Build date time section
   Widget _buildDateTimeSection() {
-    return BaseCard(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Date & Time',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-          ),
-          const SizedBox(height: 16),
-          
-          InkWell(
-            onTap: _selectDateTime,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: titleIconColor,
+                  size: 24,
+                ),
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.access_time, color: AppTheme.activityColor),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                        ),
-                      ],
+              const SizedBox(width: 12),
+              Text(
+                'Date and Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
-                ],
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_selectedDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          _selectedDateTime.hour,
+                          _selectedDateTime.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompactPickerItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    '$label:',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+          ],
+        ),
       ),
     );
   }
