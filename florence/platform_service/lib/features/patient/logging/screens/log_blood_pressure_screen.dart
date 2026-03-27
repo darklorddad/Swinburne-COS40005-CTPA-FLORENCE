@@ -25,6 +25,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   final _formKey = GlobalKey<FormState>();
   final _systolicController = TextEditingController();
   final _diastolicController = TextEditingController();
+  final _systolicFocusNode = FocusNode();
+  final _diastolicFocusNode = FocusNode();
 
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
@@ -33,6 +35,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   void dispose() {
     _systolicController.dispose();
     _diastolicController.dispose();
+    _systolicFocusNode.dispose();
+    _diastolicFocusNode.dispose();
     super.dispose();
   }
 
@@ -356,19 +360,11 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               // Systolic
               Column(
                 children: [
-                  Text(
-                    'SYS',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
                   SizedBox(
                     width: 130,
                     child: TextFormField(
                       controller: _systolicController,
+                      focusNode: _systolicFocusNode,
                       validator: (value) => Validators.range(value, 50, 300, fieldName: 'Systolic'),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.next,
@@ -391,11 +387,20 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Systolic',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                  ),
                 ],
               ),
               
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 24, 8, 0),
+                padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
                 child: Text(
                   '/',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
@@ -409,19 +414,11 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               // Diastolic
               Column(
                 children: [
-                  Text(
-                    'DIA',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
                   SizedBox(
                     width: 130,
                     child: TextFormField(
                       controller: _diastolicController,
+                      focusNode: _diastolicFocusNode,
                       validator: (value) => Validators.range(value, 30, 200, fieldName: 'Diastolic'),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       textInputAction: TextInputAction.done,
@@ -444,12 +441,21 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Diastolic',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                  ),
                 ],
               ),
               
               const SizedBox(width: 8),
               Padding(
-                padding: const EdgeInsets.only(top: 24),
+                padding: const EdgeInsets.only(bottom: 24),
                 child: Text(
                   'mmHg',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -487,32 +493,36 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
                   final displayColor = bpColor ?? AppTheme.textSecondaryColor;
 
-                  return Container(
-                    width: 140, // Fixed width
-                    height: 32, // Fixed height
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: bpColor == null
-                          ? (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor)
-                          : displayColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: displayColor.withOpacity(0.3)),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(statusIcon, size: 14, color: displayColor),
-                        const SizedBox(width: 6),
-                        Text(
-                          statusText,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: displayColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                        ),
-                      ],
+                  return InkWell(
+                    onTap: () => _systolicFocusNode.requestFocus(),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      width: 140, // Fixed width
+                      height: 32, // Fixed height
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: bpColor == null
+                            ? (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor)
+                            : displayColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: displayColor.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, size: 14, color: displayColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            statusText,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: displayColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
