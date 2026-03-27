@@ -181,10 +181,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                               const SizedBox(width: spacing),
-                              const Expanded(
-                                child: MedicationSection(),
-                              ),
-                              const SizedBox(width: spacing),
                               Expanded(
                                 child: QuickActionsGrid(
                                   actions: _getQuickActions().map((a) => (
@@ -194,6 +190,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                     onTap: () => AppRoutes.push(context, a.route)
                                   )).toList(),
                                 ),
+                              ),
+                              const SizedBox(width: spacing),
+                              const Expanded(
+                                child: MedicationSection(),
                               ),
                             ],
                           ),
@@ -206,8 +206,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               context, AppRoutes.recommendations),
                         ),
                         const SizedBox(height: spacing),
-                        const MedicationSection(),
-                        const SizedBox(height: spacing),
                         QuickActionsGrid(
                           actions: _getQuickActions().map((a) => (
                             label: a.label,
@@ -216,6 +214,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             onTap: () => AppRoutes.push(context, a.route)
                           )).toList(),
                         ),
+                        const SizedBox(height: spacing),
+                        const MedicationSection(),
                       ],
                       const SizedBox(height: spacing),
 
