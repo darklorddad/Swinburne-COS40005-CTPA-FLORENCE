@@ -155,12 +155,16 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       _buildInfoCard(),
                       const SizedBox(height: 20),
 
-                      // Activity Details Section
-                      _buildActivityDetailsSection(),
+                      // 1. Prominent Duration Input
+                      _buildDurationSection(),
                       const SizedBox(height: 20),
 
-                      // Date and time
+                      // 2. Start Date and Time
                       _buildDateTimeSection(),
+                      const SizedBox(height: 20),
+
+                      // 3. Activity Type & Details
+                      _buildTypeSection(),
                       const SizedBox(height: 32),
 
                       // Save button
@@ -224,8 +228,99 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  /// Build activity details section
-  Widget _buildActivityDetailsSection() {
+  /// Build the massive, centered Duration input (Matching Glucose/BP UI)
+  Widget _buildDurationSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.timer_outlined,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Activity Duration',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 150,
+                child: TextFormField(
+                  controller: _durationController,
+                  validator: Validators.activityDuration,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 64,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    hintText: '---',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'min',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  /// Build Activity Type (Chips + Custom Description)
+  Widget _buildTypeSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -281,8 +376,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 24),
-
-          // Quick Action Chips
           Text(
             'Quick Select',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -329,17 +422,15 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             }).toList(),
           ),
           const SizedBox(height: 20),
-
-          // Description Input
           TextFormField(
             controller: _descriptionController,
             validator: Validators.required,
             textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.next,
-            onChanged: (_) => setState(() {}), // Update chips selection state
+            textInputAction: TextInputAction.done,
+            onChanged: (_) => setState(() {}), // Updates chip selection visually
             decoration: InputDecoration(
-              labelText: 'Activity Description',
-              hintText: 'e.g., Morning jog, Gym workout, Cleaning',
+              labelText: 'Or type custom activity',
+              hintText: 'e.g., Playing tennis, Gardening...',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -347,59 +438,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              prefixIcon: const Icon(Icons.description_outlined),
+              prefixIcon: const Icon(Icons.edit_note),
             ),
-          ),
-          const SizedBox(height: 32),
-
-          // Big Duration Input
-          Text(
-            'Duration',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 140,
-                child: TextFormField(
-                  controller: _durationController,
-                  validator: Validators.activityDuration,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
-                      ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    hintText: '---',
-                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 48),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'minutes',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
           ),
         ],
       ),
