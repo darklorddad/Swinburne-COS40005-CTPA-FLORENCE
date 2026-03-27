@@ -360,15 +360,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     children: [
                       // Info
                       _buildInfoCard(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       
                       // Date & Time (Moved up as requested)
                       _buildDateTimeSection(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
                       // Meal Type
                       _buildMealTypeSection(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
                       
                       // Combined Meal Details (Photo + Inputs)
                       _buildMealDetailsSection(),
