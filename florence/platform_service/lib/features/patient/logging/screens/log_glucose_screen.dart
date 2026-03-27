@@ -1358,43 +1358,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Calories Section
-                        Row(
-                          children: [
-                            Text(
-                              'Calories (kcal)',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                            ),
-                            if (_useAiAutofill) ...[
-                              const SizedBox(width: 8),
-                              Text(
-                                'Leave blank for auto-estimate',
-                                style: TextStyle(
-                                  color: AppTheme.primaryBlue,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _caloriesController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: 'e.g. 500',
-                            filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
                         // Meal Description Section
                         Row(
                           children: [
@@ -1422,7 +1385,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
-                          textInputAction: TextInputAction.done,
+                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
@@ -1439,6 +1402,44 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 width: 2,
                               ),
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Calories Section
+                        Row(
+                          children: [
+                            Text(
+                              'Calories (kcal)',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                            ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'Leave blank for auto-estimate',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _caloriesController,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          decoration: InputDecoration(
+                            hintText: 'e.g. 500',
+                            filled: true,
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
                           ),
                         ),
                       ],
