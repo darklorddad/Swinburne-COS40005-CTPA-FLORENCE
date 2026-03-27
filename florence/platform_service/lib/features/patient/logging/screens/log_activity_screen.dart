@@ -155,8 +155,12 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       _buildInfoCard(),
                       const SizedBox(height: 20),
 
-                      // Activity Details Section
-                      _buildActivityDetailsSection(),
+                      // Duration Section
+                      _buildDurationSection(),
+                      const SizedBox(height: 20),
+
+                      // Description Section
+                      _buildDescriptionSection(),
                       const SizedBox(height: 20),
 
                       // Date and time
@@ -224,8 +228,79 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  /// Build activity details section
-  Widget _buildActivityDetailsSection() {
+  Widget _buildDurationSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Activity Duration',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 150,
+                child: TextFormField(
+                  controller: _durationController,
+                  validator: Validators.activityDuration,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 64,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    hintText: '---',
+                    hintStyle: const TextStyle(color: Colors.grey),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'min',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescriptionSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -272,22 +347,30 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          CustomTextField(
-            label: 'Activity Description',
-            hint: 'e.g., Morning jog, Gym workout, Cleaning',
+          Text(
+            'Activity Description',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
             controller: _descriptionController,
             validator: Validators.required,
             textCapitalization: TextCapitalization.sentences,
-            prefixIcon: const Icon(Icons.description_outlined),
-          ),
-          const SizedBox(height: 20),
-          CustomTextField(
-            label: 'Duration (minutes)',
-            hint: 'e.g., 30',
-            controller: _durationController,
-            validator: Validators.activityDuration,
-            keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.timer_outlined),
+            textInputAction: TextInputAction.done,
+            decoration: InputDecoration(
+              hintText: 'e.g., Morning jog, Gym workout, Cleaning',
+              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: const Icon(Icons.directions_run_outlined),
+            ),
           ),
         ],
       ),
