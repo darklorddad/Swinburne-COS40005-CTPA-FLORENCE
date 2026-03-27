@@ -285,9 +285,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           // Quick Select Grid
           Text(
             'Quick Select',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
           ),
           const SizedBox(height: 12),
@@ -356,8 +356,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             textInputAction: TextInputAction.next,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'Or type custom activity',
-              hintText: 'e.g., Playing tennis, Gardening...',
+              hintText: 'Or type custom activity...',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -376,9 +375,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           // Big Duration Input
           Text(
             'Duration',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
           ),
           const SizedBox(height: 12),

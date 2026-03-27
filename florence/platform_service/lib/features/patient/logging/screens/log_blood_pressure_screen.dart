@@ -346,8 +346,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
           Text(
             'Blood Pressure Level',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
           ),
           const SizedBox(height: 16),

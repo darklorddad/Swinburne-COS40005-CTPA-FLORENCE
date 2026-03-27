@@ -609,8 +609,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           Text(
             'Blood Glucose Level',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
           ),
           const SizedBox(height: 16),
@@ -1050,9 +1050,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       // Subsection Header
                       Text(
                         'Select Meal',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondaryColor,
-                              fontWeight: FontWeight.bold,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                       ),
                       const SizedBox(height: 12),
