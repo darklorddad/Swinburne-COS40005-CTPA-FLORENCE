@@ -35,6 +35,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _glucoseController = TextEditingController();
   final _notesController = TextEditingController();
   final _caloriesController = TextEditingController();
+  final _glucoseFocusNode = FocusNode();
 
   // State
   XFile? _selectedImage;
@@ -64,6 +65,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     _glucoseController.dispose();
     _notesController.dispose();
     _caloriesController.dispose();
+    _glucoseFocusNode.dispose();
     super.dispose();
   }
 
@@ -622,6 +624,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 width: 150,
                 child: TextFormField(
                   controller: _glucoseController,
+                  focusNode: _glucoseFocusNode,
                   validator: Validators.glucose,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
@@ -685,40 +688,44 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   final displayColor =
                       glucoseColor ?? AppTheme.textSecondaryColor;
 
-                  return Container(
-                    width: 140, // Fixed width
-                    height: 32, // Fixed height
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: glucoseColor == null
-                          ? (isDark
-                              ? Colors.white.withOpacity(0.05)
-                              : AppTheme.backgroundColor)
-                          : displayColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: displayColor.withOpacity(0.3),
+                  return InkWell(
+                    onTap: () => _glucoseFocusNode.requestFocus(),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      width: 140, // Fixed width
+                      height: 32, // Fixed height
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: glucoseColor == null
+                            ? (isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : AppTheme.backgroundColor)
+                            : displayColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: displayColor.withOpacity(0.3),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          statusIcon,
-                          size: 14,
-                          color: displayColor,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          statusText,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: displayColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                        ),
-                      ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            statusIcon,
+                            size: 14,
+                            color: displayColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            statusText,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: displayColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
