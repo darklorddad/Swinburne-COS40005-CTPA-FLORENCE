@@ -356,7 +356,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             textInputAction: TextInputAction.next,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'Or type custom activity...',
+              labelText: 'Or type custom activity',
+              hintText: 'e.g., Playing tennis, Gardening...',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
