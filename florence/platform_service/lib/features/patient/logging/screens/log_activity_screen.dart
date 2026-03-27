@@ -155,12 +155,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       _buildInfoCard(),
                       const SizedBox(height: 20),
 
-                      // Duration Section
-                      _buildDurationSection(),
-                      const SizedBox(height: 20),
-
-                      // Description Section
-                      _buildDescriptionSection(),
+                      // Activity Details Section
+                      _buildActivityDetailsSection(),
                       const SizedBox(height: 20),
 
                       // Date and time
@@ -228,83 +224,21 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  Widget _buildDurationSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Activity Duration',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 150,
-                child: TextFormField(
-                  controller: _durationController,
-                  validator: Validators.activityDuration,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 64,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryColor,
-                      ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    hintText: '---',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'min',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDescriptionSection() {
+  /// Build activity details section
+  Widget _buildActivityDetailsSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    final List<Map<String, dynamic>> commonActivities = [
+      {'name': 'Walking', 'icon': Icons.directions_walk},
+      {'name': 'Running', 'icon': Icons.directions_run},
+      {'name': 'Cycling', 'icon': Icons.directions_bike},
+      {'name': 'Gym', 'icon': Icons.fitness_center},
+      {'name': 'Yoga', 'icon': Icons.self_improvement},
+      {'name': 'Chores', 'icon': Icons.cleaning_services},
+    ];
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -347,20 +281,64 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 24),
+
+          // Quick Action Chips
           Text(
-            'Activity Description',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            'Quick Select',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.w600,
-                  fontSize: 14,
                 ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: commonActivities.map((activity) {
+              final isSelected = _descriptionController.text.toLowerCase() == activity['name'].toString().toLowerCase();
+              return ActionChip(
+                onPressed: () {
+                  setState(() {
+                    _descriptionController.text = activity['name'];
+                  });
+                },
+                backgroundColor: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+                side: BorderSide(
+                  color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
+                ),
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      activity['icon'], 
+                      size: 16, 
+                      color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      activity['name'],
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 20),
+
+          // Description Input
           TextFormField(
             controller: _descriptionController,
             validator: Validators.required,
             textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.done,
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}), // Update chips selection state
             decoration: InputDecoration(
+              labelText: 'Activity Description',
               hintText: 'e.g., Morning jog, Gym workout, Cleaning',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
@@ -369,8 +347,59 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              prefixIcon: const Icon(Icons.directions_run_outlined),
+              prefixIcon: const Icon(Icons.description_outlined),
             ),
+          ),
+          const SizedBox(height: 32),
+
+          // Big Duration Input
+          Text(
+            'Duration',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 140,
+                child: TextFormField(
+                  controller: _durationController,
+                  validator: Validators.activityDuration,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    hintText: '---',
+                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 48),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'minutes',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
           ),
         ],
       ),
@@ -417,7 +446,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Date and Time',
+                'Start Date and Time',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
