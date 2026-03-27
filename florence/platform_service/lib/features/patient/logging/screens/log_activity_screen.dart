@@ -155,16 +155,12 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       _buildInfoCard(),
                       const SizedBox(height: 20),
 
-                      // 1. Prominent Duration Input
-                      _buildDurationSection(),
+                      // Combined Activity Details & Duration
+                      _buildActivityDetailsSection(),
                       const SizedBox(height: 20),
 
-                      // 2. Start Date and Time
+                      // Start Date and Time
                       _buildDateTimeSection(),
-                      const SizedBox(height: 20),
-
-                      // 3. Activity Type & Details
-                      _buildTypeSection(),
                       const SizedBox(height: 32),
 
                       // Save button
@@ -228,99 +224,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  /// Build the massive, centered Duration input (Matching Glucose/BP UI)
-  Widget _buildDurationSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.timer_outlined,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Activity Duration',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 150,
-                child: TextFormField(
-                  controller: _durationController,
-                  validator: Validators.activityDuration,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.next,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 64,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimaryColor,
-                      ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    hintText: '---',
-                    hintStyle: const TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'min',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  /// Build Activity Type (Chips + Custom Description)
-  Widget _buildTypeSection() {
+  Widget _buildActivityDetailsSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -352,6 +256,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             children: [
               Container(
@@ -376,6 +281,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 24),
+
+          // Quick Select Grid
           Text(
             'Quick Select',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -384,50 +291,70 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 ),
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: commonActivities.map((activity) {
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 2.5,
+            ),
+            itemCount: commonActivities.length,
+            itemBuilder: (context, index) {
+              final activity = commonActivities[index];
               final isSelected = _descriptionController.text.toLowerCase() == activity['name'].toString().toLowerCase();
-              return ActionChip(
-                onPressed: () {
+              return InkWell(
+                onTap: () {
                   setState(() {
                     _descriptionController.text = activity['name'];
                   });
                 },
-                backgroundColor: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                side: BorderSide(
-                  color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
-                ),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      activity['icon'], 
-                      size: 16, 
-                      color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+                    border: Border.all(
+                      color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      activity['name'],
-                      style: TextStyle(
-                        color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        fontSize: 13,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        activity['icon'], 
+                        size: 16, 
+                        color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          activity['name'],
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            fontSize: 12,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
-            }).toList(),
+            },
           ),
           const SizedBox(height: 20),
+
+          // Description Input
           TextFormField(
             controller: _descriptionController,
             validator: Validators.required,
             textCapitalization: TextCapitalization.sentences,
-            textInputAction: TextInputAction.done,
-            onChanged: (_) => setState(() {}), // Updates chip selection visually
+            textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               labelText: 'Or type custom activity',
               hintText: 'e.g., Playing tennis, Gardening...',
@@ -440,6 +367,60 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               ),
               prefixIcon: const Icon(Icons.edit_note),
             ),
+          ),
+          
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 24),
+
+          // Big Duration Input
+          Text(
+            'Duration',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 140,
+                child: TextFormField(
+                  controller: _durationController,
+                  validator: Validators.activityDuration,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryBlue,
+                      ),
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    hintText: '---',
+                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 48),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                'minutes',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
           ),
         ],
       ),
