@@ -329,7 +329,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Log Meal'),
+        title: const Text('Log Diet'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
@@ -447,10 +447,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 child: Icon(Icons.calendar_today, color: titleIconColor, size: 24),
               ),
               const SizedBox(width: 12),
-              Text('Date & Time', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Date and Time', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Combined container
           Container(
             decoration: BoxDecoration(
@@ -560,10 +560,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 child: Icon(Icons.restaurant, size: 24, color: titleIconColor),
               ),
               const SizedBox(width: 12),
-              Text('Meal Type', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+              Text('Context', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           // Segmented Control
           Container(
             decoration: BoxDecoration(
@@ -636,21 +636,43 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.menu_book,
+                  size: 24,
+                  color: titleIconColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: titleIconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                    child: Icon(Icons.menu_book, size: 24, color: titleIconColor),
+                  Text(
+                    'Meal Details',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                  const SizedBox(width: 12),
-                  Text('Meal Details', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    'Optional',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                  ),
                 ],
               ),
-              // AI Toggle
+              const Spacer(),
+              
+              // AI Toggle Switch Group
               Row(
                 children: [
                   GestureDetector(
@@ -660,15 +682,27 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                       decoration: BoxDecoration(
                         color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor),
+                        border: Border.all(
+                          color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor,
+                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Text('Auto', style: TextStyle(fontWeight: FontWeight.w600, color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor, fontSize: 14)),
+                          Text(
+                            'Auto',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                              fontSize: 14,
+                              height: 1.0,
+                            ),
+                          ),
                           const SizedBox(width: 8),
                           SizedBox(
-                            height: 28, width: 44,
+                            height: 28,
+                            width: 44,
                             child: Transform.scale(
                               scale: 0.9,
                               child: Switch(
@@ -677,6 +711,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                                 activeTrackColor: AppTheme.primaryBlue,
                                 inactiveThumbColor: Colors.white,
                                 inactiveTrackColor: Colors.grey.shade300,
+                                trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                 onChanged: (val) => setState(() => _useAiAutofill = val),
                               ),
                             ),
@@ -690,120 +726,200 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     icon: const Icon(Icons.info_outline, size: 22, color: AppTheme.textSecondaryColor),
                     onPressed: _showAiInfoDialog,
                     visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 40, height: 40),
                     padding: EdgeInsets.zero,
                   ),
                 ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 20), // Standard spacing 20px
           
-          // Photo Picker
-          InkWell(
-            onTap: _isAnalyzing ? null : _showImageSourcePicker,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              height: 180,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image Picker Box
+              InkWell(
+                onTap: _isAnalyzing ? null : _showImageSourcePicker,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor),
-              ),
-              child: _imageBytes != null
-                  ? Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.memory(_imageBytes!, fit: BoxFit.cover)),
-                        Positioned(
-                          top: 8, right: 8,
-                          child: IconButton(
-                            onPressed: () => setState(() { _selectedImage = null; _imageBytes = null; }),
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            style: IconButton.styleFrom(backgroundColor: Colors.black54, padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
-                          ),
-                        ),
-                        if (_isAnalyzing)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              color: Colors.black45,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const CircularProgressIndicator(color: Colors.white),
-                                  const SizedBox(height: 12),
-                                  Text(_useAiAutofill ? 'Analyzing...' : 'Uploading...', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                                ],
+                child: Container(
+                  height: 160,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.borderColor),
+                  ),
+                  child: _imageBytes != null
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.memory(_imageBytes!, fit: BoxFit.cover),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedImage = null;
+                                    _imageBytes = null;
+                                  });
+                                },
+                                icon: const Icon(Icons.close, color: Colors.white),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.black54,
+                                  padding: EdgeInsets.zero,
+                                  visualDensity: VisualDensity.compact,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
-                    )
-                  : Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_a_photo_outlined, size: 32, color: AppTheme.textSecondaryColor),
-                        const SizedBox(height: 8),
-                        Text('Take a photo or upload', style: TextStyle(color: AppTheme.textSecondaryColor, fontWeight: FontWeight.w500)),
-                        if (_useAiAutofill) ...[
-                          const SizedBox(height: 4),
-                          const Text('AI analysis runs on selection', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 11)),
-                        ],
-                      ],
+                            if (_isAnalyzing)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  color: Colors.black45,
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const CircularProgressIndicator(color: Colors.white),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        _useAiAutofill ? 'Analyzing...' : 'Uploading...',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                          shadows: [
+                                            Shadow(blurRadius: 4, color: Colors.black54),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo_outlined,
+                              size: 28,
+                              color: AppTheme.textSecondaryColor,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Add Meal Photo',
+                              style: TextStyle(
+                                color: AppTheme.textSecondaryColor,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                'Analysis runs on selection',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Meal Description Section
+              Row(
+                children: [
+                  Text(
+                    'Meal Description',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                  ),
+                  if (_useAiAutofill) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      'Leave blank for auto-estimate',
+                      style: TextStyle(
+                        color: AppTheme.primaryBlue,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-            ),
-          ),
-          
-          const SizedBox(height: 24),
-          
-          // Inputs
-          Row(
-            children: [
-              Text('Meal Name', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 14)),
-              if (_useAiAutofill) ...[
-                const SizedBox(width: 8),
-                const Text('Leave blank for auto-estimate', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, fontWeight: FontWeight.w500)),
-              ],
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _mealNameController,
+                maxLines: 3,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                  hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                  filled: true,
+                  fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: AppTheme.primaryBlue,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Calories Section
+              Row(
+                children: [
+                  Text(
+                    'Calories (kcal)',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                  ),
+                  if (_useAiAutofill) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      'Leave blank for auto-estimate',
+                      style: TextStyle(
+                        color: AppTheme.primaryBlue,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _caloriesController,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.done,
+                decoration: InputDecoration(
+                  hintText: 'e.g. 500',
+                  filled: true,
+                  fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _mealNameController,
-            validator: (v) => Validators.required(v, fieldName: 'Meal name'),
-            textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(
-              hintText: 'e.g. Chicken rice, Salad',
-              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              prefixIcon: const Icon(Icons.restaurant_menu),
-            ),
-          ),
-          const SizedBox(height: 20),
-          
-          Row(
-            children: [
-              Text('Calories (kcal)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, fontSize: 14)),
-              if (_useAiAutofill) ...[
-                const SizedBox(width: 8),
-                const Text('Leave blank for auto-estimate', style: TextStyle(color: AppTheme.primaryBlue, fontSize: 12, fontWeight: FontWeight.w500)),
-              ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _caloriesController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'e.g. 500',
-              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-              prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
-            ),
           ),
         ],
       ),

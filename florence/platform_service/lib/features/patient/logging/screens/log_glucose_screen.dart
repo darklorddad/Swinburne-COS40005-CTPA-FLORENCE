@@ -55,9 +55,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   ];
 
   final List<Map<String, dynamic>> _mealTypeOptions = [
-    {'value': 'BREAKFAST', 'label': 'Breakfast', 'icon': Icons.wb_sunny_outlined},
-    {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy_outlined},
-    {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay_outlined},
+    {'value': 'BREAKFAST', 'label': 'Breakfast', 'icon': Icons.wb_sunny},
+    {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy},
+    {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay},
   ];
 
   @override
