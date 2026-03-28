@@ -178,7 +178,23 @@ class _PatientBottomNavBarShellState
               ),
             ),
 
-          // 3. Nav bar — rendered before the plus button so button appears on top
+          // 3. Sheet content — slides up from below the nav bar
+          AnimatedBuilder(
+            animation: _sheetAnim,
+            builder: (context, child) {
+              final bottom = totalNavHeight -
+                  (1 - _sheetAnim.value) * _sheetContentHeight;
+              return Positioned(
+                bottom: bottom,
+                left: 0,
+                right: 0,
+                child: child!,
+              );
+            },
+            child: _buildSheetContent(),
+          ),
+
+          // 4. Nav bar — sits above sheet so it covers sheet bottom edge
           Positioned(
             bottom: 0,
             left: 0,
@@ -186,34 +202,19 @@ class _PatientBottomNavBarShellState
             child: _buildNavBar(safeBottom),
           ),
 
-          // 4. Sheet + plus button wrapper — rendered last so it sits above nav bar
-          Positioned(
-            bottom: totalNavHeight - 40,
-            left: 0,
-            right: 0,
-            child: AnimatedBuilder(
-              animation: _sheetAnim,
-              builder: (context, child) {
-                final offset =
-                    (1 - _sheetAnim.value) * _sheetContentHeight;
-                return Transform.translate(
-                  offset: Offset(0, offset),
-                  child: child,
-                );
-              },
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Plus button handle — 80px tall, button centred
-                  SizedBox(
-                    height: 80,
-                    child: Center(child: _buildPlusButton()),
-                  ),
-                  // Sheet content (height measured after first frame)
-                  _buildSheetContent(),
-                ],
-              ),
-            ),
+          // 5. Plus button — always on top, animates upward with sheet
+          AnimatedBuilder(
+            animation: _sheetAnim,
+            builder: (context, _) {
+              final buttonBottom = (totalNavHeight - 32) +
+                  _sheetAnim.value * _sheetContentHeight;
+              return Positioned(
+                bottom: buttonBottom,
+                left: 0,
+                right: 0,
+                child: Center(child: _buildPlusButton()),
+              );
+            },
           ),
         ],
       ),
