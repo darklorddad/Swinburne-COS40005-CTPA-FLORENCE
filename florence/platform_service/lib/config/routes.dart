@@ -1,4 +1,5 @@
 import '../features/patient/logging/screens/log_hba1c_screen.dart';
+import '../features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
 
 import '../features/clinician/screens/clinician_profile_screen.dart';
 import '../features/clinician/screens/patient_detail_screen.dart';
@@ -98,7 +99,7 @@ class AppRoutes {
         return _buildRoute(const _PlaceholderScreen(title: 'Onboarding'));
 
       case dashboard:
-        return _buildRoute(const DashboardScreen(), settings);
+        return _buildRoute(const PatientBottomNavBarShell(), settings);
 
       case trends:
         return _buildRoute(const GlucoseDetailScreen(), settings);
