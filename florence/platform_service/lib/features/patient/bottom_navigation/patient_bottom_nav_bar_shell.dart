@@ -178,10 +178,17 @@ class _PatientBottomNavBarShellState
               ),
             ),
 
-          // 3. Sheet + plus button wrapper
-          // The plus button rides on top of the sheet so it travels with it
+          // 3. Nav bar — rendered before the plus button so button appears on top
           Positioned(
-            bottom: totalNavHeight - 20,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: _buildNavBar(safeBottom),
+          ),
+
+          // 4. Sheet + plus button wrapper — rendered last so it sits above nav bar
+          Positioned(
+            bottom: totalNavHeight - 40,
             left: 0,
             right: 0,
             child: AnimatedBuilder(
@@ -207,14 +214,6 @@ class _PatientBottomNavBarShellState
                 ],
               ),
             ),
-          ),
-
-          // 4. Nav bar — always rendered last so it sits on top
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: _buildNavBar(safeBottom),
           ),
         ],
       ),
