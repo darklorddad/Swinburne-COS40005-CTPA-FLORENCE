@@ -206,7 +206,7 @@ class _PatientBottomNavBarShellState
           AnimatedBuilder(
             animation: _sheetAnim,
             builder: (context, _) {
-              final buttonBottom = (totalNavHeight - 32) +
+              final buttonBottom = (totalNavHeight - 44) +
                   _sheetAnim.value * _sheetContentHeight;
               return Positioned(
                 bottom: buttonBottom,
@@ -348,8 +348,8 @@ class _PatientBottomNavBarShellState
     return GestureDetector(
       onTap: _toggleSheet,
       child: SizedBox(
-        width: 64,
-        height: 64,
+        width: 76,
+        height: 76,
         child: Stack(
           alignment: Alignment.center,
           clipBehavior: Clip.none,
@@ -368,8 +368,8 @@ class _PatientBottomNavBarShellState
                       imageFilter:
                           ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                       child: Container(
-                        width: 84,
-                        height: 84,
+                        width: 100,
+                        height: 100,
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: SweepGradient(colors: sweepColors),
@@ -386,8 +386,8 @@ class _PatientBottomNavBarShellState
               builder: (_, __) => Transform.rotate(
                 angle: _ringController.value * 2 * pi,
                 child: Container(
-                  width: 69,
-                  height: 69,
+                  width: 82,
+                  height: 82,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: SweepGradient(colors: sweepColors),
@@ -397,8 +397,8 @@ class _PatientBottomNavBarShellState
             ),
             // Layer 3: dark inner circle with plus / X
             Container(
-              width: 58,
-              height: 58,
+              width: 68,
+              height: 68,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Color(0xFF121228),
@@ -416,14 +416,14 @@ class _PatientBottomNavBarShellState
                         children: [
                           Container(
                             width: 2,
-                            height: 18,
+                            height: 22,
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.95),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
                           Container(
-                            width: 18,
+                            width: 22,
                             height: 2,
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.95),
