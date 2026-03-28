@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../../../config/routes.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../profile/screens/profile_screen.dart';
+import '../chat/screens/chat_screen.dart';
 
 class PatientBottomNavBarShell extends ConsumerStatefulWidget {
   const PatientBottomNavBarShell({super.key});
@@ -19,7 +20,7 @@ class _PatientBottomNavBarShellState
     extends ConsumerState<PatientBottomNavBarShell>
     with TickerProviderStateMixin {
   // ── Tab state ──────────────────────────────────────────────
-  int _tabIndex = 0; // 0=Home, 1=Settings, 2=Chat
+  int _tabIndex = 0; // 0=Home, 1=Chatbot, 2=Settings
 
   // ── Animation controllers ──────────────────────────────────
   late final AnimationController _ringController;
@@ -146,7 +147,7 @@ class _PatientBottomNavBarShellState
               index: _tabIndex,
               children: const [
                 DashboardScreen(),
-                ProfileScreen(),
+                ChatScreen(),
                 ProfileScreen(),
               ],
             ),
@@ -264,14 +265,14 @@ class _PatientBottomNavBarShellState
                 const Expanded(flex: 13, child: SizedBox()),
                 _buildNavItem(
                   tabIndex: 1,
-                  icon: Icons.settings_outlined,
-                  label: 'Settings',
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: 'Chatbot',
                   onTap: () => _switchTab(1),
                 ),
                 _buildNavItem(
                   tabIndex: 2,
-                  icon: Icons.person_outline_rounded,
-                  label: 'Profile',
+                  icon: Icons.settings_outlined,
+                  label: 'Settings',
                   onTap: () => _switchTab(2),
                 ),
               ],
