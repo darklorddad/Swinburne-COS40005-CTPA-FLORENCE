@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../../config/routes.dart';
-import '../chat/screens/chat_screen.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../profile/screens/profile_screen.dart';
 
@@ -39,7 +38,7 @@ class _PatientBottomNavBarShellState
   final List<double> _itemOpacity = List.filled(8, 1.0);
   final List<Offset> _itemOffset = List.filled(8, Offset.zero);
 
-  static const double _kNavHeight = 72.0;
+  static const double _kNavHeight = 80.0;
 
   @override
   void initState() {
@@ -148,7 +147,7 @@ class _PatientBottomNavBarShellState
               children: const [
                 DashboardScreen(),
                 ProfileScreen(),
-                ChatScreen(),
+                ProfileScreen(),
               ],
             ),
           ),
@@ -200,7 +199,7 @@ class _PatientBottomNavBarShellState
                 children: [
                   // Plus button handle — 80px tall, button centred
                   SizedBox(
-                    height: 80,
+                    height: 96,
                     child: Center(child: _buildPlusButton()),
                   ),
                   // Sheet content (height measured after first frame)
@@ -224,13 +223,15 @@ class _PatientBottomNavBarShellState
 
   // ── Nav bar ────────────────────────────────────────────────
   Widget _buildNavBar(double safeBottom) {
-    return ClipRect(
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
         child: Container(
           height: _kNavHeight + safeBottom,
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.94),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             border: const Border(
               top: BorderSide(color: Color(0x80CCD0E6), width: 1),
             ),
@@ -243,7 +244,7 @@ class _PatientBottomNavBarShellState
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.only(bottom: safeBottom + 6),
+            padding: EdgeInsets.only(bottom: safeBottom),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -255,7 +256,7 @@ class _PatientBottomNavBarShellState
                 ),
                 _buildNavItem(
                   tabIndex: -1, // -1 = disabled
-                  icon: Icons.show_chart_rounded,
+                  icon: Icons.monitor_heart_outlined,
                   label: 'Analysis',
                   onTap: null,
                 ),
@@ -269,8 +270,8 @@ class _PatientBottomNavBarShellState
                 ),
                 _buildNavItem(
                   tabIndex: 2,
-                  icon: Icons.chat_bubble_outline_rounded,
-                  label: 'Chatbot',
+                  icon: Icons.person_outline_rounded,
+                  label: 'Profile',
                   onTap: () => _switchTab(2),
                 ),
               ],
@@ -313,14 +314,14 @@ class _PatientBottomNavBarShellState
             ),
             Icon(
               icon,
-              size: 22,
+              size: 24,
               color: isActive ? accent : inactive,
             ),
             const SizedBox(height: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 9.5,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: isActive ? accent : inactive,
                 letterSpacing: 0.2,
@@ -351,6 +352,7 @@ class _PatientBottomNavBarShellState
         height: 64,
         child: Stack(
           alignment: Alignment.center,
+          clipBehavior: Clip.none,
           children: [
             // Layer 1: bloom (blurred, behind ring)
             AnimatedBuilder(
@@ -486,39 +488,30 @@ class _PatientBottomNavBarShellState
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           ),
           const SizedBox(height: 26),
-          GridView.count(
-            crossAxisCount: 4,
+          GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 14,
-            crossAxisSpacing: 10,
-            childAspectRatio: 0.82,
-            children: [
-              _logItem(0, '🩸', 'Glucose',
-                  [const Color(0xFFFFECEC), const Color(0xFFFFD6D6)],
-                  AppRoutes.logGlucose),
-              _logItem(1, '❤️', 'B.Pressure',
-                  [const Color(0xFFFFEAF5), const Color(0xFFFFD0EA)],
-                  AppRoutes.logBloodPressure),
-              _logItem(2, '🍽️', 'Diet',
-                  [const Color(0xFFFFFAE8), const Color(0xFFFFF0C0)],
-                  AppRoutes.logMeal),
-              _logItem(3, '🏃', 'Activity',
-                  [const Color(0xFFE8FFF4), const Color(0xFFC6FCE4)],
-                  AppRoutes.logActivity),
-              _logItem(4, '💊', 'Meds',
-                  [const Color(0xFFEEF0FF), const Color(0xFFD8DDFF)],
-                  AppRoutes.addMedication),
-              _logItem(5, '⚖️', 'BMI',
-                  [const Color(0xFFF4EEFF), const Color(0xFFE4D2FF)],
-                  AppRoutes.logBmi),
-              _logItem(6, '🫀', 'Cholesterol',
-                  [const Color(0xFFFFF3EE), const Color(0xFFFFE2D0)],
-                  AppRoutes.logCholesterol),
-              _logItem(7, '🔬', 'HbA1c',
-                  [const Color(0xFFEEF8FF), const Color(0xFFD0E8FF)],
-                  AppRoutes.logHba1c),
-            ],
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              mainAxisSpacing: 14,
+              crossAxisSpacing: 10,
+              mainAxisExtent: 100,
+            ),
+            itemCount: 8,
+            itemBuilder: (context, index) {
+              const _items = [
+                (0, '🩸', 'Glucose',     [Color(0xFFFFECEC), Color(0xFFFFD6D6)], AppRoutes.logGlucose),
+                (1, '❤️', 'B.Pressure',  [Color(0xFFFFEAF5), Color(0xFFFFD0EA)], AppRoutes.logBloodPressure),
+                (2, '🍽️', 'Diet',        [Color(0xFFFFFAE8), Color(0xFFFFF0C0)], AppRoutes.logMeal),
+                (3, '🏃', 'Activity',    [Color(0xFFE8FFF4), Color(0xFFC6FCE4)], AppRoutes.logActivity),
+                (4, '💊', 'Meds',        [Color(0xFFEEF0FF), Color(0xFFD8DDFF)], AppRoutes.addMedication),
+                (5, '⚖️', 'BMI',         [Color(0xFFF4EEFF), Color(0xFFE4D2FF)], AppRoutes.logBmi),
+                (6, '🫀', 'Cholesterol', [Color(0xFFFFF3EE), Color(0xFFFFE2D0)], AppRoutes.logCholesterol),
+                (7, '🔬', 'HbA1c',       [Color(0xFFEEF8FF), Color(0xFFD0E8FF)], AppRoutes.logHba1c),
+              ];
+              final (i, emoji, label, colors, route) = _items[index];
+              return _logItem(i, emoji, label, colors, route);
+            },
           ),
         ],
       ),
