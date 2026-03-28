@@ -181,7 +181,7 @@ class _PatientBottomNavBarShellState
           // 3. Sheet + plus button wrapper
           // The plus button rides on top of the sheet so it travels with it
           Positioned(
-            bottom: totalNavHeight,
+            bottom: totalNavHeight - 20,
             left: 0,
             right: 0,
             child: AnimatedBuilder(
@@ -199,7 +199,7 @@ class _PatientBottomNavBarShellState
                 children: [
                   // Plus button handle — 80px tall, button centred
                   SizedBox(
-                    height: 96,
+                    height: 80,
                     child: Center(child: _buildPlusButton()),
                   ),
                   // Sheet content (height measured after first frame)
@@ -261,7 +261,7 @@ class _PatientBottomNavBarShellState
                   onTap: null,
                 ),
                 // Empty centre slot — plus button floats above this
-                const Flexible(flex: 13, child: SizedBox()),
+                const Expanded(flex: 13, child: SizedBox()),
                 _buildNavItem(
                   tabIndex: 1,
                   icon: Icons.settings_outlined,
@@ -292,7 +292,7 @@ class _PatientBottomNavBarShellState
     const accent = Color(0xFF2B4EFF);
     const inactive = Color(0xFF9CA3AF);
 
-    return Flexible(
+    return Expanded(
       flex: 10,
       child: GestureDetector(
         onTap: onTap,
