@@ -361,7 +361,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               Column(
                 children: [
                   SizedBox(
-                    width: 130,
+                    width: 110,
                     child: TextFormField(
                       controller: _systolicController,
                       focusNode: _systolicFocusNode,
@@ -415,7 +415,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               Column(
                 children: [
                   SizedBox(
-                    width: 130,
+                    width: 110,
                     child: TextFormField(
                       controller: _diastolicController,
                       focusNode: _diastolicFocusNode,
