@@ -313,7 +313,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     child: InkWell(
                       onTap: () {
                         setState(() {
-                          _descriptionController.text = activity['name'];
+                          if (isSelected) {
+                            _descriptionController.clear();
+                          } else {
+                            _descriptionController.text = activity['name'];
+                          }
                         });
                       },
                       borderRadius: BorderRadius.circular(8),
