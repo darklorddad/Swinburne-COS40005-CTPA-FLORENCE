@@ -349,24 +349,15 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           const SizedBox(height: 20),
 
           // Description Input
-          TextFormField(
+          CustomTextField(
             controller: _descriptionController,
             validator: Validators.required,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              labelText: 'Or type custom activity',
-              hintText: 'e.g., Playing tennis, Gardening...',
-              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: const Icon(Icons.edit_note),
-            ),
+            label: 'Or type custom activity',
+            hint: 'e.g., Playing tennis, Gardening...',
+            prefixIcon: const Icon(Icons.edit_note),
           ),
           
           const SizedBox(height: 32),
