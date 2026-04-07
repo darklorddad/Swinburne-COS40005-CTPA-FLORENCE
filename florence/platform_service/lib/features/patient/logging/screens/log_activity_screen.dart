@@ -155,8 +155,12 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       _buildInfoCard(),
                       const SizedBox(height: 20),
 
-                      // Combined Activity Details & Duration
+                      // Activity Details
                       _buildActivityDetailsSection(),
+                      const SizedBox(height: 20),
+
+                      // Duration
+                      _buildDurationSection(),
                       const SizedBox(height: 20),
 
                       // Start Date and Time
@@ -291,88 +295,156 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 ),
           ),
           const SizedBox(height: 12),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              mainAxisSpacing: 8,
-              crossAxisSpacing: 8,
-              childAspectRatio: 2.5,
-            ),
-            itemCount: commonActivities.length,
-            itemBuilder: (context, index) {
-              final activity = commonActivities[index];
-              final isSelected = _descriptionController.text.toLowerCase() == activity['name'].toString().toLowerCase();
-              return InkWell(
-                onTap: () {
-                  setState(() {
-                    _descriptionController.text = activity['name'];
-                  });
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primaryBlue : AppTheme.borderColor,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        activity['icon'], 
-                        size: 16, 
-                        color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          activity['name'],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            fontSize: 12,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final spacing = 8.0;
+              final itemWidth = (constraints.maxWidth - (spacing * 2)) / 3;
+              final itemHeight = itemWidth / 2.5;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: commonActivities.map((activity) {
+                  final isSelected = _descriptionController.text.toLowerCase() ==
+                      activity['name'].toString().toLowerCase();
+                  return SizedBox(
+                    width: itemWidth,
+                    height: itemHeight,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _descriptionController.text = activity['name'];
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? AppTheme.primaryBlue
+                              : (isDark
+                                  ? Colors.white.withOpacity(0.05)
+                                  : AppTheme.backgroundColor),
+                          border: Border.all(
+                            color: isSelected
+                                ? AppTheme.primaryBlue
+                                : AppTheme.borderColor,
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              activity['icon'],
+                              size: 16,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppTheme.textSecondaryColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                activity['name'],
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppTheme.textPrimaryColor,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  fontSize: 12,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                }).toList(),
               );
             },
           ),
           const SizedBox(height: 20),
 
           // Description Input
-          CustomTextField(
+          TextFormField(
             controller: _descriptionController,
             validator: Validators.required,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.next,
             onChanged: (_) => setState(() {}),
-            label: 'Or type custom activity',
-            hint: 'e.g., Playing tennis, Gardening...',
-            prefixIcon: const Icon(Icons.edit_note),
+            decoration: InputDecoration(
+              labelText: 'Or type custom activity',
+              hintText: 'e.g., Playing tennis, Gardening...',
+              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              filled: true,
+              fillColor: isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : AppTheme.backgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: const Icon(Icons.edit_note),
+            ),
           ),
-          
-          const SizedBox(height: 32),
-          const Divider(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDurationSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.timer,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Duration',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
 
-          // Big Duration Input
-          Text(
-            'Duration',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-          ),
-          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -396,7 +468,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    fillColor: isDark
+                        ? Colors.white.withOpacity(0.05)
+                        : AppTheme.backgroundColor,
                     hintText: '---',
                     hintStyle: const TextStyle(color: Colors.grey, fontSize: 48),
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
