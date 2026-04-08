@@ -147,6 +147,32 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     }
   }
 
+  /// Get BMI color based on value and user thresholds
+  Color? _getBmiColor(double? value, HealthThreshold? threshold) {
+    if (value == null) return null;
+    final minNormal = threshold?.minValue ?? 18.5;
+    final maxNormal = threshold?.maxValue ?? 24.9;
+    final obeseCutoff = maxNormal + 5.0;
+
+    if (value < minNormal) return AppTheme.primaryBlue;
+    if (value <= maxNormal) return AppTheme.primaryGreen;
+    if (value <= obeseCutoff) return AppTheme.warningColor;
+    return AppTheme.errorColor;
+  }
+
+  /// Get BMI status text
+  String _getBmiStatus(double? value, HealthThreshold? threshold) {
+    if (value == null) return '';
+    final minNormal = threshold?.minValue ?? 18.5;
+    final maxNormal = threshold?.maxValue ?? 24.9;
+    final obeseCutoff = maxNormal + 5.0;
+
+    if (value < minNormal) return 'Underweight';
+    if (value <= maxNormal) return 'Normal';
+    if (value <= obeseCutoff) return 'Overweight';
+    return 'Obese';
+  }
+
   Future<void> _selectDateTime() async {
     final date = await showDatePicker(
       context: context,
@@ -365,8 +391,13 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
 
   Widget _buildInputSection(HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
+    final bmiColor = _getBmiColor(_calculatedBmi, threshold);
+    
+    final containerColor = bmiColor != null 
+        ? bmiColor.withOpacity(0.05) 
+        : (isDark ? AppTheme.midnightSurface : Colors.white);
+        
+    final borderColor = bmiColor ?? AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
@@ -374,7 +405,10 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       decoration: BoxDecoration(
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.03),
@@ -416,20 +450,33 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                 Text(
                   'Calculated BMI',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.textSecondaryColor,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
                       ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  _calculatedBmi?.toStringAsFixed(1) ?? '--',
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: _calculatedBmi != null
-                            ? AppTheme.primaryGreen
-                            : AppTheme.textSecondaryColor.withOpacity(0.5),
-                      ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      _calculatedBmi?.toStringAsFixed(1) ?? '---',
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 64,
+                            fontWeight: FontWeight.bold,
+                            color: bmiColor ?? AppTheme.textPrimaryColor,
+                          ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'kg/m²',
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 20),
                 _buildBmiStatusBadge(threshold),
               ],
             ),
@@ -470,50 +517,58 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   }
 
   Widget _buildBmiStatusBadge(HealthThreshold? threshold) {
-    String category;
-    Color color;
+    final statusText = _calculatedBmi != null
+        ? _getBmiStatus(_calculatedBmi, threshold).toUpperCase()
+        : 'ENTER DETAILS';
 
-    if (_calculatedBmi == null) {
-      category = 'Pending';
-      color = AppTheme.textSecondaryColor;
-    } else {
-      final minNormal = threshold?.minValue ?? 18.5;
-      final maxNormal = threshold?.maxValue ?? 24.9;
-      final obeseCutoff = maxNormal + 5.0;
-
-      if (_calculatedBmi! < minNormal) {
-        category = 'Underweight';
-        color = AppTheme.primaryBlue;
-      } else if (_calculatedBmi! <= maxNormal) {
-        category = 'Normal';
-        color = AppTheme.primaryGreen;
-      } else if (_calculatedBmi! <= obeseCutoff) {
-        category = 'Overweight';
-        color = AppTheme.warningColor;
-      } else {
-        category = 'Obese';
-        color = AppTheme.errorColor;
-      }
-    }
-
+    final bmiColor = _getBmiColor(_calculatedBmi, threshold);
+    final displayColor = bmiColor ?? AppTheme.textSecondaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bool isPending = _calculatedBmi == null;
 
+    IconData statusIcon;
+    if (isPending) {
+      statusIcon = Icons.edit;
+    } else if (statusText == 'UNDERWEIGHT') {
+      statusIcon = Icons.arrow_downward;
+    } else if (statusText == 'NORMAL') {
+      statusIcon = Icons.check;
+    } else {
+      statusIcon = Icons.arrow_upward;
+    }
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      width: 140, // Fixed width matching Log Glucose
+      height: 32, // Fixed height matching Log Glucose
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isPending ? color.withOpacity(0.05) : color.withOpacity(0.1),
+        color: isPending
+            ? (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor)
+            : displayColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isPending ? color.withOpacity(0.1) : color.withOpacity(0.2),
+          color: displayColor.withOpacity(0.3),
         ),
       ),
-      child: Text(
-        category.toUpperCase(),
-        style: TextStyle(
-          color: isPending ? color.withOpacity(0.5) : color,
-          fontWeight: FontWeight.bold,
-          fontSize: 12,
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            statusIcon,
+            size: 14,
+            color: isPending ? displayColor.withOpacity(0.5) : displayColor,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            statusText,
+            style: TextStyle(
+              color: isPending ? displayColor.withOpacity(0.5) : displayColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -610,6 +665,38 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                     final picked = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            // Override tertiary colors so AM/PM selector is Blue, not Red
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                              tertiary: AppTheme.primaryBlue,
+                              onTertiary: Colors.white,
+                              tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
+                              onTertiaryContainer: AppTheme.primaryBlue,
+                            ),
+                            // Fix input field background to make cursor visible
+                            timePickerTheme: TimePickerThemeData(
+                              hourMinuteColor: MaterialStateColor.resolveWith((states) {
+                                return states.contains(MaterialState.selected)
+                                    ? AppTheme.primaryBlue.withOpacity(0.1)
+                                    : Colors.grey.shade100;
+                              }),
+                              hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
+                                return states.contains(MaterialState.selected)
+                                    ? AppTheme.primaryBlue
+                                    : AppTheme.textPrimaryColor;
+                              }),
+                            ),
+                            textSelectionTheme: TextSelectionThemeData(
+                              cursorColor: AppTheme.primaryBlue,
+                              selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
+                              selectionHandleColor: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (picked != null) {
                       setState(() {
