@@ -35,6 +35,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _glucoseController = TextEditingController();
   final _notesController = TextEditingController();
   final _caloriesController = TextEditingController();
+  final _glucoseFocusNode = FocusNode();
 
   // State
   XFile? _selectedImage;
@@ -54,9 +55,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   ];
 
   final List<Map<String, dynamic>> _mealTypeOptions = [
-    {'value': 'BREAKFAST', 'label': 'Breakfast', 'icon': Icons.wb_sunny_outlined},
-    {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy_outlined},
-    {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay_outlined},
+    {'value': 'BREAKFAST', 'label': 'Breakfast', 'icon': Icons.wb_sunny},
+    {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy},
+    {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay},
   ];
 
   @override
@@ -64,6 +65,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     _glucoseController.dispose();
     _notesController.dispose();
     _caloriesController.dispose();
+    _glucoseFocusNode.dispose();
     super.dispose();
   }
 
@@ -607,8 +609,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           Text(
             'Blood Glucose Level',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
                   fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
           ),
           const SizedBox(height: 16),
@@ -622,6 +624,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 width: 150,
                 child: TextFormField(
                   controller: _glucoseController,
+                  focusNode: _glucoseFocusNode,
                   validator: Validators.glucose,
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
@@ -685,40 +688,44 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   final displayColor =
                       glucoseColor ?? AppTheme.textSecondaryColor;
 
-                  return Container(
-                    width: 140, // Fixed width
-                    height: 32, // Fixed height
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: glucoseColor == null
-                          ? (isDark
-                              ? Colors.white.withOpacity(0.05)
-                              : AppTheme.backgroundColor)
-                          : displayColor.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: displayColor.withOpacity(0.3),
+                  return InkWell(
+                    onTap: () => _glucoseFocusNode.requestFocus(),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      width: 140, // Fixed width
+                      height: 32, // Fixed height
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: glucoseColor == null
+                            ? (isDark
+                                ? Colors.white.withOpacity(0.05)
+                                : AppTheme.backgroundColor)
+                            : displayColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: displayColor.withOpacity(0.3),
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          statusIcon,
-                          size: 14,
-                          color: displayColor,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          statusText,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: displayColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                        ),
-                      ],
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            statusIcon,
+                            size: 14,
+                            color: displayColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            statusText,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  color: displayColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -1043,9 +1050,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       // Subsection Header
                       Text(
                         'Select Meal',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondaryColor,
-                              fontWeight: FontWeight.bold,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
                             ),
                       ),
                       const SizedBox(height: 12),
@@ -1351,43 +1358,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         ),
                         const SizedBox(height: 20),
 
-                        // Calories Section
-                        Row(
-                          children: [
-                            Text(
-                              'Calories (kcal)',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                            ),
-                            if (_useAiAutofill) ...[
-                              const SizedBox(width: 8),
-                              Text(
-                                'Leave blank for auto-estimate',
-                                style: TextStyle(
-                                  color: AppTheme.primaryBlue,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _caloriesController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            hintText: 'e.g. 500',
-                            filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-
                         // Meal Description Section
                         Row(
                           children: [
@@ -1415,7 +1385,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         TextFormField(
                           controller: _notesController,
                           maxLines: 3,
-                          textInputAction: TextInputAction.done,
+                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
@@ -1432,6 +1402,44 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 width: 2,
                               ),
                             ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Calories Section
+                        Row(
+                          children: [
+                            Text(
+                              'Calories (kcal)',
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
+                            ),
+                            if (_useAiAutofill) ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                'Leave blank for auto-estimate',
+                                style: TextStyle(
+                                  color: AppTheme.primaryBlue,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        TextFormField(
+                          controller: _caloriesController,
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                          decoration: InputDecoration(
+                            hintText: 'e.g. 500',
+                            filled: true,
+                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
                           ),
                         ),
                       ],
