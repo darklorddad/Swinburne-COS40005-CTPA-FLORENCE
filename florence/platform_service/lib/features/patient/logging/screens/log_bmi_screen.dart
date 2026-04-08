@@ -429,10 +429,8 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                             : AppTheme.textSecondaryColor.withOpacity(0.5),
                       ),
                 ),
-                if (_calculatedBmi != null) ...[
-                  const SizedBox(height: 12),
-                  _buildBmiStatusBadge(threshold),
-                ],
+                const SizedBox(height: 12),
+                _buildBmiStatusBadge(threshold),
               ],
             ),
           ),
@@ -475,35 +473,44 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     String category;
     Color color;
 
-    final minNormal = threshold?.minValue ?? 18.5;
-    final maxNormal = threshold?.maxValue ?? 24.9;
-    final obeseCutoff = maxNormal + 5.0;
-
-    if (_calculatedBmi! < minNormal) {
-      category = 'Underweight';
-      color = AppTheme.primaryBlue;
-    } else if (_calculatedBmi! <= maxNormal) {
-      category = 'Normal';
-      color = AppTheme.primaryGreen;
-    } else if (_calculatedBmi! <= obeseCutoff) {
-      category = 'Overweight';
-      color = AppTheme.warningColor;
+    if (_calculatedBmi == null) {
+      category = 'Pending';
+      color = AppTheme.textSecondaryColor;
     } else {
-      category = 'Obese';
-      color = AppTheme.errorColor;
+      final minNormal = threshold?.minValue ?? 18.5;
+      final maxNormal = threshold?.maxValue ?? 24.9;
+      final obeseCutoff = maxNormal + 5.0;
+
+      if (_calculatedBmi! < minNormal) {
+        category = 'Underweight';
+        color = AppTheme.primaryBlue;
+      } else if (_calculatedBmi! <= maxNormal) {
+        category = 'Normal';
+        color = AppTheme.primaryGreen;
+      } else if (_calculatedBmi! <= obeseCutoff) {
+        category = 'Overweight';
+        color = AppTheme.warningColor;
+      } else {
+        category = 'Obese';
+        color = AppTheme.errorColor;
+      }
     }
+
+    final bool isPending = _calculatedBmi == null;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: isPending ? color.withOpacity(0.05) : color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(
+          color: isPending ? color.withOpacity(0.1) : color.withOpacity(0.2),
+        ),
       ),
       child: Text(
         category.toUpperCase(),
         style: TextStyle(
-          color: color,
+          color: isPending ? color.withOpacity(0.5) : color,
           fontWeight: FontWeight.bold,
           fontSize: 12,
         ),
