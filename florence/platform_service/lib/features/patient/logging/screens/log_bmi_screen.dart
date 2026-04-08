@@ -409,6 +409,33 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               ),
             ],
           ),
+          if (_calculatedBmi != null) ...[
+            const SizedBox(height: 24),
+            Center(
+              child: Column(
+                children: [
+                  Text(
+                    'Calculated BMI',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _calculatedBmi!.toStringAsFixed(1),
+                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryGreen,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildBmiStatusBadge(threshold),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Divider(),
+          ],
           const SizedBox(height: 24),
           Row(
             children: [
@@ -437,33 +464,6 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               ),
             ],
           ),
-          if (_calculatedBmi != null) ...[
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 24),
-            Center(
-              child: Column(
-                children: [
-                  Text(
-                    'Calculated BMI',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _calculatedBmi!.toStringAsFixed(1),
-                    style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.primaryGreen,
-                        ),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildBmiStatusBadge(threshold),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );
