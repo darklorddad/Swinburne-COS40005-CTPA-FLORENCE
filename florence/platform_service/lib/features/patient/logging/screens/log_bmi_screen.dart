@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../config/routes.dart';
+import '../../../../config/theme.dart';
 import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_providers;
-import '../../core/repositories/monitor_data_repository.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
+import '../../profile/providers/user_profile_provider.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
