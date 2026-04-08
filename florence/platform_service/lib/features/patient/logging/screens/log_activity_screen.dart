@@ -382,7 +382,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               labelText: 'Or type custom activity',
-              hintText: 'e.g., Playing tennis, Gardening...',
+              hintText: 'e.g., Playing tennis with 30 minutes break in between',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark
@@ -464,7 +464,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryBlue,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
