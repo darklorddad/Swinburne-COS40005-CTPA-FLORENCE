@@ -371,7 +371,17 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               );
             },
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
+
+          // Description Input Title
+          Text(
+            'Custom Activity',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+          ),
+          const SizedBox(height: 12),
 
           // Description Input
           TextFormField(
@@ -383,8 +393,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             maxLines: 5,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              alignLabelWithHint: true,
-              labelText: 'Or type custom activity',
               hintText: 'e.g., Playing tennis with 30 minutes break in between',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
