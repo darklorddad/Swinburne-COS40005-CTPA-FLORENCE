@@ -115,6 +115,8 @@ class PatientProfileUpdate(BaseModel):
     emergency_contact_phone: Optional[str] = None
     profile_picture_url: Optional[str] = None
     email: Optional[EmailStr] = None
+    height: Optional[float] = Field(None, gt=0, lt=300)
+    weight: Optional[float] = Field(None, gt=0, lt=500)
 
 class MonitorDataType(str, Enum):
     BLOOD_PRESSURE_SYSTOLIC = 'BLOOD_PRESSURE_SYSTOLIC'
@@ -249,7 +251,22 @@ async def update_own_patient_profile(
                 update_dict['date_of_birth'] = update_dict['date_of_birth'].isoformat()
 
             updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
-            return updated_profile_response.data[0]
+            profile_data = updated_profile_response.data[0]
+
+            # --- AUTO-LOG BMI: If height or weight changed, log a new BMI entry ---
+            if 'height' in update_dict or 'weight' in update_dict:
+                h = profile_data.get('height')
+                w = profile_data.get('weight')
+                if h and w and h > 0:
+                    bmi = w / ((h / 100) ** 2)
+                    supabase.table('patient_monitor_data').insert({
+                        'patient_id': patient_profile['id'],
+                        'data_type': 'BMI',
+                        'value': round(bmi, 2),
+                        'measured_at': datetime.now().isoformat()
+                    }).execute()
+
+            return profile_data
         else:
             # Return existing profile if only email was updated
             return patient_profile

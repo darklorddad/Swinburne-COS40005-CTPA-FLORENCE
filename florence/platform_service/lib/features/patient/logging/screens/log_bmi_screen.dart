@@ -38,6 +38,19 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     super.initState();
     _heightController.addListener(_calculateBmi);
     _weightController.addListener(_calculateBmi);
+    
+    // Pre-fill from profile
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(userProfileProvider).value;
+      if (profile != null) {
+        if (profile['height'] != null) {
+          _heightController.text = profile['height'].toString();
+        }
+        if (profile['weight'] != null) {
+          _weightController.text = profile['weight'].toString();
+        }
+      }
+    });
   }
 
   @override
@@ -106,16 +119,20 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(monitorDataRepositoryProvider).addMonitorData(
-        'BMI',
-        _calculatedBmi!,
-        _selectedDateTime.toUtc(),
-      );
+      final apiService = ApiService();
       
+      // Update profile - backend will auto-log the BMI entry
+      await apiService.put('/patients/me', {
+        'height': double.tryParse(_heightController.text.replaceAll(',', '.')),
+        'weight': double.tryParse(_weightController.text.replaceAll(',', '.')),
+      });
+      
+      // Refresh providers
+      ref.invalidate(userProfileProvider);
       ref.invalidate(core_providers.monitorDataProvider);
 
       if (mounted) {
-        Helpers.showSuccess(context, 'BMI logged successfully!');
+        Helpers.showSuccess(context, 'BMI logged and profile updated!');
         AppRoutes.pop(context);
       }
     } catch (e) {

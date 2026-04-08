@@ -37,6 +37,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _emergencyContactName = 'Not set';
   String _emergencyContactPhone = 'Not set';
   String _emergencyContactRelationship = 'Not set';
+  double? _height;
+  double? _weight;
   double _targetMin = 70.0;
   double _targetMax = 180.0;
 
@@ -251,6 +253,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _showEditProfileDialog(Map<String, dynamic> profile) {
     final nameController = TextEditingController(text: profile['name']);
     final emailController = TextEditingController(text: profile['email']);
+    final heightController = TextEditingController(text: profile['height']?.toString() ?? '');
+    final weightController = TextEditingController(text: profile['weight']?.toString() ?? '');
     
     // Parse User Phone
     final parsedPhone = _parsePhone(profile['phone_number']);
@@ -391,6 +395,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: CustomTextField(
+                            label: 'Height (cm)',
+                            controller: heightController,
+                            validator: (val) => Validators.range(val, 50, 300, fieldName: 'Height'),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            prefixIcon: const Icon(Icons.height),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: CustomTextField(
+                            label: 'Weight (kg)',
+                            controller: weightController,
+                            validator: (val) => Validators.range(val, 20, 500, fieldName: 'Weight'),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            prefixIcon: const Icon(Icons.scale),
+                          ),
+                        ),
+                      ],
+                    ),
 
                     const SizedBox(height: 24),
                     const Divider(),
@@ -483,6 +511,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       'emergency_contact_name': ecNameController.text.trim(),
                       'emergency_contact_relationship': selectedRelationship,
                       'emergency_contact_phone': fullEcPhone,
+                      'height': double.tryParse(heightController.text.replaceAll(',', '.')),
+                      'weight': double.tryParse(weightController.text.replaceAll(',', '.')),
                     });
                     
                     if (mounted) {
@@ -579,6 +609,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _gender = profileData['gender'] ?? 'Not set';
           _phoneNumber = profileData['phone_number'] ?? 'Not set';
           _profileImageUrl = profileData['profile_picture_url']; // Added
+          _height = profileData['height'] != null ? (profileData['height'] as num).toDouble() : null;
+          _weight = profileData['weight'] != null ? (profileData['weight'] as num).toDouble() : null;
           _emergencyContactName = profileData['emergency_contact_name'] ?? 'Not set';
           _emergencyContactPhone = profileData['emergency_contact_phone'] ?? 'Not set';
           _emergencyContactRelationship = profileData['emergency_contact_relationship'] ?? 'Not set';
@@ -756,6 +788,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildInfoRow('Gender', _gender, Icons.wc),
           const Divider(height: 24),
           _buildInfoRow('Phone Number', _formatDisplayPhone(_phoneNumber), Icons.phone),
+          const Divider(height: 24),
+          Row(
+            children: [
+              Expanded(child: _buildInfoRow('Height', _height != null ? '${_height!.toStringAsFixed(1)} cm' : 'Not set', Icons.height)),
+              Expanded(child: _buildInfoRow('Weight', _weight != null ? '${_weight!.toStringAsFixed(1)} kg' : 'Not set', Icons.scale)),
+            ],
+          ),
 
           const SizedBox(height: 40),
 
