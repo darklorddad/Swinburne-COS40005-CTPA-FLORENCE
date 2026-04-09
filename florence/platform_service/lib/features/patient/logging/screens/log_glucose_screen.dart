@@ -671,93 +671,91 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           const SizedBox(height: 20),
 
           // Status indicator (Always visible)
-          SizedBox(
-            child: Center(
-              child: Builder(
-                builder: (context) {
-                  final statusText = glucoseColor != null
-                      ? _getGlucoseStatus(
-                              double.tryParse(_glucoseController.text), threshold)
-                          .toUpperCase()
-                      : 'ENTER READING';
+          Center(
+            child: Builder(
+              builder: (context) {
+                final statusText = glucoseColor != null
+                    ? _getGlucoseStatus(
+                            double.tryParse(_glucoseController.text), threshold)
+                        .toUpperCase()
+                    : 'ENTER READING';
 
-                  IconData statusIcon;
-                  if (glucoseColor == null) {
-                    statusIcon = Icons.edit;
-                  } else if (statusText == 'LOW') {
-                    statusIcon = Icons.arrow_downward;
-                  } else if (statusText == 'HIGH') {
-                    statusIcon = Icons.arrow_upward;
-                  } else {
-                    statusIcon = Icons.check;
-                  }
+                IconData statusIcon;
+                if (glucoseColor == null) {
+                  statusIcon = Icons.edit;
+                } else if (statusText == 'LOW') {
+                  statusIcon = Icons.arrow_downward;
+                } else if (statusText == 'HIGH') {
+                  statusIcon = Icons.arrow_upward;
+                } else {
+                  statusIcon = Icons.check;
+                }
 
-                  final displayColor =
-                      glucoseColor ?? AppTheme.textSecondaryColor;
+                final displayColor =
+                    glucoseColor ?? AppTheme.textSecondaryColor;
 
-                  return InkWell(
-                    onTap: () => _glucoseFocusNode.requestFocus(),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 140, // Fixed width
-                          height: 32,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: glucoseColor == null
-                                ? (isDark
-                                    ? Colors.white.withOpacity(0.05)
-                                    : AppTheme.backgroundColor)
-                                : displayColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: displayColor.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                statusIcon,
-                                size: 14,
-                                color: displayColor,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                statusText,
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                      color: displayColor,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 12,
-                                    ),
-                              ),
-                            ],
+                return InkWell(
+                  onTap: () => _glucoseFocusNode.requestFocus(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 140, // Fixed width
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: glucoseColor == null
+                              ? (isDark
+                                  ? Colors.white.withOpacity(0.05)
+                                  : AppTheme.backgroundColor)
+                              : displayColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: displayColor.withOpacity(0.3),
                           ),
                         ),
-                        if (_glucoseController.text.isNotEmpty)
-                          Builder(
-                            builder: (context) {
-                              final val = double.tryParse(_glucoseController.text.replaceAll(',', '.'));
-                              if (val != null && (val < minValid || val > maxValid)) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Text(
-                                    'Enter $minValid - $maxValid $currentUnit',
-                                    style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              statusIcon,
+                              size: 14,
+                              color: displayColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              statusText,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: displayColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
                                   ),
-                                );
-                              }
-                              return const SizedBox.shrink();
-                            },
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_glucoseController.text.isNotEmpty)
+                        Builder(
+                          builder: (context) {
+                            final val = double.tryParse(_glucoseController.text.replaceAll(',', '.'));
+                            if (val != null && (val < minValid || val > maxValid)) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Enter $minValid - $maxValid $currentUnit',
+                                  style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
