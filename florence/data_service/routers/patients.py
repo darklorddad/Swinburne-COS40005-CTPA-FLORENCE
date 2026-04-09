@@ -9,6 +9,32 @@ from enum import Enum
 import time
 from client import supabase
 
+# --- Conversion Helpers ---
+
+def convert_glucose_from_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value * 18.0182, 1)
+    return round(value, 1)
+
+def convert_glucose_to_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value / 18.0182, 2)
+    return round(value, 2)
+
+def convert_cholesterol_from_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value * 38.67, 1)
+    return round(value, 1)
+
+def convert_cholesterol_to_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value / 38.67, 2)
+    return round(value, 2)
+
 # --- Constants ---
 
 DEFAULT_THRESHOLDS = [
@@ -94,7 +120,16 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         if len(profile_response.data) > 1:
             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
             
-        return profile_response.data[0]
+        profile = profile_response.data[0]
+        
+        # Fetch user settings to include in the profile context for unit conversion
+        settings_res = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", user.id).execute()
+        if settings_res.data:
+            profile['settings'] = settings_res.data[0]
+        else:
+            profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            
+        return profile
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
     except HTTPException as e:
@@ -326,7 +361,19 @@ async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patie
     """
     try:
         monitor_data_response = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_profile['id']).execute()
-        return monitor_data_response.data
+        data = monitor_data_response.data
+        
+        # Convert units based on user preference
+        g_unit = patient_profile['settings']['glucose_unit']
+        c_unit = patient_profile['settings']['cholesterol_unit']
+        
+        for item in data:
+            if item['data_type'] == 'GLUCOSE':
+                item['value'] = convert_glucose_from_base(item['value'], g_unit)
+            elif 'CHOLESTEROL' in item['data_type']:
+                item['value'] = convert_cholesterol_from_base(item['value'], c_unit)
+                
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
 
@@ -341,6 +388,13 @@ async def add_own_monitor_data(
     """
     insert_dict = data.model_dump(mode='json')
     insert_dict['patient_id'] = patient_profile['id']
+    
+    # Convert to base unit before saving
+    if data.data_type == MonitorDataType.GLUCOSE:
+        insert_dict['value'] = convert_glucose_to_base(data.value, patient_profile['settings']['glucose_unit'])
+    elif 'CHOLESTEROL' in data.data_type:
+        insert_dict['value'] = convert_cholesterol_to_base(data.value, patient_profile['settings']['cholesterol_unit'])
+        
     try:
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
         return new_data_response.data[0]
@@ -381,7 +435,14 @@ async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient
     """
     try:
         logs_response = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_profile['id']).execute()
-        return logs_response.data
+        data = logs_response.data
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        for log in data:
+            log['glucose_before_meal'] = convert_glucose_from_base(log.get('glucose_before_meal'), g_unit)
+            log['glucose_after_meal'] = convert_glucose_from_base(log.get('glucose_after_meal'), g_unit)
+            
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
@@ -399,6 +460,12 @@ async def add_own_daily_log(
         # if the user only sends partial data (e.g. only glucose_after)
         data_dict = log_data.model_dump(mode='json', exclude_unset=True)
         data_dict['patient_id'] = patient_profile['id']
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        if 'glucose_before_meal' in data_dict:
+            data_dict['glucose_before_meal'] = convert_glucose_to_base(data_dict['glucose_before_meal'], g_unit)
+        if 'glucose_after_meal' in data_dict:
+            data_dict['glucose_after_meal'] = convert_glucose_to_base(data_dict['glucose_after_meal'], g_unit)
         
         # Check if row exists
         existing = supabase.table('daily_patient_logs')\
