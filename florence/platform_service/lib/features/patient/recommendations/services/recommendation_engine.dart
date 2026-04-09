@@ -30,9 +30,10 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
   /// 2. On any failure (network, timeout, bad response), fall back to
   ///    [_generateRuleBasedRecommendations] transparently.
   /// 3. Append to state.
-  Future<void> generateRecommendations({int daysToAnalyze = 7}) async {
+  /// Returns true if AI recommendations were used, false if rule-based fallback was used.
+  Future<bool> generateRecommendations({int daysToAnalyze = 7}) async {
     final healthData = ref.read(monitorDataProvider).asData?.value;
-    if (healthData == null) return;
+    if (healthData == null) return false;
 
     final summary = healthData.getHealthSummary(
       startDate: DateTime.now().subtract(Duration(days: daysToAnalyze)),
@@ -40,6 +41,7 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
     );
 
     List<HealthRecommendation> newRecommendations;
+    bool usedAI = false;
 
     if (Environment.enableAI) {
       try {
@@ -51,6 +53,7 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
         debugPrint(
           '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',
         );
+        usedAI = true;
       } catch (e) {
         debugPrint(
           '[RecommendationEngine] LLM failed, using rule-based fallback. Error: $e',
@@ -62,7 +65,12 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
       newRecommendations = _generateRuleBasedRecommendations(summary);
     }
 
-    state = [...state, ...newRecommendations];
+    // Replace active recommendations; keep completed/dismissed history
+    state = [
+      ...state.where((r) => r.status != RecommendationStatus.active),
+      ...newRecommendations,
+    ];
+    return usedAI;
   }
 
   /// Rule-based fallback — used when AI is disabled or the LLM call fails.
