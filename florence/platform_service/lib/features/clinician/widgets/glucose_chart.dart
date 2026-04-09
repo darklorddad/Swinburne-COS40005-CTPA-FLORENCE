@@ -9,10 +9,12 @@ class GlucoseChart extends StatelessWidget {
   final List<HbA1cReading> hbA1cReadings;
   final double highThreshold;
   final double lowThreshold;
+  final String unit;
 
   const GlucoseChart({
     super.key,
     required this.readings,
+    required this.unit,
     this.hbA1cReadings = const [],
     this.highThreshold = 180.0,
     this.lowThreshold = 70.0,
@@ -36,12 +38,13 @@ class GlucoseChart extends StatelessWidget {
   }
 
   LineChartData _glucoseChartData(List<GlucoseReading> sortedReadings) {
+    final bool isMmol = unit == 'mmol/L';
     
     return LineChartData(
       gridData: FlGridData(
         show: true,
         drawVerticalLine: true,
-        horizontalInterval: 50,
+        horizontalInterval: isMmol ? 2.0 : 50.0,
         getDrawingHorizontalLine: (value) {
           if (value == highThreshold || value == lowThreshold) {
             return FlLine(
@@ -102,17 +105,17 @@ class GlucoseChart extends StatelessWidget {
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            interval: 50,
+            interval: isMmol ? 2.0 : 50.0,
             getTitlesWidget: (value, meta) {
               return Text(
-                value.toInt().toString(),
+                isMmol ? value.toStringAsFixed(1) : value.toInt().toString(),
                 style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 10,
                 ),
               );
             },
-            reservedSize: 28,
+            reservedSize: 35,
           ),
         ),
       ),
@@ -147,7 +150,7 @@ class GlucoseChart extends StatelessWidget {
               if (index >= 0 && index < sortedReadings.length) {
                 final reading = sortedReadings[index];
                 return LineTooltipItem(
-                  '${reading.value} mg/dL\n',
+                  '${reading.value} $unit\n',
                   const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(
@@ -316,15 +319,15 @@ class GlucoseChart extends StatelessWidget {
     if (readings.isEmpty) return 0;
     
     double minValue = readings.map((e) => e.value).reduce((a, b) => a < b ? a : b);
-    // Give some padding below the minimum value and ensure we show the low threshold
-    return (minValue < lowThreshold ? minValue : lowThreshold) - 20;
+    double limit = (minValue < lowThreshold ? minValue : lowThreshold);
+    return limit * 0.85;
   }
 
   double _getMaxY() {
-    if (readings.isEmpty) return 300;
+    if (readings.isEmpty) return unit == 'mmol/L' ? 15 : 300;
     
     double maxValue = readings.map((e) => e.value).reduce((a, b) => a > b ? a : b);
-    // Give some padding above the maximum value and ensure we show the high threshold
-    return (maxValue > highThreshold ? maxValue : highThreshold) + 20;
+    double limit = (maxValue > highThreshold ? maxValue : highThreshold);
+    return limit * 1.15;
   }
 }

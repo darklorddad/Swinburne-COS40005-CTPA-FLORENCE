@@ -499,7 +499,20 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
     """
     try:
         thresholds_response = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
-        return thresholds_response.data
+        data = thresholds_response.data
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        c_unit = patient_profile['settings']['cholesterol_unit']
+
+        for t in data:
+            if t['data_type'] == 'GLUCOSE':
+                t['min_value'] = convert_glucose_from_base(t['min_value'], g_unit)
+                t['max_value'] = convert_glucose_from_base(t['max_value'], g_unit)
+            elif 'CHOLESTEROL' in t['data_type']:
+                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit)
+                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit)
+                
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
 
