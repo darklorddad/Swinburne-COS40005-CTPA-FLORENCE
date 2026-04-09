@@ -926,11 +926,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         "${med.amount} ${med.medicationType ?? 'Pill'}",
                         style: const TextStyle(fontSize: 12),
                       ),
-                      trailing: IconButton(
+                      trailing: PopupMenuButton<String>(
                         icon: const Icon(Icons.more_vert, size: 20),
-                        onPressed: () {
-                          // Logic for edit/stop/restart
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _showFormModal(context, isEdit: true, med: med);
+                          } else if (value == 'stop') {
+                            _confirmStop(context, ref, med, brandName);
+                          } else if (value == 'restart') {
+                            _confirmRestart(context, ref, med, brandName);
+                          }
                         },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(children: [
+                                Icon(Icons.edit, size: 18),
+                                SizedBox(width: 8),
+                                Text('Edit')
+                              ])),
+                          if (isActive)
+                            const PopupMenuItem(
+                                value: 'stop',
+                                child: Row(children: [
+                                  Icon(Icons.stop_circle, size: 18,
+                                      color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text('Stop',
+                                      style: TextStyle(color: Colors.red))
+                                ]))
+                          else
+                            const PopupMenuItem(
+                                value: 'restart',
+                                child: Row(children: [
+                                  Icon(Icons.play_circle, size: 18,
+                                      color: Colors.green),
+                                  SizedBox(width: 8),
+                                  Text('Restart',
+                                      style: TextStyle(color: Colors.green))
+                                ])),
+                        ],
                       ),
                     ),
                   );
@@ -972,6 +1009,78 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ? Colors.white.withOpacity(0.05)
           : Colors.grey.shade100,
       side: BorderSide.none,
+    );
+  }
+
+  void _showFormModal(BuildContext context,
+      {required bool isEdit, dynamic med}) {
+    showDialog(
+        context: context,
+        builder: (context) =>
+            MedicationFormDialog(isEdit: isEdit, medication: med));
+  }
+
+  void _confirmStop(
+      BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Stop Medication"),
+        content: Text(
+            "Are you sure you want to stop taking $medName? It will be moved to your history."),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref
+                  .read(medicationRepositoryProvider)
+                  .updateMedicationStatus(med.id, 'PAST');
+              ref.invalidate(patientMedicationsProvider);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                elevation: 0),
+            child: const Text("Stop Medication"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRestart(
+      BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Restart Medication"),
+        content: Text(
+            "Do you want to move $medName back to your active medications and schedule?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref
+                  .read(medicationRepositoryProvider)
+                  .updateMedicationStatus(med.id, 'CURRENT');
+              ref.invalidate(patientMedicationsProvider);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                elevation: 0),
+            child: const Text("Restart Medication"),
+          ),
+        ],
+      ),
     );
   }
 
