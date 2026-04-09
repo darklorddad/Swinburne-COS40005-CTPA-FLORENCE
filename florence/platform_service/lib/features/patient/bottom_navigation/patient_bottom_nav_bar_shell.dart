@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'dart:math' as math; // Added for math.max
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,10 +134,13 @@ class _PatientBottomNavBarShellState
           // 2. Backdrop — blurs and darkens content when sheet is open
           Positioned.fill(
             child: AnimatedBuilder(
-              animation: _sheetAnim,
+              animation: _sheetController,
               builder: (context, _) {
-                // Remove widget completely when fully closed
-                if (_sheetAnim.value == 0) return const SizedBox.shrink();
+                // BUG FIX: Strictly use isDismissed to prevent negative zero rendering bugs
+                if (_sheetController.isDismissed) return const SizedBox.shrink();
+                
+                // BUG FIX: Force a minimum blur of 0.001 to prevent Impeller engine crashes
+                final double blurAmount = math.max(0.001, _sheetAnim.value * 4);
                 
                 return IgnorePointer(
                   ignoring: !_sheetOpen, // Ignore touches while closing
@@ -145,11 +148,13 @@ class _PatientBottomNavBarShellState
                     onTap: _closeSheet,
                     child: BackdropFilter(
                       filter: ImageFilter.blur(
-                        sigmaX: _sheetAnim.value * 4,
-                        sigmaY: _sheetAnim.value * 4,
+                        sigmaX: blurAmount,
+                        sigmaY: blurAmount,
                       ),
                       child: Container(
-                        color: const Color(0xFF060618).withOpacity(0.42 * _sheetAnim.value),
+                        color: const Color(0xFF060618).withOpacity(
+                          math.max(0.0, 0.42 * _sheetAnim.value),
+                        ),
                       ),
                     ),
                   ),
@@ -160,16 +165,16 @@ class _PatientBottomNavBarShellState
 
           // 3. Sheet content — slides up from bottom
           AnimatedBuilder(
-            animation: _sheetAnim,
+            animation: _sheetController,
             builder: (context, child) {
-              if (_sheetAnim.value == 0) return const SizedBox.shrink();
+              if (_sheetController.isDismissed) return const SizedBox.shrink();
 
               return Positioned(
                 bottom: 0, // Anchored to bottom, no gap left for green backgrounds
                 left: 0,
                 right: 0,
                 child: FractionalTranslation(
-                  translation: Offset(0, 1.0 - _sheetAnim.value), // Slide by 100% of its height
+                  translation: Offset(0, 1.0 - math.max(0.0, _sheetAnim.value)), // Slide by 100% of its height
                   child: child!,
                 ),
               );
@@ -189,7 +194,7 @@ class _PatientBottomNavBarShellState
         child: AnimatedBuilder(
           animation: _crossAnim,
           builder: (context, _) => Transform.rotate(
-            angle: _crossAnim.value * (pi / 4),
+            angle: _crossAnim.value * (math.pi / 4),
             child: const Icon(Icons.add, size: 28),
           ),
         ),
