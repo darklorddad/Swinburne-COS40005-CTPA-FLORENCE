@@ -928,7 +928,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         style: const TextStyle(fontSize: 12),
                       ),
                       trailing: PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert, size: 20),
+                        icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                         onSelected: (value) {
