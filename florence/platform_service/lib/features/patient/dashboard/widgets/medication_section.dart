@@ -468,6 +468,8 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
     super.build(context);
     final medsAsync = ref.watch(patientMedicationsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final borderColor = AppTheme.getBorderColor(context);
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -477,77 +479,99 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
         children: [
           Row(
             children: [
-              const Icon(Icons.medical_services_outlined,
-                  size: 20, color: AppTheme.primaryBlue),
-              const SizedBox(width: 12),
+              const Icon(Icons.medical_services_rounded,
+                  size: 18, color: AppTheme.primaryBlue),
+              const SizedBox(width: 10),
               const Text(
                 "Medication Cabinet",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
-          // FILTER ROW
-          Row(
-            children: [
-              _buildFilterChip("Active", CabinetFilter.active),
-              const SizedBox(width: 8),
-              _buildFilterChip("Past", CabinetFilter.past),
-            ],
-          ),
-          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: containerColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: borderColor),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildFilterChip("Active", CabinetFilter.active),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("Past", CabinetFilter.past),
+                      const SizedBox(width: 8),
+                      _buildFilterChip("All", CabinetFilter.all),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
 
-          // CABINET LIST
-          medsAsync.when(
-            skipLoadingOnReload: true,
-            data: (meds) {
-              if (meds.isEmpty)
-                return Center(
-                    child: Text("Cabinet is empty",
-                        style: TextStyle(color: AppTheme.textSecondaryColor)));
+                medsAsync.when(
+                  skipLoadingOnReload: true,
+                  data: (meds) {
+                    if (meds.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                            child: Text("Cabinet is empty",
+                                style: TextStyle(color: AppTheme.textSecondaryColor))),
+                      );
+                    }
 
-              // Apply Filter Logic
-              final filteredMeds = meds.where((m) {
-                if (_currentFilter == CabinetFilter.active)
-                  return m.status != 'PAST';
-                if (_currentFilter == CabinetFilter.past)
-                  return m.status == 'PAST';
-                return true; // All
-              }).toList();
+                    final filteredMeds = meds.where((m) {
+                      if (_currentFilter == CabinetFilter.active)
+                        return m.status != 'PAST';
+                      if (_currentFilter == CabinetFilter.past)
+                        return m.status == 'PAST';
+                      return true;
+                    }).toList();
 
-              if (filteredMeds.isEmpty)
-                return Center(
-                    child: Text("No medications match this filter",
-                        style: TextStyle(color: AppTheme.textSecondaryColor)));
+                    if (filteredMeds.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        child: Center(
+                            child: Text("No medications found",
+                                style: TextStyle(color: AppTheme.textSecondaryColor))),
+                      );
+                    }
 
-              return ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: filteredMeds.length,
-                itemBuilder: (context, index) {
-                  final med = filteredMeds[index];
-                  final isActive = med.status != 'PAST';
-                  return _buildCabinetRow(context, ref, med, isActive: isActive);
-                },
-              );
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
-          ),
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredMeds.length,
+                      separatorBuilder: (context, index) => Divider(color: borderColor, height: 24),
+                      itemBuilder: (context, index) {
+                        final med = filteredMeds[index];
+                        return _buildCabinetRow(context, ref, med, isActive: med.status != 'PAST');
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
+                ),
 
-          const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-          // ADD BUTTON
-          OutlinedButton.icon(
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text("Add Medication"),
-            onPressed: () => _showFormModal(context, isEdit: false),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              side: BorderSide(color: AppTheme.primaryBlue.withOpacity(0.5)),
-              shape:
-                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text("Add New"),
+                  onPressed: () => _showFormModal(context, isEdit: false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.primaryBlue,
+                    side: BorderSide(color: AppTheme.primaryBlue.withOpacity(0.3)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -575,74 +599,87 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
     );
   }
 
-  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med, {required bool isActive}) {
-    final String brandName = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Unknown';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med,
+      {required bool isActive}) {
+    final String brandName = med.medicationDictionary['brand_name'] ??
+        med.customMedicationName ??
+        'Unknown';
 
-    // Standardised Grey Gradient
-    final LinearGradient backgroundGradient = isDark
-        ? LinearGradient(colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)])
-        : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      // Opacity fades out past medications slightly
-      child: Opacity(
-        opacity: isActive ? 1.0 : 0.6,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: backgroundGradient,
-            borderRadius: BorderRadius.circular(16),
+    return Opacity(
+      opacity: isActive ? 1.0 : 0.5,
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryBlue.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.medication_rounded,
+                color: AppTheme.primaryBlue, size: 20),
           ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      brandName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        fontSize: 16,
-                        decoration: isActive ? null : TextDecoration.lineThrough,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "${med.amount}  ${med.medicationType ?? 'Pill'}",
-                      style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13),
-                    ),
-                  ],
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  brandName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    decoration: isActive ? null : TextDecoration.lineThrough,
+                  ),
                 ),
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.grey),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showFormModal(context, isEdit: true, med: med);
-                  } else if (value == 'stop') {
-                    _confirmStop(context, ref, med, brandName);
-                  } else if (value == 'restart') {
-                    _confirmRestart(context, ref, med, brandName);
-                  }
-                },
-                itemBuilder: (context) => [
-                  // Show Edit for both active and past (so they can adjust dose before restarting)
-                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
-                  
-                  // Toggle Stop / Restart based on status
-                  if (isActive)
-                    const PopupMenuItem(value: 'stop', child: Row(children: [Icon(Icons.stop_circle, size: 18, color: Colors.red), SizedBox(width: 8), Text('Stop', style: TextStyle(color: Colors.red))]))
-                  else
-                    const PopupMenuItem(value: 'restart', child: Row(children: [Icon(Icons.play_circle, size: 18, color: Colors.green), SizedBox(width: 8), Text('Restart', style: TextStyle(color: Colors.green))])),
-                ],
-              ),
+                Text(
+                  "${med.amount} ${med.medicationType ?? 'Pill'}",
+                  style:
+                      TextStyle(color: AppTheme.textSecondaryColor, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            onSelected: (value) {
+              if (value == 'edit') {
+                _showFormModal(context, isEdit: true, med: med);
+              } else if (value == 'stop') {
+                _confirmStop(context, ref, med, brandName);
+              } else if (value == 'restart') {
+                _confirmRestart(context, ref, med, brandName);
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(children: [
+                    Icon(Icons.edit, size: 18),
+                    SizedBox(width: 8),
+                    Text('Edit')
+                  ])),
+              if (isActive)
+                const PopupMenuItem(
+                    value: 'stop',
+                    child: Row(children: [
+                      Icon(Icons.stop_circle, size: 18, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text('Stop', style: TextStyle(color: Colors.red))
+                    ]))
+              else
+                const PopupMenuItem(
+                    value: 'restart',
+                    child: Row(children: [
+                      Icon(Icons.play_circle, size: 18, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text('Restart', style: TextStyle(color: Colors.green))
+                    ])),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
