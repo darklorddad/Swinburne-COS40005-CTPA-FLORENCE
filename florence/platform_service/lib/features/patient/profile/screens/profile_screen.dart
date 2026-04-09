@@ -15,6 +15,7 @@ import '../../../../main.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
+import '../../dashboard/widgets/medication_section.dart';
 import '../providers/user_profile_provider.dart';
 
 /// Profile & Settings Screen
@@ -633,6 +634,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       // Health Profile section
                       _buildHealthProfileSection(),
+                      const SizedBox(height: 16),
+
+                      // Medication Cabinet Section
+                      const MedicationCabinetSection(),
                       const SizedBox(height: 16),
                       
                       // Settings section

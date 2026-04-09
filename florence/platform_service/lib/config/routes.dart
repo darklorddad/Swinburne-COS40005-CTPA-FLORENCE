@@ -62,6 +62,7 @@ class AppRoutes {
   static const String logGlucose = '/log/glucose';
   static const String logMeal = '/log/meal';
   static const String logActivity = '/log/activity';
+  static const String logMedication = '/log/medication';
   static const String addMedication = '/add-medication';
   static const String logBloodPressure = '/log/blood-pressure';
   static const String logCholesterol = '/log/cholesterol';
@@ -137,6 +138,18 @@ class AppRoutes {
 
       case logActivity:
         return _buildRoute(const LogActivityScreen(), settings);
+
+      case logMedication:
+        return _buildRoute(
+          Scaffold(
+            appBar: AppBar(title: const Text("Medication Logging")),
+            body: const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: MedicationLoggingSection(),
+            ),
+          ),
+          settings,
+        );
 
       case addMedication:
         return _buildRoute(const AddMedicationScreen(), settings);

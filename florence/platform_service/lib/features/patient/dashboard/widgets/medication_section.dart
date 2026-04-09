@@ -128,8 +128,8 @@ class MedicationSection extends StatelessWidget {
               child: TabBarView(
                 physics: BouncingScrollPhysics(),
                 children: [
-                  _TodaysMedicationsView(),
-                  _MedicationCabinetView(),
+                  MedicationLoggingSection(),
+                  MedicationCabinetSection(),
                 ],
               ),
             ),
@@ -146,14 +146,14 @@ class MedicationSection extends StatelessWidget {
 
 enum ScheduleFilter { all, pending, taken }
 
-class _TodaysMedicationsView extends ConsumerStatefulWidget {
-  const _TodaysMedicationsView();
+class MedicationLoggingSection extends ConsumerStatefulWidget {
+  const MedicationLoggingSection({super.key});
 
   @override
-  ConsumerState<_TodaysMedicationsView> createState() => _TodaysMedicationsViewState();
+  ConsumerState<MedicationLoggingSection> createState() => _MedicationLoggingSectionState();
 }
 
-class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> with AutomaticKeepAliveClientMixin {
+class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSection> with AutomaticKeepAliveClientMixin {
   ScheduleFilter _currentFilter = ScheduleFilter.all;
 
   @override
@@ -446,14 +446,14 @@ class _StatusLabel extends StatelessWidget {
 
 enum CabinetFilter { active, past, all }
 
-class _MedicationCabinetView extends ConsumerStatefulWidget {
-  const _MedicationCabinetView();
+class MedicationCabinetSection extends ConsumerStatefulWidget {
+  const MedicationCabinetSection({super.key});
 
   @override
-  ConsumerState<_MedicationCabinetView> createState() => _MedicationCabinetViewState();
+  ConsumerState<MedicationCabinetSection> createState() => _MedicationCabinetSectionState();
 }
 
-class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> with AutomaticKeepAliveClientMixin {
+class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSection> with AutomaticKeepAliveClientMixin {
   CabinetFilter _currentFilter = CabinetFilter.active;
 
   @override
