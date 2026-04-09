@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../shared/widgets/card_widgets.dart';
@@ -125,8 +126,8 @@ class QuickActionsGrid extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 // Calculate item width to fit exactly 4 items
-                // Available width minus 3 gaps of 12px each
-                final itemWidth = (constraints.maxWidth - (3 * 12)) / 4;
+                // Use math.max to ensure width never drops below 0 during layout/animations
+                final itemWidth = math.max(0.0, (constraints.maxWidth - (3 * 12)) / 4);
                 
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
