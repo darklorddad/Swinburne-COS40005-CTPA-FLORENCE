@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../config/routes.dart';
+import '../../core/providers/settings_providers.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/services/api_service.dart';

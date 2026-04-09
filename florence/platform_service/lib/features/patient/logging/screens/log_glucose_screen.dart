@@ -738,13 +738,21 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             ],
                           ),
                         ),
-                        if (glucoseValue != null && (glucoseValue < minValid || glucoseValue > maxValid))
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text(
-                              'Enter $minValid - $maxValid $currentUnit',
-                              style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
-                            ),
+                        if (_glucoseController.text.isNotEmpty)
+                          Builder(
+                            builder: (context) {
+                              final val = double.tryParse(_glucoseController.text.replaceAll(',', '.'));
+                              if (val != null && (val < minValid || val > maxValid)) {
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    'Enter $minValid - $maxValid $currentUnit',
+                                    style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+                                  ),
+                                );
+                              }
+                              return const SizedBox.shrink();
+                            },
                           ),
                       ],
                     ),
