@@ -11,7 +11,7 @@ import '../models/recommendation_models.dart';
 /// Uses the same auth pattern as the AI meal analysis — sends the Supabase
 /// JWT so the backend can authenticate the request.
 class LlmRecommendationService {
-  static const _timeout = Duration(seconds: 45);
+  static const _timeout = Duration(seconds: 120);
 
   /// Sends the patient's [HealthSummary] to the LLM Engine and returns
   /// a list of AI-generated [HealthRecommendation]s.
