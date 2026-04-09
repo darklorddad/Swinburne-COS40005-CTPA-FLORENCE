@@ -578,7 +578,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Build glucose input
   Widget _buildGlucoseInput(Color? glucoseColor, HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.glucoseUnit;
+    final isMmol = currentUnit == 'mmol/L';
+
+    final double minValid = isMmol ? 1.0 : 20.0;
+    final double maxValid = isMmol ? 35.0 : 600.0;
+
     // Tint the whole card background based on status
     final containerColor = glucoseColor != null 
         ? glucoseColor.withOpacity(0.05) 
@@ -652,7 +658,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'mg/dL',
+                currentUnit,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: AppTheme.textSecondaryColor,
                     ),
@@ -691,41 +697,54 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   return InkWell(
                     onTap: () => _glucoseFocusNode.requestFocus(),
                     borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      width: 140, // Fixed width
-                      height: 32, // Fixed height
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: glucoseColor == null
-                            ? (isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : AppTheme.backgroundColor)
-                            : displayColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: displayColor.withOpacity(0.3),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 140, // Fixed width
+                          height: 32, // Fixed height
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: glucoseColor == null
+                                ? (isDark
+                                    ? Colors.white.withOpacity(0.05)
+                                    : AppTheme.backgroundColor)
+                                : displayColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: displayColor.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                statusIcon,
+                                size: 14,
+                                color: displayColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                statusText,
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      color: displayColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            statusIcon,
-                            size: 14,
-                            color: displayColor,
+                        if (glucoseValue != null && (glucoseValue < minValid || glucoseValue > maxValid))
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              'Enter $minValid - $maxValid $currentUnit',
+                              style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
+                            ),
                           ),
-                          const SizedBox(width: 6),
-                          Text(
-                            statusText,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: displayColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   );
                 },

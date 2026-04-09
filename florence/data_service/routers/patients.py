@@ -14,13 +14,13 @@ from client import supabase
 def convert_glucose_from_base(value: Optional[float], unit: str) -> Optional[float]:
     if value is None: return None
     if unit == 'mg/dL':
-        return round(value * 18.0182, 1)
+        return round(value * 18.0)
     return round(value, 1)
 
 def convert_glucose_to_base(value: Optional[float], unit: str) -> Optional[float]:
     if value is None: return None
     if unit == 'mg/dL':
-        return round(value / 18.0182, 2)
+        return round(value / 18.0, 2)
     return round(value, 2)
 
 def convert_cholesterol_from_base(value: Optional[float], unit: str) -> Optional[float]:

@@ -342,6 +342,8 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.cholesterolUnit;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -376,7 +378,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Cholesterol (mg/dL)',
+                'Cholesterol ($currentUnit)',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -384,37 +386,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          CustomTextField(
-            label: 'Total Cholesterol',
-            hint: 'e.g., 190',
-            controller: _totalController,
-            keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.bloodtype_outlined),
-          ),
+          _buildLabField('Total Cholesterol', _totalController, currentUnit, Icons.bloodtype_outlined),
           const SizedBox(height: 16),
-          CustomTextField(
-            label: 'LDL Cholesterol',
-            hint: 'e.g., 100',
-            controller: _ldlController,
-            keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.arrow_downward),
-          ),
+          _buildLabField('LDL Cholesterol', _ldlController, currentUnit, Icons.arrow_downward),
           const SizedBox(height: 16),
-          CustomTextField(
-            label: 'HDL Cholesterol',
-            hint: 'e.g., 60',
-            controller: _hdlController,
-            keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.arrow_upward),
-          ),
+          _buildLabField('HDL Cholesterol', _hdlController, currentUnit, Icons.arrow_upward),
           const SizedBox(height: 16),
-          CustomTextField(
-            label: 'Triglycerides',
-            hint: 'e.g., 150',
-            controller: _triglyceridesController,
-            keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.water_drop_outlined),
-          ),
+          _buildLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined),
         ],
       ),
     );
@@ -531,6 +509,27 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLabField(String label, TextEditingController controller, String unit, IconData icon) {
+    final isMmol = unit == 'mmol/L';
+    final double minValid = isMmol ? 0.1 : 5.0;
+    final double maxValid = isMmol ? 50.0 : 1000.0;
+
+    return CustomTextField(
+      label: label,
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      prefixIcon: Icon(icon),
+      validator: (val) {
+        if (val != null && val.isNotEmpty) {
+          final num = double.tryParse(val.replaceAll(',', '.'));
+          if (num == null) return 'Invalid number';
+          if (num < minValid || num > maxValid) return 'Enter $minValid - $maxValid';
+        }
+        return null;
+      },
     );
   }
 
