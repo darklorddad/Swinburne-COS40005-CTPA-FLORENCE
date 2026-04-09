@@ -6,17 +6,15 @@ from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings
 
-
 class RecommendationSettings(BaseSettings):
     # Optional override — if unset, service.py falls back to global LLM_MODEL (same as nutrition)
-    RECOMMENDATION_LLM_MODEL: Optional[str] = None
-    RECOMMENDATION_LLM_MAX_TOKENS: int = 2048  # enough for 2-6 recs; within free credit limit
+    LLM_MODEL: Optional[str] = None
+    LLM_MAX_TOKENS: int = 2048  # enough for 2-6 recs; within free credit limit
 
     class Config:
         _env_file = Path(__file__).resolve().parent.parent.parent.parent / ".env"
         env_file = _env_file if _env_file.exists() else None
         env_file_encoding = "utf-8"
         extra = "ignore"
-
 
 recommendation_settings = RecommendationSettings()

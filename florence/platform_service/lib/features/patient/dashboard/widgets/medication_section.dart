@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../config/theme.dart';
 import '../../../../core/models/medication_models.dart';
 import '../../../../core/utils/helpers.dart';
 import '../../core/providers/medication_providers.dart';
 import '../../core/repositories/medication_repository.dart';
-import '../providers/dashboard_providers.dart';
 
 // ==========================================
 // 1. PROVIDERS
@@ -128,8 +128,7 @@ class MedicationSection extends StatelessWidget {
               child: TabBarView(
                 physics: BouncingScrollPhysics(),
                 children: [
-                  _TodaysMedicationsView(),
-                  _MedicationCabinetView(),
+                  MedicationLoggingSection(),
                 ],
               ),
             ),
@@ -146,14 +145,14 @@ class MedicationSection extends StatelessWidget {
 
 enum ScheduleFilter { all, pending, taken }
 
-class _TodaysMedicationsView extends ConsumerStatefulWidget {
-  const _TodaysMedicationsView();
+class MedicationLoggingSection extends ConsumerStatefulWidget {
+  const MedicationLoggingSection({super.key});
 
   @override
-  ConsumerState<_TodaysMedicationsView> createState() => _TodaysMedicationsViewState();
+  ConsumerState<MedicationLoggingSection> createState() => _MedicationLoggingSectionState();
 }
 
-class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> with AutomaticKeepAliveClientMixin {
+class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSection> with AutomaticKeepAliveClientMixin {
   ScheduleFilter _currentFilter = ScheduleFilter.all;
 
   @override
@@ -178,23 +177,18 @@ class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> 
   LinearGradient _getGradient(bool isTaken, bool isLate, bool isDark) {
     if (isTaken) {
       return LinearGradient(
-        colors: isDark 
-          ? [Colors.green.withOpacity(0.2), Colors.green.withOpacity(0.05)]
-          : [Colors.green.shade50, Colors.green.shade100],
-      );
-    } else if (isLate) {
-      return LinearGradient(
-        colors: isDark 
-          ? [Colors.orange.withOpacity(0.2), Colors.yellow.withOpacity(0.05)]
-          : [Colors.orange.shade50, Colors.yellow.shade50],
-      );
-    } else {
-      return LinearGradient(
-        colors: isDark 
-          ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
-          : [Colors.grey.shade100, Colors.grey.shade200],
+        colors: [
+          Colors.green.withOpacity(isDark ? 0.1 : 0.05),
+          Colors.green.withOpacity(isDark ? 0.1 : 0.05),
+        ],
       );
     }
+    return LinearGradient(
+      colors: [
+        isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+      ],
+    );
   }
 
   @override
@@ -206,6 +200,7 @@ class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> 
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // FILTER ROW
           Row(
@@ -220,45 +215,47 @@ class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> 
           const SizedBox(height: 16),
 
           // SCHEDULE LIST
-          Expanded(
-            child: scheduleAsync.when(
-              skipLoadingOnReload: true,
-              data: (scheduleItems) {
-                if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
+          scheduleAsync.when(
+            skipLoadingOnReload: true,
+            data: (scheduleItems) {
+              if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
 
-                List<Widget> loggableItems = [];
+              List<Widget> loggableItems = [];
+              
+              for (var item in scheduleItems) {
+                final med = PatientMedication.fromJson(item['medication']);
+                final int timesLogged = item['times_logged'] ?? 0;
+                final bool isWeekly = item['is_weekly'] ?? false;
                 
-                for (var item in scheduleItems) {
-                  final med = PatientMedication.fromJson(item['medication']);
-                  final int timesLogged = item['times_logged'] ?? 0;
-                  final bool isWeekly = item['is_weekly'] ?? false;
+                int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
+                bool isLate = false; 
+
+                for (int i = 1; i <= totalDoses; i++) {
+                  bool isTaken = i <= timesLogged;
                   
-                  int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
-                  bool isLate = false; 
+                  // APPLY FILTER LOGIC
+                  bool shouldShow = true;
+                  if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
+                  if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
 
-                  for (int i = 1; i <= totalDoses; i++) {
-                    bool isTaken = i <= timesLogged;
-                    
-                    // APPLY FILTER LOGIC
-                    bool shouldShow = true;
-                    if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
-                    if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
-
-                    if (shouldShow) {
-                      loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
-                    }
+                  if (shouldShow) {
+                    loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
                   }
                 }
+              }
 
-                if (loggableItems.isEmpty) {
-                  return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
-                }
+              if (loggableItems.isEmpty) {
+                return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+              }
 
-                return ListView(physics: const BouncingScrollPhysics(), children: loggableItems);
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => const Center(child: Text("Error loading schedule")),
-            ),
+              return ListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: loggableItems,
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const Center(child: Text("Error loading schedule")),
           ),
         ],
       ),
@@ -330,6 +327,12 @@ class _TodaysMedicationsViewState extends ConsumerState<_TodaysMedicationsView> 
           decoration: BoxDecoration(
             gradient: _getGradient(isTaken, isLate, isDark),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isTaken
+                  ? Colors.green.withOpacity(0.3)
+                  : AppTheme.getBorderColor(context),
+              width: 1,
+            ),
           ),
           child: Row(
             children: [
@@ -441,260 +444,20 @@ class _StatusLabel extends StatelessWidget {
 }
 
 // ==========================================
-// 4. MEDICATION CABINET VIEW (Filtered)
+// 4. MEDICATION FORM MODAL (Public)
 // ==========================================
 
-enum CabinetFilter { active, past, all }
-
-class _MedicationCabinetView extends ConsumerStatefulWidget {
-  const _MedicationCabinetView();
-
-  @override
-  ConsumerState<_MedicationCabinetView> createState() => _MedicationCabinetViewState();
-}
-
-class _MedicationCabinetViewState extends ConsumerState<_MedicationCabinetView> with AutomaticKeepAliveClientMixin {
-  CabinetFilter _currentFilter = CabinetFilter.active;
-
-  @override
-  bool get wantKeepAlive => true;
-
-  @override
-  Widget build(BuildContext context) {
-    super.build(context);
-    final medsAsync = ref.watch(patientMedicationsProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // FILTER ROW
-          Row(
-            children: [
-              _buildFilterChip("Active", CabinetFilter.active),
-              const SizedBox(width: 8),
-              _buildFilterChip("Past", CabinetFilter.past),
-              const SizedBox(width: 8),
-              _buildFilterChip("All", CabinetFilter.all),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // CABINET LIST
-          Expanded(
-            child: medsAsync.when(
-              skipLoadingOnReload: true,
-              data: (meds) {
-                if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
-
-                // Apply Filter Logic
-                final filteredMeds = meds.where((m) {
-                  if (_currentFilter == CabinetFilter.active) return m.status != 'PAST';
-                  if (_currentFilter == CabinetFilter.past) return m.status == 'PAST';
-                  return true; // All
-                }).toList();
-
-                if (filteredMeds.isEmpty) return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
-
-                return ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: filteredMeds.length,
-                  itemBuilder: (context, index) {
-                    final med = filteredMeds[index];
-                    final isActive = med.status != 'PAST';
-                    return _buildCabinetRow(context, ref, med, isActive: isActive);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
-            ),
-          ),
-          
-          const SizedBox(height: 12),
-          
-          // ADD BUTTON
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text("Add New Medication"),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-              foregroundColor: AppTheme.primaryBlue,
-              elevation: 0, shadowColor: Colors.transparent,
-              splashFactory: NoSplash.splashFactory,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () => _showFormModal(context, isEdit: false),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterChip(String label, CabinetFilter filterValue) {
-    final isSelected = _currentFilter == filterValue;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) setState(() => _currentFilter = filterValue);
-      },
-      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-      ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      showCheckmark: false,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
-      side: BorderSide.none,
-    );
-  }
-
-  Widget _buildCabinetRow(BuildContext context, WidgetRef ref, dynamic med, {required bool isActive}) {
-    final String brandName = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? 'Unknown';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Standardised Grey Gradient
-    final LinearGradient backgroundGradient = isDark
-        ? LinearGradient(colors: [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)])
-        : LinearGradient(colors: [Colors.grey.shade100, Colors.grey.shade200]);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      // Opacity fades out past medications slightly
-      child: Opacity(
-        opacity: isActive ? 1.0 : 0.6,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: backgroundGradient,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      brandName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        fontSize: 16,
-                        decoration: isActive ? null : TextDecoration.lineThrough,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      "${med.amount}  ${med.medicationType ?? 'Pill'}",
-                      style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.grey),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                onSelected: (value) {
-                  if (value == 'edit') {
-                    _showFormModal(context, isEdit: true, med: med);
-                  } else if (value == 'stop') {
-                    _confirmStop(context, ref, med, brandName);
-                  } else if (value == 'restart') {
-                    _confirmRestart(context, ref, med, brandName);
-                  }
-                },
-                itemBuilder: (context) => [
-                  // Show Edit for both active and past (so they can adjust dose before restarting)
-                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
-                  
-                  // Toggle Stop / Restart based on status
-                  if (isActive)
-                    const PopupMenuItem(value: 'stop', child: Row(children: [Icon(Icons.stop_circle, size: 18, color: Colors.red), SizedBox(width: 8), Text('Stop', style: TextStyle(color: Colors.red))]))
-                  else
-                    const PopupMenuItem(value: 'restart', child: Row(children: [Icon(Icons.play_circle, size: 18, color: Colors.green), SizedBox(width: 8), Text('Restart', style: TextStyle(color: Colors.green))])),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showFormModal(BuildContext context, {required bool isEdit, dynamic med}) {
-    showDialog(context: context, builder: (context) => _MedicationFormDialog(isEdit: isEdit, medication: med));
-  }
-
-  void _confirmStop(BuildContext context, WidgetRef ref, dynamic med, String medName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Stop Medication"),
-        content: Text("Are you sure you want to stop taking $medName? It will be moved to your history."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
-              ref.invalidate(patientMedicationsProvider);
-              ref.invalidate(todaysScheduleProvider); // Refresh schedule to remove it
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white, elevation: 0),
-            child: const Text("Stop Medication"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Logic to restart a past medication
-  void _confirmRestart(BuildContext context, WidgetRef ref, dynamic med, String medName) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text("Restart Medication"),
-        content: Text("Do you want to move $medName back to your active medications and schedule?"),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              await ref.read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'CURRENT');
-              ref.invalidate(patientMedicationsProvider);
-              ref.invalidate(todaysScheduleProvider); // Refresh schedule to add it back
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, elevation: 0),
-            child: const Text("Restart Medication"),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ==========================================
-// 5. MEDICATION FORM MODAL (Private)
-// ==========================================
-
-class _MedicationFormDialog extends ConsumerStatefulWidget {
+class MedicationFormDialog extends ConsumerStatefulWidget {
   final bool isEdit;
   final PatientMedication? medication;
 
-  const _MedicationFormDialog({required this.isEdit, this.medication});
+  const MedicationFormDialog({required this.isEdit, this.medication});
 
   @override
-  ConsumerState<_MedicationFormDialog> createState() => _MedicationFormDialogState();
+  ConsumerState<MedicationFormDialog> createState() => _MedicationFormDialogState();
 }
 
-class _MedicationFormDialogState extends ConsumerState<_MedicationFormDialog> {
+class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
   final _formKey = GlobalKey<FormState>();
   
   // State Variables

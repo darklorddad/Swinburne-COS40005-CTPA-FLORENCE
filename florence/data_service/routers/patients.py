@@ -104,6 +104,14 @@ async def get_current_patient_profile(authorization: str = Header(...)):
 
 # --- Pydantic Models ---
 
+class UserSettingsUpdate(BaseModel):
+    glucose_unit: Optional[str] = None
+    cholesterol_unit: Optional[str] = None
+
+class UserSettingsResponse(BaseModel):
+    glucose_unit: str
+    cholesterol_unit: str
+
 class PatientProfileUpdate(BaseModel):
     """Fields a patient is allowed to update on their own profile."""
     name: Optional[str] = None
@@ -206,6 +214,42 @@ router = APIRouter(
     prefix="/patients",
     tags=["Patient (Self-Service)"]
 )
+
+@router.get("/me/settings", response_model=UserSettingsResponse, summary="Get my app settings")
+async def get_user_settings(patient_profile: dict = Depends(get_current_patient_profile)):
+    """
+    Retrieves the app settings (units of measurement) for the authenticated patient.
+    """
+    try:
+        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", patient_profile['user_id']).execute()
+        
+        if not response.data:
+            # Return defaults if no settings record exists yet
+            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch settings: {str(e)}")
+
+@router.patch("/me/settings", summary="Update my app settings")
+async def update_user_settings(
+    settings: UserSettingsUpdate, 
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Updates app settings like measurement units.
+    """
+    update_data = settings.model_dump(exclude_unset=True)
+    if not update_data:
+        return {"message": "No fields to update"}
+        
+    try:
+        # Use upsert to handle cases where the settings row might not exist yet
+        update_data["user_id"] = patient_profile['user_id']
+        supabase.table("user_settings").upsert(update_data).execute()
+        return {"message": "Settings updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update settings: {str(e)}")
 
 @router.get("/me", summary="Get my own full patient profile")
 async def get_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):

@@ -100,7 +100,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       const _QuickActionItem('B.Pressure', Icons.monitor_heart_outlined, Color(0xFFF50057), AppRoutes.logBloodPressure), // Magenta
       const _QuickActionItem('Diet', Icons.restaurant_outlined, Color(0xFFFFA726), AppRoutes.logMeal), // Orange
       const _QuickActionItem('Activity', Icons.directions_run_rounded, Color(0xFF66BB6A), AppRoutes.logActivity), // Green
-      const _QuickActionItem('Meds', Icons.medication_outlined, Color(0xFF42A5F5), AppRoutes.addMedication), // Blue
+      const _QuickActionItem('Log Meds', Icons.history_edu_rounded, Color(0xFF42A5F5), AppRoutes.logMedication), // Blue
       const _QuickActionItem('BMI', Icons.monitor_weight_outlined, Color(0xFF26A69A), AppRoutes.logBmi), // Teal
       const _QuickActionItem('Cholesterol', Icons.bloodtype_outlined, Color(0xFFAB47BC), AppRoutes.logCholesterol), // Purple
       const _QuickActionItem('HbA1c', Icons.pie_chart_outline, Color(0xFFFFCA28), AppRoutes.logHba1c), // Amber
@@ -192,9 +192,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 ),
                               ),
                               const SizedBox(width: spacing),
-                              const Expanded(
-                                child: MedicationSection(),
-                              ),
                             ],
                           ),
                         )
@@ -214,8 +211,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             onTap: () => AppRoutes.push(context, a.route)
                           )).toList(),
                         ),
-                        const SizedBox(height: spacing),
-                        const MedicationSection(),
                       ],
                       const SizedBox(height: spacing),
 

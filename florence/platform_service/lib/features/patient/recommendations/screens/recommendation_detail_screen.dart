@@ -36,7 +36,6 @@ class _RecommendationDetailScreenState
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Update in Supabase
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -67,7 +66,7 @@ class _RecommendationDetailScreenState
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Update in Supabase
+      
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -90,7 +89,6 @@ class _RecommendationDetailScreenState
     setState(() => _isLoading = true);
 
     try {
-      // TODO: Update in Supabase
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {

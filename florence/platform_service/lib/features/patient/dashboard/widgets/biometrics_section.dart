@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
+
+import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
 import '../../core/models/health_data_models.dart'; // Updated import
-import '../../../../config/routes.dart';
-import 'compact_health_card.dart';
 import '../screens/cholesterol_detail_screen.dart';
 import '../screens/diet_detail_screen.dart';
+import 'compact_health_card.dart';
 
 /// Biometrics Section
 /// A container widget that groups all health metric cards

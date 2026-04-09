@@ -5,7 +5,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
@@ -15,6 +14,10 @@ import '../../../../main.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
+import '../../core/providers/medication_providers.dart';
+import '../../core/providers/settings_providers.dart';
+import '../../core/repositories/medication_repository.dart';
+import '../../dashboard/widgets/medication_section.dart';
 import '../providers/user_profile_provider.dart';
 
 /// Profile & Settings Screen
@@ -148,8 +151,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return '$code $number';
   }
 
-  // Settings
-  String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
+  // Medication Cabinet Filter
+  String _medFilter = 'Active';
 
   // App info
   String _appVersion = '';
@@ -545,14 +548,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // TODO: Navigate to edit health profile screen
   }
   
-  /// Toggle glucose unit
-  void _toggleGlucoseUnit() {
-    setState(() {
-      _glucoseUnit = _glucoseUnit == 'mg/dL' ? 'mmol/L' : 'mg/dL';
-    });
-    Helpers.showSuccess(context, 'Glucose unit changed to $_glucoseUnit');
-    // TODO: Save preference to storage
-  }
   
   /// Toggle dark mode
   void _toggleDarkMode(bool value) {
@@ -633,6 +628,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       // Health Profile section
                       _buildHealthProfileSection(),
+                      const SizedBox(height: 16),
+
+                      // Medication Cabinet Section
+                      _buildMedicationCabinetSection(),
                       const SizedBox(height: 16),
                       
                       // Settings section
@@ -824,6 +823,256 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+  /// Build medication cabinet section
+  Widget _buildMedicationCabinetSection() {
+    final medsAsync = ref.watch(patientMedicationsProvider);
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionHeader('Medication Cabinet', Icons.medical_services_outlined),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                onPressed: () {
+                  // Logic to show add medication form
+                  showDialog(
+                    context: context,
+                    builder: (context) => const MedicationFormDialog(isEdit: false),
+                  );
+                },
+                tooltip: 'Add Medication',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildMedFilterChip('Active'),
+                const SizedBox(width: 8),
+                _buildMedFilterChip('Past'),
+                const SizedBox(width: 8),
+                _buildMedFilterChip('All'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          medsAsync.when(
+            data: (meds) {
+              final filteredMeds = meds.where((m) {
+                if (_medFilter == 'Active') return m.status != 'PAST';
+                if (_medFilter == 'Past') return m.status == 'PAST';
+                return true;
+              }).toList();
+
+              if (filteredMeds.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: Text('No medications found')),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredMeds.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final med = filteredMeds[index];
+                  final isActive = med.status != 'PAST';
+                  final brandName = med.medicationDictionary['brand_name'] ??
+                      med.customMedicationName ??
+                      'Unknown';
+
+                  return Opacity(
+                    opacity: isActive ? 1.0 : 0.5,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.medication_rounded,
+                            color: AppTheme.primaryBlue, size: 20),
+                      ),
+                      title: Text(
+                        brandName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          decoration:
+                              isActive ? null : TextDecoration.lineThrough,
+                        ),
+                      ),
+                      subtitle: Text(
+                        "${med.amount} ${med.medicationType ?? 'Pill'}",
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: PopupMenuButton<String>(
+                        icon: const Icon(Icons.more_vert, color: Colors.grey, size: 20),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        onSelected: (value) {
+                          if (value == 'edit') {
+                            _showFormModal(context, isEdit: true, med: med);
+                          } else if (value == 'stop') {
+                            _confirmStop(context, ref, med, brandName);
+                          } else if (value == 'restart') {
+                            _confirmRestart(context, ref, med, brandName);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(children: [
+                                Icon(Icons.edit, size: 18),
+                                SizedBox(width: 8),
+                                Text('Edit')
+                              ])),
+                          if (isActive)
+                            const PopupMenuItem(
+                                value: 'stop',
+                                child: Row(children: [
+                                  Icon(Icons.stop_circle, size: 18,
+                                      color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text('Stop',
+                                      style: TextStyle(color: Colors.red))
+                                ]))
+                          else
+                            const PopupMenuItem(
+                                value: 'restart',
+                                child: Row(children: [
+                                  Icon(Icons.play_circle, size: 18,
+                                      color: Colors.green),
+                                  SizedBox(width: 8),
+                                  Text('Restart',
+                                      style: TextStyle(color: Colors.green))
+                                ])),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (err, stack) => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: Text('Error loading medications')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedFilterChip(String label) {
+    final isSelected = _medFilter == label;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _medFilter = label);
+        }
+      },
+      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      showCheckmark: false,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? Colors.white.withOpacity(0.05)
+          : Colors.grey.shade100,
+      side: BorderSide.none,
+    );
+  }
+
+  void _showFormModal(BuildContext context,
+      {required bool isEdit, dynamic med}) {
+    showDialog(
+        context: context,
+        builder: (context) =>
+            MedicationFormDialog(isEdit: isEdit, medication: med));
+  }
+
+  void _confirmStop(
+      BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Stop Medication"),
+        content: Text(
+            "Are you sure you want to stop taking $medName? It will be moved to your history."),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref
+                  .read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
+              ref.invalidate(patientMedicationsProvider);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                elevation: 0),
+            child: const Text("Stop Medication"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmRestart(
+      BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Restart Medication"),
+        content: Text(
+            "Do you want to move $medName back to your active medications and schedule?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref
+                  .read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'CURRENT');
+              ref.invalidate(patientMedicationsProvider);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                elevation: 0),
+            child: const Text("Restart Medication"),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Build health profile section
   Widget _buildHealthProfileSection() {
     return BaseCard(
@@ -856,6 +1105,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   
   /// Build settings section
   Widget _buildSettingsSection() {
+    final settings = ref.watch(patientSettingsProvider);
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -863,13 +1114,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSectionHeader('Settings', Icons.settings_outlined),
           const SizedBox(height: 16),
 
-          // Glucose unit
-          _buildSettingItem(
-            'Glucose Unit',
-            _glucoseUnit,
-            Icons.straighten,
-            onTap: _toggleGlucoseUnit,
-            showChevron: true,
+          _buildInteractiveSettingRow(
+            title: 'Glucose Unit',
+            currentValue: settings.glucoseUnit,
+            icon: Icons.straighten,
+            options: ['mmol/L', 'mg/dL'],
+            onSelect: (value) {
+              ref.read(patientSettingsProvider.notifier).updateGlucoseUnit(value);
+              Helpers.showSuccess(context, 'Glucose unit changed to $value');
+            },
+          ),
+          const Divider(height: 1),
+
+          _buildInteractiveSettingRow(
+            title: 'Cholesterol Unit',
+            currentValue: settings.cholesterolUnit,
+            icon: Icons.bloodtype_outlined,
+            options: ['mmol/L', 'mg/dL'],
+            onSelect: (value) {
+              ref.read(patientSettingsProvider.notifier).updateCholesterolUnit(value);
+              Helpers.showSuccess(context, 'Cholesterol unit changed to $value');
+            },
           ),
           const Divider(height: 24),
 
@@ -884,6 +1149,94 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 24),
         ],
       ),
+    );
+  }
+
+  Widget _buildInteractiveSettingRow({
+    required String title,
+    required String currentValue,
+    required IconData icon,
+    required List<String> options,
+    required Function(String) onSelect,
+  }) {
+    return InkWell(
+      onTap: () => _showUnitSelectionModal(title, currentValue, options, onSelect),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+            Text(
+              currentValue,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.primaryBlue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUnitSelectionModal(
+    String title,
+    String currentValue,
+    List<String> options,
+    Function(String) onSelect,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Select $title',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                ...options.map((option) {
+                  final isSelected = option == currentValue;
+                  return ListTile(
+                    title: Text(
+                      option,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? AppTheme.primaryBlue : null,
+                      ),
+                    ),
+                    trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryBlue) : null,
+                    onTap: () {
+                      onSelect(option);
+                      Navigator.pop(context);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
   
