@@ -9,7 +9,7 @@ from pydantic_settings import BaseSettings
 class RecommendationSettings(BaseSettings):
     # Optional override — if unset, service.py falls back to global LLM_MODEL (same as nutrition)
     LLM_MODEL: Optional[str] = None
-    LLM_MAX_TOKENS: int = 2048  # enough for 2-6 recs; within free credit limit
+    LLM_MAX_TOKENS: int = 32000  # increased to prevent truncated JSON on detailed responses
 
     class Config:
         _env_file = Path(__file__).resolve().parent.parent.parent.parent / ".env"
