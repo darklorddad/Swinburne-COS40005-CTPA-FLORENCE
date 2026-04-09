@@ -129,7 +129,6 @@ class MedicationSection extends StatelessWidget {
                 physics: BouncingScrollPhysics(),
                 children: [
                   MedicationLoggingSection(),
-                  MedicationCabinetSection(),
                 ],
               ),
             ),

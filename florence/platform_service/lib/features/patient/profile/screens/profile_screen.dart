@@ -5,7 +5,6 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/providers/theme_provider.dart';
 import '../../../../core/services/api_service.dart'; // Added
 import '../../../../core/utils/formatters.dart';
@@ -15,6 +14,7 @@ import '../../../../main.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
+import '../../core/providers/medication_providers.dart';
 import '../../dashboard/widgets/medication_section.dart';
 import '../providers/user_profile_provider.dart';
 
