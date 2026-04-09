@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/features/clinician/models/health_data.dart';
 import 'package:florence/features/clinician/models/patient.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:florence/features/clinician/widgets/glucose_chart.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:intl/intl.dart';
 
-class GlucoseAnalyticsScreen extends StatefulWidget {
+class GlucoseAnalyticsScreen extends ConsumerStatefulWidget {
   final Patient patient;
   final List<GlucoseReading> readings;
 
@@ -16,10 +18,10 @@ class GlucoseAnalyticsScreen extends StatefulWidget {
   });
 
   @override
-  State<GlucoseAnalyticsScreen> createState() => _GlucoseAnalyticsScreenState();
+  ConsumerState<GlucoseAnalyticsScreen> createState() => _GlucoseAnalyticsScreenState();
 }
 
-class _GlucoseAnalyticsScreenState extends State<GlucoseAnalyticsScreen> {
+class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen> {
   int _currentPage = 0;
   final int _itemsPerPage = 5;
 
@@ -143,6 +145,7 @@ class _GlucoseAnalyticsScreenState extends State<GlucoseAnalyticsScreen> {
                 height: 250,
                 child: GlucoseChart(
                   readings: widget.readings,
+                  unit: ref.watch(patientSettingsProvider).glucoseUnit,
                   hbA1cReadings: [], // Only glucose
                 ),
               ),
