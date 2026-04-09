@@ -637,7 +637,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 16),
 
                       // Medication Cabinet Section
-                      const MedicationCabinetSection(),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildSectionHeader('Medication Cabinet', Icons.medical_services_rounded),
+                            const SizedBox(height: 12),
+                            const MedicationCabinetSection(),
+                          ],
+                        ),
+                      ),
                       const SizedBox(height: 16),
                       
                       // Settings section

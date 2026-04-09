@@ -471,119 +471,96 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
     final borderColor = AppTheme.getBorderColor(context);
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.medical_services_rounded,
-                  size: 18, color: AppTheme.primaryBlue),
-              const SizedBox(width: 10),
-              const Text(
-                "Medication Cabinet",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: containerColor,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: borderColor),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterChip("Active", CabinetFilter.active),
+                const SizedBox(width: 8),
+                _buildFilterChip("Past", CabinetFilter.past),
+                const SizedBox(width: 8),
+                _buildFilterChip("All", CabinetFilter.all),
               ],
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _buildFilterChip("Active", CabinetFilter.active),
-                      const SizedBox(width: 8),
-                      _buildFilterChip("Past", CabinetFilter.past),
-                      const SizedBox(width: 8),
-                      _buildFilterChip("All", CabinetFilter.all),
-                    ],
-                  ),
+          ),
+          const SizedBox(height: 16),
+
+          medsAsync.when(
+            skipLoadingOnReload: true,
+            data: (meds) {
+              if (meds.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                      child: Text("Cabinet is empty",
+                          style: TextStyle(color: AppTheme.textSecondaryColor))),
+                );
+              }
+
+              final filteredMeds = meds.where((m) {
+                if (_currentFilter == CabinetFilter.active)
+                  return m.status != 'PAST';
+                if (_currentFilter == CabinetFilter.past)
+                  return m.status == 'PAST';
+                return true;
+              }).toList();
+
+              if (filteredMeds.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: Center(
+                      child: Text("No medications found",
+                          style: TextStyle(color: AppTheme.textSecondaryColor))),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredMeds.length,
+                separatorBuilder: (context, index) => Divider(
+                  color: borderColor,
+                  height: 32,
                 ),
-                const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final med = filteredMeds[index];
+                  return _buildCabinetRow(context, ref, med, isActive: med.status != 'PAST');
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
+          ),
 
-                medsAsync.when(
-                  skipLoadingOnReload: true,
-                  data: (meds) {
-                    if (meds.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                            child: Text("Cabinet is empty",
-                                style: TextStyle(color: AppTheme.textSecondaryColor))),
-                      );
-                    }
+          const SizedBox(height: 16),
 
-                    final filteredMeds = meds.where((m) {
-                      if (_currentFilter == CabinetFilter.active)
-                        return m.status != 'PAST';
-                      if (_currentFilter == CabinetFilter.past)
-                        return m.status == 'PAST';
-                      return true;
-                    }).toList();
-
-                    if (filteredMeds.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 24),
-                        child: Center(
-                            child: Text("No medications found",
-                                style: TextStyle(color: AppTheme.textSecondaryColor))),
-                      );
-                    }
-
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredMeds.length,
-                      separatorBuilder: (context, index) => Divider(
-                        color: borderColor,
-                        height: 32,
-                      ),
-                      itemBuilder: (context, index) {
-                        final med = filteredMeds[index];
-                        return _buildCabinetRow(context, ref, med, isActive: med.status != 'PAST');
-                      },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
-                ),
-
-                const SizedBox(height: 16),
-
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text("Add Medication"),
-                  onPressed: () => _showFormModal(context, isEdit: false),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.primaryBlue,
-                    side: BorderSide(color: AppTheme.primaryBlue.withOpacity(0.3)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ],
+          OutlinedButton.icon(
+            icon: const Icon(Icons.add, size: 16),
+            label: const Text("Add Medication"),
+            onPressed: () => _showFormModal(context, isEdit: false),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppTheme.primaryBlue,
+              side: BorderSide(color: AppTheme.primaryBlue.withOpacity(0.3)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
             ),
           ),
         ],
