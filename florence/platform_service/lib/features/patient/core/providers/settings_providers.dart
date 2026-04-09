@@ -22,8 +22,17 @@ class PatientSettings {
 class PatientSettingsNotifier extends Notifier<PatientSettings> {
   @override
   PatientSettings build() {
-    // TODO: In a future PR, fetch initial settings from userProfileProvider
+    _fetchInitialSettings();
     return PatientSettings();
+  }
+
+  Future<void> _fetchInitialSettings() async {
+    try {
+      final fetchedSettings = await ref.read(settingsRepositoryProvider).getSettings();
+      state = fetchedSettings;
+    } catch (e) {
+      debugPrint('Failed to load initial user settings: $e');
+    }
   }
 
   Future<void> updateGlucoseUnit(String unit) async {

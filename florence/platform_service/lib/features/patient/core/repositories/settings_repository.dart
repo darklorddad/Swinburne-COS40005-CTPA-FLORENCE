@@ -6,14 +6,23 @@ class SettingsRepository {
 
   SettingsRepository(this._apiService);
 
+  Future<PatientSettings> getSettings() async {
+    final response = await _apiService.get('/patients/me/settings');
+    
+    return PatientSettings(
+      glucoseUnit: response['glucose_unit'] ?? 'mmol/L',
+      cholesterolUnit: response['cholesterol_unit'] ?? 'mmol/L',
+    );
+  }
+
   Future<void> updateSettings({String? glucoseUnit, String? cholesterolUnit}) async {
     final Map<String, dynamic> payload = {};
     if (glucoseUnit != null) payload['glucose_unit'] = glucoseUnit;
     if (cholesterolUnit != null) payload['cholesterol_unit'] = cholesterolUnit;
 
-    // Assuming backend endpoint exists: PUT /patients/me
-    // We use the existing patient profile update endpoint as it usually contains these preferences
-    await _apiService.put('/patients/me', payload);
+    if (payload.isNotEmpty) {
+      await _apiService.patch('/patients/me/settings', payload);
+    }
   }
 }
 
