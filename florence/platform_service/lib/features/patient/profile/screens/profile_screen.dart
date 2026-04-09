@@ -152,6 +152,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // Settings
   String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
 
+  // Medication Cabinet Filter
+  String _medFilter = 'Active';
+
   // App info
   String _appVersion = '';
   
@@ -637,17 +640,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 16),
 
                       // Medication Cabinet Section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _buildSectionHeader('Medication Cabinet', Icons.medical_services_rounded),
-                            const SizedBox(height: 12),
-                            const MedicationCabinetSection(),
-                          ],
-                        ),
-                      ),
+                      _buildMedicationCabinetSection(),
                       const SizedBox(height: 16),
                       
                       // Settings section
@@ -839,6 +832,149 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+  /// Build medication cabinet section
+  Widget _buildMedicationCabinetSection() {
+    final medsAsync = ref.watch(patientMedicationsProvider);
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionHeader('Medication Cabinet', Icons.medical_services_outlined),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, size: 20),
+                onPressed: () {
+                  // Logic to show add medication form
+                  showDialog(
+                    context: context,
+                    builder: (context) => const MedicationFormDialog(isEdit: false),
+                  );
+                },
+                tooltip: 'Add Medication',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildMedFilterChip('Active'),
+                const SizedBox(width: 8),
+                _buildMedFilterChip('Past'),
+                const SizedBox(width: 8),
+                _buildMedFilterChip('All'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          medsAsync.when(
+            data: (meds) {
+              final filteredMeds = meds.where((m) {
+                if (_medFilter == 'Active') return m.status != 'PAST';
+                if (_medFilter == 'Past') return m.status == 'PAST';
+                return true;
+              }).toList();
+
+              if (filteredMeds.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(child: Text('No medications found')),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredMeds.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final med = filteredMeds[index];
+                  final isActive = med.status != 'PAST';
+                  final brandName = med.medicationDictionary['brand_name'] ??
+                      med.customMedicationName ??
+                      'Unknown';
+
+                  return Opacity(
+                    opacity: isActive ? 1.0 : 0.5,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.medication_rounded,
+                            color: AppTheme.primaryBlue, size: 20),
+                      ),
+                      title: Text(
+                        brandName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          decoration:
+                              isActive ? null : TextDecoration.lineThrough,
+                        ),
+                      ),
+                      subtitle: Text(
+                        "${med.amount} ${med.medicationType ?? 'Pill'}",
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.more_vert, size: 20),
+                        onPressed: () {
+                          // Logic for edit/stop/restart
+                        },
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (err, stack) => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: Text('Error loading medications')),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMedFilterChip(String label) {
+    final isSelected = _medFilter == label;
+    return ChoiceChip(
+      label: Text(label),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() => _medFilter = label);
+        }
+      },
+      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      labelStyle: TextStyle(
+        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      showCheckmark: false,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? Colors.white.withOpacity(0.05)
+          : Colors.grey.shade100,
+      side: BorderSide.none,
+    );
+  }
+
   /// Build health profile section
   Widget _buildHealthProfileSection() {
     return BaseCard(
