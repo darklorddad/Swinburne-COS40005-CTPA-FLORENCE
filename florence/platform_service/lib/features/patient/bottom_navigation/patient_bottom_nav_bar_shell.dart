@@ -132,18 +132,17 @@ class _PatientBottomNavBarShellState
           ),
 
           // 2. Backdrop — blurs and darkens content when sheet is open
-          AnimatedBuilder(
-            animation: _sheetController,
-            builder: (context, _) {
-              // BUG FIX: Strictly use isDismissed to prevent negative zero rendering bugs
-              if (_sheetController.isDismissed) return const SizedBox.shrink();
-              
-              // BUG FIX: Force a minimum blur of 0.001 to prevent Impeller engine crashes
-              final double blurAmount = math.max(0.001, _sheetAnim.value * 4);
-              
-              // Move Positioned.fill INSIDE the builder to prevent black screen glitch on Impeller
-              return Positioned.fill(
-                child: IgnorePointer(
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _sheetController,
+              builder: (context, _) {
+                // BUG FIX: Strictly use isDismissed to prevent negative zero rendering bugs
+                if (_sheetController.isDismissed) return const SizedBox.shrink();
+                
+                // BUG FIX: Force a minimum blur of 0.001 to prevent Impeller engine crashes
+                final double blurAmount = math.max(0.001, _sheetAnim.value * 4);
+                
+                return IgnorePointer(
                   ignoring: !_sheetOpen, // Ignore touches while closing
                   child: GestureDetector(
                     onTap: _closeSheet,
@@ -159,28 +158,28 @@ class _PatientBottomNavBarShellState
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
 
           // 3. Sheet content — slides up from bottom
-          AnimatedBuilder(
-            animation: _sheetController,
-            builder: (context, child) {
-              if (_sheetController.isDismissed) return const SizedBox.shrink();
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: AnimatedBuilder(
+              animation: _sheetController,
+              builder: (context, child) {
+                if (_sheetController.isDismissed) return const SizedBox.shrink();
 
-              return Positioned(
-                bottom: 0, // Anchored to bottom, no gap left for green backgrounds
-                left: 0,
-                right: 0,
-                child: FractionalTranslation(
-                  translation: Offset(0, 1.0 - math.max(0.0, _sheetAnim.value)), // Slide by 100% of its height
+                return FractionalTranslation(
+                  translation: Offset(0, 1.0 - math.max(0.0, _sheetAnim.value)),
                   child: child!,
-                ),
-              );
-            },
-            child: _buildSheetContent(navHeight),
+                );
+              },
+              child: _buildSheetContent(navHeight),
+            ),
           ),
         ],
       ),
