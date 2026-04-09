@@ -298,8 +298,8 @@ class _RecommendationsScreenState
   }
 
   Future<void> _checkAndLoad() async {
-    final current = ref.read(recommendationProvider);
-    if (current.isEmpty) {
+    final active = ref.read(recommendationProvider).where((r) => r.isActive).toList();
+    if (active.isEmpty) {
       await _generateRecommendations();
     } else {
       _scoreCtrl.forward();
@@ -310,12 +310,18 @@ class _RecommendationsScreenState
     setState(() => _isGenerating = true);
     _scoreCtrl.reset();
     try {
-      await ref
+      final usedAI = await ref
           .read(recommendationProvider.notifier)
           .generateRecommendations(daysToAnalyze: 7);
       _staggerCtrl.forward(from: 0);
       _scoreCtrl.forward();
-      if (mounted) Helpers.showSuccess(context, 'Analysis complete');
+      if (mounted) {
+        if (usedAI) {
+          Helpers.showSuccess(context, 'AI analysis complete');
+        } else {
+          Helpers.showWarning(context, 'AI unavailable — showing general recommendations');
+        }
+      }
     } catch (_) {
       if (mounted) Helpers.showError(context, 'Failed to generate insights');
     } finally {

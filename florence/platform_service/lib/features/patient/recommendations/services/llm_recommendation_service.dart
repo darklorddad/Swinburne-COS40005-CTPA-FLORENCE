@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/config/environment.dart';
 import '../../../patient/core/models/health_data_models.dart';
 import '../models/recommendation_models.dart';
 
 /// Calls the LLM Engine Service to generate AI-powered health recommendations.
 ///
-/// Does NOT use [ApiService] — that class hardcodes [Environment.dataServiceUrl].
-/// This service calls [Environment.llmEngineServiceUrl] directly, following the
-/// same pattern as the chatbot service. No auth header is needed (internal service).
+/// Uses the same auth pattern as the AI meal analysis — sends the Supabase
+/// JWT so the backend can authenticate the request.
 class LlmRecommendationService {
   static const _timeout = Duration(seconds: 45);
-  static const _headers = {'Content-Type': 'application/json'};
 
   /// Sends the patient's [HealthSummary] to the LLM Engine and returns
   /// a list of AI-generated [HealthRecommendation]s.
@@ -23,9 +22,17 @@ class LlmRecommendationService {
     HealthSummary summary, {
     int analysisPeriodDays = 7,
   }) async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) throw Exception('User not authenticated');
+
     final url = Uri.parse(
       '${Environment.llmEngineServiceUrl}/recommendations/generate',
     );
+
+    final headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ${session.accessToken}',
+    };
 
     final body = jsonEncode({
       'health_summary': _summaryToSnakeCase(summary),
@@ -35,7 +42,7 @@ class LlmRecommendationService {
     debugPrint('[LlmRecommendationService] POST $url');
 
     final response = await http
-        .post(url, headers: _headers, body: body)
+        .post(url, headers: headers, body: body)
         .timeout(_timeout);
 
     debugPrint('[LlmRecommendationService] Status: ${response.statusCode}');
