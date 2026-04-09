@@ -492,7 +492,7 @@ class _RecommendationsScreenState
                   _greeting(),
                   style: TextStyle(
                     color: c.txtPrimary,
-                    fontSize: 28,
+                    fontSize: 35,
                     fontWeight: FontWeight.w300,
                     height: 1.1,
                   ),
@@ -727,7 +727,7 @@ class _RecommendationsScreenState
                               stateLabel,
                               style: TextStyle(
                                 color: c.txtPrimary,
-                                fontSize: 24,
+                                fontSize: 31,
                                 fontWeight: FontWeight.w300,
                                 fontStyle: FontStyle.italic,
                                 height: 1.2,
@@ -1064,7 +1064,7 @@ class _RecommendationsScreenState
                 'Your recommendations',
                 style: TextStyle(
                   color: c.txtPrimary,
-                  fontSize: 20,
+                  fontSize: 27,
                   fontWeight: FontWeight.w300,
                   fontStyle: FontStyle.italic,
                 ),
@@ -1647,7 +1647,7 @@ class _RecommendationsScreenState
             textAlign: TextAlign.center,
             style: TextStyle(
               color: c.txtPrimary.withValues(alpha: 0.31),
-              fontSize: 17,
+              fontSize: 24,
               fontWeight: FontWeight.w300,
               fontStyle: FontStyle.italic,
               height: 1.5,
