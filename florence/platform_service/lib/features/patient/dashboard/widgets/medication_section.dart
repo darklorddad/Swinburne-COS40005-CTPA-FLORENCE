@@ -178,23 +178,18 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
   LinearGradient _getGradient(bool isTaken, bool isLate, bool isDark) {
     if (isTaken) {
       return LinearGradient(
-        colors: isDark 
-          ? [Colors.green.withOpacity(0.2), Colors.green.withOpacity(0.05)]
-          : [Colors.green.shade50, Colors.green.shade100],
-      );
-    } else if (isLate) {
-      return LinearGradient(
-        colors: isDark 
-          ? [Colors.orange.withOpacity(0.2), Colors.yellow.withOpacity(0.05)]
-          : [Colors.orange.shade50, Colors.yellow.shade50],
-      );
-    } else {
-      return LinearGradient(
-        colors: isDark 
-          ? [Colors.white.withOpacity(0.05), Colors.white.withOpacity(0.02)]
-          : [Colors.grey.shade100, Colors.grey.shade200],
+        colors: [
+          Colors.green.withOpacity(isDark ? 0.1 : 0.05),
+          Colors.green.withOpacity(isDark ? 0.1 : 0.05),
+        ],
       );
     }
+    return LinearGradient(
+      colors: [
+        isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+      ],
+    );
   }
 
   @override
@@ -333,6 +328,12 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
           decoration: BoxDecoration(
             gradient: _getGradient(isTaken, isLate, isDark),
             borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isTaken
+                  ? Colors.green.withOpacity(0.3)
+                  : AppTheme.getBorderColor(context),
+              width: 1,
+            ),
           ),
           child: Row(
             children: [
@@ -469,19 +470,30 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
+          Row(
+            children: [
+              const Icon(Icons.medical_services_outlined,
+                  size: 20, color: AppTheme.primaryBlue),
+              const SizedBox(width: 12),
+              const Text(
+                "Medication Cabinet",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
           // FILTER ROW
           Row(
             children: [
               _buildFilterChip("Active", CabinetFilter.active),
               const SizedBox(width: 8),
               _buildFilterChip("Past", CabinetFilter.past),
-              const SizedBox(width: 8),
-              _buildFilterChip("All", CabinetFilter.all),
             ],
           ),
           const SizedBox(height: 16),
@@ -490,16 +502,24 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
           medsAsync.when(
             skipLoadingOnReload: true,
             data: (meds) {
-              if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
+              if (meds.isEmpty)
+                return Center(
+                    child: Text("Cabinet is empty",
+                        style: TextStyle(color: AppTheme.textSecondaryColor)));
 
               // Apply Filter Logic
               final filteredMeds = meds.where((m) {
-                if (_currentFilter == CabinetFilter.active) return m.status != 'PAST';
-                if (_currentFilter == CabinetFilter.past) return m.status == 'PAST';
+                if (_currentFilter == CabinetFilter.active)
+                  return m.status != 'PAST';
+                if (_currentFilter == CabinetFilter.past)
+                  return m.status == 'PAST';
                 return true; // All
               }).toList();
 
-              if (filteredMeds.isEmpty) return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+              if (filteredMeds.isEmpty)
+                return Center(
+                    child: Text("No medications match this filter",
+                        style: TextStyle(color: AppTheme.textSecondaryColor)));
 
               return ListView.builder(
                 shrinkWrap: true,
@@ -515,22 +535,20 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
           ),
-          
-          const SizedBox(height: 12),
-          
+
+          const SizedBox(height: 16),
+
           // ADD BUTTON
-          ElevatedButton.icon(
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text("Add New Medication"),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              backgroundColor: AppTheme.primaryBlue.withOpacity(0.1),
-              foregroundColor: AppTheme.primaryBlue,
-              elevation: 0, shadowColor: Colors.transparent,
-              splashFactory: NoSplash.splashFactory,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text("Add Medication"),
             onPressed: () => _showFormModal(context, isEdit: false),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              side: BorderSide(color: AppTheme.primaryBlue.withOpacity(0.5)),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           ),
         ],
       ),

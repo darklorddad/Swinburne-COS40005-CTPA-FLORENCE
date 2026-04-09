@@ -28,18 +28,6 @@ class MedicationLoggingScreen extends ConsumerWidget {
               children: [
                 // Reusing the refactored section
                 MedicationLoggingSection(),
-                
-                SizedBox(height: 24),
-                
-                Text(
-                  'Recent History',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: 12),
-                // (Optional: Add a simplified history list widget here)
               ],
             ),
           ),
