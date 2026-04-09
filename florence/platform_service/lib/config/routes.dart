@@ -129,7 +129,7 @@ class AppRoutes {
       case profile:
         return _buildRoute(const ProfileScreen(), settings);
 
-      case settings:
+      case AppRoutes.settings:
         return _buildRoute(const SettingsScreen(), settings);
 
       case logGlucose:
