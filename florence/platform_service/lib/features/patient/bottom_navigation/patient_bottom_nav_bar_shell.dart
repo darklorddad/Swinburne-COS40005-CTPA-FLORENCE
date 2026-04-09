@@ -402,7 +402,7 @@ class _PatientBottomNavBarShellState
               height: 68,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF121228),
+                color: Colors.white,
               ),
               child: Center(
                 child: AnimatedBuilder(
@@ -419,7 +419,7 @@ class _PatientBottomNavBarShellState
                             width: 2,
                             height: 22,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.95),
+                              color: Colors.black.withOpacity(0.95),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -427,7 +427,7 @@ class _PatientBottomNavBarShellState
                             width: 22,
                             height: 2,
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.95),
+                              color: Colors.black.withOpacity(0.95),
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
