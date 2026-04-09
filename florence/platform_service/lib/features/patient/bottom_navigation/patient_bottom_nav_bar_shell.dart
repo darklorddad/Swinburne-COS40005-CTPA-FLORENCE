@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../config/routes.dart';
+import '../../../../config/theme.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../profile/screens/profile_screen.dart';
 import '../profile/screens/settings_screen.dart';
@@ -28,6 +29,7 @@ class _PatientBottomNavBarShellState
 
   late final Animation<double> _sheetAnim;
   late final Animation<double> _crossAnim;
+  late final AnimationController _pulseController;
 
   // ── Sheet state ────────────────────────────────────────────
   bool _sheetOpen = false;
@@ -61,12 +63,18 @@ class _PatientBottomNavBarShellState
       curve: const Cubic(0.34, 1.56, 0.64, 1),
       reverseCurve: Curves.easeIn,
     );
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat();
   }
 
   @override
   void dispose() {
     _sheetController.dispose();
     _crossController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -184,68 +192,99 @@ class _PatientBottomNavBarShellState
         ],
       ),
       
-      // 4. Standard Floating Action Button
-      floatingActionButton: FloatingActionButton(
-        onPressed: _toggleSheet,
-        backgroundColor: const Color(0xFF2B4EFF),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        elevation: 4,
-        child: AnimatedBuilder(
-          animation: _crossAnim,
-          builder: (context, _) => Transform.rotate(
-            angle: _crossAnim.value * (math.pi / 4),
-            child: const Icon(Icons.add, size: 28),
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      
-      // 5. Standard Nav Bar
+      // 4. Standard Nav Bar
       bottomNavigationBar: _buildNavBar(),
     );
   }
 
   // ── Nav bar ────────────────────────────────────────────────
   Widget _buildNavBar() {
-    return BottomAppBar(
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8.0,
-      color: Colors.white.withOpacity(0.98),
-      elevation: 16,
-      padding: EdgeInsets.zero,
-      child: SizedBox(
-        height: 65,
-        child: Row(
-          children: [
-            _buildNavItem(
-              tabIndex: 0,
-              icon: Icons.home_rounded,
-              label: 'Home',
-              onTap: () => _switchTab(0),
-            ),
-            _buildNavItem(
-              tabIndex: 1,
-              icon: Icons.chat_bubble_outline_rounded,
-              label: 'Chatbot',
-              onTap: () => _switchTab(1),
-            ),
-            
-            const Expanded(child: SizedBox()),
-            
-            _buildNavItem(
-              tabIndex: 2,
-              icon: Icons.person_outline,
-              label: 'Profile',
-              onTap: () => _switchTab(2),
-            ),
-            _buildNavItem(
-              tabIndex: 3,
-              icon: Icons.settings_outlined,
-              label: 'Settings',
-              onTap: () => _switchTab(3),
-            ),
-          ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      height: 65 + MediaQuery.of(context).padding.bottom,
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border(
+          top: BorderSide(color: borderColor, width: 1.0),
+        ),
+      ),
+      child: Row(
+        children: [
+          _buildNavItem(
+            tabIndex: 0,
+            icon: Icons.home_rounded,
+            label: 'Home',
+            onTap: () => _switchTab(0),
+          ),
+          _buildNavItem(
+            tabIndex: 1,
+            icon: Icons.chat_bubble_outline_rounded,
+            label: 'Chatbot',
+            onTap: () => _switchTab(1),
+          ),
+          
+          _buildCenterButton(),
+          
+          _buildNavItem(
+            tabIndex: 2,
+            icon: Icons.person_outline,
+            label: 'Profile',
+            onTap: () => _switchTab(2),
+          ),
+          _buildNavItem(
+            tabIndex: 3,
+            icon: Icons.settings_outlined,
+            label: 'Settings',
+            onTap: () => _switchTab(3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCenterButton() {
+    return Expanded(
+      child: GestureDetector(
+        onTap: _toggleSheet,
+        behavior: HitTestBehavior.opaque,
+        child: Center(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([_crossAnim, _pulseController]),
+            builder: (context, _) {
+              return Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SweepGradient(
+                    transform: GradientRotation(_pulseController.value * 2 * math.pi),
+                    colors: const [
+                      Color(0xFF2B4EFF), // Primary Blue
+                      Color(0xFF82B1FF), // Lighter Blue
+                      Color(0xFF0039CB), // Darker Blue
+                      Color(0xFF2B4EFF), // Seamless wrap
+                    ],
+                    stops: const [0.0, 0.33, 0.66, 1.0],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2B4EFF).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Transform.rotate(
+                  angle: _crossAnim.value * (math.pi / 4),
+                  child: const Icon(Icons.add, color: Colors.white, size: 28),
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -315,7 +354,7 @@ class _PatientBottomNavBarShellState
         ],
       ),
       // Add navHeight to the bottom padding so content sits above the nav bar cleanly
-      padding: EdgeInsets.fromLTRB(22, 14, 22, 24 + navHeight),
+      padding: EdgeInsets.fromLTRB(22, 14, 22, 12 + navHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -341,7 +380,7 @@ class _PatientBottomNavBarShellState
             'Select a metric to record',
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           ),
-          const SizedBox(height: 26),
+          const SizedBox(height: 14),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
