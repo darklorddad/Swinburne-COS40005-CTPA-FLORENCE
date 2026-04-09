@@ -364,17 +364,17 @@ class _PatientBottomNavBarShellState
             itemCount: 8,
             itemBuilder: (context, index) {
               const _items = [
-                (0, '🩸', 'Glucose',     [Color(0xFFFFECEC), Color(0xFFFFD6D6)], AppRoutes.logGlucose),
-                (1, '❤️', 'B.Pressure',  [Color(0xFFFFEAF5), Color(0xFFFFD0EA)], AppRoutes.logBloodPressure),
-                (2, '🍽️', 'Diet',        [Color(0xFFFFFAE8), Color(0xFFFFF0C0)], AppRoutes.logMeal),
-                (3, '🏃', 'Activity',    [Color(0xFFE8FFF4), Color(0xFFC6FCE4)], AppRoutes.logActivity),
-                (4, '💊', 'Meds',        [Color(0xFFEEF0FF), Color(0xFFD8DDFF)], AppRoutes.addMedication),
-                (5, '⚖️', 'BMI',         [Color(0xFFF4EEFF), Color(0xFFE4D2FF)], AppRoutes.logBmi),
-                (6, '🫀', 'Cholesterol', [Color(0xFFFFF3EE), Color(0xFFFFE2D0)], AppRoutes.logCholesterol),
-                (7, '🔬', 'HbA1c',       [Color(0xFFEEF8FF), Color(0xFFD0E8FF)], AppRoutes.logHba1c),
+                (0, Icons.water_drop_rounded, 'Glucose', Color(0xFFEF5350), AppRoutes.logGlucose),
+                (1, Icons.monitor_heart_outlined, 'B.Pressure', Color(0xFFF50057), AppRoutes.logBloodPressure),
+                (2, Icons.restaurant_outlined, 'Diet', Color(0xFFFFA726), AppRoutes.logMeal),
+                (3, Icons.directions_run_rounded, 'Activity', Color(0xFF66BB6A), AppRoutes.logActivity),
+                (4, Icons.history_edu_rounded, 'Meds', Color(0xFF42A5F5), AppRoutes.logMedication),
+                (5, Icons.monitor_weight_outlined, 'BMI', Color(0xFF26A69A), AppRoutes.logBmi),
+                (6, Icons.bloodtype_outlined, 'Cholesterol', Color(0xFFAB47BC), AppRoutes.logCholesterol),
+                (7, Icons.pie_chart_outline, 'HbA1c', Color(0xFFFFCA28), AppRoutes.logHba1c),
               ];
-              final (i, emoji, label, colors, route) = _items[index];
-              return _logItem(i, emoji, label, colors, route);
+              final (i, icon, label, color, route) = _items[index];
+              return _logItem(i, icon, label, color, route);
             },
           ),
         ],
@@ -384,9 +384,9 @@ class _PatientBottomNavBarShellState
 
   Widget _logItem(
     int index,
-    String emoji,
+    IconData icon,
     String label,
-    List<Color> gradientColors,
+    Color color,
     String route,
   ) {
     return GestureDetector(
@@ -401,46 +401,52 @@ class _PatientBottomNavBarShellState
           duration: const Duration(milliseconds: 360),
           offset: _itemOffset[index] / 100,
           curve: const Cubic(0.34, 1.56, 0.64, 1),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(21),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: gradientColors,
-                  ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x12000000),
-                      blurRadius: 12,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    emoji,
-                    style: const TextStyle(fontSize: 23),
-                  ),
-                ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: color.withOpacity(0.2),
+                width: 1,
               ),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF6B7280),
-                  height: 1.2,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: color.withOpacity(0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    color: color,
+                    size: 22,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F1020),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ),
       ),
