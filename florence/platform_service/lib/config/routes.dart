@@ -24,6 +24,7 @@ import '../features/patient/logging/screens/log_hba1c_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/medication/screens/medication_logging_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
+import '../features/patient/profile/screens/settings_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
 
 /// Application routing configuration
@@ -127,6 +128,9 @@ class AppRoutes {
 
       case profile:
         return _buildRoute(const ProfileScreen(), settings);
+
+      case settings:
+        return _buildRoute(const SettingsScreen(), settings);
 
       case logGlucose:
         return _buildRoute(const LogGlucoseScreen(), settings);
