@@ -86,13 +86,13 @@ class RecommendationService:
         # temperature=0.3: grounded clinical outputs with slight variation across calls
         # model: isolated per-feature config — does not affect chatbot or nutrition
         model = (
-            recommendation_settings.RECOMMENDATION_LLM_MODEL
+            recommendation_settings.LLM_MODEL
             or global_settings.LLM_MODEL
         )
         self.llm = LLMFactory.create(
             temperature=0.3,
             model=model,
-            max_tokens=recommendation_settings.RECOMMENDATION_LLM_MAX_TOKENS,
+            max_tokens=recommendation_settings.LLM_MAX_TOKENS,
         )
 
     async def generate_recommendations(
