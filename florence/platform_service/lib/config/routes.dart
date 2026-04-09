@@ -1,33 +1,30 @@
-import '../features/patient/logging/screens/log_hba1c_screen.dart';
-import '../features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
-
-import '../features/clinician/screens/clinician_profile_screen.dart';
-import '../features/clinician/screens/patient_detail_screen.dart';
 import 'package:flutter/material.dart';
-import '../features/auth/screens/splash_screen.dart';
-import '../features/auth/screens/login_screen.dart';
-import '../features/auth/screens/register_screen.dart';
-import '../features/patient/dashboard/screens/dashboard_screen.dart';
-import '../features/patient/logging/screens/log_bmi_screen.dart';
-import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
-import '../features/patient/logging/screens/log_cholesterol_screen.dart';
-import '../features/patient/logging/screens/log_glucose_screen.dart';
-import '../features/patient/logging/screens/log_activity_screen.dart';
-import '../features/patient/medications/screens/add_medication_screen.dart';
-import '../features/patient/medication/screens/medication_logging_screen.dart';
-import '../features/patient/logging/screens/log_meal_screen.dart';
-import '../features/patient/profile/screens/profile_screen.dart';
-import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
-import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
-import '../features/patient/dashboard/screens/activity_detail_screen.dart';
-import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
-import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
-import '../features/patient/chat/screens/chat_screen.dart';
-import '../features/patient/recommendations/screens/recommendations_screen.dart';
-import '../features/clinician/screens/clinician_home_screen.dart';
 
 // Admin-side imports
 import '../features/admin/dashboard/screens/admin_dashboard_screen.dart';
+import '../features/auth/screens/login_screen.dart';
+import '../features/auth/screens/register_screen.dart';
+import '../features/auth/screens/splash_screen.dart';
+import '../features/clinician/screens/clinician_home_screen.dart';
+import '../features/clinician/screens/clinician_profile_screen.dart';
+import '../features/clinician/screens/patient_detail_screen.dart';
+import '../features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
+import '../features/patient/chat/screens/chat_screen.dart';
+import '../features/patient/dashboard/screens/activity_detail_screen.dart';
+import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
+import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
+import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
+import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
+import '../features/patient/logging/screens/log_activity_screen.dart';
+import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
+import '../features/patient/logging/screens/log_bmi_screen.dart';
+import '../features/patient/logging/screens/log_cholesterol_screen.dart';
+import '../features/patient/logging/screens/log_glucose_screen.dart';
+import '../features/patient/logging/screens/log_hba1c_screen.dart';
+import '../features/patient/logging/screens/log_meal_screen.dart';
+import '../features/patient/medication/screens/medication_logging_screen.dart';
+import '../features/patient/profile/screens/profile_screen.dart';
+import '../features/patient/recommendations/screens/recommendations_screen.dart';
 
 /// Application routing configuration
 /// Centralized navigation management
@@ -142,9 +139,6 @@ class AppRoutes {
 
       case logMedication:
         return _buildRoute(const MedicationLoggingScreen(), settings);
-
-      case addMedication:
-        return _buildRoute(const AddMedicationScreen(), settings);
 
       case logBloodPressure:
         return _buildRoute(const LogBloodPressureScreen(), settings);
