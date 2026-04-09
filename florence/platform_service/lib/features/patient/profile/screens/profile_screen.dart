@@ -15,6 +15,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
 import '../../core/providers/medication_providers.dart';
+import '../../core/providers/settings_providers.dart';
 import '../../core/repositories/medication_repository.dart';
 import '../../dashboard/widgets/medication_section.dart';
 import '../providers/user_profile_provider.dart';
@@ -149,9 +150,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return '$code $number';
   }
-
-  // Settings
-  String _glucoseUnit = 'mg/dL'; // or 'mmol/L'
 
   // Medication Cabinet Filter
   String _medFilter = 'Active';
@@ -550,14 +548,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     // TODO: Navigate to edit health profile screen
   }
   
-  /// Toggle glucose unit
-  void _toggleGlucoseUnit() {
-    setState(() {
-      _glucoseUnit = _glucoseUnit == 'mg/dL' ? 'mmol/L' : 'mg/dL';
-    });
-    Helpers.showSuccess(context, 'Glucose unit changed to $_glucoseUnit');
-    // TODO: Save preference to storage
-  }
   
   /// Toggle dark mode
   void _toggleDarkMode(bool value) {
@@ -1115,6 +1105,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   
   /// Build settings section
   Widget _buildSettingsSection() {
+    final settings = ref.watch(patientSettingsProvider);
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1122,13 +1114,27 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _buildSectionHeader('Settings', Icons.settings_outlined),
           const SizedBox(height: 16),
 
-          // Glucose unit
-          _buildSettingItem(
-            'Glucose Unit',
-            _glucoseUnit,
-            Icons.straighten,
-            onTap: _toggleGlucoseUnit,
-            showChevron: true,
+          _buildInteractiveSettingRow(
+            title: 'Glucose Unit',
+            currentValue: settings.glucoseUnit,
+            icon: Icons.straighten,
+            options: ['mmol/L', 'mg/dL'],
+            onSelect: (value) {
+              ref.read(patientSettingsProvider.notifier).updateGlucoseUnit(value);
+              Helpers.showSuccess(context, 'Glucose unit changed to $value');
+            },
+          ),
+          const Divider(height: 1),
+
+          _buildInteractiveSettingRow(
+            title: 'Cholesterol Unit',
+            currentValue: settings.cholesterolUnit,
+            icon: Icons.bloodtype_outlined,
+            options: ['mmol/L', 'mg/dL'],
+            onSelect: (value) {
+              ref.read(patientSettingsProvider.notifier).updateCholesterolUnit(value);
+              Helpers.showSuccess(context, 'Cholesterol unit changed to $value');
+            },
           ),
           const Divider(height: 24),
 
@@ -1143,6 +1149,94 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const Divider(height: 24),
         ],
       ),
+    );
+  }
+
+  Widget _buildInteractiveSettingRow({
+    required String title,
+    required String currentValue,
+    required IconData icon,
+    required List<String> options,
+    required Function(String) onSelect,
+  }) {
+    return InkWell(
+      onTap: () => _showUnitSelectionModal(title, currentValue, options, onSelect),
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+            Text(
+              currentValue,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppTheme.primaryBlue,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUnitSelectionModal(
+    String title,
+    String currentValue,
+    List<String> options,
+    Function(String) onSelect,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Select $title',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                ...options.map((option) {
+                  final isSelected = option == currentValue;
+                  return ListTile(
+                    title: Text(
+                      option,
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? AppTheme.primaryBlue : null,
+                      ),
+                    ),
+                    trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryBlue) : null,
+                    onTap: () {
+                      onSelect(option);
+                      Navigator.pop(context);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
   
