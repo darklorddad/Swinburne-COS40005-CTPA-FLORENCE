@@ -1036,8 +1036,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ElevatedButton(
             onPressed: () async {
               await ref
-                  .read(medicationRepositoryProvider)
-                  .updateMedicationStatus(med.id, 'PAST');
+                  .read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'PAST');
               ref.invalidate(patientMedicationsProvider);
               if (context.mounted) Navigator.pop(context);
             },
@@ -1068,8 +1067,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ElevatedButton(
             onPressed: () async {
               await ref
-                  .read(medicationRepositoryProvider)
-                  .updateMedicationStatus(med.id, 'CURRENT');
+                  .read(medicationRepositoryProvider).updateMedicationStatus(med.id, 'CURRENT');
               ref.invalidate(patientMedicationsProvider);
               if (context.mounted) Navigator.pop(context);
             },
