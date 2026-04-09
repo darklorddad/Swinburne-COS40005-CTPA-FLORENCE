@@ -61,7 +61,7 @@ class _PatientBottomNavBarShellState
     _crossAnim = CurvedAnimation(
       parent: _crossController,
       curve: const Cubic(0.34, 1.56, 0.64, 1),
-      reverseCurve: Curves.easeIn,
+      reverseCurve: const Cubic(0.34, 1.56, 0.64, 1),
     );
 
     _pulseController = AnimationController(
@@ -204,7 +204,7 @@ class _PatientBottomNavBarShellState
     final borderColor = AppTheme.getBorderColor(context);
 
     return Container(
-      height: 65 + MediaQuery.of(context).padding.bottom,
+      height: 74 + MediaQuery.of(context).padding.bottom,
       padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
         color: bgColor,
@@ -354,7 +354,7 @@ class _PatientBottomNavBarShellState
         ],
       ),
       // Add navHeight to the bottom padding so content sits above the nav bar cleanly
-      padding: EdgeInsets.fromLTRB(22, 14, 22, 12 + navHeight),
+      padding: EdgeInsets.fromLTRB(22, 14, 22, 4 + navHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -380,7 +380,7 @@ class _PatientBottomNavBarShellState
             'Select a metric to record',
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 6),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
