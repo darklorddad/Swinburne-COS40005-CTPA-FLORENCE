@@ -84,16 +84,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     }
   }
 
-  /// Show quick log modal
-  void _showQuickLogModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _QuickLogModal(actions: _getQuickActions()),
-    );
-  }
-
   List<_QuickActionItem> _getQuickActions() {
     return [
       const _QuickActionItem('Glucose', Icons.water_drop_rounded, Color(0xFFEF5350), AppRoutes.logGlucose), // Red
@@ -252,11 +242,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ),
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: _showQuickLogModal,
-          tooltip: 'Quick Log',
-        ),
         const NotificationBell(),
         IconButton(
           icon: const Icon(Icons.chat_bubble_outline),
@@ -302,136 +287,5 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       case 'DINNER': return 3;
       default: return 0;
     }
-  }
-}
-
-
-/// Quick log modal
-class _QuickLogModal extends StatelessWidget {
-  final List<_QuickActionItem> actions;
-
-  const _QuickLogModal({required this.actions});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Prevents taking full height
-            children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                'Log Health Data',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 24),
-
-              // Actions Grid
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                alignment: WrapAlignment.center,
-                children: actions.map((action) {
-                  return _ModalActionButton(
-                    action: action,
-                    onTap: () {
-                      Navigator.pop(context);
-                      AppRoutes.push(context, action.route);
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModalActionButton extends StatelessWidget {
-  final _QuickActionItem action;
-  final VoidCallback onTap;
-
-  const _ModalActionButton({
-    required this.action,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width - 48 - 48) / 4; // Approx 4 items per row minus spacing
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: width.clamp(70.0, 100.0), // Min 70, Max 100
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: action.color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: action.color.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: action.color.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                action.icon,
-                color: action.color,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              action.label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
