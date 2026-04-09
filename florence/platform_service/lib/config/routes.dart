@@ -14,6 +14,7 @@ import '../features/patient/logging/screens/log_cholesterol_screen.dart';
 import '../features/patient/logging/screens/log_glucose_screen.dart';
 import '../features/patient/logging/screens/log_activity_screen.dart';
 import '../features/patient/medications/screens/add_medication_screen.dart';
+import '../features/patient/medication/screens/medication_logging_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
@@ -140,16 +141,7 @@ class AppRoutes {
         return _buildRoute(const LogActivityScreen(), settings);
 
       case logMedication:
-        return _buildRoute(
-          Scaffold(
-            appBar: AppBar(title: const Text("Medication Logging")),
-            body: const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: MedicationLoggingSection(),
-            ),
-          ),
-          settings,
-        );
+        return _buildRoute(const MedicationLoggingScreen(), settings);
 
       case addMedication:
         return _buildRoute(const AddMedicationScreen(), settings);
