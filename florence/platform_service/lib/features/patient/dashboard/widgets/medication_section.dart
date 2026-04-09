@@ -497,6 +497,13 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
               color: containerColor,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: borderColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -521,7 +528,7 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
                   data: (meds) {
                     if (meds.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                             child: Text("Cabinet is empty",
                                 style: TextStyle(color: AppTheme.textSecondaryColor))),
@@ -538,7 +545,7 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
 
                     if (filteredMeds.isEmpty) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 20),
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Center(
                             child: Text("No medications found",
                                 style: TextStyle(color: AppTheme.textSecondaryColor))),
