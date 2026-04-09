@@ -17,7 +17,7 @@ class PatientSettings {
   }
 }
 
-class PatientSettingsNotifier extends StateNotifier<PatientSettings> {
+class PatientSettingsNotifier extends Notifier<PatientSettings> {
   PatientSettingsNotifier() : super(PatientSettings());
 
   void updateGlucoseUnit(String unit) {
