@@ -15,6 +15,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../chat/services/chatbot_service.dart';
 import '../../core/providers/medication_providers.dart';
+import '../../core/repositories/medication_repository.dart';
 import '../../dashboard/widgets/medication_section.dart';
 import '../providers/user_profile_provider.dart';
 
