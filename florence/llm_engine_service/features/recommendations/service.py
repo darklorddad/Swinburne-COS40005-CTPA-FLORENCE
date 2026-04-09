@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone
 from langchain_core.messages import HumanMessage, SystemMessage
 from config import settings as global_settings
@@ -125,10 +126,26 @@ Current timestamp for generated_at: {now_iso}"""
                 HumanMessage(content=human_content),
             ])
 
-            # Strip any markdown fencing the model may add despite instructions
-            content = response.content.replace("```json", "").replace("```", "").strip()
+            content = response.content
+
+            # Remove <think> blocks (often returned by reasoning models like DeepSeek R1)
+            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+
+            # Find the JSON block to strip out any conversational fluff
+            start_idx = content.find('{')
+            end_idx = content.rfind('}')
+            if start_idx != -1 and end_idx != -1:
+                content = content[start_idx:end_idx + 1]
 
             data = json.loads(content)
+
+            # Ensure all triggering_data points have a timestamp to prevent Pydantic/Dart crashes
+            for rec in data.get("recommendations", []):
+                explanation = rec.get("explanation")
+                if explanation and isinstance(explanation, dict):
+                    for dp in explanation.get("triggering_data", []):
+                        if not dp.get("timestamp"):
+                            dp["timestamp"] = now_iso
 
             recommendations = [
                 HealthRecommendationItem(**item)
