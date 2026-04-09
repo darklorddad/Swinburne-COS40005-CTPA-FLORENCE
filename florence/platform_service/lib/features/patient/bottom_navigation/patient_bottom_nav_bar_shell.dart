@@ -132,17 +132,18 @@ class _PatientBottomNavBarShellState
           ),
 
           // 2. Backdrop — blurs and darkens content when sheet is open
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: _sheetController,
-              builder: (context, _) {
-                // BUG FIX: Strictly use isDismissed to prevent negative zero rendering bugs
-                if (_sheetController.isDismissed) return const SizedBox.shrink();
-                
-                // BUG FIX: Force a minimum blur of 0.001 to prevent Impeller engine crashes
-                final double blurAmount = math.max(0.001, _sheetAnim.value * 4);
-                
-                return IgnorePointer(
+          AnimatedBuilder(
+            animation: _sheetController,
+            builder: (context, _) {
+              // BUG FIX: Strictly use isDismissed to prevent negative zero rendering bugs
+              if (_sheetController.isDismissed) return const SizedBox.shrink();
+              
+              // BUG FIX: Force a minimum blur of 0.001 to prevent Impeller engine crashes
+              final double blurAmount = math.max(0.001, _sheetAnim.value * 4);
+              
+              // Move Positioned.fill INSIDE the builder to prevent black screen glitch on Impeller
+              return Positioned.fill(
+                child: IgnorePointer(
                   ignoring: !_sheetOpen, // Ignore touches while closing
                   child: GestureDetector(
                     onTap: _closeSheet,
@@ -158,9 +159,9 @@ class _PatientBottomNavBarShellState
                       ),
                     ),
                   ),
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
 
           // 3. Sheet content — slides up from bottom
