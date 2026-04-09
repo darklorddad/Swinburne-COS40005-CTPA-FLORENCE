@@ -670,9 +670,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
           const SizedBox(height: 20),
 
-          // Status indicator (Always visible, fixed size)
+          // Status indicator (Always visible)
           SizedBox(
-            height: 32,
             child: Center(
               child: Builder(
                 builder: (context) {
@@ -704,7 +703,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       children: [
                         Container(
                           width: 140, // Fixed width
-                          height: 32, // Fixed height
+                          height: 32,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             color: glucoseColor == null
