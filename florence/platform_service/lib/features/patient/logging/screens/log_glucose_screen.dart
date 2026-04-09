@@ -1,26 +1,28 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:image_picker/image_picker.dart';
+
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../../config/routes.dart';
+import '../../../../config/theme.dart';
 import '../../../../core/config/environment.dart';
+import '../../../../core/layout/responsive_layout_system.dart';
 import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/helpers.dart';
+import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
 import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
+import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-
 /// Log Glucose Screen
 /// Allows users to record blood glucose readings
 class LogGlucoseScreen extends ConsumerStatefulWidget {
