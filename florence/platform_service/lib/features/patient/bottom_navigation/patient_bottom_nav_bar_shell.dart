@@ -2,7 +2,6 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../../config/routes.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../profile/screens/profile_screen.dart';
@@ -32,8 +31,6 @@ class _PatientBottomNavBarShellState
 
   // ── Sheet state ────────────────────────────────────────────
   bool _sheetOpen = false;
-  double _sheetContentHeight = 380;
-  final GlobalKey _sheetContentKey = GlobalKey();
 
   // ── Log item stagger ───────────────────────────────────────
   final List<double> _itemOpacity = List.filled(8, 1.0);
@@ -64,18 +61,6 @@ class _PatientBottomNavBarShellState
       curve: const Cubic(0.34, 1.56, 0.64, 1),
       reverseCurve: Curves.easeIn,
     );
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureSheet());
-  }
-
-  void _measureSheet() {
-    final ctx = _sheetContentKey.currentContext;
-    if (ctx != null) {
-      final box = ctx.findRenderObject() as RenderBox?;
-      if (box != null && box.hasSize) {
-        setState(() => _sheetContentHeight = box.size.height);
-      }
-    }
   }
 
   @override
@@ -126,9 +111,10 @@ class _PatientBottomNavBarShellState
   @override
   Widget build(BuildContext context) {
     final safeBottom = MediaQuery.of(context).padding.bottom;
+    final navHeight = 65.0 + safeBottom; // BottomAppBar height + notch
 
     return Scaffold(
-      extendBody: true, // Allows the sheet to slide up from behind the BottomAppBar
+      extendBody: true,
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
@@ -146,12 +132,16 @@ class _PatientBottomNavBarShellState
           ),
 
           // 2. Backdrop — blurs and darkens content when sheet is open
-          if (_sheetOpen)
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _sheetAnim,
-                builder: (context, _) {
-                  return GestureDetector(
+          Positioned.fill(
+            child: AnimatedBuilder(
+              animation: _sheetAnim,
+              builder: (context, _) {
+                // Remove widget completely when fully closed
+                if (_sheetAnim.value == 0) return const SizedBox.shrink();
+                
+                return IgnorePointer(
+                  ignoring: !_sheetOpen, // Ignore touches while closing
+                  child: GestureDetector(
                     onTap: _closeSheet,
                     child: BackdropFilter(
                       filter: ImageFilter.blur(
@@ -159,32 +149,32 @@ class _PatientBottomNavBarShellState
                         sigmaY: _sheetAnim.value * 4,
                       ),
                       child: Container(
-                        color: Color.lerp(
-                          Colors.transparent,
-                          const Color(0xFF060618).withOpacity(0.42),
-                          _sheetAnim.value,
-                        ),
+                        color: const Color(0xFF060618).withOpacity(0.42 * _sheetAnim.value),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
+          ),
 
-          // 3. Sheet content — slides up from behind the nav bar
+          // 3. Sheet content — slides up from bottom
           AnimatedBuilder(
             animation: _sheetAnim,
             builder: (context, child) {
-              final navHeight = 65.0 + safeBottom; // BottomAppBar height + notch
-              final bottomOffset = navHeight - ((1 - _sheetAnim.value) * _sheetContentHeight);
+              if (_sheetAnim.value == 0) return const SizedBox.shrink();
+
               return Positioned(
-                bottom: bottomOffset,
+                bottom: 0, // Anchored to bottom, no gap left for green backgrounds
                 left: 0,
                 right: 0,
-                child: child!,
+                child: FractionalTranslation(
+                  translation: Offset(0, 1.0 - _sheetAnim.value), // Slide by 100% of its height
+                  child: child!,
+                ),
               );
             },
-            child: _buildSheetContent(),
+            child: _buildSheetContent(navHeight),
           ),
         ],
       ),
@@ -206,7 +196,7 @@ class _PatientBottomNavBarShellState
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       
-      // 5. Standard Nav Bar (No border radius)
+      // 5. Standard Nav Bar
       bottomNavigationBar: _buildNavBar(),
     );
   }
@@ -217,7 +207,7 @@ class _PatientBottomNavBarShellState
       shape: const CircularNotchedRectangle(),
       notchMargin: 8.0,
       color: Colors.white.withOpacity(0.98),
-      elevation: 16, // Adds a drop shadow
+      elevation: 16,
       padding: EdgeInsets.zero,
       child: SizedBox(
         height: 65,
@@ -236,7 +226,6 @@ class _PatientBottomNavBarShellState
               onTap: () => _switchTab(1),
             ),
             
-            // Empty centre slot for the docked FAB
             const Expanded(child: SizedBox()),
             
             _buildNavItem(
@@ -274,10 +263,9 @@ class _PatientBottomNavBarShellState
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Active pill above icon
             AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOut, // Use easeOut to fix the negative width Flex Error
+              curve: Curves.easeOut,
               width: isActive ? 20.0 : 0.0,
               height: 3.0,
               margin: const EdgeInsets.only(bottom: 4),
@@ -308,9 +296,8 @@ class _PatientBottomNavBarShellState
   }
 
   // ── Sheet content ──────────────────────────────────────────
-  Widget _buildSheetContent() {
+  Widget _buildSheetContent(double navHeight) {
     return Container(
-      key: _sheetContentKey,
       decoration: const BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
@@ -322,7 +309,8 @@ class _PatientBottomNavBarShellState
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(22, 14, 22, 40),
+      // Add navHeight to the bottom padding so content sits above the nav bar cleanly
+      padding: EdgeInsets.fromLTRB(22, 14, 22, 24 + navHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -338,15 +326,12 @@ class _PatientBottomNavBarShellState
           ),
           Text(
             'Log Health Data',
-            style: GoogleFonts.cormorantGaramond(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
-              color: const Color(0xFF0F1020),
-              letterSpacing: -0.5,
-            ),
+            // Updated to match the app theme typography
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           const Text(
             'Select a metric to record',
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
@@ -363,7 +348,7 @@ class _PatientBottomNavBarShellState
             ),
             itemCount: 8,
             itemBuilder: (context, index) {
-              const _items = [
+              const items = [
                 (0, Icons.water_drop_rounded, 'Glucose', Color(0xFFEF5350), AppRoutes.logGlucose),
                 (1, Icons.monitor_heart_outlined, 'B.Pressure', Color(0xFFF50057), AppRoutes.logBloodPressure),
                 (2, Icons.restaurant_outlined, 'Diet', Color(0xFFFFA726), AppRoutes.logMeal),
@@ -373,7 +358,7 @@ class _PatientBottomNavBarShellState
                 (6, Icons.bloodtype_outlined, 'Cholesterol', Color(0xFFAB47BC), AppRoutes.logCholesterol),
                 (7, Icons.pie_chart_outline, 'HbA1c', Color(0xFFFFCA28), AppRoutes.logHba1c),
               ];
-              final (i, icon, label, color, route) = _items[index];
+              final (i, icon, label, color, route) = items[index];
               return _logItem(i, icon, label, color, route);
             },
           ),
