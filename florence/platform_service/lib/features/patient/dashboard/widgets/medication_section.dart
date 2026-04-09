@@ -206,6 +206,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // FILTER ROW
           Row(
@@ -220,45 +221,47 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
           const SizedBox(height: 16),
 
           // SCHEDULE LIST
-          Expanded(
-            child: scheduleAsync.when(
-              skipLoadingOnReload: true,
-              data: (scheduleItems) {
-                if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
+          scheduleAsync.when(
+            skipLoadingOnReload: true,
+            data: (scheduleItems) {
+              if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
 
-                List<Widget> loggableItems = [];
+              List<Widget> loggableItems = [];
+              
+              for (var item in scheduleItems) {
+                final med = PatientMedication.fromJson(item['medication']);
+                final int timesLogged = item['times_logged'] ?? 0;
+                final bool isWeekly = item['is_weekly'] ?? false;
                 
-                for (var item in scheduleItems) {
-                  final med = PatientMedication.fromJson(item['medication']);
-                  final int timesLogged = item['times_logged'] ?? 0;
-                  final bool isWeekly = item['is_weekly'] ?? false;
+                int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
+                bool isLate = false; 
+
+                for (int i = 1; i <= totalDoses; i++) {
+                  bool isTaken = i <= timesLogged;
                   
-                  int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
-                  bool isLate = false; 
+                  // APPLY FILTER LOGIC
+                  bool shouldShow = true;
+                  if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
+                  if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
 
-                  for (int i = 1; i <= totalDoses; i++) {
-                    bool isTaken = i <= timesLogged;
-                    
-                    // APPLY FILTER LOGIC
-                    bool shouldShow = true;
-                    if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
-                    if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
-
-                    if (shouldShow) {
-                      loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
-                    }
+                  if (shouldShow) {
+                    loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
                   }
                 }
+              }
 
-                if (loggableItems.isEmpty) {
-                  return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
-                }
+              if (loggableItems.isEmpty) {
+                return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+              }
 
-                return ListView(physics: const BouncingScrollPhysics(), children: loggableItems);
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => const Center(child: Text("Error loading schedule")),
-            ),
+              return ListView(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: loggableItems,
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const Center(child: Text("Error loading schedule")),
           ),
         ],
       ),
@@ -469,6 +472,7 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // FILTER ROW
           Row(
@@ -483,34 +487,33 @@ class _MedicationCabinetSectionState extends ConsumerState<MedicationCabinetSect
           const SizedBox(height: 16),
 
           // CABINET LIST
-          Expanded(
-            child: medsAsync.when(
-              skipLoadingOnReload: true,
-              data: (meds) {
-                if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
+          medsAsync.when(
+            skipLoadingOnReload: true,
+            data: (meds) {
+              if (meds.isEmpty) return Center(child: Text("Cabinet is empty", style: TextStyle(color: AppTheme.textSecondaryColor)));
 
-                // Apply Filter Logic
-                final filteredMeds = meds.where((m) {
-                  if (_currentFilter == CabinetFilter.active) return m.status != 'PAST';
-                  if (_currentFilter == CabinetFilter.past) return m.status == 'PAST';
-                  return true; // All
-                }).toList();
+              // Apply Filter Logic
+              final filteredMeds = meds.where((m) {
+                if (_currentFilter == CabinetFilter.active) return m.status != 'PAST';
+                if (_currentFilter == CabinetFilter.past) return m.status == 'PAST';
+                return true; // All
+              }).toList();
 
-                if (filteredMeds.isEmpty) return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+              if (filteredMeds.isEmpty) return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
 
-                return ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: filteredMeds.length,
-                  itemBuilder: (context, index) {
-                    final med = filteredMeds[index];
-                    final isActive = med.status != 'PAST';
-                    return _buildCabinetRow(context, ref, med, isActive: isActive);
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
-            ),
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredMeds.length,
+                itemBuilder: (context, index) {
+                  final med = filteredMeds[index];
+                  final isActive = med.status != 'PAST';
+                  return _buildCabinetRow(context, ref, med, isActive: isActive);
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const Center(child: Text("Failed to load cabinet")),
           ),
           
           const SizedBox(height: 12),
