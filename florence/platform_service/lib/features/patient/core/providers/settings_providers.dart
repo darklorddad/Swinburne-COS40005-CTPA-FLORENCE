@@ -18,7 +18,10 @@ class PatientSettings {
 }
 
 class PatientSettingsNotifier extends Notifier<PatientSettings> {
-  PatientSettingsNotifier() : super(PatientSettings());
+  @override
+  PatientSettings build() {
+    return PatientSettings();
+  }
 
   void updateGlucoseUnit(String unit) {
     state = state.copyWith(glucoseUnit: unit);
@@ -29,6 +32,6 @@ class PatientSettingsNotifier extends Notifier<PatientSettings> {
   }
 }
 
-final patientSettingsProvider = StateNotifierProvider<PatientSettingsNotifier, PatientSettings>((ref) {
+final patientSettingsProvider = NotifierProvider<PatientSettingsNotifier, PatientSettings>(() {
   return PatientSettingsNotifier();
 });
