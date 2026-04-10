@@ -354,7 +354,7 @@ class _PatientBottomNavBarShellState
         ],
       ),
       // Add navHeight to the bottom padding so content sits above the nav bar cleanly
-      padding: EdgeInsets.fromLTRB(22, 14, 22, navHeight),
+      padding: EdgeInsets.fromLTRB(22, 14, 22, 16 + navHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -380,6 +380,7 @@ class _PatientBottomNavBarShellState
             'Select a metric to record',
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           ),
+          const SizedBox(height: 16),
           GridView.builder(
             padding: EdgeInsets.zero,
             shrinkWrap: true,
