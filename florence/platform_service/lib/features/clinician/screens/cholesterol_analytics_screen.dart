@@ -51,37 +51,50 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Cholesterol Ratio', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.monitor_heart_outlined, color: AppTheme.textSecondary, size: 20),
+                      SizedBox(width: 8),
+                      Text('Cholesterol Ratio', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    ],
+                  ),
+                  Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondary),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               // Target Ranges Box
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppTheme.lowRiskColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.lowRiskColor.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         Text('Target Ranges', style: TextStyle(color: AppTheme.lowRiskColor, fontWeight: FontWeight.bold)),
-                        Icon(Icons.chevron_right, color: AppTheme.lowRiskColor, size: 16),
+                        Icon(Icons.check_circle_outline, color: AppTheme.lowRiskColor, size: 16),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     _buildTargetRow('Total', '100 - 200 mg/dL'),
                     _buildTargetRow('LDL', '0 - 100 mg/dL'),
                     _buildTargetRow('HDL', '40 - 100 mg/dL'),
@@ -171,21 +184,28 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: const [
-                  Icon(Icons.bar_chart, color: AppTheme.primaryColor),
+              const Row(
+                children: [
+                  Icon(Icons.bar_chart, color: AppTheme.textSecondary, size: 20),
                   SizedBox(width: 8),
-                  Text('Cholesterol Breakdown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  Text('Cholesterol Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                 ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
+              const SizedBox(height: 20),
+              const SizedBox(
                 height: 200,
-                child: Center(child: Text('Breakdown Chart (Coming Soon)', style: TextStyle(color: Colors.grey))),
+                child: Center(child: Text('Breakdown Chart (Coming Soon)', style: TextStyle(color: AppTheme.textSecondary))),
               ),
             ],
           ),

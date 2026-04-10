@@ -32,12 +32,12 @@ class ApiDataService implements DataService {
       return (data as List).map((json) => Patient(
         id: json['id']?.toString() ?? '',
         name: json['name'] ?? 'Unknown',
-        age: json['age'] ?? 0,
-        gender: json['gender'] ?? 'Unknown',
-        condition: _parseCondition(json['condition']),
+        age: 0, // Age requires date_of_birth which is not in this endpoint
+        gender: 'Unknown',
+        condition: ChronicCondition.type2Diabetes, // Default placeholder
         riskLevel: _parseRiskLevel(json['risk_level']),
-        lastSync: json['last_sync'] != null ? DateTime.parse(json['last_sync']) : DateTime.now(),
-        contactInfo: json['contact_info'] ?? '',
+        lastSync: DateTime.now(), // Real sync time not provided in list endpoint
+        contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
       )).toList();
     } catch (e) {
       debugPrint('Error fetching patients: $e');
@@ -54,12 +54,12 @@ class ApiDataService implements DataService {
       return (data as List).map((json) => Patient(
         id: json['id']?.toString() ?? '',
         name: json['name'] ?? 'Unknown',
-        age: json['age'] ?? 0,
-        gender: json['gender'] ?? 'Unknown',
-        condition: _parseCondition(json['condition']),
+        age: 0,
+        gender: 'Unknown',
+        condition: ChronicCondition.type2Diabetes,
         riskLevel: _parseRiskLevel(json['risk_level']),
-        lastSync: json['last_sync'] != null ? DateTime.parse(json['last_sync']) : DateTime.now(),
-        contactInfo: json['contact_info'] ?? '',
+        lastSync: DateTime.now(),
+        contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
       )).toList();
     } catch (e) {
       debugPrint('Error fetching available patients: $e');
@@ -75,6 +75,67 @@ class ApiDataService implements DataService {
   @override
   Future<void> unassignPatient(String patientId) async {
     await _api.post('/clinicians/patients/$patientId/unassign', {});
+  }
+
+  @override
+  Future<void> addPatientNote(String patientId, String noteContent) async {
+    await _api.post('/clinicians/me/patients/$patientId/notes', {
+      'note_content': noteContent,
+    });
+  }
+
+  @override
+  Future<void> updatePatientRiskLevel(String patientId, String riskLevel) async {
+    await _api.put('/clinicians/me/patients/$patientId/assess-risk', {
+      'risk_level': riskLevel.toUpperCase(),
+    });
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPatientThresholds(String patientId) async {
+    final data = await _api.get('/clinicians/me/patients/$patientId/thresholds');
+    if (data == null) return [];
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  @override
+  Future<void> setPatientThresholds(String patientId, List<Map<String, dynamic>> thresholds) async {
+    await _api.put('/clinicians/me/patients/$patientId/thresholds', thresholds);
+  }
+
+  @override
+  Future<Patient> getPatient(String patientId) async {
+    try {
+      final data = await _api.get('/clinicians/me/patients/$patientId');
+      if (data == null) throw Exception('Patient data not found');
+
+      final profile = data['profile'];
+      if (profile == null) throw Exception('Patient profile not found');
+
+      int calculatedAge = 0;
+      if (profile['date_of_birth'] != null) {
+        final dob = DateTime.parse(profile['date_of_birth']);
+        final now = DateTime.now();
+        calculatedAge = now.year - dob.year;
+        if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+          calculatedAge--;
+        }
+      }
+
+      return Patient(
+        id: profile['id']?.toString() ?? '',
+        name: profile['name'] ?? 'Unknown',
+        age: calculatedAge,
+        gender: profile['gender'] ?? 'Unknown',
+        condition: _parseCondition(profile['condition']),
+        riskLevel: _parseRiskLevel(profile['risk_level']),
+        lastSync: profile['last_sync'] != null ? DateTime.parse(profile['last_sync']) : DateTime.now(),
+        contactInfo: profile['phone_number'] ?? profile['contact_info'] ?? '',
+      );
+    } catch (e) {
+      debugPrint('Error fetching patient: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -148,6 +209,27 @@ class ApiDataService implements DataService {
               ))
           .toList();
 
+      // Parse daily_logs to mealEntries
+      final dailyLogs = data['daily_logs'] as List? ?? [];
+      final mealEntries = <MealEntry>[];
+
+      for (var log in dailyLogs) {
+        if (log['meal_desc'] != null || log['calories'] != null || log['photo_url'] != null) {
+          mealEntries.add(MealEntry(
+            timestamp: log['log_date'] != null ? DateTime.parse('${log['log_date']}T12:00:00Z') : DateTime.now(),
+            mealType: log['meal_time'] ?? 'Meal',
+            foodItems: log['meal_desc'] != null 
+                ? [FoodItem(name: log['meal_desc'], quantity: 1, unit: 'serving', nutrition: {'calories': (log['calories'] as num?)?.toDouble() ?? 0})] 
+                : [],
+            nutritionSummary: {
+              if (log['calories'] != null) 'calories': (log['calories'] as num).toDouble(),
+            },
+          ));
+        }
+      }
+      
+      mealEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
       // Parse BMI from monitor data (take latest)
       double weight = 70.0; // Default
       double height = 170.0; // Default
@@ -169,7 +251,7 @@ class ApiDataService implements DataService {
         bloodPressureReadings: bpReadings,
         cholesterolReadings: cholReadings,
         activityData: _parseActivityData(activityLogs),
-        mealEntries: [], 
+        mealEntries: mealEntries, 
         automatedActions: [], 
         medications: [], 
         aiGeneratedSummary: 'Patient data loaded successfully.',

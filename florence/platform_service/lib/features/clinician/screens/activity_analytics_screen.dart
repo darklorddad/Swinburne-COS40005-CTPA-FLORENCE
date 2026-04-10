@@ -53,16 +53,28 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text("Today's Movement", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.directions_run, color: AppTheme.textSecondary, size: 20),
+                      SizedBox(width: 8),
+                      Text("Today's Movement", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    ],
+                  ),
+                  Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondary),
                 ],
               ),
               const SizedBox(height: 24),
@@ -71,23 +83,23 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
                   children: [
                     Text(
                       todayData.activeMinutes.toString(),
-                      style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                      style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                     ),
-                    const Text('minutes', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    const Text('minutes', style: TextStyle(fontSize: 16, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 4),
                     Text(
                       'across ${todayData.activeMinutes > 0 ? (todayData.activeMinutes / 30).ceil() : 0} sessions', // Mock calculation
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      style: const TextStyle(fontSize: 12, color: AppTheme.textTertiary),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  _buildStatItem('Steps', todayData.steps.toString(), Icons.directions_walk, AppTheme.primaryColor),
-                  _buildStatItem('Calories', todayData.caloriesBurned.toString(), Icons.local_fire_department, Colors.orange),
+                  _buildStatItem('Steps', todayData.steps.toString(), Icons.directions_walk, AppTheme.secondaryColor, isUp: true),
+                  _buildStatItem('Calories', todayData.caloriesBurned.toString(), Icons.local_fire_department, AppTheme.accentColor, isUp: true),
                 ],
               ),
             ],
@@ -97,14 +109,44 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
-    return Column(
-      children: [
-        Icon(icon, color: color),
-        const SizedBox(height: 4),
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
+  Widget _buildStatItem(String label, String value, IconData icon, Color color, {bool? isUp}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color.withValues(alpha: 0.5)),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              if (isUp != null) ...[
+                const SizedBox(width: 8),
+                Icon(
+                  isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 16,
+                  color: isUp ? AppTheme.lowRiskColor : AppTheme.highRiskColor, // More activity is generally good
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+          const SizedBox(height: 4),
+          Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 
@@ -115,31 +157,43 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Activity Streak', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondary, size: 20),
+                      SizedBox(width: 8),
+                      Text('Activity Streak', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    ],
+                  ),
+                  Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondary),
                 ],
               ),
-              const SizedBox(height: 16),
-              Row(
+              const SizedBox(height: 24),
+              const Row(
                 children: [
-                  const Text(
+                  Text(
                     '5', // Mock streak
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.grey),
+                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('DAY STREAK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.grey)),
-                      Text('Start moving today!', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    children: [
+                      Text('DAY STREAK', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppTheme.textSecondary, letterSpacing: 0.5)),
+                      Text('Start moving today!', style: TextStyle(fontSize: 13, color: AppTheme.textTertiary)),
                     ],
                   ),
                 ],
@@ -159,7 +213,7 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
                   // Mock data: some days are active (green), some less (light green), some none (grey)
                   // Use index to vary
                   final opacity = (index % 3 == 0) ? 1.0 : ((index % 2 == 0) ? 0.4 : 0.1);
-                  final color = index > 24 ? Colors.grey[200]! : AppTheme.lowRiskColor.withValues(alpha: opacity);
+                  final color = index > 24 ? AppTheme.dividerColor : AppTheme.lowRiskColor.withValues(alpha: opacity);
                   
                   // Simple day label for top row
                   if (index < 7) {
@@ -174,10 +228,10 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
                   );
                 },
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               const Align(
                 alignment: Alignment.centerRight,
-                child: Text('Less ■■■ More', style: TextStyle(fontSize: 10, color: Colors.grey)),
+                child: Text('Less ■■■ More', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
               ),
             ],
           ),
@@ -190,19 +244,31 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Text('Weekly Consistency', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  Icon(Icons.info_outline, size: 20, color: Colors.grey),
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_month_outlined, color: AppTheme.textSecondary, size: 20),
+                      SizedBox(width: 8),
+                      Text('Weekly Consistency', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    ],
+                  ),
+                  Icon(Icons.info_outline, size: 20, color: AppTheme.textSecondary),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               SizedBox(
                 height: 200,
                 child: ActivityChart(activityData: widget.activityData),

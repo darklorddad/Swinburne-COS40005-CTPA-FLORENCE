@@ -44,19 +44,31 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
+              const Row(
+                children: [
+                  Icon(Icons.monitor_heart_outlined, color: AppTheme.primaryColor, size: 22),
+                  SizedBox(width: 8),
+                  Text('Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                ],
+              ),
+              const SizedBox(height: 20),
               // Target Ranges
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: AppTheme.lowRiskColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.lowRiskColor.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,23 +77,24 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Text('Target Ranges', style: TextStyle(color: AppTheme.lowRiskColor, fontWeight: FontWeight.bold)),
-                        Icon(Icons.chevron_right, color: AppTheme.lowRiskColor, size: 16),
+                        Icon(Icons.check_circle_outline, color: AppTheme.lowRiskColor, size: 18),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     _buildTargetRow('Systolic', '90 - 120 mmHg'),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     _buildTargetRow('Diastolic', '60 - 80 mmHg'),
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               // Averages
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildAvgCard('Avg Systolic', '${_calculateAvgSystolic().toInt()} mmHg'),
-                  _buildAvgCard('Avg Diastolic', '${_calculateAvgDiastolic().toInt()} mmHg'),
+                  _buildAvgCard('Avg Systolic', '${_calculateAvgSystolic().toInt()} mmHg', isUp: false, color: AppTheme.primaryColor),
+                  const SizedBox(width: 12),
+                  _buildAvgCard('Avg Diastolic', '${_calculateAvgDiastolic().toInt()} mmHg', isUp: false, color: AppTheme.secondaryColor),
                 ],
               ),
             ],
@@ -95,27 +108,55 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(color: AppTheme.lowRiskColor.withValues(alpha: 0.8), fontSize: 13)),
-        Text(value, style: const TextStyle(color: AppTheme.lowRiskColor, fontWeight: FontWeight.bold, fontSize: 13)),
+        Text(label, style: TextStyle(color: AppTheme.lowRiskColor.withValues(alpha: 0.8), fontSize: 14)),
+        Text(value, style: const TextStyle(color: AppTheme.lowRiskColor, fontWeight: FontWeight.bold, fontSize: 14)),
       ],
     );
   }
 
-  Widget _buildAvgCard(String label, String value) {
+  Widget _buildAvgCard(String label, String value, {bool? isUp, Color? color}) {
+    final bgColor = color?.withValues(alpha: 0.1) ?? Colors.white;
+    final borderColor = color?.withValues(alpha: 0.3) ?? AppTheme.dividerColor;
+    
     return Expanded(
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(8),
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 4),
-            Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(label, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontWeight: FontWeight.w600)),
+                if (isUp != null)
+                  Icon(
+                    isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                    size: 14,
+                    color: isUp ? AppTheme.highRiskColor : AppTheme.lowRiskColor,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value, 
+              style: TextStyle(
+                fontSize: 20, 
+                fontWeight: FontWeight.bold, 
+                color: color ?? AppTheme.textPrimary,
+              ),
+            ),
           ],
         ),
       ),
@@ -126,14 +167,34 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Center(
             child: Column(
-              children: const [
-                Icon(Icons.bar_chart, size: 48, color: Colors.grey),
-                SizedBox(height: 16),
-                Text('Blood Pressure Trends Chart (Coming Soon)', style: TextStyle(color: Colors.grey)),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.bar_chart_rounded, size: 40, color: AppTheme.primaryColor),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Blood Pressure Trends',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Chart visualization coming soon',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                ),
               ],
             ),
           ),

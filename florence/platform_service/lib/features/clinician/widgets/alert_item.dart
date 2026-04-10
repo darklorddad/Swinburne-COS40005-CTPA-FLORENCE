@@ -17,11 +17,19 @@ class AlertItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 0),
+      color: _getAlertColor(alert.type).withValues(alpha: 0.1), // Filled in background
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: _getAlertColor(alert.type).withValues(alpha: 0.4), // Stronger outline
+          width: 1.5,
+        ),
+      ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -29,54 +37,77 @@ class AlertItem extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    alert.patientName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: _getAlertColor(alert.type).withValues(alpha: 0.5)),
+                        ),
+                        child: Icon(
+                          Icons.warning_amber_rounded,
+                          size: 16,
+                          color: _getAlertColor(alert.type),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        alert.patientName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
                   ),
                   Text(
                     _formatTimestamp(alert.timestamp),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Colors.grey,
+                      color: Colors.grey.shade600,
                     ),
                   ),
                 ],
               ),
               
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               
               // Alert type chip
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _getAlertColor(alert.type).withValues(alpha: 0.1),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: _getAlertColor(alert.type).withValues(alpha: 0.5),
+                    color: _getAlertColor(alert.type),
                     width: 1,
                   ),
                 ),
                 child: Text(
                   alert.typeDisplay,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 11,
                     color: _getAlertColor(alert.type),
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               
               // Alert description
               Text(
                 alert.description,
-                style: const TextStyle(fontSize: 14),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: AppTheme.textPrimary,
+                ),
               ),
               
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               
               // View details link
               Row(
@@ -84,12 +115,16 @@ class AlertItem extends StatelessWidget {
                 children: [
                   TextButton.icon(
                     onPressed: onTap,
-                    icon: const Icon(Icons.visibility, size: 18),
+                    icon: const Icon(Icons.arrow_forward_ios, size: 14),
                     label: const Text('View Details'),
                     style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      foregroundColor: AppTheme.primaryColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.3)),
+                      ),
                     ),
                   ),
                 ],

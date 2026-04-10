@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:florence/features/clinician/models/patient.dart';
 import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/models/clinician_note.dart';
 import 'package:florence/features/clinician/services/api_data_service.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
 import 'package:florence/features/clinician/widgets/risk_indicator.dart';
@@ -40,6 +41,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   late TabController _tabController;
   Patient? _patient;
   PatientHealthData? _healthData;
+  List<ClinicianNote>? _notes;
   bool _isLoading = true;
   String? _error;
   // Metric/Imperial toggle for BMI
@@ -65,14 +67,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     });
 
     try {
-      final patients = await _dataService.getPatients();
-      final patient = patients.firstWhere((p) => p.id == widget.patientId);
+      final patient = await _dataService.getPatient(widget.patientId);
       final healthData = await _dataService.getPatientHealthData(widget.patientId);
+      final notes = await _dataService.getClinicianNotes(widget.patientId);
       
       if (mounted) {
         setState(() {
           _patient = patient;
           _healthData = healthData;
+          _notes = notes;
           _isLoading = false;
         });
 
@@ -127,8 +130,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     if (confirmed == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        // Assuming DataService has or will have an unassign method. 
-        // If not, this needs to be added to your service layer.
         await _dataService.unassignPatient(widget.patientId);
         
         if (mounted) {
@@ -140,6 +141,102 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e')),
           );
+        }
+      }
+    }
+  }
+
+  Future<void> _showUpdateRiskDialog() async {
+    RiskLevel selectedRisk = _patient!.riskLevel;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Update Risk Level'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: RiskLevel.values.map((risk) {
+                  return RadioListTile<RiskLevel>(
+                    title: Text(risk.name.toUpperCase()),
+                    value: risk,
+                    groupValue: selectedRisk,
+                    activeColor: AppTheme.getRiskColor(risk.name),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        if (value != null) selectedRisk = value;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text('Update'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (confirmed == true && selectedRisk != _patient!.riskLevel && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        await _dataService.updatePatientRiskLevel(widget.patientId, selectedRisk.name);
+        await _loadPatientData();
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _showAddNoteDialog() async {
+    final TextEditingController noteController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Clinical Note'),
+        content: TextField(
+          controller: noteController,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: 'Enter your note here...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Save Note'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && noteController.text.trim().isNotEmpty && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        await _dataService.addPatientNote(widget.patientId, noteController.text.trim());
+        await _loadPatientData();
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -179,45 +276,68 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_patient!.name),
-        bottom: TabBar(
+    return DefaultTabController(
+      length: 2,
+      initialIndex: widget.initialTab,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_patient!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          elevation: 0,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(30),
+              ),
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            labelColor: AppTheme.primaryColor,
+            unselectedLabelColor: AppTheme.textSecondary,
+            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
+            padding: const EdgeInsets.all(4),
+            tabs: const [
+              Tab(text: 'Overview'),
+              Tab(text: 'Historical Data'), // Changed from Health Data
+            ],
+          ),
+            ),
+          ),
+        ),
+        body: TabBarView(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'Overview'),
-            Tab(text: 'Health Data'),
-            // Tab(text: 'AI Chatbot'), // Temporarily disabled
+          children: [
+            _buildOverviewTab(),
+            _buildHistoricalDataTab(), // Changed from Health Data
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOverviewTab(),
-          _buildHealthDataTab(),
-          // _buildChatbotTab(), // Temporarily disabled
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Handle action based on current tab
-          switch (_tabController.index) {
-            case 0:
-              // Schedule follow-up
-              _showScheduleFollowupDialog();
-              break;
-            case 1:
-              // Request new measurements
-              _showRequestDataDialog();
-              break;
-            /* case 2:
-              // Focus chat input
-              FocusScope.of(context).requestFocus(FocusNode());
-              break; */
-          }
-        },
-        child: Icon(_tabController.index == 0 ? Icons.calendar_today : (_tabController.index == 1 ? Icons.sync : Icons.smart_toy)),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            switch (_tabController.index) {
+              case 0:
+                _showScheduleFollowupDialog();
+                break;
+              case 1:
+                _showRequestDataDialog();
+                break;
+            }
+          },
+          child: Icon(_tabController.index == 0 ? Icons.calendar_today : Icons.sync),
+        ),
       ),
     );
   }
@@ -229,86 +349,119 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         // Patient header card
         _buildPatientHeaderCard(),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: 24),
         
-        /*
-        // AI-Generated Summary Card
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.auto_awesome,
-                      color: AppTheme.primaryColor,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'AI-Generated Health Summary',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  _healthData!.aiGeneratedSummary,
-                  style: const TextStyle(fontSize: 14),
-                ),
-              ],
+        // Grid Section Header
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Text(
+            'Current Status',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
             ),
           ),
         ),
         
-        const SizedBox(height: 12),
-        */
+        // Bento Box Style Grid for Stats
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          childAspectRatio: 1.35, // Adjusted to give a bit more vertical space
+          children: [
+            _buildBentoStatCard(
+              'Glucose', 
+              _healthData!.glucoseReadings.isNotEmpty ? '${_healthData!.glucoseReadings.last.value.toInt()}' : '--', 
+              'mg/dL',
+              Icons.water_drop, 
+              AppTheme.getRiskColor(_healthData!.glucoseReadings.isNotEmpty ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value) : 'low'),
+            ),
+            _buildBentoStatCard(
+              'Blood Pressure', 
+              _healthData!.bloodPressureReadings.isNotEmpty ? '${_healthData!.bloodPressureReadings.last.systolic.toInt()}/${_healthData!.bloodPressureReadings.last.diastolic.toInt()}' : '--', 
+              'mmHg',
+              Icons.favorite, 
+              AppTheme.getRiskColor(_healthData!.bloodPressureReadings.isNotEmpty ? _getBPRiskLevel(_healthData!.bloodPressureReadings.last.systolic, _healthData!.bloodPressureReadings.last.diastolic) : 'low'),
+            ),
+            _buildBentoStatCard(
+              'HbA1c', 
+              _healthData!.hbA1cReadings.isNotEmpty ? '${_healthData!.hbA1cReadings.last.value}' : '--', 
+              '%',
+              Icons.pie_chart, 
+              AppTheme.getRiskColor(_healthData!.hbA1cReadings.isNotEmpty ? _getHbA1cRiskLevel(_healthData!.hbA1cReadings.last.value) : 'low'),
+            ),
+            _buildBentoStatCard(
+              'BMI', 
+              _calculateBMI(_healthData!.weight, _healthData!.height).toStringAsFixed(1), 
+              'kg/m²',
+              Icons.monitor_weight, 
+              AppTheme.getRiskColor(_getBMIRiskLevel(_calculateBMI(_healthData!.weight, _healthData!.height))),
+            ),
+          ],
+        ),
+        
+        const SizedBox(height: 24),
         
         // Detected Patterns Card
         Card(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(
-                      Icons.analytics,
-                      color: AppTheme.secondaryColor,
-                      size: 20,
-                    ),
+                    Icon(Icons.monitor_heart_outlined, color: AppTheme.textSecondary, size: 20),
                     SizedBox(width: 8),
                     Text(
                       'Detected Patterns',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                if (_healthData!.detectedPatterns.isEmpty)
+                  const Text('No significant patterns detected at this time.', style: TextStyle(color: AppTheme.textSecondary)),
                 Column(
                   children: _healthData!.detectedPatterns.map((pattern) => 
                     Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.circle,
-                            size: 8,
-                            color: Colors.grey,
+                          const Padding(
+                            padding: EdgeInsets.only(top: 6),
+                            child: Icon(
+                              Icons.circle,
+                              size: 8,
+                              color: AppTheme.textSecondary,
+                            ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 12),
                           Expanded(
-                            child: Text(pattern),
+                            child: Text(
+                              pattern,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                height: 1.5,
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -320,158 +473,180 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
         
-        const SizedBox(height: 12),
+        const SizedBox(height: 24),
         
-        /*
-        // Recommendations Card
+        // Clinical Notes Card
         Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.lightbulb,
-                      color: AppTheme.accentColor,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'AI Recommendations',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Column(
-                  children: _healthData!.recommendations.map((recommendation) => 
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.check_circle,
-                            size: 16,
-                            color: AppTheme.lowRiskColor,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(recommendation),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ).toList(),
-                ),
-              ],
-            ),
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
           ),
-        ),
-        
-        const SizedBox(height: 12),
-        */
-        
-        /*
-        // Recent Automated Actions Card
-        Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.smart_toy,
-                      color: AppTheme.automatedActionColor,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Recent Automated Actions',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                ..._healthData!.automatedActions.take(3).map((action) =>
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Row(
+                    const Row(
                       children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(
-                            _getAutomatedActionIcon(action.type),
-                            color: Colors.purple,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                action.type,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                action.description,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                DateFormat('MMM d, h:mm a').format(action.timestamp),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
+                        Icon(Icons.notes, color: AppTheme.textSecondary, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Clinical Notes',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    TextButton.icon(
+                      onPressed: _showAddNoteDialog,
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Add Note'),
+                    ),
+                  ],
                 ),
-                if (_healthData!.automatedActions.length > 3)
-                  TextButton(
-                    onPressed: () {
-                      _tabController.animateTo(1); // Go to Health Data tab
-                    },
-                    child: const Text('View all automated actions'),
+                const SizedBox(height: 16),
+                if (_notes == null || _notes!.isEmpty)
+                  const Text('No clinical notes recorded yet.', style: TextStyle(color: AppTheme.textSecondary)),
+                if (_notes != null && _notes!.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: _notes!.map((note) => Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.textPrimary.withValues(alpha: 0.05), // Alternative safe color
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AppTheme.dividerColor.withValues(alpha: 0.5)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              DateFormat('MMM d, yyyy - h:mm a').format(note.timestamp),
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              note.content,
+                              style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary, height: 1.4),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )).toList(),
                   ),
               ],
             ),
           ),
         ),
-        */
       ],
     );
   }
   
-  Widget _buildHealthDataTab() {
+  Widget _buildBentoStatCard(String label, String value, String unit, IconData icon, Color color) {
+    return Container(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1), // Solid tinted background based on risk
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
+                ),
+                child: Icon(icon, size: 16, color: color),
+              ),
+            ],
+          ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                unit,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper Methods for Bento Box Risk Levels
+  String _getGlucoseRiskLevel(double value) {
+    if (value < 70 || value > 180) return 'high';
+    if (value > 140) return 'medium';
+    return 'low';
+  }
+  
+  String _getBPRiskLevel(double systolic, double diastolic) {
+    if (systolic >= 140 || diastolic >= 90) return 'high';
+    if (systolic >= 130 || diastolic >= 80) return 'medium';
+    return 'low';
+  }
+  
+  String _getHbA1cRiskLevel(double value) {
+    if (value >= 8.0) return 'high';
+    if (value >= 7.0) return 'medium';
+    return 'low';
+  }
+  
+  String _getBMIRiskLevel(double bmi) {
+    if (bmi >= 30.0) return 'high';
+    if (bmi >= 25.0) return 'medium';
+    return 'low';
+  }
+  
+  double _calculateBMI(double weightKg, double heightCm) {
+    if (heightCm == 0) return 0;
+    return weightKg / ((heightCm / 100) * (heightCm / 100));
+  }
+  
+  Widget _buildHistoricalDataTab() {
     // Filter datasets by selected timeframe
     final now = DateTime.now();
     final since = now.subtract(const Duration(days: 30)); // Default 30 days for activity
@@ -630,42 +805,65 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             ),
           ),
           child: Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    children: const [
-                      Icon(Icons.directions_run, size: 20, color: AppTheme.textSecondary),
-                      SizedBox(width: 8),
-                      Text('Physical Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatCard(
-                        'Avg Steps',
-                        _calculateAverageSteps().toInt().toString(),
-                        Icons.directions_walk,
-                        AppTheme.secondaryColor,
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppTheme.lowRiskColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.directions_run, size: 20, color: AppTheme.lowRiskColor),
                       ),
-                      _buildStatCard(
-                        'Avg Active Mins',
-                        _calculateAverageActiveMinutes().toInt().toString(),
-                        Icons.timer,
-                        AppTheme.lowRiskColor,
-                      ),
-                      _buildStatCard(
-                        'Avg Calories',
-                        _calculateAverageCalories().toInt().toString(),
-                        Icons.local_fire_department,
-                        AppTheme.accentColor,
-                      ),
+                      const SizedBox(width: 12),
+                      const Text('Physical Activity Log', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                      const Spacer(),
+                      const Icon(Icons.chevron_right, color: AppTheme.textSecondary),
                     ],
                   ),
+                  const SizedBox(height: 16),
+                  if (filteredActivity.isNotEmpty) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatCard(
+                          'Avg Steps',
+                          _calculateAverageSteps().toInt().toString(),
+                          Icons.directions_walk,
+                          AppTheme.secondaryColor,
+                        ),
+                        _buildStatCard(
+                          'Avg Active Mins',
+                          _calculateAverageActiveMinutes().toInt().toString(),
+                          Icons.timer,
+                          AppTheme.lowRiskColor,
+                        ),
+                        _buildStatCard(
+                          'Avg Calories',
+                          _calculateAverageCalories().toInt().toString(),
+                          Icons.local_fire_department,
+                          AppTheme.accentColor,
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const Center(
+                      child: Text(
+                        'No activity data for the selected period',
+                        style: TextStyle(color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -676,49 +874,54 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         
         // Medications Card
         Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Current Medications',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const Row(
+                  children: [
+                    Icon(Icons.medication_outlined, color: AppTheme.secondaryColor, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Current Medications',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 if (_healthData!.medications.isEmpty)
-                  const Text('No active medications recorded.'),
+                  const Text('No active medications recorded.', style: TextStyle(color: AppTheme.textSecondary)),
                 ..._healthData!.medications.map((m) => Container(
                   margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: AppTheme.dividerColor),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        width: 40,
-                        height: 40,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
+                          shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 20),
+                        child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 24),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -728,18 +931,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                               children: [
                                 Text(
                                   m.name,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                 ),
-                                Text(
-                                  m.dosage,
-                                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.dividerColor.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    m.dosage,
+                                    style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
+                                  ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: 8),
                             Wrap(
                               spacing: 8,
-                              runSpacing: 4,
+                              runSpacing: 8,
                               children: [
                                 _buildNutrientChip('Route', m.route, AppTheme.primaryColor),
                                 _buildNutrientChip('Frequency', m.frequency, AppTheme.lowRiskColor),
@@ -748,8 +958,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                               ],
                             ),
                             if (m.notes != null) ...[
-                              const SizedBox(height: 4),
-                              Text(m.notes!, style: const TextStyle(fontSize: 13)),
+                              const SizedBox(height: 8),
+                              Text(m.notes!, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
                             ]
                           ],
                         ),
@@ -766,52 +976,59 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
         // Diet Log Card
         Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Diet Log',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const Row(
+                  children: [
+                    Icon(Icons.restaurant_outlined, color: AppTheme.accentColor, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Diet Log',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                if (_healthData!.mealEntries.isEmpty)
+                   const Text('No diet logs recorded.', style: TextStyle(color: AppTheme.textSecondary)),
                 ..._healthData!.mealEntries.take(3).map((meal) => 
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppTheme.dividerColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            color: AppTheme.accentColor.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
                           child: Icon(
                             _getMealIcon(meal.mealType),
-                            color: AppTheme.primaryColor,
-                            size: 20,
+                            color: AppTheme.accentColor,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -823,13 +1040,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                                     meal.mealType,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
                                   ),
                                   Text(
                                     DateFormat('MMM d, h:mm a').format(meal.timestamp),
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey,
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
@@ -837,27 +1056,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                               const SizedBox(height: 4),
                               Text(
                                 meal.foodItems.map((f) => '${f.name} (${f.quantity} ${f.unit})').join(', '),
-                                style: const TextStyle(fontSize: 13),
+                                style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
                               ),
-                              const SizedBox(height: 4),
-                              Row(
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
                                   _buildNutrientChip(
                                     'Carbs',
                                     '${meal.nutritionSummary['carbs']?.toInt() ?? 0}g',
                                     AppTheme.accentColor,
                                   ),
-                                  const SizedBox(width: 8),
                                   _buildNutrientChip(
                                     'Protein',
                                     '${meal.nutritionSummary['protein']?.toInt() ?? 0}g',
-                                    AppTheme.lowRiskColor,
+                                    AppTheme.primaryColor,
                                   ),
-                                  const SizedBox(width: 8),
                                   _buildNutrientChip(
                                     'Fat',
                                     '${meal.nutritionSummary['fat']?.toInt() ?? 0}g',
-                                    AppTheme.highRiskColor,
+                                    AppTheme.secondaryColor,
                                   ),
                                 ],
                               ),
@@ -871,10 +1090,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 if (_healthData!.mealEntries.length > 3)
                   Center(
                     child: TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppTheme.primaryColor,
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
                       onPressed: () {
                         // Show all meal entries
                       },
-                      child: const Text('View all entries'),
+                      child: const Text('View all entries', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
               ],
@@ -886,51 +1110,64 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         
         // Automated Actions Card
         Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Automated Actions Log',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.automatedActionColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.auto_awesome, color: AppTheme.automatedActionColor, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Automated Actions Log',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
                 ..._healthData!.automatedActions.map((action) =>
                   Container(
                     margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: AppTheme.dividerColor),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
-                            color: Colors.purple.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
+                            color: AppTheme.automatedActionColor.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
                           child: Icon(
                             _getAutomatedActionIcon(action.type),
-                            color: Colors.purple,
-                            size: 20,
+                            color: AppTheme.automatedActionColor,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -942,21 +1179,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                                     action.type,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
                                   ),
                                   Text(
                                     DateFormat('MMM d, h:mm a').format(action.timestamp),
                                     style: const TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey,
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
                                 action.description,
-                                style: const TextStyle(fontSize: 13),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  height: 1.4,
+                                  color: AppTheme.textSecondary,
+                                ),
                               ),
                               if (action.response != null) ...[
                                 const SizedBox(height: 4),
@@ -996,52 +1239,63 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return GestureDetector(
       onTap: onTap,
       child: Card(
-        color: hasData ? statusColor : const Color(0xFF616161),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 20, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-                  if (!hasData) ...[
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'No Data',
-                        style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: hasData ? statusColor.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
+                    child: Icon(icon, size: 20, color: hasData ? statusColor : Colors.grey),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary))),
                 ],
               ),
+              const SizedBox(height: 16),
+              Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
               const SizedBox(height: 12),
-              Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(height: 8),
               if (hasData)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Text(
-                    status,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        status,
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_ios, size: 10, color: statusColor),
+                    ],
                   ),
                 )
               else
-                Text(
-                  'No history',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.dividerColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'No Data',
+                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
                 ),
             ],
           ),
@@ -1132,9 +1386,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   */
   
   Widget _buildPatientHeaderCard() {
-    return Card(
+    final riskColor = AppTheme.getRiskColor(_patient!.riskLevel.name);
+    
+    return Container(
+      margin: EdgeInsets.zero,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: riskColor.withValues(alpha: 0.3), width: 1.5),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            riskColor.withValues(alpha: 0.15),
+            riskColor.withValues(alpha: 0.05),
+            Colors.white,
+          ],
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1143,25 +1413,33 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               children: [
                 // Patient Avatar
                 Container(
-                  width: 60,
-                  height: 60,
+                  width: 68,
+                  height: 68,
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    color: Colors.white,
                     shape: BoxShape.circle,
+                    border: Border.all(color: riskColor, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: riskColor.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: Text(
-                      _patient!.name.split(' ').map((e) => e[0]).join(''),
-                      style: const TextStyle(
-                        fontSize: 24,
+                      _patient!.name.split(' ').map((e) => e[0]).take(2).join('').toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
+                        color: riskColor,
                       ),
                     ),
                   ),
                 ),
                 
-                const SizedBox(width: 16),
+                const SizedBox(width: 20),
                 
                 // Patient Info
                 Expanded(
@@ -1174,129 +1452,126 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                             child: Text(
                               _patient!.name,
                               style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          RiskIndicator(riskLevel: _patient!.riskLevel),
-                          const SizedBox(width: 8),
+                          const Spacer(),
                           IconButton(
-                            icon: const Icon(Icons.person_remove_outlined, size: 24, color: Colors.grey),
+                            icon: const Icon(Icons.person_remove_outlined, size: 24, color: AppTheme.textSecondary),
                             tooltip: 'Unassign Patient',
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
                             style: IconButton.styleFrom(
-                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              backgroundColor: Colors.white,
+                              padding: const EdgeInsets.all(8),
                             ),
                             onPressed: _showUnassignConfirmation,
                           ),
                         ],
                       ),
-                      Text(
-                        '${_patient!.age} years, ${_patient!.gender}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black87,
-                        ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Status Pills Row
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildHeaderPill(
+                            'ID: ${_patient!.id}', 
+                            Icons.badge_outlined,
+                            AppTheme.textSecondary,
+                            Colors.white,
+                          ),
+                          _buildHeaderPill(
+                            '${_patient!.age} yrs, ${_patient!.gender}', 
+                            Icons.person_outline,
+                            AppTheme.textSecondary,
+                            Colors.white,
+                          ),
+                          GestureDetector(
+                            onTap: _showUpdateRiskDialog,
+                            child: _buildHeaderPill(
+                              _patient!.riskLevel.name.toUpperCase() + ' (Edit)', 
+                              Icons.warning_amber_rounded,
+                              riskColor,
+                              Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        _patient!.conditionName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.primaryColor,
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Condition Pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.medical_services_outlined, size: 14, color: AppTheme.primaryColor),
+                            const SizedBox(width: 6),
+                            Text(
+                              _patient!.conditionName,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                
-                // Patient ID
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'ID: ${_patient!.id}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Last Update:',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    Text(
-                      _formatDateTime(_patient!.lastSync),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
             
-            const SizedBox(height: 12),
-            const Divider(),
+            const SizedBox(height: 20),
             
-            // Contact Info
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+            // Contact Info Row
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Row(
                 children: [
-                  const Icon(Icons.phone, size: 18, color: Colors.grey),
+                  const Icon(Icons.phone_outlined, size: 18, color: AppTheme.textSecondary),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _patient!.contactInfo,
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const SizedBox(width: 8),
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       TextButton.icon(
-                        icon: const Icon(Icons.message, size: 16),
+                        icon: const Icon(Icons.message_outlined, size: 16),
                         label: const Text('Message'),
                         style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          foregroundColor: AppTheme.primaryColor,
+                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                         ),
                         onPressed: () {
-                          _tabController.animateTo(2); // Go to AI Chatbot tab
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      TextButton.icon(
-                        icon: const Icon(Icons.call, size: 16),
-                        label: const Text('Call'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        onPressed: () {
-                          // Make call
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Opening chat with ${_patient!.name}...')),
+                          );
                         },
                       ),
                     ],
@@ -1309,34 +1584,105 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       ),
     );
   }
+
+  Widget _buildHeaderPill(String text, IconData icon, Color color, Color bgColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   
   // Helper widgets
   
+  double _calculateAverageSteps() {
+    if (_healthData == null || _healthData!.activityData.isEmpty) return 0;
+    final now = DateTime.now();
+    final since = now.subtract(const Duration(days: 30));
+    final filtered = _healthData!.activityData.where((a) => a.date.isAfter(since)).toList();
+    if (filtered.isEmpty) return 0;
+    
+    double total = 0;
+    for (var a in filtered) {
+      total += a.steps;
+    }
+    return total / filtered.length;
+  }
+
+  double _calculateAverageActiveMinutes() {
+    if (_healthData == null || _healthData!.activityData.isEmpty) return 0;
+    final now = DateTime.now();
+    final since = now.subtract(const Duration(days: 30));
+    final filtered = _healthData!.activityData.where((a) => a.date.isAfter(since)).toList();
+    if (filtered.isEmpty) return 0;
+    
+    double total = 0;
+    for (var a in filtered) {
+      total += a.activeMinutes;
+    }
+    return total / filtered.length;
+  }
+
+  double _calculateAverageCalories() {
+    if (_healthData == null || _healthData!.activityData.isEmpty) return 0;
+    final now = DateTime.now();
+    final since = now.subtract(const Duration(days: 30));
+    final filtered = _healthData!.activityData.where((a) => a.date.isAfter(since)).toList();
+    if (filtered.isEmpty) return 0;
+    
+    double total = 0;
+    for (var a in filtered) {
+      total += a.caloriesBurned;
+    }
+    return total / filtered.length;
+  }
+
   Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Column(
       children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(height: 12),
         Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
           ),
         ),
         const SizedBox(height: 4),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: color),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-          ],
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: AppTheme.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     );
@@ -1376,6 +1722,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   
   
   // Helper methods
+  /*
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -1390,6 +1737,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       return DateFormat('MMM d, h:mm a').format(dateTime);
     }
   }
+  */
   
   IconData _getMealIcon(String mealType) {
     switch (mealType.toLowerCase()) {
@@ -1421,23 +1769,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
   
-  double _calculateAverageSteps() {
-    if (_healthData!.activityData.isEmpty) return 0;
-    final sum = _healthData!.activityData.fold(0, (prev, element) => prev + element.steps);
-    return sum / _healthData!.activityData.length;
-  }
-  
-  double _calculateAverageActiveMinutes() {
-    if (_healthData!.activityData.isEmpty) return 0;
-    final sum = _healthData!.activityData.fold(0, (prev, element) => prev + element.activeMinutes);
-    return sum / _healthData!.activityData.length;
-  }
-  
-  double _calculateAverageCalories() {
-    if (_healthData!.activityData.isEmpty) return 0;
-    final sum = _healthData!.activityData.fold(0, (prev, element) => prev + element.caloriesBurned);
-    return sum / _healthData!.activityData.length;
-  }
   
   /*
   // Dialog methods

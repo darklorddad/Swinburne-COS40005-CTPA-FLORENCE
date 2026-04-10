@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
 import 'package:florence/features/clinician/services/api_data_service.dart';
+import 'package:florence/features/clinician/services/api_service.dart';
 import 'package:florence/features/clinician/models/clinician.dart';
 
 class ClinicianProfileScreen extends StatefulWidget {
@@ -41,7 +41,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
     setState(() => _isLoading = true);
     try {
       final clinician = await _dataService.getClinicianProfile();
-      final email = Supabase.instance.client.auth.currentUser?.email;
+      final email = ApiService().currentUserEmail;
       
       if (mounted) {
         setState(() {
@@ -156,62 +156,69 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profile Header Card
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      // Avatar
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+              // Profile Header
+              Center(
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          width: 4,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                         child: Text(
                           _nameController.text.isNotEmpty 
-                            ? _nameController.text.split(' ').map((e) => e.isNotEmpty ? e[0] : '').join('')
+                            ? _nameController.text.split(' ').where((e) => e.isNotEmpty).map((e) => e[0]).take(2).join('').toUpperCase()
                             : '?',
                           style: const TextStyle(
-                            fontSize: 32,
+                            fontSize: 36,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _nameController.text,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                          ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _nameController.text.isEmpty ? 'Loading...' : _nameController.text,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               
               // Personal Information Section
               const Text(
@@ -219,13 +226,15 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               
               Card(
+                margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
                       // Name
@@ -234,8 +243,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         enabled: _isEditing,
                         decoration: const InputDecoration(
                           labelText: 'Name',
-                          prefixIcon: Icon(Icons.person),
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.person_outline),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -245,15 +253,14 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         },
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       
                       // Gender
                       DropdownButtonFormField<String>(
                         value: _selectedGender,
                         decoration: const InputDecoration(
                           labelText: 'Gender',
-                          prefixIcon: Icon(Icons.people),
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.people_outline),
                         ),
                         items: _genders.map((gender) {
                           return DropdownMenuItem(
@@ -270,7 +277,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                             : null,
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       
                       // Mobile Phone
                       TextFormField(
@@ -279,8 +286,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
                           labelText: 'Mobile Phone Number',
-                          prefixIcon: Icon(Icons.phone),
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.phone_outlined),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -294,7 +300,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               
               // Account Information Section
               const Text(
@@ -302,13 +308,15 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               
               Card(
+                margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
                       // Email (Read-only)
@@ -317,12 +325,11 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         enabled: false,
                         decoration: const InputDecoration(
                           labelText: 'Email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       
                       // Organisation ID (Read-only)
                       TextFormField(
@@ -330,8 +337,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         enabled: false,
                         decoration: const InputDecoration(
                           labelText: 'Organisation ID',
-                          prefixIcon: Icon(Icons.business),
-                          border: OutlineInputBorder(),
+                          prefixIcon: Icon(Icons.business_outlined),
                         ),
                       ),
                     ],
@@ -339,18 +345,19 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 ),
               ),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 40),
 
               if (!_isEditing)
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: _handleLogout,
-                    icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    icon: const Icon(Icons.logout, color: AppTheme.highRiskColor),
+                    label: const Text('Logout', style: TextStyle(color: AppTheme.highRiskColor, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
+                      side: const BorderSide(color: AppTheme.highRiskColor, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
@@ -388,7 +395,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
     if (confirmed == true && mounted) {
       try {
-        await Supabase.instance.client.auth.signOut();
+        await ApiService().signOut();
       } catch (e) {
         debugPrint('Logout error: $e');
       }

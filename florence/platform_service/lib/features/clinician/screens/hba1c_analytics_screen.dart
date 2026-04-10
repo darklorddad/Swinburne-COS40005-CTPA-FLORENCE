@@ -47,14 +47,26 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
+        color: Colors.white,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Actual vs. Goal',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const Row(
+                children: [
+                  Icon(Icons.track_changes_outlined, color: AppTheme.textSecondary, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Actual vs. Goal',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  ),
+                ],
               ),
               const SizedBox(height: 24),
               Row(
@@ -62,15 +74,16 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   _buildBar('You', latest, latest <= target ? AppTheme.lowRiskColor : AppTheme.highRiskColor),
-                  _buildBar('Target', target, Colors.blue.shade200),
+                  _buildBar('Target', target, AppTheme.secondaryColor.withValues(alpha: 0.5)),
                 ],
               ),
               const SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: (latest <= target ? AppTheme.lowRiskColor : AppTheme.highRiskColor).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: (latest <= target ? AppTheme.lowRiskColor : AppTheme.highRiskColor).withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -78,7 +91,7 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
                       latest <= target ? Icons.check_circle : Icons.warning,
                       color: latest <= target ? AppTheme.lowRiskColor : AppTheme.highRiskColor,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         latest <= target 
@@ -121,13 +134,40 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
 
   Widget _buildTrendsSection() {
     // Placeholder for trends chart
-    return const Padding(
-      padding: EdgeInsets.all(16),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: EdgeInsets.all(32),
+          padding: const EdgeInsets.all(32),
           child: Center(
-            child: Text('HbA1c Trends Chart (Coming Soon)'),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.bar_chart_rounded, size: 40, color: AppTheme.primaryColor),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'HbA1c Trends',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Chart visualization coming soon',
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                ),
+              ],
+            ),
           ),
         ),
       ),

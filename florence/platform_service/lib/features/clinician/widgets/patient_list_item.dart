@@ -18,34 +18,39 @@ class PatientListItem extends StatelessWidget {
     final riskColor = AppTheme.getRiskColor(patient.riskLevel.name);
     
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      color: riskColor,
-      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      color: riskColor.withValues(alpha: 0.15), // Filled in background
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: riskColor.withValues(alpha: 0.5), // Stronger outline
+          width: 1.5,
+        ),
       ),
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              // Patient Avatar placeholder
+              // Patient Avatar
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white,
                   shape: BoxShape.circle,
+                  border: Border.all(color: riskColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     patient.name.isNotEmpty ? patient.name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: riskColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 22,
                     ),
                   ),
                 ),
@@ -66,43 +71,46 @@ class PatientListItem extends StatelessWidget {
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                             ),
                           ),
                         ),
                         // Risk Status Pill
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: riskColor),
                           ),
                           child: Text(
                             patient.riskLevel.name.toUpperCase(),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: riskColor,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
-                      'ID: ${patient.id} • ${patient.age} yrs • ${patient.gender}',
-                      style: TextStyle(
+                      patient.age > 0 
+                          ? 'ID: ${patient.id} • ${patient.age} yrs • ${patient.gender}'
+                          : 'ID: ${patient.id}',
+                      style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       patient.conditionName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -115,19 +123,20 @@ class PatientListItem extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  const Text(
                     'Last Update',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: AppTheme.textTertiary,
                     ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
                     _formatLastUpdate(patient.lastSync),
                     style: const TextStyle(
                       fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondary,
                     ),
                   ),
                 ],
