@@ -508,16 +508,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () => AppRoutes.push(context, AppRoutes.settings),
-              tooltip: 'Settings',
-            ),
-          ),
-        ],
       ),
       body: userProfileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

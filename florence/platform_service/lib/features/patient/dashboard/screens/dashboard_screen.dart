@@ -241,21 +241,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Text('Florence'),
         ),
       ),
-      actions: [
-        const NotificationBell(),
-        IconButton(
-          icon: const Icon(Icons.chat_bubble_outline),
-          onPressed: () => AppRoutes.push(context, AppRoutes.chat),
-          tooltip: 'AI Health Assistant',
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => AppRoutes.push(context, AppRoutes.profile),
-            tooltip: 'Profile',
-          ),
-        ),
+      actions: const [
+        NotificationBell(),
+        SizedBox(width: 8),
       ],
       elevation: 0,
       bottom: PreferredSize(
