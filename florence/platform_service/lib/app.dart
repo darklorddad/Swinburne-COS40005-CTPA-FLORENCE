@@ -286,7 +286,7 @@ class _AppState extends ConsumerState<App> {
         themeMode: themeMode,
 
         // Routing
-        initialRoute: AppRoutes.splash,
+        initialRoute: AppRoutes.adminDashboard,
         onGenerateRoute: AppRoutes.generateRoute,
       ),
     );
