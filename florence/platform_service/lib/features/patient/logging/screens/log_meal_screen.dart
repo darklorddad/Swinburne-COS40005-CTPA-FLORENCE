@@ -359,60 +359,61 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-        title: const Text('Log Diet'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.trends),
-              tooltip: 'View History',
-            ),
+          title: const Text('Log Diet'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info
-                      _buildInfoCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Date & Time (Moved up as requested)
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.trends),
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info
+                        _buildInfoCard(),
+                        const SizedBox(height: 20),
+                        
+                        // Date & Time (Moved up as requested)
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
 
-                      // Meal Type
-                      _buildMealTypeSection(),
-                      const SizedBox(height: 20),
-                      
-                      // Combined Meal Details (Photo + Inputs)
-                      _buildMealDetailsSection(),
-                      const SizedBox(height: 32),
-                      
-                      // Save
-                      PrimaryButton(
-                        text: 'Save Meal',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Meal Type
+                        _buildMealTypeSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Combined Meal Details (Photo + Inputs)
+                        _buildMealDetailsSection(),
+                        const SizedBox(height: 32),
+                        
+                        // Save
+                        PrimaryButton(
+                          text: 'Save Meal',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),

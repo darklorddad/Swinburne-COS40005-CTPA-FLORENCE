@@ -242,63 +242,64 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-        title: const Text('Log BMI'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
-              },
-              tooltip: 'View History',
+          title: const Text('Log BMI'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(bmiThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () {
+                  AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(bmiThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(bmiThreshold),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(bmiThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
