@@ -172,6 +172,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildHighRiskPatientsList(bool isMobile) {
     return Card(
+      margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -246,6 +247,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildQuickActions(bool isMobile) {
     return Card(
+      margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -308,6 +310,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildRecentActivity(bool isMobile) {
     return Card(
+      margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),

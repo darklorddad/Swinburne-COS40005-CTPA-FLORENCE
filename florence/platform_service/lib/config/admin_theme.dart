@@ -108,7 +108,7 @@ class AdminTheme {
 
     // AppBar Theme
     appBarTheme: const AppBarTheme(
-      backgroundColor: surfaceColor,
+      backgroundColor: sidebarColor,
       foregroundColor: textPrimaryColor,
       elevation: 0,
       centerTitle: false,
