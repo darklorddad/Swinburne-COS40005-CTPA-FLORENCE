@@ -25,6 +25,63 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> {
     _currentRisk = widget.patientData['Risk Level'] ?? 'LOW';
   }
 
+  // --- API Call: Update Risk Level ---
+  Future<void> _updateRiskLevel(String newRisk) async {
+    setState(() => _isLoading = true);
+    try {
+      final id = widget.patientData['id'];
+      await _apiService.put('/admin/patients/$id', {
+        'risk_level': newRisk.toUpperCase(),
+      });
+      
+      setState(() => _currentRisk = newRisk);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Risk Level updated successfully.'), backgroundColor: AdminTheme.successColor),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update: $e'), backgroundColor: AdminTheme.errorColor),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- API Call: Assign Clinician ---
+  Future<void> _assignClinician() async {
+    if (_clinicianIdController.text.isEmpty) return;
+    
+    setState(() => _isLoading = true);
+    try {
+      final patientId = widget.patientData['id'];
+      final clinicianId = int.tryParse(_clinicianIdController.text);
+      
+      await _apiService.put('/admin/patients/$patientId/assign-clinician', {
+        'clinician_id': clinicianId,
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Clinician assigned successfully.'), backgroundColor: AdminTheme.successColor),
+        );
+        Navigator.pop(context); // Go back to refresh the list
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to assign clinician: $e'), backgroundColor: AdminTheme.errorColor),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.patientData;
