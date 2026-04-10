@@ -14,6 +14,8 @@ import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/dashboard/screens/activity_detail_screen.dart';
 import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
 import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
+import '../features/patient/dashboard/screens/cholesterol_detail_screen.dart';
+import '../features/patient/dashboard/screens/diet_detail_screen.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
 import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
 import '../features/patient/logging/screens/log_activity_screen.dart';
@@ -24,6 +26,7 @@ import '../features/patient/logging/screens/log_glucose_screen.dart';
 import '../features/patient/logging/screens/log_hba1c_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/medication/screens/medication_logging_screen.dart';
+import '../features/patient/notifications/screens/notifications_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
 import '../features/patient/profile/screens/settings_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
@@ -45,6 +48,8 @@ class AppRoutes {
   static const String activityDetail = '/trends/activity-detail';
   static const String bmiDetail = '/bmi-detail';
   static const String hba1cDetail = '/hba1c-detail';
+  static const String cholesterolDetail = '/cholesterol-detail';
+  static const String mealDetail = '/meal-detail';
 
   static const String chat = '/chat';
   static const String recommendations = '/recommendations';
@@ -120,6 +125,15 @@ class AppRoutes {
 
       case hba1cDetail:
         return _buildRoute(const HbA1cDetailScreen());
+
+      case cholesterolDetail:
+        return _buildRoute(const CholesterolDetailScreen());
+
+      case mealDetail:
+        return _buildRoute(const DietAnalyticsScreen());
+
+      case notifications:
+        return _buildRoute(const NotificationsScreen());
 
       case chat:
         return _buildRoute(const ChatScreen(), settings);
