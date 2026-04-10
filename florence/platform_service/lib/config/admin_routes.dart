@@ -96,12 +96,12 @@ class AdminRoutes {
     final arguments = settings.arguments;
 
     // Check authentication
-    if (!permissionService.isAuthenticated && routeName != login) {
-      return MaterialPageRoute(
-        builder: (_) => const AdminLoginScreen(),
-        settings: settings,
-      );
-    }
+    // if (!permissionService.isAuthenticated && routeName != login) {
+    //   return MaterialPageRoute(
+    //     builder: (_) => const AdminLoginScreen(),
+    //     settings: settings,
+    //   );
+    // }
 
     // Route based on path
     switch (routeName) {
@@ -432,64 +432,67 @@ class AdminRoutes {
     AdminRole? requiredRole,
     required WidgetBuilder builder,
   }) {
-    final permissionService = PermissionService();
 
-    // Check authentication
-    if (!permissionService.isAuthenticated) {
-      return MaterialPageRoute(
-        builder: (_) => const AdminLoginScreen(),
-        settings: settings,
-      );
-    }
+    return MaterialPageRoute(builder: builder, settings: settings);
 
-    // Check role
-    if (requiredRole != null && !permissionService.hasRole(requiredRole)) {
-      return MaterialPageRoute(
-        builder: (_) => AccessDeniedScreen(
-          requiredRole: requiredRole,
-        ),
-        settings: settings,
-      );
-    }
+    // final permissionService = PermissionService();
 
-    // Check single permission
-    if (requiredPermission != null &&
-        !permissionService.hasPermission(requiredPermission)) {
-      return MaterialPageRoute(
-        builder: (_) => AccessDeniedScreen(
-          requiredPermission: requiredPermission,
-        ),
-        settings: settings,
-      );
-    }
+    // // Check authentication
+    // if (!permissionService.isAuthenticated) {
+    //   return MaterialPageRoute(
+    //     builder: (_) => const AdminLoginScreen(),
+    //     settings: settings,
+    //   );
+    // }
 
-    // Check any permissions (OR logic)
-    if (anyPermissions != null &&
-        !permissionService.hasAnyPermission(anyPermissions)) {
-      return MaterialPageRoute(
-        builder: (_) => AccessDeniedScreen(
-          message: 'You do not have the required permissions to access this page.',
-        ),
-        settings: settings,
-      );
-    }
+    // // Check role
+    // if (requiredRole != null && !permissionService.hasRole(requiredRole)) {
+    //   return MaterialPageRoute(
+    //     builder: (_) => AccessDeniedScreen(
+    //       requiredRole: requiredRole,
+    //     ),
+    //     settings: settings,
+    //   );
+    // }
 
-    // Check all permissions (AND logic)
-    if (allPermissions != null &&
-        !permissionService.hasAllPermissions(allPermissions)) {
-      return MaterialPageRoute(
-        builder: (_) => AccessDeniedScreen(
-          message: 'You do not have all the required permissions to access this page.',
-        ),
-        settings: settings,
-      );
-    }
+    // // Check single permission
+    // if (requiredPermission != null &&
+    //     !permissionService.hasPermission(requiredPermission)) {
+    //   return MaterialPageRoute(
+    //     builder: (_) => AccessDeniedScreen(
+    //       requiredPermission: requiredPermission,
+    //     ),
+    //     settings: settings,
+    //   );
+    // }
 
-    // Permission check passed - build route
-    return MaterialPageRoute(
-      builder: builder,
-      settings: settings,
-    );
+    // // Check any permissions (OR logic)
+    // if (anyPermissions != null &&
+    //     !permissionService.hasAnyPermission(anyPermissions)) {
+    //   return MaterialPageRoute(
+    //     builder: (_) => AccessDeniedScreen(
+    //       message: 'You do not have the required permissions to access this page.',
+    //     ),
+    //     settings: settings,
+    //   );
+    // }
+
+    // // Check all permissions (AND logic)
+    // if (allPermissions != null &&
+    //     !permissionService.hasAllPermissions(allPermissions)) {
+    //   return MaterialPageRoute(
+    //     builder: (_) => AccessDeniedScreen(
+    //       message: 'You do not have all the required permissions to access this page.',
+    //     ),
+    //     settings: settings,
+    //   );
+    // }
+
+    // // Permission check passed - build route
+    // return MaterialPageRoute(
+    //   builder: builder,
+    //   settings: settings,
+    // );
   }
 
   /// Build dashboard route based on user role
