@@ -339,7 +339,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.history),
-              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.dietDetail),
+              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.trends),
               tooltip: 'View History',
             ),
           ),
