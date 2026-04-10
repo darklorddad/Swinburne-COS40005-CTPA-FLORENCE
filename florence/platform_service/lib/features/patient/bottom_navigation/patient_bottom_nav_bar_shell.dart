@@ -358,14 +358,27 @@ class _PatientBottomNavBarShellState
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Drag pill
-          Container(
-            width: 38,
-            height: 4,
-            margin: const EdgeInsets.only(bottom: 22),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE2E4EF),
-              borderRadius: BorderRadius.circular(2),
+          // Drag pill (Now interactable with a larger hit area)
+          GestureDetector(
+            onTap: _closeSheet,
+            onVerticalDragUpdate: (details) {
+              // If the user drags the handle downwards, close the sheet
+              if (details.delta.dy > 2) {
+                _closeSheet();
+              }
+            },
+            behavior: HitTestBehavior.opaque, // Ensures the padding area is clickable
+            child: Padding(
+              // The padding acts as an invisible, larger touch target
+              padding: const EdgeInsets.only(bottom: 22, top: 4, left: 40, right: 40),
+              child: Container(
+                width: 38,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE2E4EF),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
           ),
           Text(
