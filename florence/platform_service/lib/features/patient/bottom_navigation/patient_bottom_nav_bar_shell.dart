@@ -354,7 +354,7 @@ class _PatientBottomNavBarShellState
         ],
       ),
       // Add navHeight to the bottom padding so content sits above the nav bar cleanly
-      padding: EdgeInsets.fromLTRB(22, 14, 22, 22 + navHeight),
+      padding: EdgeInsets.fromLTRB(22, 14, 22, 40 + navHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
