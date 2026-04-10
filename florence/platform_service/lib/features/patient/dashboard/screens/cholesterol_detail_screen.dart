@@ -28,6 +28,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
+              // Use pushReplacement to prevent the loop!
               onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logCholesterol),
               tooltip: 'Add Log',
             ),
