@@ -354,7 +354,7 @@ class _PatientBottomNavBarShellState
         ],
       ),
       // Add navHeight to the bottom padding so content sits above the nav bar cleanly
-      padding: EdgeInsets.fromLTRB(22, 14, 22, 16 + navHeight),
+      padding: EdgeInsets.fromLTRB(22, 14, 22, 22 + navHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -380,7 +380,7 @@ class _PatientBottomNavBarShellState
             'Select a metric to record',
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 22),
           GridView.builder(
             padding: EdgeInsets.zero,
             shrinkWrap: true,
@@ -432,7 +432,7 @@ class _PatientBottomNavBarShellState
           offset: _itemOffset[index] / 100,
           curve: const Cubic(0.34, 1.56, 0.64, 1),
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: color.withOpacity(0.08),
               borderRadius: BorderRadius.circular(16),
@@ -443,6 +443,7 @@ class _PatientBottomNavBarShellState
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
