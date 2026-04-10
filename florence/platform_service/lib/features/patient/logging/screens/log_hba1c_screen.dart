@@ -93,7 +93,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'HbA1c reading saved successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -150,8 +150,38 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
     final hba1cColor = _getHba1cColor(hba1cValue, hba1cThreshold);
 
-    return Scaffold(
-      appBar: AppBar(
+    final bool hasChanges = _hba1cController.text.isNotEmpty;
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final bool shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep Editing'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                child: const Text('Discard'),
+              ),
+            ],
+          ),
+        ) ?? false;
+
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: const Text('Log HbA1c'),
         elevation: 0,
         centerTitle: false,

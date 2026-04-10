@@ -287,7 +287,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to log meal: $e');
@@ -327,8 +327,38 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    final bool hasChanges = _mealNameController.text.isNotEmpty || _caloriesController.text.isNotEmpty || _imageBytes != null;
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final bool shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep Editing'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                child: const Text('Discard'),
+              ),
+            ],
+          ),
+        ) ?? false;
+
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: const Text('Log Diet'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),

@@ -92,7 +92,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Cholesterol data logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -157,8 +157,41 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       );
     } catch (_) {}
 
-    return Scaffold(
-      appBar: AppBar(
+    final bool hasChanges = _totalController.text.isNotEmpty || 
+                           _ldlController.text.isNotEmpty || 
+                           _hdlController.text.isNotEmpty || 
+                           _triglyceridesController.text.isNotEmpty;
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final bool shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep Editing'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                child: const Text('Discard'),
+              ),
+            ],
+          ),
+        ) ?? false;
+
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: const Text('Log Cholesterol'),
         elevation: 0,
         centerTitle: false,

@@ -84,7 +84,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -128,8 +128,38 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    final bool hasChanges = _medicationNameController.text.isNotEmpty || _dosageController.text.isNotEmpty || _notesController.text.isNotEmpty;
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final bool shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep Editing'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                child: const Text('Discard'),
+              ),
+            ],
+          ),
+        ) ?? false;
+
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
         title: const Text('Log Medication'),
         actions: [
           Padding(
