@@ -176,7 +176,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               icon: const Icon(Icons.history),
               onPressed: () {
                 // Use pushReplacement to prevent the loop!
-                AppRoutes.pushReplacement(context, AppRoutes.cholesterol);
+                AppRoutes.pushReplacement(context, AppRoutes.trendsCholesterol);
               },
               tooltip: 'View History',
             ),
