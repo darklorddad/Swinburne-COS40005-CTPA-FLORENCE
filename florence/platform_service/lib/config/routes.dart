@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 // Admin-side imports
 import '../features/admin/dashboard/screens/admin_dashboard_screen.dart';
@@ -177,9 +178,9 @@ class AppRoutes {
     }
   }
 
-  /// Helper method to build routes with transitions
-  static MaterialPageRoute _buildRoute(Widget page, [RouteSettings? settings]) {
-    return MaterialPageRoute(builder: (_) => page, settings: settings);
+  /// Helper method to build routes with premium iOS-style transitions
+  static Route<dynamic> _buildRoute(Widget page, [RouteSettings? settings]) {
+    return CupertinoPageRoute(builder: (_) => page, settings: settings);
   }
 
   /// Navigation helpers
