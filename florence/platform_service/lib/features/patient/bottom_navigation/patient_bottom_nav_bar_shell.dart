@@ -380,15 +380,15 @@ class _PatientBottomNavBarShellState
             'Select a metric to record',
             style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
           ),
-          const SizedBox(height: 2),
           GridView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
-              mainAxisSpacing: 10,
+              mainAxisSpacing: 14,
               crossAxisSpacing: 10,
-              mainAxisExtent: 86,
+              mainAxisExtent: 100,
             ),
             itemCount: 8,
             itemBuilder: (context, index) {
