@@ -131,7 +131,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
-                AppRoutes.push(context, AppRoutes.activityDetail);
+                AppRoutes.pushReplacement(context, AppRoutes.activityDetail);
               },
               tooltip: 'View History',
             ),

@@ -168,7 +168,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
-                AppRoutes.push(context, AppRoutes.hba1cDetail);
+                AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
               },
               tooltip: 'View History',
             ),

@@ -31,7 +31,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logGlucose),
+              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logGlucose),
               tooltip: 'Add Log',
             ),
           ),

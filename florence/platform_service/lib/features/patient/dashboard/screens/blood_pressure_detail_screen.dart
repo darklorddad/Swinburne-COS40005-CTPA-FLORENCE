@@ -30,7 +30,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logBloodPressure),
               tooltip: 'Add Log',
             ),
           ),

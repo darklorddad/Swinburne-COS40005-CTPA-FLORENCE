@@ -28,7 +28,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logCholesterol),
+              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logCholesterol),
               tooltip: 'Add Log',
             ),
           ),

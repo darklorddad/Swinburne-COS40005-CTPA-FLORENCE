@@ -409,7 +409,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
-                AppRoutes.push(context, AppRoutes.trendsDetail);
+                AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
               },
               tooltip: 'View History',
             ),

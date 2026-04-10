@@ -152,7 +152,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
-                AppRoutes.push(context, AppRoutes.bloodPressureDetail);
+                AppRoutes.pushReplacement(context, AppRoutes.bloodPressureDetail);
               },
               tooltip: 'View History',
             ),

@@ -228,7 +228,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
             child: IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
-                AppRoutes.push(context, AppRoutes.bmiDetail);
+                AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
               },
               tooltip: 'View History',
             ),

@@ -30,7 +30,7 @@ class BmiDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logBmi),
+              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logBmi),
               tooltip: 'Add Log',
             ),
           ),

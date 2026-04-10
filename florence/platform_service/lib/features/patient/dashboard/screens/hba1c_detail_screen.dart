@@ -30,7 +30,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logHba1c),
+              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logHba1c),
               tooltip: 'Add Log',
             ),
           ),
