@@ -123,7 +123,7 @@ class _PatientBottomNavBarShellState
 
     return Scaffold(
       extendBody: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // 1. Tab content
