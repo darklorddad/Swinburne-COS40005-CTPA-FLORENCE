@@ -422,70 +422,71 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-        title: const Text('Log Glucose'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
-              },
-              tooltip: 'View History',
+          title: const Text('Log Glucose'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(glucoseThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () {
+                  AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(glucoseThreshold),
+                        const SizedBox(height: 20),
 
-                      // Glucose value input (large and prominent)
-                      _buildGlucoseInput(glucoseColor, glucoseThreshold),
-                      const SizedBox(height: 20),
+                        // Glucose value input (large and prominent)
+                        _buildGlucoseInput(glucoseColor, glucoseThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 20),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
 
-                      // Context selection
-                      _buildContextSection(),
-                      
-                      // Notes (optional) - Padding/Spacing handled internally for animation
-                      _buildNotesSection(),
-                      const SizedBox(height: 32),
+                        // Context selection
+                        _buildContextSection(),
+                        
+                        // Notes (optional) - Padding/Spacing handled internally for animation
+                        _buildNotesSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
