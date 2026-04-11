@@ -562,7 +562,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           Text(
             'Started At',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
+                  color: AppTheme.textPrimaryColor,
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -624,7 +624,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           Text(
             'Ended At',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
+                  color: AppTheme.textPrimaryColor,
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -722,13 +722,29 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          CustomTextField(
-            label: 'Actual time spent exercising (mins)',
-            hint: 'e.g., 45',
+          TextFormField(
             controller: _activeDurationController,
             validator: (value) => Validators.range(value, 1, 1440, fieldName: 'Active Duration'),
             keyboardType: TextInputType.number,
-            prefixIcon: const Icon(Icons.timer_outlined),
+            decoration: InputDecoration(
+              labelText: 'Actual time spent exercising (mins)',
+              hintText: 'e.g., 45',
+              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(
+                  color: AppTheme.primaryBlue,
+                  width: 2,
+                ),
+              ),
+              prefixIcon: Icon(Icons.timer_outlined, color: titleIconColor),
+            ),
           ),
           const SizedBox(height: 8),
           Text(
