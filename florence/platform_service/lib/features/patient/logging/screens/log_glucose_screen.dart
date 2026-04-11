@@ -390,10 +390,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     }
   }
 
-  Future<bool> _onWillPop(bool hasChanges) async {
-    if (!hasChanges) return true;
-
-    final bool shouldPop = await showDialog<bool>(
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Discard Changes?'),
@@ -404,18 +402,26 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             child: const Text('Keep Editing'),
           ),
           TextButton(
-            onPressed: () {
-              setState(() => _forcePop = true);
-              Navigator.pop(context, true);
-            },
+            onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
             child: const Text('Discard'),
           ),
         ],
       ),
     ) ?? false;
+  }
 
-    return shouldPop;
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _glucoseController.text = _initialGlucose;
+      _notesController.text = _initialNotes;
+      _caloriesController.text = _initialCalories;
+      _selectedDateTime = _initialDateTime;
+      _selectedTiming = _initialTiming;
+      _selectedImage = null;
+      _imageBytes = null;
+    });
   }
 
   @override
@@ -444,9 +450,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final shouldPop = await _onWillPop(hasChanges);
+        final shouldDiscard = await _showDiscardDialog();
 
-        if (shouldPop && context.mounted) {
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
           });
@@ -471,8 +478,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 icon: const Icon(Icons.history),
                 onPressed: () async {
                   if (hasChanges) {
-                    final shouldDiscard = await _onWillPop(hasChanges);
+                    final shouldDiscard = await _showDiscardDialog();
                     if (!shouldDiscard) return;
+                    _resetForm();
                   }
                   if (widget.onSwitchToHistory != null) {
                     widget.onSwitchToHistory!();
