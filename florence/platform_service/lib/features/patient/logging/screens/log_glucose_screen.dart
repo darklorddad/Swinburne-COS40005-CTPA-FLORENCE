@@ -47,6 +47,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   String _initialCalories = '';
   late DateTime _initialDateTime;
   late String _initialTiming;
+  late String _initialMealType;
   XFile? _selectedImage;
   Uint8List? _imageBytes;
   // _uploadedImageUrl is now set ONLY after hitting Save
@@ -74,6 +75,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     super.initState();
     _initialDateTime = _selectedDateTime;
     _initialTiming = _selectedTiming;
+    _initialMealType = _selectedMealType;
   }
 
   @override
@@ -419,6 +421,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       _caloriesController.text = _initialCalories;
       _selectedDateTime = _initialDateTime;
       _selectedTiming = _initialTiming;
+      _selectedMealType = _initialMealType;
       _selectedImage = null;
       _imageBytes = null;
     });
@@ -433,7 +436,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
          _caloriesController.text != _initialCalories || 
          _imageBytes != null ||
          _selectedDateTime != _initialDateTime ||
-         _selectedTiming != _initialTiming);
+         _selectedTiming != _initialTiming ||
+         _selectedMealType != _initialMealType);
 
     final healthData = ref.watch(monitorDataProvider).asData?.value;
     HealthThreshold? glucoseThreshold;

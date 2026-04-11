@@ -360,6 +360,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       _caloriesController.text = _initialCalories;
       _selectedDateTime = _initialDateTime;
       _selectedMealType = _initialMealType;
+      _initialMealType = _selectedMealType; // Sync initial state for next return
       _selectedImage = null;
       _imageBytes = null;
     });
