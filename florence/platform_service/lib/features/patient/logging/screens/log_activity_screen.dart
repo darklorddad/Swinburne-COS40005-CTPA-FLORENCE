@@ -49,15 +49,17 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     _initialEndDateTime = _endDateTime;
     
     // Automatically suggest active time based on start/end if empty
-    _updateSuggestedDuration();
+    // We do this after initialising late variables to avoid LateInitializationError
+    _updateSuggestedDuration(isInitial: true);
   }
 
-  void _updateSuggestedDuration() {
+  void _updateSuggestedDuration({bool isInitial = false}) {
     final diff = _endDateTime.difference(_selectedDateTime).inMinutes;
     if (diff > 0 && _activeDurationController.text.isEmpty) {
       _activeDurationController.text = diff.toString();
     }
-    if (mounted) setState(() {});
+    // Don't call setState during initState
+    if (!isInitial && mounted) setState(() {});
   }
 
   @override
