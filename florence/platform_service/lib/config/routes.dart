@@ -20,6 +20,7 @@ import '../features/patient/dashboard/screens/diet_detail_screen.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
 import '../features/patient/glucose/screens/glucose_unified_container.dart';
 import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
+import '../features/patient/hba1c/screens/hba1c_unified_container.dart';
 import '../features/patient/logging/screens/log_activity_screen.dart';
 import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
 import '../features/patient/logging/screens/log_bmi_screen.dart';
@@ -125,7 +126,7 @@ class AppRoutes {
         return _buildRoute(const BmiDetailScreen());
 
       case hba1cDetail:
-        return _buildRoute(const HbA1cDetailScreen());
+        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 0));
 
       case cholesterolDetail:
         return _buildRoute(const CholesterolDetailScreen());
@@ -170,7 +171,7 @@ class AppRoutes {
         return _buildRoute(const LogBmiScreen(), settings);
 
       case logHba1c:
-        return _buildRoute(const LogHba1cScreen(), settings);
+        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 1), settings);
 
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);
