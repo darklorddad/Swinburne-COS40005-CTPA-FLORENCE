@@ -294,10 +294,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
 
                         // Activity Details
                         _buildActivityDetailsSection(),
-                        const SizedBox(height: 20),
-
-                        // Calories Section
-                        _buildCaloriesSection(),
                         const SizedBox(height: 32),
 
                         // Save button
@@ -547,6 +543,47 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               ),
             ),
           ),
+          const SizedBox(height: 20),
+
+          // Calories Section
+          Row(
+            children: [
+              Text(
+                'Calories Burned (kcal)',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+              ),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _isLoading ? null : _estimateCalories,
+                icon: const Icon(Icons.auto_awesome, size: 16),
+                label: const Text('Auto-Estimate', style: TextStyle(fontSize: 12)),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppTheme.primaryBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _caloriesController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              hintText: 'e.g., 300',
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: const Icon(Icons.local_fire_department_outlined),
+            ),
+          ),
         ],
       ),
     );
@@ -705,7 +742,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.orange.shade300 : Colors.orange;
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     final totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
 
@@ -742,34 +779,37 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Active Workout Time',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      'Total session time was $totalElapsed mins.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.primaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ],
+                child: Text(
+                  'Active Time',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
           TextFormField(
+            initialValue: '$totalElapsed',
+            readOnly: true,
+            decoration: InputDecoration(
+              labelText: 'Total session time (mins)',
+              filled: true,
+              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: const Icon(Icons.schedule),
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
             controller: _activeDurationController,
             validator: (value) => Validators.range(value, 1, 1440, fieldName: 'Active Duration'),
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'Actual time spent exercising (mins)',
+              labelText: 'Actual time spent (mins)',
               hintText: 'e.g., 45',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
@@ -785,93 +825,16 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   width: 2,
                 ),
               ),
-              prefixIcon: Icon(Icons.timer_outlined, color: titleIconColor),
+              prefixIcon: const Icon(Icons.timer_outlined),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Adjust this number down if you took breaks. This helps the AI calculate your exact calorie burn.',
+            'Note: Adjust this number down if you took breaks.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppTheme.textSecondaryColor,
                   fontStyle: FontStyle.italic,
                 ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCaloriesSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.red.shade300 : Colors.red;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Calories Burned',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _isLoading ? null : _estimateCalories,
-                icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('Auto-Estimate'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          TextFormField(
-            controller: _caloriesController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Calories (kcal)',
-              hintText: 'e.g., 300',
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.monitor_heart_outlined, color: titleIconColor),
-            ),
           ),
         ],
       ),

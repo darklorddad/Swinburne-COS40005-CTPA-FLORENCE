@@ -1558,7 +1558,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined),
                           ),
                         ),
                       ],
