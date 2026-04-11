@@ -32,8 +32,15 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   bool _forcePop = false;
   String _initialSystolic = '';
   String _initialDiastolic = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
 
   @override
   void dispose() {
@@ -118,6 +125,34 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     }
   }
 
+  Future<bool> _onWillPop(bool hasChanges) async {
+    if (!hasChanges) return true;
+
+    final bool shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _forcePop = true);
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    return shouldPop;
+  }
+
   @override
   Widget build(BuildContext context) {
     final sysValue = double.tryParse(_systolicController.text);
@@ -140,37 +175,20 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
     final bool hasChanges = !_forcePop && 
         (_systolicController.text != _initialSystolic || 
-         _diastolicController.text != _initialDiastolic);
+         _diastolicController.text != _initialDiastolic ||
+         _selectedDateTime != _initialDateTime);
 
     return PopScope(
       canPop: !hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final bool shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep Editing'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _forcePop = true);
-                  Navigator.pop(context, true);
-                },
-                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-                child: const Text('Discard'),
-              ),
-            ],
-          ),
-        ) ?? false;
+        final shouldPop = await _onWillPop(hasChanges);
 
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         }
       },
       child: Scaffold(
@@ -190,8 +208,16 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: widget.onSwitchToHistory ?? () {
-                  AppRoutes.pushReplacement(context, AppRoutes.bloodPressureDetail);
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _onWillPop(hasChanges);
+                    if (!shouldDiscard) return;
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.bloodPressureDetail);
+                  }
                 },
                 tooltip: 'View History',
               ),

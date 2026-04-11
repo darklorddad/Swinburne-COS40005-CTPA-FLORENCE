@@ -45,6 +45,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   String _initialGlucose = '';
   String _initialNotes = '';
   String _initialCalories = '';
+  late DateTime _initialDateTime;
+  late String _initialTiming;
   XFile? _selectedImage;
   Uint8List? _imageBytes;
   // _uploadedImageUrl is now set ONLY after hitting Save
@@ -66,6 +68,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy},
     {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+    _initialTiming = _selectedTiming;
+  }
 
   @override
   void dispose() {
@@ -381,14 +390,44 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     }
   }
 
+  Future<bool> _onWillPop(bool hasChanges) async {
+    if (!hasChanges) return true;
+
+    final bool shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _forcePop = true);
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    return shouldPop;
+  }
+
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
     final bool hasChanges = !_forcePop && 
         (_glucoseController.text != _initialGlucose || 
          _notesController.text != _initialNotes || 
-         _caloriesController.text != _initialCalories ||
-         _imageBytes != null);
+         _caloriesController.text != _initialCalories || 
+         _imageBytes != null ||
+         _selectedDateTime != _initialDateTime ||
+         _selectedTiming != _initialTiming);
 
     final healthData = ref.watch(monitorDataProvider).asData?.value;
     HealthThreshold? glucoseThreshold;
@@ -405,30 +444,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final bool shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep Editing'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _forcePop = true);
-                  Navigator.pop(context, true);
-                },
-                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-                child: const Text('Discard'),
-              ),
-            ],
-          ),
-        ) ?? false;
+        final shouldPop = await _onWillPop(hasChanges);
 
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         }
       },
       child: Scaffold(
@@ -448,8 +469,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: widget.onSwitchToHistory ?? () {
-                  AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _onWillPop(hasChanges);
+                    if (!shouldDiscard) return;
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
+                  }
                 },
                 tooltip: 'View History',
               ),

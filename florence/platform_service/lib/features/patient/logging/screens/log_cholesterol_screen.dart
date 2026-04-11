@@ -37,6 +37,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   String _initialLdl = '';
   String _initialHdl = '';
   String _initialTri = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   // Initialize with seconds stripped for clean database grouping
   DateTime _selectedDateTime = DateTime(
@@ -46,6 +47,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     DateTime.now().hour,
     DateTime.now().minute,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
 
   @override
   void dispose() {
@@ -139,6 +146,34 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     }
   }
 
+  Future<bool> _onWillPop(bool hasChanges) async {
+    if (!hasChanges) return true;
+
+    final bool shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _forcePop = true);
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    return shouldPop;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Fetch thresholds
@@ -166,37 +201,20 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         (_totalController.text != _initialTotal || 
          _ldlController.text != _initialLdl || 
          _hdlController.text != _initialHdl || 
-         _triglyceridesController.text != _initialTri);
+         _triglyceridesController.text != _initialTri ||
+         _selectedDateTime != _initialDateTime);
 
     return PopScope(
       canPop: !hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final bool shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep Editing'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _forcePop = true);
-                  Navigator.pop(context, true);
-                },
-                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-                child: const Text('Discard'),
-              ),
-            ],
-          ),
-        ) ?? false;
+        final shouldPop = await _onWillPop(hasChanges);
 
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         }
       },
       child: Scaffold(
@@ -216,8 +234,16 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: widget.onSwitchToHistory ?? () {
-                  AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _onWillPop(hasChanges);
+                    if (!shouldDiscard) return;
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
+                  }
                 },
                 tooltip: 'View History',
               ),

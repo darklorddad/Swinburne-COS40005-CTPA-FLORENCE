@@ -30,9 +30,16 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   // State
   bool _forcePop = false;
   String _initialHba1c = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
+
   @override
   void dispose() {
     _hba1cController.dispose();
@@ -138,12 +145,41 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     }
   }
   
+  Future<bool> _onWillPop(bool hasChanges) async {
+    if (!hasChanges) return true;
+
+    final bool shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _forcePop = true);
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    return shouldPop;
+  }
+
   @override
   Widget build(BuildContext context) {
     final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
 
     final bool hasChanges = !_forcePop && 
-        (_hba1cController.text != _initialHba1c);
+        (_hba1cController.text != _initialHba1c ||
+         _selectedDateTime != _initialDateTime);
 
     // Fetch thresholds
     final healthData = ref.watch(monitorDataProvider).asData?.value;
@@ -161,30 +197,12 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final bool shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep Editing'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _forcePop = true);
-                  Navigator.pop(context, true);
-                },
-                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-                child: const Text('Discard'),
-              ),
-            ],
-          ),
-        ) ?? false;
+        final shouldPop = await _onWillPop(hasChanges);
 
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         }
       },
       child: Scaffold(
@@ -204,8 +222,16 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: widget.onSwitchToHistory ?? () {
-                  AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _onWillPop(hasChanges);
+                    if (!shouldDiscard) return;
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
+                  }
                 },
                 tooltip: 'View History',
               ),

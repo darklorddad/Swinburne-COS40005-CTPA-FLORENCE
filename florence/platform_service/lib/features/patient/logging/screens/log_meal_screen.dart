@@ -38,6 +38,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   bool _forcePop = false;
   String _initialMealName = '';
   String _initialCalories = '';
+  late DateTime _initialDateTime;
+  late String _initialMealType;
   bool _isLoading = false;
   bool _isAnalyzing = false;
   bool _useAiAutofill = true;
@@ -52,6 +54,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   void initState() {
     super.initState();
     _selectedMealType = _getMealTypeFromTime(DateTime.now());
+    _initialDateTime = _selectedDateTime;
+    _initialMealType = _selectedMealType;
   }
 
   String _getMealTypeFromTime(DateTime time) {
@@ -328,42 +332,54 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     }
   }
   
+  Future<bool> _onWillPop(bool hasChanges) async {
+    if (!hasChanges) return true;
+
+    final bool shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _forcePop = true);
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    return shouldPop;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasChanges = !_forcePop && 
         (_mealNameController.text != _initialMealName || 
          _caloriesController.text != _initialCalories || 
-         _imageBytes != null);
+         _imageBytes != null ||
+         _selectedDateTime != _initialDateTime ||
+         _selectedMealType != _initialMealType);
 
     return PopScope(
       canPop: !hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final bool shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep Editing'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _forcePop = true);
-                  Navigator.pop(context, true);
-                },
-                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-                child: const Text('Discard'),
-              ),
-            ],
-          ),
-        ) ?? false;
+        final shouldPop = await _onWillPop(hasChanges);
 
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         }
       },
       child: Scaffold(
@@ -378,7 +394,17 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: widget.onSwitchToHistory ?? () => AppRoutes.pushReplacement(context, AppRoutes.mealDetail),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _onWillPop(hasChanges);
+                    if (!shouldDiscard) return;
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.mealDetail);
+                  }
+                },
                 tooltip: 'View History',
               ),
             ),

@@ -32,6 +32,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
+  late DateTime _initialDateTime;
   double? _calculatedBmi;
 
   // Track pre-filled data to prevent false "hasChanges" triggers
@@ -41,6 +42,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   @override
   void initState() {
     super.initState();
+    _initialDateTime = _selectedDateTime;
     _heightController.addListener(_calculateBmi);
     _weightController.addListener(_calculateBmi);
     
@@ -207,6 +209,34 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     }
   }
 
+  Future<bool> _onWillPop(bool hasChanges) async {
+    if (!hasChanges) return true;
+
+    final bool shouldPop = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() => _forcePop = true);
+              Navigator.pop(context, true);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+
+    return shouldPop;
+  }
+
   @override
   Widget build(BuildContext context) {
     // Fetch thresholds
@@ -220,37 +250,20 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
 
     final bool hasChanges = !_forcePop && 
         (_heightController.text != _initialHeight || 
-         _weightController.text != _initialWeight);
+         _weightController.text != _initialWeight ||
+         _selectedDateTime != _initialDateTime);
 
     return PopScope(
       canPop: !hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
-        final bool shouldPop = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Discard Changes?'),
-            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Keep Editing'),
-              ),
-              TextButton(
-                onPressed: () {
-                  setState(() => _forcePop = true);
-                  Navigator.pop(context, true);
-                },
-                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
-                child: const Text('Discard'),
-              ),
-            ],
-          ),
-        ) ?? false;
+        final shouldPop = await _onWillPop(hasChanges);
 
         if (shouldPop && context.mounted) {
-          Navigator.of(context).pop();
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
         }
       },
       child: Scaffold(
@@ -270,8 +283,16 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: widget.onSwitchToHistory ?? () {
-                  AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _onWillPop(hasChanges);
+                    if (!shouldDiscard) return;
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
+                  }
                 },
                 tooltip: 'View History',
               ),
