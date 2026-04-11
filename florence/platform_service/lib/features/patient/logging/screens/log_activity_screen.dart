@@ -16,7 +16,8 @@ import '../../core/repositories/monitor_data_repository.dart';
 /// Log Activity Screen
 /// Allows users to record physical activities and exercise
 class LogActivityScreen extends ConsumerStatefulWidget {
-  const LogActivityScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogActivityScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogActivityScreen> createState() => _LogActivityScreenState();
@@ -160,7 +161,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: () {
+                onPressed: widget.onSwitchToHistory ?? () {
                   AppRoutes.pushReplacement(context, AppRoutes.activityDetail);
                 },
                 tooltip: 'View History',

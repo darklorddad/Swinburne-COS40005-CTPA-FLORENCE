@@ -12,6 +12,7 @@ import '../features/clinician/screens/patient_detail_screen.dart';
 import '../features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/dashboard/screens/activity_detail_screen.dart';
+import '../features/patient/activity/screens/activity_unified_container.dart';
 import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
 import '../features/patient/blood_pressure/screens/blood_pressure_unified_container.dart';
 import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
@@ -121,7 +122,7 @@ class AppRoutes {
         return _buildRoute(const BloodPressureUnifiedContainer(initialTab: 0));
 
       case activityDetail:
-        return _buildRoute(const ActivityDetailScreen());
+        return _buildRoute(const ActivityUnifiedContainer(initialTab: 0));
 
       case bmiDetail:
         return _buildRoute(const BmiDetailScreen());
@@ -157,7 +158,7 @@ class AppRoutes {
         return _buildRoute(const LogMealScreen(), settings);
 
       case logActivity:
-        return _buildRoute(const LogActivityScreen(), settings);
+        return _buildRoute(const ActivityUnifiedContainer(initialTab: 1), settings);
 
       case logMedication:
         return _buildRoute(const MedicationLoggingScreen(), settings);
