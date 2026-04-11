@@ -12,7 +12,8 @@ import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 
 class ActivityDetailScreen extends ConsumerWidget {
-  const ActivityDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const ActivityDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +32,7 @@ class ActivityDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logActivity),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logActivity),
               tooltip: 'Add Log',
             ),
           ),

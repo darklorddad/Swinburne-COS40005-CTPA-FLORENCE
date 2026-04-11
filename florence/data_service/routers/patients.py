@@ -123,11 +123,11 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         profile = profile_response.data[0]
         
         # Fetch user settings to include in the profile context for unit conversion
-        settings_res = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", user.id).execute()
+        settings_res = supabase.table("user_settings").select("glucose_unit, cholesterol_unit, show_quick_actions").eq("user_id", user.id).execute()
         if settings_res.data:
             profile['settings'] = settings_res.data[0]
         else:
-            profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
             
         return profile
     except AuthApiError as e:
@@ -142,10 +142,12 @@ async def get_current_patient_profile(authorization: str = Header(...)):
 class UserSettingsUpdate(BaseModel):
     glucose_unit: Optional[str] = None
     cholesterol_unit: Optional[str] = None
+    show_quick_actions: Optional[bool] = None
 
 class UserSettingsResponse(BaseModel):
     glucose_unit: str
     cholesterol_unit: str
+    show_quick_actions: bool = False
 
 class PatientProfileUpdate(BaseModel):
     """Fields a patient is allowed to update on their own profile."""
@@ -256,11 +258,11 @@ async def get_user_settings(patient_profile: dict = Depends(get_current_patient_
     Retrieves the app settings (units of measurement) for the authenticated patient.
     """
     try:
-        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", patient_profile['user_id']).execute()
+        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit, show_quick_actions").eq("user_id", patient_profile['user_id']).execute()
         
         if not response.data:
             # Return defaults if no settings record exists yet
-            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
             
         return response.data[0]
     except Exception as e:

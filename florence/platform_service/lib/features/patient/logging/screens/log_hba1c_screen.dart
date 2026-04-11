@@ -16,7 +16,8 @@ import '../../core/repositories/monitor_data_repository.dart';
 /// Log HbA1c Screen
 /// Allows users to record Hemoglobin A1c readings
 class LogHba1cScreen extends ConsumerStatefulWidget {
-  const LogHba1cScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogHba1cScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogHba1cScreen> createState() => _LogHba1cScreenState();
@@ -27,9 +28,18 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   final _hba1cController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialHba1c = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
+
   @override
   void dispose() {
     _hba1cController.dispose();
@@ -93,7 +103,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'HbA1c reading saved successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -135,9 +145,42 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     }
   }
   
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _hba1cController.text = _initialHba1c;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
+
+    final bool hasChanges = !_forcePop && 
+        (_hba1cController.text != _initialHba1c ||
+         _selectedDateTime != _initialDateTime);
 
     // Fetch thresholds
     final healthData = ref.watch(monitorDataProvider).asData?.value;
@@ -150,65 +193,89 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
     final hba1cColor = _getHba1cColor(hba1cValue, hba1cThreshold);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log HbA1c'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.hba1cDetail);
-              },
-              tooltip: 'View History',
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log HbA1c'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(hba1cThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(hba1cThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(hba1cColor, hba1cThreshold),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(hba1cColor, hba1cThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),

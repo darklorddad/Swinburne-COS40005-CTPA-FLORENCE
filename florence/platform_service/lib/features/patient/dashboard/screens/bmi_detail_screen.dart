@@ -13,7 +13,8 @@ import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class BmiDetailScreen extends ConsumerWidget {
-  const BmiDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const BmiDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +31,7 @@ class BmiDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logBmi),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logBmi),
               tooltip: 'Add Log',
             ),
           ),

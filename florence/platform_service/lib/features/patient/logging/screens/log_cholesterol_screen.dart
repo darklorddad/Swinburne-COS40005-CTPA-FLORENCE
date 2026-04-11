@@ -15,11 +15,11 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/screens/cholesterol_detail_screen.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {
-  const LogCholesterolScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogCholesterolScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogCholesterolScreen> createState() => _LogCholesterolScreenState();
@@ -32,6 +32,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _hdlController = TextEditingController();
   final _triglyceridesController = TextEditingController();
 
+  bool _forcePop = false;
+  String _initialTotal = '';
+  String _initialLdl = '';
+  String _initialHdl = '';
+  String _initialTri = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   // Initialize with seconds stripped for clean database grouping
   DateTime _selectedDateTime = DateTime(
@@ -41,6 +47,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     DateTime.now().hour,
     DateTime.now().minute,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
 
   @override
   void dispose() {
@@ -92,7 +104,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Cholesterol data logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -134,6 +146,38 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     }
   }
 
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _totalController.text = _initialTotal;
+      _ldlController.text = _initialLdl;
+      _hdlController.text = _initialHdl;
+      _triglyceridesController.text = _initialTri;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Fetch thresholds
@@ -157,68 +201,96 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       );
     } catch (_) {}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Cholesterol'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
-                );
-              },
-              tooltip: 'View History',
+    final bool hasChanges = !_forcePop && 
+        (_totalController.text != _initialTotal || 
+         _ldlController.text != _initialLdl || 
+         _hdlController.text != _initialHdl || 
+         _triglyceridesController.text != _initialTri ||
+         _selectedDateTime != _initialDateTime);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Cholesterol'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),

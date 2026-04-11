@@ -13,7 +13,8 @@ import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class HbA1cDetailScreen extends ConsumerWidget {
-  const HbA1cDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const HbA1cDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +31,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logHba1c),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logHba1c),
               tooltip: 'Add Log',
             ),
           ),

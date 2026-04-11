@@ -18,12 +18,12 @@ import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/screens/diet_detail_screen.dart'; // For navigation
 
 /// Log Meal Screen
 /// Allows users to record meals, photos, and calories
 class LogMealScreen extends ConsumerStatefulWidget {
-  const LogMealScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogMealScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -35,6 +35,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _caloriesController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialMealName = '';
+  String _initialCalories = '';
+  late DateTime _initialDateTime;
+  late String _initialMealType;
   bool _isLoading = false;
   bool _isAnalyzing = false;
   bool _useAiAutofill = true;
@@ -49,6 +54,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   void initState() {
     super.initState();
     _selectedMealType = _getMealTypeFromTime(DateTime.now());
+    _initialDateTime = _selectedDateTime;
+    _initialMealType = _selectedMealType;
   }
 
   String _getMealTypeFromTime(DateTime time) {
@@ -287,7 +294,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to log meal: $e');
@@ -325,64 +332,131 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
     }
   }
   
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Diet'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
-        ),
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DietAnalyticsScreen())),
-              tooltip: 'View History',
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info
-                      _buildInfoCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Date & Time (Moved up as requested)
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 20),
+    ) ?? false;
+  }
 
-                      // Meal Type
-                      _buildMealTypeSection(),
-                      const SizedBox(height: 20),
-                      
-                      // Combined Meal Details (Photo + Inputs)
-                      _buildMealDetailsSection(),
-                      const SizedBox(height: 32),
-                      
-                      // Save
-                      PrimaryButton(
-                        text: 'Save Meal',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _mealNameController.text = _initialMealName;
+      _caloriesController.text = _initialCalories;
+      _selectedDateTime = _initialDateTime;
+      _selectedMealType = _initialMealType;
+      _initialMealType = _selectedMealType; // Sync initial state for next return
+      _selectedImage = null;
+      _imageBytes = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasChanges = !_forcePop && 
+        (_mealNameController.text != _initialMealName || 
+         _caloriesController.text != _initialCalories || 
+         _imageBytes != null ||
+         _selectedDateTime != _initialDateTime ||
+         _selectedMealType != _initialMealType);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Diet'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.mealDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info
+                        _buildInfoCard(),
+                        const SizedBox(height: 20),
+                        
+                        // Date & Time (Moved up as requested)
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
+
+                        // Meal Type
+                        _buildMealTypeSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Combined Meal Details (Photo + Inputs)
+                        _buildMealDetailsSection(),
+                        const SizedBox(height: 32),
+                        
+                        // Save
+                        PrimaryButton(
+                          text: 'Save Meal',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),

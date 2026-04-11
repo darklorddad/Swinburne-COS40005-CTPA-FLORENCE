@@ -16,7 +16,8 @@ import '../../profile/providers/user_profile_provider.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
-  const LogBmiScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogBmiScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogBmiScreen> createState() => _LogBmiScreenState();
@@ -28,13 +29,20 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   final _weightController = TextEditingController();
   // final ApiService _apiService = ApiService(); // Removed
 
+  bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
+  late DateTime _initialDateTime;
   double? _calculatedBmi;
+
+  // Track pre-filled data to prevent false "hasChanges" triggers
+  String _initialHeight = '';
+  String _initialWeight = '';
 
   @override
   void initState() {
     super.initState();
+    _initialDateTime = _selectedDateTime;
     _heightController.addListener(_calculateBmi);
     _weightController.addListener(_calculateBmi);
     
@@ -43,10 +51,12 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       final profile = ref.read(userProfileProvider).value;
       if (profile != null) {
         if (profile['height'] != null) {
-          _heightController.text = profile['height'].toString();
+          _initialHeight = profile['height'].toString();
+          _heightController.text = _initialHeight;
         }
         if (profile['weight'] != null) {
-          _weightController.text = profile['weight'].toString();
+          _initialWeight = profile['weight'].toString();
+          _weightController.text = _initialWeight;
         }
       }
     });
@@ -132,7 +142,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged and profile updated!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -199,6 +209,36 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     }
   }
 
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _heightController.text = _initialHeight;
+      _weightController.text = _initialWeight;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Fetch thresholds
@@ -210,65 +250,94 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       );
     } catch (_) {}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log BMI'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.bmiDetail);
-              },
-              tooltip: 'View History',
+    final bool hasChanges = !_forcePop && 
+        (_heightController.text != _initialHeight || 
+         _weightController.text != _initialWeight ||
+         _selectedDateTime != _initialDateTime);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log BMI'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(bmiThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(bmiThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(bmiThreshold),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(bmiThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),

@@ -16,7 +16,8 @@ import '../../core/repositories/monitor_data_repository.dart';
 /// Log Activity Screen
 /// Allows users to record physical activities and exercise
 class LogActivityScreen extends ConsumerStatefulWidget {
-  const LogActivityScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogActivityScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogActivityScreen> createState() => _LogActivityScreenState();
@@ -28,9 +29,19 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   final _durationController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialDescription = '';
+  String _initialDuration = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
+
   @override
   void dispose() {
     _descriptionController.dispose();
@@ -69,7 +80,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'Activity logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -111,71 +122,130 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     }
   }
   
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Activity'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.activityDetail);
-              },
-              tooltip: 'View History',
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info card
-                      _buildInfoCard(),
-                      const SizedBox(height: 20),
+    ) ?? false;
+  }
 
-                      // Activity Details
-                      _buildActivityDetailsSection(),
-                      const SizedBox(height: 20),
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _descriptionController.text = _initialDescription;
+      _durationController.text = _initialDuration;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
 
-                      // Duration
-                      _buildDurationSection(),
-                      const SizedBox(height: 20),
+  @override
+  Widget build(BuildContext context) {
+    final bool hasChanges = !_forcePop && 
+        (_descriptionController.text != _initialDescription || 
+         _durationController.text != _initialDuration ||
+         _selectedDateTime != _initialDateTime);
 
-                      // Start Date and Time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Activity',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Activity'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.activityDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info card
+                        _buildInfoCard(),
+                        const SizedBox(height: 20),
+
+                        // Activity Details
+                        _buildActivityDetailsSection(),
+                        const SizedBox(height: 20),
+
+                        // Duration
+                        _buildDurationSection(),
+                        const SizedBox(height: 20),
+
+                        // Start Date and Time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
+
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Activity',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
