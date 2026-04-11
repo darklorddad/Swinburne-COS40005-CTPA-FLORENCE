@@ -33,6 +33,10 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   DateTime _selectedDateTime = DateTime.now();
   double? _calculatedBmi;
 
+  // Track pre-filled data to prevent false "hasChanges" triggers
+  String _initialHeight = '';
+  String _initialWeight = '';
+
   @override
   void initState() {
     super.initState();
@@ -44,10 +48,12 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       final profile = ref.read(userProfileProvider).value;
       if (profile != null) {
         if (profile['height'] != null) {
-          _heightController.text = profile['height'].toString();
+          _initialHeight = profile['height'].toString();
+          _heightController.text = _initialHeight;
         }
         if (profile['weight'] != null) {
-          _weightController.text = profile['weight'].toString();
+          _initialWeight = profile['weight'].toString();
+          _weightController.text = _initialWeight;
         }
       }
     });
@@ -211,7 +217,8 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       );
     } catch (_) {}
 
-    final bool hasChanges = _heightController.text.isNotEmpty || _weightController.text.isNotEmpty;
+    final bool hasChanges = _heightController.text != _initialHeight || 
+                            _weightController.text != _initialWeight;
 
     return PopScope(
       canPop: !hasChanges,
