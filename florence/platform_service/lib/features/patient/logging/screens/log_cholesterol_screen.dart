@@ -32,6 +32,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _hdlController = TextEditingController();
   final _triglyceridesController = TextEditingController();
 
+  bool _forcePop = false;
+  String _initialTotal = '';
+  String _initialLdl = '';
+  String _initialHdl = '';
+  String _initialTri = '';
   bool _isLoading = false;
   // Initialize with seconds stripped for clean database grouping
   DateTime _selectedDateTime = DateTime(
@@ -157,10 +162,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       );
     } catch (_) {}
 
-    final bool hasChanges = _totalController.text.isNotEmpty || 
-                           _ldlController.text.isNotEmpty || 
-                           _hdlController.text.isNotEmpty || 
-                           _triglyceridesController.text.isNotEmpty;
+    final bool hasChanges = !_forcePop && 
+        (_totalController.text != _initialTotal || 
+         _ldlController.text != _initialLdl || 
+         _hdlController.text != _initialHdl || 
+         _triglyceridesController.text != _initialTri);
 
     return PopScope(
       canPop: !hasChanges,
@@ -178,7 +184,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),

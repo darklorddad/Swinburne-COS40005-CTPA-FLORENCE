@@ -35,6 +35,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _caloriesController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialMealName = '';
+  String _initialCalories = '';
   bool _isLoading = false;
   bool _isAnalyzing = false;
   bool _useAiAutofill = true;
@@ -327,7 +330,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   
   @override
   Widget build(BuildContext context) {
-    final bool hasChanges = _mealNameController.text.isNotEmpty || _caloriesController.text.isNotEmpty || _imageBytes != null;
+    final bool hasChanges = !_forcePop && 
+        (_mealNameController.text != _initialMealName || 
+         _caloriesController.text != _initialCalories || 
+         _imageBytes != null);
 
     return PopScope(
       canPop: !hasChanges,
@@ -345,7 +351,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),

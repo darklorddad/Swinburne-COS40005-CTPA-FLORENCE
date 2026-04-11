@@ -28,6 +28,8 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   final _hba1cController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialHba1c = '';
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
@@ -140,6 +142,9 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   Widget build(BuildContext context) {
     final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
 
+    final bool hasChanges = !_forcePop && 
+        (_hba1cController.text != _initialHba1c);
+
     // Fetch thresholds
     final healthData = ref.watch(monitorDataProvider).asData?.value;
     HealthThreshold? hba1cThreshold;
@@ -150,8 +155,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     } catch (_) {}
 
     final hba1cColor = _getHba1cColor(hba1cValue, hba1cThreshold);
-
-    final bool hasChanges = _hba1cController.text.isNotEmpty;
 
     return PopScope(
       canPop: !hasChanges,
@@ -169,7 +172,10 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),

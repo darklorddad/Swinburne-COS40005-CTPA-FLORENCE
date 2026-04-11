@@ -29,6 +29,9 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   final _systolicFocusNode = FocusNode();
   final _diastolicFocusNode = FocusNode();
 
+  bool _forcePop = false;
+  String _initialSystolic = '';
+  String _initialDiastolic = '';
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
 
@@ -135,7 +138,9 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
     final bpColor = _getBPColor(sysValue, diaValue, sysThreshold, diaThreshold);
 
-    final bool hasChanges = _systolicController.text.isNotEmpty || _diastolicController.text.isNotEmpty;
+    final bool hasChanges = !_forcePop && 
+        (_systolicController.text != _initialSystolic || 
+         _diastolicController.text != _initialDiastolic);
 
     return PopScope(
       canPop: !hasChanges,
@@ -153,7 +158,10 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),

@@ -29,6 +29,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   final _durationController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialDescription = '';
+  String _initialDuration = '';
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
@@ -114,7 +117,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   
   @override
   Widget build(BuildContext context) {
-    final bool hasChanges = _descriptionController.text.isNotEmpty || _durationController.text.isNotEmpty;
+    final bool hasChanges = !_forcePop && 
+        (_descriptionController.text != _initialDescription || 
+         _durationController.text != _initialDuration);
 
     return PopScope(
       canPop: !hasChanges,
@@ -132,7 +137,10 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),

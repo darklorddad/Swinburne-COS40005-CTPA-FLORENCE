@@ -41,6 +41,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _glucoseFocusNode = FocusNode();
 
   // State
+  bool _forcePop = false;
+  String _initialGlucose = '';
+  String _initialNotes = '';
+  String _initialCalories = '';
   XFile? _selectedImage;
   Uint8List? _imageBytes;
   // _uploadedImageUrl is now set ONLY after hitting Save
@@ -380,7 +384,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
-    final bool hasChanges = _glucoseController.text.isNotEmpty || _notesController.text.isNotEmpty || _imageBytes != null;
+    final bool hasChanges = !_forcePop && 
+        (_glucoseController.text != _initialGlucose || 
+         _notesController.text != _initialNotes || 
+         _caloriesController.text != _initialCalories ||
+         _imageBytes != null);
     
     // Fetch thresholds
     final healthData = ref.watch(monitorDataProvider).asData?.value;
@@ -409,7 +417,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),
