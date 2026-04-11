@@ -508,104 +508,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  Widget _buildDurationSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.timer,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'Duration',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 140,
-                child: TextFormField(
-                  controller: _durationController,
-                  validator: Validators.activityDuration,
-                  keyboardType: TextInputType.number,
-                  textInputAction: TextInputAction.done,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black,
-                      ),
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark
-                        ? Colors.white.withOpacity(0.05)
-                        : AppTheme.backgroundColor,
-                    hintText: '---',
-                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 48),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 16),
-              Text(
-                'minutes',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build date time section
-  Widget _buildDateTimeSection() {
+  Widget _buildTimeSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -637,14 +540,14 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.calendar_today,
+                  Icons.schedule,
                   color: titleIconColor,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'Start Date and Time',
+                'Session Timeline',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -652,13 +555,21 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 20),
+          
+          // Start Time
+          Text(
+            'Started At',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
               color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
-              ),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
             ),
             child: Column(
               children: [
@@ -667,7 +578,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   value: Formatters.date(_selectedDateTime),
                   icon: Icons.calendar_today_outlined,
                   onTap: () async {
-                    FocusScope.of(context).requestFocus(FocusNode());
+                    FocusScope.of(context).unfocus();
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: _selectedDateTime,
@@ -676,13 +587,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     );
                     if (picked != null) {
                       setState(() {
-                        _selectedDateTime = DateTime(
-                          picked.year,
-                          picked.month,
-                          picked.day,
-                          _selectedDateTime.hour,
-                          _selectedDateTime.minute,
-                        );
+                        _selectedDateTime = DateTime(picked.year, picked.month, picked.day, _selectedDateTime.hour, _selectedDateTime.minute);
+                        _updateSuggestedDuration();
                       });
                     }
                   },
@@ -693,26 +599,142 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
                   icon: Icons.access_time_outlined,
                   onTap: () async {
-                    FocusScope.of(context).requestFocus(FocusNode());
+                    FocusScope.of(context).unfocus();
                     final picked = await showTimePicker(
                       context: context,
                       initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
                     );
                     if (picked != null) {
                       setState(() {
-                        _selectedDateTime = DateTime(
-                          _selectedDateTime.year,
-                          _selectedDateTime.month,
-                          _selectedDateTime.day,
-                          picked.hour,
-                          picked.minute,
-                        );
+                        _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
+                        _updateSuggestedDuration();
                       });
                     }
                   },
                 ),
               ],
             ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // End Time
+          Text(
+            'Ended At',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
+            ),
+            child: _buildCompactPickerItem(
+              label: 'Time',
+              value: TimeOfDay.fromDateTime(_endDateTime).format(context),
+              icon: Icons.access_time_filled,
+              onTap: () async {
+                FocusScope.of(context).unfocus();
+                final picked = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(_endDateTime),
+                );
+                if (picked != null) {
+                  setState(() {
+                    _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
+                    _updateSuggestedDuration();
+                  });
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveDurationSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.orange.shade300 : Colors.orange;
+
+    final totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.local_fire_department,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Active Workout Time',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    Text(
+                      'Total session time was $totalElapsed mins.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          CustomTextField(
+            label: 'Actual time spent exercising (mins)',
+            hint: 'e.g., 45',
+            controller: _activeDurationController,
+            validator: (value) => Validators.range(value, 1, 1440, fieldName: 'Active Duration'),
+            keyboardType: TextInputType.number,
+            prefixIcon: const Icon(Icons.timer_outlined),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Adjust this number down if you took breaks. This helps the AI calculate your exact calorie burn.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                  fontStyle: FontStyle.italic,
+                ),
           ),
         ],
       ),
@@ -756,136 +778,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildEndDateTimeSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
-
-    // Calculate end time dynamically
-    final durationMinutes = int.tryParse(_durationController.text) ?? 0;
-    final endDateTime = _selectedDateTime.add(Duration(minutes: durationMinutes));
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.event_available,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'End Date and Time',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      'Automatically calculated based on duration',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.borderColor,
-              ),
-            ),
-            child: Column(
-              children: [
-                _buildReadOnlyCompactItem(
-                  label: 'Date',
-                  value: Formatters.date(endDateTime),
-                  icon: Icons.calendar_today_outlined,
-                ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
-                _buildReadOnlyCompactItem(
-                  label: 'Time',
-                  value: TimeOfDay.fromDateTime(endDateTime).format(context),
-                  icon: Icons.access_time_outlined,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildReadOnlyCompactItem({
-    required String label,
-    required String value,
-    required IconData icon,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-      child: Row(
-        children: [
-          Icon(icon, color: AppTheme.textSecondaryColor.withOpacity(0.7), size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Row(
-              children: [
-                Text(
-                  '$label:',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondaryColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  value,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textSecondaryColor,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
