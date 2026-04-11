@@ -145,6 +145,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             _toggleDarkMode,
           ),
           const Divider(height: 24),
+
+          _buildSettingToggle(
+            'Show Quick Actions',
+            'Display quick actions on the dashboard',
+            Icons.flash_on_outlined,
+            settings.showQuickActions,
+            (value) => ref.read(patientSettingsProvider.notifier).toggleQuickActions(value),
+          ),
+          const Divider(height: 24),
         ],
       ),
     );

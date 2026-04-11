@@ -8,6 +8,7 @@ import '../../../../shared/widgets/notification_bell.dart';
 import '../../chat/services/chatbot_service.dart'; // Chat Service
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
+import '../../core/providers/settings_providers.dart';
 import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
 import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
@@ -138,6 +139,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       latestMeal = sortedMeals.last;
     }
     
+    final showQuickActions = ref.watch(patientSettingsProvider).showQuickActions;
+
     // Define consistent spacing
     const double spacing = 20.0;
 
@@ -170,17 +173,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                       context, AppRoutes.recommendations),
                                 ),
                               ),
-                              const SizedBox(width: spacing),
-                              Expanded(
-                                child: QuickActionsGrid(
-                                  actions: _getQuickActions().map((a) => (
-                                    label: a.label,
-                                    icon: a.icon,
-                                    color: a.color,
-                                    onTap: () => AppRoutes.push(context, a.route)
-                                  )).toList(),
+                              if (showQuickActions) ...[
+                                const SizedBox(width: spacing),
+                                Expanded(
+                                  child: QuickActionsGrid(
+                                    actions: _getQuickActions().map((a) => (
+                                      label: a.label,
+                                      icon: a.icon,
+                                      color: a.color,
+                                      onTap: () => AppRoutes.push(context, a.route)
+                                    )).toList(),
+                                  ),
                                 ),
-                              ),
+                              ],
                               const SizedBox(width: spacing),
                             ],
                           ),
@@ -192,15 +197,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           onTap: () => AppRoutes.push(
                               context, AppRoutes.recommendations),
                         ),
-                        const SizedBox(height: spacing),
-                        QuickActionsGrid(
-                          actions: _getQuickActions().map((a) => (
-                            label: a.label,
-                            icon: a.icon,
-                            color: a.color,
-                            onTap: () => AppRoutes.push(context, a.route)
-                          )).toList(),
-                        ),
+                        if (showQuickActions) ...[
+                          const SizedBox(height: spacing),
+                          QuickActionsGrid(
+                            actions: _getQuickActions().map((a) => (
+                              label: a.label,
+                              icon: a.icon,
+                              color: a.color,
+                              onTap: () => AppRoutes.push(context, a.route)
+                            )).toList(),
+                          ),
+                        ],
                       ],
                       const SizedBox(height: spacing),
 
