@@ -18,7 +18,8 @@ import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {
-  const LogCholesterolScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogCholesterolScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogCholesterolScreen> createState() => _LogCholesterolScreenState();
@@ -206,8 +207,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: () {
-                  // Use pushReplacement to prevent the loop!
+                onPressed: widget.onSwitchToHistory ?? () {
                   AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
                 },
                 tooltip: 'View History',

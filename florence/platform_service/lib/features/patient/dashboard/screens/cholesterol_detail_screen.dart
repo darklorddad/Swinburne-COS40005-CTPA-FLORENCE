@@ -11,7 +11,8 @@ import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class CholesterolDetailScreen extends ConsumerWidget {
-  const CholesterolDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const CholesterolDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,8 +29,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              // Use pushReplacement to prevent the loop!
-              onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.logCholesterol),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logCholesterol),
               tooltip: 'Add Log',
             ),
           ),
