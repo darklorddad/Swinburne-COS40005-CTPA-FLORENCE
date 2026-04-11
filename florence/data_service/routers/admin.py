@@ -46,7 +46,7 @@ async def get_all_patients():
     try:
         # Select specific fields and related data from foreign tables
         patients_response = supabase.table('patient_profiles').select(
-            "name, phone_number, gender, date_of_birth, "
+            "id, name, phone_number, gender, date_of_birth, "
             "emergency_contact_name, emergency_contact_relationship, emergency_contact_phone, "
             "risk_level, last_risk_assessment, "
             "organisations(name), "
@@ -60,6 +60,7 @@ async def get_all_patients():
             clinician_data = patient.get('clinician_profiles')
             
             processed_patient = {
+                "id": patient.get("id"),
                 "Name": patient.get("name"),
                 "Phone Number": patient.get("phone_number"),
                 "Gender": patient.get("gender"),
