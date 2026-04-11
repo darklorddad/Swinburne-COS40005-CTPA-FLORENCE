@@ -41,7 +41,6 @@ class _DietUnifiedContainerState extends State<DietUnifiedContainer> {
           onKeepEditing: () => _switchTab(1),
         ),
         LogGlucoseScreen(
-          onSwitchToHistory: () => _switchTab(0),
           onKeepEditing: () => _switchTab(2),
         ),
       ],
