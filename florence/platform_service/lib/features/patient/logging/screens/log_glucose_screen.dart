@@ -389,17 +389,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
          _notesController.text != _initialNotes || 
          _caloriesController.text != _initialCalories ||
          _imageBytes != null);
-    
-    // Fetch thresholds
-    final healthData = ref.watch(monitorDataProvider).asData?.value;
-    HealthThreshold? glucoseThreshold;
-    try {
-      glucoseThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.GLUCOSE
-      );
-    } catch (_) {}
-
-    final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold);
 
     return PopScope(
       canPop: !hasChanges,
@@ -433,6 +422,15 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         }
       },
       child: Scaffold(
+    final healthData = ref.watch(monitorDataProvider).asData?.value;
+    HealthThreshold? glucoseThreshold;
+    try {
+      glucoseThreshold = healthData?.healthThresholds.firstWhere(
+        (t) => t.dataType == MonitorDataType.GLUCOSE
+      );
+    } catch (_) {}
+
+    final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold);
         appBar: AppBar(
           title: const Text('Log Glucose'),
           elevation: 0,

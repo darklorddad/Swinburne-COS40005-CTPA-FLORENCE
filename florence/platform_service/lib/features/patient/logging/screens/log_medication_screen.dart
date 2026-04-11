@@ -28,6 +28,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   final _notesController = TextEditingController();
   
   // State
+  bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   String _selectedMedicationType = 'Tablet';
@@ -128,7 +129,10 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   
   @override
   Widget build(BuildContext context) {
-    final bool hasChanges = _medicationNameController.text.isNotEmpty || _dosageController.text.isNotEmpty || _notesController.text.isNotEmpty;
+    final bool hasChanges = !_forcePop && 
+        (_medicationNameController.text.isNotEmpty || 
+         _dosageController.text.isNotEmpty || 
+         _notesController.text.isNotEmpty);
 
     return PopScope(
       canPop: !hasChanges,
@@ -146,7 +150,10 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),

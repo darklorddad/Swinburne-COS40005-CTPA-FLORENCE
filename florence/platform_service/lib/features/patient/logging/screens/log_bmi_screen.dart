@@ -29,6 +29,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   final _weightController = TextEditingController();
   // final ApiService _apiService = ApiService(); // Removed
 
+  bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   double? _calculatedBmi;
@@ -217,8 +218,9 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       );
     } catch (_) {}
 
-    final bool hasChanges = _heightController.text != _initialHeight || 
-                            _weightController.text != _initialWeight;
+    final bool hasChanges = !_forcePop && 
+        (_heightController.text != _initialHeight || 
+         _weightController.text != _initialWeight);
 
     return PopScope(
       canPop: !hasChanges,
@@ -236,7 +238,10 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                 child: const Text('Keep Editing'),
               ),
               TextButton(
-                onPressed: () => Navigator.pop(context, true),
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
                 style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
                 child: const Text('Discard'),
               ),
