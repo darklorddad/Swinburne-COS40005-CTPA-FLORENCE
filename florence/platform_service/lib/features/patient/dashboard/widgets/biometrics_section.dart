@@ -4,8 +4,6 @@ import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart'; // Updated import
-import '../screens/cholesterol_detail_screen.dart';
-import '../screens/diet_detail_screen.dart';
 import 'compact_health_card.dart';
 
 /// Biometrics Section
@@ -200,10 +198,7 @@ class BiometricsSection extends StatelessWidget {
       timestamp: cholesterolDisplay?.measuredAt.toLocal(),
       icon: Icons.bloodtype_outlined,
       color: _getCholesterolColor(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
-      onTap: () => Navigator.push(
-        context, 
-        MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
-      ),
+      onTap: () => AppRoutes.push(context, AppRoutes.cholesterolDetail),
     ));
 
     // Activity (Always show)
@@ -228,10 +223,7 @@ class BiometricsSection extends StatelessWidget {
       subtitleOverride: null, // Use default "Last updated: ..."
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const DietAnalyticsScreen()),
-      ),
+      onTap: () => AppRoutes.push(context, AppRoutes.mealDetail),
     ));
 
     // BMI (Always show)
