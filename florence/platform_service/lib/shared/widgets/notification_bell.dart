@@ -3,8 +3,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../config/routes.dart';
 import '../../core/services/notifications/notification_service.dart';
-import '../../features/patient/notifications/screens/notifications_screen.dart';
 
 /// Notification bell icon with badge
 class NotificationBell extends ConsumerWidget {
@@ -21,12 +21,7 @@ class NotificationBell extends ConsumerWidget {
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationsScreen(),
-              ),
-            );
+            AppRoutes.push(context, AppRoutes.notifications);
           },
           tooltip: 'Notifications',
         ),

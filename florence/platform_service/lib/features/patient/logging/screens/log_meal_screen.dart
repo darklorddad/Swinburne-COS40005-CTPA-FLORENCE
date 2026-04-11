@@ -18,7 +18,6 @@ import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/screens/diet_detail_screen.dart'; // For navigation
 
 /// Log Meal Screen
 /// Allows users to record meals, photos, and calories

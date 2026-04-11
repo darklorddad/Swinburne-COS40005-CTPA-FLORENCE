@@ -15,7 +15,6 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/screens/cholesterol_detail_screen.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {
