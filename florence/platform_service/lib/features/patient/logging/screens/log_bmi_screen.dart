@@ -320,8 +320,12 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                         _buildInfoCard(bmiThreshold),
                         const SizedBox(height: 20),
 
+                        // Calculated BMI Section
+                        _buildCalculatedBmiSection(bmiThreshold),
+                        const SizedBox(height: 20),
+
                         // Input Section
-                        _buildInputSection(bmiThreshold),
+                        _buildInputSection(),
                         const SizedBox(height: 20),
 
                         // Date and time
@@ -456,7 +460,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     );
   }
 
-  Widget _buildInputSection(HealthThreshold? threshold) {
+  Widget _buildCalculatedBmiSection(HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bmiColor = _getBmiColor(_calculatedBmi, threshold);
     
@@ -503,7 +507,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Measurements',
+                'Calculated BMI',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -514,14 +518,6 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
           Center(
             child: Column(
               children: [
-                Text(
-                  'Calculated BMI',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                ),
-                const SizedBox(height: 16),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -548,8 +544,60 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
-          const Divider(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.edit_note,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Measurements',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
           const SizedBox(height: 24),
           Row(
             children: [
