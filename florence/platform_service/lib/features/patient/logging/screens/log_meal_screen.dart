@@ -22,7 +22,8 @@ import '../../core/repositories/monitor_data_repository.dart';
 /// Log Meal Screen
 /// Allows users to record meals, photos, and calories
 class LogMealScreen extends ConsumerStatefulWidget {
-  const LogMealScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogMealScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -368,7 +369,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: () => AppRoutes.pushReplacement(context, AppRoutes.mealDetail),
+                onPressed: widget.onSwitchToHistory ?? () => AppRoutes.pushReplacement(context, AppRoutes.mealDetail),
                 tooltip: 'View History',
               ),
             ),

@@ -19,6 +19,7 @@ import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
 import '../features/patient/dashboard/screens/cholesterol_detail_screen.dart';
 import '../features/patient/cholesterol/screens/cholesterol_unified_container.dart';
 import '../features/patient/dashboard/screens/diet_detail_screen.dart';
+import '../features/patient/diet/screens/diet_unified_container.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
 import '../features/patient/glucose/screens/glucose_unified_container.dart';
 import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
@@ -134,7 +135,7 @@ class AppRoutes {
         return _buildRoute(const CholesterolUnifiedContainer(initialTab: 0));
 
       case mealDetail:
-        return _buildRoute(const DietAnalyticsScreen());
+        return _buildRoute(const DietUnifiedContainer(initialTab: 0));
 
       case notifications:
         return _buildRoute(const NotificationsScreen());
@@ -155,7 +156,7 @@ class AppRoutes {
         return _buildRoute(const GlucoseUnifiedContainer(initialTab: 1), settings);
 
       case logMeal:
-        return _buildRoute(const LogMealScreen(), settings);
+        return _buildRoute(const DietUnifiedContainer(initialTab: 1), settings);
 
       case logActivity:
         return _buildRoute(const ActivityUnifiedContainer(initialTab: 1), settings);

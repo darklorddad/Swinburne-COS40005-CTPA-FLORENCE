@@ -15,7 +15,8 @@ import '../../dashboard/providers/dashboard_providers.dart';
 
 /// Diet Analytics Screen (formerly MealImpactScreen)
 class DietAnalyticsScreen extends ConsumerWidget {
-  const DietAnalyticsScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const DietAnalyticsScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +32,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => _showLogOptions(context),
+              onPressed: onSwitchToLog ?? () => _showLogOptions(context),
               tooltip: 'Add Log',
             ),
           ),
