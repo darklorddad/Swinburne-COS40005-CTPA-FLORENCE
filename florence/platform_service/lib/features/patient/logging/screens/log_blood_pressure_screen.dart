@@ -15,7 +15,8 @@ import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Blood Pressure Screen
 class LogBloodPressureScreen extends ConsumerStatefulWidget {
-  const LogBloodPressureScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogBloodPressureScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogBloodPressureScreen> createState() => _LogBloodPressureScreenState();
@@ -181,7 +182,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: () {
+                onPressed: widget.onSwitchToHistory ?? () {
                   AppRoutes.pushReplacement(context, AppRoutes.bloodPressureDetail);
                 },
                 tooltip: 'View History',
