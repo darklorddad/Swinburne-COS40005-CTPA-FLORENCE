@@ -16,7 +16,8 @@ import '../../profile/providers/user_profile_provider.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
-  const LogBmiScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogBmiScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogBmiScreen> createState() => _LogBmiScreenState();
@@ -257,7 +258,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               padding: const EdgeInsets.only(right: 4),
               child: IconButton(
                 icon: const Icon(Icons.history),
-                onPressed: () {
+                onPressed: widget.onSwitchToHistory ?? () {
                   AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
                 },
                 tooltip: 'View History',

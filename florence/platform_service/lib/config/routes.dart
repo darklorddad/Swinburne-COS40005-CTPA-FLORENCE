@@ -16,6 +16,7 @@ import '../features/patient/activity/screens/activity_unified_container.dart';
 import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
 import '../features/patient/blood_pressure/screens/blood_pressure_unified_container.dart';
 import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
+import '../features/patient/bmi/screens/bmi_unified_container.dart';
 import '../features/patient/dashboard/screens/cholesterol_detail_screen.dart';
 import '../features/patient/cholesterol/screens/cholesterol_unified_container.dart';
 import '../features/patient/dashboard/screens/diet_detail_screen.dart';
@@ -126,7 +127,7 @@ class AppRoutes {
         return _buildRoute(const ActivityUnifiedContainer(initialTab: 0));
 
       case bmiDetail:
-        return _buildRoute(const BmiDetailScreen());
+        return _buildRoute(const BmiUnifiedContainer(initialTab: 0));
 
       case hba1cDetail:
         return _buildRoute(const HbA1cUnifiedContainer(initialTab: 0));
@@ -171,7 +172,7 @@ class AppRoutes {
         return _buildRoute(const CholesterolUnifiedContainer(initialTab: 1), settings);
 
       case logBmi:
-        return _buildRoute(const LogBmiScreen(), settings);
+        return _buildRoute(const BmiUnifiedContainer(initialTab: 1), settings);
 
       case logHba1c:
         return _buildRoute(const HbA1cUnifiedContainer(initialTab: 1), settings);
