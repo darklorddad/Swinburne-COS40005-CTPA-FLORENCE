@@ -939,30 +939,68 @@ class _HistorySectionState extends State<_HistorySection> {
             ),
           ),
 
-          // RIGHT: Status Badge + Date
+          // RIGHT: Status Badge + Date + Calories
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (log.caloriesBurned != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_fire_department, color: Colors.orange, size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${log.caloriesBurned} kcal',
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(log.timestamp.toLocal()),
+                '${DateFormat('HH:mm').format(log.startTime.toLocal())} - ${DateFormat('HH:mm').format(log.endTime.toLocal())}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
+                      color: AppTheme.textPrimaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                DateFormat('dd MMM yyyy').format(log.startTime.toLocal()),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 10,
                       color: AppTheme.textSecondaryColor,
                     ),
               ),

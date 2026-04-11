@@ -445,8 +445,12 @@ class MonitorDataRepository {
         for (var item in activityData) {
           activities.add(ActivityLog(
             id: item['id'].toString(),
-            startTime: DateTime.parse(item['start_time']),
-            endTime: DateTime.parse(item['end_time']),
+            startTime: item['start_time'] != null 
+                ? DateTime.parse(item['start_time']) 
+                : DateTime.parse(item['created_at']),
+            endTime: item['end_time'] != null 
+                ? DateTime.parse(item['end_time']) 
+                : DateTime.parse(item['created_at']).add(Duration(minutes: item['active_duration_minutes'] ?? 0)),
             type: item['activity_description'] ?? 'Activity',
             activeDurationMinutes: item['active_duration_minutes'] ?? 0,
             intensity: 'Moderate',
