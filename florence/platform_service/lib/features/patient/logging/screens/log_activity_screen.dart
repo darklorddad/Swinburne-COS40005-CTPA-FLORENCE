@@ -234,12 +234,12 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                         _buildDateTimeSection(),
                         const SizedBox(height: 20),
 
-                        // End Date and Time
-                        _buildEndDateTimeSection(),
-                        const SizedBox(height: 20),
-
                         // Duration
                         _buildDurationSection(),
+                        const SizedBox(height: 20),
+
+                        // End Date and Time
+                        _buildEndDateTimeSection(),
                         const SizedBox(height: 20),
 
                         // Activity Details
@@ -792,11 +792,24 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                'End Date and Time',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'End Date and Time',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
+                    Text(
+                      'Automatically calculated based on duration',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
