@@ -40,11 +40,17 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   void initState() {
     super.initState();
     _initialDateTime = _selectedDateTime;
+    _durationController.addListener(_updateEndTime);
+  }
+
+  void _updateEndTime() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _descriptionController.dispose();
+    _durationController.removeListener(_updateEndTime);
     _durationController.dispose();
     super.dispose();
   }
@@ -224,16 +230,20 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                         _buildInfoCard(),
                         const SizedBox(height: 20),
 
-                        // Activity Details
-                        _buildActivityDetailsSection(),
+                        // Start Date and Time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
+
+                        // End Date and Time
+                        _buildEndDateTimeSection(),
                         const SizedBox(height: 20),
 
                         // Duration
                         _buildDurationSection(),
                         const SizedBox(height: 20),
 
-                        // Start Date and Time
-                        _buildDateTimeSection(),
+                        // Activity Details
+                        _buildActivityDetailsSection(),
                         const SizedBox(height: 32),
 
                         // Save button
@@ -736,6 +746,123 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEndDateTimeSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    // Calculate end time dynamically
+    final durationMinutes = int.tryParse(_durationController.text) ?? 0;
+    final endDateTime = _selectedDateTime.add(Duration(minutes: durationMinutes));
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.event_available,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'End Date and Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.borderColor,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildReadOnlyCompactItem(
+                  label: 'Date',
+                  value: Formatters.date(endDateTime),
+                  icon: Icons.calendar_today_outlined,
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildReadOnlyCompactItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(endDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyCompactItem({
+    required String label,
+    required String value,
+    required IconData icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.textSecondaryColor.withOpacity(0.7), size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Row(
+              children: [
+                Text(
+                  '$label:',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
