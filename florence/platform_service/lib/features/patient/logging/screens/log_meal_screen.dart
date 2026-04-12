@@ -951,6 +951,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 textInputAction: TextInputAction.newline,
                 minLines: 3,
                 maxLines: 3,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'e.g., Grilled chicken, 60g carbs, no veggies...',
                   hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
@@ -1000,6 +1001,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 controller: _caloriesController,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'e.g. 500',
                   filled: true,
