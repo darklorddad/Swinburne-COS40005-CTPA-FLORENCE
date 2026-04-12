@@ -505,7 +505,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
 
           // Description Input Title
           Text(
-            'Custom Activity',
+            'Activity Description',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -538,7 +538,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   SizedBox(height: 14),
-                  Icon(Icons.edit_note),
+                  Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
                 ],
               ),
             ),
@@ -555,34 +555,54 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       fontSize: 14,
                     ),
               ),
-              const Spacer(),
-              TextButton.icon(
-                onPressed: _isLoading ? null : _estimateCalories,
-                icon: const Icon(Icons.auto_awesome, size: 16),
-                label: const Text('Auto-Estimate', style: TextStyle(fontSize: 12)),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryBlue,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
+              const SizedBox(width: 8),
+              Text(
+                'Optional',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          TextFormField(
-            controller: _caloriesController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              hintText: 'e.g., 300',
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _caloriesController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: 'e.g., 300',
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
+                  ),
+                ),
               ),
-              prefixIcon: const Icon(Icons.local_fire_department_outlined),
-            ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 56, // Match the height of the TextFormField
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _estimateCalories,
+                  icon: const Icon(Icons.auto_awesome, size: 18),
+                  label: const Text('Auto', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppTheme.primaryBlue.withOpacity(0.2) : AppTheme.primaryBlue.withOpacity(0.1),
+                    foregroundColor: AppTheme.primaryBlue,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -714,23 +734,48 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
             ),
-            child: _buildCompactPickerItem(
-              label: 'Time',
-              value: TimeOfDay.fromDateTime(_endDateTime).format(context),
-              icon: Icons.access_time_filled,
-              onTap: () async {
-                FocusScope.of(context).unfocus();
-                final picked = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.fromDateTime(_endDateTime),
-                );
-                if (picked != null) {
-                  setState(() {
-                    _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
-                    _updateSuggestedDuration();
-                  });
-                }
-              },
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_endDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).unfocus();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _endDateTime,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _endDateTime = DateTime(picked.year, picked.month, picked.day, _endDateTime.hour, _endDateTime.minute);
+                        _updateSuggestedDuration();
+                      });
+                    }
+                  },
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_endDateTime).format(context),
+                  icon: Icons.access_time_filled,
+                  onTap: () async {
+                    FocusScope.of(context).unfocus();
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_endDateTime),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
+                        _updateSuggestedDuration();
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -789,24 +834,53 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 20),
-          TextFormField(
-            initialValue: '$totalElapsed',
-            readOnly: true,
-            decoration: InputDecoration(
-              labelText: 'Total session time (mins)',
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: const Icon(Icons.schedule),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade300),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.schedule, color: AppTheme.textSecondaryColor.withOpacity(0.7)),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total session time (mins)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppTheme.textSecondaryColor.withOpacity(0.8),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$totalElapsed',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: AppTheme.textPrimaryColor.withOpacity(0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
           TextFormField(
             controller: _activeDurationController,
-            validator: (value) => Validators.range(value, 1, 1440, fieldName: 'Active Duration'),
+            validator: (value) {
+              final rangeError = Validators.range(value, 1, 1440, fieldName: 'Active Duration');
+              if (rangeError != null) return rangeError;
+              final val = int.tryParse(value!);
+              if (val != null && val > totalElapsed) {
+                return 'Cannot exceed total session time ($totalElapsed mins)';
+              }
+              return null;
+            },
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
               labelText: 'Actual time spent (mins)',
@@ -825,7 +899,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   width: 2,
                 ),
               ),
-              prefixIcon: const Icon(Icons.timer_outlined),
+              prefixIcon: const Icon(Icons.timer_outlined, color: AppTheme.textSecondaryColor),
             ),
           ),
           const SizedBox(height: 8),
