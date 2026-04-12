@@ -62,33 +62,50 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     _updateSuggestedDuration(isInitial: true);
   }
 
-  void _validateTimeline() {
+  void _validateAndAdjustTimeline({required bool isStart}) {
     final now = DateTime.now();
+    // Strip seconds and milliseconds for perfectly clean math
+    final cleanNow = DateTime(now.year, now.month, now.day, now.hour, now.minute);
 
-    // 1. Prevent future Start Time
-    if (_selectedDateTime.isAfter(now)) {
-      _selectedDateTime = now;
-      Helpers.showWarning(context, 'Start time cannot be in the future.');
-    }
-
-    // 2. Prevent future End Time
-    if (_endDateTime.isAfter(now)) {
-      _endDateTime = now;
-      Helpers.showWarning(context, 'End time cannot be in the future.');
-    }
-
-    // 3. Ensure End Time is strictly AFTER Start Time (at least 1 min)
-    if (_endDateTime.isBefore(_selectedDateTime) ||
-        _endDateTime.isAtSameMomentAs(_selectedDateTime)) {
-      _endDateTime = _selectedDateTime.add(const Duration(minutes: 1));
-
-      // If pushing the End Time forward pushed it into the future, we have to pull the Start Time back!
-      if (_endDateTime.isAfter(now)) {
-        _endDateTime = now;
-        _selectedDateTime = now.subtract(const Duration(minutes: 1));
+    if (isStart) {
+      // 1. Clamp Start to Now if they picked a future time
+      if (_selectedDateTime.isAfter(cleanNow)) {
+        _selectedDateTime = cleanNow.subtract(const Duration(minutes: 1));
+        Helpers.showWarning(context, 'Start time cannot be in the future.');
       }
 
-      Helpers.showWarning(context, 'End time must be after start time.');
+      // 2. If Start overtakes End, dynamically push End forward by 30 mins
+      if (_selectedDateTime.isAfter(_endDateTime) ||
+          _selectedDateTime.isAtSameMomentAs(_endDateTime)) {
+        DateTime proposedEnd = _selectedDateTime.add(const Duration(minutes: 30));
+        // Ensure the pushed End Time doesn't accidentally go into the future
+        _endDateTime = proposedEnd.isAfter(cleanNow) ? cleanNow : proposedEnd;
+
+        // Ultimate fallback if squeezed against the exact current minute
+        if (_endDateTime.isBefore(_selectedDateTime) ||
+            _endDateTime.isAtSameMomentAs(_selectedDateTime)) {
+          _selectedDateTime = _endDateTime.subtract(const Duration(minutes: 1));
+        }
+      }
+    } else {
+      // 1. Clamp End to Now
+      if (_endDateTime.isAfter(cleanNow)) {
+        _endDateTime = cleanNow;
+        Helpers.showWarning(context, 'End time cannot be in the future.');
+      }
+
+      // 2. If End is pulled before Start, dynamically pull Start backwards
+      if (_endDateTime.isBefore(_selectedDateTime) ||
+          _endDateTime.isAtSameMomentAs(_selectedDateTime)) {
+        _selectedDateTime = _endDateTime.subtract(const Duration(minutes: 30));
+      }
+    }
+
+    // 3. Automatically clamp the Active Duration input if the timeline window shrank
+    int totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+    int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
+    if (currentActive > totalElapsed) {
+      _activeDurationController.text = totalElapsed.toString();
     }
   }
 
@@ -214,8 +231,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             time.hour,
             time.minute,
           );
-          _validateTimeline();
-          _updateSuggestedDuration();
+          _validateAndAdjustTimeline(isStart: true);
         });
       }
     }
@@ -744,8 +760,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(picked.year, picked.month, picked.day, _selectedDateTime.hour, _selectedDateTime.minute);
-                        _validateTimeline();
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: true);
                       });
                     }
                   },
@@ -764,7 +779,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: true);
                       });
                     }
                   },
@@ -807,8 +822,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _endDateTime = DateTime(picked.year, picked.month, picked.day, _endDateTime.hour, _endDateTime.minute);
-                        _validateTimeline();
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: false);
                       });
                     }
                   },
@@ -827,8 +841,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
-                        _validateTimeline();
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: false);
                       });
                     }
                   },
