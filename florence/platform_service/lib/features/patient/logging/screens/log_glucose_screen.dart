@@ -443,6 +443,22 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.glucoseUnit;
+
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    String targetText = "Loading target...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final glucoseTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'GLUCOSE');
+        targetText =
+            "Target: ${glucoseTarget.minValue} - ${glucoseTarget.maxValue} $currentUnit";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final glucoseValue = double.tryParse(_glucoseController.text);
     final bool hasChanges = !_forcePop && 
         (_glucoseController.text != _initialGlucose || 
