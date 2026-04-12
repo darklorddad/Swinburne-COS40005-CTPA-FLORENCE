@@ -665,7 +665,7 @@ class _HistorySectionState extends State<_HistorySection> {
       unitText = 'mg/dL';
       
       // Delta text
-      deltaText = (spike > 0 ? '+' : '') + '${spike.toInt()}';
+      deltaText = '${spike > 0 ? '+' : ''}${spike.toInt()}';
 
       if (spike > 50) {
         statusColor = AppTheme.errorColor;

@@ -105,7 +105,7 @@ class Formatters {
   
   /// Format: 1,234.56
   static String number(num value, {int decimals = 0}) {
-    final formatter = NumberFormat('#,##0${decimals > 0 ? '.' + '0' * decimals : ''}');
+    final formatter = NumberFormat('#,##0${decimals > 0 ? '.${'0' * decimals}' : ''}');
     return formatter.format(value);
   }
   
