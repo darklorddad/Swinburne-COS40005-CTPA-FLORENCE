@@ -38,36 +38,34 @@ class DiseaseLog {
       };
 }
 
-class DiseaseLogNotifier extends StateNotifier<AsyncValue<List<DiseaseLog>>> {
-  final ApiService _api = ApiService();
-  DiseaseLogNotifier() : super(const AsyncValue.loading()) {
-    fetchLogs();
+class DiseaseLogNotifier extends AsyncNotifier<List<DiseaseLog>> {
+  @override
+  Future<List<DiseaseLog>> build() async {
+    return _fetchLogsFromApi();
   }
 
-  Future<void> fetchLogs() async {
-    state = const AsyncValue.loading();
-    try {
-      final response = await _api.get('/patients/me/disease-logs');
-      final List<DiseaseLog> logs = (response as List)
-          .map((json) => DiseaseLog.fromJson(json))
-          .toList();
-      state = AsyncValue.data(logs);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
+  Future<List<DiseaseLog>> _fetchLogsFromApi() async {
+    final api = ApiService();
+    final response = await api.get('/patients/me/disease-logs');
+
+    return (response as List)
+        .map((json) => DiseaseLog.fromJson(json))
+        .toList();
   }
 
   Future<void> addLog(DiseaseLog log) async {
-    try {
-      await _api.post('/patients/me/disease-logs', log.toJson());
-      await fetchLogs();
-    } catch (e) {
-      rethrow;
-    }
+    final api = ApiService();
+
+    state = const AsyncValue.loading();
+
+    state = await AsyncValue.guard(() async {
+      await api.post('/patients/me/disease-logs', log.toJson());
+      return _fetchLogsFromApi();
+    });
   }
 }
 
 final diseaseLogProvider =
-    StateNotifierProvider<DiseaseLogNotifier, AsyncValue<List<DiseaseLog>>>((ref) {
+    AsyncNotifierProvider<DiseaseLogNotifier, List<DiseaseLog>>(() {
   return DiseaseLogNotifier();
 });
