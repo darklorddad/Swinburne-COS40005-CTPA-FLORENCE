@@ -10,7 +10,7 @@ import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
-import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
 import '../widgets/biometrics_section.dart';
