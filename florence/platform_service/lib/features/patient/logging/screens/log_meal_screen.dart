@@ -774,6 +774,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
                             'Auto',
                             style: TextStyle(
