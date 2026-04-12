@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -59,6 +60,53 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     // Automatically suggest active time based on start/end if empty
     // We do this after initialising late variables to avoid LateInitializationError
     _updateSuggestedDuration(isInitial: true);
+  }
+
+  void _validateAndAdjustTimeline({required bool isStart}) {
+    final now = DateTime.now();
+    // Strip seconds and milliseconds for perfectly clean math
+    final cleanNow = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+
+    if (isStart) {
+      // 1. Clamp Start to Now if they picked a future time
+      if (_selectedDateTime.isAfter(cleanNow)) {
+        _selectedDateTime = cleanNow.subtract(const Duration(minutes: 1));
+        Helpers.showWarning(context, 'Start time cannot be in the future.');
+      }
+
+      // 2. If Start overtakes End, dynamically push End forward by 30 mins
+      if (_selectedDateTime.isAfter(_endDateTime) ||
+          _selectedDateTime.isAtSameMomentAs(_endDateTime)) {
+        DateTime proposedEnd = _selectedDateTime.add(const Duration(minutes: 30));
+        // Ensure the pushed End Time doesn't accidentally go into the future
+        _endDateTime = proposedEnd.isAfter(cleanNow) ? cleanNow : proposedEnd;
+
+        // Ultimate fallback if squeezed against the exact current minute
+        if (_endDateTime.isBefore(_selectedDateTime) ||
+            _endDateTime.isAtSameMomentAs(_selectedDateTime)) {
+          _selectedDateTime = _endDateTime.subtract(const Duration(minutes: 1));
+        }
+      }
+    } else {
+      // 1. Clamp End to Now
+      if (_endDateTime.isAfter(cleanNow)) {
+        _endDateTime = cleanNow;
+        Helpers.showWarning(context, 'End time cannot be in the future.');
+      }
+
+      // 2. If End is pulled before Start, dynamically pull Start backwards
+      if (_endDateTime.isBefore(_selectedDateTime) ||
+          _endDateTime.isAtSameMomentAs(_selectedDateTime)) {
+        _selectedDateTime = _endDateTime.subtract(const Duration(minutes: 30));
+      }
+    }
+
+    // 3. Automatically clamp the Active Duration input if the timeline window shrank
+    int totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+    int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
+    if (currentActive > totalElapsed) {
+      _activeDurationController.text = totalElapsed.toString();
+    }
   }
 
   void _updateSuggestedDuration({bool isInitial = false}) {
@@ -183,6 +231,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             time.hour,
             time.minute,
           );
+          _validateAndAdjustTimeline(isStart: true);
         });
       }
     }
@@ -568,44 +617,63 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _caloriesController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. 500',
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _caloriesController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. 500',
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                     ),
-                    prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              SizedBox(
-                height: 56, // Match the height of the TextFormField
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _estimateCalories,
-                  icon: const Icon(Icons.auto_awesome, size: 18),
-                  label: const Text('Auto', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? AppTheme.primaryBlue.withOpacity(0.2) : AppTheme.primaryBlue.withOpacity(0.1),
-                    foregroundColor: AppTheme.primaryBlue,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                const SizedBox(width: 6),
+                InkWell(
+                  onTap: _isLoading ? null : _estimateCalories,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.primaryBlue.withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 16,
+                          color: AppTheme.primaryBlue,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Auto',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -692,7 +760,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(picked.year, picked.month, picked.day, _selectedDateTime.hour, _selectedDateTime.minute);
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: true);
                       });
                     }
                   },
@@ -711,7 +779,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: true);
                       });
                     }
                   },
@@ -754,7 +822,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _endDateTime = DateTime(picked.year, picked.month, picked.day, _endDateTime.hour, _endDateTime.minute);
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: false);
                       });
                     }
                   },
@@ -773,7 +841,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
-                        _updateSuggestedDuration();
+                        _validateAndAdjustTimeline(isStart: false);
                       });
                     }
                   },
@@ -820,7 +888,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header (Padded)
+          // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -848,12 +916,22 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                       ),
-                      Text(
-                        'Total session duration: $totalElapsed mins',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondaryColor,
-                              fontWeight: FontWeight.w500,
+                      Text.rich(
+                        TextSpan(
+                          text: 'Total session duration: ',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                          children: [
+                            TextSpan(
+                              text: '$totalElapsed mins',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                color: AppTheme.textPrimaryColor,
+                              ),
                             ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -863,7 +941,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Big Number Display (Padded, Color changed to primary text)
+          // Big Number Display with Input Clamping
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
@@ -878,12 +956,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       controller: _activeDurationController,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
-                      validator: (value) {
-                        final val = int.tryParse(value ?? '');
-                        if (val == null) return 'Required';
-                        if (val > totalElapsed) return 'Max $totalElapsed';
-                        return null;
-                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       style: TextStyle(
                         fontSize: 56,
                         fontWeight: FontWeight.bold,
@@ -892,9 +967,17 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 8), 
-                        errorStyle: TextStyle(fontSize: 12),
                       ),
-                      onChanged: (_) => setState(() {}), 
+                      onChanged: (val) {
+                        int? parsed = int.tryParse(val);
+                        if (parsed != null && parsed > totalElapsed) {
+                          _activeDurationController.text = totalElapsed.toString();
+                          _activeDurationController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _activeDurationController.text.length),
+                          );
+                        }
+                        setState(() {}); 
+                      }, 
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -937,7 +1020,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Quick Adjust Chips (Padded, Styled like Activity Details Quick Select)
+          // Quick Adjust Chips (Fractions!)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -953,7 +1036,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildDurationChip(
-                    label: '${threeQuarters}m',
+                    label: '3/4',
                     onTap: () => setState(() => _activeDurationController.text = threeQuarters.toString()),
                     isSelected: currentActive == threeQuarters,
                     isDark: isDark,
@@ -962,7 +1045,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildDurationChip(
-                    label: '${half}m',
+                    label: '1/2',
                     onTap: () => setState(() => _activeDurationController.text = half.toString()),
                     isSelected: currentActive == half,
                     isDark: isDark,
@@ -971,7 +1054,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildDurationChip(
-                    label: '${quarter}m',
+                    label: '1/4',
                     onTap: () => setState(() => _activeDurationController.text = quarter.toString()),
                     isSelected: currentActive == quarter,
                     isDark: isDark,
@@ -982,7 +1065,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Note (Padded)
+          // Note (Default font!)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
@@ -990,7 +1073,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 'Note: Adjust this down if you took breaks',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondaryColor,
-                      fontStyle: FontStyle.italic,
                     ),
               ),
             ),

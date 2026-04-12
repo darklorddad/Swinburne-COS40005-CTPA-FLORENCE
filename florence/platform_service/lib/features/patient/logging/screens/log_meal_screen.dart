@@ -748,29 +748,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'Meal Details',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+              Text(
+                'Meal Details',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Provide a photo, description, or calories to save this log.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
               ),
               const Spacer(),
-              
+
               // AI Toggle Switch Group
               Row(
                 children: [
@@ -789,6 +774,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
                             'Auto',
                             style: TextStyle(
@@ -832,8 +823,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20), // Standard spacing 20px
-          
+          const SizedBox(height: 24),
+          Text(
+            'Note: Provide at least a photo, description or calories to save this log.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                ),
+          ),
+          const SizedBox(height: 12),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
