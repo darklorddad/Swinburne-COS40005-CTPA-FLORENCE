@@ -15,7 +15,6 @@ import 'package:florence/features/patient/dashboard/providers/dashboard_provider
 import 'package:florence/features/patient/dashboard/widgets/ai_insight_card.dart';
 import 'package:florence/features/patient/dashboard/widgets/biometrics_section.dart';
 import 'package:florence/features/patient/dashboard/widgets/quick_actions_grid.dart';
-import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
 
 // Model for Quick Actions to ensure consistency between Grid and Modal
 class _QuickActionItem {

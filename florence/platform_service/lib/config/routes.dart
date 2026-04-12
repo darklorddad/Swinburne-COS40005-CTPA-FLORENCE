@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 // Admin-side imports
 import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/patients/screens/patients_list_screen.dart';
+import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
 import 'package:florence/features/auth/screens/login_screen.dart';
 import 'package:florence/features/auth/screens/register_screen.dart';
 import 'package:florence/features/auth/screens/splash_screen.dart';
@@ -12,27 +14,13 @@ import 'package:florence/features/clinician/screens/clinician_profile_screen.dar
 import 'package:florence/features/clinician/screens/patient_detail_screen.dart';
 import 'package:florence/features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
 import 'package:florence/features/patient/chat/screens/chat_screen.dart';
-import 'package:florence/features/patient/dashboard/screens/activity_detail_screen.dart';
 import 'package:florence/features/patient/activity/screens/activity_unified_container.dart';
-import 'package:florence/features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
 import 'package:florence/features/patient/blood_pressure/screens/blood_pressure_unified_container.dart';
-import 'package:florence/features/patient/dashboard/screens/bmi_detail_screen.dart';
 import 'package:florence/features/patient/bmi/screens/bmi_unified_container.dart';
-import 'package:florence/features/patient/dashboard/screens/cholesterol_detail_screen.dart';
 import 'package:florence/features/patient/cholesterol/screens/cholesterol_unified_container.dart';
-import 'package:florence/features/patient/dashboard/screens/diet_detail_screen.dart';
 import 'package:florence/features/patient/diet/screens/diet_unified_container.dart';
-import 'package:florence/features/patient/dashboard/screens/glucose_detail_screen.dart';
 import 'package:florence/features/patient/glucose/screens/glucose_unified_container.dart';
-import 'package:florence/features/patient/dashboard/screens/hba1c_detail_screen.dart';
 import 'package:florence/features/patient/hba1c/screens/hba1c_unified_container.dart';
-import 'package:florence/features/patient/logging/screens/log_activity_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_blood_pressure_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_bmi_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_cholesterol_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_glucose_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_meal_screen.dart';
 import 'package:florence/features/patient/medication/screens/medication_logging_screen.dart';
 import 'package:florence/features/patient/notifications/screens/notifications_screen.dart';
 import 'package:florence/features/patient/profile/screens/profile_screen.dart';
@@ -90,6 +78,8 @@ class AppRoutes {
   // Admin routes
   static const String adminDashboard = '/admin-dashboard';
   static const String adminLogin = '/admin/login';
+  static const String adminPatientList = '/admin/patients';
+  static const String adminPatientDetail = '/admin/patient-detail';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -195,6 +185,21 @@ class AppRoutes {
 
       case adminLogin:
         return _buildRoute(const AdminLoginScreen(), settings);
+
+      case adminPatientList:
+        return _buildRoute(const PatientsListScreen(), settings);
+
+      case adminPatientDetail:
+        if (args is Map<String, dynamic>) {
+          return _buildRoute(AdminPatientDetailScreen(patientData: args), settings);
+        } else {
+          return _buildRoute(
+            Scaffold(
+              body: Center(child: Text('Invalid arguments for ${settings.name}')),
+            ),
+            settings,
+          );
+        }
 
       default:
         return _buildRoute(

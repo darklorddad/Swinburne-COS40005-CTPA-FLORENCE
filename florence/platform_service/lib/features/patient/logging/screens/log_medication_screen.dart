@@ -8,7 +8,6 @@ import 'package:florence/shared/widgets/input_widgets.dart';
 import 'package:florence/shared/widgets/card_widgets.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
-import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 

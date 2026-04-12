@@ -290,7 +290,6 @@ class AppTheme {
       tertiary: primaryRed,
       error: errorColor,
       surface: midnightSurface,
-      background: midnightBackground,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
       onError: Colors.white,

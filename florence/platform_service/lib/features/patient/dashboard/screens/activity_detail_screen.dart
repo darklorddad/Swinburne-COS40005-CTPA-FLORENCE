@@ -605,8 +605,9 @@ class _ActivityTimingChart extends StatelessWidget {
     for (var log in recentLogs) {
       // Group by Local Hour
       final h = log.timestamp.toLocal().hour;
-      if (h >= 5 && h < 11) morning += log.duration;
-      else if (h >= 11 && h < 17) midday += log.duration;
+      if (h >= 5 && h < 11) {
+        morning += log.duration;
+      } else if (h >= 11 && h < 17) midday += log.duration;
       else if (h >= 17 && h < 22) evening += log.duration;
       else night += log.duration;
     }
