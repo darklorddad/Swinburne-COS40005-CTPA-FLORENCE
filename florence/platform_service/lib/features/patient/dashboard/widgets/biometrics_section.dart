@@ -291,7 +291,7 @@ class BiometricsSection extends StatelessWidget {
 
   PatientThreshold? _getThreshold(List<PatientThreshold> thresholds, MonitorDataType type) {
     try {
-      return thresholds.firstWhere((t) => t.dataType == type);
+      return thresholds.firstWhere((t) => t.dataType == type.name);
     } catch (_) {
       return null;
     }
