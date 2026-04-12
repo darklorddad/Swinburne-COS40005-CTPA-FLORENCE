@@ -506,7 +506,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       fontSize: 64,
                       fontWeight: FontWeight.bold,
-                      color: bmiColor ?? AppTheme.textPrimaryColor,
+                      color: bmiColor ?? Colors.grey,
                     ),
               ),
               const SizedBox(width: 8),
@@ -596,7 +596,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                           Validators.range(value, 50, 300, fieldName: 'Height'),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        hintText: 'e.g., 175',
+                        hintText: 'e.g. 175',
                         hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                         filled: true,
                         fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -636,7 +636,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                           Validators.range(value, 20, 500, fieldName: 'Weight'),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                       decoration: InputDecoration(
-                        hintText: 'e.g., 70',
+                        hintText: 'e.g. 70',
                         hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                         filled: true,
                         fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -667,7 +667,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   Widget _buildBmiStatusBadge(HealthThreshold? threshold) {
     final statusText = _calculatedBmi != null
         ? _getBmiStatus(_calculatedBmi, threshold).toUpperCase()
-        : 'ENTER DETAILS';
+        : 'ENTER READING';
 
     final bmiColor = _getBmiColor(_calculatedBmi, threshold);
     final displayColor = bmiColor ?? AppTheme.textSecondaryColor;
@@ -705,16 +705,16 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
           Icon(
             statusIcon,
             size: 14,
-            color: isPending ? displayColor.withOpacity(0.5) : displayColor,
+            color: displayColor,
           ),
           const SizedBox(width: 6),
           Text(
             statusText,
-            style: TextStyle(
-              color: isPending ? displayColor.withOpacity(0.5) : displayColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: displayColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
           ),
         ],
       ),
