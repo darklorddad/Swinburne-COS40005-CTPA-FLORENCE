@@ -703,12 +703,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Glucose', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
+                        'Glucose',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.primaryGreen.withOpacity(0.8)),
                       ),
                       Text(
-                        '${min.toInt()} - ${max.toInt()} mg/dL',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
