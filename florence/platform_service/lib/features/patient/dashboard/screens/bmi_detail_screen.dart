@@ -49,9 +49,9 @@ class BmiDetailScreen extends ConsumerWidget {
         data: (dataList) {
           // Get Thresholds
           final thresholds = thresholdsAsync.value ?? [];
-          HealthThreshold? bmiThreshold;
+          PatientThreshold? bmiThreshold;
           try {
-            bmiThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BMI);
+            bmiThreshold = thresholds.firstWhere((t) => t.dataType == 'BMI');
           } catch (_) {}
 
           // Filter BMI Data
@@ -314,7 +314,7 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _BmiGaugeSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _BmiGaugeSection({this.latestReading, this.threshold});
 
@@ -558,7 +558,7 @@ class _BmiGaugeSection extends StatelessWidget {
 
 class _BmiTrendSection extends StatelessWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _BmiTrendSection({required this.readings, this.threshold});
 
@@ -1021,7 +1021,7 @@ class _BmiCorrelationSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _HistorySection({required this.readings, this.threshold});
 

@@ -55,9 +55,9 @@ class HbA1cDetailScreen extends ConsumerWidget {
           readings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
           final thresholds = thresholdsAsync.value ?? [];
-          HealthThreshold? userThreshold;
+          PatientThreshold? userThreshold;
           try {
-            userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.HBA1C);
+            userThreshold = thresholds.firstWhere((t) => t.dataType == 'HBA1C');
           } catch (_) {}
 
           return RefreshIndicator(
@@ -162,7 +162,7 @@ class HbA1cDetailScreen extends ConsumerWidget {
 
 class _GaugeSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _GaugeSection({this.latestReading, this.threshold});
 
@@ -478,7 +478,7 @@ class _GaugeSection extends StatelessWidget {
 
 class _TrendsSection extends StatefulWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _TrendsSection({required this.readings, this.threshold});
 
@@ -737,7 +737,7 @@ class _TrendsSectionState extends State<_TrendsSection> {
 
 class _GoalComparisonSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _GoalComparisonSection({this.latestReading, this.threshold});
 
@@ -908,7 +908,7 @@ class _GoalComparisonSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _HistorySection({required this.readings, this.threshold});
 

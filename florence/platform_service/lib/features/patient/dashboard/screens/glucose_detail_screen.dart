@@ -60,9 +60,9 @@ class GlucoseDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Check if user actually has a set threshold
-          HealthThreshold? userThreshold;
+          PatientThreshold? userThreshold;
           try {
-            userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+            userThreshold = thresholds.firstWhere((t) => t.dataType == 'GLUCOSE');
           } catch (_) {}
 
           final isDefault = userThreshold == null;
@@ -372,7 +372,7 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _StatisticsSection extends StatelessWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _StatisticsSection({
@@ -529,7 +529,7 @@ class _StatisticsSection extends StatelessWidget {
 
 class _GlucoseTrendsSection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _GlucoseTrendsSection({
@@ -762,7 +762,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
 
 class _TimeInRangeSection extends StatelessWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _TimeInRangeSection({
@@ -847,7 +847,7 @@ class _TimeInRangeSection extends StatelessWidget {
 
 class _ModalDaySection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _ModalDaySection({
@@ -969,7 +969,7 @@ class _ModalDaySection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _HistorySection({required this.readings, this.threshold});
 

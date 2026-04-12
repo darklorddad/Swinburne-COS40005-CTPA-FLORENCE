@@ -53,10 +53,10 @@ class CholesterolDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Get thresholds (Nullable)
-          final ldlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_LDL);
-          final hdlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_HDL);
-          final totalThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
-          final triThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
+          final ldlThreshold = _getThreshold(thresholds, 'CHOLESTEROL_LDL');
+          final hdlThreshold = _getThreshold(thresholds, 'CHOLESTEROL_HDL');
+          final totalThreshold = _getThreshold(thresholds, 'CHOLESTEROL_TOTAL');
+          final triThreshold = _getThreshold(thresholds, 'CHOLESTEROL_TRIGLYCERIDES');
           
           // Construct composite latest reading from most recent available data points
           _CholesterolReading? latest;
@@ -161,7 +161,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
     );
   }
 
-  HealthThreshold? _getThreshold(List<HealthThreshold> thresholds, MonitorDataType type) {
+  PatientThreshold? _getThreshold(List<PatientThreshold> thresholds, String type) {
     try {
       return thresholds.firstWhere((t) => t.dataType == type);
     } catch (_) {
@@ -271,10 +271,10 @@ class _CholesterolReading {
 
 class _RatioSection extends StatelessWidget {
   final _CholesterolReading? reading;
-  final HealthThreshold? total;
-  final HealthThreshold? ldl;
-  final HealthThreshold? hdl;
-  final HealthThreshold? tri;
+  final PatientThreshold? total;
+  final PatientThreshold? ldl;
+  final PatientThreshold? hdl;
+  final PatientThreshold? tri;
 
   const _RatioSection({
     this.reading,
@@ -871,7 +871,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
 
 class _HistorySection extends StatefulWidget {
   final List<_CholesterolReading> readings;
-  final List<HealthThreshold> thresholds;
+  final List<PatientThreshold> thresholds;
 
   const _HistorySection({required this.readings, required this.thresholds});
 
