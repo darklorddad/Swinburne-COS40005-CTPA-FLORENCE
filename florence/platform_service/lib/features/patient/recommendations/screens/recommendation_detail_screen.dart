@@ -5,7 +5,6 @@ import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/shared/widgets/card_widgets.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:florence/config/theme.dart';
-import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 

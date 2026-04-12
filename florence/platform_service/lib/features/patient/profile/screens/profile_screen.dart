@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/services/api_service.dart'; // Added
 import 'package:florence/core/utils/formatters.dart';
@@ -333,7 +332,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SizedBox(
                           width: 100,
                           child: DropdownButtonFormField<String>(
-                            value: selectedPhoneCode,
+                            initialValue: selectedPhoneCode,
                             isExpanded: true,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
@@ -415,7 +414,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SizedBox(
                           width: 100,
                           child: DropdownButtonFormField<String>(
-                            value: selectedEcPhoneCode,
+                            initialValue: selectedEcPhoneCode,
                             isExpanded: true,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
@@ -1237,7 +1236,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: status,
+                initialValue: status,
                 decoration: const InputDecoration(labelText: 'Status'),
                 items: const [
                   DropdownMenuItem(value: 'active', child: Text("Active")),

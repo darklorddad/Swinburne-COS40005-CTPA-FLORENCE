@@ -2,11 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/core/utils/helpers.dart';
-import 'package:florence/shared/widgets/card_widgets.dart';
 import 'package:florence/config/theme.dart';
-import 'package:florence/core/config/environment.dart';
 import 'package:florence/features/patient/chat/services/chatbot_service.dart';
 import 'package:florence/features/patient/chat/models/chat_message.dart';
 

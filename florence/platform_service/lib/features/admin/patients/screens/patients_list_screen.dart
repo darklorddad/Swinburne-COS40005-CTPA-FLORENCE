@@ -162,7 +162,7 @@ class _PatientsListScreenState extends State<PatientsListScreen> {
             Expanded(
               flex: 1,
               child: DropdownButtonFormField<String>(
-                value: _filterRisk,
+                initialValue: _filterRisk,
                 decoration: const InputDecoration(labelText: 'Risk Level'),
                 items: const [
                   DropdownMenuItem(value: 'all', child: Text('All Risk Levels')),
@@ -187,7 +187,7 @@ class _PatientsListScreenState extends State<PatientsListScreen> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
-          headingRowColor: MaterialStateProperty.all(AdminTheme.backgroundColor),
+          headingRowColor: WidgetStateProperty.all(AdminTheme.backgroundColor),
           columns: const [
             DataColumn(label: Text('Patient Name', style: TextStyle(fontWeight: FontWeight.bold))),
             DataColumn(label: Text('Gender', style: TextStyle(fontWeight: FontWeight.bold))),

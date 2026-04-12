@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:florence/config/admin_theme.dart';
 import 'package:florence/features/admin/core/services/admin_auth_service.dart';
-import 'package:florence/features/admin/core/models/admin_user.dart';
 
 /// Admin Login Screen
 /// Separate login for admin/staff users

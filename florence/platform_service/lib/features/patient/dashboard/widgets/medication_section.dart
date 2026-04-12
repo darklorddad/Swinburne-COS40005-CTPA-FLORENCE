@@ -787,7 +787,7 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                           LayoutBuilder(
                             builder: (context, constraints) {
                               return DropdownButtonFormField<String>(
-                                value: _selectedType,
+                                initialValue: _selectedType,
                                 isExpanded: true,
                                 dropdownColor: menuBackgroundColor,
                                 borderRadius: BorderRadius.circular(16),
@@ -832,7 +832,7 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                               return LayoutBuilder(
                                 builder: (context, constraints) {
                                   return DropdownButtonFormField<dynamic>(
-                                    value: _selectedFrequency,
+                                    initialValue: _selectedFrequency,
                                     isExpanded: true,
                                     validator: (val) => val == null ? 'Required' : null,
                                     dropdownColor: menuBackgroundColor,
@@ -888,7 +888,7 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                           child: LayoutBuilder(
                             builder: (context, constraints) {
                               return DropdownButtonFormField<String>(
-                                value: _selectedTimings[index],
+                                initialValue: _selectedTimings[index],
                                 isExpanded: true,
                                 dropdownColor: menuBackgroundColor,
                                 borderRadius: BorderRadius.circular(16),

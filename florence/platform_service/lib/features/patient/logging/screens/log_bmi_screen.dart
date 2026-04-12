@@ -8,7 +8,6 @@ import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/core/utils/validators.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
-import 'package:florence/shared/widgets/input_widgets.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_providers;
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
@@ -855,13 +854,13 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                             ),
                             // Fix input field background to make cursor visible
                             timePickerTheme: TimePickerThemeData(
-                              hourMinuteColor: MaterialStateColor.resolveWith((states) {
-                                return states.contains(MaterialState.selected)
+                              hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                                return states.contains(WidgetState.selected)
                                     ? AppTheme.primaryBlue.withOpacity(0.1)
                                     : Colors.grey.shade100;
                               }),
-                              hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
-                                return states.contains(MaterialState.selected)
+                              hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+                                return states.contains(WidgetState.selected)
                                     ? AppTheme.primaryBlue
                                     : AppTheme.textPrimaryColor;
                               }),
