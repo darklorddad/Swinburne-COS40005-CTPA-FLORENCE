@@ -38,13 +38,13 @@ def convert_cholesterol_to_base(value: Optional[float], unit: str) -> Optional[f
 # --- Constants ---
 
 DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 10.0},
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 2.6, 'max_value': 5.2},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 2.6},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 1.0, 'max_value': 2.6},
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 1.7},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.7},
     {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
-    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
     {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
     {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
 ]
@@ -123,11 +123,11 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         profile = profile_response.data[0]
         
         # Fetch user settings to include in the profile context for unit conversion
-        settings_res = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", user.id).execute()
+        settings_res = supabase.table("user_settings").select("glucose_unit, cholesterol_unit, show_quick_actions").eq("user_id", user.id).execute()
         if settings_res.data:
             profile['settings'] = settings_res.data[0]
         else:
-            profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
             
         return profile
     except AuthApiError as e:
@@ -142,10 +142,12 @@ async def get_current_patient_profile(authorization: str = Header(...)):
 class UserSettingsUpdate(BaseModel):
     glucose_unit: Optional[str] = None
     cholesterol_unit: Optional[str] = None
+    show_quick_actions: Optional[bool] = None
 
 class UserSettingsResponse(BaseModel):
     glucose_unit: str
     cholesterol_unit: str
+    show_quick_actions: bool = False
 
 class PatientProfileUpdate(BaseModel):
     """Fields a patient is allowed to update on their own profile."""
@@ -184,6 +186,20 @@ class MonitorDataUpdate(BaseModel):
     value: Optional[float] = None
     measured_at: Optional[datetime] = None
 
+class DiseaseLogCreate(BaseModel):
+    condition_name: str
+    status: Literal['active', 'resolved']
+    diagnosed_date: Optional[date] = None
+    resolved_date: Optional[date] = None
+    notes: Optional[str] = None
+
+class DiseaseLogUpdate(BaseModel):
+    condition_name: Optional[str] = None
+    status: Optional[Literal['active', 'resolved']] = None
+    diagnosed_date: Optional[date] = None
+    resolved_date: Optional[date] = None
+    notes: Optional[str] = None
+
 class MealTime(str, Enum):
     BREAKFAST = 'BREAKFAST'
     LUNCH = 'LUNCH'
@@ -215,8 +231,10 @@ class DailyLogCreate(BaseModel):
 
 class ActivityLogCreate(BaseModel):
     activity_description: str
-    duration_minutes: int
-    performed_at: datetime
+    active_duration_minutes: int
+    start_time: datetime
+    end_time: datetime
+    calories_burned: Optional[int] = None
 
 class MedicationCreate(BaseModel):
     medication_id: Optional[int] = None
@@ -243,6 +261,14 @@ class MedicationIntakeCreate(BaseModel):
     taken_at: Optional[datetime] = None
     notes: Optional[str] = None
 
+class ThresholdUpdateItem(BaseModel):
+    data_type: str
+    min_value: float
+    max_value: float
+
+class ThresholdUpdateBatch(BaseModel):
+    thresholds: List[ThresholdUpdateItem]
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -256,11 +282,11 @@ async def get_user_settings(patient_profile: dict = Depends(get_current_patient_
     Retrieves the app settings (units of measurement) for the authenticated patient.
     """
     try:
-        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", patient_profile['user_id']).execute()
+        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit, show_quick_actions").eq("user_id", patient_profile['user_id']).execute()
         
         if not response.data:
             # Return defaults if no settings record exists yet
-            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
             
         return response.data[0]
     except Exception as e:
@@ -428,6 +454,62 @@ async def update_own_monitor_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
 
+@router.get("/me/disease-logs", summary="Get my disease logs")
+async def get_own_disease_logs(patient_profile: dict = Depends(get_current_patient_profile)):
+    try:
+        response = supabase.table('disease_logs').select('*').eq('patient_id', patient_profile['id']).order('diagnosed_date', desc=True).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/me/disease-logs", summary="Add a disease log")
+async def add_own_disease_log(
+    log_data: DiseaseLogCreate, 
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        insert_dict = log_data.model_dump(mode='json')
+        insert_dict['patient_id'] = patient_profile['id']
+        
+        # Logic: If status is active, ensure resolved_date is null
+        if log_data.status == 'active':
+            insert_dict['resolved_date'] = None
+            
+        response = supabase.table('disease_logs').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save disease log: {str(e)}")
+
+@router.patch("/me/disease-logs/{log_id}", summary="Update a disease log")
+async def update_own_disease_log(
+    log_id: int,
+    log_update: DiseaseLogUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        update_dict = log_update.model_dump(mode='json', exclude_unset=True)
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+
+        # Logic: If changing to active, wipe the resolved date
+        if update_dict.get('status') == 'active':
+            update_dict['resolved_date'] = None
+
+        response = supabase.table('disease_logs') \
+            .update(update_dict) \
+            .eq('id', log_id) \
+            .eq('patient_id', patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Disease log not found")
+            
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update disease log: {str(e)}")
+
 @router.get("/me/daily-logs", summary="Get all my daily logs")
 async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """
@@ -499,16 +581,61 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
     """
     try:
         thresholds_response = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
-        return thresholds_response.data
+        data = thresholds_response.data
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        c_unit = patient_profile['settings']['cholesterol_unit']
+
+        for t in data:
+            if t['data_type'] == 'GLUCOSE':
+                t['min_value'] = convert_glucose_from_base(t['min_value'], g_unit)
+                t['max_value'] = convert_glucose_from_base(t['max_value'], g_unit)
+            elif 'CHOLESTEROL' in t['data_type']:
+                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit)
+                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit)
+                
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+
+
+@router.put("/me/thresholds", summary="Update my health thresholds")
+async def update_own_thresholds(
+    data: ThresholdUpdateBatch,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Updates multiple thresholds at once, converting from user units back to base mmol/L"""
+    patient_id = patient_profile['id']
+    g_unit = patient_profile['settings']['glucose_unit']
+    c_unit = patient_profile['settings']['cholesterol_unit']
+
+    try:
+        for t in data.thresholds:
+            min_val = t.min_value
+            max_val = t.max_value
+            
+            if t.data_type == 'GLUCOSE':
+                min_val = convert_glucose_to_base(min_val, g_unit)
+                max_val = convert_glucose_to_base(max_val, g_unit)
+            elif 'CHOLESTEROL' in t.data_type:
+                min_val = convert_cholesterol_to_base(min_val, c_unit)
+                max_val = convert_cholesterol_to_base(max_val, c_unit)
+
+            supabase.table('patient_thresholds').update({
+                'min_value': min_val,
+                'max_value': max_val
+            }).eq('patient_id', patient_id).eq('data_type', t.data_type).execute()
+
+        return {"message": "Thresholds updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update thresholds: {str(e)}")
 
 
 @router.get("/me/activity-logs", summary="Get my activity logs")
 async def get_own_activity_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """Retrieves all activity logs."""
     try:
-        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('performed_at', desc=True).execute()
+        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('start_time', desc=True).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve activity logs: {str(e)}")

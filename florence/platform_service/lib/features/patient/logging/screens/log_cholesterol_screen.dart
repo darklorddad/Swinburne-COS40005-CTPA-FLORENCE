@@ -14,12 +14,13 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/screens/cholesterol_detail_screen.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {
-  const LogCholesterolScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogCholesterolScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogCholesterolScreen> createState() => _LogCholesterolScreenState();
@@ -32,6 +33,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _hdlController = TextEditingController();
   final _triglyceridesController = TextEditingController();
 
+  bool _forcePop = false;
+  String _initialTotal = '';
+  String _initialLdl = '';
+  String _initialHdl = '';
+  String _initialTri = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   // Initialize with seconds stripped for clean database grouping
   DateTime _selectedDateTime = DateTime(
@@ -41,6 +48,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     DateTime.now().hour,
     DateTime.now().minute,
   );
+
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
 
   @override
   void dispose() {
@@ -92,7 +105,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Cholesterol data logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -134,6 +147,38 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     }
   }
 
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _totalController.text = _initialTotal;
+      _ldlController.text = _initialLdl;
+      _hdlController.text = _initialHdl;
+      _triglyceridesController.text = _initialTri;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Fetch thresholds
@@ -157,68 +202,96 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       );
     } catch (_) {}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Cholesterol'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                Navigator.push(
-                  context, 
-                  MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
-                );
-              },
-              tooltip: 'View History',
+    final bool hasChanges = !_forcePop && 
+        (_totalController.text != _initialTotal || 
+         _ldlController.text != _initialLdl || 
+         _hdlController.text != _initialHdl || 
+         _triglyceridesController.text != _initialTri ||
+         _selectedDateTime != _initialDateTime);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Cholesterol'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -229,7 +302,24 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildInfoCard(HealthThreshold? totalT, HealthThreshold? ldlT, HealthThreshold? hdlT, HealthThreshold? triT) {
+  Widget _buildInfoCard(HealthThreshold? totalT, HealthThreshold? ldlT,
+      HealthThreshold? hdlT, HealthThreshold? triT) {
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.cholesterolUnit;
+
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    String targetText = "Loading target...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final totalTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'CHOLESTEROL_TOTAL');
+        targetText =
+            "Total Target: ${totalTarget.minValue} - ${totalTarget.maxValue} $currentUnit";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -259,11 +349,24 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Keep track of your cholesterol levels for a healthy heart.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Keep track of your cholesterol levels for a healthy heart.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      targetText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.infoColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -373,14 +476,14 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.bloodtype_outlined,
+                  Icons.science_outlined,
                   color: titleIconColor,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'Cholesterol ($currentUnit)',
+                'Lipid Panel ($currentUnit)',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -388,13 +491,25 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildLabField('Total Cholesterol', _totalController, currentUnit, Icons.bloodtype_outlined),
+
+          // 2x2 Grid Layout
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit, Icons.bloodtype_outlined, '5.0', '150')),
+              const SizedBox(width: 16),
+              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit, Icons.arrow_downward, '2.5', '100')),
+            ],
+          ),
           const SizedBox(height: 16),
-          _buildLabField('LDL Cholesterol', _ldlController, currentUnit, Icons.arrow_downward),
-          const SizedBox(height: 16),
-          _buildLabField('HDL Cholesterol', _hdlController, currentUnit, Icons.arrow_upward),
-          const SizedBox(height: 16),
-          _buildLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit, Icons.arrow_upward, '1.5', '50')),
+              const SizedBox(width: 16),
+              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined, '1.7', '150')),
+            ],
+          ),
         ],
       ),
     );
@@ -439,7 +554,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Test Date and Time',
+                'Date and Time',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -514,24 +629,58 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildLabField(String label, TextEditingController controller, String unit, IconData icon) {
+  Widget _buildGridLabField(String label, TextEditingController controller, String unit, IconData icon, String placeholderMmol, String placeholderMgdl) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMmol = unit == 'mmol/L';
     final double minValid = isMmol ? 0.1 : 5.0;
     final double maxValid = isMmol ? 50.0 : 1000.0;
 
-    return CustomTextField(
-      label: label,
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      prefixIcon: Icon(icon),
-      validator: (val) {
-        if (val != null && val.isNotEmpty) {
-          final num = double.tryParse(val.replaceAll(',', '.'));
-          if (num == null) return 'Invalid number';
-          if (num < minValid || num > maxValid) return 'Enter $minValid - $maxValid';
-        }
-        return null;
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          onChanged: (_) => setState(() {}),
+          validator: (val) {
+            if (val != null && val.isNotEmpty) {
+              final num = double.tryParse(val.replaceAll(',', '.'));
+              if (num == null) return 'Invalid';
+              if (num < minValid || num > maxValid) return 'Range:\n$minValid - $maxValid';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: isMmol ? 'e.g. $placeholderMmol' : 'e.g. $placeholderMgdl',
+            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            filled: true,
+            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryBlue,
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

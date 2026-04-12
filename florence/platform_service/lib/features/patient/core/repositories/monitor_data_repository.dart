@@ -1,6 +1,10 @@
 import 'dart:math';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../core/config/environment.dart';
 import '../models/health_data_models.dart';
 
 /// Payload class for all health data
@@ -87,8 +91,8 @@ class HealthDataState {
         ? (inRangeCount / allGlucoseValues.length) * 100 
         : 0.0;
 
-    final activityInPeriod = activities.where((a) => a.timestamp.isAfter(startDate) && a.timestamp.isBefore(endDate)).toList();
-    final totalMinutes = activityInPeriod.fold(0, (sum, a) => sum + a.duration);
+    final activityInPeriod = activities.where((a) => a.startTime.isAfter(startDate) && a.startTime.isBefore(endDate)).toList();
+    final totalMinutes = activityInPeriod.fold(0, (sum, a) => sum + a.activeDurationMinutes);
 
     final mealsInPeriod = meals.where((m) => m.timestamp.isAfter(startDate) && m.timestamp.isBefore(endDate)).toList();
     final avgCarbs = mealsInPeriod.isNotEmpty 
@@ -276,7 +280,7 @@ class MonitorDataRepository {
     bloodPressureReadings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
     cholesterolResults.sort((a, b) => b.testDate.compareTo(a.testDate));
     bmiResults.sort((a, b) => b.testDate.compareTo(a.testDate));
-    activities.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    activities.sort((a, b) => b.startTime.compareTo(a.startTime));
     meals.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return HealthDataState(
@@ -361,14 +365,51 @@ class MonitorDataRepository {
   }
 
   Future<void> addActivity(ActivityLog log) async {
-    // Currently backend doesn't have a dedicated POST for activity-logs if it is read-only from external source, 
-    // but for the purpose of this refactor we assume it exists or uses generic monitor data structure if applicable.
-    // Assuming a dedicated endpoint based on GET /activity-logs
     await _apiService.post('/patients/me/activity-logs', {
       'activity_description': log.type,
-      'duration_minutes': log.duration,
-      'performed_at': log.timestamp.toIso8601String(),
+      'active_duration_minutes': log.activeDurationMinutes,
+      'start_time': log.startTime.toIso8601String(),
+      'end_time': log.endTime.toIso8601String(),
+      'calories_burned': log.caloriesBurned,
     });
+  }
+
+  Future<int> estimateActivityCalories({
+    required int durationMinutes,
+    required String description,
+    double? weightKg,
+    double? heightCm,
+    int? age,
+    String? gender,
+  }) async {
+    try {
+      final llmUrl = '${Environment.llmEngineServiceUrl}/activity/estimate-calories';
+      final session = Supabase.instance.client.auth.currentSession;
+      
+      final response = await http.post(
+        Uri.parse(llmUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          if (session != null) 'Authorization': 'Bearer ${session.accessToken}',
+        },
+        body: jsonEncode({
+          'active_duration_minutes': durationMinutes,
+          'activity_description': description,
+          if (weightKg != null) 'weight_kg': weightKg,
+          if (heightCm != null) 'height_cm': heightCm,
+          if (age != null) 'age': age,
+          if (gender != null) 'gender': gender,
+        }),
+      );
+      
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['estimated_calories'] as int;
+      }
+    } catch (e) {
+      print("Error estimating calories: $e");
+    }
+    return durationMinutes * 5; // Fallback
   }
 
   Future<void> addMedication(String name, String type, String dosage, String timing, DateTime timestamp, String? notes) async {
@@ -404,10 +445,16 @@ class MonitorDataRepository {
         for (var item in activityData) {
           activities.add(ActivityLog(
             id: item['id'].toString(),
-            timestamp: DateTime.parse(item['performed_at']),
+            startTime: item['start_time'] != null 
+                ? DateTime.parse(item['start_time']) 
+                : DateTime.parse(item['created_at']),
+            endTime: item['end_time'] != null 
+                ? DateTime.parse(item['end_time']) 
+                : DateTime.parse(item['created_at']).add(Duration(minutes: item['active_duration_minutes'] ?? 0)),
             type: item['activity_description'] ?? 'Activity',
-            duration: item['duration_minutes'] ?? 0,
+            activeDurationMinutes: item['active_duration_minutes'] ?? 0,
             intensity: 'Moderate',
+            caloriesBurned: item['calories_burned'],
           ));
         }
       }

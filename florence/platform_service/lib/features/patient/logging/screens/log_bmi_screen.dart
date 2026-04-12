@@ -11,12 +11,14 @@ import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_providers;
-import '../../dashboard/providers/dashboard_providers.dart';
+import '../../core/providers/threshold_providers.dart';
+import '../../dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
 import '../../profile/providers/user_profile_provider.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
-  const LogBmiScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogBmiScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogBmiScreen> createState() => _LogBmiScreenState();
@@ -28,13 +30,20 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   final _weightController = TextEditingController();
   // final ApiService _apiService = ApiService(); // Removed
 
+  bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
+  late DateTime _initialDateTime;
   double? _calculatedBmi;
+
+  // Track pre-filled data to prevent false "hasChanges" triggers
+  String _initialHeight = '';
+  String _initialWeight = '';
 
   @override
   void initState() {
     super.initState();
+    _initialDateTime = _selectedDateTime;
     _heightController.addListener(_calculateBmi);
     _weightController.addListener(_calculateBmi);
     
@@ -43,10 +52,12 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       final profile = ref.read(userProfileProvider).value;
       if (profile != null) {
         if (profile['height'] != null) {
-          _heightController.text = profile['height'].toString();
+          _initialHeight = profile['height'].toString();
+          _heightController.text = _initialHeight;
         }
         if (profile['weight'] != null) {
-          _weightController.text = profile['weight'].toString();
+          _initialWeight = profile['weight'].toString();
+          _weightController.text = _initialWeight;
         }
       }
     });
@@ -132,7 +143,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged and profile updated!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -199,76 +210,153 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // Fetch thresholds
-    final healthData = ref.watch(core_providers.monitorDataProvider).asData?.value;
-    HealthThreshold? bmiThreshold;
-    try {
-      bmiThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.BMI
-      );
-    } catch (_) {}
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log BMI'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.bmiDetail);
-              },
-              tooltip: 'View History',
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(bmiThreshold),
-                      const SizedBox(height: 20),
+    ) ?? false;
+  }
 
-                      // Input Section
-                      _buildInputSection(bmiThreshold),
-                      const SizedBox(height: 20),
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _heightController.text = _initialHeight;
+      _weightController.text = _initialWeight;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+  @override
+  Widget build(BuildContext context) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final bmiTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
+        targetText =
+            "Target: ${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)}";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
+    // Fetch thresholds
+    final healthData =
+        ref.watch(core_providers.monitorDataProvider).asData?.value;
+    HealthThreshold? bmiThreshold;
+    try {
+      bmiThreshold = healthData?.healthThresholds.firstWhere(
+          (t) => t.dataType == MonitorDataType.BMI);
+    } catch (_) {}
+
+    final bool hasChanges = !_forcePop &&
+        (_heightController.text != _initialHeight || 
+         _weightController.text != _initialWeight ||
+         _selectedDateTime != _initialDateTime);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log BMI'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(bmiThreshold),
+                        const SizedBox(height: 20),
+
+                        // Calculated BMI Section
+                        _buildCalculatedBmiSection(bmiThreshold),
+                        const SizedBox(height: 20),
+
+                        // Input Section
+                        _buildInputSection(),
+                        const SizedBox(height: 20),
+
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
+
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -280,6 +368,20 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   }
 
   Widget _buildInfoCard(HealthThreshold? threshold) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final bmiTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
+        targetText =
+            "Target: ${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)}";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -366,15 +468,16 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Text('BMI',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text(
-                        'BMI', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
-                      ),
-                      Text(
-                        threshold != null 
-                          ? '${threshold.minValue.toStringAsFixed(1)} - ${threshold.maxValue.toStringAsFixed(1)} kg/m²'
-                          : '18.5 - 24.9 kg/m²',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
@@ -387,7 +490,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     );
   }
 
-  Widget _buildInputSection(HealthThreshold? threshold) {
+  Widget _buildCalculatedBmiSection(HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bmiColor = _getBmiColor(_calculatedBmi, threshold);
     
@@ -396,6 +499,66 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         : (isDark ? AppTheme.midnightSurface : Colors.white);
         
     final borderColor = bmiColor ?? AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Calculated BMI Level',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                _calculatedBmi?.toStringAsFixed(1) ?? '---',
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      fontSize: 64,
+                      fontWeight: FontWeight.bold,
+                      color: bmiColor ?? Colors.grey,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'kg/m²',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildBmiStatusBadge(threshold),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
@@ -442,69 +605,86 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  'Calculated BMI',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      _calculatedBmi?.toStringAsFixed(1) ?? '---',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 64,
-                            fontWeight: FontWeight.bold,
-                            color: bmiColor ?? AppTheme.textPrimaryColor,
-                          ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'kg/m²',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildBmiStatusBadge(threshold),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 24),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: CustomTextField(
-                  label: 'Height (cm)',
-                  hint: 'e.g., 175',
-                  controller: _heightController,
-                  validator: (value) =>
-                      Validators.range(value, 50, 300, fieldName: 'Height'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.height),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Height (cm)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _heightController,
+                      validator: (value) =>
+                          Validators.range(value, 50, 300, fieldName: 'Height'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 175',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.height, color: AppTheme.textSecondaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: CustomTextField(
-                  label: 'Weight (kg)',
-                  hint: 'e.g., 70',
-                  controller: _weightController,
-                  validator: (value) =>
-                      Validators.range(value, 20, 500, fieldName: 'Weight'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.scale),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Weight (kg)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _weightController,
+                      validator: (value) =>
+                          Validators.range(value, 20, 500, fieldName: 'Weight'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 70',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.scale, color: AppTheme.textSecondaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -517,7 +697,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   Widget _buildBmiStatusBadge(HealthThreshold? threshold) {
     final statusText = _calculatedBmi != null
         ? _getBmiStatus(_calculatedBmi, threshold).toUpperCase()
-        : 'ENTER DETAILS';
+        : 'ENTER READING';
 
     final bmiColor = _getBmiColor(_calculatedBmi, threshold);
     final displayColor = bmiColor ?? AppTheme.textSecondaryColor;
@@ -555,16 +735,16 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
           Icon(
             statusIcon,
             size: 14,
-            color: isPending ? displayColor.withOpacity(0.5) : displayColor,
+            color: displayColor,
           ),
           const SizedBox(width: 6),
           Text(
             statusText,
-            style: TextStyle(
-              color: isPending ? displayColor.withOpacity(0.5) : displayColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: displayColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
           ),
         ],
       ),

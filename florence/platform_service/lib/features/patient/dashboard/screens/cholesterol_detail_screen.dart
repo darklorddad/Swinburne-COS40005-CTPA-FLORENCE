@@ -8,10 +8,12 @@ import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
+import '../../core/providers/threshold_providers.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class CholesterolDetailScreen extends ConsumerWidget {
-  const CholesterolDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const CholesterolDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +30,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logCholesterol),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logCholesterol),
               tooltip: 'Add Log',
             ),
           ),
@@ -51,10 +53,10 @@ class CholesterolDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Get thresholds (Nullable)
-          final ldlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_LDL);
-          final hdlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_HDL);
-          final totalThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
-          final triThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
+          final ldlThreshold = _getThreshold(thresholds, 'CHOLESTEROL_LDL');
+          final hdlThreshold = _getThreshold(thresholds, 'CHOLESTEROL_HDL');
+          final totalThreshold = _getThreshold(thresholds, 'CHOLESTEROL_TOTAL');
+          final triThreshold = _getThreshold(thresholds, 'CHOLESTEROL_TRIGLYCERIDES');
           
           // Construct composite latest reading from most recent available data points
           _CholesterolReading? latest;
@@ -159,7 +161,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
     );
   }
 
-  HealthThreshold? _getThreshold(List<HealthThreshold> thresholds, MonitorDataType type) {
+  PatientThreshold? _getThreshold(List<PatientThreshold> thresholds, String type) {
     try {
       return thresholds.firstWhere((t) => t.dataType == type);
     } catch (_) {
@@ -269,10 +271,10 @@ class _CholesterolReading {
 
 class _RatioSection extends StatelessWidget {
   final _CholesterolReading? reading;
-  final HealthThreshold? total;
-  final HealthThreshold? ldl;
-  final HealthThreshold? hdl;
-  final HealthThreshold? tri;
+  final PatientThreshold? total;
+  final PatientThreshold? ldl;
+  final PatientThreshold? hdl;
+  final PatientThreshold? tri;
 
   const _RatioSection({
     this.reading,
@@ -869,7 +871,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
 
 class _HistorySection extends StatefulWidget {
   final List<_CholesterolReading> readings;
-  final List<HealthThreshold> thresholds;
+  final List<PatientThreshold> thresholds;
 
   const _HistorySection({required this.readings, required this.thresholds});
 

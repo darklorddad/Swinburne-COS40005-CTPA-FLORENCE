@@ -18,12 +18,17 @@ import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/providers/monitor_data_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/screens/diet_detail_screen.dart'; // For navigation
 
 /// Log Meal Screen
 /// Allows users to record meals, photos, and calories
 class LogMealScreen extends ConsumerStatefulWidget {
-  const LogMealScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  final VoidCallback? onKeepEditing;
+  const LogMealScreen({
+    super.key,
+    this.onSwitchToHistory,
+    this.onKeepEditing,
+  });
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -35,6 +40,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   final _caloriesController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialMealName = '';
+  String _initialCalories = '';
+  late DateTime _initialDateTime;
+  late String _initialMealType;
   bool _isLoading = false;
   bool _isAnalyzing = false;
   bool _useAiAutofill = true;
@@ -49,6 +59,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   void initState() {
     super.initState();
     _selectedMealType = _getMealTypeFromTime(DateTime.now());
+    _initialDateTime = _selectedDateTime;
+    _initialMealType = _selectedMealType;
   }
 
   String _getMealTypeFromTime(DateTime time) {
@@ -252,6 +264,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Prevent submitting completely empty meal logs
+    if (_mealNameController.text.trim().isEmpty && 
+        _caloriesController.text.trim().isEmpty && 
+        _selectedImage == null) {
+      Helpers.showError(context, 'Please provide a photo, description, or calories to log this meal.');
+      return;
+    }
+
     final now = DateTime.now();
     // Validate that the date is not in future
     if (_selectedDateTime.isAfter(now)) {
@@ -287,7 +307,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to log meal: $e');
@@ -320,69 +340,143 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             time.hour, 
             time.minute
           );
+          _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
         });
       }
     }
   }
   
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Diet'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
-        ),
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const DietAnalyticsScreen())),
-              tooltip: 'View History',
-            ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
           ),
         ],
       ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info
-                      _buildInfoCard(),
-                      const SizedBox(height: 20),
-                      
-                      // Date & Time (Moved up as requested)
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 20),
+    ) ?? false;
+  }
 
-                      // Meal Type
-                      _buildMealTypeSection(),
-                      const SizedBox(height: 20),
-                      
-                      // Combined Meal Details (Photo + Inputs)
-                      _buildMealDetailsSection(),
-                      const SizedBox(height: 32),
-                      
-                      // Save
-                      PrimaryButton(
-                        text: 'Save Meal',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _mealNameController.text = _initialMealName;
+      _caloriesController.text = _initialCalories;
+      _selectedDateTime = _initialDateTime;
+      _selectedMealType = _initialMealType;
+      _initialMealType = _selectedMealType; // Sync initial state for next return
+      _selectedImage = null;
+      _imageBytes = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool hasChanges = !_forcePop && 
+        (_mealNameController.text != _initialMealName || 
+         _caloriesController.text != _initialCalories || 
+         _imageBytes != null ||
+         _selectedDateTime != _initialDateTime ||
+         _selectedMealType != _initialMealType);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        if (!hasChanges) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        } else {
+          if (widget.onKeepEditing != null) {
+            widget.onKeepEditing!();
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Diet'),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.mealDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info
+                        _buildInfoCard(),
+                        const SizedBox(height: 20),
+                        
+                        // Date & Time (Moved up as requested)
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
+
+                        // Meal Type
+                        _buildMealTypeSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Combined Meal Details (Photo + Inputs)
+                        _buildMealDetailsSection(),
+                        const SizedBox(height: 32),
+                        
+                        // Save
+                        PrimaryButton(
+                          text: 'Save Meal',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -504,6 +598,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
+                        _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
                       });
                     }
                   },
@@ -653,25 +748,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Meal Details',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  Text(
-                    'Optional',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                  ),
-                ],
+              Text(
+                'Meal Details',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
               ),
               const Spacer(),
-              
+
               // AI Toggle Switch Group
               Row(
                 children: [
@@ -690,6 +774,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                          ),
+                          const SizedBox(width: 6),
                           Text(
                             'Auto',
                             style: TextStyle(
@@ -733,8 +823,15 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 20), // Standard spacing 20px
-          
+          const SizedBox(height: 24),
+          Text(
+            'Note: Provide at least a photo, description or calories to save this log.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.textSecondaryColor,
+                ),
+          ),
+          const SizedBox(height: 12),
+
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -861,10 +958,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _mealNameController,
+                textInputAction: TextInputAction.newline,
+                minLines: 3,
                 maxLines: 3,
-                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                  hintText: 'e.g. grilled chicken, 60g carbs, no veggies...',
                   hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                   filled: true,
                   fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -879,6 +978,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                       width: 2,
                     ),
                   ),
+                  prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
                 ),
               ),
               const SizedBox(height: 20),
@@ -911,12 +1011,13 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 controller: _caloriesController,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'e.g. 500',
                   filled: true,
                   fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                  prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                 ),
               ),
             ],

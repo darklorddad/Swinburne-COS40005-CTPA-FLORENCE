@@ -76,22 +76,28 @@ class MonitorData {
 class PatientActivityLog {
   final int id;
   final String activityDescription;
-  final int durationMinutes;
-  final DateTime performedAt;
+  final int activeDurationMinutes;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int? caloriesBurned;
 
   const PatientActivityLog({
     required this.id,
     required this.activityDescription,
-    required this.durationMinutes,
-    required this.performedAt,
+    required this.activeDurationMinutes,
+    required this.startTime,
+    required this.endTime,
+    this.caloriesBurned,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'activity_description': activityDescription,
-      'duration_minutes': durationMinutes,
-      'performed_at': performedAt.toIso8601String(),
+      'active_duration_minutes': activeDurationMinutes,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+      'calories_burned': caloriesBurned,
     };
   }
 
@@ -99,8 +105,10 @@ class PatientActivityLog {
     return PatientActivityLog(
       id: json['id'] as int,
       activityDescription: json['activity_description'] as String,
-      durationMinutes: json['duration_minutes'] as int,
-      performedAt: DateTime.parse(json['performed_at'] as String),
+      activeDurationMinutes: json['active_duration_minutes'] as int,
+      startTime: DateTime.parse(json['start_time'] as String),
+      endTime: DateTime.parse(json['end_time'] as String),
+      caloriesBurned: json['calories_burned'] as int?,
     );
   }
 }
@@ -425,20 +433,26 @@ class MealLog {
 @immutable
 class ActivityLog {
   final String id;
-  final DateTime timestamp;
+  final DateTime startTime;
+  final DateTime endTime;
   final String type; // Walking, Running, Cycling, etc.
-  final int duration; // minutes
+  final int activeDurationMinutes; // minutes
   final String intensity; // Low, Moderate, High
   final int? caloriesBurned;
   final double? distance; // km
   final int? steps;
   final String? notes;
 
+  // Backward compatibility getters
+  DateTime get timestamp => startTime;
+  int get duration => activeDurationMinutes;
+
   const ActivityLog({
     required this.id,
-    required this.timestamp,
+    required this.startTime,
+    required this.endTime,
     required this.type,
-    required this.duration,
+    required this.activeDurationMinutes,
     required this.intensity,
     this.caloriesBurned,
     this.distance,
@@ -451,9 +465,10 @@ class ActivityLog {
 
   ActivityLog copyWith({
     String? id,
-    DateTime? timestamp,
+    DateTime? startTime,
+    DateTime? endTime,
     String? type,
-    int? duration,
+    int? activeDurationMinutes,
     String? intensity,
     int? caloriesBurned,
     double? distance,
@@ -462,9 +477,10 @@ class ActivityLog {
   }) {
     return ActivityLog(
       id: id ?? this.id,
-      timestamp: timestamp ?? this.timestamp,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
       type: type ?? this.type,
-      duration: duration ?? this.duration,
+      activeDurationMinutes: activeDurationMinutes ?? this.activeDurationMinutes,
       intensity: intensity ?? this.intensity,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       distance: distance ?? this.distance,
@@ -476,9 +492,10 @@ class ActivityLog {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'timestamp': timestamp.toIso8601String(),
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
       'type': type,
-      'duration': duration,
+      'activeDurationMinutes': activeDurationMinutes,
       'intensity': intensity,
       'caloriesBurned': caloriesBurned,
       'distance': distance,
@@ -490,9 +507,10 @@ class ActivityLog {
   factory ActivityLog.fromJson(Map<String, dynamic> json) {
     return ActivityLog(
       id: json['id'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      startTime: DateTime.parse(json['startTime'] as String),
+      endTime: DateTime.parse(json['endTime'] as String),
       type: json['type'] as String,
-      duration: json['duration'] as int,
+      activeDurationMinutes: json['activeDurationMinutes'] as int,
       intensity: json['intensity'] as String,
       caloriesBurned: json['caloriesBurned'] as int?,
       distance: json['distance'] != null ? (json['distance'] as num).toDouble() : null,

@@ -11,11 +11,13 @@ import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Blood Pressure Screen
 class LogBloodPressureScreen extends ConsumerStatefulWidget {
-  const LogBloodPressureScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogBloodPressureScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogBloodPressureScreen> createState() => _LogBloodPressureScreenState();
@@ -28,8 +30,18 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   final _systolicFocusNode = FocusNode();
   final _diastolicFocusNode = FocusNode();
 
+  bool _forcePop = false;
+  String _initialSystolic = '';
+  String _initialDiastolic = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
 
   @override
   void dispose() {
@@ -73,7 +85,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
       if (mounted) {
         Helpers.showSuccess(context, 'Blood pressure logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -114,85 +126,147 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     }
   }
 
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _systolicController.text = _initialSystolic;
+      _diastolicController.text = _initialDiastolic;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final sysValue = double.tryParse(_systolicController.text);
     final diaValue = double.tryParse(_diastolicController.text);
 
-    // Fetch thresholds
-    final healthData = ref.watch(monitorDataProvider).asData?.value;
-    HealthThreshold? sysThreshold;
-    HealthThreshold? diaThreshold;
-    try {
-      sysThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC
-      );
-      diaThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC
-      );
-    } catch (_) {}
+    // Fetch thresholds from the NEW provider
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    PatientThreshold? sysThreshold;
+    PatientThreshold? diaThreshold;
+
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        sysThreshold = thresholdsAsync.value!.firstWhere(
+          (t) => t.dataType == 'BLOOD_PRESSURE_SYSTOLIC',
+        );
+        diaThreshold = thresholdsAsync.value!.firstWhere(
+          (t) => t.dataType == 'BLOOD_PRESSURE_DIASTOLIC',
+        );
+      } catch (_) {}
+    }
 
     final bpColor = _getBPColor(sysValue, diaValue, sysThreshold, diaThreshold);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Blood Pressure'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.bloodPressureDetail);
-              },
-              tooltip: 'View History',
+    final bool hasChanges = !_forcePop && 
+        (_systolicController.text != _initialSystolic || 
+         _diastolicController.text != _initialDiastolic ||
+         _selectedDateTime != _initialDateTime);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Blood Pressure'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(sysThreshold, diaThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.bloodPressureDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(sysThreshold, diaThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(bpColor, sysThreshold, diaThreshold),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(bpColor, sysThreshold, diaThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -203,7 +277,13 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     );
   }
 
-  Widget _buildInfoCard(HealthThreshold? sysT, HealthThreshold? diaT) {
+  Widget _buildInfoCard(PatientThreshold? sysT, PatientThreshold? diaT) {
+    String targetText = "Target: Not set";
+    if (sysT != null && diaT != null) {
+      targetText =
+          "Target: ${sysT.minValue.toInt()}/${diaT.minValue.toInt()} - ${sysT.maxValue.toInt()}/${diaT.maxValue.toInt()} mmHg";
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -233,11 +313,24 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Regularly logging your blood pressure helps monitor cardiovascular health.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Regularly logging your blood pressure helps monitor cardiovascular health.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      targetText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.infoColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -317,7 +410,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     );
   }
 
-  Widget _buildInputSection(Color? bpColor, HealthThreshold? sysT, HealthThreshold? diaT) {
+  Widget _buildInputSection(
+      Color? bpColor, PatientThreshold? sysT, PatientThreshold? diaT) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = bpColor != null 
         ? bpColor.withOpacity(0.05) 
@@ -689,7 +783,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     );
   }
 
-  Color? _getBPColor(double? sys, double? dia, HealthThreshold? sysT, HealthThreshold? diaT) {
+  Color? _getBPColor(
+      double? sys, double? dia, PatientThreshold? sysT, PatientThreshold? diaT) {
     if (sys == null || dia == null) return null;
     
     final sMin = sysT?.minValue ?? 90;
@@ -702,7 +797,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     return AppTheme.primaryGreen;
   }
 
-  String _getBPStatus(double? sys, double? dia, HealthThreshold? sysT, HealthThreshold? diaT) {
+  String _getBPStatus(
+      double? sys, double? dia, PatientThreshold? sysT, PatientThreshold? diaT) {
     if (sys == null || dia == null) return '';
     
     final sMin = sysT?.minValue ?? 90;

@@ -10,10 +10,12 @@ import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
+import '../../core/providers/threshold_providers.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class BloodPressureDetailScreen extends ConsumerWidget {
-  const BloodPressureDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const BloodPressureDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +32,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logBloodPressure),
               tooltip: 'Add Log',
             ),
           ),
@@ -55,10 +57,10 @@ class BloodPressureDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Check for user-defined thresholds
-          HealthThreshold? userSys;
-          HealthThreshold? userDia;
-          try { userSys = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC); } catch (_) {}
-          try { userDia = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC); } catch (_) {}
+          PatientThreshold? userSys;
+          PatientThreshold? userDia;
+          try { userSys = thresholds.firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_SYSTOLIC'); } catch (_) {}
+          try { userDia = thresholds.firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_DIASTOLIC'); } catch (_) {}
 
           final isDefault = userSys == null || userDia == null;
 
@@ -362,8 +364,8 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _StatisticsSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
   final bool isDefault;
 
   const _StatisticsSection({
@@ -500,8 +502,8 @@ class _StatisticsSection extends StatelessWidget {
 
 class _DualTrendSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
 
   const _DualTrendSection({required this.readings, this.sysThreshold, this.diaThreshold});
 
@@ -785,8 +787,8 @@ class _FloatingBarSection extends StatelessWidget {
 
 class _ScatterSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
 
   const _ScatterSection({required this.readings, this.sysThreshold, this.diaThreshold});
 
@@ -878,8 +880,8 @@ class _ScatterSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
 
   const _HistorySection({
     required this.readings,

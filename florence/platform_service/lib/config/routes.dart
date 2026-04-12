@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 // Admin-side imports
 import '../features/admin/dashboard/screens/admin_dashboard_screen.dart';
@@ -11,10 +12,19 @@ import '../features/clinician/screens/patient_detail_screen.dart';
 import '../features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
 import '../features/patient/chat/screens/chat_screen.dart';
 import '../features/patient/dashboard/screens/activity_detail_screen.dart';
+import '../features/patient/activity/screens/activity_unified_container.dart';
 import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
+import '../features/patient/blood_pressure/screens/blood_pressure_unified_container.dart';
 import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
+import '../features/patient/bmi/screens/bmi_unified_container.dart';
+import '../features/patient/dashboard/screens/cholesterol_detail_screen.dart';
+import '../features/patient/cholesterol/screens/cholesterol_unified_container.dart';
+import '../features/patient/dashboard/screens/diet_detail_screen.dart';
+import '../features/patient/diet/screens/diet_unified_container.dart';
 import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
+import '../features/patient/glucose/screens/glucose_unified_container.dart';
 import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
+import '../features/patient/hba1c/screens/hba1c_unified_container.dart';
 import '../features/patient/logging/screens/log_activity_screen.dart';
 import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
 import '../features/patient/logging/screens/log_bmi_screen.dart';
@@ -23,7 +33,9 @@ import '../features/patient/logging/screens/log_glucose_screen.dart';
 import '../features/patient/logging/screens/log_hba1c_screen.dart';
 import '../features/patient/logging/screens/log_meal_screen.dart';
 import '../features/patient/medication/screens/medication_logging_screen.dart';
+import '../features/patient/notifications/screens/notifications_screen.dart';
 import '../features/patient/profile/screens/profile_screen.dart';
+import '../features/patient/profile/screens/settings_screen.dart';
 import '../features/patient/recommendations/screens/recommendations_screen.dart';
 
 /// Application routing configuration
@@ -43,6 +55,8 @@ class AppRoutes {
   static const String activityDetail = '/trends/activity-detail';
   static const String bmiDetail = '/bmi-detail';
   static const String hba1cDetail = '/hba1c-detail';
+  static const String cholesterolDetail = '/cholesterol-detail';
+  static const String mealDetail = '/meal-detail';
 
   static const String chat = '/chat';
   static const String recommendations = '/recommendations';
@@ -101,23 +115,31 @@ class AppRoutes {
         return _buildRoute(const PatientBottomNavBarShell(), settings);
 
       case trends:
-        return _buildRoute(const GlucoseDetailScreen(), settings);
+        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 0), settings);
 
       case trendsDetail:
-        return _buildRoute(
-            const GlucoseDetailScreen());
+        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 0), settings);
 
       case bloodPressureDetail:
-        return _buildRoute(const BloodPressureDetailScreen());
+        return _buildRoute(const BloodPressureUnifiedContainer(initialTab: 0));
 
       case activityDetail:
-        return _buildRoute(const ActivityDetailScreen());
+        return _buildRoute(const ActivityUnifiedContainer(initialTab: 0));
 
       case bmiDetail:
-        return _buildRoute(const BmiDetailScreen());
+        return _buildRoute(const BmiUnifiedContainer(initialTab: 0));
 
       case hba1cDetail:
-        return _buildRoute(const HbA1cDetailScreen());
+        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 0));
+
+      case cholesterolDetail:
+        return _buildRoute(const CholesterolUnifiedContainer(initialTab: 0));
+
+      case mealDetail:
+        return _buildRoute(const DietUnifiedContainer(initialTab: 0));
+
+      case notifications:
+        return _buildRoute(const NotificationsScreen());
 
       case chat:
         return _buildRoute(const ChatScreen(), settings);
@@ -128,29 +150,32 @@ class AppRoutes {
       case profile:
         return _buildRoute(const ProfileScreen(), settings);
 
+      case AppRoutes.settings:
+        return _buildRoute(const SettingsScreen(), settings);
+
       case logGlucose:
-        return _buildRoute(const LogGlucoseScreen(), settings);
+        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 1), settings);
 
       case logMeal:
-        return _buildRoute(const LogMealScreen(), settings);
+        return _buildRoute(const DietUnifiedContainer(initialTab: 1), settings);
 
       case logActivity:
-        return _buildRoute(const LogActivityScreen(), settings);
+        return _buildRoute(const ActivityUnifiedContainer(initialTab: 1), settings);
 
       case logMedication:
         return _buildRoute(const MedicationLoggingScreen(), settings);
 
       case logBloodPressure:
-        return _buildRoute(const LogBloodPressureScreen(), settings);
+        return _buildRoute(const BloodPressureUnifiedContainer(initialTab: 1), settings);
 
       case logCholesterol:
-        return _buildRoute(const LogCholesterolScreen(), settings);
+        return _buildRoute(const CholesterolUnifiedContainer(initialTab: 1), settings);
 
       case logBmi:
-        return _buildRoute(const LogBmiScreen(), settings);
+        return _buildRoute(const BmiUnifiedContainer(initialTab: 1), settings);
 
       case logHba1c:
-        return _buildRoute(const LogHba1cScreen(), settings);
+        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 1), settings);
 
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);
@@ -173,9 +198,9 @@ class AppRoutes {
     }
   }
 
-  /// Helper method to build routes with transitions
-  static MaterialPageRoute _buildRoute(Widget page, [RouteSettings? settings]) {
-    return MaterialPageRoute(builder: (_) => page, settings: settings);
+  /// Helper method to build routes with premium iOS-style transitions
+  static Route<dynamic> _buildRoute(Widget page, [RouteSettings? settings]) {
+    return CupertinoPageRoute(builder: (_) => page, settings: settings);
   }
 
   /// Navigation helpers

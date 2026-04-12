@@ -28,6 +28,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   final _notesController = TextEditingController();
   
   // State
+  bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   String _selectedMedicationType = 'Tablet';
@@ -84,7 +85,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -128,79 +129,116 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Medication'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                Helpers.showInfo(context, 'Medication history coming soon');
-              },
-              tooltip: 'View History',
-            ),
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Info card
-                    _buildInfoCard(),
-              const SizedBox(height: 24),
-              
-              // Medication name
-              _buildMedicationNameSection(),
-              const SizedBox(height: 24),
-              
-              // Medication type
-              _buildMedicationTypeSection(),
-              const SizedBox(height: 24),
-              
-              // Dosage
-              _buildDosageSection(),
-              const SizedBox(height: 24),
-              
-              // Timing
-              _buildTimingSection(),
-              const SizedBox(height: 24),
-              
-              // Date and time
-              _buildDateTimeSection(),
-              const SizedBox(height: 24),
-              
-              // Notes
-              _buildNotesSection(),
-              const SizedBox(height: 32),
-              
-              // Save button
-              PrimaryButton(
-                text: 'Save Medication',
-                onPressed: _isLoading ? null : _handleSave,
-                isLoading: _isLoading,
-                width: double.infinity,
+    final bool hasChanges = !_forcePop && 
+        (_medicationNameController.text.isNotEmpty || 
+         _dosageController.text.isNotEmpty || 
+         _notesController.text.isNotEmpty);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final bool shouldPop = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Discard Changes?'),
+            content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep Editing'),
               ),
-              const SizedBox(height: 16),
-              
-              // Warning card
-              _buildWarningCard(),
-              const SizedBox(height: 24),
+              TextButton(
+                onPressed: () {
+                  setState(() => _forcePop = true);
+                  Navigator.pop(context, true);
+                },
+                style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+                child: const Text('Discard'),
+              ),
             ],
           ),
+        ) ?? false;
+
+        if (shouldPop && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Medication'),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () {
+                  Helpers.showInfo(context, 'Medication history coming soon');
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
         ),
-      ),
-      ),
-      ),
+        body: SingleChildScrollView(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Info card
+                      _buildInfoCard(),
+                      const SizedBox(height: 24),
+                      
+                      // Medication name
+                      _buildMedicationNameSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Medication type
+                      _buildMedicationTypeSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Dosage
+                      _buildDosageSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Timing
+                      _buildTimingSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Date and time
+                      _buildDateTimeSection(),
+                      const SizedBox(height: 24),
+                      
+                      // Notes
+                      _buildNotesSection(),
+                      const SizedBox(height: 32),
+                      
+                      // Save button
+                      PrimaryButton(
+                        text: 'Save Medication',
+                        onPressed: _isLoading ? null : _handleSave,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Warning card
+                      _buildWarningCard(),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
