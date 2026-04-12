@@ -697,7 +697,7 @@ class _FloatingBarSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: range == '1D' ? (data.length > 0 ? data.length / 6 : 1) : 1,
+                        interval: range == '1D' ? (data.isNotEmpty ? data.length / 6 : 1) : 1,
                         getTitlesWidget: (v, meta) {
                           if (v.toInt() >= data.length) return const SizedBox();
 
