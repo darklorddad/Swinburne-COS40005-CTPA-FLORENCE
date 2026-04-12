@@ -589,7 +589,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 6),
                 InkWell(
                   onTap: _isLoading ? null : _estimateCalories,
                   borderRadius: BorderRadius.circular(12),
