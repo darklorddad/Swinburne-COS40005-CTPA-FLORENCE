@@ -47,6 +47,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Grab the current time but force seconds and milliseconds to 0
+    final now = DateTime.now();
+    _endDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    
     _selectedDateTime = _endDateTime.subtract(const Duration(minutes: 30));
     _initialDateTime = _selectedDateTime;
     _initialEndDateTime = _endDateTime;
