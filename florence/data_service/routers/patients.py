@@ -38,13 +38,13 @@ def convert_cholesterol_to_base(value: Optional[float], unit: str) -> Optional[f
 # --- Constants ---
 
 DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 10.0},
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 2.6, 'max_value': 5.2},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 2.6},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 1.0, 'max_value': 2.6},
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 1.7},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.7},
     {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
-    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
     {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
     {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
 ]
@@ -260,6 +260,14 @@ class MedicationIntakeCreate(BaseModel):
     status: Literal['TAKEN', 'SKIPPED', 'LATE'] = 'TAKEN'
     taken_at: Optional[datetime] = None
     notes: Optional[str] = None
+
+class ThresholdUpdateItem(BaseModel):
+    data_type: str
+    min_value: float
+    max_value: float
+
+class ThresholdUpdateBatch(BaseModel):
+    thresholds: List[ThresholdUpdateItem]
 
 # --- Router Definition ---
 
@@ -589,6 +597,38 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+
+
+@router.put("/me/thresholds", summary="Update my health thresholds")
+async def update_own_thresholds(
+    data: ThresholdUpdateBatch,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Updates multiple thresholds at once, converting from user units back to base mmol/L"""
+    patient_id = patient_profile['id']
+    g_unit = patient_profile['settings']['glucose_unit']
+    c_unit = patient_profile['settings']['cholesterol_unit']
+
+    try:
+        for t in data.thresholds:
+            min_val = t.min_value
+            max_val = t.max_value
+            
+            if t.data_type == 'GLUCOSE':
+                min_val = convert_glucose_to_base(min_val, g_unit)
+                max_val = convert_glucose_to_base(max_val, g_unit)
+            elif 'CHOLESTEROL' in t.data_type:
+                min_val = convert_cholesterol_to_base(min_val, c_unit)
+                max_val = convert_cholesterol_to_base(max_val, c_unit)
+
+            supabase.table('patient_thresholds').update({
+                'min_value': min_val,
+                'max_value': max_val
+            }).eq('patient_id', patient_id).eq('data_type', t.data_type).execute()
+
+        return {"message": "Thresholds updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update thresholds: {str(e)}")
 
 
 @router.get("/me/activity-logs", summary="Get my activity logs")
