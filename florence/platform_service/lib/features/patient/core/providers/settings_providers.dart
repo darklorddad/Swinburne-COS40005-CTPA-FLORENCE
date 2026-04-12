@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repositories/settings_repository.dart';
-import 'threshold_providers.dart';
+import 'package:florence/features/patient/core/repositories/settings_repository.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 
 class PatientSettings {
   final String glucoseUnit;

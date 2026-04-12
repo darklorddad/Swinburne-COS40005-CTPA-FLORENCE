@@ -2,8 +2,8 @@ import 'dart:math' as math; // Added for math.max
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
 import '../dashboard/screens/dashboard_screen.dart';
 import '../profile/screens/profile_screen.dart';
 import '../profile/screens/settings_screen.dart';
@@ -406,15 +406,15 @@ class _PatientBottomNavBarShellState
             ),
             itemCount: 8,
             itemBuilder: (context, index) {
-              const items = [
-                (0, Icons.water_drop_rounded, 'Glucose', Color(0xFFEF5350), AppRoutes.logGlucose),
-                (1, Icons.monitor_heart_outlined, 'B.Pressure', Color(0xFFF50057), AppRoutes.logBloodPressure),
-                (2, Icons.restaurant_outlined, 'Diet', Color(0xFFFFA726), AppRoutes.logMeal),
-                (3, Icons.directions_run_rounded, 'Activity', Color(0xFF66BB6A), AppRoutes.logActivity),
-                (4, Icons.history_edu_rounded, 'Meds', Color(0xFF42A5F5), AppRoutes.logMedication),
-                (5, Icons.monitor_weight_outlined, 'BMI', Color(0xFF26A69A), AppRoutes.logBmi),
-                (6, Icons.bloodtype_outlined, 'Cholesterol', Color(0xFFAB47BC), AppRoutes.logCholesterol),
-                (7, Icons.pie_chart_outline, 'HbA1c', Color(0xFFFFCA28), AppRoutes.logHba1c),
+              final items = [
+                (0, Icons.water_drop_rounded, 'Glucose', const Color(0xFFEF5350), AppRoutes.logGlucose),
+                (1, Icons.monitor_heart_outlined, 'B.Pressure', const Color(0xFFF50057), AppRoutes.logBloodPressure),
+                (2, Icons.restaurant_outlined, 'Diet', const Color(0xFFFFA726), AppRoutes.logMeal),
+                (3, Icons.directions_run_rounded, 'Activity', const Color(0xFF66BB6A), AppRoutes.logActivity),
+                (4, Icons.history_edu_rounded, 'Meds', const Color(0xFF42A5F5), AppRoutes.logMedication),
+                (5, Icons.monitor_weight_outlined, 'BMI', const Color(0xFF26A69A), AppRoutes.logBmi),
+                (6, Icons.bloodtype_outlined, 'Cholesterol', const Color(0xFFAB47BC), AppRoutes.logCholesterol),
+                (7, Icons.pie_chart_outline, 'HbA1c', const Color(0xFFFFCA28), AppRoutes.logHba1c),
               ];
               final (i, icon, label, color, route) = items[index];
               return _logItem(i, icon, label, color, route);

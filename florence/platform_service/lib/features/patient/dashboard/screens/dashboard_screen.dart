@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../shared/widgets/notification_bell.dart';
-import '../../chat/services/chatbot_service.dart'; // Chat Service
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_data;
-import '../../core/providers/settings_providers.dart';
-import '../../core/providers/threshold_providers.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/shared/widgets/notification_bell.dart';
+import 'package:florence/features/patient/chat/services/chatbot_service.dart'; // Chat Service
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
 import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
