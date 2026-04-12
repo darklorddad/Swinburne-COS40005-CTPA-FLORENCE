@@ -591,28 +591,32 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               const SizedBox(width: 12),
               InkWell(
                 onTap: _isLoading ? null : _estimateCalories,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: AppTheme.primaryBlue.withOpacity(0.3),
+                    ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.auto_awesome, 
-                        size: 16, 
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 16,
                         color: AppTheme.primaryBlue,
                       ),
                       const SizedBox(width: 6),
-                      const Text(
+                      Text(
                         'Auto',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: AppTheme.primaryBlue,
+                          height: 1.0,
                         ),
                       ),
                     ],
