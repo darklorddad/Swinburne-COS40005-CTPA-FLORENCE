@@ -355,13 +355,6 @@ class _RecommendationsScreenState
         ? active
         : active.where((r) => r.category == _activeFilter).toList();
 
-    final profileAsync = ref.watch(userProfileProvider);
-    final profileMap = profileAsync.asData?.value;
-    final firstName =
-        profileMap?['first_name'] as String? ??
-        profileMap?['name'] as String? ??
-        'there';
-
     return Scaffold(
       backgroundColor: c.bg,
       body: Stack(
@@ -377,14 +370,10 @@ class _RecommendationsScreenState
                     child: CustomScrollView(
                       physics: const BouncingScrollPhysics(),
                       slivers: [
-                        SliverToBoxAdapter(child: _buildHeader(firstName, c)),
                         SliverToBoxAdapter(child: _buildDateBand(c)),
                         SliverToBoxAdapter(
                           child: _buildVitalityCard(score, active, c, ringStart, ringEnd, stateLabel),
                         ),
-                        // Phase 2: Top Insight hero card
-                        if (active.isNotEmpty)
-                          SliverToBoxAdapter(child: _buildTopInsight(active, c)),
                         SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, c)),
                         SliverToBoxAdapter(child: _buildRefreshBtn(c)),
                         // Phase 2: Filter pills
