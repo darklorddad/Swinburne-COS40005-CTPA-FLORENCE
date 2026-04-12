@@ -63,6 +63,17 @@ class DiseaseLogNotifier extends AsyncNotifier<List<DiseaseLog>> {
       return _fetchLogsFromApi();
     });
   }
+
+  Future<void> updateLog(int logId, DiseaseLog updatedLog) async {
+    final api = ApiService();
+
+    state = const AsyncValue.loading();
+
+    state = await AsyncValue.guard(() async {
+      await api.patch('/patients/me/disease-logs/$logId', updatedLog.toJson());
+      return _fetchLogsFromApi();
+    });
+  }
 }
 
 final diseaseLogProvider =

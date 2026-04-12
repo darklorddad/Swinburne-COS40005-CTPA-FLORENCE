@@ -13,6 +13,8 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/providers/disease_providers.dart';
 import '../../core/providers/medication_providers.dart';
+import '../../core/providers/settings_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/medication_repository.dart';
 import '../../dashboard/widgets/medication_section.dart';
 import '../providers/user_profile_provider.dart';
@@ -1003,7 +1005,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               _buildSectionHeader('Disease Log', Icons.history_edu_outlined),
               IconButton(
-                onPressed: () => _showAddDiseaseModal(context, ref),
+                onPressed: () => _showDiseaseFormModal(context, ref),
                 icon: const Icon(Icons.add_circle_outline,
                     color: AppTheme.primaryBlue),
               ),
@@ -1099,21 +1101,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isActive ? Colors.red[50] : Colors.green[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isActive ? 'ACTIVE' : 'RESOLVED',
-                          style: TextStyle(
-                            color: isActive ? Colors.red : Colors.green,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color:
+                                  isActive ? Colors.red[50] : Colors.green[50],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              isActive ? 'ACTIVE' : 'RESOLVED',
+                              style: TextStyle(
+                                color: isActive ? Colors.red : Colors.green,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          PopupMenuButton<String>(
+                            icon:
+                                const Icon(Icons.more_horiz, color: Colors.grey),
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                _showDiseaseFormModal(context, ref,
+                                    existingLog: log);
+                              } else if (value == 'resolve') {
+                                _promptResolveDate(context, ref, log);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                  value: 'edit', child: Text('Edit')),
+                              if (isActive)
+                                const PopupMenuItem(
+                                    value: 'resolve',
+                                    child: Text('Mark as Resolved')),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   );
@@ -1172,11 +1200,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showAddDiseaseModal(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    String status = 'active';
-    DateTime? diagnosedDate;
-    DateTime? resolvedDate;
+  void _showDiseaseFormModal(BuildContext context, WidgetRef ref,
+      {DiseaseLog? existingLog}) {
+    final isEditing = existingLog != null;
+    final nameController =
+        TextEditingController(text: existingLog?.conditionName ?? '');
+    String status = existingLog?.status ?? 'active';
+    DateTime? diagnosedDate = existingLog?.diagnosedDate;
+    DateTime? resolvedDate = existingLog?.resolvedDate;
 
     showModalBottomSheet(
       context: context,
@@ -1194,8 +1225,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Log Medical Condition",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(isEditing ? "Edit Condition" : "Log Medical Condition",
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: nameController,
@@ -1226,7 +1258,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onTap: () async {
                   final date = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.now(),
+                      initialDate: diagnosedDate ?? DateTime.now(),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now());
                   if (date != null) setModalState(() => diagnosedDate = date);
@@ -1242,7 +1274,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () async {
                     final date = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
+                        initialDate: resolvedDate ?? DateTime.now(),
                         firstDate: diagnosedDate ?? DateTime(1900),
                         lastDate: DateTime.now());
                     if (date != null) setModalState(() => resolvedDate = date);
@@ -1254,18 +1286,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     if (nameController.text.isNotEmpty) {
-                      await ref
-                          .read(diseaseLogProvider.notifier)
-                          .addLog(DiseaseLog(
-                            conditionName: nameController.text,
-                            status: status,
-                            diagnosedDate: diagnosedDate,
-                            resolvedDate: resolvedDate,
-                          ));
+                      final log = DiseaseLog(
+                        conditionName: nameController.text,
+                        status: status,
+                        diagnosedDate: diagnosedDate,
+                        resolvedDate: resolvedDate,
+                      );
+
+                      if (isEditing) {
+                        await ref
+                            .read(diseaseLogProvider.notifier)
+                            .updateLog(existingLog.id!, log);
+                      } else {
+                        await ref.read(diseaseLogProvider.notifier).addLog(log);
+                      }
                       if (context.mounted) Navigator.pop(context);
                     }
                   },
-                  child: const Text("Save Condition"),
+                  child: Text(isEditing ? "Save Changes" : "Save Condition"),
                 ),
               ),
             ],
@@ -1275,8 +1313,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Future<void> _promptResolveDate(
+      BuildContext context, WidgetRef ref, DiseaseLog log) async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: log.diagnosedDate ?? DateTime(1900),
+      lastDate: DateTime.now(),
+      helpText: 'Select Date Resolved',
+    );
+
+    if (selectedDate != null && log.id != null) {
+      final updatedLog = DiseaseLog(
+        conditionName: log.conditionName,
+        status: 'resolved',
+        diagnosedDate: log.diagnosedDate,
+        resolvedDate: selectedDate,
+        notes: log.notes,
+      );
+
+      await ref.read(diseaseLogProvider.notifier).updateLog(log.id!, updatedLog);
+    }
+  }
+
   /// Build health profile section
   Widget _buildHealthProfileSection() {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    final settings = ref.watch(patientSettingsProvider);
+
+    final labels = {
+      'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
+      'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
+      'GLUCOSE': 'Fasting Glucose',
+      'BMI': 'Healthy BMI',
+      'HBA1C': 'HbA1c',
+      'CHOLESTEROL_TOTAL': 'Total Cholesterol',
+      'CHOLESTEROL_LDL': 'LDL Cholesterol',
+      'CHOLESTEROL_HDL': 'HDL Cholesterol',
+      'CHOLESTEROL_TRIGLYCERIDES': 'Triglycerides'
+    };
+
+    String getUnit(String type) {
+      if (type == 'GLUCOSE') return settings.glucoseUnit;
+      if (type.contains('CHOLESTEROL')) return settings.cholesterolUnit;
+      if (type.contains('BLOOD_PRESSURE')) return 'mmHg';
+      if (type == 'HBA1C') return '%';
+      return '';
+    }
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1285,22 +1369,152 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildSectionHeader('Health Profile', Icons.favorite_outline),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20),
-                onPressed: _editHealthProfile,
-                tooltip: 'Edit',
+              TextButton(
+                onPressed: thresholdsAsync.value == null
+                    ? null
+                    : () => _showEditThresholdsModal(
+                        context, ref, thresholdsAsync.value!, labels, getUnit),
+                child: const Text('Edit',
+                    style: TextStyle(color: AppTheme.primaryBlue)),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
-          const Divider(height: 24),
-          _buildInfoRow(
-            'Target Glucose Range',
-            '${_targetMin.toInt()}-${_targetMax.toInt()} mg/dL',
-            Icons.track_changes,
+          thresholdsAsync.when(
+            data: (thresholds) {
+              if (thresholds.isEmpty) return const Text("No thresholds found.");
+              return Column(
+                children: thresholds.map((t) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(labels[t.dataType] ?? t.dataType,
+                            style: const TextStyle(
+                                fontSize: 15, color: Colors.grey)),
+                        Text(
+                          '${t.minValue} - ${t.maxValue} ${getUnit(t.dataType)}',
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text("Error: $e"),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showEditThresholdsModal(
+      BuildContext context,
+      WidgetRef ref,
+      List<PatientThreshold> currentThresholds,
+      Map<String, String> labels,
+      Function(String) getUnit) {
+    final Map<String, TextEditingController> minControllers = {};
+    final Map<String, TextEditingController> maxControllers = {};
+
+    for (var t in currentThresholds) {
+      minControllers[t.dataType] =
+          TextEditingController(text: t.minValue.toString());
+      maxControllers[t.dataType] =
+          TextEditingController(text: t.maxValue.toString());
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20),
+        child: FractionallySizedBox(
+          heightFactor: 0.8,
+          child: Column(
+            children: [
+              const Text("Edit Health Thresholds",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView(
+                  children: currentThresholds.map((t) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: minControllers[t.dataType],
+                                  decoration: const InputDecoration(
+                                      labelText: 'Min', isDense: true),
+                                  keyboardType: const TextInputType.numberWithOptions(
+                                      decimal: true),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextField(
+                                  controller: maxControllers[t.dataType],
+                                  decoration: const InputDecoration(
+                                      labelText: 'Max', isDense: true),
+                                  keyboardType: const TextInputType.numberWithOptions(
+                                      decimal: true),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    final List<PatientThreshold> updated = [];
+                    for (var t in currentThresholds) {
+                      updated.add(PatientThreshold(
+                        dataType: t.dataType,
+                        minValue:
+                            double.tryParse(minControllers[t.dataType]!.text) ??
+                                t.minValue,
+                        maxValue:
+                            double.tryParse(maxControllers[t.dataType]!.text) ??
+                                t.maxValue,
+                      ));
+                    }
+                    await ref
+                        .read(patientThresholdsProvider.notifier)
+                        .updateThresholds(updated);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  child: const Text("Save Changes"),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
