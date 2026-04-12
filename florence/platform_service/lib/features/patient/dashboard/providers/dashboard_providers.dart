@@ -16,9 +16,6 @@ final latestActivityProvider = Provider<AsyncValue<ActivityLog?>>((ref) {
   );
 }, isAutoDispose: true);
 
-final patientThresholdsProvider = Provider<AsyncValue<List<HealthThreshold>>>((ref) {
-  return ref.watch(core.monitorDataProvider).whenData((state) => state.healthThresholds);
-}, isAutoDispose: true);
 
 final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((ref) {
   return ref.watch(core.monitorDataProvider).whenData((state) {

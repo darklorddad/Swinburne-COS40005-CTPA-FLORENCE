@@ -12,7 +12,7 @@ import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_providers;
 import '../../core/providers/threshold_providers.dart';
-import '../../dashboard/providers/dashboard_providers.dart';
+import '../../dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
 import '../../profile/providers/user_profile_provider.dart';
 
 /// Log BMI Screen
