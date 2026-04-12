@@ -467,14 +467,14 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             children: [
               Expanded(child: _buildGridLabField('Total', _totalController, currentUnit)),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('LDL (Bad)', _ldlController, currentUnit)),
+              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit)),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('HDL (Good)', _hdlController, currentUnit)),
+              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit)),
               const SizedBox(width: 16),
               Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit)),
             ],
