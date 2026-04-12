@@ -799,7 +799,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
-    final totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+    int totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+    int maxDuration = totalElapsed > 0 ? totalElapsed : 1; // Prevent slider errors if time is 0
+    
+    int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
+    double sliderValue = currentActive.clamp(0, maxDuration).toDouble();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -818,6 +822,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header
           Row(
             children: [
               Container(
@@ -834,52 +839,126 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Active Time',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Active Duration',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    Text(
+                      'Total session: $totalElapsed mins',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.02) : Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade300),
-            ),
+          const SizedBox(height: 32),
+
+          // Big Number Display
+          Center(
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                Icon(Icons.schedule, color: AppTheme.textSecondaryColor.withOpacity(0.7)),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Total session time (mins)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppTheme.textSecondaryColor.withOpacity(0.8),
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$totalElapsed',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: AppTheme.textPrimaryColor.withOpacity(0.7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
+                Text(
+                  '$currentActive',
+                  style: const TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryBlue,
+                    height: 1.0,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'mins',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textSecondaryColor,
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 16),
+
+          // Custom Slider
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppTheme.primaryBlue,
+              inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+              thumbColor: AppTheme.primaryBlue,
+              overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
+              trackHeight: 8,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+            ),
+            child: Slider(
+              value: sliderValue,
+              min: 0,
+              max: maxDuration.toDouble(),
+              divisions: maxDuration > 0 ? maxDuration : 1,
+              onChanged: (val) {
+                setState(() {
+                  _activeDurationController.text = val.toInt().toString();
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Adjust Chips
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildDurationChip(
+                label: 'Full',
+                onTap: () => setState(() => _activeDurationController.text = totalElapsed.toString()),
+                isSelected: currentActive == totalElapsed,
+                isDark: isDark,
+              ),
+              _buildDurationChip(
+                label: '-5m',
+                onTap: () {
+                  final newVal = (totalElapsed - 5).clamp(0, totalElapsed);
+                  setState(() => _activeDurationController.text = newVal.toString());
+                },
+                isSelected: currentActive == totalElapsed - 5,
+                isDark: isDark,
+              ),
+              _buildDurationChip(
+                label: '-10m',
+                onTap: () {
+                  final newVal = (totalElapsed - 10).clamp(0, totalElapsed);
+                  setState(() => _activeDurationController.text = newVal.toString());
+                },
+                isSelected: currentActive == totalElapsed - 10,
+                isDark: isDark,
+              ),
+              _buildDurationChip(
+                label: '-15m',
+                onTap: () {
+                  final newVal = (totalElapsed - 15).clamp(0, totalElapsed);
+                  setState(() => _activeDurationController.text = newVal.toString());
+                },
+                isSelected: currentActive == totalElapsed - 15,
+                isDark: isDark,
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+
+          // Manual Input Field
           TextFormField(
             controller: _activeDurationController,
             validator: (value) {
@@ -892,10 +971,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               return null;
             },
             keyboardType: TextInputType.number,
+            onChanged: (_) => setState(() {}), // Trigger rebuild to update slider
             decoration: InputDecoration(
-              labelText: 'Actual time spent (mins)',
-              hintText: 'e.g., 45',
-              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+              labelText: 'Manual Entry (mins)',
               filled: true,
               fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
               border: OutlineInputBorder(
@@ -909,18 +987,53 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   width: 2,
                 ),
               ),
-              prefixIcon: const Icon(Icons.timer_outlined, color: AppTheme.textSecondaryColor),
+              prefixIcon: const Icon(Icons.edit_outlined, color: AppTheme.textSecondaryColor),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Note: Adjust this number down if you took breaks.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontStyle: FontStyle.italic,
-                ),
+          Center(
+            child: Text(
+              'Note: Adjust this down if you took breaks.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.textSecondaryColor,
+                    fontStyle: FontStyle.italic,
+                  ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper widget for the Quick Adjust Chips
+  Widget _buildDurationChip({
+    required String label,
+    required VoidCallback onTap,
+    required bool isSelected,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? AppTheme.primaryBlue 
+              : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 13,
+          ),
+        ),
       ),
     );
   }
