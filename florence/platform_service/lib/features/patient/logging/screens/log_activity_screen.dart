@@ -798,14 +798,13 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
     double sliderValue = currentActive.clamp(0, maxDuration).toDouble();
 
-    // Dynamically calculate the 4 pill values
     int full = totalElapsed;
     int threeQuarters = (totalElapsed * 0.75).round();
     int half = (totalElapsed * 0.5).round();
     int quarter = (totalElapsed * 0.25).round();
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
@@ -821,171 +820,179 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Active Duration',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      'Total session duration: $totalElapsed mins',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-
-          // Big Number Display (Larger vertically, black 'mins')
-          Center(
+          // Header (Padded)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
               children: [
-                SizedBox(
-                  width: 140, 
-                  child: TextFormField(
-                    controller: _activeDurationController,
-                    keyboardType: TextInputType.number,
-                    textAlign: TextAlign.center,
-                    validator: (value) {
-                      final val = int.tryParse(value ?? '');
-                      if (val == null) return 'Required';
-                      if (val > totalElapsed) return 'Max $totalElapsed';
-                      return null;
-                    },
-                    style: const TextStyle(
-                      fontSize: 56,
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.primaryBlue,
-                    ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
-                      errorStyle: TextStyle(fontSize: 12),
-                    ),
-                    onChanged: (_) => setState(() {}), 
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: titleIconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.local_fire_department,
+                    color: titleIconColor,
+                    size: 24,
                   ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'mins',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimaryColor,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Active Duration',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Text(
+                        'Total session duration: $totalElapsed mins',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
 
-          // Full-Width Custom Slider
-          Transform.translate(
-            offset: const Offset(-12, 0),
-            child: SliderTheme(
-              data: SliderTheme.of(context).copyWith(
-                trackShape: const RectangularSliderTrackShape(),
-                activeTrackColor: AppTheme.primaryBlue,
-                inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
-                thumbColor: AppTheme.primaryBlue,
-                overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
-                trackHeight: 8,
-                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-                overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-              ),
-              child: Slider(
-                value: sliderValue,
-                min: 0,
-                max: maxDuration.toDouble(),
-                divisions: maxDuration > 0 ? maxDuration : 1,
-                onChanged: (val) {
-                  setState(() {
-                    _activeDurationController.text = val.toInt().toString();
-                  });
-                },
+          // Big Number Display (Padded, Color changed to primary text)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  SizedBox(
+                    width: 140, 
+                    child: TextFormField(
+                      controller: _activeDurationController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      validator: (value) {
+                        final val = int.tryParse(value ?? '');
+                        if (val == null) return 'Required';
+                        if (val > totalElapsed) return 'Max $totalElapsed';
+                        return null;
+                      },
+                      style: TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8), 
+                        errorStyle: TextStyle(fontSize: 12),
+                      ),
+                      onChanged: (_) => setState(() {}), 
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'mins',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimaryColor, 
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
 
-          // Quick Adjust Chips (Matched to Quick Select style)
-          Row(
-            children: [
-              Expanded(
-                child: _buildDurationChip(
-                  label: 'Full',
-                  onTap: () => setState(() => _activeDurationController.text = full.toString()),
-                  isSelected: currentActive == full,
-                  isDark: isDark,
+          // Full-Width Custom Slider
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppTheme.primaryBlue,
+              inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+              thumbColor: AppTheme.primaryBlue,
+              overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
+              trackHeight: 8,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+            ),
+            child: Slider(
+              value: sliderValue,
+              min: 0,
+              max: maxDuration.toDouble(),
+              divisions: maxDuration > 0 ? maxDuration : 1,
+              onChanged: (val) {
+                setState(() {
+                  _activeDurationController.text = val.toInt().toString();
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Adjust Chips (Padded, Styled like Activity Details Quick Select)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildDurationChip(
+                    label: 'Full',
+                    onTap: () => setState(() => _activeDurationController.text = full.toString()),
+                    isSelected: currentActive == full,
+                    isDark: isDark,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildDurationChip(
-                  label: '${threeQuarters}m',
-                  onTap: () => setState(() => _activeDurationController.text = threeQuarters.toString()),
-                  isSelected: currentActive == threeQuarters,
-                  isDark: isDark,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildDurationChip(
+                    label: '${threeQuarters}m',
+                    onTap: () => setState(() => _activeDurationController.text = threeQuarters.toString()),
+                    isSelected: currentActive == threeQuarters,
+                    isDark: isDark,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildDurationChip(
-                  label: '${half}m',
-                  onTap: () => setState(() => _activeDurationController.text = half.toString()),
-                  isSelected: currentActive == half,
-                  isDark: isDark,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildDurationChip(
+                    label: '${half}m',
+                    onTap: () => setState(() => _activeDurationController.text = half.toString()),
+                    isSelected: currentActive == half,
+                    isDark: isDark,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _buildDurationChip(
-                  label: '${quarter}m',
-                  onTap: () => setState(() => _activeDurationController.text = quarter.toString()),
-                  isSelected: currentActive == quarter,
-                  isDark: isDark,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildDurationChip(
+                    label: '${quarter}m',
+                    onTap: () => setState(() => _activeDurationController.text = quarter.toString()),
+                    isSelected: currentActive == quarter,
+                    isDark: isDark,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 24),
 
-          // Note (Removed full stop)
-          Center(
-            child: Text(
-              'Note: Adjust this down if you took breaks',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.textSecondaryColor,
-                    fontStyle: FontStyle.italic,
-                  ),
+          // Note (Padded)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: Text(
+                'Note: Adjust this down if you took breaks',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
             ),
           ),
         ],
@@ -993,7 +1000,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  // Updated to match Quick Select chip styling
+  // Updated to match the standard Quick Select aesthetic
   Widget _buildDurationChip({
     required String label,
     required VoidCallback onTap,
@@ -1002,28 +1009,26 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected 
-              ? AppTheme.primaryBlue.withOpacity(0.15) 
-              : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
-          borderRadius: BorderRadius.circular(24),
+              ? AppTheme.primaryBlue 
+              : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected 
-                ? AppTheme.primaryBlue 
-                : Colors.transparent,
-            width: 1.5,
+            color: isSelected ? AppTheme.primaryBlue : AppTheme.getBorderColor(context),
+            width: 1,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? AppTheme.primaryBlue : AppTheme.textPrimaryColor,
+            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            fontSize: 13,
+            fontSize: 14,
           ),
         ),
       ),
