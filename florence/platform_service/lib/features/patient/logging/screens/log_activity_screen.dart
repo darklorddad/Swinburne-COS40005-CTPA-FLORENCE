@@ -793,10 +793,16 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     int totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
-    int maxDuration = totalElapsed > 0 ? totalElapsed : 1; // Prevent slider errors if time is 0
+    int maxDuration = totalElapsed > 0 ? totalElapsed : 1; 
     
     int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
     double sliderValue = currentActive.clamp(0, maxDuration).toDouble();
+
+    // Dynamically calculate the 4 pill values based on total session time
+    int full = totalElapsed;
+    int threeQuarters = (totalElapsed * 0.75).round();
+    int half = (totalElapsed * 0.5).round();
+    int quarter = (totalElapsed * 0.25).round();
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -842,7 +848,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                           ),
                     ),
                     Text(
-                      'Total session: $totalElapsed mins',
+                      'Total session duration: $totalElapsed mins', // Updated subtitle
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondaryColor,
                             fontWeight: FontWeight.w500,
@@ -855,24 +861,42 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Big Number Display
+          // Big Number Display (Now an interactive input!)
           Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(
-                  '$currentActive',
-                  style: const TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primaryBlue,
-                    height: 1.0,
+                SizedBox(
+                  width: 140, // Keeps the input box contained so it doesn't push the "mins" text away
+                  child: TextFormField(
+                    controller: _activeDurationController,
+                    keyboardType: TextInputType.number,
+                    textAlign: TextAlign.center,
+                    validator: (value) {
+                      final val = int.tryParse(value ?? '');
+                      if (val == null) return 'Required';
+                      if (val > totalElapsed) return 'Max $totalElapsed';
+                      return null;
+                    },
+                    style: TextStyle(
+                      fontSize: 56,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.primaryBlue,
+                      height: 1.0,
+                    ),
+                    decoration: const InputDecoration(
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
+                      errorStyle: TextStyle(fontSize: 12, height: 1.0),
+                    ),
+                    onChanged: (_) => setState(() {}), // Syncs the slider instantly
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text(
+                const SizedBox(width: 4),
+                Text(
                   'mins',
                   style: TextStyle(
                     fontSize: 20,
@@ -910,83 +934,52 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Quick Adjust Chips
+          // Quick Adjust Chips (Equal width & dynamically calculated)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildDurationChip(
-                label: 'Full',
-                onTap: () => setState(() => _activeDurationController.text = totalElapsed.toString()),
-                isSelected: currentActive == totalElapsed,
-                isDark: isDark,
+              Expanded(
+                child: _buildDurationChip(
+                  label: '${full}m',
+                  onTap: () => setState(() => _activeDurationController.text = full.toString()),
+                  isSelected: currentActive == full,
+                  isDark: isDark,
+                ),
               ),
-              _buildDurationChip(
-                label: '-5m',
-                onTap: () {
-                  final newVal = (totalElapsed - 5).clamp(0, totalElapsed);
-                  setState(() => _activeDurationController.text = newVal.toString());
-                },
-                isSelected: currentActive == totalElapsed - 5,
-                isDark: isDark,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDurationChip(
+                  label: '${threeQuarters}m',
+                  onTap: () => setState(() => _activeDurationController.text = threeQuarters.toString()),
+                  isSelected: currentActive == threeQuarters,
+                  isDark: isDark,
+                ),
               ),
-              _buildDurationChip(
-                label: '-10m',
-                onTap: () {
-                  final newVal = (totalElapsed - 10).clamp(0, totalElapsed);
-                  setState(() => _activeDurationController.text = newVal.toString());
-                },
-                isSelected: currentActive == totalElapsed - 10,
-                isDark: isDark,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDurationChip(
+                  label: '${half}m',
+                  onTap: () => setState(() => _activeDurationController.text = half.toString()),
+                  isSelected: currentActive == half,
+                  isDark: isDark,
+                ),
               ),
-              _buildDurationChip(
-                label: '-15m',
-                onTap: () {
-                  final newVal = (totalElapsed - 15).clamp(0, totalElapsed);
-                  setState(() => _activeDurationController.text = newVal.toString());
-                },
-                isSelected: currentActive == totalElapsed - 15,
-                isDark: isDark,
+              const SizedBox(width: 8),
+              Expanded(
+                child: _buildDurationChip(
+                  label: '${quarter}m',
+                  onTap: () => setState(() => _activeDurationController.text = quarter.toString()),
+                  isSelected: currentActive == quarter,
+                  isDark: isDark,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 24),
 
-          // Manual Input Field
-          TextFormField(
-            controller: _activeDurationController,
-            validator: (value) {
-              final rangeError = Validators.range(value, 1, 1440, fieldName: 'Active Duration');
-              if (rangeError != null) return rangeError;
-              final val = int.tryParse(value!);
-              if (val != null && val > totalElapsed) {
-                return 'Cannot exceed total session time ($totalElapsed mins)';
-              }
-              return null;
-            },
-            keyboardType: TextInputType.number,
-            onChanged: (_) => setState(() {}), // Trigger rebuild to update slider
-            decoration: InputDecoration(
-              labelText: 'Manual Entry (mins)',
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppTheme.primaryBlue,
-                  width: 2,
-                ),
-              ),
-              prefixIcon: const Icon(Icons.edit_outlined, color: AppTheme.textSecondaryColor),
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Note (Removed full stop)
           Center(
             child: Text(
-              'Note: Adjust this down if you took breaks.',
+              'Note: Adjust this down if you took breaks',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppTheme.textSecondaryColor,
                     fontStyle: FontStyle.italic,
@@ -998,7 +991,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  // Helper widget for the Quick Adjust Chips
+  // Updated Helper: Uses alignment to center text within Expanded pills
   Widget _buildDurationChip({
     required String label,
     required VoidCallback onTap,
@@ -1009,7 +1002,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
               ? AppTheme.primaryBlue 
