@@ -40,7 +40,7 @@ class AdminAuthService {
           lastName: supabaseUser.userMetadata?['name']?.split(' ').last ?? 'User',
           role: userRole,
           permissions: _getPermissionsForRole(userRole), // Assign default permissions for the role
-          createdAt: DateTime.parse(supabaseUser.createdAt!));
+          createdAt: DateTime.parse(supabaseUser.createdAt));
     }
   }
 
