@@ -479,7 +479,7 @@ async def update_own_disease_log(
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     try:
-        update_dict = log_update.model_dump(exclude_unset=True)
+        update_dict = log_update.model_dump(mode='json', exclude_unset=True)
         if not update_dict:
             raise HTTPException(status_code=400, detail="No fields provided for update")
 
