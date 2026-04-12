@@ -655,7 +655,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                           size: 16,
                           color: AppTheme.primaryBlue,
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Text(
                           'Auto',
                           style: TextStyle(
