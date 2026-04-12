@@ -459,6 +459,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
+        if (!hasChanges) return;
+
         final shouldDiscard = await _showDiscardDialog();
 
         if (shouldDiscard && context.mounted) {

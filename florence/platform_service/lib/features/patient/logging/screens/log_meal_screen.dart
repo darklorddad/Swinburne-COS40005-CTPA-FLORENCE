@@ -385,6 +385,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
 
+        if (!hasChanges) return;
+
         final shouldDiscard = await _showDiscardDialog();
 
         if (shouldDiscard && context.mounted) {
