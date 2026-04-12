@@ -757,8 +757,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                           fontWeight: FontWeight.bold,
                         ),
                   ),
+                  const SizedBox(height: 4),
                   Text(
-                    'Optional',
+                    'Provide a photo, description, or calories to save this log.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondaryColor,
                         ),
