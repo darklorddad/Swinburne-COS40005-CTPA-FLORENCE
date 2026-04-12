@@ -23,7 +23,12 @@ import '../../core/repositories/monitor_data_repository.dart';
 /// Allows users to record meals, photos, and calories
 class LogMealScreen extends ConsumerStatefulWidget {
   final VoidCallback? onSwitchToHistory;
-  const LogMealScreen({super.key, this.onSwitchToHistory});
+  final VoidCallback? onKeepEditing;
+  const LogMealScreen({
+    super.key,
+    this.onSwitchToHistory,
+    this.onKeepEditing,
+  });
 
   @override
   ConsumerState<LogMealScreen> createState() => _LogMealScreenState();
@@ -387,6 +392,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
           });
+        } else {
+          if (widget.onKeepEditing != null) {
+            widget.onKeepEditing!();
+          }
         }
       },
       child: Scaffold(

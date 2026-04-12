@@ -217,8 +217,10 @@ class DailyLogCreate(BaseModel):
 
 class ActivityLogCreate(BaseModel):
     activity_description: str
-    duration_minutes: int
-    performed_at: datetime
+    active_duration_minutes: int
+    start_time: datetime
+    end_time: datetime
+    calories_burned: Optional[int] = None
 
 class MedicationCreate(BaseModel):
     medication_id: Optional[int] = None
@@ -523,7 +525,7 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
 async def get_own_activity_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """Retrieves all activity logs."""
     try:
-        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('performed_at', desc=True).execute()
+        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('start_time', desc=True).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve activity logs: {str(e)}")

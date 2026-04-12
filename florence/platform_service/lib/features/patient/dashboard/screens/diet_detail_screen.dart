@@ -15,8 +15,13 @@ import '../../dashboard/providers/dashboard_providers.dart';
 
 /// Diet Analytics Screen (formerly MealImpactScreen)
 class DietAnalyticsScreen extends ConsumerWidget {
-  final VoidCallback? onSwitchToLog;
-  const DietAnalyticsScreen({super.key, this.onSwitchToLog});
+  final VoidCallback? onSwitchToLogMeal;
+  final VoidCallback? onSwitchToLogGlucose;
+  const DietAnalyticsScreen({
+    super.key,
+    this.onSwitchToLogMeal,
+    this.onSwitchToLogGlucose,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -32,7 +37,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: onSwitchToLog ?? () => _showLogOptions(context),
+              onPressed: () => _showLogOptions(context),
               tooltip: 'Add Log',
             ),
           ),
@@ -168,7 +173,11 @@ class DietAnalyticsScreen extends ConsumerWidget {
                     color: AppTheme.primaryRed,
                     onTap: () {
                       Navigator.pop(context);
-                      AppRoutes.push(context, AppRoutes.logGlucose);
+                      if (onSwitchToLogGlucose != null) {
+                        onSwitchToLogGlucose!();
+                      } else {
+                        AppRoutes.push(context, AppRoutes.logGlucose);
+                      }
                     },
                   ),
                   const SizedBox(height: 12),
@@ -180,7 +189,11 @@ class DietAnalyticsScreen extends ConsumerWidget {
                     color: AppTheme.mealColor,
                     onTap: () {
                       Navigator.pop(context);
-                      AppRoutes.push(context, AppRoutes.logMeal);
+                      if (onSwitchToLogMeal != null) {
+                        onSwitchToLogMeal!();
+                      } else {
+                        AppRoutes.push(context, AppRoutes.logMeal);
+                      }
                     },
                   ),
                 ],

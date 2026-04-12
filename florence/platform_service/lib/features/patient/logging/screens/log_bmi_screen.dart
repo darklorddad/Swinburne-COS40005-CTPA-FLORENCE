@@ -320,8 +320,12 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                         _buildInfoCard(bmiThreshold),
                         const SizedBox(height: 20),
 
+                        // Calculated BMI Section
+                        _buildCalculatedBmiSection(bmiThreshold),
+                        const SizedBox(height: 20),
+
                         // Input Section
-                        _buildInputSection(bmiThreshold),
+                        _buildInputSection(),
                         const SizedBox(height: 20),
 
                         // Date and time
@@ -456,7 +460,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     );
   }
 
-  Widget _buildInputSection(HealthThreshold? threshold) {
+  Widget _buildCalculatedBmiSection(HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bmiColor = _getBmiColor(_calculatedBmi, threshold);
     
@@ -465,6 +469,66 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         : (isDark ? AppTheme.midnightSurface : Colors.white);
         
     final borderColor = bmiColor ?? AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            'Calculated BMI Level',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                _calculatedBmi?.toStringAsFixed(1) ?? '---',
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      fontSize: 64,
+                      fontWeight: FontWeight.bold,
+                      color: bmiColor ?? AppTheme.textPrimaryColor,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'kg/m²',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildBmiStatusBadge(threshold),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
@@ -511,69 +575,86 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Center(
-            child: Column(
-              children: [
-                Text(
-                  'Calculated BMI',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      _calculatedBmi?.toStringAsFixed(1) ?? '---',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 64,
-                            fontWeight: FontWeight.bold,
-                            color: bmiColor ?? AppTheme.textPrimaryColor,
-                          ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'kg/m²',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                _buildBmiStatusBadge(threshold),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 24),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: CustomTextField(
-                  label: 'Height (cm)',
-                  hint: 'e.g., 175',
-                  controller: _heightController,
-                  validator: (value) =>
-                      Validators.range(value, 50, 300, fieldName: 'Height'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.height),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Height (cm)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _heightController,
+                      validator: (value) =>
+                          Validators.range(value, 50, 300, fieldName: 'Height'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'e.g., 175',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.height, color: AppTheme.textSecondaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: CustomTextField(
-                  label: 'Weight (kg)',
-                  hint: 'e.g., 70',
-                  controller: _weightController,
-                  validator: (value) =>
-                      Validators.range(value, 20, 500, fieldName: 'Weight'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.scale),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Weight (kg)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _weightController,
+                      validator: (value) =>
+                          Validators.range(value, 20, 500, fieldName: 'Weight'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'e.g., 70',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.scale, color: AppTheme.textSecondaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

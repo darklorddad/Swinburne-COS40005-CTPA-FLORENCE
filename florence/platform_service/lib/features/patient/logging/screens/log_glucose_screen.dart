@@ -27,7 +27,12 @@ import '../../core/repositories/monitor_data_repository.dart';
 /// Allows users to record blood glucose readings
 class LogGlucoseScreen extends ConsumerStatefulWidget {
   final VoidCallback? onSwitchToHistory;
-  const LogGlucoseScreen({super.key, this.onSwitchToHistory});
+  final VoidCallback? onKeepEditing;
+  const LogGlucoseScreen({
+    super.key,
+    this.onSwitchToHistory,
+    this.onKeepEditing,
+  });
 
   @override
   ConsumerState<LogGlucoseScreen> createState() => _LogGlucoseScreenState();
@@ -461,6 +466,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
           });
+        } else {
+          if (widget.onKeepEditing != null) {
+            widget.onKeepEditing!();
+          }
         }
       },
       child: Scaffold(

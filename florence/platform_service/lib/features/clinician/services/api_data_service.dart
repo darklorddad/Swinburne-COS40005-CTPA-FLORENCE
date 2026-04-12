@@ -266,10 +266,12 @@ class ApiDataService implements DataService {
   List<ActivityData> _parseActivityData(List? logs) {
     if (logs == null) return [];
     return logs.map((log) => ActivityData(
-      date: DateTime.parse(log['performed_at']),
+      date: log['start_time'] != null 
+          ? DateTime.parse(log['start_time']) 
+          : DateTime.parse(log['created_at']),
       steps: 0, // Not in DB yet
-      activeMinutes: log['duration_minutes'] ?? 0,
-      caloriesBurned: 0, // Not in DB yet
+      activeMinutes: log['active_duration_minutes'] ?? 0,
+      caloriesBurned: log['calories_burned'] ?? 0,
     )).toList();
   }
 }
