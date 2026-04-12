@@ -11,6 +11,7 @@ import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Blood Pressure Screen
@@ -274,6 +275,21 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   }
 
   Widget _buildInfoCard(HealthThreshold? sysT, HealthThreshold? diaT) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    String targetText = "Loading targets...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final sysTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_SYSTOLIC');
+        final diaTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_DIASTOLIC');
+        targetText =
+            "Target: ${sysTarget.minValue.toInt()}/${diaTarget.minValue.toInt()} - ${sysTarget.maxValue.toInt()}/${diaTarget.maxValue.toInt()} mmHg";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -303,11 +319,24 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Regularly logging your blood pressure helps monitor cardiovascular health.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Regularly logging your blood pressure helps monitor cardiovascular health.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      targetText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.infoColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],

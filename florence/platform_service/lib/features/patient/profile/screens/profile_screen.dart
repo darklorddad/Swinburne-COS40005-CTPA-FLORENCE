@@ -1344,7 +1344,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final labels = {
       'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
       'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
-      'GLUCOSE': 'Fasting Glucose',
+      'GLUCOSE': 'Glucose',
       'BMI': 'Healthy BMI',
       'HBA1C': 'HbA1c',
       'CHOLESTEROL_TOTAL': 'Total Cholesterol',

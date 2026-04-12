@@ -14,6 +14,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log Cholesterol Screen
@@ -301,7 +302,24 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildInfoCard(HealthThreshold? totalT, HealthThreshold? ldlT, HealthThreshold? hdlT, HealthThreshold? triT) {
+  Widget _buildInfoCard(HealthThreshold? totalT, HealthThreshold? ldlT,
+      HealthThreshold? hdlT, HealthThreshold? triT) {
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.cholesterolUnit;
+
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    String targetText = "Loading target...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final totalTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'CHOLESTEROL_TOTAL');
+        targetText =
+            "Total Target: ${totalTarget.minValue} - ${totalTarget.maxValue} $currentUnit";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -331,11 +349,24 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Keep track of your cholesterol levels for a healthy heart.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Keep track of your cholesterol levels for a healthy heart.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      targetText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.infoColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],

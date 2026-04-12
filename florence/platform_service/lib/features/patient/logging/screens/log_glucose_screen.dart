@@ -22,6 +22,7 @@ import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 /// Log Glucose Screen
 /// Allows users to record blood glucose readings
@@ -570,9 +571,22 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   /// Build info card with target range
   Widget _buildInfoCard(HealthThreshold? threshold) {
-    final min = threshold?.minValue ?? 70;
-    final max = threshold?.maxValue ?? 180;
-    
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.glucoseUnit;
+
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    String targetText = "Loading target...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final glucoseTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'GLUCOSE');
+        targetText =
+            "Target: ${glucoseTarget.minValue} - ${glucoseTarget.maxValue} $currentUnit";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -602,11 +616,24 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Record your blood glucose reading to track your health trends.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Record your blood glucose reading to track your health trends.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      targetText,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.infoColor.withOpacity(0.8),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
