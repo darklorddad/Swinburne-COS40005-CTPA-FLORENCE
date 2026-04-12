@@ -332,6 +332,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             time.hour, 
             time.minute
           );
+          _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
         });
       }
     }

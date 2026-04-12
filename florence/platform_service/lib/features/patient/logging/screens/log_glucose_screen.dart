@@ -75,9 +75,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay},
   ];
 
+  String _getMealTypeFromTime(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 4 && hour < 11) return 'BREAKFAST';
+    if (hour >= 11 && hour < 16) return 'LUNCH';
+    return 'DINNER';
+  }
+
   @override
   void initState() {
     super.initState();
+    _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
     _initialDateTime = _selectedDateTime;
     _initialTiming = _selectedTiming;
     _initialMealType = _selectedMealType;
@@ -1001,6 +1009,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           picked.hour,
                           picked.minute,
                         );
+                        _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
                       });
                     }
                   },
