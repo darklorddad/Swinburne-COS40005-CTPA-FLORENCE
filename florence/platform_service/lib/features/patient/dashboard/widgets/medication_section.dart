@@ -451,7 +451,7 @@ class MedicationFormDialog extends ConsumerStatefulWidget {
   final bool isEdit;
   final PatientMedication? medication;
 
-  const MedicationFormDialog({required this.isEdit, this.medication});
+  const MedicationFormDialog({super.key, required this.isEdit, this.medication});
 
   @override
   ConsumerState<MedicationFormDialog> createState() => _MedicationFormDialogState();
