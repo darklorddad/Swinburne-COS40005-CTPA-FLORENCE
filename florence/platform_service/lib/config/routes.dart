@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 
 // Admin-side imports
 import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
+import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
 import 'package:florence/features/auth/screens/login_screen.dart';
 import 'package:florence/features/auth/screens/register_screen.dart';
 import 'package:florence/features/auth/screens/splash_screen.dart';
@@ -67,11 +68,14 @@ class AppRoutes {
   static const String logBmi = '/log/bmi';
   static const String logHba1c = '/log/Hba1c';
 
-  // Clinician/Admin routes
+  // Clinician routes
   static const String clinicianDashboard = '/clinician-dashboard';
   static const String clinicianPatientDetail = '/clinician/patient-detail';
   static const String clinicianProfile = '/clinician/profile';
+
+  // Admin routes
   static const String adminDashboard = '/admin-dashboard';
+  static const String adminLogin = '/admin/login';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -174,6 +178,9 @@ class AppRoutes {
 
       case adminDashboard:
         return _buildRoute(const AdminDashboardScreen(), settings);
+
+      case adminLogin:
+        return _buildRoute(const AdminLoginScreen(), settings);
 
       default:
         return _buildRoute(
