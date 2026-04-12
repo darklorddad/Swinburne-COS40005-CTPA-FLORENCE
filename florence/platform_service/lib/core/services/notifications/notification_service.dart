@@ -99,7 +99,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
               ? NotificationPriority.critical
               : NotificationPriority.high,
           title: 'Glucose Spike Detected',
-          message: pattern.description + '\n\nConsider a short walk or checking your recent meals.',
+          message: '${pattern.description}\n\nConsider a short walk or checking your recent meals.',
           createdAt: DateTime.now(),
           actionUrl: '/glucose-trends',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
@@ -113,7 +113,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           type: NotificationType.alert,
           priority: NotificationPriority.critical,
           title: 'Low Glucose Alert',
-          message: pattern.description + '\n\nIf you feel symptoms, have a fast-acting carb.',
+          message: '${pattern.description}\n\nIf you feel symptoms, have a fast-acting carb.',
           createdAt: DateTime.now(),
           actionUrl: '/log/glucose',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
@@ -127,7 +127,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           type: NotificationType.educational,
           priority: NotificationPriority.medium,
           title: 'Post-Meal Spike',
-          message: pattern.description + '\n\nTip: A 10-minute walk after meals can help reduce spikes.',
+          message: '${pattern.description}\n\nTip: A 10-minute walk after meals can help reduce spikes.',
           createdAt: DateTime.now(),
           actionUrl: '/log/activity',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
@@ -169,7 +169,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           type: NotificationType.alert,
           priority: NotificationPriority.high,
           title: 'Consecutive High Readings',
-          message: pattern.description + '\n\nReview your recent meals and activity.',
+          message: '${pattern.description}\n\nReview your recent meals and activity.',
           createdAt: DateTime.now(),
           actionUrl: '/recommendations',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
@@ -183,7 +183,7 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
           type: NotificationType.educational,
           priority: NotificationPriority.medium,
           title: 'High Glucose Variability',
-          message: pattern.description + '\n\nConsistent meal timing and portions can help stabilize levels.',
+          message: '${pattern.description}\n\nConsistent meal timing and portions can help stabilize levels.',
           createdAt: DateTime.now(),
           actionUrl: '/trends',
           triggeredBy: {'pattern': pattern.type.name, 'metadata': pattern.metadata},
@@ -206,10 +206,8 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
         );
     }
 
-    if (notification != null) {
-      await addNotification(notification);
+    await addNotification(notification);
     }
-  }
 
   /// Add a notification
   Future<void> addNotification(HealthNotification notification) async {

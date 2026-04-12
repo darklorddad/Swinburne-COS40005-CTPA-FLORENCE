@@ -78,11 +78,11 @@ class BiometricsSection extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ResponsiveCardLayout(
-            children: cards,
             mobileColumns: 1,
             tabletColumns: 2,
             desktopColumns: 3,
             spacing: 12.0,
+            children: cards,
           ),
         ],
       ),

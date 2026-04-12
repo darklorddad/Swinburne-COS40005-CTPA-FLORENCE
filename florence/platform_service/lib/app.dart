@@ -161,8 +161,7 @@ class _AppState extends ConsumerState<App> {
 
       // This logic handles deep link sign-ins (email confirmation)
       final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn &&
-          user.createdAt != null &&
-          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes <
+          DateTime.now().difference(DateTime.parse(user.createdAt)).inMinutes <
               2;
 
       dynamic backendUser;
@@ -219,7 +218,7 @@ class _AppState extends ConsumerState<App> {
       }
 
       // Determine user role from Supabase auth metadata
-      final userRole = session?.user?.appMetadata['role'] as String? ?? 'PATIENT';
+      final userRole = session.user.appMetadata['role'] as String? ?? 'PATIENT';
       debugPrint('[App Listener] Session found. Role: $userRole. Navigating...');
 
       String destinationRoute;

@@ -532,8 +532,9 @@ class _DualTrendSection extends StatelessWidget {
         } else {
            final now = DateTime.now();
            Duration d = const Duration(days: 7);
-           if (range == '14D') d = const Duration(days: 14);
-           else if (range == '30D') d = const Duration(days: 30);
+           if (range == '14D') {
+             d = const Duration(days: 14);
+           } else if (range == '30D') d = const Duration(days: 30);
            minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
            maxX = now.millisecondsSinceEpoch.toDouble();
         }
@@ -696,7 +697,7 @@ class _FloatingBarSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: range == '1D' ? (data.length > 0 ? data.length / 6 : 1) : 1,
+                        interval: range == '1D' ? (data.isNotEmpty ? data.length / 6 : 1) : 1,
                         getTitlesWidget: (v, meta) {
                           if (v.toInt() >= data.length) return const SizedBox();
 
@@ -707,12 +708,14 @@ class _FloatingBarSection extends StatelessWidget {
                           // Smartly skip labels to avoid clutter
                           switch (range) {
                             case '1D':
-                              if (total > 12) shouldSkip = index % 3 != 0; // Show every 3rd
-                              else if (total > 5) shouldSkip = index % 2 != 0; // Show every 2nd
+                              if (total > 12) {
+                                shouldSkip = index % 3 != 0; // Show every 3rd
+                              } else if (total > 5) shouldSkip = index % 2 != 0; // Show every 2nd
                               break;
                             case '30D':
-                              if (total > 15) shouldSkip = index % 5 != 0; // Show every 5th
-                              else if (total > 8) shouldSkip = index % 3 != 0; // Show every 3rd
+                              if (total > 15) {
+                                shouldSkip = index % 5 != 0; // Show every 5th
+                              } else if (total > 8) shouldSkip = index % 3 != 0; // Show every 3rd
                               break;
                             default: // 7D, 14D
                               if (total > 10) shouldSkip = index % 2 != 0;
