@@ -154,7 +154,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: Colors.grey.withOpacity(0.3),
+                      color: Colors.grey.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -227,7 +227,7 @@ class DietAnalyticsScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -352,7 +352,7 @@ class _DietStatsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
@@ -459,7 +459,7 @@ class _DietImpactChart extends StatelessWidget {
           barRods: [
             BarChartRodData(
               toY: avg > 0 ? avg : 2, // Minimal height if 0 or negative to show empty
-              color: spikes.isEmpty ? AppTheme.textSecondaryColor.withOpacity(0.2) : barColor,
+              color: spikes.isEmpty ? AppTheme.textSecondaryColor.withValues(alpha: 0.2) : barColor,
               width: 24,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
             )
@@ -487,7 +487,7 @@ class _DietImpactChart extends StatelessWidget {
               show: true,
               drawVerticalLine: false,
               horizontalInterval: 20,
-              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
             ),
             titlesData: FlTitlesData(
               leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -516,7 +516,7 @@ class _DietImpactChart extends StatelessWidget {
             ),
             borderData: FlBorderData(
               show: true,
-              border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5)),
+              border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
             ),
             barGroups: barGroups,
             barTouchData: BarTouchData(
@@ -590,7 +590,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -602,7 +602,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1), 
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1), 
                       borderRadius: BorderRadius.circular(12)
                     ),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
@@ -695,12 +695,12 @@ class _HistorySectionState extends State<_HistorySection> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03), 
+            color: Colors.black.withValues(alpha: 0.03), 
             blurRadius: 8, 
             offset: const Offset(0, 2)
           )
         ],
-        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -809,7 +809,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -891,7 +891,7 @@ class _DietCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -905,7 +905,7 @@ class _DietCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
@@ -1025,7 +1025,7 @@ class _TrafficLightCalendar extends StatelessWidget {
                     color: Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AppTheme.getBorderColor(context).withOpacity(0.5), // Visible border
+                      color: AppTheme.getBorderColor(context).withValues(alpha: 0.5), // Visible border
                       width: 1
                     ),
                   ),
@@ -1056,7 +1056,7 @@ class _TrafficLightCalendar extends StatelessWidget {
 
               if (!hasLog) {
                 cellColor = Colors.transparent;
-                textColor = AppTheme.textSecondaryColor.withOpacity(0.5);
+                textColor = AppTheme.textSecondaryColor.withValues(alpha: 0.5);
                 tooltip = 'No logs';
               } else if (maxSpike == null) {
                 // Logged but no glucose data
@@ -1085,7 +1085,7 @@ class _TrafficLightCalendar extends StatelessWidget {
               if (isToday) {
                 border = Border.all(color: AppTheme.textPrimaryColor, width: 1.0); // Highlight Today
               } else if (!hasLog) {
-                border = Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5), width: 1);
+                border = Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5), width: 1);
               }
 
               // Text Color Logic (If today + no log, match the border color)
@@ -1122,7 +1122,7 @@ class _TrafficLightCalendar extends StatelessWidget {
             spacing: 16,
             runSpacing: 8,
             children: [
-              _LegendDot(color: AppTheme.textSecondaryColor.withOpacity(0.5), label: 'No Data', isOutline: true),
+              _LegendDot(color: AppTheme.textSecondaryColor.withValues(alpha: 0.5), label: 'No Data', isOutline: true),
               _LegendDot(color: AppTheme.primaryBlue, label: 'No Pair'),
               _LegendDot(color: AppTheme.primaryGreen, label: 'Good'),
               _LegendDot(color: AppTheme.warningColor, label: 'Fair'),

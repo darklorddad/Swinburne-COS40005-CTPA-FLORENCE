@@ -60,7 +60,7 @@ class MedicationSection extends StatelessWidget {
           border: Border.all(color: borderColor),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -72,7 +72,7 @@ class MedicationSection extends StatelessWidget {
             // 50/50 Split Seamless Header
             Container(
               decoration: BoxDecoration(
-                color: isDark ? Colors.white.withOpacity(0.02) : AppTheme.backgroundColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.02) : AppTheme.backgroundColor,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
               ),
               // ClipRRect prevents the transparent hover box from bleeding out of the corners
@@ -178,15 +178,15 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
     if (isTaken) {
       return LinearGradient(
         colors: [
-          Colors.green.withOpacity(isDark ? 0.1 : 0.05),
-          Colors.green.withOpacity(isDark ? 0.1 : 0.05),
+          Colors.green.withValues(alpha: isDark ? 0.1 : 0.05),
+          Colors.green.withValues(alpha: isDark ? 0.1 : 0.05),
         ],
       );
     }
     return LinearGradient(
       colors: [
-        isDark ? Colors.white.withOpacity(0.05) : Colors.white,
-        isDark ? Colors.white.withOpacity(0.05) : Colors.white,
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
       ],
     );
   }
@@ -270,14 +270,14 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
       onSelected: (selected) {
         if (selected) setState(() => _currentFilter = filterValue);
       },
-      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      selectedColor: AppTheme.primaryBlue.withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
       side: BorderSide.none,
     );
   }
@@ -329,7 +329,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isTaken
-                  ? Colors.green.withOpacity(0.3)
+                  ? Colors.green.withValues(alpha: 0.3)
                   : AppTheme.getBorderColor(context),
               width: 1,
             ),
@@ -361,7 +361,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
                   shape: BoxShape.circle,
                   color: isTaken ? Colors.green : Colors.transparent,
                   border: Border.all(
-                    color: isTaken ? Colors.green : Colors.grey.withOpacity(0.5),
+                    color: isTaken ? Colors.green : Colors.grey.withValues(alpha: 0.5),
                     width: 2,
                   ),
                 ),
@@ -585,9 +585,9 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
 
     return InputDecoration(
       hintText: hint,
-      hintStyle: TextStyle(color: AppTheme.textSecondaryColor.withOpacity(0.6), fontSize: 14),
+      hintStyle: TextStyle(color: AppTheme.textSecondaryColor.withValues(alpha: 0.6), fontSize: 14),
       filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.02) : AppTheme.backgroundColor,
+      fillColor: isDark ? Colors.white.withValues(alpha: 0.02) : AppTheme.backgroundColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       suffixIcon: suffixIcon,
       // Default Border

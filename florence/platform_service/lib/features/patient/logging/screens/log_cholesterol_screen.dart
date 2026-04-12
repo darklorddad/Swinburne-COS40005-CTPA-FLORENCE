@@ -327,7 +327,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,7 +357,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                     Text(
                       targetText,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.infoColor.withOpacity(0.8),
+                            color: AppTheme.infoColor.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -375,10 +375,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -397,7 +397,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                           Text(
                             'Target Ranges',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -406,7 +406,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -431,7 +431,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -453,7 +453,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -467,7 +467,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -524,7 +524,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -538,7 +538,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -559,10 +559,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
             ),
             child: Column(
@@ -592,7 +592,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
@@ -660,7 +660,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             hintText: isMmol ? 'e.g. $placeholderMmol' : 'e.g. $placeholderMgdl',
             prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
             filled: true,
-            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

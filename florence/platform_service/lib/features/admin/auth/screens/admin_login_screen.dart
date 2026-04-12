@@ -191,7 +191,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                 width: 64,
                                 height: 64,
                                 decoration: BoxDecoration(
-                                  color: AdminTheme.primaryIndigo.withOpacity(0.1),
+                                  color: AdminTheme.primaryIndigo.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: const Icon(
@@ -225,10 +225,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
-                                color: AdminTheme.errorColor.withOpacity(0.1),
+                                color: AdminTheme.errorColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: AdminTheme.errorColor.withOpacity(0.3),
+                                  color: AdminTheme.errorColor.withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Row(
@@ -407,14 +407,14 @@ class _QuickLoginButton extends StatelessWidget {
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.all(16),
-        side: BorderSide(color: color.withOpacity(0.3)),
+        side: BorderSide(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),

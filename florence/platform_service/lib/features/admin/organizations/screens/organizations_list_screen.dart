@@ -211,7 +211,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AdminTheme.primaryIndigo.withOpacity(0.1),
+                      color: AdminTheme.primaryIndigo.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -355,7 +355,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -376,7 +376,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: color.withOpacity(0.8),
+                      color: color.withValues(alpha: 0.8),
                       fontSize: 11,
                     ),
               ),

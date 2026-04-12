@@ -125,7 +125,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -181,7 +181,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
               child: Icon(icon, color: color, size: 24),
             ),
             const SizedBox(width: 16),
@@ -498,7 +498,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Row(
         children: [
@@ -527,7 +527,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -536,7 +536,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: titleIconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: titleIconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(Icons.calendar_today, color: titleIconColor, size: 24),
               ),
               const SizedBox(width: 12),
@@ -547,9 +547,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           // Combined container
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor),
             ),
             child: Column(
               children: [
@@ -587,7 +587,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     ),
                   ),
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 InkWell(
                   onTap: () async {
                     final picked = await showTimePicker(
@@ -641,7 +641,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,7 +650,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: titleIconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: titleIconColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(Icons.restaurant, size: 24, color: titleIconColor),
               ),
               const SizedBox(width: 12),
@@ -661,7 +661,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           // Segmented Control
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -726,7 +726,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -738,7 +738,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -764,7 +764,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     child: Container(
                       padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor,
@@ -843,7 +843,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                   height: 160,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: AppTheme.borderColor),
                   ),
@@ -966,7 +966,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                   hintText: 'e.g. grilled chicken, 60g carbs, no veggies...',
                   hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                   filled: true,
-                  fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -1015,7 +1015,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 decoration: InputDecoration(
                   hintText: 'e.g. 500',
                   filled: true,
-                  fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                  fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                 ),

@@ -327,7 +327,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -362,10 +362,10 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -384,7 +384,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                           Text(
                             'Target Range',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -393,7 +393,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -404,7 +404,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                       Text('HbA1c',
                           style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.primaryGreen.withOpacity(0.8))),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8))),
                       Text(
                         targetText,
                         style: const TextStyle(
@@ -426,7 +426,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   Widget _buildInputSection(Color? hba1cColor, HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = hba1cColor != null 
-        ? hba1cColor.withOpacity(0.05) 
+        ? hba1cColor.withValues(alpha: 0.05) 
         : (isDark ? AppTheme.midnightSurface : Colors.white);
     final borderColor = hba1cColor ?? AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
@@ -439,7 +439,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -453,7 +453,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -492,7 +492,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -512,9 +512,9 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: hba1cColor.withOpacity(0.1),
+                  color: hba1cColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: hba1cColor.withOpacity(0.2)),
+                  border: Border.all(color: hba1cColor.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   _getHba1cStatus(
@@ -549,7 +549,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -563,7 +563,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -584,10 +584,10 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
             ),
             child: Column(
@@ -617,7 +617,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),

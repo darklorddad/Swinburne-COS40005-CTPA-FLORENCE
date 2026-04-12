@@ -607,7 +607,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppTheme.primaryBlue.withOpacity(0.1),
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                             border: Border.all(color: AppTheme.borderColor),
                           ),
                           child: ClipOval(
@@ -817,7 +817,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.medication_rounded,
@@ -908,7 +908,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           setState(() => _medFilter = label);
         }
       },
-      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      selectedColor: AppTheme.primaryBlue.withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -916,7 +916,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withOpacity(0.05)
+          ? Colors.white.withValues(alpha: 0.05)
           : Colors.grey.shade100,
       side: BorderSide.none,
     );
@@ -1018,7 +1018,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withOpacity(0.05)
+                  ? Colors.white.withValues(alpha: 0.05)
                   : Colors.grey[100],
               borderRadius: BorderRadius.circular(12),
             ),
@@ -1178,7 +1178,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             boxShadow: isSelected
                 ? [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 4,
                       offset: const Offset(0, 2),
                     )

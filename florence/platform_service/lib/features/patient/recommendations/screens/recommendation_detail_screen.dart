@@ -160,8 +160,8 @@ class _RecommendationDetailScreenState
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            categoryConfig['color'].withOpacity(0.1),
-            categoryConfig['color'].withOpacity(0.05),
+            categoryConfig['color'].withValues(alpha: 0.1),
+            categoryConfig['color'].withValues(alpha: 0.05),
           ],
         ),
       ),
@@ -171,7 +171,7 @@ class _RecommendationDetailScreenState
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: categoryConfig['color'].withOpacity(0.2),
+              color: categoryConfig['color'].withValues(alpha: 0.2),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -202,7 +202,7 @@ class _RecommendationDetailScreenState
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: priorityConfig['color'].withOpacity(0.1),
+                  color: priorityConfig['color'].withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: priorityConfig['color'],
@@ -283,7 +283,7 @@ class _RecommendationDetailScreenState
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: BaseCard(
-        // backgroundColor: AppTheme.primaryBlue.withOpacity(0.05),
+        // backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.05),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

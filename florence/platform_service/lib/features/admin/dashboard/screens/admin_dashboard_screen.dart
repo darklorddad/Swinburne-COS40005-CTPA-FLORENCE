@@ -174,7 +174,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 16 : 24),
@@ -215,7 +215,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Row(
         children: [
           CircleAvatar(
-            backgroundColor: isHighRisk ? Colors.red.withOpacity(0.1) : Colors.blue.withOpacity(0.1),
+            backgroundColor: isHighRisk ? Colors.red.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
             child: Icon(
               Icons.person,
               color: isHighRisk ? AdminTheme.errorColor : AdminTheme.primaryIndigo,
@@ -249,7 +249,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 16 : 24),
@@ -301,7 +301,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       label: Text(label),
       style: OutlinedButton.styleFrom(
         foregroundColor: color,
-        side: BorderSide(color: color.withOpacity(0.3)),
+        side: BorderSide(color: color.withValues(alpha: 0.3)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -312,7 +312,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Card(
       margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
       elevation: 2,
-      shadowColor: Colors.black.withOpacity(0.05),
+      shadowColor: Colors.black.withValues(alpha: 0.05),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: EdgeInsets.all(isMobile ? 16 : 24),
@@ -363,7 +363,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -416,7 +416,7 @@ class _GradientStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: gradientColors.last.withOpacity(0.3),
+            color: gradientColors.last.withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -438,7 +438,7 @@ class _GradientStatCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(icon, color: Colors.white, size: 24),
@@ -468,7 +468,7 @@ class _GradientStatCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 12,
                   ),
                 ),
