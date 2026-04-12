@@ -1514,8 +1514,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
+                          textInputAction: TextInputAction.newline,
+                          minLines: 3,
                           maxLines: 3,
-                          textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
                             hintText: 'e.g., Grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
@@ -1532,14 +1533,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 width: 2,
                               ),
                             ),
-                            prefixIcon: const Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                SizedBox(height: 14),
-                                Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
-                              ],
-                            ),
+                            prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
                           ),
                         ),
                         const SizedBox(height: 20),

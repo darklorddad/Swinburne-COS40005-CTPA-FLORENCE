@@ -530,7 +530,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.newline,
             minLines: 3,
-            maxLines: 5,
+            maxLines: 3,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: 'e.g., Playing tennis with 30 minutes break in between',
@@ -543,14 +543,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              prefixIcon: const Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(height: 14),
-                  Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
-                ],
-              ),
+              prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
             ),
           ),
           const SizedBox(height: 20),
