@@ -357,6 +357,11 @@ class _RecommendationsScreenState
 
     return Scaffold(
       backgroundColor: c.bg,
+      appBar: AppBar(
+        title: const Text('AI Health Insights'),
+        elevation: 0,
+        centerTitle: false,
+      ),
       body: Stack(
         children: [
           _Orbs(c: c, stateColor: orbTint),
