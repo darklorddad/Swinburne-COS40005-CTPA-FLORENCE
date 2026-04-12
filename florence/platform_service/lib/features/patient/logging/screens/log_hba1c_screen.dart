@@ -403,15 +403,16 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Text('HbA1c',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text(
-                        'HbA1c', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
-                      ),
-                      Text(
-                        threshold != null 
-                          ? '${threshold.minValue.toStringAsFixed(1)} - ${threshold.maxValue.toStringAsFixed(1)}%'
-                          : '4.0 - 7.0%',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
