@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../config/environment.dart';
-import '../automation/pattern_detection_service.dart';
-import 'notification_models.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/core/services/automation/pattern_detection_service.dart';
+import 'package:florence/core/services/notifications/notification_models.dart';
 
 /// Notification Provider
 final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);

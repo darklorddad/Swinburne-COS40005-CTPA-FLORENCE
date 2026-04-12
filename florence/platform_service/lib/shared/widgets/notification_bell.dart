@@ -3,8 +3,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../config/routes.dart';
-import '../../core/services/notifications/notification_service.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 
 /// Notification bell icon with badge
 class NotificationBell extends ConsumerWidget {

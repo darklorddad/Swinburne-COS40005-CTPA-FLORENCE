@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../../main.dart';
-import '../config/environment.dart';
+import 'package:florence/main.dart';
+import 'package:florence/core/config/environment.dart';
 
 class ApiService {
   Future<Map<String, String>> _getHeaders() async {

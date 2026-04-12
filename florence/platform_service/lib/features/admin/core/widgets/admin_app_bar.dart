@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../services/admin_auth_service.dart';
-import '../services/permission_service.dart';
-import '../../../../config/routes.dart';
-import '../../../../main.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/main.dart';
 
 /// Admin App Bar
 /// Top app bar with search, notifications, and user menu

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/cholesterol_detail_screen.dart';
-import '../../logging/screens/log_cholesterol_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/cholesterol_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_cholesterol_screen.dart';
 
 class CholesterolUnifiedContainer extends StatefulWidget {
   final int initialTab;

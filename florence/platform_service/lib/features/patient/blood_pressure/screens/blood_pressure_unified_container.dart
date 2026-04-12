@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/blood_pressure_detail_screen.dart';
-import '../../logging/screens/log_blood_pressure_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_blood_pressure_screen.dart';
 
 class BloodPressureUnifiedContainer extends StatefulWidget {
   final int initialTab;

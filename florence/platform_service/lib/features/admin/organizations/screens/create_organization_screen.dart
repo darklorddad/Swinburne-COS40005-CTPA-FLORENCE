@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../core/widgets/admin_scaffold.dart';
-import '../../../../config/admin_routes.dart';
-import '../../core/models/admin_enums.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
+import 'package:florence/config/admin_routes.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
 
 /// Create Organization Screen
 /// Form for creating a new healthcare organization (Super Admin only)

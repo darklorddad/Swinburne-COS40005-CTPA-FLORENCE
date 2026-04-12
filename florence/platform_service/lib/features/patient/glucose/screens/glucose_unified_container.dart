@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/glucose_detail_screen.dart';
-import '../../logging/screens/log_glucose_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/glucose_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_glucose_screen.dart';
 
 class GlucoseUnifiedContainer extends StatefulWidget {
   final int initialTab;

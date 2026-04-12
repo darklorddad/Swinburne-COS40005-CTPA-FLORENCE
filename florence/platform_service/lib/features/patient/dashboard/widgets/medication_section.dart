@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../config/theme.dart';
-import '../../../../core/models/medication_models.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../core/providers/medication_providers.dart';
-import '../../core/repositories/medication_repository.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/models/medication_models.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
+import 'package:florence/features/patient/core/repositories/medication_repository.dart';
 
 // ==========================================
 // 1. PROVIDERS

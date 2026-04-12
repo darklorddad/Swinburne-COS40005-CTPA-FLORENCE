@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:florence/config/theme.dart';
 
 /// Quick Actions Grid
 /// Grid of buttons for quick data logging

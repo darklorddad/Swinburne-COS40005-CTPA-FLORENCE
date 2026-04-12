@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/bmi_detail_screen.dart';
-import '../../logging/screens/log_bmi_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/bmi_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_bmi_screen.dart';
 
 class BmiUnifiedContainer extends StatefulWidget {
   final int initialTab;

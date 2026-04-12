@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/diet_detail_screen.dart';
-import '../../logging/screens/log_meal_screen.dart';
-import '../../logging/screens/log_glucose_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/diet_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_meal_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_glucose_screen.dart';
 
 class DietUnifiedContainer extends StatefulWidget {
   final int initialTab;

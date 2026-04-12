@@ -3,10 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/recommendation_engine.dart';
-import '../models/recommendation_models.dart';
-import '../../profile/providers/user_profile_provider.dart';
-import '../../../../core/utils/helpers.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/core/utils/helpers.dart';
 
 // ══════════════════════════════════════════════════════════════
 // CATEGORY THEME DEFINITIONS

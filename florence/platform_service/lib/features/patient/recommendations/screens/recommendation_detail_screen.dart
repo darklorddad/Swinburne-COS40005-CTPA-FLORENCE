@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../config/routes.dart';
-import '../models/recommendation_models.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 
 /// Recommendation Detail Screen
 /// Shows full details of a recommendation with explanation and action steps

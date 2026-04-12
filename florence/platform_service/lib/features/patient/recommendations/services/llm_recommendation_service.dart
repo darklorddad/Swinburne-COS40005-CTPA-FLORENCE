@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/config/environment.dart';
-import '../../../patient/core/models/health_data_models.dart';
-import '../models/recommendation_models.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 
 /// Calls the LLM Engine Service to generate AI-powered health recommendations.
 ///

@@ -3,21 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/services/api_service.dart'; // Added
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../core/providers/disease_providers.dart';
-import '../../core/providers/medication_providers.dart';
-import '../../core/providers/settings_providers.dart';
-import '../../core/providers/threshold_providers.dart';
-import '../../core/repositories/medication_repository.dart';
-import '../../dashboard/widgets/medication_section.dart';
-import '../providers/user_profile_provider.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/services/api_service.dart'; // Added
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/repositories/medication_repository.dart';
+import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings

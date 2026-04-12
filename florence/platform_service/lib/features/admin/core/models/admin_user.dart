@@ -1,4 +1,4 @@
-import 'admin_enums.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
 
 /// Admin User model
 /// Represents users with administrative or clinical access

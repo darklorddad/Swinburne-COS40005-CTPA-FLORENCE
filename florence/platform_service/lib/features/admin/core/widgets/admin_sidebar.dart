@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../config/admin_theme.dart';
-import '../models/admin_enums.dart';
-import '../services/permission_service.dart';
-import 'permission_guard.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/features/admin/core/widgets/permission_guard.dart';
 
 /// Admin Sidebar Navigation
 /// Left sidebar menu with permission-based navigation items

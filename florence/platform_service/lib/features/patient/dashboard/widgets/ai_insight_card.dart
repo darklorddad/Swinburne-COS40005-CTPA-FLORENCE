@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/config/routes.dart';
 
 /// AI Insight Card
 /// Displays AI-generated health insights and recommendations

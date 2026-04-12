@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../core/services/api_service.dart';
-import '../../../core/utils/validators.dart';
-import '../../../core/utils/helpers.dart';
-import '../../../shared/widgets/button_widgets.dart';
-import '../../../shared/widgets/input_widgets.dart';
-import '../../../config/theme.dart';
-import '../../../config/routes.dart';
-import '../../../main.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/main.dart';
 
 /// Login Screen
 /// Allows users to sign in with email and password

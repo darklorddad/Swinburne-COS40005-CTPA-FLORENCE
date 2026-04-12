@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/activity_detail_screen.dart';
-import '../../logging/screens/log_activity_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/activity_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_activity_screen.dart';
 
 class ActivityUnifiedContainer extends StatefulWidget {
   final int initialTab;

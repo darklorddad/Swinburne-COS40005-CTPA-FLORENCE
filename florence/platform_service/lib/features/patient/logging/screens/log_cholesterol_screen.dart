@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../config/routes.dart';
-import '../../core/providers/settings_providers.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart';
-import '../../core/providers/threshold_providers.dart';
-import '../../core/repositories/monitor_data_repository.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {

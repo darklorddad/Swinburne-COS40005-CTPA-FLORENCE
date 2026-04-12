@@ -5,11 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 
 class ActivityDetailScreen extends ConsumerWidget {
   final VoidCallback? onSwitchToLog;

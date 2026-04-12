@@ -1,4 +1,4 @@
-import 'admin_enums.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
 
 /// Organization (Hospital/Clinic) model
 /// Represents a healthcare organization in the system

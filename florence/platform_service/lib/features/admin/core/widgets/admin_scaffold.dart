@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import 'admin_sidebar.dart';
-import 'admin_app_bar.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
+import 'package:florence/features/admin/core/widgets/admin_app_bar.dart';
 
 /// Admin Scaffold
 /// Main layout wrapper for all admin screens

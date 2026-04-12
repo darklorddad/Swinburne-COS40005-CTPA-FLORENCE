@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../core/widgets/admin_scaffold.dart';
-import '../../../../core/services/api_service.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
+import 'package:florence/core/services/api_service.dart';
 
 class PatientDetailScreen extends StatefulWidget {
   final Map<String, dynamic> patientData;

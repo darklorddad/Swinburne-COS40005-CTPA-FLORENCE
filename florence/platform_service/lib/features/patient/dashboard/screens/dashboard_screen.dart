@@ -11,11 +11,11 @@ import 'package:florence/features/patient/core/providers/monitor_data_providers.
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
-import '../providers/dashboard_providers.dart'; // Added
-import '../widgets/ai_insight_card.dart';
-import '../widgets/biometrics_section.dart';
-import '../widgets/quick_actions_grid.dart';
-import '../widgets/medication_section.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart'; // Added
+import 'package:florence/features/patient/dashboard/widgets/ai_insight_card.dart';
+import 'package:florence/features/patient/dashboard/widgets/biometrics_section.dart';
+import 'package:florence/features/patient/dashboard/widgets/quick_actions_grid.dart';
+import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
 
 // Model for Quick Actions to ensure consistency between Grid and Modal
 class _QuickActionItem {

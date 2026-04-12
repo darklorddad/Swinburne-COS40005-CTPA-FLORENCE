@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../models/admin_enums.dart';
-import '../services/permission_service.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
 
 /// Access Denied Screen
 /// Shown when user attempts to access a page/feature without proper permissions

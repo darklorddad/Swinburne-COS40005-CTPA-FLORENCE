@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../core/widgets/admin_scaffold.dart';
-import '../../core/services/permission_service.dart';
-import '../../../../config/admin_routes.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/config/admin_routes.dart';
 
 /// Admin Dashboard
 /// System-wide overview with patient metrics, recent activity, and quick actions

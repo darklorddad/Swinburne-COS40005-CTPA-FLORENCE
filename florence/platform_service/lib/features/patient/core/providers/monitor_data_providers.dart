@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repositories/monitor_data_repository.dart';
-import '../models/health_data_models.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
 
 /// Main provider that fetches and holds all health data
 final monitorDataProvider = AsyncNotifierProvider<MonitorDataNotifier, HealthDataState>(MonitorDataNotifier.new, isAutoDispose: true);

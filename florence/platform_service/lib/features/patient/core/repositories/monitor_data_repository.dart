@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/config/environment.dart';
-import '../models/health_data_models.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
 
 /// Payload class for all health data
 class HealthDataState {

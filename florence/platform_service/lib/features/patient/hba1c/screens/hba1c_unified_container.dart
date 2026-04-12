@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../dashboard/screens/hba1c_detail_screen.dart';
-import '../../logging/screens/log_hba1c_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/hba1c_detail_screen.dart';
+import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
 
 class HbA1cUnifiedContainer extends StatefulWidget {
   final int initialTab;

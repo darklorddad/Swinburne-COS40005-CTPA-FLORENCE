@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
-import '../dashboard/screens/dashboard_screen.dart';
-import '../profile/screens/profile_screen.dart';
-import '../profile/screens/settings_screen.dart';
-import '../chat/screens/chat_screen.dart';
+import 'package:florence/features/patient/dashboard/screens/dashboard_screen.dart';
+import 'package:florence/features/patient/profile/screens/profile_screen.dart';
+import 'package:florence/features/patient/profile/screens/settings_screen.dart';
+import 'package:florence/features/patient/chat/screens/chat_screen.dart';
 
 class PatientBottomNavBarShell extends ConsumerStatefulWidget {
   const PatientBottomNavBarShell({super.key});

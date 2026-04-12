@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/models/medication_models.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/models/medication_models.dart';
 
 /// Repository for managing medication data and intake logs.
 class MedicationRepository {

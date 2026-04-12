@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/api_service.dart';
+import 'package:florence/core/services/api_service.dart';
 
 class PatientThreshold {
   final String dataType;

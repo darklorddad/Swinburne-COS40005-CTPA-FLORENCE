@@ -4,17 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'config/theme.dart';
-import 'config/routes.dart';
-import 'core/services/api_service.dart';
-import 'core/providers/theme_provider.dart';
-import 'features/admin/core/services/admin_auth_service.dart';
-import 'main.dart';
-import 'features/patient/core/providers/monitor_data_providers.dart';
-import 'features/patient/profile/providers/user_profile_provider.dart';
-import 'features/patient/chat/services/chatbot_service.dart';
-import 'features/patient/recommendations/services/recommendation_engine.dart';
-import 'core/services/notifications/notification_service.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/providers/theme_provider.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
+import 'package:florence/main.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/features/patient/chat/services/chatbot_service.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers

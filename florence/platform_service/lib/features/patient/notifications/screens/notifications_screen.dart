@@ -3,10 +3,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/notifications/notification_service.dart';
-import '../../../../core/services/notifications/notification_models.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../config/theme.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
+import 'package:florence/core/services/notifications/notification_models.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/config/theme.dart';
 
 /// Notifications screen showing all notifications
 class NotificationsScreen extends ConsumerStatefulWidget {

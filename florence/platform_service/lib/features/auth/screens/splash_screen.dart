@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
+import 'package:florence/config/theme.dart';
 
 /// A simple splash screen that displays the app logo and name.
 /// It no longer contains any logic. Navigation is now handled by the

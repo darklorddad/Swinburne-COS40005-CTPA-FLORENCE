@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../features/admin/auth/screens/admin_login_screen.dart';
-import '../features/admin/core/widgets/access_denied_screen.dart';
-import '../features/admin/core/services/permission_service.dart';
-import '../features/admin/core/models/admin_enums.dart';
-import '../features/admin/patients/screens/patient_detail_screen.dart';
+import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/core/widgets/access_denied_screen.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
 
 /// Admin Routes Configuration
 /// Centralized routing for admin-side of the application

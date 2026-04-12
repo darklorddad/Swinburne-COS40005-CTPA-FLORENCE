@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
 
 class CompactHealthCard extends StatelessWidget {
   final String label;

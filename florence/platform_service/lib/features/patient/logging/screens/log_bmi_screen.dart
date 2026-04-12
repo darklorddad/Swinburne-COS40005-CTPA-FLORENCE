@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_providers;
-import '../../core/providers/threshold_providers.dart';
-import '../../dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
-import '../../profile/providers/user_profile_provider.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_providers;
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
