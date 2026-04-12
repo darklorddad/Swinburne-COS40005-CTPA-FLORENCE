@@ -569,61 +569,63 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _caloriesController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    hintText: 'e.g. 500',
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-                    border: OutlineInputBorder(
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _caloriesController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: 'e.g. 500',
+                      filled: true,
+                      fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                InkWell(
+                  onTap: _isLoading ? null : _estimateCalories,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              InkWell(
-                onTap: _isLoading ? null : _estimateCalories,
-                borderRadius: BorderRadius.circular(24),
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(12, 8, 16, 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: AppTheme.primaryBlue.withOpacity(0.3),
-                    ),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: AppTheme.primaryBlue,
+                      border: Border.all(
+                        color: AppTheme.primaryBlue.withOpacity(0.3),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Auto',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.auto_awesome,
+                          size: 16,
                           color: AppTheme.primaryBlue,
-                          height: 1.0,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          'Auto',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryBlue,
+                            height: 1.0,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
