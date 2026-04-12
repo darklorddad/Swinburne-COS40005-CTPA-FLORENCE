@@ -966,6 +966,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                       width: 2,
                     ),
                   ),
+                  prefixIcon: const Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(height: 14),
+                      Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
