@@ -511,7 +511,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Test Date and Time',
+                'Date and Time',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -587,23 +587,54 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   }
 
   Widget _buildLabField(String label, TextEditingController controller, String unit, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMmol = unit == 'mmol/L';
     final double minValid = isMmol ? 0.1 : 5.0;
     final double maxValid = isMmol ? 50.0 : 1000.0;
 
-    return CustomTextField(
-      label: label,
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      prefixIcon: Icon(icon),
-      validator: (val) {
-        if (val != null && val.isNotEmpty) {
-          final num = double.tryParse(val.replaceAll(',', '.'));
-          if (num == null) return 'Invalid number';
-          if (num < minValid || num > maxValid) return 'Enter $minValid - $maxValid';
-        }
-        return null;
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          onChanged: (_) => setState(() {}),
+          validator: (val) {
+            if (val != null && val.isNotEmpty) {
+              final num = double.tryParse(val.replaceAll(',', '.'));
+              if (num == null) return 'Invalid number';
+              if (num < minValid || num > maxValid) return 'Enter $minValid - $maxValid';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: 'e.g. ${isMmol ? '5.0' : '150'}',
+            filled: true,
+            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryBlue,
+                width: 2,
+              ),
+            ),
+            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor),
+          ),
+        ),
+      ],
     );
   }
 
