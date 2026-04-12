@@ -751,6 +751,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Meal Details',

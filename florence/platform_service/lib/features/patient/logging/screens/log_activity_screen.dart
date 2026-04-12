@@ -903,7 +903,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor, 
+                      color: AppTheme.textSecondaryColor, 
                     ),
                   ),
                 ],
