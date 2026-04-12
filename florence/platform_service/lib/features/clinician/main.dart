@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:clinician_dashboard/screens/clinician_home_screen.dart';
-import 'package:clinician_dashboard/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
