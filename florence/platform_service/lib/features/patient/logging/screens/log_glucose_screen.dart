@@ -75,9 +75,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay},
   ];
 
+  String _getMealTypeFromTime(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 4 && hour < 11) return 'BREAKFAST';
+    if (hour >= 11 && hour < 16) return 'LUNCH';
+    return 'DINNER';
+  }
+
   @override
   void initState() {
     super.initState();
+    _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
     _initialDateTime = _selectedDateTime;
     _initialTiming = _selectedTiming;
     _initialMealType = _selectedMealType;
@@ -458,6 +466,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       canPop: !hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+
+        if (!hasChanges) return;
 
         final shouldDiscard = await _showDiscardDialog();
 
@@ -997,6 +1007,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           picked.hour,
                           picked.minute,
                         );
+                        _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
                       });
                     }
                   },
@@ -1501,10 +1512,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
+                          textInputAction: TextInputAction.newline,
+                          minLines: 3,
                           maxLines: 3,
-                          textInputAction: TextInputAction.next,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
-                            hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                            hintText: 'e.g. grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -1519,6 +1532,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 width: 2,
                               ),
                             ),
+                            prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -1551,12 +1565,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.done,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             hintText: 'e.g. 500',
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                           ),
                         ),
                       ],

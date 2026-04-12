@@ -264,6 +264,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Prevent submitting completely empty meal logs
+    if (_mealNameController.text.trim().isEmpty && 
+        _caloriesController.text.trim().isEmpty && 
+        _selectedImage == null) {
+      Helpers.showError(context, 'Please provide a photo, description, or calories to log this meal.');
+      return;
+    }
+
     final now = DateTime.now();
     // Validate that the date is not in future
     if (_selectedDateTime.isAfter(now)) {
@@ -332,6 +340,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
             time.hour, 
             time.minute
           );
+          _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
         });
       }
     }
@@ -384,6 +393,8 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       canPop: !hasChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+
+        if (!hasChanges) return;
 
         final shouldDiscard = await _showDiscardDialog();
 
@@ -587,6 +598,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
+                        _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
                       });
                     }
                   },
@@ -736,22 +748,26 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Meal Details',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  Text(
-                    'Optional',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Meal Details',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Provide a photo, description, or calories to save this log.',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
+                ),
               ),
               const Spacer(),
               
@@ -944,10 +960,12 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _mealNameController,
+                textInputAction: TextInputAction.newline,
+                minLines: 3,
                 maxLines: 3,
-                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
-                  hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                  hintText: 'e.g. grilled chicken, 60g carbs, no veggies...',
                   hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                   filled: true,
                   fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
@@ -962,6 +980,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                       width: 2,
                     ),
                   ),
+                  prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
                 ),
               ),
               const SizedBox(height: 20),
@@ -994,12 +1013,13 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 controller: _caloriesController,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
                 decoration: InputDecoration(
                   hintText: 'e.g. 500',
                   filled: true,
                   fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                  prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                 ),
               ),
             ],

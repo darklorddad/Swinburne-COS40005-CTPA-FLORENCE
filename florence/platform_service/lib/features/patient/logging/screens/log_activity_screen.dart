@@ -47,6 +47,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   @override
   void initState() {
     super.initState();
+    
+    // Grab the current time but force seconds and milliseconds to 0
+    final now = DateTime.now();
+    _endDateTime = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    
     _selectedDateTime = _endDateTime.subtract(const Duration(minutes: 30));
     _initialDateTime = _selectedDateTime;
     _initialEndDateTime = _endDateTime;
@@ -60,6 +65,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     final diff = _endDateTime.difference(_selectedDateTime).inMinutes;
     if (diff > 0 && _activeDurationController.text.isEmpty) {
       _activeDurationController.text = diff.toString();
+
+      // Keep track of the prefilled value so it doesn't immediately count as a "change"
+      if (isInitial) {
+        _initialDuration = diff.toString();
+      }
     }
     // Don't call setState during initState
     if (!isInitial && mounted) setState(() {});
@@ -294,10 +304,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
 
                         // Activity Details
                         _buildActivityDetailsSection(),
-                        const SizedBox(height: 20),
-
-                        // Calories Section
-                        _buildCaloriesSection(),
                         const SizedBox(height: 32),
 
                         // Save button
@@ -509,7 +515,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
 
           // Description Input Title
           Text(
-            'Custom Activity',
+            'Activity Description',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
@@ -524,10 +530,10 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.newline,
             minLines: 3,
-            maxLines: 5,
+            maxLines: 3,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'e.g., Playing tennis with 30 minutes break in between',
+              hintText: 'e.g. playing tennis with 30 minutes break in between',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark
@@ -537,15 +543,69 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              prefixIcon: const Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(height: 14),
-                  Icon(Icons.edit_note),
-                ],
-              ),
+              prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
             ),
+          ),
+          const SizedBox(height: 20),
+
+          // Calories Section
+          Row(
+            children: [
+              Text(
+                'Calories Burned (kcal)',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Optional',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _caloriesController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: 'e.g. 500',
+                    filled: true,
+                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 56, // Match the height of the TextFormField
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _estimateCalories,
+                  icon: const Icon(Icons.auto_awesome, size: 18),
+                  label: const Text('Auto', style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isDark ? AppTheme.primaryBlue.withOpacity(0.2) : AppTheme.primaryBlue.withOpacity(0.1),
+                    foregroundColor: AppTheme.primaryBlue,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -677,23 +737,48 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
             ),
-            child: _buildCompactPickerItem(
-              label: 'Time',
-              value: TimeOfDay.fromDateTime(_endDateTime).format(context),
-              icon: Icons.access_time_filled,
-              onTap: () async {
-                FocusScope.of(context).unfocus();
-                final picked = await showTimePicker(
-                  context: context,
-                  initialTime: TimeOfDay.fromDateTime(_endDateTime),
-                );
-                if (picked != null) {
-                  setState(() {
-                    _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
-                    _updateSuggestedDuration();
-                  });
-                }
-              },
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_endDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).unfocus();
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _endDateTime,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _endDateTime = DateTime(picked.year, picked.month, picked.day, _endDateTime.hour, _endDateTime.minute);
+                        _updateSuggestedDuration();
+                      });
+                    }
+                  },
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_endDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).unfocus();
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_endDateTime),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
+                        _updateSuggestedDuration();
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -705,12 +790,21 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.orange.shade300 : Colors.orange;
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
-    final totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+    int totalElapsed = _endDateTime.difference(_selectedDateTime).inMinutes;
+    int maxDuration = totalElapsed > 0 ? totalElapsed : 1; 
+    
+    int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
+    double sliderValue = currentActive.clamp(0, maxDuration).toDouble();
+
+    int full = totalElapsed;
+    int threeQuarters = (totalElapsed * 0.75).round();
+    int half = (totalElapsed * 0.5).round();
+    int quarter = (totalElapsed * 0.25).round();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
@@ -726,154 +820,217 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+          // Header (Padded)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: titleIconColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.local_fire_department,
+                    color: titleIconColor,
+                    size: 24,
+                  ),
                 ),
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: titleIconColor,
-                  size: 24,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Active Duration',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      Text(
+                        'Total session duration: $totalElapsed mins',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Active Workout Time',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    Text(
-                      'Total session time was $totalElapsed mins.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.primaryBlue,
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-          TextFormField(
-            controller: _activeDurationController,
-            validator: (value) => Validators.range(value, 1, 1440, fieldName: 'Active Duration'),
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Actual time spent exercising (mins)',
-              hintText: 'e.g., 45',
-              hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+          const SizedBox(height: 32),
+
+          // Big Number Display (Padded, Color changed to primary text)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  SizedBox(
+                    width: 140, 
+                    child: TextFormField(
+                      controller: _activeDurationController,
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      validator: (value) {
+                        final val = int.tryParse(value ?? '');
+                        if (val == null) return 'Required';
+                        if (val > totalElapsed) return 'Max $totalElapsed';
+                        return null;
+                      },
+                      style: TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimaryColor,
+                      ),
+                      decoration: const InputDecoration(
+                        border: InputBorder.none,
+                        contentPadding: EdgeInsets.symmetric(vertical: 8), 
+                        errorStyle: TextStyle(fontSize: 12),
+                      ),
+                      onChanged: (_) => setState(() {}), 
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'mins',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textSecondaryColor, 
+                    ),
+                  ),
+                ],
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: AppTheme.primaryBlue,
-                  width: 2,
-                ),
-              ),
-              prefixIcon: Icon(Icons.timer_outlined, color: titleIconColor),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            'Adjust this number down if you took breaks. This helps the AI calculate your exact calorie burn.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.textSecondaryColor,
-                  fontStyle: FontStyle.italic,
+
+          // Full-Width Custom Slider
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: AppTheme.primaryBlue,
+              inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+              thumbColor: AppTheme.primaryBlue,
+              overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
+              trackHeight: 8,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+            ),
+            child: Slider(
+              value: sliderValue,
+              min: 0,
+              max: maxDuration.toDouble(),
+              divisions: maxDuration > 0 ? maxDuration : 1,
+              onChanged: (val) {
+                setState(() {
+                  _activeDurationController.text = val.toInt().toString();
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Adjust Chips (Padded, Styled like Activity Details Quick Select)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildDurationChip(
+                    label: 'Full',
+                    onTap: () => setState(() => _activeDurationController.text = full.toString()),
+                    isSelected: currentActive == full,
+                    isDark: isDark,
+                  ),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildDurationChip(
+                    label: '${threeQuarters}m',
+                    onTap: () => setState(() => _activeDurationController.text = threeQuarters.toString()),
+                    isSelected: currentActive == threeQuarters,
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildDurationChip(
+                    label: '${half}m',
+                    onTap: () => setState(() => _activeDurationController.text = half.toString()),
+                    isSelected: currentActive == half,
+                    isDark: isDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildDurationChip(
+                    label: '${quarter}m',
+                    onTap: () => setState(() => _activeDurationController.text = quarter.toString()),
+                    isSelected: currentActive == quarter,
+                    isDark: isDark,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Note (Padded)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Center(
+              child: Text(
+                'Note: Adjust this down if you took breaks',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCaloriesSection() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.red.shade300 : Colors.red;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  // Updated to match the standard Quick Select aesthetic
+  Widget _buildDurationChip({
+    required String label,
+    required VoidCallback onTap,
+    required bool isSelected,
+    required bool isDark,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? AppTheme.primaryBlue 
+              : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected ? AppTheme.primaryBlue : AppTheme.getBorderColor(context),
+            width: 1,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.local_fire_department,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Calories Burned',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-              TextButton.icon(
-                onPressed: _isLoading ? null : _estimateCalories,
-                icon: const Icon(Icons.auto_awesome, size: 18),
-                label: const Text('Auto-Estimate'),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.primaryBlue,
-                ),
-              ),
-            ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            fontSize: 14,
           ),
-          const SizedBox(height: 20),
-          TextFormField(
-            controller: _caloriesController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'Calories (kcal)',
-              hintText: 'e.g., 300',
-              filled: true,
-              fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              prefixIcon: Icon(Icons.monitor_heart_outlined, color: titleIconColor),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

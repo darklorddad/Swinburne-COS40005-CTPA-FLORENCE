@@ -32,16 +32,25 @@ class _DietUnifiedContainerState extends State<DietUnifiedContainer> {
     return IndexedStack(
       index: _currentIndex,
       children: [
-        DietAnalyticsScreen(
-          onSwitchToLogMeal: () => _switchTab(1),
-          onSwitchToLogGlucose: () => _switchTab(2),
+        HeroMode(
+          enabled: _currentIndex == 0,
+          child: DietAnalyticsScreen(
+            onSwitchToLogMeal: () => _switchTab(1),
+            onSwitchToLogGlucose: () => _switchTab(2),
+          ),
         ),
-        LogMealScreen(
-          onSwitchToHistory: () => _switchTab(0),
-          onKeepEditing: () => _switchTab(1),
+        HeroMode(
+          enabled: _currentIndex == 1,
+          child: LogMealScreen(
+            onSwitchToHistory: () => _switchTab(0),
+            onKeepEditing: () => _switchTab(1),
+          ),
         ),
-        LogGlucoseScreen(
-          onKeepEditing: () => _switchTab(2),
+        HeroMode(
+          enabled: _currentIndex == 2,
+          child: LogGlucoseScreen(
+            onKeepEditing: () => _switchTab(2),
+          ),
         ),
       ],
     );

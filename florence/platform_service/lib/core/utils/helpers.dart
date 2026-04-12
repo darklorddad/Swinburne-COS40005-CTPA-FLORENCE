@@ -10,6 +10,7 @@ class Helpers {
   
   /// Show success snackbar
   static void showSuccess(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -17,6 +18,7 @@ class Helpers {
           borderRadius: BorderRadius.circular(50),
         ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
@@ -32,6 +34,7 @@ class Helpers {
   
   /// Show error snackbar
   static void showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -39,6 +42,7 @@ class Helpers {
           borderRadius: BorderRadius.circular(50),
         ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.error, color: Colors.white),
             const SizedBox(width: 12),
@@ -54,6 +58,7 @@ class Helpers {
   
   /// Show info snackbar
   static void showInfo(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -61,6 +66,7 @@ class Helpers {
           borderRadius: BorderRadius.circular(50),
         ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.info, color: Colors.white),
             const SizedBox(width: 12),
@@ -76,6 +82,7 @@ class Helpers {
   
   /// Show warning snackbar
   static void showWarning(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -83,6 +90,7 @@ class Helpers {
           borderRadius: BorderRadius.circular(50),
         ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.warning, color: Colors.white),
             const SizedBox(width: 12),
