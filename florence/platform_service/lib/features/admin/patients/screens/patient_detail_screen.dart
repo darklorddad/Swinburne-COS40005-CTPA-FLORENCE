@@ -3,16 +3,16 @@ import 'package:florence/config/admin_theme.dart';
 import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
 import 'package:florence/core/services/api_service.dart';
 
-class PatientDetailScreen extends StatefulWidget {
+class AdminPatientDetailScreen extends StatefulWidget {
   final Map<String, dynamic> patientData;
 
-  const PatientDetailScreen({super.key, required this.patientData});
+  const AdminPatientDetailScreen({super.key, required this.patientData});
 
   @override
-  State<PatientDetailScreen> createState() => _PatientDetailScreenState();
+  State<AdminPatientDetailScreen> createState() => _PatientDetailScreenState();
 }
 
-class _PatientDetailScreenState extends State<PatientDetailScreen> {
+class _PatientDetailScreenState extends State<AdminPatientDetailScreen> {
   final _apiService = ApiService();
   bool _isLoading = false;
   
