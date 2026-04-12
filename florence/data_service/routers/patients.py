@@ -193,6 +193,13 @@ class DiseaseLogCreate(BaseModel):
     resolved_date: Optional[date] = None
     notes: Optional[str] = None
 
+class DiseaseLogUpdate(BaseModel):
+    condition_name: Optional[str] = None
+    status: Optional[Literal['active', 'resolved']] = None
+    diagnosed_date: Optional[date] = None
+    resolved_date: Optional[date] = None
+    notes: Optional[str] = None
+
 class MealTime(str, Enum):
     BREAKFAST = 'BREAKFAST'
     LUNCH = 'LUNCH'
@@ -464,6 +471,36 @@ async def add_own_disease_log(
         return response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save disease log: {str(e)}")
+
+@router.patch("/me/disease-logs/{log_id}", summary="Update a disease log")
+async def update_own_disease_log(
+    log_id: int,
+    log_update: DiseaseLogUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        update_dict = log_update.model_dump(exclude_unset=True)
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+
+        # Logic: If changing to active, wipe the resolved date
+        if update_dict.get('status') == 'active':
+            update_dict['resolved_date'] = None
+
+        response = supabase.table('disease_logs') \
+            .update(update_dict) \
+            .eq('id', log_id) \
+            .eq('patient_id', patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Disease log not found")
+            
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update disease log: {str(e)}")
 
 @router.get("/me/daily-logs", summary="Get all my daily logs")
 async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):

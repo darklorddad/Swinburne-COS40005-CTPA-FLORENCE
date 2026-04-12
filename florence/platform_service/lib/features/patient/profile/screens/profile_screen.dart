@@ -1003,7 +1003,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               _buildSectionHeader('Disease Log', Icons.history_edu_outlined),
               IconButton(
-                onPressed: () => _showAddDiseaseModal(context, ref),
+                onPressed: () => _showDiseaseFormModal(context, ref),
                 icon: const Icon(Icons.add_circle_outline,
                     color: AppTheme.primaryBlue),
               ),
@@ -1099,21 +1099,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           ],
                         ),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isActive ? Colors.red[50] : Colors.green[50],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isActive ? 'ACTIVE' : 'RESOLVED',
-                          style: TextStyle(
-                            color: isActive ? Colors.red : Colors.green,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color:
+                                  isActive ? Colors.red[50] : Colors.green[50],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              isActive ? 'ACTIVE' : 'RESOLVED',
+                              style: TextStyle(
+                                color: isActive ? Colors.red : Colors.green,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          PopupMenuButton<String>(
+                            icon:
+                                const Icon(Icons.more_horiz, color: Colors.grey),
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                _showDiseaseFormModal(context, ref,
+                                    existingLog: log);
+                              } else if (value == 'resolve') {
+                                _promptResolveDate(context, ref, log);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                  value: 'edit', child: Text('Edit')),
+                              if (isActive)
+                                const PopupMenuItem(
+                                    value: 'resolve',
+                                    child: Text('Mark as Resolved')),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   );
@@ -1172,11 +1198,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showAddDiseaseModal(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    String status = 'active';
-    DateTime? diagnosedDate;
-    DateTime? resolvedDate;
+  void _showDiseaseFormModal(BuildContext context, WidgetRef ref,
+      {DiseaseLog? existingLog}) {
+    final isEditing = existingLog != null;
+    final nameController =
+        TextEditingController(text: existingLog?.conditionName ?? '');
+    String status = existingLog?.status ?? 'active';
+    DateTime? diagnosedDate = existingLog?.diagnosedDate;
+    DateTime? resolvedDate = existingLog?.resolvedDate;
 
     showModalBottomSheet(
       context: context,
@@ -1194,8 +1223,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text("Log Medical Condition",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(isEditing ? "Edit Condition" : "Log Medical Condition",
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               TextField(
                 controller: nameController,
@@ -1226,7 +1256,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onTap: () async {
                   final date = await showDatePicker(
                       context: context,
-                      initialDate: DateTime.now(),
+                      initialDate: diagnosedDate ?? DateTime.now(),
                       firstDate: DateTime(1900),
                       lastDate: DateTime.now());
                   if (date != null) setModalState(() => diagnosedDate = date);
@@ -1242,7 +1272,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   onTap: () async {
                     final date = await showDatePicker(
                         context: context,
-                        initialDate: DateTime.now(),
+                        initialDate: resolvedDate ?? DateTime.now(),
                         firstDate: diagnosedDate ?? DateTime(1900),
                         lastDate: DateTime.now());
                     if (date != null) setModalState(() => resolvedDate = date);
@@ -1254,18 +1284,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     if (nameController.text.isNotEmpty) {
-                      await ref
-                          .read(diseaseLogProvider.notifier)
-                          .addLog(DiseaseLog(
-                            conditionName: nameController.text,
-                            status: status,
-                            diagnosedDate: diagnosedDate,
-                            resolvedDate: resolvedDate,
-                          ));
+                      final log = DiseaseLog(
+                        conditionName: nameController.text,
+                        status: status,
+                        diagnosedDate: diagnosedDate,
+                        resolvedDate: resolvedDate,
+                      );
+
+                      if (isEditing) {
+                        await ref
+                            .read(diseaseLogProvider.notifier)
+                            .updateLog(existingLog.id!, log);
+                      } else {
+                        await ref.read(diseaseLogProvider.notifier).addLog(log);
+                      }
                       if (context.mounted) Navigator.pop(context);
                     }
                   },
-                  child: const Text("Save Condition"),
+                  child: Text(isEditing ? "Save Changes" : "Save Condition"),
                 ),
               ),
             ],
@@ -1273,6 +1309,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _promptResolveDate(
+      BuildContext context, WidgetRef ref, DiseaseLog log) async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: log.diagnosedDate ?? DateTime(1900),
+      lastDate: DateTime.now(),
+      helpText: 'Select Date Resolved',
+    );
+
+    if (selectedDate != null && log.id != null) {
+      final updatedLog = DiseaseLog(
+        conditionName: log.conditionName,
+        status: 'resolved',
+        diagnosedDate: log.diagnosedDate,
+        resolvedDate: selectedDate,
+        notes: log.notes,
+      );
+
+      await ref.read(diseaseLogProvider.notifier).updateLog(log.id!, updatedLog);
+    }
   }
 
   /// Build health profile section
