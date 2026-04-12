@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 // Admin-side imports
 import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/patients/screens/patients_list_screen.dart';
+import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
 import 'package:florence/features/auth/screens/login_screen.dart';
 import 'package:florence/features/auth/screens/register_screen.dart';
 import 'package:florence/features/auth/screens/splash_screen.dart';
@@ -76,6 +78,8 @@ class AppRoutes {
   // Admin routes
   static const String adminDashboard = '/admin-dashboard';
   static const String adminLogin = '/admin/login';
+  static const String adminPatientList = '/admin/patients';
+  static const String adminPatientDetail = '/admin/patient-detail';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -181,6 +185,21 @@ class AppRoutes {
 
       case adminLogin:
         return _buildRoute(const AdminLoginScreen(), settings);
+
+      case adminPatientList:
+        return _buildRoute(const PatientsListScreen(), settings);
+
+      case adminPatientDetail:
+        if (args is Map<String, dynamic>) {
+          return _buildRoute(AdminPatientDetailScreen(patientData: args), settings);
+        } else {
+          return _buildRoute(
+            Scaffold(
+              body: Center(child: Text('Invalid arguments for ${settings.name}')),
+            ),
+            settings,
+          );
+        }
 
       default:
         return _buildRoute(

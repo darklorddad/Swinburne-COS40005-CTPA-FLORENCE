@@ -202,7 +202,7 @@ class AdminRoutes {
           requiredPermission: AdminPermission.viewAllPatients, // or viewOrgPatients
           builder: (_) {
             final patientData = settings.arguments as Map<String, dynamic>? ?? {};
-            return PatientDetailScreen(patientData: patientData);
+            return AdminPatientDetailScreen(patientData: patientData);
           },
         );
 
