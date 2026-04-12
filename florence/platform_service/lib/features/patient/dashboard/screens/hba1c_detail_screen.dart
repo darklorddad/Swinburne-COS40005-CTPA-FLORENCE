@@ -10,6 +10,7 @@ import '../../../../config/theme.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
+import '../../core/providers/threshold_providers.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 
 class HbA1cDetailScreen extends ConsumerWidget {

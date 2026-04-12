@@ -9,6 +9,7 @@ import '../../chat/services/chatbot_service.dart'; // Chat Service
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_data;
 import '../../core/providers/settings_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
 import '../providers/dashboard_providers.dart'; // Added
 import '../widgets/ai_insight_card.dart';
