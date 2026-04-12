@@ -206,10 +206,8 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
         );
     }
 
-    if (notification != null) {
-      await addNotification(notification);
+    await addNotification(notification);
     }
-  }
 
   /// Add a notification
   Future<void> addNotification(HealthNotification notification) async {

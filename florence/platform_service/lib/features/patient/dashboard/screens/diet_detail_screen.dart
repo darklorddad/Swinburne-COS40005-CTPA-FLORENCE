@@ -795,17 +795,17 @@ class _HistorySectionState extends State<_HistorySection> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (deltaText != null) ...[
-                    Text(
-                      displayMealTime,
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  ...[
+                  Text(
+                    displayMealTime,
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(width: 6),
-                  ],
+                  ),
+                  const SizedBox(width: 6),
+                ],
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(

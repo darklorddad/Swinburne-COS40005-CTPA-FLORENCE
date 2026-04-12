@@ -161,7 +161,6 @@ class _AppState extends ConsumerState<App> {
 
       // This logic handles deep link sign-ins (email confirmation)
       final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn &&
-          user.createdAt != null &&
           DateTime.now().difference(DateTime.parse(user.createdAt)).inMinutes <
               2;
 
