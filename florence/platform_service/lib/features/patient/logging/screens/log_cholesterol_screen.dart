@@ -476,14 +476,14 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.bloodtype_outlined,
+                  Icons.science_outlined,
                   color: titleIconColor,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'Cholesterol ($currentUnit)',
+                'Lipid Panel ($currentUnit)',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -491,13 +491,25 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildLabField('Total Cholesterol', _totalController, currentUnit, Icons.bloodtype_outlined),
+
+          // 2x2 Grid Layout
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit, Icons.bloodtype_outlined, '5.0', '150')),
+              const SizedBox(width: 16),
+              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit, Icons.arrow_downward, '2.5', '100')),
+            ],
+          ),
           const SizedBox(height: 16),
-          _buildLabField('LDL Cholesterol', _ldlController, currentUnit, Icons.arrow_downward),
-          const SizedBox(height: 16),
-          _buildLabField('HDL Cholesterol', _hdlController, currentUnit, Icons.arrow_upward),
-          const SizedBox(height: 16),
-          _buildLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit, Icons.arrow_upward, '1.5', '50')),
+              const SizedBox(width: 16),
+              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined, '1.7', '150')),
+            ],
+          ),
         ],
       ),
     );
@@ -542,7 +554,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
               const SizedBox(width: 12),
               Text(
-                'Test Date and Time',
+                'Date and Time',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -617,24 +629,58 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildLabField(String label, TextEditingController controller, String unit, IconData icon) {
+  Widget _buildGridLabField(String label, TextEditingController controller, String unit, IconData icon, String placeholderMmol, String placeholderMgdl) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMmol = unit == 'mmol/L';
     final double minValid = isMmol ? 0.1 : 5.0;
     final double maxValid = isMmol ? 50.0 : 1000.0;
 
-    return CustomTextField(
-      label: label,
-      controller: controller,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      prefixIcon: Icon(icon),
-      validator: (val) {
-        if (val != null && val.isNotEmpty) {
-          final num = double.tryParse(val.replaceAll(',', '.'));
-          if (num == null) return 'Invalid number';
-          if (num < minValid || num > maxValid) return 'Enter $minValid - $maxValid';
-        }
-        return null;
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          onChanged: (_) => setState(() {}),
+          validator: (val) {
+            if (val != null && val.isNotEmpty) {
+              final num = double.tryParse(val.replaceAll(',', '.'));
+              if (num == null) return 'Invalid';
+              if (num < minValid || num > maxValid) return 'Range:\n$minValid - $maxValid';
+            }
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: isMmol ? 'e.g. $placeholderMmol' : 'e.g. $placeholderMgdl',
+            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            filled: true,
+            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryBlue,
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
