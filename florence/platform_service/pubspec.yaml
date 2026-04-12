@@ -54,7 +54,6 @@ dependencies:
   package_info_plus: ^8.0.0
 
   crypto: any
-  clinician_dashboard: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
