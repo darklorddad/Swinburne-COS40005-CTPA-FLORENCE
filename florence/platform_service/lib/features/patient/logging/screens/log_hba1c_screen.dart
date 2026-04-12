@@ -10,7 +10,8 @@ import '../../../../config/theme.dart';
 import '../../../../config/routes.dart';
 import '../../../../core/layout/responsive_layout_system.dart';
 import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart'; // Added
+import '../../core/providers/monitor_data_providers.dart';
+import '../../core/providers/threshold_providers.dart';
 import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log HbA1c Screen
@@ -176,7 +177,22 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final hba1cTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'HBA1C');
+        targetText =
+            "Target: ${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
+    final hba1cValue =
+        double.tryParse(_hba1cController.text.replaceAll(',', '.'));
 
     final bool hasChanges = !_forcePop && 
         (_hba1cController.text != _initialHba1c ||
@@ -287,6 +303,20 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   }
 
   Widget _buildInfoCard(HealthThreshold? threshold) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final hba1cTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'HBA1C');
+        targetText =
+            "Target: ${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);

@@ -11,6 +11,7 @@ import '../../../../shared/widgets/button_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
 import '../../core/models/health_data_models.dart';
 import '../../core/providers/monitor_data_providers.dart' as core_providers;
+import '../../core/providers/threshold_providers.dart';
 import '../../dashboard/providers/dashboard_providers.dart';
 import '../../profile/providers/user_profile_provider.dart';
 
@@ -241,16 +242,30 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final bmiTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
+        targetText =
+            "Target: ${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)}";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     // Fetch thresholds
-    final healthData = ref.watch(core_providers.monitorDataProvider).asData?.value;
+    final healthData =
+        ref.watch(core_providers.monitorDataProvider).asData?.value;
     HealthThreshold? bmiThreshold;
     try {
       bmiThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.BMI
-      );
+          (t) => t.dataType == MonitorDataType.BMI);
     } catch (_) {}
 
-    final bool hasChanges = !_forcePop && 
+    final bool hasChanges = !_forcePop &&
         (_heightController.text != _initialHeight || 
          _weightController.text != _initialWeight ||
          _selectedDateTime != _initialDateTime);
@@ -353,6 +368,20 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   }
 
   Widget _buildInfoCard(HealthThreshold? threshold) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final bmiTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
+        targetText =
+            "Target: ${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)}";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -439,15 +468,16 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Text('BMI',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryGreen.withOpacity(0.8))),
                       Text(
-                        'BMI', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
-                      ),
-                      Text(
-                        threshold != null 
-                          ? '${threshold.minValue.toStringAsFixed(1)} - ${threshold.maxValue.toStringAsFixed(1)} kg/m²'
-                          : '18.5 - 24.9 kg/m²',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),

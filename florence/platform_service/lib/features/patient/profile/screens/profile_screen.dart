@@ -1420,6 +1420,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       Function(String) getUnit) {
     final Map<String, TextEditingController> minControllers = {};
     final Map<String, TextEditingController> maxControllers = {};
+    final formKey = GlobalKey<FormState>();
 
     for (var t in currentThresholds) {
       minControllers[t.dataType] =
@@ -1441,78 +1442,115 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             top: 20),
         child: FractionallySizedBox(
           heightFactor: 0.8,
-          child: Column(
-            children: [
-              const Text("Edit Health Thresholds",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView(
-                  children: currentThresholds.map((t) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: minControllers[t.dataType],
-                                  decoration: const InputDecoration(
-                                      labelText: 'Min', isDense: true),
-                                  keyboardType: const TextInputType.numberWithOptions(
-                                      decimal: true),
+          child: Form(
+            key: formKey,
+            child: Column(
+              children: [
+                const Text("Edit Health Thresholds",
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView(
+                    children: currentThresholds.map((t) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: minControllers[t.dataType],
+                                    decoration: const InputDecoration(
+                                        labelText: 'Min', isDense: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final minVal = double.tryParse(value);
+                                      if (minVal == null) return 'Numbers only';
+                                      final maxVal = double.tryParse(
+                                          maxControllers[t.dataType]!.text);
+                                      if (maxVal != null && minVal >= maxVal) {
+                                        return 'Must be < Max';
+                                      }
+                                      return null;
+                                    },
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: TextField(
-                                  controller: maxControllers[t.dataType],
-                                  decoration: const InputDecoration(
-                                      labelText: 'Max', isDense: true),
-                                  keyboardType: const TextInputType.numberWithOptions(
-                                      decimal: true),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: maxControllers[t.dataType],
+                                    decoration: const InputDecoration(
+                                        labelText: 'Max', isDense: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final maxVal = double.tryParse(value);
+                                      if (maxVal == null) return 'Numbers only';
+                                      final minVal = double.tryParse(
+                                          minControllers[t.dataType]!.text);
+                                      if (minVal != null && maxVal <= minVal) {
+                                        return 'Must be > Min';
+                                      }
+                                      return null;
+                                    },
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final List<PatientThreshold> updated = [];
-                    for (var t in currentThresholds) {
-                      updated.add(PatientThreshold(
-                        dataType: t.dataType,
-                        minValue:
-                            double.tryParse(minControllers[t.dataType]!.text) ??
-                                t.minValue,
-                        maxValue:
-                            double.tryParse(maxControllers[t.dataType]!.text) ??
-                                t.maxValue,
-                      ));
-                    }
-                    await ref
-                        .read(patientThresholdsProvider.notifier)
-                        .updateThresholds(updated);
-                    if (context.mounted) Navigator.pop(context);
-                  },
-                  child: const Text("Save Changes"),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+
+                      final List<PatientThreshold> updated = [];
+                      for (var t in currentThresholds) {
+                        updated.add(PatientThreshold(
+                          dataType: t.dataType,
+                          minValue:
+                              double.parse(minControllers[t.dataType]!.text),
+                          maxValue:
+                              double.parse(maxControllers[t.dataType]!.text),
+                        ));
+                      }
+                      await ref
+                          .read(patientThresholdsProvider.notifier)
+                          .updateThresholds(updated);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    child: const Text("Save Changes"),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
