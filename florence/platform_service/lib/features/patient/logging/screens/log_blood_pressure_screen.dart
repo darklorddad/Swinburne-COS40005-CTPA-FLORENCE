@@ -161,18 +161,21 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     final sysValue = double.tryParse(_systolicController.text);
     final diaValue = double.tryParse(_diastolicController.text);
 
-    // Fetch thresholds
-    final healthData = ref.watch(monitorDataProvider).asData?.value;
-    HealthThreshold? sysThreshold;
-    HealthThreshold? diaThreshold;
-    try {
-      sysThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC
-      );
-      diaThreshold = healthData?.healthThresholds.firstWhere(
-        (t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC
-      );
-    } catch (_) {}
+    // Fetch thresholds from the NEW provider
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    PatientThreshold? sysThreshold;
+    PatientThreshold? diaThreshold;
+
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        sysThreshold = thresholdsAsync.value!.firstWhere(
+          (t) => t.dataType == 'BLOOD_PRESSURE_SYSTOLIC',
+        );
+        diaThreshold = thresholdsAsync.value!.firstWhere(
+          (t) => t.dataType == 'BLOOD_PRESSURE_DIASTOLIC',
+        );
+      } catch (_) {}
+    }
 
     final bpColor = _getBPColor(sysValue, diaValue, sysThreshold, diaThreshold);
 
@@ -274,20 +277,11 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     );
   }
 
-  Widget _buildInfoCard(HealthThreshold? sysT, HealthThreshold? diaT) {
-    final thresholdsAsync = ref.watch(patientThresholdsProvider);
-    String targetText = "Loading targets...";
-    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
-      try {
-        final sysTarget = thresholdsAsync.value!
-            .firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_SYSTOLIC');
-        final diaTarget = thresholdsAsync.value!
-            .firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_DIASTOLIC');
-        targetText =
-            "Target: ${sysTarget.minValue.toInt()}/${diaTarget.minValue.toInt()} - ${sysTarget.maxValue.toInt()}/${diaTarget.maxValue.toInt()} mmHg";
-      } catch (e) {
-        targetText = "Target: Not set";
-      }
+  Widget _buildInfoCard(PatientThreshold? sysT, PatientThreshold? diaT) {
+    String targetText = "Target: Not set";
+    if (sysT != null && diaT != null) {
+      targetText =
+          "Target: ${sysT.minValue.toInt()}/${diaT.minValue.toInt()} - ${sysT.maxValue.toInt()}/${diaT.maxValue.toInt()} mmHg";
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -416,7 +410,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     );
   }
 
-  Widget _buildInputSection(Color? bpColor, HealthThreshold? sysT, HealthThreshold? diaT) {
+  Widget _buildInputSection(
+      Color? bpColor, PatientThreshold? sysT, PatientThreshold? diaT) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = bpColor != null 
         ? bpColor.withOpacity(0.05) 
@@ -788,7 +783,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     );
   }
 
-  Color? _getBPColor(double? sys, double? dia, HealthThreshold? sysT, HealthThreshold? diaT) {
+  Color? _getBPColor(
+      double? sys, double? dia, PatientThreshold? sysT, PatientThreshold? diaT) {
     if (sys == null || dia == null) return null;
     
     final sMin = sysT?.minValue ?? 90;
@@ -801,7 +797,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     return AppTheme.primaryGreen;
   }
 
-  String _getBPStatus(double? sys, double? dia, HealthThreshold? sysT, HealthThreshold? diaT) {
+  String _getBPStatus(
+      double? sys, double? dia, PatientThreshold? sysT, PatientThreshold? diaT) {
     if (sys == null || dia == null) return '';
     
     final sMin = sysT?.minValue ?? 90;
