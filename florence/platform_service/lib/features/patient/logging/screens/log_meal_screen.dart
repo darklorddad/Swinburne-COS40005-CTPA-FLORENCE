@@ -226,8 +226,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
           updated = true;
         }
         
-        if (updated) Helpers.showSuccess(context, 'Meal details auto-filled!');
-        else Helpers.showInfo(context, 'Could not identify meal. Please enter details manually.');
+        if (updated) {
+          Helpers.showSuccess(context, 'Meal details auto-filled!');
+        } else {
+          Helpers.showInfo(context, 'Could not identify meal. Please enter details manually.');
+        }
       } else if (mounted) {
          Helpers.showWarning(context, 'AI analysis unavailable. Please enter details manually.');
       }
@@ -670,8 +673,9 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 final isFirst = index == 0;
                 final isLast = index == _mealTypeOptions.length - 1;
                 BorderRadius radius = BorderRadius.zero;
-                if (isFirst) radius = const BorderRadius.horizontal(left: Radius.circular(12));
-                else if (isLast) radius = const BorderRadius.horizontal(right: Radius.circular(12));
+                if (isFirst) {
+                  radius = const BorderRadius.horizontal(left: Radius.circular(12));
+                } else if (isLast) radius = const BorderRadius.horizontal(right: Radius.circular(12));
 
                 return Expanded(
                   child: InkWell(

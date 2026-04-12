@@ -1,5 +1,6 @@
 /// Pattern Detection Service for FLORENCE Digital Health Platform
 /// AI-powered pattern recognition for automation triggers
+library;
 
 import 'dart:math';
 import 'package:florence/core/config/environment.dart';

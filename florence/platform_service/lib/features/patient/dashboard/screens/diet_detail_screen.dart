@@ -449,8 +449,9 @@ class _DietImpactChart extends StatelessWidget {
 
       // Color logic
       Color barColor = AppTheme.primaryGreen;
-      if (avg > 50) barColor = AppTheme.errorColor;
-      else if (avg > 30) barColor = AppTheme.warningColor;
+      if (avg > 50) {
+        barColor = AppTheme.errorColor;
+      } else if (avg > 30) barColor = AppTheme.warningColor;
       
       barGroups.add(
         BarChartGroupData(
@@ -666,8 +667,9 @@ class _HistorySectionState extends State<_HistorySection> {
       // Delta text
       deltaText = (spike > 0 ? '+' : '') + '${spike.toInt()}';
 
-      if (spike > 50) statusColor = AppTheme.errorColor;
-      else if (spike > 30) statusColor = AppTheme.warningColor;
+      if (spike > 50) {
+        statusColor = AppTheme.errorColor;
+      } else if (spike > 30) statusColor = AppTheme.warningColor;
       else statusColor = AppTheme.primaryGreen;
     }
 

@@ -763,8 +763,9 @@ class _GoalComparisonSection extends StatelessWidget {
     bool isGood = !isHigh && !isLow && current > 0;
 
     Color barColor;
-    if (isHigh) barColor = AppTheme.errorColor;
-    else if (isLow) barColor = AppTheme.warningColor;
+    if (isHigh) {
+      barColor = AppTheme.errorColor;
+    } else if (isLow) barColor = AppTheme.warningColor;
     else barColor = AppTheme.primaryGreen;
 
     final maxY = math.max(current, threshold!.maxValue) * 1.4;
