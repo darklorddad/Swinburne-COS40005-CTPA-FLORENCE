@@ -264,6 +264,14 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // Prevent submitting completely empty meal logs
+    if (_mealNameController.text.trim().isEmpty && 
+        _caloriesController.text.trim().isEmpty && 
+        _selectedImage == null) {
+      Helpers.showError(context, 'Please provide a photo, description, or calories to log this meal.');
+      return;
+    }
+
     final now = DateTime.now();
     // Validate that the date is not in future
     if (_selectedDateTime.isAfter(now)) {
