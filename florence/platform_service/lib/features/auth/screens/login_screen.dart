@@ -113,7 +113,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Navigate to forgot password
   void _goToForgotPassword() {
-    // TODO: Implement forgot password screen
     Helpers.showInfo(context, 'Forgot password feature coming soon');
   }
 
