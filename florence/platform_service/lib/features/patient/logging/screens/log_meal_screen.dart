@@ -759,35 +759,46 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
               // AI Toggle Switch Group
               Row(
                 children: [
-                  InkWell(
+                  GestureDetector(
                     onTap: () => setState(() => _useAiAutofill = !_useAiAutofill),
-                    borderRadius: BorderRadius.circular(20),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
                       decoration: BoxDecoration(
-                        color: _useAiAutofill 
-                            ? AppTheme.primaryBlue.withOpacity(0.1)
-                            : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
-                        borderRadius: BorderRadius.circular(20),
+                        color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        borderRadius: BorderRadius.circular(24),
                         border: Border.all(
                           color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor,
                         ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.auto_awesome, 
-                            size: 16, 
-                            color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-                          ),
-                          const SizedBox(width: 6),
                           Text(
                             'Auto',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                               color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                              fontSize: 14,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 28,
+                            width: 44,
+                            child: Transform.scale(
+                              scale: 0.9,
+                              child: Switch(
+                                value: _useAiAutofill,
+                                activeColor: Colors.white,
+                                activeTrackColor: AppTheme.primaryBlue,
+                                inactiveThumbColor: Colors.white,
+                                inactiveTrackColor: Colors.grey.shade300,
+                                trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                onChanged: (val) => setState(() => _useAiAutofill = val),
+                              ),
                             ),
                           ),
                         ],
