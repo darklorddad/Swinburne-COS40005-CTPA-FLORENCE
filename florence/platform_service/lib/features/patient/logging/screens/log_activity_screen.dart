@@ -770,7 +770,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_endDateTime).format(context),
-                  icon: Icons.access_time_filled,
+                  icon: Icons.access_time_outlined,
                   onTap: () async {
                     FocusScope.of(context).unfocus();
                     final picked = await showTimePicker(
