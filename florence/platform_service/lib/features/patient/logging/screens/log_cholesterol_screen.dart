@@ -465,18 +465,18 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit)),
+              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit, Icons.bloodtype_outlined, '5.0', '150')),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit)),
+              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit, Icons.arrow_downward, '2.5', '100')),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit)),
+              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit, Icons.arrow_upward, '1.5', '50')),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit)),
+              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined, '1.7', '150')),
             ],
           ),
         ],
@@ -598,7 +598,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildGridLabField(String label, TextEditingController controller, String unit) {
+  Widget _buildGridLabField(String label, TextEditingController controller, String unit, IconData icon, String placeholderMmol, String placeholderMgdl) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMmol = unit == 'mmol/L';
     final double minValid = isMmol ? 0.1 : 5.0;
@@ -631,7 +631,8 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             return null;
           },
           decoration: InputDecoration(
-            hintText: isMmol ? '5.0' : '150',
+            hintText: isMmol ? 'e.g. $placeholderMmol' : 'e.g. $placeholderMgdl',
+            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
             filled: true,
             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
