@@ -60,6 +60,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     final diff = _endDateTime.difference(_selectedDateTime).inMinutes;
     if (diff > 0 && _activeDurationController.text.isEmpty) {
       _activeDurationController.text = diff.toString();
+
+      // Keep track of the prefilled value so it doesn't immediately count as a "change"
+      if (isInitial) {
+        _initialDuration = diff.toString();
+      }
     }
     // Don't call setState during initState
     if (!isInitial && mounted) setState(() {});
