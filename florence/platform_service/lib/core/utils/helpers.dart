@@ -13,7 +13,12 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50),
+        ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.check_circle, color: Colors.white),
             const SizedBox(width: 12),
@@ -21,7 +26,7 @@ class Helpers {
           ],
         ),
         backgroundColor: Colors.green,
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -32,7 +37,12 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50),
+        ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.error, color: Colors.white),
             const SizedBox(width: 12),
@@ -40,7 +50,7 @@ class Helpers {
           ],
         ),
         backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 4),
       ),
     );
@@ -51,7 +61,12 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50),
+        ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.info, color: Colors.white),
             const SizedBox(width: 12),
@@ -59,7 +74,7 @@ class Helpers {
           ],
         ),
         backgroundColor: Colors.blue,
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
     );
@@ -70,7 +85,12 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(50),
+        ),
         content: Row(
+          key: UniqueKey(),
           children: [
             const Icon(Icons.warning, color: Colors.white),
             const SizedBox(width: 12),
@@ -78,7 +98,7 @@ class Helpers {
           ],
         ),
         backgroundColor: Colors.orange,
-        behavior: SnackBarBehavior.fixed,
+        behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
       ),
     );
