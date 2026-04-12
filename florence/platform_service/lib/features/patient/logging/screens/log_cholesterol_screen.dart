@@ -445,14 +445,14 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.bloodtype_outlined,
+                  Icons.science_outlined,
                   color: titleIconColor,
                   size: 24,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'Cholesterol ($currentUnit)',
+                'Lipid Panel ($currentUnit)',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -460,13 +460,25 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildLabField('Total Cholesterol', _totalController, currentUnit, Icons.bloodtype_outlined),
+
+          // 2x2 Grid Layout
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildGridLabField('LDL (Bad)', _ldlController, currentUnit)),
+            ],
+          ),
           const SizedBox(height: 16),
-          _buildLabField('LDL Cholesterol', _ldlController, currentUnit, Icons.arrow_downward),
-          const SizedBox(height: 16),
-          _buildLabField('HDL Cholesterol', _hdlController, currentUnit, Icons.arrow_upward),
-          const SizedBox(height: 16),
-          _buildLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _buildGridLabField('HDL (Good)', _hdlController, currentUnit)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit)),
+            ],
+          ),
         ],
       ),
     );
@@ -586,7 +598,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildLabField(String label, TextEditingController controller, String unit, IconData icon) {
+  Widget _buildGridLabField(String label, TextEditingController controller, String unit) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isMmol = unit == 'mmol/L';
     final double minValid = isMmol ? 0.1 : 5.0;
@@ -599,8 +611,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
           label,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
-                fontSize: 14,
+                fontSize: 13,
               ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -611,15 +625,16 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
           validator: (val) {
             if (val != null && val.isNotEmpty) {
               final num = double.tryParse(val.replaceAll(',', '.'));
-              if (num == null) return 'Invalid number';
-              if (num < minValid || num > maxValid) return 'Enter $minValid - $maxValid';
+              if (num == null) return 'Invalid';
+              if (num < minValid || num > maxValid) return 'Range:\n$minValid - $maxValid';
             }
             return null;
           },
           decoration: InputDecoration(
-            hintText: 'e.g. ${isMmol ? '5.0' : '150'}',
+            hintText: isMmol ? '5.0' : '150',
             filled: true,
             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide.none,
@@ -631,7 +646,6 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                 width: 2,
               ),
             ),
-            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor),
           ),
         ),
       ],
