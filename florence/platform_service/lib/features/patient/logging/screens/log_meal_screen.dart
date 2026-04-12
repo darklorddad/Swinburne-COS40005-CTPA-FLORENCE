@@ -590,6 +590,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(_selectedDateTime.year, _selectedDateTime.month, _selectedDateTime.day, picked.hour, picked.minute);
+                        _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
                       });
                     }
                   },
@@ -950,7 +951,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                 maxLines: 3,
                 textInputAction: TextInputAction.next,
                 decoration: InputDecoration(
-                  hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                  hintText: 'e.g., Grilled chicken, 60g carbs, no veggies...',
                   hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                   filled: true,
                   fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,

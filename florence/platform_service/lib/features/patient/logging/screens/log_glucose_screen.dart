@@ -1517,7 +1517,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           maxLines: 3,
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
-                            hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                            hintText: 'e.g., Grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                             filled: true,
                             fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
