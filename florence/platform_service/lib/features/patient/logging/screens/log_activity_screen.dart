@@ -533,7 +533,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             maxLines: 3,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              hintText: 'e.g., Playing tennis with 30 minutes break in between',
+              hintText: 'e.g. playing tennis with 30 minutes break in between',
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark
@@ -576,7 +576,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   controller: _caloriesController,
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    hintText: 'e.g., 300',
+                    hintText: 'e.g. 500',
                     filled: true,
                     fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
                     border: OutlineInputBorder(
@@ -798,14 +798,14 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     int currentActive = int.tryParse(_activeDurationController.text) ?? 0;
     double sliderValue = currentActive.clamp(0, maxDuration).toDouble();
 
-    // Dynamically calculate the 4 pill values based on total session time
+    // Dynamically calculate the 4 pill values
     int full = totalElapsed;
     int threeQuarters = (totalElapsed * 0.75).round();
     int half = (totalElapsed * 0.5).round();
     int quarter = (totalElapsed * 0.25).round();
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
@@ -848,7 +848,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                           ),
                     ),
                     Text(
-                      'Total session duration: $totalElapsed mins', // Updated subtitle
+                      'Total session duration: $totalElapsed mins',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: AppTheme.textSecondaryColor,
                             fontWeight: FontWeight.w500,
@@ -861,7 +861,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Big Number Display (Now an interactive input!)
+          // Big Number Display (Larger vertically, black 'mins')
           Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -869,7 +869,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               textBaseline: TextBaseline.alphabetic,
               children: [
                 SizedBox(
-                  width: 140, // Keeps the input box contained so it doesn't push the "mins" text away
+                  width: 140, 
                   child: TextFormField(
                     controller: _activeDurationController,
                     keyboardType: TextInputType.number,
@@ -880,19 +880,17 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       if (val > totalElapsed) return 'Max $totalElapsed';
                       return null;
                     },
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 56,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.primaryBlue,
-                      height: 1.0,
                     ),
                     decoration: const InputDecoration(
                       border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                      errorStyle: TextStyle(fontSize: 12, height: 1.0),
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                      errorStyle: TextStyle(fontSize: 12),
                     ),
-                    onChanged: (_) => setState(() {}), // Syncs the slider instantly
+                    onChanged: (_) => setState(() {}), 
                   ),
                 ),
                 const SizedBox(width: 4),
@@ -901,7 +899,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.textSecondaryColor,
+                    color: AppTheme.textPrimaryColor,
                   ),
                 ),
               ],
@@ -909,37 +907,41 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Custom Slider
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppTheme.primaryBlue,
-              inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
-              thumbColor: AppTheme.primaryBlue,
-              overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
-              trackHeight: 8,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
-            ),
-            child: Slider(
-              value: sliderValue,
-              min: 0,
-              max: maxDuration.toDouble(),
-              divisions: maxDuration > 0 ? maxDuration : 1,
-              onChanged: (val) {
-                setState(() {
-                  _activeDurationController.text = val.toInt().toString();
-                });
-              },
+          // Full-Width Custom Slider
+          Transform.translate(
+            offset: const Offset(-12, 0),
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                trackShape: const RectangularSliderTrackShape(),
+                activeTrackColor: AppTheme.primaryBlue,
+                inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+                thumbColor: AppTheme.primaryBlue,
+                overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
+                trackHeight: 8,
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+              ),
+              child: Slider(
+                value: sliderValue,
+                min: 0,
+                max: maxDuration.toDouble(),
+                divisions: maxDuration > 0 ? maxDuration : 1,
+                onChanged: (val) {
+                  setState(() {
+                    _activeDurationController.text = val.toInt().toString();
+                  });
+                },
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          // Quick Adjust Chips (Equal width & dynamically calculated)
+          // Quick Adjust Chips (Matched to Quick Select style)
           Row(
             children: [
               Expanded(
                 child: _buildDurationChip(
-                  label: '${full}m',
+                  label: 'Full',
                   onTap: () => setState(() => _activeDurationController.text = full.toString()),
                   isSelected: currentActive == full,
                   isDark: isDark,
@@ -991,7 +993,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     );
   }
 
-  // Updated Helper: Uses alignment to center text within Expanded pills
+  // Updated to match Quick Select chip styling
   Widget _buildDurationChip({
     required String label,
     required VoidCallback onTap,
@@ -1000,23 +1002,26 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected 
-              ? AppTheme.primaryBlue 
+              ? AppTheme.primaryBlue.withOpacity(0.15) 
               : (isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryBlue : (isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade300),
+            color: isSelected 
+                ? AppTheme.primaryBlue 
+                : Colors.transparent,
+            width: 1.5,
           ),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppTheme.textPrimaryColor,
+            color: isSelected ? AppTheme.primaryBlue : AppTheme.textPrimaryColor,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
             fontSize: 13,
           ),
