@@ -1064,7 +1064,7 @@ class _RecommendationsScreenState
                 'Your recommendations',
                 style: TextStyle(
                   color: c.txtPrimary,
-                  fontSize: 37,
+                  fontSize: 31,
                   fontWeight: FontWeight.w300,
                   fontStyle: FontStyle.italic,
                 ),
