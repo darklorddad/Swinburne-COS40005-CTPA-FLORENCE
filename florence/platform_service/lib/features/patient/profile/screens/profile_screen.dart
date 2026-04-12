@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../config/routes.dart';
 import '../../../../config/theme.dart';
@@ -10,6 +11,7 @@ import '../../../../core/utils/helpers.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/card_widgets.dart';
 import '../../../../shared/widgets/input_widgets.dart';
+import '../../core/providers/disease_providers.dart';
 import '../../core/providers/medication_providers.dart';
 import '../../core/repositories/medication_repository.dart';
 import '../../dashboard/widgets/medication_section.dart';
@@ -561,6 +563,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       // Medication Cabinet Section
                       _buildMedicationCabinetSection(),
+                      const SizedBox(height: 16),
+
+                      // Disease Log Section
+                      _buildDiseaseLogSection(context, ref),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -978,6 +984,196 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: const Text("Restart Medication"),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDiseaseLogSection(BuildContext context, WidgetRef ref) {
+    final diseaseLogsAsync = ref.watch(diseaseLogProvider);
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionHeader('Disease Log', Icons.history_edu_outlined),
+              IconButton(
+                onPressed: () => _showAddDiseaseModal(context, ref),
+                icon: const Icon(Icons.add_circle_outline,
+                    color: AppTheme.primaryBlue),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          diseaseLogsAsync.when(
+            data: (logs) => logs.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Text("No disease history logged.",
+                        style: TextStyle(color: Colors.grey)),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: logs.length,
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final log = logs[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(log.conditionName,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(
+                            "Diagnosed: ${log.diagnosedDate != null ? DateFormat('dd MMM yyyy').format(log.diagnosedDate!) : 'Unknown'}"),
+                        trailing: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: log.status == 'active'
+                                    ? Colors.red[50]
+                                    : Colors.green[50],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                log.status.toUpperCase(),
+                                style: TextStyle(
+                                  color: log.status == 'active'
+                                      ? Colors.red
+                                      : Colors.green,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            if (log.status == 'resolved' &&
+                                log.resolvedDate != null)
+                              Padding(
+                                padding: const EdgeInsets.top(4),
+                                child: Text(
+                                  "Resolved: ${DateFormat('dd MMM yyyy').format(log.resolvedDate!)}",
+                                  style: const TextStyle(
+                                      fontSize: 10, color: Colors.grey),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text("Error loading logs: $e"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddDiseaseModal(BuildContext context, WidgetRef ref) {
+    final nameController = TextEditingController();
+    String status = 'active';
+    DateTime? diagnosedDate;
+    DateTime? resolvedDate;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text("Log Medical Condition",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                    labelText: 'Condition Name',
+                    hintText: 'e.g. Type 2 Diabetes'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: status,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: const [
+                  DropdownMenuItem(value: 'active', child: Text("Active")),
+                  DropdownMenuItem(value: 'resolved', child: Text("Resolved")),
+                ],
+                onChanged: (val) => setModalState(() {
+                  status = val!;
+                  if (status == 'active') resolvedDate = null;
+                }),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(diagnosedDate == null
+                    ? "Select Diagnosed Date"
+                    : "Diagnosed: ${DateFormat('dd MMM yyyy').format(diagnosedDate!)}"),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  final date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now());
+                  if (date != null) setModalState(() => diagnosedDate = date);
+                },
+              ),
+              if (status == 'resolved')
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(resolvedDate == null
+                      ? "Select Resolved Date"
+                      : "Resolved: ${DateFormat('dd MMM yyyy').format(resolvedDate!)}"),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: diagnosedDate ?? DateTime(1900),
+                        lastDate: DateTime.now());
+                    if (date != null) setModalState(() => resolvedDate = date);
+                  },
+                ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.isNotEmpty) {
+                      await ref
+                          .read(diseaseLogProvider.notifier)
+                          .addLog(DiseaseLog(
+                            conditionName: nameController.text,
+                            status: status,
+                            diagnosedDate: diagnosedDate,
+                            resolvedDate: resolvedDate,
+                          ));
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
+                  child: const Text("Save Condition"),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

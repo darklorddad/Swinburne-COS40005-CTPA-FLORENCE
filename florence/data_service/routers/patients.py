@@ -186,6 +186,13 @@ class MonitorDataUpdate(BaseModel):
     value: Optional[float] = None
     measured_at: Optional[datetime] = None
 
+class DiseaseLogCreate(BaseModel):
+    condition_name: str
+    status: Literal['active', 'resolved']
+    diagnosed_date: Optional[date] = None
+    resolved_date: Optional[date] = None
+    notes: Optional[str] = None
+
 class MealTime(str, Enum):
     BREAKFAST = 'BREAKFAST'
     LUNCH = 'LUNCH'
@@ -431,6 +438,32 @@ async def update_own_monitor_data(
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
+
+@router.get("/me/disease-logs", summary="Get my disease logs")
+async def get_own_disease_logs(patient_profile: dict = Depends(get_current_patient_profile)):
+    try:
+        response = supabase.table('disease_logs').select('*').eq('patient_id', patient_profile['id']).order('diagnosed_date', desc=True).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/me/disease-logs", summary="Add a disease log")
+async def add_own_disease_log(
+    log_data: DiseaseLogCreate, 
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        insert_dict = log_data.model_dump(mode='json')
+        insert_dict['patient_id'] = patient_profile['id']
+        
+        # Logic: If status is active, ensure resolved_date is null
+        if log_data.status == 'active':
+            insert_dict['resolved_date'] = None
+            
+        response = supabase.table('disease_logs').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save disease log: {str(e)}")
 
 @router.get("/me/daily-logs", summary="Get all my daily logs")
 async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):
