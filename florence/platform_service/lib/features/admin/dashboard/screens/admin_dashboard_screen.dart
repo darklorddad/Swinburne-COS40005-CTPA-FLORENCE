@@ -58,6 +58,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     builder: (context, constraints) {
                       if (constraints.maxWidth < 900) {
                         return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _buildQuickActions(isMobile),
                             SizedBox(height: isMobile ? 16 : 24),
@@ -81,6 +82,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           Expanded(
                             flex: 4,
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildQuickActions(isMobile),
                                 const SizedBox(height: 24),
@@ -449,7 +451,7 @@ class _GradientStatCard extends StatelessWidget {
                     const Icon(Icons.arrow_outward_rounded, color: Colors.white70, size: 20),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 16),
                 Text(
                   value,
                   style: const TextStyle(
@@ -459,7 +461,7 @@ class _GradientStatCard extends StatelessWidget {
                     height: 1.1,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   title,
                   style: const TextStyle(
@@ -471,7 +473,7 @@ class _GradientStatCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: TextStyle(
