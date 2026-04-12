@@ -27,6 +27,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  String _diseaseFilter = 'ACTIVE';
+
   // Mock user data (fallback)
   String _userName = 'John Doe';
   String _userEmail = 'john.doe@example.com';
@@ -549,7 +551,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(
+                        left: 16, right: 16, top: 16, bottom: 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -1006,71 +1009,165 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+
+          // Custom Segmented Filter Control
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withOpacity(0.05)
+                  : Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildDiseaseFilterButton('ACTIVE', 'Active'),
+                _buildDiseaseFilterButton('RESOLVED', 'Resolved'),
+                _buildDiseaseFilterButton('ALL', 'All'),
+              ],
+            ),
+          ),
           const SizedBox(height: 16),
+
           diseaseLogsAsync.when(
-            data: (logs) => logs.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Text("No disease history logged.",
+            data: (logs) {
+              final filteredLogs = logs.where((log) {
+                if (_diseaseFilter == 'ALL') return true;
+                return log.status.toUpperCase() == _diseaseFilter;
+              }).toList();
+
+              if (filteredLogs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text("No disease history found.",
                         style: TextStyle(color: Colors.grey)),
-                  )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: logs.length,
-                    separatorBuilder: (context, index) => const Divider(),
-                    itemBuilder: (context, index) {
-                      final log = logs[index];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(log.conditionName,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(
-                            "Diagnosed: ${log.diagnosedDate != null ? DateFormat('dd MMM yyyy').format(log.diagnosedDate!) : 'Unknown'}"),
-                        trailing: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredLogs.length,
+                separatorBuilder: (context, index) => const Divider(height: 24),
+                itemBuilder: (context, index) {
+                  final log = filteredLogs[index];
+                  final isActive = log.status.toLowerCase() == 'active';
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.red[50] : Colors.green[50],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.medical_services_outlined,
+                          color: isActive ? Colors.red : Colors.green,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: log.status == 'active'
-                                    ? Colors.red[50]
-                                    : Colors.green[50],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                log.status.toUpperCase(),
-                                style: TextStyle(
-                                  color: log.status == 'active'
-                                      ? Colors.red
-                                      : Colors.green,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
+                            Text(
+                              log.conditionName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
                             ),
-                            if (log.status == 'resolved' &&
-                                log.resolvedDate != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 4),
-                                child: Text(
-                                  "Resolved: ${DateFormat('dd MMM yyyy').format(log.resolvedDate!)}",
-                                  style: const TextStyle(
-                                      fontSize: 10, color: Colors.grey),
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Diagnosed: ${log.diagnosedDate != null ? DateFormat('dd MMM yyyy').format(log.diagnosedDate!) : 'Unknown'}",
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 13),
+                            ),
+                            if (!isActive && log.resolvedDate != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                "Resolved: ${DateFormat('dd MMM yyyy').format(log.resolvedDate!)}",
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 13),
                               ),
+                            ]
                           ],
                         ),
-                      );
-                    },
-                  ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text("Error loading logs: $e"),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.red[50] : Colors.green[50],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          isActive ? 'ACTIVE' : 'RESOLVED',
+                          style: TextStyle(
+                            color: isActive ? Colors.red : Colors.green,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text("Error loading logs: $e"),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDiseaseFilterButton(String filterValue, String label) {
+    final isSelected = _diseaseFilter == filterValue;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _diseaseFilter = filterValue;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryBlue : Colors.grey[600],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
