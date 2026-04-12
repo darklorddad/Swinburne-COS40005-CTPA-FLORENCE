@@ -62,6 +62,36 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
     _updateSuggestedDuration(isInitial: true);
   }
 
+  void _validateTimeline() {
+    final now = DateTime.now();
+
+    // 1. Prevent future Start Time
+    if (_selectedDateTime.isAfter(now)) {
+      _selectedDateTime = now;
+      Helpers.showWarning(context, 'Start time cannot be in the future.');
+    }
+
+    // 2. Prevent future End Time
+    if (_endDateTime.isAfter(now)) {
+      _endDateTime = now;
+      Helpers.showWarning(context, 'End time cannot be in the future.');
+    }
+
+    // 3. Ensure End Time is strictly AFTER Start Time (at least 1 min)
+    if (_endDateTime.isBefore(_selectedDateTime) ||
+        _endDateTime.isAtSameMomentAs(_selectedDateTime)) {
+      _endDateTime = _selectedDateTime.add(const Duration(minutes: 1));
+
+      // If pushing the End Time forward pushed it into the future, we have to pull the Start Time back!
+      if (_endDateTime.isAfter(now)) {
+        _endDateTime = now;
+        _selectedDateTime = now.subtract(const Duration(minutes: 1));
+      }
+
+      Helpers.showWarning(context, 'End time must be after start time.');
+    }
+  }
+
   void _updateSuggestedDuration({bool isInitial = false}) {
     final diff = _endDateTime.difference(_selectedDateTime).inMinutes;
     if (diff > 0 && _activeDurationController.text.isEmpty) {
@@ -184,6 +214,8 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
             time.hour,
             time.minute,
           );
+          _validateTimeline();
+          _updateSuggestedDuration();
         });
       }
     }
@@ -712,6 +744,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _selectedDateTime = DateTime(picked.year, picked.month, picked.day, _selectedDateTime.hour, _selectedDateTime.minute);
+                        _validateTimeline();
                         _updateSuggestedDuration();
                       });
                     }
@@ -774,6 +807,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _endDateTime = DateTime(picked.year, picked.month, picked.day, _endDateTime.hour, _endDateTime.minute);
+                        _validateTimeline();
                         _updateSuggestedDuration();
                       });
                     }
@@ -793,6 +827,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     if (picked != null) {
                       setState(() {
                         _endDateTime = DateTime(_endDateTime.year, _endDateTime.month, _endDateTime.day, picked.hour, picked.minute);
+                        _validateTimeline();
                         _updateSuggestedDuration();
                       });
                     }
