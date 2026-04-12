@@ -33,7 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
     // Check for a message passed from navigation arguments (e.g., from an invalid deep link).
     // This is the ideal place to handle one-time actions when a screen is pushed with arguments.
     if (!_hasShownRouteError) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       final routeMessage = args?['message'] as String?;
       if (routeMessage != null) {
         // Schedule the snackbar to show after the build is complete to avoid build-time errors.
@@ -52,21 +53,22 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     Helpers.hideKeyboard(context);
     setState(() {
       _errorMessage = null; // Clear previous errors
       _isLoading = true;
     });
-    
+
     try {
-      debugPrint('[Login Screen] Attempting login for user: ${_emailController.text.trim()}');
-      
+      debugPrint(
+          '[Login Screen] Attempting login for user: ${_emailController.text.trim()}');
+
       // Call the backend API using ApiService
       final session = await _apiService.post('/auth/login', {
         'email': _emailController.text.trim(),
@@ -78,7 +80,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (refreshToken != null) {
         // Manually set the session using the refresh token. The Supabase client
         // will use this to fetch a valid access token and establish the session.
-        debugPrint('[Login Screen] Login API call successful. Setting session with refresh token.');
+        debugPrint(
+            '[Login Screen] Login API call successful. Setting session with refresh token.');
         // This will trigger the onAuthStateChange listener in app.dart.
         await supabase.auth.setSession(refreshToken);
       } else {
@@ -91,7 +94,8 @@ class _LoginScreenState extends State<LoginScreen> {
         var errorMessage = error.toString().replaceFirst('Exception: ', '');
         // The backend returns a generic message for both invalid credentials and unconfirmed email.
         if (errorMessage.contains('Invalid login credentials')) {
-          errorMessage = 'Invalid email or password. Please also check if you have confirmed your email';
+          errorMessage =
+              'Invalid email or password. Please also check if you have confirmed your email';
         }
         setState(() => _errorMessage = errorMessage);
       }
@@ -101,24 +105,24 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
   }
-  
+
   /// Navigate to registration
   void _goToRegister() {
     AppRoutes.push(context, AppRoutes.register);
   }
-  
+
   /// Navigate to forgot password
   void _goToForgotPassword() {
     // TODO: Implement forgot password screen
     Helpers.showInfo(context, 'Forgot password feature coming soon');
   }
-  
+
   @override
   Widget build(BuildContext context) {
     // Responsive sizing
     final isDesktop = Helpers.isDesktop(context);
     final maxWidth = isDesktop ? 400.0 : double.infinity;
-    
+
     // Manual handling of bottom insets to fix mobile web keyboard glitch
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
@@ -132,106 +136,110 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24.0),
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Logo and Title
-                    _buildHeader(),
-                    const SizedBox(height: 48),
-                    
-                    // Display an in-screen error message for failed login attempts.
-                    if (_errorMessage != null) ...[
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: AppTheme.errorColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 20),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: AppTheme.errorColor, fontSize: 13),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    
-                    CustomTextField(
-                      label: 'Email',
-                      hint: 'Enter your email',
-                      controller: _emailController,
-                      validator: Validators.email,
-                      keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      enabled: !_isLoading,
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Password field
-                    PasswordField(
-                      label: 'Password',
-                      hint: 'Enter your password',
-                      controller: _passwordController,
-                      validator: (value) => Validators.minLength(value, 1, fieldName: 'Password'),
-                      textInputAction: TextInputAction.done,
-                      onChanged: (value) {
-                        // When user starts typing a new password, clear the error message
-                        if (_errorMessage != null) {
-                          setState(() {
-                            _errorMessage = null;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Remember me and forgot password row
-                    _buildRememberMeRow(),
-                    const SizedBox(height: 32),
-                    
-                    // Login button
-                    PrimaryButton(
-                      text: 'Sign In',
-                      onPressed: _isLoading ? null : _handleLogin,
-                      isLoading: _isLoading,
-                      width: double.infinity,
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Divider
-                    _buildDivider(),
-                    const SizedBox(height: 16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Logo and Title
+                      _buildHeader(),
+                      const SizedBox(height: 48),
 
-                    // Add this temporarily somewhere on your main login screen
-TextButton(
-  onPressed: () => Navigator.pushNamed(context, '/admin/login'),
-  child: const Text('Go to Admin Portal (Dev)'),
-),
-                    
-                    // Register link
-                    _buildRegisterLink(),
-                  ],
+                      // Display an in-screen error message for failed login attempts.
+                      if (_errorMessage != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: AppTheme.errorColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.error_outline,
+                                  color: AppTheme.errorColor, size: 20),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorMessage!,
+                                  style: const TextStyle(
+                                      color: AppTheme.errorColor, fontSize: 13),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      CustomTextField(
+                        label: 'Email',
+                        hint: 'Enter your email',
+                        controller: _emailController,
+                        validator: Validators.email,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        prefixIcon: const Icon(Icons.email_outlined),
+                        enabled: !_isLoading,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Password field
+                      PasswordField(
+                        label: 'Password',
+                        hint: 'Enter your password',
+                        controller: _passwordController,
+                        validator: (value) => Validators.minLength(value, 1,
+                            fieldName: 'Password'),
+                        textInputAction: TextInputAction.done,
+                        onChanged: (value) {
+                          // When user starts typing a new password, clear the error message
+                          if (_errorMessage != null) {
+                            setState(() {
+                              _errorMessage = null;
+                            });
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Remember me and forgot password row
+                      _buildRememberMeRow(),
+                      const SizedBox(height: 32),
+
+                      // Login button
+                      PrimaryButton(
+                        text: 'Sign In',
+                        onPressed: _isLoading ? null : _handleLogin,
+                        isLoading: _isLoading,
+                        width: double.infinity,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Divider
+                      _buildDivider(),
+                      const SizedBox(height: 16),
+
+                      // Add this temporarily somewhere on your main login screen
+                      TextButton(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, AppRoutes.adminDashboard),
+                        child: const Text('Go to Admin Portal (Dev)'),
+                      ),
+
+                      // Register link
+                      _buildRegisterLink(),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-      ),
     );
   }
-  
+
   Widget _buildHeader() {
     return Column(
       children: [
@@ -267,7 +275,7 @@ TextButton(
       ],
     );
   }
-  
+
   /// Build forgot password link
   Widget _buildRememberMeRow() {
     return Row(
@@ -292,7 +300,7 @@ TextButton(
       ],
     );
   }
-  
+
   /// Build divider with "or" text
   Widget _buildDivider() {
     return Row(
@@ -321,7 +329,7 @@ TextButton(
       ],
     );
   }
-  
+
   /// Build register link
   Widget _buildRegisterLink() {
     return Row(
