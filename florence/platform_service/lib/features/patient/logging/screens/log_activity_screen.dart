@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../core/utils/formatters.dart';
@@ -588,20 +589,33 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              SizedBox(
-                height: 56, // Match the height of the TextFormField
-                child: ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _estimateCalories,
-                  icon: const Icon(Icons.auto_awesome, size: 18),
-                  label: const Text('Auto', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isDark ? AppTheme.primaryBlue.withOpacity(0.2) : AppTheme.primaryBlue.withOpacity(0.1),
-                    foregroundColor: AppTheme.primaryBlue,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+              InkWell(
+                onTap: _isLoading ? null : _estimateCalories,
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.auto_awesome, 
+                        size: 16, 
+                        color: AppTheme.primaryBlue,
+                      ),
+                      const SizedBox(width: 6),
+                      const Text(
+                        'Auto',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryBlue,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -820,7 +834,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header (Padded)
+          // Header
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -848,12 +862,22 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                       ),
-                      Text(
-                        'Total session duration: $totalElapsed mins',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondaryColor,
-                              fontWeight: FontWeight.w500,
+                      Text.rich(
+                        TextSpan(
+                          text: 'Total session duration: ',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                          children: [
+                            TextSpan(
+                              text: '$totalElapsed mins',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold, 
+                                color: AppTheme.textPrimaryColor,
+                              ),
                             ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -863,7 +887,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 32),
 
-          // Big Number Display (Padded, Color changed to primary text)
+          // Big Number Display with Input Clamping
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
@@ -878,12 +902,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       controller: _activeDurationController,
                       keyboardType: TextInputType.number,
                       textAlign: TextAlign.center,
-                      validator: (value) {
-                        final val = int.tryParse(value ?? '');
-                        if (val == null) return 'Required';
-                        if (val > totalElapsed) return 'Max $totalElapsed';
-                        return null;
-                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
                       style: TextStyle(
                         fontSize: 56,
                         fontWeight: FontWeight.bold,
@@ -892,9 +913,17 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       decoration: const InputDecoration(
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.symmetric(vertical: 8), 
-                        errorStyle: TextStyle(fontSize: 12),
                       ),
-                      onChanged: (_) => setState(() {}), 
+                      onChanged: (val) {
+                        int? parsed = int.tryParse(val);
+                        if (parsed != null && parsed > totalElapsed) {
+                          _activeDurationController.text = totalElapsed.toString();
+                          _activeDurationController.selection = TextSelection.fromPosition(
+                            TextPosition(offset: _activeDurationController.text.length),
+                          );
+                        }
+                        setState(() {}); 
+                      }, 
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -937,7 +966,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Quick Adjust Chips (Padded, Styled like Activity Details Quick Select)
+          // Quick Adjust Chips (Fractions!)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -953,7 +982,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildDurationChip(
-                    label: '${threeQuarters}m',
+                    label: '3/4',
                     onTap: () => setState(() => _activeDurationController.text = threeQuarters.toString()),
                     isSelected: currentActive == threeQuarters,
                     isDark: isDark,
@@ -962,7 +991,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildDurationChip(
-                    label: '${half}m',
+                    label: '1/2',
                     onTap: () => setState(() => _activeDurationController.text = half.toString()),
                     isSelected: currentActive == half,
                     isDark: isDark,
@@ -971,7 +1000,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: _buildDurationChip(
-                    label: '${quarter}m',
+                    label: '1/4',
                     onTap: () => setState(() => _activeDurationController.text = quarter.toString()),
                     isSelected: currentActive == quarter,
                     isDark: isDark,
@@ -982,7 +1011,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           ),
           const SizedBox(height: 24),
 
-          // Note (Padded)
+          // Note (Default font!)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Center(
@@ -990,7 +1019,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 'Note: Adjust this down if you took breaks',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppTheme.textSecondaryColor,
-                      fontStyle: FontStyle.italic,
                     ),
               ),
             ),
