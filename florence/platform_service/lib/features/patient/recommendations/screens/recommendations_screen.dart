@@ -352,10 +352,7 @@ class _RecommendationsScreenState
         bottom: _isGenerating
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(2),
-                child: LinearProgressIndicator(
-                  backgroundColor: Colors.transparent,
-                  color: c.accent,
-                ),
+                child: const LinearProgressIndicator(minHeight: 2),
               )
             : null,
       ),
