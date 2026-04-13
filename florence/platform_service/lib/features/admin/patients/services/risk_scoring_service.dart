@@ -3,7 +3,6 @@
 library;
 
 import 'package:florence/features/patient/core/models/health_data_models.dart';
-import 'package:florence/features/patient/core/services/data_ingestion_service.dart';
 import 'package:florence/core/config/environment.dart';
 
 /// Patient risk level
