@@ -19,14 +19,17 @@ You will receive a patient's health summary. Generate 2–3 concise, evidence-ba
 - HbA1c: <7.0%
 - Activity: ≥150 min/week
 - Adherence: ≥80%
-- Sleep: 7–9 hours
+- HDL Cholesterol: >40 mg/dL
+- LDL Cholesterol: <100 mg/dL
+- Triglycerides: <150 mg/dL
 
 ## Output Rules
 1. Return ONLY raw JSON. No markdown, no backticks, no conversational text.
 2. Generate exactly 2-3 recommendations. Sort by urgency.
 3. Never recommend dose changes.
 4. Each recommendation needs 2 specific action_items.
-5. Keep descriptions and rationales under 150 characters each.
+5. Keep descriptions and rationales under 200 characters each.
+6. In triggering_data, cite specific readings from the patient's individual data when available (e.g. "Glucose 210 mg/dL after dinner" not just "high glucose"). Use the type field as a machine key and description as human-readable label.
 6. Set expires_at to 7 days after generated_at.
 7. ID format: rec_<category>_<timestamp_ms>.
 
@@ -73,7 +76,7 @@ class RecommendationService:
             or global_settings.LLM_MODEL
         )
         self.llm = LLMFactory.create(
-            temperature=0.3,
+            temperature=0.65,
             model=model,
             max_tokens=recommendation_settings.LLM_MAX_TOKENS,
         )
@@ -85,6 +88,73 @@ class RecommendationService:
         now_iso = now.isoformat()
         s = request.health_summary
 
+        # Build extended vitals section
+        extended_lines = []
+        if s.latest_bmi is not None:
+            extended_lines.append(f"- Latest BMI: {s.latest_bmi:.1f}")
+        if s.latest_systolic is not None and s.latest_diastolic is not None:
+            extended_lines.append(f"- Latest Blood Pressure: {s.latest_systolic:.0f}/{s.latest_diastolic:.0f} mmHg")
+        if s.latest_cholesterol is not None:
+            extended_lines.append(f"- Latest Total Cholesterol: {s.latest_cholesterol:.1f} mg/dL")
+        if s.latest_hdl is not None:
+            extended_lines.append(f"- Latest HDL Cholesterol: {s.latest_hdl:.1f} mg/dL")
+        if s.latest_ldl is not None:
+            extended_lines.append(f"- Latest LDL Cholesterol: {s.latest_ldl:.1f} mg/dL")
+        if s.latest_triglycerides is not None:
+            extended_lines.append(f"- Latest Triglycerides: {s.latest_triglycerides:.1f} mg/dL")
+        if s.latest_hba1c is not None:
+            extended_lines.append(f"- Latest Lab HbA1c: {s.latest_hba1c:.1f}%")
+        extended_section = ("\n" + "\n".join(extended_lines)) if extended_lines else ""
+
+        # Disease & medication context
+        disease_section = ""
+        if s.active_diseases:
+            disease_section = f"\nActive Diagnoses: {', '.join(s.active_diseases)}"
+
+        medication_section = ""
+        if s.current_medications:
+            rows = "\n".join(
+                f"  - {m.get('name','Unknown')} {m.get('amount','')} ({m.get('type','')}) — take {m.get('timing','')}"
+                for m in s.current_medications
+            )
+            medication_section = f"\nCurrent Medications:\n{rows}"
+
+        # Build recent readings sections
+        glucose_section = ""
+        if s.recent_glucose_readings:
+            rows = "\n".join(
+                f"  {r['timestamp']}: {r['value']} mg/dL"
+                for r in s.recent_glucose_readings
+            )
+            glucose_section = f"\nRecent Glucose Readings (newest first):\n{rows}"
+
+        meal_section = ""
+        if s.recent_meals:
+            rows = "\n".join(
+                f"  {m.get('type','Meal')} at {m['timestamp']}"
+                + (f": {m['description']}" if m.get('description') else "")
+                + (f", {m.get('calories',0)} kcal" if m.get('calories') else "")
+                + (f", glucose {m['glucose_before']}→{m['glucose_after']} mg/dL"
+                   if m.get('glucose_before') and m.get('glucose_after') else "")
+                for m in s.recent_meals
+            )
+            meal_section = f"\nRecent Meals:\n{rows}"
+
+        activity_section = ""
+        if s.recent_activities:
+            rows = "\n".join(
+                f"  {a.get('type','Activity')} {a.get('duration_minutes',0)}min at {a['timestamp']}"
+                + (f", {a['calories_burned']} kcal burned" if a.get('calories_burned') else "")
+                for a in s.recent_activities
+            )
+            activity_section = f"\nRecent Activities:\n{rows}"
+
+        # Previous recommendations to avoid repetition
+        prev_section = ""
+        if request.previous_recommendation_titles:
+            titles = "\n".join(f"  - {t}" for t in request.previous_recommendation_titles)
+            prev_section = f"\nIMPORTANT: The patient has already received these recommendations — do NOT repeat them, generate fresh ones:\n{titles}"
+
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.
 
 Patient Health Summary ({request.analysis_period_days}-day period):
@@ -95,10 +165,9 @@ Patient Health Summary ({request.analysis_period_days}-day period):
 - Time in Target Range (70–180 mg/dL): {s.time_in_range:.1f}%
 - Estimated HbA1c: {s.estimated_a1c:.1f}%
 - Total Meals Logged: {s.total_meals}
-- Average Carbohydrates per Meal: {s.average_carbs:.1f}g
+- Average Calories per Meal: {s.average_calories:.0f} kcal
 - Total Activity Minutes: {s.total_activity_minutes} minutes
-- Medication Adherence: {s.medication_adherence * 100:.0f}%
-- Average Sleep: {s.average_sleep_hours} hours/night
+- Medication Adherence (today): {s.medication_adherence * 100:.0f}%{extended_section}{disease_section}{medication_section}{glucose_section}{meal_section}{activity_section}{prev_section}
 
 Current timestamp for generated_at: {now_iso}"""
 

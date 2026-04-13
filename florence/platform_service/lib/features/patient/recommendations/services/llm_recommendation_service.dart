@@ -21,6 +21,7 @@ class LlmRecommendationService {
   Future<List<HealthRecommendation>> generate(
     HealthSummary summary, {
     int analysisPeriodDays = 7,
+    List<String> previousTitles = const [],
   }) async {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) throw Exception('User not authenticated');
@@ -37,6 +38,8 @@ class LlmRecommendationService {
     final body = jsonEncode({
       'health_summary': _summaryToSnakeCase(summary),
       'analysis_period_days': analysisPeriodDays,
+      if (previousTitles.isNotEmpty)
+        'previous_recommendation_titles': previousTitles,
     });
 
     debugPrint('[LlmRecommendationService] POST $url');
@@ -66,6 +69,7 @@ class LlmRecommendationService {
   /// Maps [HealthSummary] camelCase fields → Python backend snake_case keys.
   Map<String, dynamic> _summaryToSnakeCase(HealthSummary summary) {
     return {
+      // Core aggregates
       'average_glucose': summary.averageGlucose,
       'glucose_std_dev': summary.glucoseStdDev,
       'hyper_events': summary.hyperEvents,
@@ -73,10 +77,26 @@ class LlmRecommendationService {
       'time_in_range': summary.timeInRange,
       'estimated_a1c': summary.estimatedA1c,
       'total_meals': summary.totalMeals,
-      'average_carbs': summary.averageCarbs,
+      'average_calories': summary.averageCalories,
       'total_activity_minutes': summary.totalActivityMinutes,
       'medication_adherence': summary.medicationAdherence,
-      'average_sleep_hours': summary.averageSleepHours,
+      // Extended vitals
+      if (summary.latestBmi != null) 'latest_bmi': summary.latestBmi,
+      if (summary.latestSystolic != null) 'latest_systolic': summary.latestSystolic,
+      if (summary.latestDiastolic != null) 'latest_diastolic': summary.latestDiastolic,
+      if (summary.latestCholesterol != null) 'latest_cholesterol': summary.latestCholesterol,
+      if (summary.latestHdl != null) 'latest_hdl': summary.latestHdl,
+      if (summary.latestLdl != null) 'latest_ldl': summary.latestLdl,
+      if (summary.latestTriglycerides != null) 'latest_triglycerides': summary.latestTriglycerides,
+      if (summary.latestHba1c != null) 'latest_hba1c': summary.latestHba1c,
+      // Disease & medication context (live from Supabase)
+      if (summary.activeDiseaseNames.isNotEmpty) 'active_diseases': summary.activeDiseaseNames,
+      if (summary.currentMedications.isNotEmpty) 'current_medications': summary.currentMedications,
+      // Individual recent readings
+      if (summary.recentGlucoseReadings.isNotEmpty)
+        'recent_glucose_readings': summary.recentGlucoseReadings,
+      if (summary.recentMeals.isNotEmpty) 'recent_meals': summary.recentMeals,
+      if (summary.recentActivities.isNotEmpty) 'recent_activities': summary.recentActivities,
     };
   }
 

@@ -40,6 +40,12 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
       endDate: DateTime.now(),
     );
 
+    // Collect current active titles so the LLM avoids repeating them
+    final previousTitles = state
+        .where((r) => r.status == RecommendationStatus.active)
+        .map((r) => r.title)
+        .toList();
+
     List<HealthRecommendation> newRecommendations;
     bool usedAI = false;
 
@@ -49,6 +55,7 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
         newRecommendations = await _llmService.generate(
           summary,
           analysisPeriodDays: daysToAnalyze,
+          previousTitles: previousTitles,
         );
         debugPrint(
           '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',
