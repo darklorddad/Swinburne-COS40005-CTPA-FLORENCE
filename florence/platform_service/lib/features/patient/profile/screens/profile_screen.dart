@@ -1517,7 +1517,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ),
                                       keyboardType:
                                           const TextInputType.numberWithOptions(
-                                              decimal: true),
+                                              decimal: true, signed: true),
                                       autovalidateMode:
                                           AutovalidateMode.onUserInteraction,
                                       validator: (value) {
@@ -1526,14 +1526,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         }
                                         final minVal = double.tryParse(value);
                                         if (minVal == null) return 'Numbers only';
-                                        final maxVal = double.tryParse(
-                                            maxControllers[t.dataType]!.text);
-                                        if (maxVal != null && minVal >= maxVal) {
-                                          final maxStr = maxVal % 1 == 0
-                                              ? maxVal.toInt().toString()
-                                              : maxVal.toString();
-                                          return 'Must be lower than $maxStr';
-                                        }
+                                        if (minVal < 0) return 'Cannot be negative';
                                         return null;
                                       },
                                       onChanged: (_) {
@@ -1572,7 +1565,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                       ),
                                       keyboardType:
                                           const TextInputType.numberWithOptions(
-                                              decimal: true),
+                                              decimal: true, signed: true),
                                       autovalidateMode:
                                           AutovalidateMode.onUserInteraction,
                                       validator: (value) {
@@ -1581,6 +1574,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         }
                                         final maxVal = double.tryParse(value);
                                         if (maxVal == null) return 'Numbers only';
+                                        if (maxVal < 0) return 'Cannot be negative';
+
                                         final minVal = double.tryParse(
                                             minControllers[t.dataType]!.text);
                                         if (minVal != null && maxVal <= minVal) {
