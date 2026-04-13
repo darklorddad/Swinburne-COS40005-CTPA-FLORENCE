@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel, model_validator, Field, EmailStr
 from typing import Optional, Literal, List
 from supabase_auth.errors import AuthApiError
