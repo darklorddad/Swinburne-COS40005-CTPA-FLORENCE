@@ -1683,8 +1683,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                                 for (var t in currentThresholds) {
                                   if (msg.contains(t.dataType)) {
-                                    backendErrors[t.dataType] = msg.replaceAll(
+                                    // 1. Clean the base message
+                                    String cleanMsg = msg.replaceAll(
                                         ' for ${t.dataType}', '');
+
+                                    // 2. Determine if this specific metric needs to be converted back for the UI
+                                    bool isGlucoseMgdl = t.dataType == 'GLUCOSE' &&
+                                        settings.glucoseUnit == 'mg/dL';
+                                    bool isCholMgdl = t.dataType.startsWith('CHOLESTEROL') &&
+                                        settings.cholesterolUnit == 'mg/dL';
+
+                                    if (isGlucoseMgdl || isCholMgdl) {
+                                      double multiplier = 1.0;
+                                      if (t.dataType == 'GLUCOSE') {
+                                        multiplier = 18.0;
+                                      } else {
+                                        // Note: Backend uses 38.67 for all cholesterol types
+                                        multiplier = 38.67;
+                                      }
+
+                                      // 3. Find any decimals in the error string and multiply them
+                                      cleanMsg = cleanMsg.replaceAllMapped(
+                                          RegExp(r'\d+\.\d+'), (m) {
+                                        double? val =
+                                            double.tryParse(m.group(0)!);
+                                        if (val != null) {
+                                          // Multiply, round to 1 decimal place, and remove '.0' if it's a whole number
+                                          return (val * multiplier)
+                                              .toStringAsFixed(1)
+                                              .replaceAll(RegExp(r'\.0$'), '');
+                                        }
+                                        return m.group(0)!;
+                                      });
+                                    }
+
+                                    backendErrors[t.dataType] = cleanMsg;
                                     foundSpecificError = true;
                                   }
                                 }
