@@ -169,8 +169,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                   color: Colors.redAccent,
                   onTap: () async {
                     Navigator.pop(context);
-                    FilePickerResult? result =
-                        await FilePicker.platform.pickFiles(
+                    FilePickerResult? result = await FilePicker.pickFiles(
                       type: FileType.custom,
                       allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
                       withData: true,
