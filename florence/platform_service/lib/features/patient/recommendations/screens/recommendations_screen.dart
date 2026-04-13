@@ -143,6 +143,7 @@ class _RecommendationsScreenState
   String? _expandedId;
   int _streakDays = 0;
   RecommendationCategory? _activeFilter;
+  RecommendationPriority? _priorityFilter;
   bool _celebTriggered = false;
 
   late final AnimationController _scoreCtrl;
@@ -258,9 +259,11 @@ class _RecommendationsScreenState
 
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(score));
 
-    final filtered = _activeFilter == null
-        ? active
-        : active.where((r) => r.category == _activeFilter).toList();
+    final filtered = active.where((r) {
+      if (_activeFilter != null && r.category != _activeFilter) return false;
+      if (_priorityFilter != null && r.priority != _priorityFilter) return false;
+      return true;
+    }).toList();
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
@@ -287,8 +290,10 @@ class _RecommendationsScreenState
                 ),
                 SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs)),
                 SliverToBoxAdapter(child: _buildRefreshBtn()),
-                if (active.isNotEmpty)
-                  SliverToBoxAdapter(child: _buildFilterPills(active)),
+                if (active.isNotEmpty) ...[
+                  const SliverToBoxAdapter(child: SizedBox(height: 4)),
+                  SliverToBoxAdapter(child: _buildFilterBtn(active)),
+                ],
                 if (filtered.isEmpty && !_isGenerating)
                   SliverToBoxAdapter(child: _buildEmptyHint()),
                 SliverList(
@@ -479,50 +484,306 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Filter pills ──────────────────────────────────────────────
-  Widget _buildFilterPills(List<HealthRecommendation> all) {
-    final presentCategories = all.map((r) => r.category).toSet().toList();
+  // ── Filter button ─────────────────────────────────────────────
+  Widget _buildFilterBtn(List<HealthRecommendation> all) {
+    final activeCount = (_activeFilter != null ? 1 : 0) + (_priorityFilter != null ? 1 : 0);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: SizedBox(
-        height: 40,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          children: [
-            _FilterPill(
-              label: 'All',
-              isSelected: _activeFilter == null,
-              color: AppTheme.primaryBlue,
-              onTap: () => setState(() => _activeFilter = null),
-            ),
-            ...presentCategories.map((cat) {
-              final theme = _themeFor(cat);
-              final label = cat.name[0].toUpperCase() + cat.name.substring(1);
-              return _FilterPill(
-                label: label,
-                isSelected: _activeFilter == cat,
-                color: theme.primary,
-                onTap: () => setState(
-                  () => _activeFilter = _activeFilter == cat ? null : cat,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _openFilterSheet(all),
+                icon: const Icon(Icons.tune_rounded, size: 16),
+                label: const Text('Filter'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: activeCount > 0
+                      ? AppTheme.primaryBlue
+                      : AppTheme.textSecondaryColor,
+                  side: BorderSide(
+                    color: activeCount > 0
+                        ? AppTheme.primaryBlue
+                        : AppTheme.borderColor,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  textStyle: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.w500),
                 ),
-              );
-            }),
+              ),
+              if (activeCount > 0)
+                Positioned(
+                  top: -5,
+                  right: -5,
+                  child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.primaryBlue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$activeCount',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (activeCount > 0) ...[
+            const SizedBox(width: 8),
+            TextButton(
+              onPressed: () => setState(
+                  () { _activeFilter = null; _priorityFilter = null; }),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.textSecondaryColor,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              ),
+              child: const Text('Clear', style: TextStyle(fontSize: 13)),
+            ),
           ],
-        ),
+        ],
       ),
+    );
+  }
+
+  // ── Filter bottom sheet ───────────────────────────────────────
+  void _openFilterSheet(List<HealthRecommendation> all) {
+    final presentCategories = all.map((r) => r.category).toSet().toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                  20, 12, 20, MediaQuery.of(ctx).viewInsets.bottom + 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.borderColor,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        'Filter Recommendations',
+                        style:
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                      const Spacer(),
+                      if (_activeFilter != null || _priorityFilter != null)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _activeFilter = null;
+                              _priorityFilter = null;
+                            });
+                            setSheetState(() {});
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.textSecondaryColor,
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Text('Clear all'),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+                  // Category section
+                  Text(
+                    'BY TYPE',
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: presentCategories.map((cat) {
+                      final catTheme = _themeFor(cat);
+                      final label =
+                          cat.name[0].toUpperCase() + cat.name.substring(1);
+                      final isSelected = _activeFilter == cat;
+                      return FilterChip(
+                        label: Text(label),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setState(() => _activeFilter = val ? cat : null);
+                          setSheetState(() {});
+                        },
+                        selectedColor:
+                            catTheme.primary.withValues(alpha: 0.13),
+                        checkmarkColor: catTheme.primary,
+                        avatar: Icon(catTheme.icon,
+                            size: 14,
+                            color: isSelected
+                                ? catTheme.primary
+                                : AppTheme.textSecondaryColor),
+                        showCheckmark: false,
+                        labelStyle: TextStyle(
+                          fontSize: 13,
+                          color: isSelected
+                              ? catTheme.primary
+                              : AppTheme.textSecondaryColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        side: BorderSide(
+                          color: isSelected
+                              ? catTheme.primary
+                              : AppTheme.borderColor,
+                        ),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 20),
+                  // Priority section
+                  Text(
+                    'BY PRIORITY',
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: RecommendationPriority.values.map((p) {
+                      final urgColor = _urgencyColor(p);
+                      final label = _urgencyLabel(p);
+                      final isSelected = _priorityFilter == p;
+                      return FilterChip(
+                        label: Text(label),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setState(() => _priorityFilter = val ? p : null);
+                          setSheetState(() {});
+                        },
+                        selectedColor: urgColor.withValues(alpha: 0.10),
+                        checkmarkColor: urgColor,
+                        showCheckmark: false,
+                        avatar: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: urgColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        labelStyle: TextStyle(
+                          fontSize: 13,
+                          color: isSelected
+                              ? urgColor
+                              : AppTheme.textSecondaryColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        side: BorderSide(
+                          color: isSelected ? urgColor : AppTheme.borderColor,
+                        ),
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Apply',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
   // ── Empty hint ────────────────────────────────────────────────
   Widget _buildEmptyHint() {
+    String message;
+    if (_activeFilter != null && _priorityFilter != null) {
+      final catLabel = _activeFilter!.name[0].toUpperCase() +
+          _activeFilter!.name.substring(1);
+      message =
+          'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} $catLabel recommendations right now.';
+    } else if (_activeFilter != null) {
+      final catLabel = _activeFilter!.name[0].toUpperCase() +
+          _activeFilter!.name.substring(1);
+      message = 'No $catLabel recommendations right now.';
+    } else if (_priorityFilter != null) {
+      message =
+          'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} recommendations right now.';
+    } else {
+      message =
+          'Tap "Regenerate Analysis" to analyse your recent health data.';
+    }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       child: Text(
-        _activeFilter != null
-            ? 'No ${_activeFilter!.name} recommendations right now.'
-            : 'Tap "Regenerate Analysis" to analyse your recent health data.',
+        message,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: AppTheme.textSecondaryColor,
           height: 1.5,
@@ -825,51 +1086,6 @@ class _RecommendationsScreenState
           side: BorderSide(color: AppTheme.primaryBlue.withValues(alpha: 0.30)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// FILTER PILL WIDGET
-// ══════════════════════════════════════════════════════════════
-
-class _FilterPill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _FilterPill({
-    required this.label,
-    required this.isSelected,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : AppTheme.borderColor,
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppTheme.textSecondaryColor,
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
         ),
       ),
     );
