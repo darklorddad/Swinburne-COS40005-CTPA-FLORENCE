@@ -14,14 +14,30 @@ async def parse_lab_report(
     file: UploadFile = File(...),
     service: BiometricsService = Depends(get_biometrics_service)
 ):
-    allowed_types = ["image/jpeg", "image/png", "application/pdf"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(status_code=400, detail="Invalid file type. Please upload an image or PDF.")
+    # 1. More robust file validation (handles mobile WEBP/HEIC and generic streams)
+    content_type = file.content_type or ""
+    filename = (file.filename or "").lower()
     
+    is_image = content_type.startswith("image/") or filename.endswith(('.png', '.jpg', '.jpeg', '.webp', '.heic'))
+    is_pdf = content_type == "application/pdf" or filename.endswith('.pdf')
+
+    if not (is_image or is_pdf):
+        print(f"Rejected upload - Type: {content_type}, Name: {filename}") # For Vercel logs
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type received ({content_type}). Please upload a valid image or PDF."
+        )
+    
+    # 2. Since we might accept formats the LLM doesn't natively love (like HEIC), 
+    # we enforce passing a standard mime type to the service layer just in case.
+    safe_mime_type = content_type if content_type.startswith("image/") else "image/jpeg"
+    if is_pdf:
+        safe_mime_type = "application/pdf"
+
     content = await file.read()
     
     try:
-        return await service.parse_lab_report(content, file.content_type, report_type)
+        return await service.parse_lab_report(content, safe_mime_type, report_type)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
