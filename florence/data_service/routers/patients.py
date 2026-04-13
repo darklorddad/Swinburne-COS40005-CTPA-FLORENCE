@@ -266,6 +266,47 @@ class ThresholdUpdateItem(BaseModel):
     min_value: float
     max_value: float
 
+    @model_validator(mode='after')
+    def validate_clinical_ranges(self):
+        # 1. Logical Sanity Check
+        if self.min_value >= self.max_value:
+            raise ValueError(f"Min value ({self.min_value}) must be less than Max value ({self.max_value}) for {self.data_type}.")
+
+        # 2. Biological Absolute Limits (Format: Min, Max)
+        # These assume BASE units: mmol/L, mmHg, kg/m2, %
+        absolute_limits = {
+            'BLOOD_PRESSURE_SYSTOLIC': (50.0, 300.0),  # Below 50 is cardiogenic shock
+            'BLOOD_PRESSURE_DIASTOLIC': (30.0, 200.0), 
+            'GLUCOSE': (1.5, 50.0),                    # 1.5 mmol/L is coma-level low
+            'BMI': (10.0, 150.0),                      # Below 10 is severe starvation
+            'HBA1C': (3.0, 30.0),                      # Red blood cells barely function below 3%
+            'CHOLESTEROL_TOTAL': (1.0, 30.0),
+            'CHOLESTEROL_LDL': (0.0, 30.0),            # 0.0 allowed (some modern drugs drop it to near zero)
+            'CHOLESTEROL_HDL': (0.0, 15.0),
+            'CHOLESTEROL_TRIGLYCERIDES': (0.0, 50.0),
+        }
+
+        # 3. Apply the Limits
+        limits = absolute_limits.get(self.data_type)
+        if limits:
+            abs_min, abs_max = limits
+
+            # Check if the user's MIN target is dangerously low
+            if self.min_value < abs_min:
+                raise ValueError(
+                    f"Target minimum of {self.min_value} is dangerously low for {self.data_type}. "
+                    f"Absolute allowed minimum is {abs_min}."
+                )
+
+            # Check if the user's MAX target is dangerously high
+            if self.max_value > abs_max:
+                raise ValueError(
+                    f"Target maximum of {self.max_value} is dangerously high for {self.data_type}. "
+                    f"Absolute allowed maximum is {abs_max}."
+                )
+
+        return self
+
 class ThresholdUpdateBatch(BaseModel):
     thresholds: List[ThresholdUpdateItem]
 
