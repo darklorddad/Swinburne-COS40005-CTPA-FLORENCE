@@ -1529,7 +1529,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         final maxVal = double.tryParse(
                                             maxControllers[t.dataType]!.text);
                                         if (maxVal != null && minVal >= maxVal) {
-                                          return 'Must be < Max';
+                                          final maxStr = maxVal % 1 == 0
+                                              ? maxVal.toInt().toString()
+                                              : maxVal.toString();
+                                          return 'Must be lower than $maxStr';
                                         }
                                         return null;
                                       },
@@ -1538,6 +1541,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           setModalState(() =>
                                               backendErrors.remove(t.dataType));
                                         }
+                                        formKey.currentState?.validate();
                                       },
                                     ),
                                   ),
@@ -1580,7 +1584,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         final minVal = double.tryParse(
                                             minControllers[t.dataType]!.text);
                                         if (minVal != null && maxVal <= minVal) {
-                                          return 'Must be > Min';
+                                          final minStr = minVal % 1 == 0
+                                              ? minVal.toInt().toString()
+                                              : minVal.toString();
+                                          return 'Must be higher than $minStr';
                                         }
                                         return null;
                                       },
@@ -1589,6 +1596,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                           setModalState(() =>
                                               backendErrors.remove(t.dataType));
                                         }
+                                        formKey.currentState?.validate();
                                       },
                                     ),
                                   ),
