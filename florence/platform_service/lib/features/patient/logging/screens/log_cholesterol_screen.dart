@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -36,8 +37,9 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   bool _isScanning = false;
   final ImagePicker _picker = ImagePicker();
   bool _useAiAutofill = true;
-  Uint8List? _imageBytes;
-  XFile? _selectedImage;
+  Uint8List? _fileBytes;
+  String? _selectedFileName;
+  bool _isPdf = false;
   bool _isAnalyzing = false;
   bool _forcePop = false;
   String _initialTotal = '';
@@ -122,6 +124,8 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                       ),
                 ),
                 const SizedBox(height: 24),
+
+                // 1. Camera
                 _buildPhotoOption(
                   context,
                   title: 'Take Photo',
@@ -131,20 +135,51 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                     Navigator.pop(context);
                     final image = await _picker.pickImage(
                         source: ImageSource.camera, maxWidth: 800);
-                    if (image != null) _processImage(image);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      _processFile(bytes, image.name, false);
+                    }
                   },
                 ),
                 const SizedBox(height: 12),
+
+                // 2. Photo Gallery
                 _buildPhotoOption(
                   context,
-                  title: 'Choose from Gallery',
+                  title: 'Choose Photo',
                   icon: Icons.photo_library_rounded,
                   color: AppTheme.accentPurple,
                   onTap: () async {
                     Navigator.pop(context);
                     final image = await _picker.pickImage(
                         source: ImageSource.gallery, maxWidth: 800);
-                    if (image != null) _processImage(image);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      _processFile(bytes, image.name, false);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 3. Document / PDF Picker
+                _buildPhotoOption(
+                  context,
+                  title: 'Upload Document (PDF)',
+                  icon: Icons.picture_as_pdf_rounded,
+                  color: Colors.redAccent,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    FilePickerResult? result =
+                        await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                      withData: true,
+                    );
+                    if (result != null && result.files.single.bytes != null) {
+                      final file = result.files.single;
+                      final isPdf = file.extension?.toLowerCase() == 'pdf';
+                      _processFile(file.bytes!, file.name, isPdf);
+                    }
                   },
                 ),
               ],
@@ -187,12 +222,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Future<void> _processImage(XFile image) async {
-    final bytes = await image.readAsBytes();
-
+  Future<void> _processFile(Uint8List bytes, String filename, bool isPdf) async {
     setState(() {
-      _selectedImage = image;
-      _imageBytes = bytes;
+      _fileBytes = bytes;
+      _selectedFileName = filename;
+      _isPdf = isPdf;
       _isAnalyzing = true;
     });
 
@@ -206,7 +240,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         '/biometrics/parse-lab-report',
         'file',
         bytes,
-        image.name,
+        filename,
         baseUrlOverride: Environment.llmEngineServiceUrl,
         additionalFields: {'report_type': 'lipid_panel'},
       );
@@ -227,7 +261,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
           }
         });
         Helpers.showSuccess(
-            context, 'Lab report parsed! Please verify the values.');
+            context, 'Report parsed successfully! Please verify the values.');
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to parse report: $e');
@@ -357,8 +391,9 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       _hdlController.text = _initialHdl;
       _triglyceridesController.text = _initialTri;
       _selectedDateTime = _initialDateTime;
-      _selectedImage = null;
-      _imageBytes = null;
+      _fileBytes = null;
+      _selectedFileName = null;
+      _isPdf = false;
     });
   }
 
@@ -391,7 +426,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             _hdlController.text != _initialHdl ||
             _triglyceridesController.text != _initialTri ||
             _selectedDateTime != _initialDateTime ||
-            _imageBytes != null);
+            _fileBytes != null);
 
     return PopScope(
       canPop: !hasChanges,
@@ -766,22 +801,50 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppTheme.borderColor),
               ),
-              child: _imageBytes != null
+              child: _fileBytes != null
                   ? Stack(
                       fit: StackFit.expand,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.memory(_imageBytes!, fit: BoxFit.cover),
-                        ),
+                        // Dynamic Preview: Image vs PDF
+                        if (!_isPdf)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(_fileBytes!, fit: BoxFit.cover),
+                          )
+                        else
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.picture_as_pdf,
+                                  size: 48, color: Colors.redAccent),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                  _selectedFileName ?? 'Document.pdf',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                        // Close Button
                         Positioned(
                           top: 8,
                           right: 8,
                           child: IconButton(
                             onPressed: () {
                               setState(() {
-                                _selectedImage = null;
-                                _imageBytes = null;
+                                _fileBytes = null;
+                                _selectedFileName = null;
+                                _isPdf = false;
                               });
                             },
                             icon: const Icon(Icons.close, color: Colors.white),
@@ -792,6 +855,8 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                             ),
                           ),
                         ),
+
+                        // Loading Overlay
                         if (_isAnalyzing)
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
