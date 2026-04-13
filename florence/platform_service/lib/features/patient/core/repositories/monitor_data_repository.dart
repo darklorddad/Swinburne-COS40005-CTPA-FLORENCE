@@ -453,12 +453,26 @@ class MonitorDataRepository {
     });
   }
 
-  Future<void> addMonitorData(String type, double value, DateTime timestamp) async {
+  Future<void> addMonitorData(String type, double value, DateTime timestamp, {int? documentId}) async {
     await _apiService.post('/patients/me/monitor-data', {
       'data_type': type,
       'value': value,
       'measured_at': timestamp.toIso8601String(),
+      if (documentId != null) 'document_id': documentId,
     });
+  }
+
+  Future<int> createClinicalDocument({
+    required int patientId,
+    required String documentPath,
+    required String documentType,
+  }) async {
+    final response = await _apiService.post('/patients/me/clinical-documents', {
+      'patient_id': patientId,
+      'document_path': documentPath,
+      'document_type': documentType,
+    });
+    return response['id'] as int;
   }
 
   Future<void> addBloodPressure(DateTime timestamp, double systolic, double diastolic) async {

@@ -14,8 +14,10 @@ import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 
 /// Log Cholesterol Screen
 class LogCholesterolScreen extends ConsumerStatefulWidget {
@@ -288,18 +290,52 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
     try {
       final repo = ref.read(monitorDataRepositoryProvider);
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session == null) throw Exception("User not authenticated");
+
+      int? documentId;
+
+      // STEP 1 & 2: If a file was selected, upload it and create the document record
+      if (_fileBytes != null && _selectedFileName != null) {
+        final userId = session.user.id;
+        final extension = _selectedFileName!.split('.').last.toLowerCase();
+
+        // 1. Upload to the secure bucket
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
+        final documentPath = '$userId/$fileName';
+
+        await Supabase.instance.client.storage
+            .from('clinical-documents')
+            .uploadBinary(
+              documentPath,
+              _fileBytes!,
+              fileOptions: FileOptions(
+                contentType: _isPdf ? 'application/pdf' : 'image/$extension',
+              ),
+            );
+
+        // 2. Create the record in our new table and get the ID back
+        final patientProfile = ref.read(userProfileProvider).value;
+        if (patientProfile == null) throw Exception("Patient profile not found");
+
+        documentId = await repo.createClinicalDocument(
+          patientId: patientProfile['id'],
+          documentPath: documentPath,
+          documentType: 'LIPID_PANEL',
+        );
+      }
+
+      // STEP 3: Save the actual biometrics, linking them to the document
       final List<Future> tasks = [];
 
-      // Helper
       void addCallIfNotEmpty(TextEditingController controller, String type) {
-        // Fix: Handle comma inputs (e.g. 190,5 -> 190.5) to prevent crashes
         final text = controller.text.trim().replaceAll(',', '.');
         if (text.isNotEmpty) {
-          // Fix: Send UTC time to ensure consistency across timezones
           tasks.add(repo.addMonitorData(
-            type, 
-            double.parse(text), 
+            type,
+            double.parse(text),
             _selectedDateTime.toUtc(),
+            documentId: documentId,
           ));
         }
       }
@@ -314,16 +350,17 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       }
 
       await Future.wait(tasks);
-      
+
       ref.invalidate(monitorDataProvider);
 
       if (mounted) {
-        Helpers.showSuccess(context, 'Cholesterol data logged successfully!');
+        Helpers.showSuccess(
+            context, 'Cholesterol data and lab report saved successfully!');
         AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to log data: ${e.toString()}');
+        Helpers.showError(context, 'Failed to save data: ${e.toString()}');
       }
     } finally {
       if (mounted) {
