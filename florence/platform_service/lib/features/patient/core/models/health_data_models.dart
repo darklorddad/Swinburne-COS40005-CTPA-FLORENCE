@@ -952,6 +952,20 @@ class HealthSummary {
   final double medicationAdherence;
   final int averageSleepHours;
 
+  // Extended vitals (optional — populated when patient has logged them)
+  final double? latestBmi;
+  final double? latestSystolic;
+  final double? latestDiastolic;
+  final double? latestCholesterol;
+  final double? latestHba1c;
+  final double? sleepConsistencyHours; // std dev of nightly duration
+
+  // Individual recent readings for pattern-based recommendations
+  final List<Map<String, dynamic>> recentGlucoseReadings; // last 10: {value, timestamp}
+  final List<Map<String, dynamic>> recentMeals;           // last 5: {type, carbs, glucose_before, glucose_after, timestamp}
+  final List<Map<String, dynamic>> recentActivities;      // last 5: {type, duration_minutes, timestamp}
+  final List<Map<String, dynamic>> recentSleepLogs;       // last 7: {duration_hours, bed_time, quality}
+
   const HealthSummary({
     required this.startDate,
     required this.endDate,
@@ -967,6 +981,16 @@ class HealthSummary {
     required this.totalActivityMinutes,
     required this.medicationAdherence,
     required this.averageSleepHours,
+    this.latestBmi,
+    this.latestSystolic,
+    this.latestDiastolic,
+    this.latestCholesterol,
+    this.latestHba1c,
+    this.sleepConsistencyHours,
+    this.recentGlucoseReadings = const [],
+    this.recentMeals = const [],
+    this.recentActivities = const [],
+    this.recentSleepLogs = const [],
   });
 
   bool get isWellControlled => timeInRange >= 70 && hypoEvents < 4;
@@ -987,6 +1011,16 @@ class HealthSummary {
       'totalActivityMinutes': totalActivityMinutes,
       'medicationAdherence': medicationAdherence,
       'averageSleepHours': averageSleepHours,
+      'latestBmi': latestBmi,
+      'latestSystolic': latestSystolic,
+      'latestDiastolic': latestDiastolic,
+      'latestCholesterol': latestCholesterol,
+      'latestHba1c': latestHba1c,
+      'sleepConsistencyHours': sleepConsistencyHours,
+      'recentGlucoseReadings': recentGlucoseReadings,
+      'recentMeals': recentMeals,
+      'recentActivities': recentActivities,
+      'recentSleepLogs': recentSleepLogs,
     };
   }
 
@@ -1006,6 +1040,20 @@ class HealthSummary {
       totalActivityMinutes: json['totalActivityMinutes'] as int,
       medicationAdherence: (json['medicationAdherence'] as num).toDouble(),
       averageSleepHours: json['averageSleepHours'] as int,
+      latestBmi: (json['latestBmi'] as num?)?.toDouble(),
+      latestSystolic: (json['latestSystolic'] as num?)?.toDouble(),
+      latestDiastolic: (json['latestDiastolic'] as num?)?.toDouble(),
+      latestCholesterol: (json['latestCholesterol'] as num?)?.toDouble(),
+      latestHba1c: (json['latestHba1c'] as num?)?.toDouble(),
+      sleepConsistencyHours: (json['sleepConsistencyHours'] as num?)?.toDouble(),
+      recentGlucoseReadings: (json['recentGlucoseReadings'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      recentMeals: (json['recentMeals'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      recentActivities: (json['recentActivities'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      recentSleepLogs: (json['recentSleepLogs'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
     );
   }
 }

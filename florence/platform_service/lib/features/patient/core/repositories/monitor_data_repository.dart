@@ -124,6 +124,80 @@ class HealthDataState {
       avgSleep = (avgMinutes / 60).round();
     }
 
+    // Latest single-value vitals
+    final sortedBmi = [...bmiResults]
+        ..sort((a, b) => b.testDate.compareTo(a.testDate));
+    final latestBmi = sortedBmi.isNotEmpty ? sortedBmi.first.value : null;
+
+    final sortedBp = [...bloodPressureReadings]
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final latestSystolic = sortedBp.isNotEmpty ? sortedBp.first.systolic : null;
+    final latestDiastolic = sortedBp.isNotEmpty ? sortedBp.first.diastolic : null;
+
+    final sortedChol = [...cholesterolResults]
+        ..sort((a, b) => b.testDate.compareTo(a.testDate));
+    final latestCholesterol = sortedChol.isNotEmpty ? sortedChol.first.value : null;
+
+    final sortedHba1c = [...hba1cResults]
+        ..sort((a, b) => b.testDate.compareTo(a.testDate));
+    final latestHba1c = sortedHba1c.isNotEmpty ? sortedHba1c.first.value : null;
+
+    // Sleep consistency (std dev of nightly duration)
+    double? sleepConsistency;
+    if (sleepInPeriod.length > 1) {
+      final durations = sleepInPeriod
+          .map((s) => s.duration.inMinutes / 60.0)
+          .toList();
+      final mean = durations.reduce((a, b) => a + b) / durations.length;
+      final variance = durations
+              .map((d) => (d - mean) * (d - mean))
+              .reduce((a, b) => a + b) /
+          durations.length;
+      sleepConsistency = sqrt(variance);
+    }
+
+    // Recent individual readings (newest first)
+    final recentGlucose = ([...glucoseReadings]
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp)))
+        .take(10)
+        .map((r) => {
+              'value': r.value,
+              'timestamp': r.timestamp.toIso8601String(),
+            })
+        .toList();
+
+    final recentMealsList = ([...meals]
+          ..sort((a, b) => b.timestamp.compareTo(a.timestamp)))
+        .take(5)
+        .map((m) => {
+              'type': m.type,
+              'carbs': m.carbs,
+              'glucose_before': m.glucoseBefore,
+              'glucose_after': m.glucoseAfter,
+              'timestamp': m.timestamp.toIso8601String(),
+            })
+        .toList();
+
+    final recentActivitiesList = ([...activities]
+          ..sort((a, b) => b.startTime.compareTo(a.startTime)))
+        .take(5)
+        .map((a) => {
+              'type': a.type,
+              'duration_minutes': a.activeDurationMinutes,
+              'timestamp': a.startTime.toIso8601String(),
+            })
+        .toList();
+
+    final recentSleepList = ([...sleepLogs]
+          ..sort((a, b) => b.bedTime.compareTo(a.bedTime)))
+        .take(7)
+        .map((s) => {
+              'duration_hours': s.duration.inMinutes / 60.0,
+              'bed_time': s.bedTime.toIso8601String(),
+              'quality': s.quality,
+            })
+        .toList();
+
     return HealthSummary(
       startDate: startDate,
       endDate: endDate,
@@ -137,10 +211,21 @@ class HealthDataState {
       totalActivityMinutes: totalMinutes,
       totalMeals: mealsInPeriod.length,
       averageCarbs: avgCarbs,
-      medicationAdherence: medications.isNotEmpty 
-          ? medications.map((m) => m.adherenceRate).reduce((a, b) => a + b) / medications.length 
+      medicationAdherence: medications.isNotEmpty
+          ? medications.map((m) => m.adherenceRate).reduce((a, b) => a + b) /
+              medications.length
           : 0.0,
       averageSleepHours: avgSleep,
+      latestBmi: latestBmi,
+      latestSystolic: latestSystolic,
+      latestDiastolic: latestDiastolic,
+      latestCholesterol: latestCholesterol,
+      latestHba1c: latestHba1c,
+      sleepConsistencyHours: sleepConsistency,
+      recentGlucoseReadings: recentGlucose,
+      recentMeals: recentMealsList,
+      recentActivities: recentActivitiesList,
+      recentSleepLogs: recentSleepList,
     );
   }
 }
