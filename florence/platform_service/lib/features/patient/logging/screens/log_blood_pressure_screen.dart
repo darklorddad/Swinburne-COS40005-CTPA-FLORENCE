@@ -292,7 +292,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -322,7 +322,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                     Text(
                       targetText,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.infoColor.withOpacity(0.8),
+                            color: AppTheme.infoColor.withValues(alpha: 0.8),
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -340,10 +340,10 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -362,7 +362,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                           Text(
                             'Target Ranges',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -371,7 +371,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -400,7 +400,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -410,7 +410,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
       Color? bpColor, PatientThreshold? sysT, PatientThreshold? diaT) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = bpColor != null 
-        ? bpColor.withOpacity(0.05) 
+        ? bpColor.withValues(alpha: 0.05) 
         : (isDark ? AppTheme.midnightSurface : Colors.white);
     final borderColor = bpColor ?? AppTheme.getBorderColor(context);
 
@@ -425,7 +425,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -470,7 +470,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                         hintText: '---',
                         hintStyle: const TextStyle(color: Colors.grey),
                       ),
@@ -496,7 +496,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                         fontSize: 48,
                         fontWeight: FontWeight.w300,
-                        color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                        color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
                       ),
                 ),
               ),
@@ -524,7 +524,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                         hintText: '---',
                         hintStyle: const TextStyle(color: Colors.grey),
                       ),
@@ -592,10 +592,10 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: bpColor == null
-                            ? (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor)
-                            : displayColor.withOpacity(0.1),
+                            ? (isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor)
+                            : displayColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: displayColor.withOpacity(0.3)),
+                        border: Border.all(color: displayColor.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -638,7 +638,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -652,7 +652,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -673,10 +673,10 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
             ),
             child: Column(
@@ -706,7 +706,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),

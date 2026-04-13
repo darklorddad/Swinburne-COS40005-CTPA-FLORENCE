@@ -506,7 +506,7 @@ if (confirmed) {
 ```dart
 // profile_screen.dart, line ~200
 CircleAvatar(
-  backgroundColor: AppTheme.primaryGreen.withOpacity(0.1), // Change color
+  backgroundColor: AppTheme.primaryGreen.withValues(alpha: 0.1), // Change color
   child: Text(
     _userName[0],
     style: TextStyle(color: AppTheme.primaryGreen), // Match color

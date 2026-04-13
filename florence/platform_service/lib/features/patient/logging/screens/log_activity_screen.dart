@@ -387,7 +387,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -437,7 +437,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -452,7 +452,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -512,7 +512,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                           color: isSelected
                               ? AppTheme.primaryBlue
                               : (isDark
-                                  ? Colors.white.withOpacity(0.05)
+                                  ? Colors.white.withValues(alpha: 0.05)
                                   : AppTheme.backgroundColor),
                           border: Border.all(
                             color: isSelected
@@ -583,7 +583,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
               filled: true,
               fillColor: isDark
-                  ? Colors.white.withOpacity(0.05)
+                  ? Colors.white.withValues(alpha: 0.05)
                   : AppTheme.backgroundColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -625,7 +625,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     decoration: InputDecoration(
                       hintText: 'e.g. 500',
                       filled: true,
-                      fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                      fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -641,10 +641,10 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: AppTheme.primaryBlue.withOpacity(0.3),
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.3),
                       ),
                     ),
                     child: const Row(
@@ -691,7 +691,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -705,7 +705,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -736,9 +736,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor),
             ),
             child: Column(
               children: [
@@ -762,7 +762,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
@@ -798,9 +798,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor),
+              border: Border.all(color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor),
             ),
             child: Column(
               children: [
@@ -824,7 +824,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_endDateTime).format(context),
@@ -876,7 +876,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -893,7 +893,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: titleIconColor.withOpacity(0.1),
+                    color: titleIconColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -996,9 +996,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: AppTheme.primaryBlue,
-              inactiveTrackColor: isDark ? Colors.white.withOpacity(0.1) : Colors.grey.shade200,
+              inactiveTrackColor: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade200,
               thumbColor: AppTheme.primaryBlue,
-              overlayColor: AppTheme.primaryBlue.withOpacity(0.1),
+              overlayColor: AppTheme.primaryBlue.withValues(alpha: 0.1),
               trackHeight: 8,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
@@ -1095,7 +1095,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         decoration: BoxDecoration(
           color: isSelected 
               ? AppTheme.primaryBlue 
-              : (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor),
+              : (isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppTheme.primaryBlue : AppTheme.getBorderColor(context),

@@ -301,7 +301,7 @@ class _StreakHeatmap extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.3)),
+                        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.3)),
                       ),
                     );
                   }
@@ -312,11 +312,11 @@ class _StreakHeatmap extends StatelessWidget {
 
                   Color cellColor;
                   if (minutes == 0) {
-                    cellColor = AppTheme.textSecondaryColor.withOpacity(0.1);
+                    cellColor = AppTheme.textSecondaryColor.withValues(alpha: 0.1);
                   } else if (minutes < 20) {
-                    cellColor = dataColor.withOpacity(0.4);
+                    cellColor = dataColor.withValues(alpha: 0.4);
                   } else if (minutes < 45) {
-                    cellColor = dataColor.withOpacity(0.7);
+                    cellColor = dataColor.withValues(alpha: 0.7);
                   } else {
                     cellColor = dataColor;
                   }
@@ -343,11 +343,11 @@ class _StreakHeatmap extends StatelessWidget {
             children: [
               Text('Less', style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
               const SizedBox(width: 4),
-              _LegendBox(color: AppTheme.textSecondaryColor.withOpacity(0.1)),
+              _LegendBox(color: AppTheme.textSecondaryColor.withValues(alpha: 0.1)),
               const SizedBox(width: 2),
-              _LegendBox(color: dataColor.withOpacity(0.4)),
+              _LegendBox(color: dataColor.withValues(alpha: 0.4)),
               const SizedBox(width: 2),
-              _LegendBox(color: dataColor.withOpacity(0.7)),
+              _LegendBox(color: dataColor.withValues(alpha: 0.7)),
               const SizedBox(width: 2),
               _LegendBox(color: dataColor),
               const SizedBox(width: 4),
@@ -492,7 +492,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
       // Visual Logic: Green if > 0, Grey if 0
       final barColor = minutes > 0 
           ? dataColor 
-          : AppTheme.textSecondaryColor.withOpacity(0.3);
+          : AppTheme.textSecondaryColor.withValues(alpha: 0.3);
 
       return BarChartGroupData(
         x: index,
@@ -506,7 +506,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
               show: true,
               toY: maxY,
               // Increased opacity for better visibility against white background
-              color: AppTheme.textSecondaryColor.withOpacity(0.15),
+              color: AppTheme.textSecondaryColor.withValues(alpha: 0.15),
             ),
           ),
         ],
@@ -642,7 +642,7 @@ class _ActivityTimingChart extends StatelessWidget {
               show: true,
               drawVerticalLine: false,
               horizontalInterval: maxY / 4,
-              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.1), strokeWidth: 1),
+              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.1), strokeWidth: 1),
             ),
             titlesData: FlTitlesData(
               leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -674,7 +674,7 @@ class _ActivityTimingChart extends StatelessWidget {
               // Visual Logic: Green if > 0, Grey if 0
               final barColor = point.value > 0 
                   ? dataColor 
-                  : AppTheme.textSecondaryColor.withOpacity(0.3);
+                  : AppTheme.textSecondaryColor.withValues(alpha: 0.3);
 
               return BarChartGroupData(
                 x: point.index,
@@ -687,7 +687,7 @@ class _ActivityTimingChart extends StatelessWidget {
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
                       toY: maxY,
-                      color: AppTheme.textSecondaryColor.withOpacity(0.15),
+                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.15),
                     ),
                   ),
                 ],
@@ -770,7 +770,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -782,7 +782,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1), 
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1), 
                       borderRadius: BorderRadius.circular(12)
                     ),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
@@ -889,12 +889,12 @@ class _HistorySectionState extends State<_HistorySection> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03), 
+            color: Colors.black.withValues(alpha: 0.03), 
             blurRadius: 8, 
             offset: const Offset(0, 2)
           )
         ],
-        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -951,7 +951,7 @@ class _HistorySectionState extends State<_HistorySection> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
@@ -974,7 +974,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
@@ -1067,7 +1067,7 @@ class _ActivityCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1081,7 +1081,7 @@ class _ActivityCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 // Always use Primary Blue for the Header Icon to match other screens

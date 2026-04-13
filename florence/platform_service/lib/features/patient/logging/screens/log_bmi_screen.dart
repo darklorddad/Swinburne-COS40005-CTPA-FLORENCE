@@ -393,7 +393,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -428,10 +428,10 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -450,7 +450,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                           Text(
                             'Target Range',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -459,7 +459,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -470,7 +470,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                       Text('BMI',
                           style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.primaryGreen.withOpacity(0.8))),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8))),
                       Text(
                         targetText,
                         style: const TextStyle(
@@ -494,7 +494,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     final bmiColor = _getBmiColor(_calculatedBmi, threshold);
     
     final containerColor = bmiColor != null 
-        ? bmiColor.withOpacity(0.05) 
+        ? bmiColor.withValues(alpha: 0.05) 
         : (isDark ? AppTheme.midnightSurface : Colors.white);
         
     final borderColor = bmiColor ?? AppTheme.getBorderColor(context);
@@ -510,7 +510,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -571,7 +571,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -585,7 +585,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -628,7 +628,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                         hintText: 'e.g. 175',
                         hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -668,7 +668,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                         hintText: 'e.g. 70',
                         hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                         filled: true,
-                        fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
@@ -720,11 +720,11 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: isPending
-            ? (isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor)
-            : displayColor.withOpacity(0.1),
+            ? (isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor)
+            : displayColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: displayColor.withOpacity(0.3),
+          color: displayColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -764,7 +764,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -778,7 +778,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -799,10 +799,10 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
             ),
             child: Column(
@@ -832,7 +832,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
@@ -849,14 +849,14 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                             colorScheme: Theme.of(context).colorScheme.copyWith(
                               tertiary: AppTheme.primaryBlue,
                               onTertiary: Colors.white,
-                              tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
+                              tertiaryContainer: AppTheme.primaryBlue.withValues(alpha: 0.2),
                               onTertiaryContainer: AppTheme.primaryBlue,
                             ),
                             // Fix input field background to make cursor visible
                             timePickerTheme: TimePickerThemeData(
                               hourMinuteColor: WidgetStateColor.resolveWith((states) {
                                 return states.contains(WidgetState.selected)
-                                    ? AppTheme.primaryBlue.withOpacity(0.1)
+                                    ? AppTheme.primaryBlue.withValues(alpha: 0.1)
                                     : Colors.grey.shade100;
                               }),
                               hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
@@ -867,7 +867,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                             ),
                             textSelectionTheme: TextSelectionThemeData(
                               cursorColor: AppTheme.primaryBlue,
-                              selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
+                              selectionColor: AppTheme.primaryBlue.withValues(alpha: 0.3),
                               selectionHandleColor: AppTheme.primaryBlue,
                             ),
                           ),

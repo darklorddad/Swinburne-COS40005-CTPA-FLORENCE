@@ -245,7 +245,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   /// Build info card
   Widget _buildInfoCard() {
     return BaseCard(
-      // backgroundColor: AppTheme.medicationColor.withOpacity(0.1),
+      // backgroundColor: AppTheme.medicationColor.withValues(alpha: 0.1),
       child: Row(
         children: [
           Icon(
@@ -315,7 +315,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppTheme.medicationColor.withOpacity(0.1)
+                        ? AppTheme.medicationColor.withValues(alpha: 0.1)
                         : AppTheme.backgroundColor,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
@@ -480,7 +480,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
   /// Build warning card
   Widget _buildWarningCard() {
     return BaseCard(
-      // backgroundColor: AppTheme.warningColor.withOpacity(0.1),
+      // backgroundColor: AppTheme.warningColor.withValues(alpha: 0.1),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

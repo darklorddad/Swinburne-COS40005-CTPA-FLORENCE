@@ -282,7 +282,7 @@ class _ChartSectionState extends State<_ChartSection> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -297,7 +297,7 @@ class _ChartSectionState extends State<_ChartSection> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
@@ -321,7 +321,7 @@ class _ChartSectionState extends State<_ChartSection> {
           Container(
             height: 36,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
             padding: const EdgeInsets.all(4),
@@ -416,10 +416,10 @@ class _StatisticsSection extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Column(
@@ -438,7 +438,7 @@ class _StatisticsSection extends StatelessWidget {
                             Text(
                               'Target Range',
                               style: TextStyle(
-                                color: AppTheme.primaryGreen.withOpacity(0.8),
+                                color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -447,7 +447,7 @@ class _StatisticsSection extends StatelessWidget {
                         Icon(
                           Icons.chevron_right,
                           size: 20,
-                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                         ),
                       ],
                     ),
@@ -488,7 +488,7 @@ class _StatisticsSection extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -499,7 +499,7 @@ class _StatisticsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
@@ -620,8 +620,8 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -653,14 +653,14 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   // 1. Safe Zone Background (Green Band)
                   rangeAnnotations: threshold != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
                       HorizontalRangeAnnotation(
                         y1: threshold!.minValue, 
                         y2: threshold!.maxValue, 
-                        color: AppTheme.primaryGreen.withOpacity(0.1)
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.1)
                       )
                     ],
                   ) : null,
@@ -668,8 +668,8 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   // 2. Dotted Lines for Thresholds (Matches Trends)
                   extraLinesData: threshold != null ? ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
                   ) : null,
                   lineBarsData: [
@@ -687,7 +687,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                           strokeColor: Colors.white,
                         ),
                       ),
-                      belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withOpacity(0.1), AppTheme.primaryBlue.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                      belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withValues(alpha: 0.1), AppTheme.primaryBlue.withValues(alpha: 0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                     ),
                   ],
                   lineTouchData: LineTouchData(
@@ -700,7 +700,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
@@ -883,14 +883,14 @@ class _ModalDaySection extends StatelessWidget {
           chartLines.add(LineChartBarData(
             spots: spots, 
             isCurved: true, 
-            color: AppTheme.textSecondaryColor.withOpacity(0.3), 
+            color: AppTheme.textSecondaryColor.withValues(alpha: 0.3), 
             barWidth: 1.5, 
             // Enable dots so single readings are visible
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
                 radius: 2,
-                color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
                 strokeWidth: 0,
               ),
             ),
@@ -917,8 +917,8 @@ class _ModalDaySection extends StatelessWidget {
                     drawVerticalLine: true, // Enabled vertical grid
                     horizontalInterval: 50,
                     verticalInterval: 6,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     // Hide Y Axis Labels
@@ -933,14 +933,14 @@ class _ModalDaySection extends StatelessWidget {
                     // Hide Right Axis Labels
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   rangeAnnotations: threshold != null ? RangeAnnotations(
-                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold!.minValue, y2: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold!.minValue, y2: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.1))],
                   ) : null,
                   extraLinesData: threshold != null ? ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
                   ) : null,
                   lineBarsData: chartLines,
@@ -1007,7 +1007,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -1016,7 +1016,7 @@ class _HistorySectionState extends State<_HistorySection> {
             children: [
               Row(
                 children: [
-                  Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)),
+                  Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)),
                   const SizedBox(width: 12),
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
@@ -1088,13 +1088,13 @@ class _HistorySectionState extends State<_HistorySection> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03), 
+                    color: Colors.black.withValues(alpha: 0.03), 
                     blurRadius: 8, 
                     offset: const Offset(0, 2)
                   )
                 ],
                 border: Border.all(
-                  color: statusColor.withOpacity(0.3), 
+                  color: statusColor.withValues(alpha: 0.3), 
                   width: 1
                 ),
               ),
@@ -1132,7 +1132,7 @@ class _HistorySectionState extends State<_HistorySection> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1), 
+                          color: statusColor.withValues(alpha: 0.1), 
                           borderRadius: BorderRadius.circular(8)
                         ),
                         child: Text(

@@ -31,7 +31,7 @@ class QuickActionsGrid extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -46,7 +46,7 @@ class QuickActionsGrid extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -165,8 +165,8 @@ class QuickActionsGrid extends StatelessWidget {
     double? fixedWidth,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttonColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
-    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor.withOpacity(0.5);
+    final buttonColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor.withValues(alpha: 0.5);
 
     Widget content = InkWell(
       onTap: onTap,
@@ -179,7 +179,7 @@ class QuickActionsGrid extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -195,7 +195,7 @@ class QuickActionsGrid extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

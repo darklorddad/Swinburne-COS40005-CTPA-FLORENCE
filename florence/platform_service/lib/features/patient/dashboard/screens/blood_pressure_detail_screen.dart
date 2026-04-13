@@ -296,7 +296,7 @@ class _ChartSectionState extends State<_ChartSection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -306,7 +306,7 @@ class _ChartSectionState extends State<_ChartSection> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
@@ -322,7 +322,7 @@ class _ChartSectionState extends State<_ChartSection> {
           // Tabs
           Container(
             height: 36,
-            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
             padding: const EdgeInsets.all(4),
             child: Row(
               children: widget.ranges.map((range) {
@@ -404,9 +404,9 @@ class _StatisticsSection extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   children: [
@@ -419,14 +419,14 @@ class _StatisticsSection extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'Target Ranges',
-                              style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
+                              style: TextStyle(color: AppTheme.primaryGreen.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
                         Icon(
                           Icons.chevron_right,
                           size: 20,
-                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                         ),
                       ],
                     ),
@@ -465,7 +465,7 @@ class _StatisticsSection extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -476,7 +476,7 @@ class _StatisticsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
@@ -549,8 +549,8 @@ class _DualTrendSection extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -578,26 +578,26 @@ class _DualTrendSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   // Safe Zones
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
                       if (sysThreshold != null)
-                        HorizontalRangeAnnotation(y1: sysThreshold!.minValue, y2: sysThreshold!.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
+                        HorizontalRangeAnnotation(y1: sysThreshold!.minValue, y2: sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.05)),
                       if (diaThreshold != null)
-                        HorizontalRangeAnnotation(y1: diaThreshold!.minValue, y2: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
+                        HorizontalRangeAnnotation(y1: diaThreshold!.minValue, y2: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.05)),
                     ]
                   ),
                   // Dotted Threshold Lines
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
                       if (sysThreshold != null) ...[
-                        HorizontalLine(y: sysThreshold!.minValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: sysThreshold!.maxValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: sysThreshold!.minValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
                       ],
                       if (diaThreshold != null) ...[
-                        HorizontalLine(y: diaThreshold!.minValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: diaThreshold!.minValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
                       ],
                     ],
                   ),
@@ -632,7 +632,7 @@ class _DualTrendSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                            final isSys = spot.barIndex == 0;
@@ -739,11 +739,11 @@ class _FloatingBarSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))), // Added border
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (group) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                          final r = data[group.x.toInt()];
                          return BarTooltipItem(
@@ -762,7 +762,7 @@ class _FloatingBarSection extends StatelessWidget {
                         BarChartRodData(
                           toY: r.systolic,
                           fromY: r.diastolic,
-                          color: AppTheme.primaryBlue.withOpacity(0.6),
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.6),
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         )
@@ -838,7 +838,7 @@ class _ScatterSection extends StatelessWidget {
                   }).toList(),
                   minX: 40, maxX: 130,
                   minY: 80, maxY: 200,
-                  gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)),
                   titlesData: FlTitlesData(
                     bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (value, meta) {
                       if (value <= meta.min || value >= meta.max) return const SizedBox();
@@ -848,10 +848,10 @@ class _ScatterSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   scatterTouchData: ScatterTouchData(
                     touchTooltipData: ScatterTouchTooltipData(
-                      getTooltipColor: (spot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (spot) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItems: (spot) {
                         return ScatterTooltipItem(
                           'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',
@@ -923,7 +923,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -935,7 +935,7 @@ class _HistorySectionState extends State<_HistorySection> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)
                   ),
                   const SizedBox(width: 12),
@@ -1009,13 +1009,13 @@ class _HistorySectionState extends State<_HistorySection> {
                  borderRadius: BorderRadius.circular(12),
                  boxShadow: [
                    BoxShadow(
-                     color: Colors.black.withOpacity(0.03),
+                     color: Colors.black.withValues(alpha: 0.03),
                      blurRadius: 8,
                      offset: const Offset(0, 2)
                    )
                  ],
                  border: Border.all(
-                   color: statusColor.withOpacity(0.3),
+                   color: statusColor.withValues(alpha: 0.3),
                    width: 1,
                  ),
                ),
@@ -1052,7 +1052,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        Container(
                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                          decoration: BoxDecoration(
-                           color: statusColor.withOpacity(0.1),
+                           color: statusColor.withValues(alpha: 0.1),
                            borderRadius: BorderRadius.circular(8),
                          ),
                          child: Text(

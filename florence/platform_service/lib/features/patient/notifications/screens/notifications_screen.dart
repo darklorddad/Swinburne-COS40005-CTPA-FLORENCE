@@ -180,12 +180,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           decoration: BoxDecoration(
             color: notification.isRead
                 ? Colors.transparent
-                : _getNotificationColor(notification.type).withOpacity(0.05),
+                : _getNotificationColor(notification.type).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: notification.isRead
                   ? Colors.grey.shade300
-                  : _getNotificationColor(notification.type).withOpacity(0.3),
+                  : _getNotificationColor(notification.type).withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -199,7 +199,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: _getNotificationColor(notification.type)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _getNotificationIcon(notification.type, 24),

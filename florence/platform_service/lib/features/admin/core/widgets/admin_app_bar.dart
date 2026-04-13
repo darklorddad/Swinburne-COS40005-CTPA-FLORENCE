@@ -230,7 +230,7 @@ class _NotificationButton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AdminTheme.infoColor.withOpacity(0.1),
+                color: AdminTheme.infoColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
