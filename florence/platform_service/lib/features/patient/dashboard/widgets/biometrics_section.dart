@@ -1,14 +1,13 @@
-import 'package:florence/features/patient/core/providers/threshold_providers.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:florence/features/patient/core/providers/settings_providers.dart';
-
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart'; // Updated import
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/dashboard/widgets/compact_health_card.dart';
-
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Biometrics Section
 /// A container widget that groups all health metric cards
 class BiometricsSection extends ConsumerWidget {

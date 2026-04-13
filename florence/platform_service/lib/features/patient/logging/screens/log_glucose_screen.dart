@@ -1,13 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:florence/features/patient/core/providers/settings_providers.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/config/environment.dart';
@@ -15,11 +8,17 @@ import 'package:florence/core/services/api_service.dart';
 import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/core/utils/validators.dart';
-import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 /// Log Glucose Screen
 /// Allows users to record blood glucose readings
 class LogGlucoseScreen extends ConsumerStatefulWidget {
@@ -443,17 +442,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final currentUnit = settings.glucoseUnit;
 
     final thresholdsAsync = ref.watch(patientThresholdsProvider);
-    String targetText = "Loading target...";
-    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
-      try {
-        final glucoseTarget = thresholdsAsync.value!
-            .firstWhere((t) => t.dataType == 'GLUCOSE');
-        targetText =
-            "Target: ${glucoseTarget.minValue} - ${glucoseTarget.maxValue} $currentUnit";
-      } catch (e) {
-        targetText = "Target: Not set";
-      }
-    }
+
 
     final glucoseValue = double.tryParse(_glucoseController.text);
     final bool hasChanges = !_forcePop && 
@@ -593,7 +582,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         final glucoseTarget = thresholdsAsync.value!
             .firstWhere((t) => t.dataType == 'GLUCOSE');
         targetText =
-            "Target: ${glucoseTarget.minValue} - ${glucoseTarget.maxValue} $currentUnit";
+            "${glucoseTarget.minValue} - ${glucoseTarget.maxValue} $currentUnit";
       } catch (e) {
         targetText = "Target: Not set";
       }
@@ -635,14 +624,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       'Record your blood glucose reading to track your health trends.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.infoColor,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      targetText,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.infoColor.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
                           ),
                     ),
                   ],

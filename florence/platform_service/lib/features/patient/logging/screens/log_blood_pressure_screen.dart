@@ -1,14 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:florence/core/utils/validators.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
 import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
-import 'package:florence/shared/widgets/button_widgets.dart';
-import 'package:florence/config/theme.dart';
-import 'package:florence/config/routes.dart';
+import 'package:florence/core/utils/validators.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Log Blood Pressure Screen
 class LogBloodPressureScreen extends ConsumerStatefulWidget {
@@ -274,11 +274,6 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
   }
 
   Widget _buildInfoCard(PatientThreshold? sysT, PatientThreshold? diaT) {
-    String targetText = "Target: Not set";
-    if (sysT != null && diaT != null) {
-      targetText =
-          "Target: ${sysT.minValue.toInt()}/${diaT.minValue.toInt()} - ${sysT.maxValue.toInt()}/${diaT.maxValue.toInt()} mmHg";
-    }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
@@ -316,14 +311,6 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                       'Regularly logging your blood pressure helps monitor cardiovascular health.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppTheme.infoColor,
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      targetText,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.infoColor.withValues(alpha: 0.8),
-                            fontWeight: FontWeight.w600,
                           ),
                     ),
                   ],

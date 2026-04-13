@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-// For ApiService (if needed, but repo used)
-import 'package:florence/core/utils/validators.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
 import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
-import 'package:florence/shared/widgets/button_widgets.dart';
-import 'package:florence/config/theme.dart';
-import 'package:florence/config/routes.dart';
+// For ApiService (if needed, but repo used)
+import 'package:florence/core/utils/validators.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Log HbA1c Screen
 /// Allows users to record Hemoglobin A1c readings
@@ -177,18 +177,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   Widget build(BuildContext context) {
     final thresholdsAsync = ref.watch(patientThresholdsProvider);
 
-    String targetText = "Target: Loading...";
-    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
-      try {
-        final hba1cTarget =
-            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'HBA1C');
-        targetText =
-            "Target: ${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
-      } catch (e) {
-        targetText = "Target: Not set";
-      }
-    }
-
     final hba1cValue =
         double.tryParse(_hba1cController.text.replaceAll(',', '.'));
 
@@ -309,7 +297,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         final hba1cTarget =
             thresholdsAsync.value!.firstWhere((t) => t.dataType == 'HBA1C');
         targetText =
-            "Target: ${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
+            "${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
       } catch (e) {
         targetText = "Target: Not set";
       }
