@@ -313,16 +313,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Auto-Fill Section
-                        _buildAutoFillSection(),
-                        const SizedBox(height: 24),
-
                         // Info & Target card
-                        _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
+                        _buildInfoCard(totalThreshold, ldlThreshold,
+                            hdlThreshold, triThreshold),
                         const SizedBox(height: 20),
 
-                        // Input Section
-                        _buildInputSection(),
+                        // The new unified Lipid Panel Card
+                        _buildLipidPanelSection(),
                         const SizedBox(height: 20),
 
                         // Date and time
@@ -479,76 +476,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildAutoFillSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryBlue.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.document_scanner, color: AppTheme.primaryBlue),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Auto-Fill with Lab Report',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.primaryBlue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Upload a photo of your lipid panel to automatically extract your values.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _isScanning ? null : _scanLabReport,
-              icon: _isScanning
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.camera_alt),
-              label: Text(_isScanning ? 'Analyzing Report...' : 'Scan Lab Report'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniTargetRow(String label, String val, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
-        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
-      ],
-    );
-  }
-
-  Widget _buildInputSection() {
+  Widget _buildLipidPanelSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
     final settings = ref.watch(patientSettingsProvider);
     final currentUnit = settings.cholesterolUnit;
 
@@ -569,7 +502,9 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 1. Header
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -579,8 +514,8 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                 ),
                 child: Icon(
                   Icons.science_outlined,
-                  color: titleIconColor,
                   size: 24,
+                  color: titleIconColor,
                 ),
               ),
               const SizedBox(width: 12),
@@ -592,28 +527,110 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               ),
             ],
           ),
+
+          const SizedBox(height: 20),
+
+          // 2. The Photo Button
+          InkWell(
+            onTap: _isScanning ? null : _scanLabReport,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : AppTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderColor),
+              ),
+              child: _isScanning
+                  ? Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Analyzing Report...',
+                          style: TextStyle(
+                            color:
+                                isDark ? Colors.white : AppTheme.textPrimaryColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 28,
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Add Lab Report',
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+
           const SizedBox(height: 24),
 
-          // 2x2 Grid Layout
+          // 3. The 2x2 Grid
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit, Icons.bloodtype_outlined, '5.0', '150')),
+              Expanded(
+                  child: _buildGridLabField(
+                      'Total',
+                      _totalController,
+                      currentUnit,
+                      Icons.bloodtype_outlined,
+                      '5.0',
+                      '150')),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit, Icons.arrow_downward, '2.5', '100')),
+              Expanded(
+                  child: _buildGridLabField('LDL', _ldlController, currentUnit,
+                      Icons.arrow_downward, '2.5', '100')),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit, Icons.arrow_upward, '1.5', '50')),
+              Expanded(
+                  child: _buildGridLabField('HDL', _hdlController, currentUnit,
+                      Icons.arrow_upward, '1.5', '50')),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined, '1.7', '150')),
+              Expanded(
+                  child: _buildGridLabField(
+                      'Triglycerides',
+                      _triglyceridesController,
+                      currentUnit,
+                      Icons.water_drop_outlined,
+                      '1.7',
+                      '150')),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 
