@@ -237,13 +237,26 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     }
 
     try {
-      final result = await _apiService.uploadFile(
-        '/biometrics/parse-lab-report',
+      // 1. Upload to Data Service first (Stateless AI approach)
+      // We use a temporary endpoint or the existing meal-photo logic adapted for reports
+      final uploadRes = await _apiService.uploadFile(
+        '/patients/me/lab-report-upload',
         'file',
         bytes,
         filename,
-        baseUrlOverride: Environment.llmEngineServiceUrl,
-        additionalFields: {'report_type': 'lipid_panel'},
+      );
+
+      final storagePath = uploadRes['path'];
+
+      // 2. Send the PATH to LLM Engine for analysis
+      final result = await _apiService.post(
+        '/biometrics/parse-lab-report',
+        {
+          'report_type': 'lipid_panel',
+          'storage_path': storagePath,
+          'target_unit': ref.read(patientSettingsProvider).cholesterolUnit,
+        },
+        // Note: post() helper in ApiService needs to support baseUrlOverride or we use http directly
       );
 
       if (mounted && result != null) {
@@ -295,35 +308,18 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       int? documentId;
 
-      // STEP 1 & 2: If a file was selected, upload it and create the document record
+      // STEP 1 & 2: If a file was selected, upload it via Data Service and create record
       if (_fileBytes != null && _selectedFileName != null) {
-        final userId = session.user.id;
-        final extension = _selectedFileName!.split('.').last.toLowerCase();
-
-        // 1. Upload to the secure bucket
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
-        final docTypeFolder = 'lipid_panel'; // Creates the sub-folder
-        final documentPath = '$userId/$docTypeFolder/$fileName';
-
-        await Supabase.instance.client.storage
-            .from('clinical-documents')
-            .uploadBinary(
-              documentPath,
-              _fileBytes!,
-              fileOptions: FileOptions(
-                contentType: _isPdf ? 'application/pdf' : 'image/$extension',
-              ),
-            );
-
-        // 2. Create the record in our new table and get the ID back
-        final patientProfile = ref.read(userProfileProvider).value;
-        if (patientProfile == null) throw Exception("Patient profile not found");
-
-        documentId = await repo.createClinicalDocument(
-          patientId: patientProfile['id'],
-          documentPath: documentPath,
-          documentType: 'LIPID_PANEL',
+        // 1. Upload via Data Service API (No direct Supabase Storage calls from UI)
+        final uploadRes = await _apiService.uploadFile(
+          '/patients/me/clinical-documents/upload',
+          'file',
+          _fileBytes!,
+          _selectedFileName!,
+          additionalFields: {'document_type': 'LIPID_PANEL'},
         );
+
+        documentId = uploadRes['id'];
       }
 
       // STEP 3: Save the actual biometrics, linking them to the document

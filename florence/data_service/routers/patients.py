@@ -320,15 +320,18 @@ async def update_user_settings(
 @router.get("/me", summary="Get my own full patient profile")
 async def get_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
     """
-    Retrieves the complete profile for the currently authenticated patient,
-    including details from the `patient_profiles` table.
+    Retrieves the complete profile for the currently authenticated patient.
+    Generates a fresh signed URL for the profile picture if it exists.
     """
-    # The profile_picture_url is retrieved here as part of the 'patient_profile' dictionary
-    # which comes from the 'get_current_patient_profile' dependency querying the 'patient_profiles' table.
-    
-    # Print URL to console as requested
-    print(f"DEBUG: Fetched Profile URL: {patient_profile.get('profile_picture_url')}")
-    
+    avatar_path = patient_profile.get('profile_picture_url')
+    if avatar_path and not avatar_path.startswith('http'):
+        try:
+            # Generate a signed URL valid for 1 hour
+            res = supabase.storage.from_("Bucket").create_signed_url(avatar_path, 3600)
+            patient_profile['profile_picture_url'] = res.get('signedURL')
+        except Exception as e:
+            print(f"DEBUG: Failed to sign avatar URL: {e}")
+
     return patient_profile
 
 @router.put("/me", summary="Update my own patient profile")
@@ -417,14 +420,21 @@ async def create_clinical_document(
     Inserts a record into the clinical_documents table.
     """
     try:
-        result = supabase.table("clinical_documents").insert({
+        # Ensure we use the patient_id from the authenticated profile for security
+        payload = {
             "patient_id": patient_profile['id'],
             "document_path": doc_data.document_path,
             "document_type": doc_data.document_type
-        }).execute()
+        }
+        
+        result = supabase.table("clinical_documents").insert(payload).execute()
+
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to create document record")
 
         return result.data[0]
     except Exception as e:
+        print(f"ERROR: create_clinical_document: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/me/monitor-data", summary="Add a new monitor data point for myself")
@@ -892,30 +902,87 @@ async def upload_patient_avatar(
         file_content = await file.read()
 
         # 1. Upload to Supabase Storage
-        # Note: 'upsert' options are handled differently in python client versions, 
-        # usually default upload overwrites or we handle errors.
-        # Ensure your Bucket is named "Bucket"
-        res = supabase.storage.from_("Bucket").upload(
+        supabase.storage.from_("Bucket").upload(
             file=file_content,
             path=filename,
             file_options={"content-type": file.content_type, "upsert": "true"}
         )
 
-        # 2. Get Public URL
-        # Append timestamp to query param to bust frontend cache since filename stays constant
-        public_url = supabase.storage.from_("Bucket").get_public_url(filename)
-        public_url_with_cache_bust = f"{public_url}?t={int(time.time())}"
-
-        # 3. Update Database Profile
-        update_res = supabase.table('patient_profiles').update({
-            "profile_picture_url": signed_url
+        # 2. Update Database Profile with the PATH, not the URL
+        supabase.table('patient_profiles').update({
+            "profile_picture_url": filename
         }).eq('id', patient_profile['id']).execute()
 
-        return {"url": signed_url}
+        # 3. Return a signed URL for immediate UI update
+        res = supabase.storage.from_("Bucket").create_signed_url(filename, 3600)
+        return {"url": res.get('signedURL'), "path": filename}
 
     except Exception as e:
         print(f"Upload Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+
+@router.post("/me/clinical-documents/upload", summary="Upload and record a clinical document")
+async def upload_clinical_document(
+    file: UploadFile = File(...),
+    document_type: str = Form(...),
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Uploads a file to the clinical-documents bucket and creates a DB record.
+    """
+    try:
+        user_id = patient_profile['user_id']
+        file_ext = file.filename.split('.')[-1]
+        timestamp = int(time.time())
+        
+        # Path: {user_id}/{doc_type}/{timestamp}.{ext}
+        folder = document_type.lower().replace(" ", "_")
+        filename = f"{user_id}/{folder}/{timestamp}.{file_ext}"
+        
+        file_content = await file.read()
+
+        # 1. Upload to Storage
+        supabase.storage.from_("clinical-documents").upload(
+            file=file_content,
+            path=filename,
+            file_options={"content-type": file.content_type, "upsert": "true"}
+        )
+
+        # 2. Create DB Record
+        result = supabase.table("clinical_documents").insert({
+            "patient_id": patient_profile['id'],
+            "document_path": filename,
+            "document_type": document_type
+        }).execute()
+
+        return result.data[0]
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@router.post("/me/lab-report-upload", summary="Temporary upload for AI analysis")
+async def upload_temp_lab_report(
+    file: UploadFile = File(...),
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Uploads a lab report to a temp folder for AI processing.
+    Returns the path for the LLM Engine to use.
+    """
+    try:
+        user_id = patient_profile['user_id']
+        filename = f"temp/{user_id}/{int(time.time())}_{file.filename}"
+        file_content = await file.read()
+
+        supabase.storage.from_("clinical-documents").upload(
+            file=file_content,
+            path=filename,
+            file_options={"content-type": file.content_type, "upsert": "true"}
+        )
+
+        return {"path": filename}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/me/meal-photo", summary="Upload meal photo")
 async def upload_meal_photo(
