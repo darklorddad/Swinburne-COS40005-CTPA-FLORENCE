@@ -302,7 +302,8 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
         // 1. Upload to the secure bucket
         final fileName = '${DateTime.now().millisecondsSinceEpoch}.$extension';
-        final documentPath = '$userId/$fileName';
+        final docTypeFolder = 'lipid_panel'; // Creates the sub-folder
+        final documentPath = '$userId/$docTypeFolder/$fileName';
 
         await Supabase.instance.client.storage
             .from('clinical-documents')
