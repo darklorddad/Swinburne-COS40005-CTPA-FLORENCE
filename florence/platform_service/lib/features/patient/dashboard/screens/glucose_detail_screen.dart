@@ -1,17 +1,17 @@
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
-
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class GlucoseDetailScreen extends ConsumerWidget {
   final VoidCallback? onSwitchToLog;
@@ -21,7 +21,6 @@ class GlucoseDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final glucoseAsync = ref.watch(monitorDataProvider);
     final thresholdsAsync = ref.watch(patientThresholdsProvider);
-    final dailyLogsAsync = ref.watch(dailyPatientLogsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -243,7 +242,6 @@ class _ChartSectionState extends State<_ChartSection> {
   }
 
   void _showInfoDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -370,13 +368,13 @@ class _ChartSectionState extends State<_ChartSection> {
 // SECTION 1: STATISTICS SUMMARY
 // ============================================================================
 
-class _StatisticsSection extends StatelessWidget {
+class _StatisticsSection extends ConsumerWidget {
   final List<MonitorData> readings;
   final PatientThreshold? threshold;
   final bool isDefault;
 
   const _StatisticsSection({
-    required this.readings, 
+    required this.readings,
     this.threshold,
     this.isDefault = false,
   });
@@ -393,7 +391,7 @@ class _StatisticsSection extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _ChartSection(
       title: 'Overview',
       icon: Icons.analytics_outlined,
@@ -405,6 +403,7 @@ class _StatisticsSection extends StatelessWidget {
       allData: readings,
       builder: (range, data) {
         final stats = _calculateStats(data);
+        final settings = ref.watch(patientSettingsProvider);
         return Column(
           children: [
             // Target Range Display
@@ -455,7 +454,7 @@ class _StatisticsSection extends StatelessWidget {
                     if (threshold != null)
                       _buildMiniTargetRow(
                         'Glucose',
-                        '${threshold!.minValue.toInt()} - ${threshold!.maxValue.toInt()} mg/dL',
+                        '${threshold!.minValue.toInt()} - ${threshold!.maxValue.toInt()} ${settings.glucoseUnit}',
                         AppTheme.primaryGreen,
                       )
                     else
@@ -471,7 +470,7 @@ class _StatisticsSection extends StatelessWidget {
             // Statistics Row
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', 'mg/dL', Colors.blue)),
+                Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', settings.glucoseUnit, Colors.blue)),
                 const SizedBox(width: 12),
                 Expanded(child: _buildStatBox(context, 'GMI', (stats['gmi'] as double) > 0 ? (stats['gmi'] as double).toStringAsFixed(1) : '--', '%', Colors.purple)),
                 const SizedBox(width: 12),
