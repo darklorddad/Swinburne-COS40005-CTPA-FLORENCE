@@ -94,34 +94,6 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     }
   }
 
-  Future<void> _selectDateTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now(),
-    );
-
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-
-      if (time != null && mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time.hour,
-            time.minute,
-          );
-        });
-      }
-    }
-  }
-
   Future<bool> _showDiscardDialog() async {
     return await showDialog<bool>(
       context: context,

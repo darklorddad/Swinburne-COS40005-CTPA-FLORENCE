@@ -116,34 +116,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   }
   
   /// Show date time picker
-  Future<void> _selectDateTime() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
-      lastDate: DateTime.now(),
-    );
-    
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-
-      if (mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time?.hour ?? _selectedDateTime.hour,
-            time?.minute ?? _selectedDateTime.minute,
-          );
-        });
-      }
-    }
-  }
-  
   Future<bool> _showDiscardDialog() async {
     return await showDialog<bool>(
       context: context,
@@ -175,7 +147,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final thresholdsAsync = ref.watch(patientThresholdsProvider);
 
     final hba1cValue =
         double.tryParse(_hba1cController.text.replaceAll(',', '.'));

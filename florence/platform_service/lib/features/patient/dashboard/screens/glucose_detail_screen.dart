@@ -526,7 +526,7 @@ class _StatisticsSection extends ConsumerWidget {
 // SECTION 2: ANNOTATED GLUCOSE TRENDS
 // ============================================================================
 
-class _GlucoseTrendsSection extends StatelessWidget {
+class _GlucoseTrendsSection extends ConsumerWidget {
   final List<MonitorData> allReadings;
   final PatientThreshold? threshold;
   final bool isDefault;

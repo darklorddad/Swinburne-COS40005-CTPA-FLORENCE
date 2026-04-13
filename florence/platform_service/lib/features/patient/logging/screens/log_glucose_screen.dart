@@ -438,12 +438,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ref.watch(patientSettingsProvider);
-    final currentUnit = settings.glucoseUnit;
-
-    final thresholdsAsync = ref.watch(patientThresholdsProvider);
-
-
     final glucoseValue = double.tryParse(_glucoseController.text);
     final bool hasChanges = !_forcePop && 
         (_glucoseController.text != _initialGlucose || 
@@ -719,8 +713,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         : (isDark ? AppTheme.midnightSurface : Colors.white);
         
     final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
-    final hasInput = glucoseColor != null;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
