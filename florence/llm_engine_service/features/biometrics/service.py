@@ -1,4 +1,5 @@
 import base64
+from typing import Optional
 from langchain_core.messages import HumanMessage
 from core.llm_factory import LLMFactory
 from features.biometrics.models import ParsedLipidPanel, ParsedHbA1c
