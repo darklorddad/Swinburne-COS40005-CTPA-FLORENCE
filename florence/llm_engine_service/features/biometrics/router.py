@@ -8,9 +8,10 @@ router = APIRouter()
 def get_biometrics_service():
     return BiometricsService()
 
-@router.post("/parse-lab-report", response_model=Union[ParsedLipidPanel, ParsedHbA1c])
+@router.post("/parse-lab-report")
 async def parse_lab_report(
     report_type: str = Form(..., description="Type of report: 'lipid_panel' or 'hba1c'"),
+    target_unit: str = Form("mmol/L", description="The unit the app expects (mg/dL or mmol/L)"),
     file: UploadFile = File(...),
     service: BiometricsService = Depends(get_biometrics_service)
 ):
@@ -37,7 +38,12 @@ async def parse_lab_report(
     content = await file.read()
     
     try:
-        return await service.parse_lab_report(content, safe_mime_type, report_type)
+        return await service.parse_lab_report(
+            content, 
+            safe_mime_type, 
+            report_type, 
+            target_unit=target_unit
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

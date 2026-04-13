@@ -1,12 +1,15 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
+class ExtractedBiometric(BaseModel):
+    value: Optional[float] = Field(description="The numeric value found on the report")
+    unit_on_paper: Optional[str] = Field(description="The unit exactly as printed (e.g., mg/dL or mmol/L)")
+
 class ParsedLipidPanel(BaseModel):
-    total_cholesterol: Optional[float] = Field(description="Total cholesterol value")
-    hdl: Optional[float] = Field(description="HDL value")
-    ldl: Optional[float] = Field(description="LDL value")
-    triglycerides: Optional[float] = Field(description="Triglycerides value")
-    units: str = Field(description="Unit of measurement, either 'mg/dL' or 'mmol/L'")
+    total_cholesterol: ExtractedBiometric
+    ldl: ExtractedBiometric
+    hdl: ExtractedBiometric
+    triglycerides: ExtractedBiometric
 
 class ParsedHbA1c(BaseModel):
     hba1c_percentage: Optional[float] = Field(description="HbA1c percentage value")
