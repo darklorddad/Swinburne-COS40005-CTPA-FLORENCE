@@ -182,10 +182,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         fileName
       );
 
+      // 2. Get Signed URL (Private Bucket)
+      // Generate a signed URL that expires in 1 year (31536000 seconds)
+      final String signedUrl = await Supabase.instance.client.storage
+          .from('Bucket')
+          .createSignedUrl(response['path'], 31536000);
+
       // Optimistic update
       if (mounted) {
         setState(() {
-          _profileImageUrl = response['url'];
+          _profileImageUrl = signedUrl;
         });
         Helpers.hideLoadingDialog(context);
         Helpers.showSuccess(context, 'Profile picture updated');
