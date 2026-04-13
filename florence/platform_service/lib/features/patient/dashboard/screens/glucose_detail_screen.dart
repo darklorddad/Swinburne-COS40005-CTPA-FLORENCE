@@ -538,12 +538,13 @@ class _GlucoseTrendsSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(patientSettingsProvider);
     return _ChartSection(
       title: 'Glucose Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your glucose readings over time.\n\n'
-                '• Y-Axis: Glucose (mg/dL)\n'
+                '• Y-Axis: Glucose (${settings.glucoseUnit})\n'
                 '• X-Axis: Time\n'
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
@@ -593,21 +594,36 @@ class _GlucoseTrendsSection extends StatelessWidget {
         final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
         final double maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
 
-        // Determine Y-Axis range
-        double minY = threshold != null ? (threshold!.minValue - 20).clamp(0, double.infinity) : 60;
-        double maxY = threshold != null ? threshold!.maxValue + 40 : 200;
-        
+        // 1. Check the current unit
+        final bool isMmol = settings.glucoseUnit == 'mmol/L';
+
+        // 2. Set dynamic padding and defaults based on the unit
+        final double padBottom = isMmol ? 1.0 : 20.0;
+        final double padTop = isMmol ? 3.0 : 40.0;
+        final double defaultMin = isMmol ? 2.0 : 60.0;
+        final double defaultMax = isMmol ? 15.0 : 200.0;
+        final double dataPad = isMmol ? 1.0 : 10.0;
+        final double snapInterval = isMmol ? 2.0 : 50.0;
+
+        // 3. Determine Y-Axis range dynamically
+        double minY = threshold != null
+            ? (threshold!.minValue - padBottom).clamp(0, double.infinity)
+            : defaultMin;
+        double maxY = threshold != null ? threshold!.maxValue + padTop : defaultMax;
+
         if (data.isNotEmpty) {
           double dataMin = data.map((e) => e.value).reduce(math.min);
           double dataMax = data.map((e) => e.value).reduce(math.max);
-          minY = math.min(minY, dataMin - 10);
-          maxY = math.max(maxY, dataMax + 10);
+
+          // Ensure the chart always wraps neatly around the lowest and highest data points
+          minY = math.min(minY, (dataMin - dataPad).clamp(0, double.infinity));
+          maxY = math.max(maxY, dataMax + dataPad);
         }
 
-        // Snap to grid (50) to ensure equal spacing
-        minY = (minY / 50).floor() * 50.0;
-        maxY = (maxY / 50).ceil() * 50.0;
-        if (maxY == minY) maxY += 50;
+        // Snap to grid to ensure equal spacing
+        minY = (minY / snapInterval).floor() * snapInterval;
+        maxY = (maxY / snapInterval).ceil() * snapInterval;
+        if (maxY == minY) maxY += snapInterval;
 
         return Column(
           children: [
@@ -699,12 +715,14 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
+                      getTooltipColor: (touchedSpot) =>
+                          Colors.black.withValues(alpha: 0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
-                          final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                          final date =
+                              DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                           // Include Date, Time, Value, and Unit
                           return LineTooltipItem(
                             '${DateFormat('MMM d, y').format(date)}\n', // Date Line
@@ -715,14 +733,17 @@ class _GlucoseTrendsSection extends StatelessWidget {
                             ),
                             children: [
                               TextSpan(
-                                text: '${DateFormat('h:mm a').format(date)}\n', // Time Line
+                                text:
+                                    '${DateFormat('h:mm a').format(date)}\n', // Time Line
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 10,
                                 ),
                               ),
                               TextSpan(
-                                text: '${spot.y.toInt()} mg/dL', // Value + Unit
+                                text: isMmol
+                                    ? '${spot.y.toStringAsFixed(1)} ${settings.glucoseUnit}'
+                                    : '${spot.y.toInt()} ${settings.glucoseUnit}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
