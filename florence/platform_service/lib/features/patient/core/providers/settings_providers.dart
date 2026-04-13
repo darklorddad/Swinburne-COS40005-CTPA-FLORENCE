@@ -43,28 +43,30 @@ class PatientSettingsNotifier extends Notifier<PatientSettings> {
   Future<void> updateGlucoseUnit(String unit) async {
     final previousState = state;
     state = state.copyWith(glucoseUnit: unit);
-
-    try {
-      await ref.read(settingsRepositoryProvider).updateSettings(glucoseUnit: unit);
-      ref.invalidate(patientThresholdsProvider);
-      ref.invalidate(monitorDataProvider);
-    } catch (e) {
-      state = previousState;
-      debugPrint('Failed to update glucose unit: $e');
-    }
+    _backgroundSync(glucoseUnit: unit, previousState: previousState);
   }
 
   Future<void> updateCholesterolUnit(String unit) async {
     final previousState = state;
     state = state.copyWith(cholesterolUnit: unit);
+    _backgroundSync(cholesterolUnit: unit, previousState: previousState);
+  }
 
+  Future<void> _backgroundSync({
+    String? glucoseUnit,
+    String? cholesterolUnit,
+    required PatientSettings previousState,
+  }) async {
     try {
-      await ref.read(settingsRepositoryProvider).updateSettings(cholesterolUnit: unit);
+      await ref.read(settingsRepositoryProvider).updateSettings(
+            glucoseUnit: glucoseUnit ?? state.glucoseUnit,
+            cholesterolUnit: cholesterolUnit ?? state.cholesterolUnit,
+          );
       ref.invalidate(patientThresholdsProvider);
       ref.invalidate(monitorDataProvider);
     } catch (e) {
       state = previousState;
-      debugPrint('Failed to update cholesterol unit: $e');
+      debugPrint('Failed to sync unit: $e');
     }
   }
 

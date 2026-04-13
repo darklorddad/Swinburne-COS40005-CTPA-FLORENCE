@@ -28,7 +28,10 @@ class BiometricsSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(patientSettingsProvider);
-    final cards = _buildHealthCards(context, settings);
+    final monitorState = ref.watch(monitorDataProvider);
+    final isRefreshing = monitorState.isLoading || monitorState.isRefreshing;
+
+    final cards = _buildHealthCards(context, settings, isRefreshing);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
@@ -92,7 +95,7 @@ class BiometricsSection extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildHealthCards(BuildContext context, PatientSettings settings) {
+  List<Widget> _buildHealthCards(BuildContext context, PatientSettings settings, bool isRefreshing) {
     final cards = <Widget>[];
     
     MonitorData? getData(MonitorDataType type) {
@@ -160,7 +163,9 @@ class BiometricsSection extends ConsumerWidget {
     // Glucose (Always show)
     cards.add(CompactHealthCard(
       label: 'Glucose',
-      value: glucose?.value.toStringAsFixed(isGlucoseMmol ? 1 : 0) ?? '--',
+      value: isRefreshing
+          ? '...'
+          : (glucose?.value.toStringAsFixed(isGlucoseMmol ? 1 : 0) ?? '--'),
       unit: settings.glucoseUnit,
       status: _getGlucoseStatus(glucose?.value, thresholds),
       timestamp: glucose?.measuredAt.toLocal(),
@@ -198,7 +203,10 @@ class BiometricsSection extends ConsumerWidget {
     // Cholesterol (Always show)
     cards.add(CompactHealthCard(
       label: isLdlDisplay ? 'Cholesterol (LDL)' : 'Cholesterol',
-      value: cholesterolDisplay?.value.toStringAsFixed(isCholMmol ? 1 : 0) ?? '--',
+      value: isRefreshing
+          ? '...'
+          : (cholesterolDisplay?.value.toStringAsFixed(isCholMmol ? 1 : 0) ??
+              '--'),
       unit: settings.cholesterolUnit,
       status: _getCholesterolStatus(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
       timestamp: cholesterolDisplay?.measuredAt.toLocal(),
