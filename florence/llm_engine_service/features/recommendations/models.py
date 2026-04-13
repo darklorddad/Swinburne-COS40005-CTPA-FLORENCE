@@ -11,24 +11,28 @@ class HealthSummaryRequest(BaseModel):
     time_in_range: float            # % of readings between 70–180 mg/dL
     estimated_a1c: float            # estimated HbA1c %
     total_meals: int                # meals logged in period
-    average_carbs: float            # g/meal average
+    average_calories: float         # avg kcal/meal (carbs not stored in DB)
     total_activity_minutes: int     # total activity minutes in period
-    medication_adherence: float     # 0.0–1.0 (proportion of doses taken)
-    average_sleep_hours: int        # average hours per night
+    medication_adherence: float     # 0.0–1.0 today's adherence from schedule API
 
     # Extended vitals (optional — present when patient has logged them)
     latest_bmi: Optional[float] = None
     latest_systolic: Optional[float] = None
     latest_diastolic: Optional[float] = None
-    latest_cholesterol: Optional[float] = None
+    latest_cholesterol: Optional[float] = None      # total cholesterol
+    latest_hdl: Optional[float] = None              # HDL cholesterol
+    latest_ldl: Optional[float] = None              # LDL cholesterol
+    latest_triglycerides: Optional[float] = None    # triglycerides
     latest_hba1c: Optional[float] = None            # lab-measured HbA1c %
-    sleep_consistency_hours: Optional[float] = None # std dev of nightly duration
+
+    # Disease & medication context (live from Supabase — changes as patient updates their cabinet)
+    active_diseases: Optional[List[str]] = None     # active condition names e.g. ["Type 2 Diabetes"]
+    current_medications: Optional[List[Dict[str, Any]]] = None  # [{name, amount, timing, type}]
 
     # Individual recent readings for pattern detection
     recent_glucose_readings: Optional[List[Dict[str, Any]]] = None  # [{value, timestamp}]
-    recent_meals: Optional[List[Dict[str, Any]]] = None             # [{type, carbs, glucose_before, glucose_after, timestamp}]
-    recent_activities: Optional[List[Dict[str, Any]]] = None        # [{type, duration_minutes, timestamp}]
-    recent_sleep_logs: Optional[List[Dict[str, Any]]] = None        # [{duration_hours, bed_time, quality}]
+    recent_meals: Optional[List[Dict[str, Any]]] = None  # [{type, description, calories, glucose_before, glucose_after, timestamp}]
+    recent_activities: Optional[List[Dict[str, Any]]] = None  # [{type, duration_minutes, calories_burned, timestamp}]
 
 
 class RecommendationRequest(BaseModel):

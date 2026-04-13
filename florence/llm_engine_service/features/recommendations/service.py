@@ -19,7 +19,9 @@ You will receive a patient's health summary. Generate 2–3 concise, evidence-ba
 - HbA1c: <7.0%
 - Activity: ≥150 min/week
 - Adherence: ≥80%
-- Sleep: 7–9 hours
+- HDL Cholesterol: >40 mg/dL
+- LDL Cholesterol: <100 mg/dL
+- Triglycerides: <150 mg/dL
 
 ## Output Rules
 1. Return ONLY raw JSON. No markdown, no backticks, no conversational text.
@@ -94,11 +96,28 @@ class RecommendationService:
             extended_lines.append(f"- Latest Blood Pressure: {s.latest_systolic:.0f}/{s.latest_diastolic:.0f} mmHg")
         if s.latest_cholesterol is not None:
             extended_lines.append(f"- Latest Total Cholesterol: {s.latest_cholesterol:.1f} mg/dL")
+        if s.latest_hdl is not None:
+            extended_lines.append(f"- Latest HDL Cholesterol: {s.latest_hdl:.1f} mg/dL")
+        if s.latest_ldl is not None:
+            extended_lines.append(f"- Latest LDL Cholesterol: {s.latest_ldl:.1f} mg/dL")
+        if s.latest_triglycerides is not None:
+            extended_lines.append(f"- Latest Triglycerides: {s.latest_triglycerides:.1f} mg/dL")
         if s.latest_hba1c is not None:
             extended_lines.append(f"- Latest Lab HbA1c: {s.latest_hba1c:.1f}%")
-        if s.sleep_consistency_hours is not None:
-            extended_lines.append(f"- Sleep Consistency (std dev of nightly duration): {s.sleep_consistency_hours:.1f} hrs")
         extended_section = ("\n" + "\n".join(extended_lines)) if extended_lines else ""
+
+        # Disease & medication context
+        disease_section = ""
+        if s.active_diseases:
+            disease_section = f"\nActive Diagnoses: {', '.join(s.active_diseases)}"
+
+        medication_section = ""
+        if s.current_medications:
+            rows = "\n".join(
+                f"  - {m.get('name','Unknown')} {m.get('amount','')} ({m.get('type','')}) — take {m.get('timing','')}"
+                for m in s.current_medications
+            )
+            medication_section = f"\nCurrent Medications:\n{rows}"
 
         # Build recent readings sections
         glucose_section = ""
@@ -112,7 +131,9 @@ class RecommendationService:
         meal_section = ""
         if s.recent_meals:
             rows = "\n".join(
-                f"  {m.get('type','Meal')} at {m['timestamp']}: {m.get('carbs',0)}g carbs"
+                f"  {m.get('type','Meal')} at {m['timestamp']}"
+                + (f": {m['description']}" if m.get('description') else "")
+                + (f", {m.get('calories',0)} kcal" if m.get('calories') else "")
                 + (f", glucose {m['glucose_before']}→{m['glucose_after']} mg/dL"
                    if m.get('glucose_before') and m.get('glucose_after') else "")
                 for m in s.recent_meals
@@ -123,18 +144,10 @@ class RecommendationService:
         if s.recent_activities:
             rows = "\n".join(
                 f"  {a.get('type','Activity')} {a.get('duration_minutes',0)}min at {a['timestamp']}"
+                + (f", {a['calories_burned']} kcal burned" if a.get('calories_burned') else "")
                 for a in s.recent_activities
             )
             activity_section = f"\nRecent Activities:\n{rows}"
-
-        sleep_section = ""
-        if s.recent_sleep_logs:
-            rows = "\n".join(
-                f"  {sl['bed_time']}: {sl.get('duration_hours',0):.1f}hrs"
-                + (f", quality {sl['quality']}/10" if sl.get('quality') else "")
-                for sl in s.recent_sleep_logs
-            )
-            sleep_section = f"\nRecent Sleep Logs:\n{rows}"
 
         # Previous recommendations to avoid repetition
         prev_section = ""
@@ -152,10 +165,9 @@ Patient Health Summary ({request.analysis_period_days}-day period):
 - Time in Target Range (70–180 mg/dL): {s.time_in_range:.1f}%
 - Estimated HbA1c: {s.estimated_a1c:.1f}%
 - Total Meals Logged: {s.total_meals}
-- Average Carbohydrates per Meal: {s.average_carbs:.1f}g
+- Average Calories per Meal: {s.average_calories:.0f} kcal
 - Total Activity Minutes: {s.total_activity_minutes} minutes
-- Medication Adherence: {s.medication_adherence * 100:.0f}%
-- Average Sleep: {s.average_sleep_hours} hours/night{extended_section}{glucose_section}{meal_section}{activity_section}{sleep_section}{prev_section}
+- Medication Adherence (today): {s.medication_adherence * 100:.0f}%{extended_section}{disease_section}{medication_section}{glucose_section}{meal_section}{activity_section}{prev_section}
 
 Current timestamp for generated_at: {now_iso}"""
 
