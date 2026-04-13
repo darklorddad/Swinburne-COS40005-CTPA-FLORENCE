@@ -324,11 +324,13 @@ async def get_own_patient_profile(patient_profile: dict = Depends(get_current_pa
     Generates a fresh signed URL for the profile picture if it exists.
     """
     avatar_path = patient_profile.get('profile_picture_url')
-    if avatar_path and not avatar_path.startswith('http'):
+    if avatar_path:
         try:
             # Generate a signed URL valid for 1 hour
             res = supabase.storage.from_("Bucket").create_signed_url(avatar_path, 3600)
-            patient_profile['profile_picture_url'] = res.get('signedURL')
+            # The response from Supabase Python client for create_signed_url is usually the URL string or a dict
+            signed_url = res if isinstance(res, str) else res.get('signedURL')
+            patient_profile['profile_picture_url'] = signed_url
         except Exception as e:
             print(f"DEBUG: Failed to sign avatar URL: {e}")
 
@@ -929,60 +931,43 @@ async def upload_clinical_document(
 ):
     """
     Uploads a file to the clinical-documents bucket and creates a DB record.
+    Returns the record including the generated ID and storage path.
     """
     try:
         user_id = patient_profile['user_id']
-        file_ext = file.filename.split('.')[-1]
+        filename_parts = file.filename.split('.')
+        file_ext = filename_parts[-1] if len(filename_parts) > 1 else "bin"
         timestamp = int(time.time())
         
         # Path: {user_id}/{doc_type}/{timestamp}.{ext}
         folder = document_type.lower().replace(" ", "_")
-        filename = f"{user_id}/{folder}/{timestamp}.{file_ext}"
+        storage_path = f"{user_id}/{folder}/{timestamp}.{file_ext}"
         
         file_content = await file.read()
 
         # 1. Upload to Storage
         supabase.storage.from_("clinical-documents").upload(
             file=file_content,
-            path=filename,
-            file_options={"content-type": file.content_type, "upsert": "true"}
+            path=storage_path,
+            file_options={"content-type": file.content_type or "application/octet-stream", "upsert": "true"}
         )
 
         # 2. Create DB Record
         result = supabase.table("clinical_documents").insert({
             "patient_id": patient_profile['id'],
-            "document_path": filename,
+            "document_path": storage_path,
             "document_type": document_type
         }).execute()
+
+        if not result.data:
+            raise Exception("Failed to insert document record into database")
 
         return result.data[0]
 
     except Exception as e:
+        print(f"ERROR: upload_clinical_document: {e}")
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
 
-@router.post("/me/lab-report-upload", summary="Temporary upload for AI analysis")
-async def upload_temp_lab_report(
-    file: UploadFile = File(...),
-    patient_profile: dict = Depends(get_current_patient_profile)
-):
-    """
-    Uploads a lab report to a temp folder for AI processing.
-    Returns the path for the LLM Engine to use.
-    """
-    try:
-        user_id = patient_profile['user_id']
-        filename = f"temp/{user_id}/{int(time.time())}_{file.filename}"
-        file_content = await file.read()
-
-        supabase.storage.from_("clinical-documents").upload(
-            file=file_content,
-            path=filename,
-            file_options={"content-type": file.content_type, "upsert": "true"}
-        )
-
-        return {"path": filename}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/me/meal-photo", summary="Upload meal photo")
 async def upload_meal_photo(

@@ -237,26 +237,18 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     }
 
     try {
-      // 1. Upload to Data Service first (Stateless AI approach)
-      // We use a temporary endpoint or the existing meal-photo logic adapted for reports
-      final uploadRes = await _apiService.uploadFile(
-        '/patients/me/lab-report-upload',
+      // 1. Send the BYTES directly to LLM Engine for analysis (Stateless)
+      // We use the baseUrlOverride to hit the LLM Engine instead of Data Service
+      final result = await _apiService.uploadFile(
+        '/biometrics/parse-lab-report',
         'file',
         bytes,
         filename,
-      );
-
-      final storagePath = uploadRes['path'];
-
-      // 2. Send the PATH to LLM Engine for analysis
-      final result = await _apiService.post(
-        '/biometrics/parse-lab-report',
-        {
+        baseUrlOverride: Environment.llmEngineServiceUrl,
+        additionalFields: {
           'report_type': 'lipid_panel',
-          'storage_path': storagePath,
           'target_unit': ref.read(patientSettingsProvider).cholesterolUnit,
         },
-        // Note: post() helper in ApiService needs to support baseUrlOverride or we use http directly
       );
 
       if (mounted && result != null) {
@@ -303,14 +295,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
     try {
       final repo = ref.read(monitorDataRepositoryProvider);
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session == null) throw Exception("User not authenticated");
-
       int? documentId;
 
-      // STEP 1 & 2: If a file was selected, upload it via Data Service and create record
+      // STEP 1: If a file was selected, upload it to Data Service to persist in Storage
       if (_fileBytes != null && _selectedFileName != null) {
-        // 1. Upload via Data Service API (No direct Supabase Storage calls from UI)
         final uploadRes = await _apiService.uploadFile(
           '/patients/me/clinical-documents/upload',
           'file',
@@ -322,7 +310,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         documentId = uploadRes['id'];
       }
 
-      // STEP 3: Save the actual biometrics, linking them to the document
+      // STEP 2: Save the actual biometrics, linking them to the document record
       final List<Future> tasks = [];
 
       void addCallIfNotEmpty(TextEditingController controller, String type) {
