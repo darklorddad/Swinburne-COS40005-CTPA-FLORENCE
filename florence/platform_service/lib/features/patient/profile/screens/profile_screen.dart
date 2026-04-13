@@ -1633,16 +1633,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           generalError = null;
                         });
 
+                        final settings = ref.read(patientSettingsProvider);
                         final List<PatientThreshold> updated = [];
+
                         for (var t in currentThresholds) {
+                          double convertedMin =
+                              double.parse(minControllers[t.dataType]!.text);
+                          double convertedMax =
+                              double.parse(maxControllers[t.dataType]!.text);
+
+                          // Convert Glucose back to mmol/L (Divide by 18.0)
+                          if (t.dataType == 'GLUCOSE' &&
+                              settings.glucoseUnit == 'mg/dL') {
+                            convertedMin = convertedMin / 18.0;
+                            convertedMax = convertedMax / 18.0;
+                          }
+                          // Convert Cholesterol back to mmol/L
+                          else if (t.dataType.startsWith('CHOLESTEROL') &&
+                              settings.cholesterolUnit == 'mg/dL') {
+                            // Note: Backend uses 38.67 for all cholesterol types including Triglycerides
+                            convertedMin = convertedMin / 38.67;
+                            convertedMax = convertedMax / 38.67;
+                          }
+
                           updated.add(PatientThreshold(
                             dataType: t.dataType,
-                            minValue:
-                                double.parse(minControllers[t.dataType]!.text),
-                            maxValue:
-                                double.parse(maxControllers[t.dataType]!.text),
+                            minValue: convertedMin,
+                            maxValue: convertedMax,
                           ));
                         }
+
                         try {
                           await ref
                               .read(patientThresholdsProvider.notifier)
