@@ -1543,10 +1543,35 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               double.parse(maxControllers[t.dataType]!.text),
                         ));
                       }
-                      await ref
-                          .read(patientThresholdsProvider.notifier)
-                          .updateThresholds(updated);
-                      if (context.mounted) Navigator.pop(context);
+                      try {
+                        await ref
+                            .read(patientThresholdsProvider.notifier)
+                            .updateThresholds(updated);
+                        if (context.mounted) Navigator.pop(context);
+                      } catch (e) {
+                        if (context.mounted) {
+                          String errorMsg = e.toString();
+                          
+                          // Regex magic: Extracts everything after "Value error, " and before ", input:"
+                          final match = RegExp(r'msg:\s*Value error,\s*(.*?)(?:,\s*input:|})').firstMatch(errorMsg);
+                          
+                          if (match != null) {
+                            errorMsg = match.group(1)!.trim(); // Gets the clean clinical message
+                          } else {
+                            errorMsg = "Failed to save thresholds. Please check your inputs.";
+                          }
+
+                          // Show the clean error in a SnackBar
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(errorMsg, style: const TextStyle(color: Colors.white)),
+                              backgroundColor: Colors.red.shade800,
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 4),
+                            )
+                          );
+                        }
+                      }
                     },
                     child: const Text("Save Changes"),
                   ),
