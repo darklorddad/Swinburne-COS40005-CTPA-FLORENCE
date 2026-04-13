@@ -947,24 +947,28 @@ class HealthSummary {
   final double timeInRange; // percentage 70-180 mg/dL
   final double estimatedA1c;
   final int totalMeals;
-  final double averageCarbs;
+  final double averageCalories; // avg kcal per logged meal (carbs not stored in DB)
   final int totalActivityMinutes;
-  final double medicationAdherence;
-  final int averageSleepHours;
+  final double medicationAdherence; // today's dose adherence from schedule API
 
   // Extended vitals (optional — populated when patient has logged them)
   final double? latestBmi;
   final double? latestSystolic;
   final double? latestDiastolic;
-  final double? latestCholesterol;
+  final double? latestCholesterol; // total cholesterol
+  final double? latestHdl;
+  final double? latestLdl;
+  final double? latestTriglycerides;
   final double? latestHba1c;
-  final double? sleepConsistencyHours; // std dev of nightly duration
+
+  // Disease & medication context (live from disease_logs + patient_medications tables)
+  final List<String> activeDiseaseNames;           // active condition names e.g. ["Type 2 Diabetes"]
+  final List<Map<String, dynamic>> currentMedications; // [{name, amount, timing, type}]
 
   // Individual recent readings for pattern-based recommendations
   final List<Map<String, dynamic>> recentGlucoseReadings; // last 10: {value, timestamp}
-  final List<Map<String, dynamic>> recentMeals;           // last 5: {type, carbs, glucose_before, glucose_after, timestamp}
-  final List<Map<String, dynamic>> recentActivities;      // last 5: {type, duration_minutes, timestamp}
-  final List<Map<String, dynamic>> recentSleepLogs;       // last 7: {duration_hours, bed_time, quality}
+  final List<Map<String, dynamic>> recentMeals;  // last 5: {type, description, calories, glucose_before, glucose_after, timestamp}
+  final List<Map<String, dynamic>> recentActivities; // last 5: {type, duration_minutes, calories_burned, timestamp}
 
   const HealthSummary({
     required this.startDate,
@@ -977,20 +981,22 @@ class HealthSummary {
     required this.timeInRange,
     required this.estimatedA1c,
     required this.totalMeals,
-    required this.averageCarbs,
+    required this.averageCalories,
     required this.totalActivityMinutes,
     required this.medicationAdherence,
-    required this.averageSleepHours,
     this.latestBmi,
     this.latestSystolic,
     this.latestDiastolic,
     this.latestCholesterol,
+    this.latestHdl,
+    this.latestLdl,
+    this.latestTriglycerides,
     this.latestHba1c,
-    this.sleepConsistencyHours,
+    this.activeDiseaseNames = const [],
+    this.currentMedications = const [],
     this.recentGlucoseReadings = const [],
     this.recentMeals = const [],
     this.recentActivities = const [],
-    this.recentSleepLogs = const [],
   });
 
   bool get isWellControlled => timeInRange >= 70 && hypoEvents < 4;
@@ -1007,20 +1013,22 @@ class HealthSummary {
       'timeInRange': timeInRange,
       'estimatedA1c': estimatedA1c,
       'totalMeals': totalMeals,
-      'averageCarbs': averageCarbs,
+      'averageCalories': averageCalories,
       'totalActivityMinutes': totalActivityMinutes,
       'medicationAdherence': medicationAdherence,
-      'averageSleepHours': averageSleepHours,
       'latestBmi': latestBmi,
       'latestSystolic': latestSystolic,
       'latestDiastolic': latestDiastolic,
       'latestCholesterol': latestCholesterol,
+      'latestHdl': latestHdl,
+      'latestLdl': latestLdl,
+      'latestTriglycerides': latestTriglycerides,
       'latestHba1c': latestHba1c,
-      'sleepConsistencyHours': sleepConsistencyHours,
+      'activeDiseaseNames': activeDiseaseNames,
+      'currentMedications': currentMedications,
       'recentGlucoseReadings': recentGlucoseReadings,
       'recentMeals': recentMeals,
       'recentActivities': recentActivities,
-      'recentSleepLogs': recentSleepLogs,
     };
   }
 
@@ -1036,23 +1044,26 @@ class HealthSummary {
       timeInRange: (json['timeInRange'] as num).toDouble(),
       estimatedA1c: (json['estimatedA1c'] as num).toDouble(),
       totalMeals: json['totalMeals'] as int,
-      averageCarbs: (json['averageCarbs'] as num).toDouble(),
+      averageCalories: (json['averageCalories'] as num).toDouble(),
       totalActivityMinutes: json['totalActivityMinutes'] as int,
       medicationAdherence: (json['medicationAdherence'] as num).toDouble(),
-      averageSleepHours: json['averageSleepHours'] as int,
       latestBmi: (json['latestBmi'] as num?)?.toDouble(),
       latestSystolic: (json['latestSystolic'] as num?)?.toDouble(),
       latestDiastolic: (json['latestDiastolic'] as num?)?.toDouble(),
       latestCholesterol: (json['latestCholesterol'] as num?)?.toDouble(),
+      latestHdl: (json['latestHdl'] as num?)?.toDouble(),
+      latestLdl: (json['latestLdl'] as num?)?.toDouble(),
+      latestTriglycerides: (json['latestTriglycerides'] as num?)?.toDouble(),
       latestHba1c: (json['latestHba1c'] as num?)?.toDouble(),
-      sleepConsistencyHours: (json['sleepConsistencyHours'] as num?)?.toDouble(),
+      activeDiseaseNames: (json['activeDiseaseNames'] as List<dynamic>?)
+              ?.map((e) => e as String).toList() ?? [],
+      currentMedications: (json['currentMedications'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
       recentGlucoseReadings: (json['recentGlucoseReadings'] as List<dynamic>?)
               ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
       recentMeals: (json['recentMeals'] as List<dynamic>?)
               ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
       recentActivities: (json['recentActivities'] as List<dynamic>?)
-              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
-      recentSleepLogs: (json['recentSleepLogs'] as List<dynamic>?)
               ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
     );
   }
