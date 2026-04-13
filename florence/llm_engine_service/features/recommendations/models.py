@@ -1,8 +1,9 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 
 
 class HealthSummaryRequest(BaseModel):
+    # Core aggregates
     average_glucose: float          # mg/dL, 7-day average
     glucose_std_dev: float          # mg/dL, variability measure
     hyper_events: int               # readings > 180 mg/dL in period
@@ -15,10 +16,25 @@ class HealthSummaryRequest(BaseModel):
     medication_adherence: float     # 0.0–1.0 (proportion of doses taken)
     average_sleep_hours: int        # average hours per night
 
+    # Extended vitals (optional — present when patient has logged them)
+    latest_bmi: Optional[float] = None
+    latest_systolic: Optional[float] = None
+    latest_diastolic: Optional[float] = None
+    latest_cholesterol: Optional[float] = None
+    latest_hba1c: Optional[float] = None            # lab-measured HbA1c %
+    sleep_consistency_hours: Optional[float] = None # std dev of nightly duration
+
+    # Individual recent readings for pattern detection
+    recent_glucose_readings: Optional[List[Dict[str, Any]]] = None  # [{value, timestamp}]
+    recent_meals: Optional[List[Dict[str, Any]]] = None             # [{type, carbs, glucose_before, glucose_after, timestamp}]
+    recent_activities: Optional[List[Dict[str, Any]]] = None        # [{type, duration_minutes, timestamp}]
+    recent_sleep_logs: Optional[List[Dict[str, Any]]] = None        # [{duration_hours, bed_time, quality}]
+
 
 class RecommendationRequest(BaseModel):
     health_summary: HealthSummaryRequest
     analysis_period_days: int = 7
+    previous_recommendation_titles: Optional[List[str]] = None
 
 
 class TriggeringDataPoint(BaseModel):
