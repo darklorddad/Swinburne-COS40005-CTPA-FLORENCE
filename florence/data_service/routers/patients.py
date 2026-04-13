@@ -269,6 +269,11 @@ class ThresholdUpdateItem(BaseModel):
 class ThresholdUpdateBatch(BaseModel):
     thresholds: List[ThresholdUpdateItem]
 
+class ClinicalDocumentCreate(BaseModel):
+    patient_id: int
+    document_path: str
+    document_type: str
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -402,6 +407,25 @@ async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patie
         return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
+
+@router.post("/me/clinical-documents", summary="Create a clinical document record")
+async def create_clinical_document(
+    doc_data: ClinicalDocumentCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Inserts a record into the clinical_documents table.
+    """
+    try:
+        result = supabase.table("clinical_documents").insert({
+            "patient_id": patient_profile['id'],
+            "document_path": doc_data.document_path,
+            "document_type": doc_data.document_type
+        }).execute()
+
+        return result.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/me/monitor-data", summary="Add a new monitor data point for myself")
 async def add_own_monitor_data(
@@ -884,10 +908,10 @@ async def upload_patient_avatar(
 
         # 3. Update Database Profile
         update_res = supabase.table('patient_profiles').update({
-            "profile_picture_url": public_url_with_cache_bust
+            "profile_picture_url": signed_url
         }).eq('id', patient_profile['id']).execute()
 
-        return {"url": public_url_with_cache_bust}
+        return {"url": signed_url}
 
     except Exception as e:
         print(f"Upload Error: {str(e)}")
