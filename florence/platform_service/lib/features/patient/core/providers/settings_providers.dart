@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/features/patient/core/repositories/settings_repository.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 
 class PatientSettings {
   final String glucoseUnit;
@@ -46,6 +47,7 @@ class PatientSettingsNotifier extends Notifier<PatientSettings> {
     try {
       await ref.read(settingsRepositoryProvider).updateSettings(glucoseUnit: unit);
       ref.invalidate(patientThresholdsProvider);
+      ref.invalidate(monitorDataProvider);
     } catch (e) {
       state = previousState;
       debugPrint('Failed to update glucose unit: $e');
@@ -59,6 +61,7 @@ class PatientSettingsNotifier extends Notifier<PatientSettings> {
     try {
       await ref.read(settingsRepositoryProvider).updateSettings(cholesterolUnit: unit);
       ref.invalidate(patientThresholdsProvider);
+      ref.invalidate(monitorDataProvider);
     } catch (e) {
       state = previousState;
       debugPrint('Failed to update cholesterol unit: $e');

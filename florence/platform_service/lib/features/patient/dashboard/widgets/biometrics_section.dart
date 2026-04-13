@@ -1,5 +1,7 @@
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
@@ -9,7 +11,7 @@ import 'package:florence/features/patient/dashboard/widgets/compact_health_card.
 
 /// Biometrics Section
 /// A container widget that groups all health metric cards
-class BiometricsSection extends StatelessWidget {
+class BiometricsSection extends ConsumerWidget {
   final List<MonitorData> monitorData;
   final ActivityLog? latestActivity;
   final DailyPatientLog? latestMeal;
@@ -24,8 +26,9 @@ class BiometricsSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final cards = _buildHealthCards(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(patientSettingsProvider);
+    final cards = _buildHealthCards(context, settings);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
@@ -89,7 +92,7 @@ class BiometricsSection extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildHealthCards(BuildContext context) {
+  List<Widget> _buildHealthCards(BuildContext context, PatientSettings settings) {
     final cards = <Widget>[];
     
     MonitorData? getData(MonitorDataType type) {
@@ -121,6 +124,7 @@ class BiometricsSection extends StatelessWidget {
     }
 
     final glucose = getData(MonitorDataType.GLUCOSE);
+    final isGlucoseMmol = settings.glucoseUnit == 'mmol/L';
     final latestBP = getLatestBP();
     final bpSystolic = latestBP.sys;
     final bpDiastolic = latestBP.dia;
@@ -151,12 +155,13 @@ class BiometricsSection extends StatelessWidget {
     }
 
     final bmi = getData(MonitorDataType.BMI);
+    final isCholMmol = settings.cholesterolUnit == 'mmol/L';
 
     // Glucose (Always show)
     cards.add(CompactHealthCard(
       label: 'Glucose',
-      value: glucose?.value.toStringAsFixed(0) ?? '--',
-      unit: 'mg/dL',
+      value: glucose?.value.toStringAsFixed(isGlucoseMmol ? 1 : 0) ?? '--',
+      unit: settings.glucoseUnit,
       status: _getGlucoseStatus(glucose?.value, thresholds),
       timestamp: glucose?.measuredAt.toLocal(),
       icon: Icons.water_drop_outlined,
@@ -193,8 +198,8 @@ class BiometricsSection extends StatelessWidget {
     // Cholesterol (Always show)
     cards.add(CompactHealthCard(
       label: isLdlDisplay ? 'Cholesterol (LDL)' : 'Cholesterol',
-      value: cholesterolDisplay?.value.toStringAsFixed(0) ?? '--',
-      unit: 'mg/dL',
+      value: cholesterolDisplay?.value.toStringAsFixed(isCholMmol ? 1 : 0) ?? '--',
+      unit: settings.cholesterolUnit,
       status: _getCholesterolStatus(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
       timestamp: cholesterolDisplay?.measuredAt.toLocal(),
       icon: Icons.bloodtype_outlined,
