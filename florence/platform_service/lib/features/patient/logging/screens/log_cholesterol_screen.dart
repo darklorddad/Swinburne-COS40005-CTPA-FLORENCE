@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
@@ -23,11 +24,14 @@ class LogCholesterolScreen extends ConsumerStatefulWidget {
 
 class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _totalController = TextEditingController(); 
+  final _apiService = ApiService();
+  final _totalController = TextEditingController();
   final _ldlController = TextEditingController();
   final _hdlController = TextEditingController();
   final _triglyceridesController = TextEditingController();
 
+  bool _isScanning = false;
+  final ImagePicker _picker = ImagePicker();
   bool _forcePop = false;
   String _initialTotal = '';
   String _initialLdl = '';
@@ -48,6 +52,48 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
   void initState() {
     super.initState();
     _initialDateTime = _selectedDateTime;
+  }
+
+  Future<void> _scanLabReport() async {
+    try {
+      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (pickedFile == null) return;
+
+      setState(() => _isScanning = true);
+
+      final bytes = await pickedFile.readAsBytes();
+
+      final result = await _apiService.uploadFile(
+        '/biometrics/parse-lab-report',
+        'file',
+        bytes,
+        pickedFile.name,
+        baseUrlOverride: Environment.llmEngineServiceUrl,
+        additionalFields: {'report_type': 'lipid_panel'},
+      );
+
+      if (mounted && result != null) {
+        setState(() {
+          if (result['total_cholesterol'] != null) {
+            _totalController.text = result['total_cholesterol'].toString();
+          }
+          if (result['hdl'] != null) {
+            _hdlController.text = result['hdl'].toString();
+          }
+          if (result['ldl'] != null) {
+            _ldlController.text = result['ldl'].toString();
+          }
+          if (result['triglycerides'] != null) {
+            _triglyceridesController.text = result['triglycerides'].toString();
+          }
+        });
+        Helpers.showSuccess(context, 'Lab report parsed! Please verify the values before saving.');
+      }
+    } catch (e) {
+      if (mounted) Helpers.showError(context, 'Failed to parse report: $e');
+    } finally {
+      if (mounted) setState(() => _isScanning = false);
+    }
   }
 
   @override
@@ -265,6 +311,10 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // Auto-Fill Section
+                        _buildAutoFillSection(),
+                        const SizedBox(height: 24),
+
                         // Info & Target card
                         _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
                         const SizedBox(height: 20),
@@ -419,6 +469,61 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                   const SizedBox(height: 4),
                   _buildMiniTargetRow('Triglycerides', triT != null ? '${triT.minValue.toInt()} - ${triT.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAutoFillSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryBlue.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.document_scanner, color: AppTheme.primaryBlue),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Auto-Fill with Lab Report',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppTheme.primaryBlue,
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Upload a photo of your lipid panel to automatically extract your values.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isScanning ? null : _scanLabReport,
+              icon: _isScanning
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.camera_alt),
+              label: Text(_isScanning ? 'Analyzing Report...' : 'Scan Lab Report'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),

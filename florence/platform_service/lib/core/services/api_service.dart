@@ -144,16 +144,29 @@ class ApiService {
 
   
   /// Upload a file via Multipart Request
-  Future<dynamic> uploadFile(String endpoint, String fieldName, List<int> fileBytes, String filename) async {
+  Future<dynamic> uploadFile(
+    String endpoint,
+    String fieldName,
+    List<int> fileBytes,
+    String filename, {
+    Map<String, String>? additionalFields,
+    String? baseUrlOverride,
+  }) async {
     try {
-      final uri = Uri.parse('${Environment.dataServiceUrl}$endpoint');
+      final baseUrl = baseUrlOverride ?? Environment.dataServiceUrl;
+      final uri = Uri.parse('$baseUrl$endpoint');
       final request = http.MultipartRequest('POST', uri);
 
       // Add Headers (Auth)
       final headers = await _getHeaders();
       request.headers.addAll(headers);
       // Remove Content-Type as MultipartRequest sets it automatically
-      request.headers.remove('Content-Type'); 
+      request.headers.remove('Content-Type');
+
+      // Add additional form fields
+      if (additionalFields != null) {
+        request.fields.addAll(additionalFields);
+      }
 
       // Add File
       request.files.add(
