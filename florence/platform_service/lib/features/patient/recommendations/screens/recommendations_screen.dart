@@ -1106,7 +1106,7 @@ class _RecommendationsScreenState
                   if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
                     const SizedBox(height: 16),
                     Text(
-                      'DATA FETCHED',
+                      'DATA ANALYSED BASED ON:',
                       style: TextStyle(
                         color: AppTheme.textSecondaryColor,
                         fontSize: 11,
