@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -34,6 +36,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
   bool _isScanning = false;
   final ImagePicker _picker = ImagePicker();
+  bool _useAiAutofill = true;
+  Uint8List? _fileBytes;
+  String? _selectedFileName;
+  bool _isPdf = false;
+  bool _isAnalyzing = false;
   bool _forcePop = false;
   String _initialTotal = '';
   String _initialLdl = '';
@@ -56,20 +63,184 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     _initialDateTime = _selectedDateTime;
   }
 
-  Future<void> _scanLabReport() async {
+  void _showAiInfoDialog() {
+    FocusScope.of(context).requestFocus(FocusNode());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.auto_awesome, color: AppTheme.primaryBlue),
+            SizedBox(width: 8),
+            Text('AI Auto-Fill'),
+          ],
+        ),
+        content: const Text(
+          'When enabled, selecting a lab report will automatically trigger our AI engine to extract your lipid panel values.\n\n'
+          'Note: Analysis only happens when the image is first selected.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showImageSourcePicker() async {
+    FocusScope.of(context).requestFocus(FocusNode());
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final backgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
+
+    await showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: BoxDecoration(
+          color: backgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  'Add Lab Report',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 24),
+
+                // 1. Camera
+                _buildPhotoOption(
+                  context,
+                  title: 'Take Photo',
+                  icon: Icons.camera_alt_rounded,
+                  color: AppTheme.primaryBlue,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await _picker.pickImage(
+                        source: ImageSource.camera, maxWidth: 800);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      _processFile(bytes, image.name, false);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 2. Photo Gallery
+                _buildPhotoOption(
+                  context,
+                  title: 'Choose Photo',
+                  icon: Icons.photo_library_rounded,
+                  color: AppTheme.accentPurple,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await _picker.pickImage(
+                        source: ImageSource.gallery, maxWidth: 800);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      _processFile(bytes, image.name, false);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 3. Document / PDF Picker
+                _buildPhotoOption(
+                  context,
+                  title: 'Upload Document (PDF)',
+                  icon: Icons.picture_as_pdf_rounded,
+                  color: Colors.redAccent,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    FilePickerResult? result =
+                        await FilePicker.platform.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                      withData: true,
+                    );
+                    if (result != null && result.files.single.bytes != null) {
+                      final file = result.files.single;
+                      final isPdf = file.extension?.toLowerCase() == 'pdf';
+                      _processFile(file.bytes!, file.name, isPdf);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPhotoOption(BuildContext context,
+      {required String title,
+      required IconData icon,
+      required Color color,
+      required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+            border: Border.all(color: AppTheme.getBorderColor(context)),
+            borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          children: [
+            Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: Icon(icon, color: color, size: 24)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16))),
+            Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _processFile(Uint8List bytes, String filename, bool isPdf) async {
+    setState(() {
+      _fileBytes = bytes;
+      _selectedFileName = filename;
+      _isPdf = isPdf;
+      _isAnalyzing = true;
+    });
+
+    if (!_useAiAutofill) {
+      setState(() => _isAnalyzing = false);
+      return;
+    }
+
     try {
-      final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-      if (pickedFile == null) return;
-
-      setState(() => _isScanning = true);
-
-      final bytes = await pickedFile.readAsBytes();
-
       final result = await _apiService.uploadFile(
         '/biometrics/parse-lab-report',
         'file',
         bytes,
-        pickedFile.name,
+        filename,
         baseUrlOverride: Environment.llmEngineServiceUrl,
         additionalFields: {'report_type': 'lipid_panel'},
       );
@@ -89,12 +260,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
             _triglyceridesController.text = result['triglycerides'].toString();
           }
         });
-        Helpers.showSuccess(context, 'Lab report parsed! Please verify the values before saving.');
+        Helpers.showSuccess(
+            context, 'Report parsed successfully! Please verify the values.');
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to parse report: $e');
     } finally {
-      if (mounted) setState(() => _isScanning = false);
+      if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
@@ -219,6 +391,9 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       _hdlController.text = _initialHdl;
       _triglyceridesController.text = _initialTri;
       _selectedDateTime = _initialDateTime;
+      _fileBytes = null;
+      _selectedFileName = null;
+      _isPdf = false;
     });
   }
 
@@ -245,12 +420,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       );
     } catch (_) {}
 
-    final bool hasChanges = !_forcePop && 
-        (_totalController.text != _initialTotal || 
-         _ldlController.text != _initialLdl || 
-         _hdlController.text != _initialHdl || 
-         _triglyceridesController.text != _initialTri ||
-         _selectedDateTime != _initialDateTime);
+    final bool hasChanges = !_forcePop &&
+        (_totalController.text != _initialTotal ||
+            _ldlController.text != _initialLdl ||
+            _hdlController.text != _initialHdl ||
+            _triglyceridesController.text != _initialTri ||
+            _selectedDateTime != _initialDateTime ||
+            _fileBytes != null);
 
     return PopScope(
       canPop: !hasChanges,
@@ -313,16 +489,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Auto-Fill Section
-                        _buildAutoFillSection(),
-                        const SizedBox(height: 24),
-
                         // Info & Target card
-                        _buildInfoCard(totalThreshold, ldlThreshold, hdlThreshold, triThreshold),
+                        _buildInfoCard(totalThreshold, ldlThreshold,
+                            hdlThreshold, triThreshold),
                         const SizedBox(height: 20),
 
-                        // Input Section
-                        _buildInputSection(),
+                        // The new unified Lipid Panel Card
+                        _buildLipidPanelSection(),
                         const SizedBox(height: 20),
 
                         // Date and time
@@ -479,76 +652,12 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
     );
   }
 
-  Widget _buildAutoFillSection() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryBlue.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.document_scanner, color: AppTheme.primaryBlue),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Auto-Fill with Lab Report',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.primaryBlue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Upload a photo of your lipid panel to automatically extract your values.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _isScanning ? null : _scanLabReport,
-              icon: _isScanning
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.camera_alt),
-              label: Text(_isScanning ? 'Analyzing Report...' : 'Scan Lab Report'),
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMiniTargetRow(String label, String val, Color color) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
-        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
-      ],
-    );
-  }
-
-  Widget _buildInputSection() {
+  Widget _buildLipidPanelSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
     final settings = ref.watch(patientSettingsProvider);
     final currentUnit = settings.cholesterolUnit;
 
@@ -569,7 +678,9 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header with AI Toggle
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -579,41 +690,310 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                 ),
                 child: Icon(
                   Icons.science_outlined,
-                  color: titleIconColor,
                   size: 24,
+                  color: titleIconColor,
                 ),
               ),
               const SizedBox(width: 12),
               Text(
-                'Lipid Panel ($currentUnit)',
+                'Lipid Panel',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
+              const Spacer(),
+
+              // AI Toggle Switch Group
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => _useAiAutofill = !_useAiAutofill),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : AppTheme.backgroundColor,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: _useAiAutofill
+                              ? AppTheme.primaryBlue
+                              : AppTheme.borderColor,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: _useAiAutofill
+                                ? AppTheme.primaryBlue
+                                : AppTheme.textSecondaryColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Auto',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: _useAiAutofill
+                                  ? AppTheme.primaryBlue
+                                  : AppTheme.textSecondaryColor,
+                              fontSize: 14,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 28,
+                            width: 44,
+                            child: Transform.scale(
+                              scale: 0.9,
+                              child: Switch(
+                                value: _useAiAutofill,
+                                activeThumbColor: Colors.white,
+                                activeTrackColor: AppTheme.primaryBlue,
+                                inactiveThumbColor: Colors.white,
+                                inactiveTrackColor: Colors.grey.shade300,
+                                trackOutlineColor:
+                                    WidgetStateProperty.all(Colors.transparent),
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                onChanged: (val) =>
+                                    setState(() => _useAiAutofill = val),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.info_outline,
+                        size: 22, color: AppTheme.textSecondaryColor),
+                    onPressed: _showAiInfoDialog,
+                    visualDensity: VisualDensity.compact,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
             ],
           ),
-          const SizedBox(height: 24),
 
-          // 2x2 Grid Layout
+          const SizedBox(height: 20),
+
+          // Image Picker Box
+          InkWell(
+            onTap: _isAnalyzing ? null : _showImageSourcePicker,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : AppTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderColor),
+              ),
+              child: _fileBytes != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        // Dynamic Preview: Image vs PDF
+                        if (!_isPdf)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(_fileBytes!, fit: BoxFit.cover),
+                          )
+                        else
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.picture_as_pdf,
+                                  size: 48, color: Colors.redAccent),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                  _selectedFileName ?? 'Document.pdf',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                        // Close Button
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _fileBytes = null;
+                                _selectedFileName = null;
+                                _isPdf = false;
+                              });
+                            },
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black54,
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ),
+
+                        // Loading Overlay
+                        if (_isAnalyzing)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              color: Colors.black45,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const CircularProgressIndicator(
+                                      color: Colors.white),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _useAiAutofill
+                                        ? 'Analyzing...'
+                                        : 'Processing...',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      shadows: [
+                                        Shadow(
+                                            blurRadius: 4,
+                                            color: Colors.black54),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 28,
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Add Lab Report',
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (_useAiAutofill) ...[
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Analysis runs on selection',
+                            style: TextStyle(
+                              color: AppTheme.primaryBlue,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // The 2x2 Grid
+          Row(
+            children: [
+              Text(
+                'Values ($currentUnit)',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                    ),
+              ),
+              if (_useAiAutofill) ...[
+                const SizedBox(width: 8),
+                const Text(
+                  'Leave blank for auto-extract',
+                  style: TextStyle(
+                    color: AppTheme.primaryBlue,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 12),
+
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('Total', _totalController, currentUnit, Icons.bloodtype_outlined, '5.0', '150')),
+              Expanded(
+                  child: _buildGridLabField(
+                      'Total',
+                      _totalController,
+                      currentUnit,
+                      Icons.bloodtype_outlined,
+                      '5.0',
+                      '150')),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('LDL', _ldlController, currentUnit, Icons.arrow_downward, '2.5', '100')),
+              Expanded(
+                  child: _buildGridLabField('LDL', _ldlController, currentUnit,
+                      Icons.arrow_downward, '2.5', '100')),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: _buildGridLabField('HDL', _hdlController, currentUnit, Icons.arrow_upward, '1.5', '50')),
+              Expanded(
+                  child: _buildGridLabField('HDL', _hdlController, currentUnit,
+                      Icons.arrow_upward, '1.5', '50')),
               const SizedBox(width: 16),
-              Expanded(child: _buildGridLabField('Triglycerides', _triglyceridesController, currentUnit, Icons.water_drop_outlined, '1.7', '150')),
+              Expanded(
+                  child: _buildGridLabField(
+                      'Triglycerides',
+                      _triglyceridesController,
+                      currentUnit,
+                      Icons.water_drop_outlined,
+                      '1.7',
+                      '150')),
             ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
     );
   }
 
