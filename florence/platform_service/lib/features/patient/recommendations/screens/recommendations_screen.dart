@@ -969,43 +969,6 @@ class _RecommendationsScreenState
                               height: 1.3,
                             ),
                           ),
-                          // Data source tags — visible on collapsed card
-                          if (!isOpen &&
-                              rec.explanation?.triggeringData.isNotEmpty == true) ...[
-                            const SizedBox(height: 5),
-                            Wrap(
-                              spacing: 4,
-                              runSpacing: 3,
-                              children: rec.explanation!.triggeringData
-                                  .map((dp) => _dataSourceLabel(dp.type))
-                                  .toSet()
-                                  .take(3)
-                                  .map((label) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 6, vertical: 2),
-                                        decoration: BoxDecoration(
-                                          color: catTheme.primary
-                                              .withValues(alpha: 0.08),
-                                          borderRadius:
-                                              BorderRadius.circular(4),
-                                          border: Border.all(
-                                            color: catTheme.primary
-                                                .withValues(alpha: 0.22),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          label.toUpperCase(),
-                                          style: TextStyle(
-                                            color: catTheme.primary,
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.8,
-                                          ),
-                                        ),
-                                      ))
-                                  .toList(),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -1137,6 +1100,49 @@ class _RecommendationsScreenState
                         ),
                       );
                     }),
+                  ],
+
+                  // DATA FETCHED chips
+                  if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'DATA ANALYSED BASED ON:',
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 11,
+                        letterSpacing: 1.8,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: rec.explanation!.triggeringData
+                          .map((dp) => _dataSourceLabel(dp.type))
+                          .toSet()
+                          .map((label) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: catTheme.primary.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: catTheme.primary.withValues(alpha: 0.22),
+                                  ),
+                                ),
+                                child: Text(
+                                  label.toUpperCase(),
+                                  style: TextStyle(
+                                    color: catTheme.primary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.8,
+                                  ),
+                                ),
+                              ))
+                          .toList(),
+                    ),
                   ],
 
                   // Priority bar
