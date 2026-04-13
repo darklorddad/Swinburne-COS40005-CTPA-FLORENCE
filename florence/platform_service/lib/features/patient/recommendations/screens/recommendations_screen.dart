@@ -533,40 +533,46 @@ class _RecommendationsScreenState
 
   // ── Recommendation card ───────────────────────────────────────
   Widget _buildRecCard(HealthRecommendation rec, int index) {
-    final delay = (index * 0.1).clamp(0.0, 0.7);
-    final end   = (delay + 0.45).clamp(0.0, 1.0);
-
-    final slideAnim = Tween<Offset>(begin: const Offset(0, 0.12), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _staggerCtrl, curve: Interval(delay, end, curve: Curves.easeOut)));
+    final delay    = (index * 0.12).clamp(0.0, 0.7);
+    final end      = (delay + 0.45).clamp(0.0, 1.0);
     final fadeAnim = Tween<double>(begin: 0, end: 1)
         .animate(CurvedAnimation(parent: _staggerCtrl, curve: Interval(delay, end)));
 
     return FadeTransition(
       opacity: fadeAnim,
-      child: SlideTransition(
-        position: slideAnim,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          child: _buildCardBody(rec),
-        ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        child: _buildCardBody(rec, index),
       ),
     );
   }
 
-  Widget _buildCardBody(HealthRecommendation rec) {
-    final catTheme = _themeFor(rec.category);
-    final isOpen   = _expandedId == rec.id;
+  Widget _buildCardBody(HealthRecommendation rec, int index) {
+    final catTheme    = _themeFor(rec.category);
+    final isOpen      = _expandedId == rec.id;
     final urgencyColor = _urgencyColor(rec.priority);
+    final number      = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
       onTap: () => setState(() => _expandedId = isOpen ? null : rec.id),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeInOutCubic,
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(
-            color: isOpen ? catTheme.primary.withValues(alpha: 0.40) : AppTheme.borderColor,
+          border: Border.all(
+            color: isOpen
+                ? catTheme.primary.withValues(alpha: 0.40)
+                : AppTheme.borderColor,
           ),
+          boxShadow: isOpen
+              ? [BoxShadow(
+                  color: catTheme.primary.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )]
+              : [],
         ),
         child: AnimatedSize(
           duration: const Duration(milliseconds: 300),
@@ -576,21 +582,38 @@ class _RecommendationsScreenState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // ── Collapsed row ──────────────────────────────
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
+                    // Large number
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        number,
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w800,
+                          color: catTheme.primary.withValues(
+                            alpha: isOpen ? 1.0 : 0.22,
+                          ),
+                          height: 1,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
                     // Category icon
                     Container(
-                      width: 44,
-                      height: 44,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: catTheme.primary.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(catTheme.icon, color: catTheme.primary, size: 22),
+                      child: Icon(catTheme.icon, color: catTheme.primary, size: 20),
                     ),
                     const SizedBox(width: 12),
-                    // Title + description
+                    // Category label + title
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,7 +622,7 @@ class _RecommendationsScreenState
                             rec.categoryLabel.toUpperCase(),
                             style: TextStyle(
                               color: catTheme.primary,
-                              fontSize: 10,
+                              fontSize: 9,
                               letterSpacing: 1.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -607,20 +630,9 @@ class _RecommendationsScreenState
                           const SizedBox(height: 2),
                           Text(
                             rec.title,
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            rec.explanation?.expectedImpact.isNotEmpty == true
-                                ? rec.explanation!.expectedImpact
-                                : rec.description,
-                            maxLines: isOpen ? null : 2,
-                            overflow: isOpen ? null : TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppTheme.textSecondaryColor,
-                              height: 1.5,
+                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              height: 1.3,
                             ),
                           ),
                         ],
@@ -647,70 +659,117 @@ class _RecommendationsScreenState
                     ),
                   ],
                 ),
-                // Action items
-                if (rec.actionItems.isNotEmpty) ...[
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: rec.actionItems.take(2).map((t) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: catTheme.tag,
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: catTheme.tagBorder),
-                        ),
-                        child: Text(
-                          t,
+
+                // ── Expanded detail ────────────────────────────
+                if (isOpen) ...[
+                  const SizedBox(height: 16),
+                  Divider(color: AppTheme.borderColor, height: 1),
+                  const SizedBox(height: 16),
+
+                  // WHY THIS MATTERS block
+                  Container(
+                    padding: const EdgeInsets.only(left: 12),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: catTheme.primary, width: 3),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'WHY THIS MATTERS',
                           style: TextStyle(
                             color: catTheme.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
+                            fontSize: 9,
+                            letterSpacing: 1.8,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-                // Expand toggle
-                const SizedBox(height: 10),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    AnimatedRotation(
-                      turns: isOpen ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 220),
-                      child: Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        size: 20,
-                        color: AppTheme.textSecondaryColor,
-                      ),
+                        const SizedBox(height: 6),
+                        Text(
+                          rec.explanation?.rationale.isNotEmpty == true
+                              ? rec.explanation!.rationale
+                              : rec.description,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                            height: 1.6,
+                          ),
+                        ),
+                        // Triggering data points
+                        if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: rec.explanation!.triggeringData.take(3).map((dp) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: catTheme.primary.withValues(alpha: 0.07),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  '${dp.description}: ${dp.value}',
+                                  style: TextStyle(
+                                    color: catTheme.primary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
                     ),
-                  ],
-                ),
-                // Expanded detail
-                if (isOpen) ...[
-                  Divider(color: AppTheme.borderColor, height: 20),
-                  Text(
-                    rec.description,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                      height: 1.6,
-                    ),
                   ),
-                  if (rec.explanation?.rationale.isNotEmpty == true) ...[
-                    const SizedBox(height: 8),
+
+                  // STEPS TO TAKE
+                  if (rec.actionItems.isNotEmpty) ...[
+                    const SizedBox(height: 16),
                     Text(
-                      rec.explanation!.rationale,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: catTheme.primary,
-                        height: 1.6,
+                      'STEPS TO TAKE',
+                      style: TextStyle(
+                        color: AppTheme.textSecondaryColor,
+                        fontSize: 9,
+                        letterSpacing: 1.8,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    ...rec.actionItems.take(3).toList().asMap().entries.map((e) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${e.key + 1}.',
+                              style: TextStyle(
+                                color: catTheme.primary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                e.value,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: AppTheme.textPrimaryColor,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }),
                   ],
-                  const SizedBox(height: 12),
+
                   // Priority bar
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
