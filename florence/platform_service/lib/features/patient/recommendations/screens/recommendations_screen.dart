@@ -362,15 +362,6 @@ class _RecommendationsScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    stateLabel,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: ringEnd,
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(width: 20),
