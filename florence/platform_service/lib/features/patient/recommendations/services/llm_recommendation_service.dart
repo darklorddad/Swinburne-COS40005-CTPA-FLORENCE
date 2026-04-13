@@ -21,6 +21,7 @@ class LlmRecommendationService {
   Future<List<HealthRecommendation>> generate(
     HealthSummary summary, {
     int analysisPeriodDays = 7,
+    List<String> previousTitles = const [],
   }) async {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) throw Exception('User not authenticated');
@@ -37,6 +38,8 @@ class LlmRecommendationService {
     final body = jsonEncode({
       'health_summary': _summaryToSnakeCase(summary),
       'analysis_period_days': analysisPeriodDays,
+      if (previousTitles.isNotEmpty)
+        'previous_recommendation_titles': previousTitles,
     });
 
     debugPrint('[LlmRecommendationService] POST $url');
@@ -66,6 +69,7 @@ class LlmRecommendationService {
   /// Maps [HealthSummary] camelCase fields → Python backend snake_case keys.
   Map<String, dynamic> _summaryToSnakeCase(HealthSummary summary) {
     return {
+      // Existing aggregates
       'average_glucose': summary.averageGlucose,
       'glucose_std_dev': summary.glucoseStdDev,
       'hyper_events': summary.hyperEvents,
@@ -77,6 +81,20 @@ class LlmRecommendationService {
       'total_activity_minutes': summary.totalActivityMinutes,
       'medication_adherence': summary.medicationAdherence,
       'average_sleep_hours': summary.averageSleepHours,
+      // Extended vitals
+      if (summary.latestBmi != null) 'latest_bmi': summary.latestBmi,
+      if (summary.latestSystolic != null) 'latest_systolic': summary.latestSystolic,
+      if (summary.latestDiastolic != null) 'latest_diastolic': summary.latestDiastolic,
+      if (summary.latestCholesterol != null) 'latest_cholesterol': summary.latestCholesterol,
+      if (summary.latestHba1c != null) 'latest_hba1c': summary.latestHba1c,
+      if (summary.sleepConsistencyHours != null)
+        'sleep_consistency_hours': summary.sleepConsistencyHours,
+      // Individual recent readings
+      if (summary.recentGlucoseReadings.isNotEmpty)
+        'recent_glucose_readings': summary.recentGlucoseReadings,
+      if (summary.recentMeals.isNotEmpty) 'recent_meals': summary.recentMeals,
+      if (summary.recentActivities.isNotEmpty) 'recent_activities': summary.recentActivities,
+      if (summary.recentSleepLogs.isNotEmpty) 'recent_sleep_logs': summary.recentSleepLogs,
     };
   }
 
