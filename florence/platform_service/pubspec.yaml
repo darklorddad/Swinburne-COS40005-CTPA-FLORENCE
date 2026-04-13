@@ -55,6 +55,8 @@ dependencies:
 
   crypto: any
 
+  file_picker: ^11.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
