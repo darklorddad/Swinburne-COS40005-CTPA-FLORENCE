@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:florence/config/routes.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/core/services/api_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/utils/formatters.dart';
