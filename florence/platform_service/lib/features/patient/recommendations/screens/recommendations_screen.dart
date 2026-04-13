@@ -62,6 +62,43 @@ const _kThemes = {
 _CatTheme _themeFor(RecommendationCategory cat) =>
     _kThemes[cat] ?? _kThemes[RecommendationCategory.lifestyle]!;
 
+String _dataSourceLabel(String type) {
+  const labels = {
+    'average_glucose': 'Glucose',
+    'glucose': 'Glucose',
+    'hyper_events': 'Glucose',
+    'hypo_events': 'Glucose',
+    'time_in_range': 'Glucose',
+    'total_activity_minutes': 'Activity',
+    'activity': 'Activity',
+    'medication_adherence': 'Medication',
+    'medication': 'Medication',
+    'average_carbs': 'Meal',
+    'meal': 'Meal',
+    'average_sleep_hours': 'Sleep',
+    'sleep': 'Sleep',
+    'sleep_consistency': 'Sleep',
+    'estimated_a1c': 'HbA1c',
+    'hba1c': 'HbA1c',
+    'latest_hba1c': 'HbA1c',
+    'latest_bmi': 'BMI',
+    'bmi': 'BMI',
+    'latest_systolic': 'BP',
+    'latest_diastolic': 'BP',
+    'blood_pressure': 'BP',
+    'latest_cholesterol': 'Cholesterol',
+    'cholesterol': 'Cholesterol',
+  };
+  final key = type.toLowerCase();
+  if (labels.containsKey(key)) return labels[key]!;
+  return type
+      .replaceAll('_', ' ')
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
+}
+
 // ══════════════════════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════════════════════
@@ -919,6 +956,43 @@ class _RecommendationsScreenState
                               height: 1.3,
                             ),
                           ),
+                          // Data source tags — visible on collapsed card
+                          if (!isOpen &&
+                              rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                            const SizedBox(height: 5),
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 3,
+                              children: rec.explanation!.triggeringData
+                                  .map((dp) => _dataSourceLabel(dp.type))
+                                  .toSet()
+                                  .take(3)
+                                  .map((label) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: catTheme.primary
+                                              .withValues(alpha: 0.08),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                          border: Border.all(
+                                            color: catTheme.primary
+                                                .withValues(alpha: 0.22),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          label.toUpperCase(),
+                                          style: TextStyle(
+                                            color: catTheme.primary,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.8,
+                                          ),
+                                        ),
+                                      ))
+                                  .toList(),
+                            ),
+                          ],
                         ],
                       ),
                     ),
