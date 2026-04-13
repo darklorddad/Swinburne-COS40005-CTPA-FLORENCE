@@ -64,30 +64,43 @@ _CatTheme _themeFor(RecommendationCategory cat) =>
 
 String _dataSourceLabel(String type) {
   const labels = {
+    // Glucose
     'average_glucose': 'Glucose',
     'glucose': 'Glucose',
     'hyper_events': 'Glucose',
     'hypo_events': 'Glucose',
     'time_in_range': 'Glucose',
-    'total_activity_minutes': 'Activity',
-    'activity': 'Activity',
-    'medication_adherence': 'Medication',
-    'medication': 'Medication',
-    'average_carbs': 'Meal',
-    'meal': 'Meal',
-    'average_sleep_hours': 'Sleep',
-    'sleep': 'Sleep',
-    'sleep_consistency': 'Sleep',
     'estimated_a1c': 'HbA1c',
     'hba1c': 'HbA1c',
     'latest_hba1c': 'HbA1c',
+    // Activity & meals
+    'total_activity_minutes': 'Activity',
+    'activity': 'Activity',
+    'average_calories': 'Meal',
+    'calories': 'Meal',
+    'meal': 'Meal',
+    // Medication & diagnosis
+    'medication_adherence': 'Medication',
+    'medication': 'Medication',
+    'current_medications': 'Medication',
+    'active_diseases': 'Diagnosis',
+    'disease': 'Diagnosis',
+    'diagnosis': 'Diagnosis',
+    // Vitals
     'latest_bmi': 'BMI',
     'bmi': 'BMI',
     'latest_systolic': 'BP',
     'latest_diastolic': 'BP',
     'blood_pressure': 'BP',
+    // Cholesterol breakdown
     'latest_cholesterol': 'Cholesterol',
     'cholesterol': 'Cholesterol',
+    'latest_hdl': 'HDL',
+    'hdl': 'HDL',
+    'latest_ldl': 'LDL',
+    'ldl': 'LDL',
+    'latest_triglycerides': 'Triglycerides',
+    'triglycerides': 'Triglycerides',
   };
   final key = type.toLowerCase();
   if (labels.containsKey(key)) return labels[key]!;
