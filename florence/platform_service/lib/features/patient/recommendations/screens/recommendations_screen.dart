@@ -288,12 +288,7 @@ class _RecommendationsScreenState
                 SliverToBoxAdapter(
                   child: _buildVitalityCard(score, active, ringStart, ringEnd, stateLabel),
                 ),
-                SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs)),
-                SliverToBoxAdapter(child: _buildRefreshBtn()),
-                if (active.isNotEmpty) ...[
-                  const SliverToBoxAdapter(child: SizedBox(height: 4)),
-                  SliverToBoxAdapter(child: _buildFilterBtn(active)),
-                ],
+                SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, active)),
                 if (filtered.isEmpty && !_isGenerating)
                   SliverToBoxAdapter(child: _buildEmptyHint()),
                 SliverList(
@@ -379,7 +374,7 @@ class _RecommendationsScreenState
                       'VITALITY INDEX',
                       style: TextStyle(
                         color: AppTheme.textSecondaryColor,
-                        fontSize: 10,
+                        fontSize: 12,
                         letterSpacing: 1.5,
                         fontWeight: FontWeight.w500,
                       ),
@@ -405,12 +400,12 @@ class _RecommendationsScreenState
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          const Text('🔥', style: TextStyle(fontSize: 12)),
+                          const Text('🔥', style: TextStyle(fontSize: 14)),
                           const SizedBox(width: 4),
                           Text(
                             '$_streakDays-day streak',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppTheme.primaryBlue,
                             ),
@@ -428,131 +423,159 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Section header ────────────────────────────────────────────
-  Widget _buildSectionHeader(int count, List<HealthRecommendation> recs) {
+  // ── Section header (with inline refresh + filter actions) ─────
+  Widget _buildSectionHeader(
+      int count, List<HealthRecommendation> recs, List<HealthRecommendation> all) {
     final generatedAt = recs.isNotEmpty ? recs.first.generatedAt : DateTime.now();
     final isStale = DateTime.now().difference(generatedAt).inHours >= 24;
     final freshnessText = _freshnessLabel(generatedAt);
+    final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 20, 8, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Title row with action buttons ──
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Your recommendations',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  'Your recommendations',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const Spacer(),
-              if (count > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20),
+              // Refresh icon button
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _isGenerating ? null : _generateRecommendations,
+                  icon: _isGenerating
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        )
+                      : Icon(Icons.refresh_rounded,
+                          size: 20,
+                          color: AppTheme.textSecondaryColor),
+                  tooltip: 'Regenerate',
+                ),
+              ),
+              const SizedBox(width: 2),
+              // Filter button with optional active dot
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: all.isNotEmpty ? () => _openFilterSheet(all) : null,
+                    icon: Icon(Icons.tune_rounded,
+                        size: 15,
+                        color: hasFilter
+                            ? AppTheme.primaryBlue
+                            : AppTheme.textSecondaryColor),
+                    label: Text(
+                      'Filter',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: hasFilter
+                            ? AppTheme.primaryBlue
+                            : AppTheme.textSecondaryColor,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: hasFilter
+                            ? AppTheme.primaryBlue
+                            : AppTheme.borderColor,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
+                  if (hasFilter)
+                    Positioned(
+                      top: -3,
+                      right: -3,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primaryBlue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (hasFilter) ...[
+                const SizedBox(width: 4),
+                TextButton(
+                  onPressed: () => setState(
+                      () { _activeFilter = null; _priorityFilter = null; }),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.textSecondaryColor,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Clear',
+                      style: TextStyle(fontSize: 12)),
+                ),
+              ],
+              const SizedBox(width: 8),
+            ],
+          ),
+
+          // ── Subtitle: freshness · signal count ──
+          Padding(
+            padding: const EdgeInsets.only(top: 2, right: 8),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: isStale ? _generateRecommendations : null,
                   child: Text(
-                    '$count signals',
+                    freshnessText,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
+                      color: isStale
+                          ? AppTheme.warningColor
+                          : AppTheme.textSecondaryColor,
+                    ),
+                  ),
+                ),
+                if (count > 0) ...[
+                  Text(
+                    '  ·  ',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondaryColor),
+                  ),
+                  Text(
+                    '$count signal${count == 1 ? '' : 's'}',
+                    style: TextStyle(
+                      fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.primaryBlue,
                     ),
                   ),
-                ),
-            ],
-          ),
-          if (recs.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            GestureDetector(
-              onTap: isStale ? _generateRecommendations : null,
-              child: Text(
-                freshnessText,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isStale ? AppTheme.warningColor : AppTheme.textSecondaryColor,
-                ),
-              ),
+                ],
+              ],
             ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // ── Filter button ─────────────────────────────────────────────
-  Widget _buildFilterBtn(List<HealthRecommendation> all) {
-    final activeCount = (_activeFilter != null ? 1 : 0) + (_priorityFilter != null ? 1 : 0);
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Row(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _openFilterSheet(all),
-                icon: const Icon(Icons.tune_rounded, size: 16),
-                label: const Text('Filter'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: activeCount > 0
-                      ? AppTheme.primaryBlue
-                      : AppTheme.textSecondaryColor,
-                  side: BorderSide(
-                    color: activeCount > 0
-                        ? AppTheme.primaryBlue
-                        : AppTheme.borderColor,
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  textStyle: const TextStyle(
-                      fontSize: 13, fontWeight: FontWeight.w500),
-                ),
-              ),
-              if (activeCount > 0)
-                Positioned(
-                  top: -5,
-                  right: -5,
-                  child: Container(
-                    width: 18,
-                    height: 18,
-                    decoration: const BoxDecoration(
-                      color: AppTheme.primaryBlue,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$activeCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
           ),
-          if (activeCount > 0) ...[
-            const SizedBox(width: 8),
-            TextButton(
-              onPressed: () => setState(
-                  () { _activeFilter = null; _priorityFilter = null; }),
-              style: TextButton.styleFrom(
-                foregroundColor: AppTheme.textSecondaryColor,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-              ),
-              child: const Text('Clear', style: TextStyle(fontSize: 13)),
-            ),
-          ],
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -778,7 +801,7 @@ class _RecommendationsScreenState
           'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} recommendations right now.';
     } else {
       message =
-          'Tap "Regenerate Analysis" to analyse your recent health data.';
+          'Tap the refresh icon above to analyse your recent health data.';
     }
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
@@ -883,7 +906,7 @@ class _RecommendationsScreenState
                             rec.categoryLabel.toUpperCase(),
                             style: TextStyle(
                               color: catTheme.primary,
-                              fontSize: 9,
+                              fontSize: 11,
                               letterSpacing: 1.5,
                               fontWeight: FontWeight.w600,
                             ),
@@ -912,7 +935,7 @@ class _RecommendationsScreenState
                         _urgencyLabel(rec.priority),
                         style: TextStyle(
                           color: urgencyColor,
-                          fontSize: 9,
+                          fontSize: 11,
                           letterSpacing: 0.8,
                           fontWeight: FontWeight.w700,
                         ),
@@ -942,7 +965,7 @@ class _RecommendationsScreenState
                           'WHY THIS MATTERS',
                           style: TextStyle(
                             color: catTheme.primary,
-                            fontSize: 9,
+                            fontSize: 11,
                             letterSpacing: 1.8,
                             fontWeight: FontWeight.w700,
                           ),
@@ -974,7 +997,7 @@ class _RecommendationsScreenState
                                   '${dp.description}: ${dp.value}',
                                   style: TextStyle(
                                     color: catTheme.primary,
-                                    fontSize: 11,
+                                    fontSize: 13,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -993,7 +1016,7 @@ class _RecommendationsScreenState
                       'STEPS TO TAKE',
                       style: TextStyle(
                         color: AppTheme.textSecondaryColor,
-                        fontSize: 9,
+                        fontSize: 11,
                         letterSpacing: 1.8,
                         fontWeight: FontWeight.w700,
                       ),
@@ -1009,7 +1032,7 @@ class _RecommendationsScreenState
                               '${e.key + 1}.',
                               style: TextStyle(
                                 color: catTheme.primary,
-                                fontSize: 13,
+                                fontSize: 15,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1048,7 +1071,7 @@ class _RecommendationsScreenState
                       Text(
                         rec.priorityLabel,
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 13,
                           color: catTheme.primary,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1064,32 +1087,6 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Refresh button ────────────────────────────────────────────
-  Widget _buildRefreshBtn() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: OutlinedButton.icon(
-        onPressed: _isGenerating ? null : _generateRecommendations,
-        icon: _isGenerating
-            ? SizedBox(
-                width: 14,
-                height: 14,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppTheme.primaryBlue,
-                ),
-              )
-            : const Icon(Icons.refresh_rounded, size: 16),
-        label: const Text('Regenerate Analysis'),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppTheme.primaryBlue,
-          side: BorderSide(color: AppTheme.primaryBlue.withValues(alpha: 0.30)),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
-      ),
-    );
-  }
 }
 
 // ══════════════════════════════════════════════════════════════
