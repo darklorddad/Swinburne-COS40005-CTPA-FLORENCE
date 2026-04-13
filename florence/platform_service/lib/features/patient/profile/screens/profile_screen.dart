@@ -1498,9 +1498,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         labelText: 'Min',
                                         isDense: true,
                                         enabledBorder: hasError
-                                            ? const UnderlineInputBorder(
-                                                borderSide:
-                                                    BorderSide(color: Colors.red))
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700),
+                                              )
+                                            : null,
+                                        focusedBorder: hasError
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700,
+                                                    width: 2),
+                                              )
                                             : null,
                                       ),
                                       keyboardType:
@@ -1537,9 +1549,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         labelText: 'Max',
                                         isDense: true,
                                         enabledBorder: hasError
-                                            ? const UnderlineInputBorder(
-                                                borderSide:
-                                                    BorderSide(color: Colors.red))
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700),
+                                              )
+                                            : null,
+                                        focusedBorder: hasError
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700,
+                                                    width: 2),
+                                              )
                                             : null,
                                       ),
                                       keyboardType:
