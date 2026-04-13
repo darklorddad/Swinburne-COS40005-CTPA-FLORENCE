@@ -202,13 +202,6 @@ class _RecommendationsScreenState
   // Phase 2 controllers
   late final AnimationController _breatheCtrl;  // 3000ms, repeat reversing
   late final AnimationController _celebCtrl;    // 1200ms, forward once
-  late final AnimationController _loadMsgCtrl;  // 1500ms, repeat (loading messages)
-
-  static const _loadingMessages = [
-    'Reading glucose patterns…',
-    'Cross-referencing activity logs…',
-    'Generating personalised insights…',
-  ];
 
   @override
   void initState() {
@@ -233,10 +226,6 @@ class _RecommendationsScreenState
     _celebCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1200));
 
-    _loadMsgCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1500))
-      ..repeat();
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoad();
       _updateStreak();
@@ -250,7 +239,6 @@ class _RecommendationsScreenState
     _staggerCtrl.dispose();
     _breatheCtrl.dispose();
     _celebCtrl.dispose();
-    _loadMsgCtrl.dispose();
     super.dispose();
   }
 
@@ -361,14 +349,21 @@ class _RecommendationsScreenState
         title: const Text('AI Health Insights'),
         elevation: 0,
         centerTitle: false,
+        bottom: _isGenerating
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(2),
+                child: LinearProgressIndicator(
+                  backgroundColor: Colors.transparent,
+                  color: c.accent,
+                ),
+              )
+            : null,
       ),
       body: Stack(
         children: [
           _Orbs(c: c, stateColor: orbTint),
           SafeArea(
-            child: (_isGenerating && active.isEmpty)
-                ? _buildLoading(c)
-                : RefreshIndicator(
+            child: RefreshIndicator(
                     onRefresh: _generateRecommendations,
                     color: c.accent,
                     backgroundColor: c.isDark ? const Color(0xFF0D1A3A) : Colors.white,
@@ -1574,107 +1569,6 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Phase 2: AI Personality Loading state ─────────────────────
-  Widget _buildLoading(_RecsColors c) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Pulsing sparkle icon
-          AnimatedBuilder(
-            animation: _breatheCtrl,
-            builder: (_, __) {
-              final pulse = Tween<double>(begin: 0.85, end: 1.15)
-                  .evaluate(CurvedAnimation(
-                parent: _breatheCtrl,
-                curve: Curves.easeInOut,
-              ));
-              final glow = Tween<double>(begin: 0.25, end: 0.60)
-                  .evaluate(CurvedAnimation(
-                parent: _breatheCtrl,
-                curve: Curves.easeInOut,
-              ));
-              return Transform.scale(
-                scale: pulse,
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        c.accent.withValues(alpha: glow * 0.35),
-                        Colors.transparent,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.accent.withValues(alpha: glow * 0.4),
-                        blurRadius: 24,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: c.accent.withValues(alpha: 0.85),
-                    size: 34,
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'FLORENCE IS ANALYSING YOUR HEALTH DATA',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: c.accent.withValues(alpha: 0.45),
-              fontSize: 9,
-              letterSpacing: 2.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'AI is reading your\nhealth signals…',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: c.txtPrimary.withValues(alpha: 0.31),
-              fontSize: 34,
-              fontWeight: FontWeight.w300,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Cycling sub-messages
-          AnimatedBuilder(
-            animation: _loadMsgCtrl,
-            builder: (_, __) {
-              final idx = (_loadMsgCtrl.value * _loadingMessages.length).floor()
-                  .clamp(0, _loadingMessages.length - 1);
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                child: Text(
-                  _loadingMessages[idx],
-                  key: ValueKey(idx),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: c.txtMuted.withValues(alpha: 0.70),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w300,
-                    fontStyle: FontStyle.italic,
-                    height: 1.5,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ══════════════════════════════════════════════════════════════
