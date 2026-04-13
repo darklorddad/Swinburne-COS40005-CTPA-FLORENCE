@@ -58,6 +58,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     builder: (context, constraints) {
                       if (constraints.maxWidth < 900) {
                         return Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _buildQuickActions(isMobile),
                             SizedBox(height: isMobile ? 16 : 24),
@@ -81,6 +82,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           Expanded(
                             flex: 4,
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 _buildQuickActions(isMobile),
                                 const SizedBox(height: 24),
@@ -182,14 +184,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'High Risk Patients (Action Needed)',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: isMobile ? 18 : 20,
-                      ),
+                Expanded(
+                  child: Text(
+                    'High Risk Patients (Action Needed)',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          fontSize: isMobile ? 18 : 20,
+                        ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, AdminRoutes.patients),
@@ -428,9 +432,10 @@ class _GradientStatCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -453,6 +458,7 @@ class _GradientStatCard extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
+                    height: 1.1,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -462,7 +468,10 @@ class _GradientStatCard extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
+                    height: 1.1,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -470,7 +479,10 @@ class _GradientStatCard extends StatelessWidget {
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 12,
+                    height: 1.1,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
