@@ -882,10 +882,9 @@ class _RecommendationsScreenState
   }
 
   Widget _buildCardBody(HealthRecommendation rec, int index) {
-    final catTheme    = _themeFor(rec.category);
-    final isOpen      = _expandedId == rec.id;
+    final catTheme     = _themeFor(rec.category);
+    final isOpen       = _expandedId == rec.id;
     final urgencyColor = _urgencyColor(rec.priority);
-    final number      = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
       onTap: () => setState(() => _expandedId = isOpen ? null : rec.id),
@@ -908,119 +907,126 @@ class _RecommendationsScreenState
                 )]
               : [],
         ),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOutCubic,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Collapsed row ──────────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Large number
-                    SizedBox(
-                      width: 36,
-                      child: Text(
-                        number,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: catTheme.primary.withValues(
-                            alpha: isOpen ? 1.0 : 0.22,
-                          ),
-                          height: 1,
+
+                // ── Gradient header ──────────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        catTheme.primary.withValues(alpha: 0.12),
+                        catTheme.primary.withValues(alpha: 0.04),
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: catTheme.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                        child: Icon(catTheme.icon, color: catTheme.primary, size: 18),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Category icon
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: catTheme.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(catTheme.icon, color: catTheme.primary, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    // Category label + title
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            rec.categoryLabel.toUpperCase(),
-                            style: TextStyle(
-                              color: catTheme.primary,
-                              fontSize: 11,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            rec.title,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Urgency badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: urgencyColor.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: urgencyColor.withValues(alpha: 0.25)),
-                      ),
-                      child: Text(
-                        _urgencyLabel(rec.priority),
+                      const SizedBox(width: 10),
+                      Text(
+                        rec.categoryLabel.toUpperCase(),
                         style: TextStyle(
-                          color: urgencyColor,
+                          color: catTheme.primary,
                           fontSize: 11,
-                          letterSpacing: 0.8,
-                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                // ── Expanded detail ────────────────────────────
-                if (isOpen) ...[
-                  const SizedBox(height: 16),
-                  Divider(color: AppTheme.borderColor, height: 1),
-                  const SizedBox(height: 16),
-
-                  // WHY THIS MATTERS block
-                  Container(
-                    padding: const EdgeInsets.only(left: 12),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: catTheme.primary, width: 3),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'WHY THIS MATTERS',
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: urgencyColor.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: urgencyColor.withValues(alpha: 0.25)),
+                        ),
+                        child: Text(
+                          _urgencyLabel(rec.priority),
                           style: TextStyle(
-                            color: catTheme.primary,
+                            color: urgencyColor,
                             fontSize: 11,
-                            letterSpacing: 1.8,
+                            letterSpacing: 0.8,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── White body ───────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      // Title
+                      Text(
+                        rec.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          height: 1.3,
+                        ),
+                      ),
+
+
+                      // Expanded content
+                      if (isOpen) ...[
+
+                        // Key metric pill — first triggering data point
+                        if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.backgroundColor,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  rec.explanation!.triggeringData.first.description,
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondaryColor,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  rec.explanation!.triggeringData.first.value,
+                                  style: TextStyle(
+                                    color: catTheme.primary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        // Rationale / description
+                        const SizedBox(height: 12),
                         Text(
                           rec.explanation?.rationale.isNotEmpty == true
                               ? rec.explanation!.rationale
@@ -1030,148 +1036,124 @@ class _RecommendationsScreenState
                             height: 1.6,
                           ),
                         ),
-                        // Triggering data points
+
+                        // Steps to take
+                        if (rec.actionItems.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          Text(
+                            'STEPS TO TAKE',
+                            style: TextStyle(
+                              color: AppTheme.textSecondaryColor,
+                              fontSize: 11,
+                              letterSpacing: 1.8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...rec.actionItems.take(3).toList().asMap().entries.map((e) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${e.key + 1}.',
+                                    style: TextStyle(
+                                      color: catTheme.primary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      e.value,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppTheme.textPrimaryColor,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+
+                        // DATA ANALYSED BASED ON chips
                         if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'DATA ANALYSED BASED ON:',
+                            style: TextStyle(
+                              color: AppTheme.textSecondaryColor,
+                              fontSize: 11,
+                              letterSpacing: 1.8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: rec.explanation!.triggeringData.take(3).map((dp) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: catTheme.primary.withValues(alpha: 0.07),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '${dp.description}: ${dp.value}',
-                                  style: TextStyle(
-                                    color: catTheme.primary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: rec.explanation!.triggeringData
+                                .map((dp) => _dataSourceLabel(dp.type))
+                                .toSet()
+                                .map((label) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: catTheme.primary.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: catTheme.primary.withValues(alpha: 0.22),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        label.toUpperCase(),
+                                        style: TextStyle(
+                                          color: catTheme.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
 
-                  // STEPS TO TAKE
-                  if (rec.actionItems.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'STEPS TO TAKE',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 11,
-                        letterSpacing: 1.8,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...rec.actionItems.take(3).toList().asMap().entries.map((e) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        // Priority bar
+                        const SizedBox(height: 16),
+                        Row(
                           children: [
-                            Text(
-                              '${e.key + 1}.',
-                              style: TextStyle(
-                                color: catTheme.primary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: _priorityFill(rec.priority),
+                                  minHeight: 4,
+                                  backgroundColor: AppTheme.borderColor,
+                                  valueColor: AlwaysStoppedAnimation<Color>(catTheme.primary),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                e.value,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppTheme.textPrimaryColor,
-                                  height: 1.4,
-                                ),
+                            const SizedBox(width: 10),
+                            Text(
+                              rec.priorityLabel,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: catTheme.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }),
-                  ],
-
-                  // DATA FETCHED chips
-                  if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'DATA ANALYSED BASED ON:',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 11,
-                        letterSpacing: 1.8,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: rec.explanation!.triggeringData
-                          .map((dp) => _dataSourceLabel(dp.type))
-                          .toSet()
-                          .map((label) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: catTheme.primary.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: catTheme.primary.withValues(alpha: 0.22),
-                                  ),
-                                ),
-                                child: Text(
-                                  label.toUpperCase(),
-                                  style: TextStyle(
-                                    color: catTheme.primary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ],
-
-                  // Priority bar
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: _priorityFill(rec.priority),
-                            minHeight: 4,
-                            backgroundColor: AppTheme.borderColor,
-                            valueColor: AlwaysStoppedAnimation<Color>(catTheme.primary),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        rec.priorityLabel,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: catTheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
-                ],
+                ),
+
               ],
             ),
           ),
