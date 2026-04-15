@@ -100,6 +100,19 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
     _doReveal();
   }
 
+  /// Resets the card back to scan mode (e.g. on pull-to-refresh).
+  void _resetToScan() {
+    if (!mounted) return;
+    _minTimer?.cancel();
+    _maxTimer?.cancel();
+    _revealed = false;
+    _minElapsed = false;
+    _revealCtrl.reset();
+    if (!_scanCtrl.isAnimating) _scanCtrl.repeat();
+    setState(() {});
+    _startSequence();
+  }
+
   void _doReveal() {
     if (_revealed || !mounted) return;
     _revealed = true;
@@ -121,8 +134,16 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
   @override
   Widget build(BuildContext context) {
-    // Listen for provider state changes — triggers _tryReveal() when data arrives
-    ref.listen(insightProvider, (_, __) => _tryReveal());
+    // Listen for provider state changes:
+    // - AsyncLoading → new fetch started (refresh) → reset to scan
+    // - AsyncData    → data arrived → try to reveal
+    ref.listen(insightProvider, (_, next) {
+      if (next.isLoading) {
+        _resetToScan();
+      } else {
+        _tryReveal();
+      }
+    });
 
     final insightText = ref.watch(insightProvider).asData?.value ?? _kDummyInsight;
 
