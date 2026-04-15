@@ -331,9 +331,14 @@ class _RecommendationsScreenState
       ),
       body: Stack(
         children: [
-          RefreshIndicator(
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: RefreshIndicator(
             onRefresh: _generateRecommendations,
-            child: CustomScrollView(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
@@ -350,6 +355,9 @@ class _RecommendationsScreenState
                 ),
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
               ],
+            ),
+            ),
+          ),
             ),
           ),
           // Celebration particles overlay
@@ -382,91 +390,132 @@ class _RecommendationsScreenState
     Color ringEnd,
     String stateLabel,
   ) {
+    final count = active.length;
+    final stateIcon = score >= 50 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppTheme.borderColor),
+          side: BorderSide(color: AppTheme.getBorderColor(context)),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          child: Column(
             children: [
-              // Score ring
-              Column(
-                children: [
-                  SizedBox(
-                    width: 96,
-                    height: 96,
-                    child: AnimatedBuilder(
-                      animation: _scoreAnim,
-                      builder: (_, __) => CustomPaint(
-                        painter: _ScoreRingPainter(
-                          progress: _scoreAnim.value * score / 100,
-                          displayScore: (score * _scoreAnim.value).round(),
-                          ringStart: ringStart,
-                          ringEnd: ringEnd,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 20),
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'VITALITY INDEX',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 12,
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      stateLabel,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      active.isEmpty
-                          ? 'Your health data is being analysed.'
-                          : 'You have ${active.length} active health signal${active.length == 1 ? '' : 's'}. Review each for personalised guidance.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondaryColor,
-                        height: 1.5,
-                      ),
-                    ),
-                    if (_streakDays > 0) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Text('🔥', style: TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$_streakDays-day streak',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+              // "VITALITY INDEX" label
+              Text(
+                'VITALITY INDEX',
+                style: TextStyle(
+                  color: AppTheme.getTextSecondaryColor(context),
+                  fontSize: 11,
+                  letterSpacing: 1.8,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Score ring (centred, larger)
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: AnimatedBuilder(
+                  animation: _scoreAnim,
+                  builder: (_, __) => CustomPaint(
+                    painter: _ScoreRingPainter(
+                      progress: _scoreAnim.value * score / 100,
+                      displayScore: (score * _scoreAnim.value).round(),
+                      ringStart: ringStart,
+                      ringEnd: ringEnd,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // State pill + streak row
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                children: [
+                  // State pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: ringStart.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(stateIcon, size: 14, color: ringStart),
+                        const SizedBox(width: 4),
+                        Text(
+                          stateLabel,
+                          style: TextStyle(
+                            color: ringStart,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Streak
+                  if (_streakDays > 0)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🔥', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$_streakDays-day streak',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Description text (centred)
+              Text(
+                active.isEmpty
+                    ? 'Your health data is being analysed.'
+                    : 'You have $count active health signal${count == 1 ? '' : 's'}. Review each for personalised guidance.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.getTextSecondaryColor(context),
+                  height: 1.5,
+                ),
+              ),
+
+              // "N signals" pill
+              if (count > 0) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25)),
+                  ),
+                  child: Text(
+                    '$count signal${count == 1 ? '' : 's'}',
+                    style: const TextStyle(
+                      color: AppTheme.primaryBlue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -1187,7 +1236,7 @@ class _ScoreRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 7;
+    final radius = size.width / 2 - 12;
     final rect   = Rect.fromCircle(center: center, radius: radius);
 
     // Track
@@ -1195,7 +1244,7 @@ class _ScoreRingPainter extends CustomPainter {
       center, radius,
       Paint()
         ..color = ringStart.withValues(alpha: 0.12)
-        ..strokeWidth = 6
+        ..strokeWidth = 11
         ..style = PaintingStyle.stroke,
     );
 
@@ -1214,7 +1263,7 @@ class _ScoreRingPainter extends CustomPainter {
         false,
         Paint()
           ..shader = shader
-          ..strokeWidth = 6
+          ..strokeWidth = 11
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round,
       );
