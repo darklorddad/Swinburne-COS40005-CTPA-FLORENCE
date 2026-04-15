@@ -10,11 +10,14 @@ import 'package:florence/features/patient/dashboard/providers/insight_provider.d
 const String _kDummyInsight =
     'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!';
 
-enum _Phase { loading, done }
-
 /// AI Insight Card
 /// Displays AI-generated health insights with a scanning-line loading animation
 /// followed by an Unfold reveal (text grows down from the top edge).
+///
+/// The scan keeps running until BOTH conditions are met:
+///   1. Minimum 1.8s has elapsed (animation floor)
+///   2. Real insight data has arrived from the provider
+/// A safety-net timer forces reveal after 8s regardless.
 class AIInsightCard extends ConsumerStatefulWidget {
   final VoidCallback? onTap;
   final double aspectRatio;
@@ -31,16 +34,19 @@ class AIInsightCard extends ConsumerStatefulWidget {
 
 class _AIInsightCardState extends ConsumerState<AIInsightCard>
     with TickerProviderStateMixin {
-  // ── Scan animation (repeating, stops after 1.8s) ──────────────
+  // ── Scan animation (repeating, stops when reveal triggers) ────────
   late final AnimationController _scanCtrl;
   late final Animation<double> _scanAnim;
 
-  // ── Unfold reveal animation (plays once after scan ends) ───────
+  // ── Unfold reveal animation (plays once after scan ends) ──────────
   late final AnimationController _revealCtrl;
   late final Animation<double> _revealAnim;
 
-  _Phase _phase = _Phase.loading;
-  Timer? _timer;
+  Timer? _minTimer; // fires after 1800ms — sets _minElapsed = true
+  Timer? _maxTimer; // fires after 8000ms — forces reveal regardless
+
+  bool _minElapsed = false; // true once 1.8s minimum has passed
+  bool _revealed = false;   // true once reveal has been triggered
 
   @override
   void initState() {
@@ -71,15 +77,36 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
   }
 
   void _startSequence() {
-    // Always run the full 1.8s scan before revealing
-    _timer = Timer(const Duration(milliseconds: 1800), () {
+    // Minimum scan time — 1.8s floor so animation always plays meaningfully
+    _minTimer = Timer(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
-      _scanCtrl.stop();
-      setState(() => _phase = _Phase.done);
-      // Start unfold after one frame so ClipRect is in the tree
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _revealCtrl.forward();
-      });
+      _minElapsed = true;
+      _tryReveal();
+    });
+
+    // Safety net — force reveal after 8s no matter what (slow API / no data)
+    _maxTimer = Timer(const Duration(seconds: 8), () {
+      if (!mounted || _revealed) return;
+      _doReveal();
+    });
+  }
+
+  /// Called when the min timer fires OR when the insight provider emits data.
+  /// Only reveals when both the min time has elapsed AND real data is ready.
+  void _tryReveal() {
+    if (_revealed || !_minElapsed) return;
+    final insight = ref.read(insightProvider).asData?.value;
+    if (insight == null) return; // still loading — keep scanning
+    _doReveal();
+  }
+
+  void _doReveal() {
+    if (_revealed || !mounted) return;
+    _revealed = true;
+    _scanCtrl.stop();
+    setState(() {}); // switches build() from scanner → unfold text
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _revealCtrl.forward();
     });
   }
 
@@ -87,12 +114,16 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
   void dispose() {
     _scanCtrl.dispose();
     _revealCtrl.dispose();
-    _timer?.cancel();
+    _minTimer?.cancel();
+    _maxTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    // Listen for provider state changes — triggers _tryReveal() when data arrives
+    ref.listen(insightProvider, (_, __) => _tryReveal());
+
     final insightText = ref.watch(insightProvider).asData?.value ?? _kDummyInsight;
 
     const double borderRadius = 24.0;
@@ -178,9 +209,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
                                     color: Colors.white, size: 14),
                                 const SizedBox(width: 6),
                                 Text(
-                                  _phase == _Phase.loading
-                                      ? 'Analysing...'
-                                      : 'Insights',
+                                  !_revealed ? 'Analysing...' : 'Insights',
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
@@ -202,7 +231,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
                       // ── Content area ─────────────────────────────────
                       Expanded(
-                        child: _phase == _Phase.loading
+                        child: !_revealed
                             ? _buildScanner()
                             : _buildUnfoldText(insightText),
                       ),
