@@ -167,8 +167,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Expanded(
                                 child: AIInsightCard(
-                                  insight:
-                                      'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                                   onTap: () => AppRoutes.push(
                                       context, AppRoutes.recommendations),
                                 ),
@@ -192,8 +190,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         )
                       else ...[
                         AIInsightCard(
-                          insight:
-                              'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                           onTap: () => AppRoutes.push(
                               context, AppRoutes.recommendations),
                         ),
