@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -982,9 +983,11 @@ class _RecommendationsScreenState
                       // Title
                       Text(
                         rec.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
+                        style: GoogleFonts.atkinsonHyperlegible(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
                           height: 1.3,
+                          color: AppTheme.textPrimaryColor,
                         ),
                       ),
 
