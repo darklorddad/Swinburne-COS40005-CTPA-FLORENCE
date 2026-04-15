@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
