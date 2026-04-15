@@ -13,7 +13,8 @@ const String _kDummyInsight =
 enum _Phase { loading, done }
 
 /// AI Insight Card
-/// Displays AI-generated health insights with a scanning-line loading animation.
+/// Displays AI-generated health insights with a scanning-line loading animation
+/// followed by an Unfold reveal (text grows down from the top edge).
 class AIInsightCard extends ConsumerStatefulWidget {
   final VoidCallback? onTap;
   final double aspectRatio;
@@ -29,19 +30,23 @@ class AIInsightCard extends ConsumerStatefulWidget {
 }
 
 class _AIInsightCardState extends ConsumerState<AIInsightCard>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  // ── Scan animation (repeating, stops after 1.8s) ──────────────
   late final AnimationController _scanCtrl;
   late final Animation<double> _scanAnim;
 
+  // ── Unfold reveal animation (plays once after scan ends) ───────
+  late final AnimationController _revealCtrl;
+  late final Animation<double> _revealAnim;
+
   _Phase _phase = _Phase.loading;
   Timer? _timer;
-  bool _textVisible = false;
 
   @override
   void initState() {
     super.initState();
 
-    // Scan line controller — sweeps top→bottom→top, repeating
+    // Scan line — sweeps top→bottom→top, repeating at 1.2s per cycle
     _scanCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -51,19 +56,29 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
       CurvedAnimation(parent: _scanCtrl, curve: Curves.easeInOut),
     );
 
-    // Always run the scan animation for 1.8s then reveal text
+    // Unfold reveal — heightFactor 0 → 1, with easeOut
+    _revealCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+
+    _revealAnim = CurvedAnimation(
+      parent: _revealCtrl,
+      curve: Curves.easeOut,
+    );
+
     WidgetsBinding.instance.addPostFrameCallback((_) => _startSequence());
   }
 
   void _startSequence() {
-    // Always show the scanning animation for 1.8s regardless of data state
+    // Always run the full 1.8s scan before revealing
     _timer = Timer(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
       _scanCtrl.stop();
       setState(() => _phase = _Phase.done);
-      // Slight delay so AnimatedOpacity starts after state rebuild
-      Future.delayed(const Duration(milliseconds: 50), () {
-        if (mounted) setState(() => _textVisible = true);
+      // Start unfold after one frame so ClipRect is in the tree
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _revealCtrl.forward();
       });
     });
   }
@@ -71,6 +86,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
   @override
   void dispose() {
     _scanCtrl.dispose();
+    _revealCtrl.dispose();
     _timer?.cancel();
     super.dispose();
   }
@@ -81,17 +97,13 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
     final firstActive = recs.where((r) => r.isActive).firstOrNull;
     final insightText = firstActive?.description ?? _kDummyInsight;
 
-    // If recommendations loaded after card was built, make text visible
-    if (_phase == _Phase.done && !_textVisible) {
-      _textVisible = true;
-    }
-
     const double borderRadius = 24.0;
 
     return AspectRatio(
       aspectRatio: widget.aspectRatio,
       child: InkWell(
-        onTap: widget.onTap ?? () => Navigator.pushNamed(context, AppRoutes.recommendations),
+        onTap: widget.onTap ??
+            () => Navigator.pushNamed(context, AppRoutes.recommendations),
         borderRadius: BorderRadius.circular(borderRadius),
         child: Container(
           decoration: BoxDecoration(
@@ -194,7 +206,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
                       Expanded(
                         child: _phase == _Phase.loading
                             ? _buildScanner()
-                            : _buildInsightText(insightText),
+                            : _buildUnfoldText(insightText),
                       ),
                     ],
                   ),
@@ -213,13 +225,10 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Scan container with fixed height so Positioned scan line is bounded
         AnimatedBuilder(
           animation: _scanAnim,
           builder: (_, __) {
-            // scanY oscillates 0→1→0 using sin for smooth bounce
             final scanY = math.sin(_scanAnim.value * math.pi);
-            // Total inner height: 3×10px bars + 2×9px gaps = 48px
             const double innerHeight = 48.0;
 
             return ClipRRect(
@@ -233,7 +242,6 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
                 ),
                 child: Stack(
                   children: [
-                    // Shimmer placeholder lines in a fixed-height box
                     SizedBox(
                       height: innerHeight,
                       child: Column(
@@ -247,7 +255,6 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
                         ],
                       ),
                     ),
-                    // Horizontal scan line — positioned within the 48px height
                     Positioned(
                       top: scanY * (innerHeight - 2),
                       left: 0,
@@ -272,7 +279,6 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
           },
         ),
         const SizedBox(height: 12),
-        // Label
         Text(
           'SCANNING YOUR DATA',
           style: TextStyle(
@@ -307,27 +313,33 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
     );
   }
 
-  // ── Revealed insight text ──────────────────────────────────────
-  Widget _buildInsightText(String text) {
-    return AnimatedOpacity(
-      opacity: _textVisible ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
-      child: AnimatedSlide(
-        offset: _textVisible ? Offset.zero : const Offset(0, 0.12),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOut,
-        child: Text(
-          text,
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.white,
-                height: 1.35,
-                fontWeight: FontWeight.w600,
-                fontSize: 18,
-              ),
-          maxLines: 4,
-          overflow: TextOverflow.ellipsis,
-        ),
+  // ── Unfold reveal ──────────────────────────────────────────────
+  // Text block clips open top→down with a simultaneous fade.
+  Widget _buildUnfoldText(String text) {
+    return AnimatedBuilder(
+      animation: _revealAnim,
+      builder: (context, child) {
+        return ClipRect(
+          child: Align(
+            alignment: Alignment.topLeft,
+            heightFactor: _revealAnim.value,
+            child: Opacity(
+              opacity: _revealAnim.value.clamp(0.0, 1.0),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+              fontSize: 18,
+            ),
+        maxLines: 4,
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }
