@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
@@ -305,6 +306,8 @@ class _RecommendationsScreenState
   Widget build(BuildContext context) {
     final recs   = ref.watch(recommendationProvider);
     final active = recs.where((r) => r.isActive).toList();
+    final history = recs.where((r) => !r.isActive).toList()
+      ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
     final score  = _computeScore(active);
     final (ringStart, ringEnd, stateLabel) = _scoreState(score);
 
@@ -353,6 +356,13 @@ class _RecommendationsScreenState
                     childCount: filtered.length,
                   ),
                 ),
+                if (history.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: _RecommendationHistorySection(history: history),
+                    ),
+                  ),
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
               ],
             ),
@@ -1304,6 +1314,234 @@ class _ScoreRingPainter extends CustomPainter {
       old.displayScore != displayScore ||
       old.ringStart != ringStart ||
       old.ringEnd != ringEnd;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RECOMMENDATION HISTORY SECTION
+// ══════════════════════════════════════════════════════════════
+
+class _RecommendationHistorySection extends StatefulWidget {
+  final List<HealthRecommendation> history;
+
+  const _RecommendationHistorySection({required this.history});
+
+  @override
+  State<_RecommendationHistorySection> createState() =>
+      _RecommendationHistorySectionState();
+}
+
+class _RecommendationHistorySectionState
+    extends State<_RecommendationHistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = widget.history;
+    final totalItems = items.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = items.sublist(start, end);
+
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header row ──────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.history,
+                      color: AppTheme.primaryBlue,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'History',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              // Pagination controls
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _currentPage > 0
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (currentItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            ),
+
+          ...currentItems.map((rec) {
+            final theme = _themeFor(rec.category);
+
+            // Status badge
+            final String statusLabel;
+            final Color statusColor;
+            if (rec.isExpired && rec.status == RecommendationStatus.active) {
+              statusLabel = 'EXPIRED';
+              statusColor = AppTheme.warningColor;
+            } else if (rec.status == RecommendationStatus.completed) {
+              statusLabel = 'COMPLETED';
+              statusColor = AppTheme.primaryGreen;
+            } else {
+              statusLabel = 'DISMISSED';
+              statusColor = AppTheme.textSecondaryColor;
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.midnightSurface : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: statusColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Left: category icon + title
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: theme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(theme.icon,
+                              size: 16, color: theme.primary),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            rec.title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.textPrimaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Right: status badge + date
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('dd/MM/yy HH:mm')
+                            .format(rec.generatedAt.toLocal()),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: AppTheme.textSecondaryColor,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
