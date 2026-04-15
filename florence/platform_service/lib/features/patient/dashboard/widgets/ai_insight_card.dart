@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
-import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 
-// Temporary dummy text for testing — replace with real data once pipeline is stable
+// Fallback shown while the insight provider has no data yet
 const String _kDummyInsight =
     'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!';
 
@@ -93,9 +93,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
   @override
   Widget build(BuildContext context) {
-    final recs = ref.watch(recommendationProvider);
-    final firstActive = recs.where((r) => r.isActive).firstOrNull;
-    final insightText = firstActive?.description ?? _kDummyInsight;
+    final insightText = ref.watch(insightProvider).asData?.value ?? _kDummyInsight;
 
     const double borderRadius = 24.0;
 
