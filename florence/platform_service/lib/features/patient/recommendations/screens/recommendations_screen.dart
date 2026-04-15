@@ -317,7 +317,7 @@ class _RecommendationsScreenState
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
         title: const Text('AI Health Insights'),
         elevation: 0,
@@ -659,7 +659,7 @@ class _RecommendationsScreenState
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppTheme.borderColor,
+                        color: AppTheme.getBorderColor(context),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -741,9 +741,9 @@ class _RecommendationsScreenState
                         side: BorderSide(
                           color: isSelected
                               ? catTheme.primary
-                              : AppTheme.borderColor,
+                              : AppTheme.getBorderColor(ctx),
                         ),
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppTheme.getSurfaceColor(ctx),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(
@@ -799,9 +799,9 @@ class _RecommendationsScreenState
                               : FontWeight.w400,
                         ),
                         side: BorderSide(
-                          color: isSelected ? urgColor : AppTheme.borderColor,
+                          color: isSelected ? urgColor : AppTheme.getBorderColor(ctx),
                         ),
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppTheme.getSurfaceColor(ctx),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(
@@ -893,12 +893,12 @@ class _RecommendationsScreenState
         duration: const Duration(milliseconds: 260),
         curve: Curves.easeInOutCubic,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.getSurfaceColor(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isOpen
                 ? catTheme.primary.withValues(alpha: 0.40)
-                : AppTheme.borderColor,
+                : AppTheme.getBorderColor(context),
           ),
           boxShadow: isOpen
               ? [BoxShadow(
@@ -987,7 +987,7 @@ class _RecommendationsScreenState
                           fontSize: 18,
                           fontWeight: FontWeight.w400,
                           height: 1.3,
-                          color: AppTheme.textPrimaryColor,
+                          color: AppTheme.getTextPrimaryColor(context),
                         ),
                       ),
 
@@ -1002,7 +1002,7 @@ class _RecommendationsScreenState
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 14, vertical: 10),
                             decoration: BoxDecoration(
-                              color: AppTheme.backgroundColor,
+                              color: AppTheme.getBackgroundColor(context),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Row(
@@ -1010,7 +1010,7 @@ class _RecommendationsScreenState
                                 Text(
                                   rec.explanation!.triggeringData.first.description,
                                   style: TextStyle(
-                                    color: AppTheme.textSecondaryColor,
+                                    color: AppTheme.getTextSecondaryColor(context),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -1035,7 +1035,7 @@ class _RecommendationsScreenState
                               ? rec.explanation!.rationale
                               : rec.description,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondaryColor,
+                            color: AppTheme.getTextSecondaryColor(context),
                             height: 1.6,
                           ),
                         ),
@@ -1046,7 +1046,7 @@ class _RecommendationsScreenState
                           Text(
                             'STEPS TO TAKE',
                             style: TextStyle(
-                              color: AppTheme.textSecondaryColor,
+                              color: AppTheme.getTextSecondaryColor(context),
                               fontSize: 11,
                               letterSpacing: 1.8,
                               fontWeight: FontWeight.w700,
@@ -1072,7 +1072,7 @@ class _RecommendationsScreenState
                                     child: Text(
                                       e.value,
                                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: AppTheme.textPrimaryColor,
+                                        color: AppTheme.getTextPrimaryColor(context),
                                         height: 1.4,
                                       ),
                                     ),
@@ -1089,7 +1089,7 @@ class _RecommendationsScreenState
                           Text(
                             'DATA ANALYSED BASED ON:',
                             style: TextStyle(
-                              color: AppTheme.textSecondaryColor,
+                              color: AppTheme.getTextSecondaryColor(context),
                               fontSize: 11,
                               letterSpacing: 1.8,
                               fontWeight: FontWeight.w700,

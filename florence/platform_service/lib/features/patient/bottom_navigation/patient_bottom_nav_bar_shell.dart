@@ -342,10 +342,10 @@ class _PatientBottomNavBarShellState
   // ── Sheet content ──────────────────────────────────────────
   Widget _buildSheetContent(double navHeight) {
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        boxShadow: [
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: const [
           BoxShadow(
             color: Color(0x17000000),
             blurRadius: 60,
@@ -375,7 +375,7 @@ class _PatientBottomNavBarShellState
                 width: 38,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE2E4EF),
+                  color: AppTheme.getBorderColor(context),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -480,10 +480,10 @@ class _PatientBottomNavBarShellState
                 const SizedBox(height: 6),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F1020),
+                    color: AppTheme.getTextPrimaryColor(context),
                   ),
                   textAlign: TextAlign.center,
                   maxLines: 1,
