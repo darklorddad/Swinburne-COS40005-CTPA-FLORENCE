@@ -64,7 +64,7 @@ class HealthDataService:
         for item in raw_data:
             filtered_data.append(ActivityLog(**item))
         
-        filtered_data.sort(key=lambda x: x.performed_at, reverse=True)
+        filtered_data.sort(key=lambda x: x.start_time, reverse=True)
         return filtered_data
 
     async def get_daily_logs(
@@ -148,7 +148,7 @@ class HealthDataService:
             activity_lines.append("No activity logs available.")
         else:
             for a in activity_logs:
-                activity_lines.append(f"- {a.performed_at.strftime('%Y-%m-%d %H:%M')}: {a.activity_description} ({a.duration_minutes} mins)")
+                activity_lines.append(f"- {a.start_time.strftime('%Y-%m-%d %H:%M')}: {a.activity_description} ({a.active_duration_minutes} mins)")
 
         # Format Daily Logs
         daily_lines = []

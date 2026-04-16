@@ -1,6 +1,8 @@
 import 'dart:math' as math;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
@@ -304,6 +306,8 @@ class _RecommendationsScreenState
   Widget build(BuildContext context) {
     final recs   = ref.watch(recommendationProvider);
     final active = recs.where((r) => r.isActive).toList();
+    final history = recs.where((r) => !r.isActive).toList()
+      ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
     final score  = _computeScore(active);
     final (ringStart, ringEnd, stateLabel) = _scoreState(score);
 
@@ -316,7 +320,7 @@ class _RecommendationsScreenState
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
         title: const Text('AI Health Insights'),
         elevation: 0,
@@ -330,9 +334,14 @@ class _RecommendationsScreenState
       ),
       body: Stack(
         children: [
-          RefreshIndicator(
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: RefreshIndicator(
             onRefresh: _generateRecommendations,
-            child: CustomScrollView(
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
                 SliverToBoxAdapter(
@@ -347,8 +356,18 @@ class _RecommendationsScreenState
                     childCount: filtered.length,
                   ),
                 ),
+                if (history.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: _RecommendationHistorySection(history: history),
+                    ),
+                  ),
                 const SliverToBoxAdapter(child: SizedBox(height: 40)),
               ],
+            ),
+            ),
+          ),
             ),
           ),
           // Celebration particles overlay
@@ -381,91 +400,132 @@ class _RecommendationsScreenState
     Color ringEnd,
     String stateLabel,
   ) {
+    final count = active.length;
+    final stateIcon = score >= 50 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppTheme.borderColor),
+          side: BorderSide(color: AppTheme.getBorderColor(context)),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          child: Column(
             children: [
-              // Score ring
-              Column(
-                children: [
-                  SizedBox(
-                    width: 96,
-                    height: 96,
-                    child: AnimatedBuilder(
-                      animation: _scoreAnim,
-                      builder: (_, __) => CustomPaint(
-                        painter: _ScoreRingPainter(
-                          progress: _scoreAnim.value * score / 100,
-                          displayScore: (score * _scoreAnim.value).round(),
-                          ringStart: ringStart,
-                          ringEnd: ringEnd,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 20),
-              // Text
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'VITALITY INDEX',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 12,
-                        letterSpacing: 1.5,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      stateLabel,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      active.isEmpty
-                          ? 'Your health data is being analysed.'
-                          : 'You have ${active.length} active health signal${active.length == 1 ? '' : 's'}. Review each for personalised guidance.',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondaryColor,
-                        height: 1.5,
-                      ),
-                    ),
-                    if (_streakDays > 0) ...[
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          const Text('🔥', style: TextStyle(fontSize: 14)),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$_streakDays-day streak',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.primaryBlue,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
+              // "VITALITY INDEX" label
+              Text(
+                'VITALITY INDEX',
+                style: TextStyle(
+                  color: AppTheme.getTextSecondaryColor(context),
+                  fontSize: 11,
+                  letterSpacing: 1.8,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
+              const SizedBox(height: 16),
+
+              // Score ring (centred, larger)
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: AnimatedBuilder(
+                  animation: _scoreAnim,
+                  builder: (_, __) => CustomPaint(
+                    painter: _ScoreRingPainter(
+                      progress: _scoreAnim.value * score / 100,
+                      displayScore: (score * _scoreAnim.value).round(),
+                      ringStart: ringStart,
+                      ringEnd: ringEnd,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // State pill + streak row
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                children: [
+                  // State pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: ringStart.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(stateIcon, size: 14, color: ringStart),
+                        const SizedBox(width: 4),
+                        Text(
+                          stateLabel,
+                          style: TextStyle(
+                            color: ringStart,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Streak
+                  if (_streakDays > 0)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🔥', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$_streakDays-day streak',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Description text (centred)
+              Text(
+                active.isEmpty
+                    ? 'Your health data is being analysed.'
+                    : 'You have $count active health signal${count == 1 ? '' : 's'}. Review each for personalised guidance.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.getTextSecondaryColor(context),
+                  height: 1.5,
+                ),
+              ),
+
+              // "N signals" pill
+              if (count > 0) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25)),
+                  ),
+                  child: Text(
+                    '$count signal${count == 1 ? '' : 's'}',
+                    style: const TextStyle(
+                      color: AppTheme.primaryBlue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -658,7 +718,7 @@ class _RecommendationsScreenState
                       width: 36,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: AppTheme.borderColor,
+                        color: AppTheme.getBorderColor(context),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -740,9 +800,9 @@ class _RecommendationsScreenState
                         side: BorderSide(
                           color: isSelected
                               ? catTheme.primary
-                              : AppTheme.borderColor,
+                              : AppTheme.getBorderColor(ctx),
                         ),
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppTheme.getSurfaceColor(ctx),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(
@@ -798,9 +858,9 @@ class _RecommendationsScreenState
                               : FontWeight.w400,
                         ),
                         side: BorderSide(
-                          color: isSelected ? urgColor : AppTheme.borderColor,
+                          color: isSelected ? urgColor : AppTheme.getBorderColor(ctx),
                         ),
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppTheme.getSurfaceColor(ctx),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                         padding: const EdgeInsets.symmetric(
@@ -882,10 +942,9 @@ class _RecommendationsScreenState
   }
 
   Widget _buildCardBody(HealthRecommendation rec, int index) {
-    final catTheme    = _themeFor(rec.category);
-    final isOpen      = _expandedId == rec.id;
+    final catTheme     = _themeFor(rec.category);
+    final isOpen       = _expandedId == rec.id;
     final urgencyColor = _urgencyColor(rec.priority);
-    final number      = (index + 1).toString().padLeft(2, '0');
 
     return GestureDetector(
       onTap: () => setState(() => _expandedId = isOpen ? null : rec.id),
@@ -893,12 +952,12 @@ class _RecommendationsScreenState
         duration: const Duration(milliseconds: 260),
         curve: Curves.easeInOutCubic,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.getSurfaceColor(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isOpen
                 ? catTheme.primary.withValues(alpha: 0.40)
-                : AppTheme.borderColor,
+                : AppTheme.getBorderColor(context),
           ),
           boxShadow: isOpen
               ? [BoxShadow(
@@ -908,270 +967,255 @@ class _RecommendationsScreenState
                 )]
               : [],
         ),
-        child: AnimatedSize(
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeInOutCubic,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ── Collapsed row ──────────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Large number
-                    SizedBox(
-                      width: 36,
-                      child: Text(
-                        number,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                          color: catTheme.primary.withValues(
-                            alpha: isOpen ? 1.0 : 0.22,
-                          ),
-                          height: 1,
+
+                // ── Gradient header ──────────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        catTheme.primary.withValues(alpha: 0.12),
+                        catTheme.primary.withValues(alpha: 0.04),
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: catTheme.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
                         ),
+                        child: Icon(catTheme.icon, color: catTheme.primary, size: 18),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Category icon
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: catTheme.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(catTheme.icon, color: catTheme.primary, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    // Category label + title
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            rec.categoryLabel.toUpperCase(),
-                            style: TextStyle(
-                              color: catTheme.primary,
-                              fontSize: 11,
-                              letterSpacing: 1.5,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            rec.title,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              height: 1.3,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Urgency badge
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: urgencyColor.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: urgencyColor.withValues(alpha: 0.25)),
-                      ),
-                      child: Text(
-                        _urgencyLabel(rec.priority),
+                      const SizedBox(width: 10),
+                      Text(
+                        rec.categoryLabel.toUpperCase(),
                         style: TextStyle(
-                          color: urgencyColor,
+                          color: catTheme.primary,
                           fontSize: 11,
-                          letterSpacing: 0.8,
-                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                // ── Expanded detail ────────────────────────────
-                if (isOpen) ...[
-                  const SizedBox(height: 16),
-                  Divider(color: AppTheme.borderColor, height: 1),
-                  const SizedBox(height: 16),
-
-                  // WHY THIS MATTERS block
-                  Container(
-                    padding: const EdgeInsets.only(left: 12),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: catTheme.primary, width: 3),
-                      ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'WHY THIS MATTERS',
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: urgencyColor.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: urgencyColor.withValues(alpha: 0.25)),
+                        ),
+                        child: Text(
+                          _urgencyLabel(rec.priority),
                           style: TextStyle(
-                            color: catTheme.primary,
+                            color: urgencyColor,
                             fontSize: 11,
-                            letterSpacing: 1.8,
+                            letterSpacing: 0.8,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 6),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ── White body ───────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      // Title
+                      Text(
+                        rec.title,
+                        style: GoogleFonts.atkinsonHyperlegible(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                          color: AppTheme.getTextPrimaryColor(context),
+                        ),
+                      ),
+
+
+                      // Expanded content
+                      if (isOpen) ...[
+
+                        // Key metric pill — first triggering data point
+                        if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getBackgroundColor(context),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  rec.explanation!.triggeringData.first.description,
+                                  style: TextStyle(
+                                    color: AppTheme.getTextSecondaryColor(context),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  rec.explanation!.triggeringData.first.value,
+                                  style: TextStyle(
+                                    color: catTheme.primary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        // Rationale / description
+                        const SizedBox(height: 12),
                         Text(
                           rec.explanation?.rationale.isNotEmpty == true
                               ? rec.explanation!.rationale
                               : rec.description,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondaryColor,
+                            color: AppTheme.getTextSecondaryColor(context),
                             height: 1.6,
                           ),
                         ),
-                        // Triggering data points
+
+                        // Steps to take
+                        if (rec.actionItems.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          Text(
+                            'STEPS TO TAKE',
+                            style: TextStyle(
+                              color: AppTheme.getTextSecondaryColor(context),
+                              fontSize: 11,
+                              letterSpacing: 1.8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...rec.actionItems.take(3).toList().asMap().entries.map((e) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${e.key + 1}.',
+                                    style: TextStyle(
+                                      color: catTheme.primary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      e.value,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppTheme.getTextPrimaryColor(context),
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+
+                        // DATA ANALYSED BASED ON chips
                         if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'DATA ANALYSED BASED ON:',
+                            style: TextStyle(
+                              color: AppTheme.getTextSecondaryColor(context),
+                              fontSize: 11,
+                              letterSpacing: 1.8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                           const SizedBox(height: 8),
                           Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
-                            children: rec.explanation!.triggeringData.take(3).map((dp) {
-                              return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: catTheme.primary.withValues(alpha: 0.07),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  '${dp.description}: ${dp.value}',
-                                  style: TextStyle(
-                                    color: catTheme.primary,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              );
-                            }).toList(),
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: rec.explanation!.triggeringData
+                                .map((dp) => _dataSourceLabel(dp.type))
+                                .toSet()
+                                .map((label) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: catTheme.primary.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: catTheme.primary.withValues(alpha: 0.22),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        label.toUpperCase(),
+                                        style: TextStyle(
+                                          color: catTheme.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
                           ),
                         ],
-                      ],
-                    ),
-                  ),
 
-                  // STEPS TO TAKE
-                  if (rec.actionItems.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'STEPS TO TAKE',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 11,
-                        letterSpacing: 1.8,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    ...rec.actionItems.take(3).toList().asMap().entries.map((e) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        // Priority bar
+                        const SizedBox(height: 16),
+                        Row(
                           children: [
-                            Text(
-                              '${e.key + 1}.',
-                              style: TextStyle(
-                                color: catTheme.primary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: _priorityFill(rec.priority),
+                                  minHeight: 4,
+                                  backgroundColor: AppTheme.borderColor,
+                                  valueColor: AlwaysStoppedAnimation<Color>(catTheme.primary),
+                                ),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                e.value,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: AppTheme.textPrimaryColor,
-                                  height: 1.4,
-                                ),
+                            const SizedBox(width: 10),
+                            Text(
+                              rec.priorityLabel,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: catTheme.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
                         ),
-                      );
-                    }),
-                  ],
-
-                  // DATA FETCHED chips
-                  if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
-                    const SizedBox(height: 16),
-                    Text(
-                      'DATA ANALYSED BASED ON:',
-                      style: TextStyle(
-                        color: AppTheme.textSecondaryColor,
-                        fontSize: 11,
-                        letterSpacing: 1.8,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: rec.explanation!.triggeringData
-                          .map((dp) => _dataSourceLabel(dp.type))
-                          .toSet()
-                          .map((label) => Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: catTheme.primary.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(
-                                    color: catTheme.primary.withValues(alpha: 0.22),
-                                  ),
-                                ),
-                                child: Text(
-                                  label.toUpperCase(),
-                                  style: TextStyle(
-                                    color: catTheme.primary,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.8,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ],
-
-                  // Priority bar
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(4),
-                          child: LinearProgressIndicator(
-                            value: _priorityFill(rec.priority),
-                            minHeight: 4,
-                            backgroundColor: AppTheme.borderColor,
-                            valueColor: AlwaysStoppedAnimation<Color>(catTheme.primary),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        rec.priorityLabel,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: catTheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      ],
                     ],
                   ),
-                ],
+                ),
+
               ],
             ),
           ),
@@ -1202,7 +1246,7 @@ class _ScoreRingPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 7;
+    final radius = size.width / 2 - 12;
     final rect   = Rect.fromCircle(center: center, radius: radius);
 
     // Track
@@ -1210,7 +1254,7 @@ class _ScoreRingPainter extends CustomPainter {
       center, radius,
       Paint()
         ..color = ringStart.withValues(alpha: 0.12)
-        ..strokeWidth = 6
+        ..strokeWidth = 11
         ..style = PaintingStyle.stroke,
     );
 
@@ -1229,7 +1273,7 @@ class _ScoreRingPainter extends CustomPainter {
         false,
         Paint()
           ..shader = shader
-          ..strokeWidth = 6
+          ..strokeWidth = 11
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round,
       );
@@ -1270,6 +1314,234 @@ class _ScoreRingPainter extends CustomPainter {
       old.displayScore != displayScore ||
       old.ringStart != ringStart ||
       old.ringEnd != ringEnd;
+}
+
+// ══════════════════════════════════════════════════════════════
+// RECOMMENDATION HISTORY SECTION
+// ══════════════════════════════════════════════════════════════
+
+class _RecommendationHistorySection extends StatefulWidget {
+  final List<HealthRecommendation> history;
+
+  const _RecommendationHistorySection({required this.history});
+
+  @override
+  State<_RecommendationHistorySection> createState() =>
+      _RecommendationHistorySectionState();
+}
+
+class _RecommendationHistorySectionState
+    extends State<_RecommendationHistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = widget.history;
+    final totalItems = items.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = items.sublist(start, end);
+
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header row ──────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.history,
+                      color: AppTheme.primaryBlue,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'History',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              // Pagination controls
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _currentPage > 0
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (currentItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            ),
+
+          ...currentItems.map((rec) {
+            final theme = _themeFor(rec.category);
+
+            // Status badge
+            final String statusLabel;
+            final Color statusColor;
+            if (rec.isExpired && rec.status == RecommendationStatus.active) {
+              statusLabel = 'EXPIRED';
+              statusColor = AppTheme.warningColor;
+            } else if (rec.status == RecommendationStatus.completed) {
+              statusLabel = 'COMPLETED';
+              statusColor = AppTheme.primaryGreen;
+            } else {
+              statusLabel = 'DISMISSED';
+              statusColor = AppTheme.textSecondaryColor;
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.midnightSurface : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: statusColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Left: category icon + title
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: theme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(theme.icon,
+                              size: 16, color: theme.primary),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            rec.title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.textPrimaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Right: status badge + date
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('dd/MM/yy HH:mm')
+                            .format(rec.generatedAt.toLocal()),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: AppTheme.textSecondaryColor,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
