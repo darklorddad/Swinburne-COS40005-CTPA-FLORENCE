@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import 'admin_sidebar.dart';
-import 'admin_app_bar.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
+import 'package:florence/features/admin/core/widgets/admin_app_bar.dart';
 
 /// Admin Scaffold
 /// Main layout wrapper for all admin screens
@@ -354,7 +354,7 @@ class StatCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
+                      color: color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(
@@ -424,7 +424,7 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             child: Center(
               child: Card(
                 child: Padding(

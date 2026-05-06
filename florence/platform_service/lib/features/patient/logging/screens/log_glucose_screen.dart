@@ -1,30 +1,34 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:convert';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/config/environment.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart';
-import '../../core/repositories/monitor_data_repository.dart';
-
 /// Log Glucose Screen
 /// Allows users to record blood glucose readings
 class LogGlucoseScreen extends ConsumerStatefulWidget {
-  const LogGlucoseScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  final VoidCallback? onKeepEditing;
+  const LogGlucoseScreen({
+    super.key,
+    this.onSwitchToHistory,
+    this.onKeepEditing,
+  });
 
   @override
   ConsumerState<LogGlucoseScreen> createState() => _LogGlucoseScreenState();
@@ -38,6 +42,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   final _glucoseFocusNode = FocusNode();
 
   // State
+  bool _forcePop = false;
+  String _initialGlucose = '';
+  String _initialNotes = '';
+  String _initialCalories = '';
+  late DateTime _initialDateTime;
+  late String _initialTiming;
+  late String _initialMealType;
   XFile? _selectedImage;
   Uint8List? _imageBytes;
   // _uploadedImageUrl is now set ONLY after hitting Save
@@ -59,6 +70,22 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     {'value': 'LUNCH', 'label': 'Lunch', 'icon': Icons.wb_cloudy},
     {'value': 'DINNER', 'label': 'Dinner', 'icon': Icons.nights_stay},
   ];
+
+  String _getMealTypeFromTime(DateTime time) {
+    final hour = time.hour;
+    if (hour >= 4 && hour < 11) return 'BREAKFAST';
+    if (hour >= 11 && hour < 16) return 'LUNCH';
+    return 'DINNER';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
+    _initialDateTime = _selectedDateTime;
+    _initialTiming = _selectedTiming;
+    _initialMealType = _selectedMealType;
+  }
 
   @override
   void dispose() {
@@ -124,7 +151,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 24),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withOpacity(0.3),
+                    color: Colors.grey.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -244,7 +271,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -357,7 +384,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -374,11 +401,53 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     }
   }
 
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _glucoseController.text = _initialGlucose;
+      _notesController.text = _initialNotes;
+      _caloriesController.text = _initialCalories;
+      _selectedDateTime = _initialDateTime;
+      _selectedTiming = _initialTiming;
+      _selectedMealType = _initialMealType;
+      _selectedImage = null;
+      _imageBytes = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final glucoseValue = double.tryParse(_glucoseController.text);
-    
-    // Fetch thresholds
+    final bool hasChanges = !_forcePop && 
+        (_glucoseController.text != _initialGlucose || 
+         _notesController.text != _initialNotes || 
+         _caloriesController.text != _initialCalories || 
+         _imageBytes != null ||
+         _selectedDateTime != _initialDateTime ||
+         _selectedTiming != _initialTiming ||
+         _selectedMealType != _initialMealType);
+
     final healthData = ref.watch(monitorDataProvider).asData?.value;
     HealthThreshold? glucoseThreshold;
     try {
@@ -389,72 +458,102 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
     final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log Glucose'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.trendsDetail);
-              },
-              tooltip: 'View History',
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        if (!hasChanges) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        } else {
+          if (widget.onKeepEditing != null) {
+            widget.onKeepEditing!();
+          }
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log Glucose'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(glucoseThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(glucoseThreshold),
+                        const SizedBox(height: 20),
 
-                      // Glucose value input (large and prominent)
-                      _buildGlucoseInput(glucoseColor, glucoseThreshold),
-                      const SizedBox(height: 20),
+                        // Glucose value input (large and prominent)
+                        _buildGlucoseInput(glucoseColor, glucoseThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 20),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
 
-                      // Context selection
-                      _buildContextSection(),
-                      
-                      // Notes (optional) - Padding/Spacing handled internally for animation
-                      _buildNotesSection(),
-                      const SizedBox(height: 32),
+                        // Context selection
+                        _buildContextSection(),
+                        
+                        // Notes (optional) - Padding/Spacing handled internally for animation
+                        _buildNotesSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -467,9 +566,22 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   /// Build info card with target range
   Widget _buildInfoCard(HealthThreshold? threshold) {
-    final min = threshold?.minValue ?? 70;
-    final max = threshold?.maxValue ?? 180;
-    
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.glucoseUnit;
+
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    String targetText = "Loading target...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final glucoseTarget = thresholdsAsync.value!
+            .firstWhere((t) => t.dataType == 'GLUCOSE');
+        targetText =
+            "${glucoseTarget.minValue} - ${glucoseTarget.maxValue} $currentUnit";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -482,7 +594,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -499,11 +611,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Record your blood glucose reading to track your health trends.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Record your blood glucose reading to track your health trends.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -517,10 +634,10 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -539,7 +656,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           Text(
                             'Target Range',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -548,7 +665,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -557,12 +674,17 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Glucose', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
+                        'Glucose',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppTheme.primaryGreen.withValues(alpha: 0.8)),
                       ),
                       Text(
-                        '${min.toInt()} - ${max.toInt()} mg/dL',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
@@ -578,15 +700,19 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Build glucose input
   Widget _buildGlucoseInput(Color? glucoseColor, HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.glucoseUnit;
+    final isMmol = currentUnit == 'mmol/L';
+
+    final double minValid = isMmol ? 1.0 : 20.0;
+    final double maxValid = isMmol ? 35.0 : 600.0;
+
     // Tint the whole card background based on status
     final containerColor = glucoseColor != null 
-        ? glucoseColor.withOpacity(0.05) 
+        ? glucoseColor.withValues(alpha: 0.05) 
         : (isDark ? AppTheme.midnightSurface : Colors.white);
         
     final borderColor = glucoseColor ?? AppTheme.getBorderColor(context);
-    final hasInput = glucoseColor != null;
-
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -598,7 +724,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -641,7 +767,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                     hintText: '---',
                     hintStyle: const TextStyle(
                       color: Colors.grey,
@@ -652,7 +778,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                'mg/dL',
+                currentUnit,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: AppTheme.textSecondaryColor,
                     ),
@@ -662,74 +788,92 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
           const SizedBox(height: 20),
 
-          // Status indicator (Always visible, fixed size)
-          SizedBox(
-            height: 32,
-            child: Center(
-              child: Builder(
-                builder: (context) {
-                  final statusText = glucoseColor != null
-                      ? _getGlucoseStatus(
-                              double.tryParse(_glucoseController.text), threshold)
-                          .toUpperCase()
-                      : 'ENTER READING';
+          // Status indicator (Always visible)
+          Center(
+            child: Builder(
+              builder: (context) {
+                final statusText = glucoseColor != null
+                    ? _getGlucoseStatus(
+                            double.tryParse(_glucoseController.text), threshold)
+                        .toUpperCase()
+                    : 'ENTER READING';
 
-                  IconData statusIcon;
-                  if (glucoseColor == null) {
-                    statusIcon = Icons.edit;
-                  } else if (statusText == 'LOW') {
-                    statusIcon = Icons.arrow_downward;
-                  } else if (statusText == 'HIGH') {
-                    statusIcon = Icons.arrow_upward;
-                  } else {
-                    statusIcon = Icons.check;
-                  }
+                IconData statusIcon;
+                if (glucoseColor == null) {
+                  statusIcon = Icons.edit;
+                } else if (statusText == 'LOW') {
+                  statusIcon = Icons.arrow_downward;
+                } else if (statusText == 'HIGH') {
+                  statusIcon = Icons.arrow_upward;
+                } else {
+                  statusIcon = Icons.check;
+                }
 
-                  final displayColor =
-                      glucoseColor ?? AppTheme.textSecondaryColor;
+                final displayColor =
+                    glucoseColor ?? AppTheme.textSecondaryColor;
 
-                  return InkWell(
-                    onTap: () => _glucoseFocusNode.requestFocus(),
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      width: 140, // Fixed width
-                      height: 32, // Fixed height
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: glucoseColor == null
-                            ? (isDark
-                                ? Colors.white.withOpacity(0.05)
-                                : AppTheme.backgroundColor)
-                            : displayColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: displayColor.withOpacity(0.3),
+                return InkWell(
+                  onTap: () => _glucoseFocusNode.requestFocus(),
+                  borderRadius: BorderRadius.circular(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 140, // Fixed width
+                        height: 32,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: glucoseColor == null
+                              ? (isDark
+                                  ? Colors.white.withValues(alpha: 0.05)
+                                  : AppTheme.backgroundColor)
+                              : displayColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: displayColor.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              statusIcon,
+                              size: 14,
+                              color: displayColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              statusText,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    color: displayColor,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            statusIcon,
-                            size: 14,
-                            color: displayColor,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            statusText,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: displayColor,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                      if (_glucoseController.text.isNotEmpty)
+                        Builder(
+                          builder: (context) {
+                            final val = double.tryParse(_glucoseController.text.replaceAll(',', '.'));
+                            if (val != null && (val < minValid || val > maxValid)) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Enter $minValid - $maxValid $currentUnit',
+                                  style: const TextStyle(color: AppTheme.errorColor, fontSize: 12),
                                 ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -752,7 +896,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -767,7 +911,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -791,11 +935,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? Colors.white.withOpacity(0.05)
+                  ? Colors.white.withValues(alpha: 0.05)
                   : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
             ),
             child: Column(
@@ -827,7 +971,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
@@ -845,25 +989,25 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             colorScheme: Theme.of(context).colorScheme.copyWith(
                               tertiary: AppTheme.primaryBlue,
                               onTertiary: Colors.white,
-                              tertiaryContainer: AppTheme.primaryBlue.withOpacity(0.2),
+                              tertiaryContainer: AppTheme.primaryBlue.withValues(alpha: 0.2),
                               onTertiaryContainer: AppTheme.primaryBlue,
                             ),
                             // Fix input field background to make cursor visible
                             timePickerTheme: TimePickerThemeData(
-                              hourMinuteColor: MaterialStateColor.resolveWith((states) {
-                                return states.contains(MaterialState.selected)
-                                    ? AppTheme.primaryBlue.withOpacity(0.1)
+                              hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                                return states.contains(WidgetState.selected)
+                                    ? AppTheme.primaryBlue.withValues(alpha: 0.1)
                                     : Colors.grey.shade100;
                               }),
-                              hourMinuteTextColor: MaterialStateColor.resolveWith((states) {
-                                return states.contains(MaterialState.selected)
+                              hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+                                return states.contains(WidgetState.selected)
                                     ? AppTheme.primaryBlue
                                     : AppTheme.textPrimaryColor;
                               }),
                             ),
                             textSelectionTheme: TextSelectionThemeData(
                               cursorColor: AppTheme.primaryBlue,
-                              selectionColor: AppTheme.primaryBlue.withOpacity(0.3),
+                              selectionColor: AppTheme.primaryBlue.withValues(alpha: 0.3),
                               selectionHandleColor: AppTheme.primaryBlue,
                             ),
                           ),
@@ -880,6 +1024,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           picked.hour,
                           picked.minute,
                         );
+                        _selectedMealType = _getMealTypeFromTime(_selectedDateTime);
                       });
                     }
                   },
@@ -948,7 +1093,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -962,7 +1107,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -985,7 +1130,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
           // 1. Timing Selection (Merged Segmented Control)
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -1060,7 +1205,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                       // Merged Segmented Control Style
                       Container(
                         decoration: BoxDecoration(
-                          color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                          color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -1150,7 +1295,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                   border: Border.all(color: borderColor),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -1166,7 +1311,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: titleIconColor.withOpacity(0.1),
+                            color: titleIconColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(
@@ -1203,7 +1348,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                               child: Container(
                                 padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
                                 decoration: BoxDecoration(
-                                  color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                                  color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                                   borderRadius: BorderRadius.circular(24),
                                   border: Border.all(
                                     color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.borderColor,
@@ -1213,6 +1358,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
+                                    Icon(
+                                      Icons.auto_awesome,
+                                      size: 16,
+                                      color: _useAiAutofill ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
+                                    ),
+                                    const SizedBox(width: 6),
                                     Text(
                                       'Auto',
                                       style: TextStyle(
@@ -1230,11 +1381,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                         scale: 0.9,
                                         child: Switch(
                                           value: _useAiAutofill,
-                                          activeColor: Colors.white,
+                                          activeThumbColor: Colors.white,
                                           activeTrackColor: AppTheme.primaryBlue,
                                           inactiveThumbColor: Colors.white,
                                           inactiveTrackColor: Colors.grey.shade300,
-                                          trackOutlineColor: MaterialStateProperty.all(Colors.transparent),
+                                          trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
                                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                           onChanged: (val) => setState(() => _useAiAutofill = val),
                                         ),
@@ -1269,7 +1420,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                             height: 160,
                             width: double.infinity,
                             decoration: BoxDecoration(
-                              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: AppTheme.borderColor),
                             ),
@@ -1384,13 +1535,15 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         const SizedBox(height: 8),
                         TextFormField(
                           controller: _notesController,
+                          textInputAction: TextInputAction.newline,
+                          minLines: 3,
                           maxLines: 3,
-                          textInputAction: TextInputAction.next,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
-                            hintText: 'e.g. Grilled chicken, 60g carbs, no veggies...',
+                            hintText: 'e.g. grilled chicken, 60g carbs, no veggies...',
                             hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
                             filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: BorderSide.none,
@@ -1402,6 +1555,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                                 width: 2,
                               ),
                             ),
+                            prefixIcon: const Icon(Icons.edit_note, color: AppTheme.textSecondaryColor),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -1434,12 +1588,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
                           textInputAction: TextInputAction.done,
+                          onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
                             hintText: 'e.g. 500',
                             filled: true,
-                            fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: Colors.orange),
+                            prefixIcon: const Icon(Icons.local_fire_department_outlined, color: AppTheme.textSecondaryColor),
                           ),
                         ),
                       ],

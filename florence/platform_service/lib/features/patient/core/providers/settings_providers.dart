@@ -1,20 +1,25 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repositories/settings_repository.dart';
+import 'package:florence/features/patient/core/repositories/settings_repository.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 
 class PatientSettings {
   final String glucoseUnit;
   final String cholesterolUnit;
+  final bool showQuickActions;
 
   PatientSettings({
     this.glucoseUnit = 'mmol/L',
     this.cholesterolUnit = 'mmol/L',
+    this.showQuickActions = false,
   });
 
-  PatientSettings copyWith({String? glucoseUnit, String? cholesterolUnit}) {
+  PatientSettings copyWith({String? glucoseUnit, String? cholesterolUnit, bool? showQuickActions}) {
     return PatientSettings(
       glucoseUnit: glucoseUnit ?? this.glucoseUnit,
       cholesterolUnit: cholesterolUnit ?? this.cholesterolUnit,
+      showQuickActions: showQuickActions ?? this.showQuickActions,
     );
   }
 }
@@ -38,24 +43,42 @@ class PatientSettingsNotifier extends Notifier<PatientSettings> {
   Future<void> updateGlucoseUnit(String unit) async {
     final previousState = state;
     state = state.copyWith(glucoseUnit: unit);
-
-    try {
-      await ref.read(settingsRepositoryProvider).updateSettings(glucoseUnit: unit);
-    } catch (e) {
-      state = previousState;
-      debugPrint('Failed to update glucose unit: $e');
-    }
+    _backgroundSync(glucoseUnit: unit, previousState: previousState);
   }
 
   Future<void> updateCholesterolUnit(String unit) async {
     final previousState = state;
     state = state.copyWith(cholesterolUnit: unit);
+    _backgroundSync(cholesterolUnit: unit, previousState: previousState);
+  }
 
+  Future<void> _backgroundSync({
+    String? glucoseUnit,
+    String? cholesterolUnit,
+    required PatientSettings previousState,
+  }) async {
     try {
-      await ref.read(settingsRepositoryProvider).updateSettings(cholesterolUnit: unit);
+      await ref.read(settingsRepositoryProvider).updateSettings(
+            glucoseUnit: glucoseUnit ?? state.glucoseUnit,
+            cholesterolUnit: cholesterolUnit ?? state.cholesterolUnit,
+          );
+      ref.invalidate(patientThresholdsProvider);
+      ref.invalidate(monitorDataProvider);
     } catch (e) {
       state = previousState;
-      debugPrint('Failed to update cholesterol unit: $e');
+      debugPrint('Failed to sync unit: $e');
+    }
+  }
+
+  Future<void> toggleQuickActions(bool value) async {
+    final previousState = state;
+    state = state.copyWith(showQuickActions: value);
+
+    try {
+      await ref.read(settingsRepositoryProvider).updateSettings(showQuickActions: value);
+    } catch (e) {
+      state = previousState;
+      debugPrint('Failed to update quick actions setting: $e');
     }
   }
 }

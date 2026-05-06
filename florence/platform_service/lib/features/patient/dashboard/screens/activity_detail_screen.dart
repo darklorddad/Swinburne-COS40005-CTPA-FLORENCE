@@ -5,14 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 
 class ActivityDetailScreen extends ConsumerWidget {
-  const ActivityDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const ActivityDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +32,7 @@ class ActivityDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logActivity),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logActivity),
               tooltip: 'Add Log',
             ),
           ),
@@ -300,7 +301,7 @@ class _StreakHeatmap extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.3)),
+                        border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.3)),
                       ),
                     );
                   }
@@ -311,11 +312,11 @@ class _StreakHeatmap extends StatelessWidget {
 
                   Color cellColor;
                   if (minutes == 0) {
-                    cellColor = AppTheme.textSecondaryColor.withOpacity(0.1);
+                    cellColor = AppTheme.textSecondaryColor.withValues(alpha: 0.1);
                   } else if (minutes < 20) {
-                    cellColor = dataColor.withOpacity(0.4);
+                    cellColor = dataColor.withValues(alpha: 0.4);
                   } else if (minutes < 45) {
-                    cellColor = dataColor.withOpacity(0.7);
+                    cellColor = dataColor.withValues(alpha: 0.7);
                   } else {
                     cellColor = dataColor;
                   }
@@ -342,11 +343,11 @@ class _StreakHeatmap extends StatelessWidget {
             children: [
               Text('Less', style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)),
               const SizedBox(width: 4),
-              _LegendBox(color: AppTheme.textSecondaryColor.withOpacity(0.1)),
+              _LegendBox(color: AppTheme.textSecondaryColor.withValues(alpha: 0.1)),
               const SizedBox(width: 2),
-              _LegendBox(color: dataColor.withOpacity(0.4)),
+              _LegendBox(color: dataColor.withValues(alpha: 0.4)),
               const SizedBox(width: 2),
-              _LegendBox(color: dataColor.withOpacity(0.7)),
+              _LegendBox(color: dataColor.withValues(alpha: 0.7)),
               const SizedBox(width: 2),
               _LegendBox(color: dataColor),
               const SizedBox(width: 4),
@@ -491,7 +492,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
       // Visual Logic: Green if > 0, Grey if 0
       final barColor = minutes > 0 
           ? dataColor 
-          : AppTheme.textSecondaryColor.withOpacity(0.3);
+          : AppTheme.textSecondaryColor.withValues(alpha: 0.3);
 
       return BarChartGroupData(
         x: index,
@@ -505,7 +506,7 @@ class _WeeklyConsistencyChart extends StatelessWidget {
               show: true,
               toY: maxY,
               // Increased opacity for better visibility against white background
-              color: AppTheme.textSecondaryColor.withOpacity(0.15),
+              color: AppTheme.textSecondaryColor.withValues(alpha: 0.15),
             ),
           ),
         ],
@@ -604,8 +605,9 @@ class _ActivityTimingChart extends StatelessWidget {
     for (var log in recentLogs) {
       // Group by Local Hour
       final h = log.timestamp.toLocal().hour;
-      if (h >= 5 && h < 11) morning += log.duration;
-      else if (h >= 11 && h < 17) midday += log.duration;
+      if (h >= 5 && h < 11) {
+        morning += log.duration;
+      } else if (h >= 11 && h < 17) midday += log.duration;
       else if (h >= 17 && h < 22) evening += log.duration;
       else night += log.duration;
     }
@@ -640,7 +642,7 @@ class _ActivityTimingChart extends StatelessWidget {
               show: true,
               drawVerticalLine: false,
               horizontalInterval: maxY / 4,
-              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.1), strokeWidth: 1),
+              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.1), strokeWidth: 1),
             ),
             titlesData: FlTitlesData(
               leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -672,7 +674,7 @@ class _ActivityTimingChart extends StatelessWidget {
               // Visual Logic: Green if > 0, Grey if 0
               final barColor = point.value > 0 
                   ? dataColor 
-                  : AppTheme.textSecondaryColor.withOpacity(0.3);
+                  : AppTheme.textSecondaryColor.withValues(alpha: 0.3);
 
               return BarChartGroupData(
                 x: point.index,
@@ -685,7 +687,7 @@ class _ActivityTimingChart extends StatelessWidget {
                     backDrawRodData: BackgroundBarChartRodData(
                       show: true,
                       toY: maxY,
-                      color: AppTheme.textSecondaryColor.withOpacity(0.15),
+                      color: AppTheme.textSecondaryColor.withValues(alpha: 0.15),
                     ),
                   ),
                 ],
@@ -768,7 +770,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -780,7 +782,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1), 
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1), 
                       borderRadius: BorderRadius.circular(12)
                     ),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
@@ -887,12 +889,12 @@ class _HistorySectionState extends State<_HistorySection> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03), 
+            color: Colors.black.withValues(alpha: 0.03), 
             blurRadius: 8, 
             offset: const Offset(0, 2)
           )
         ],
-        border: Border.all(color: statusColor.withOpacity(0.3), width: 1),
+        border: Border.all(color: statusColor.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -938,30 +940,68 @@ class _HistorySectionState extends State<_HistorySection> {
             ),
           ),
 
-          // RIGHT: Status Badge + Date
+          // RIGHT: Status Badge + Date + Calories
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (log.caloriesBurned != null) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.local_fire_department, color: Colors.orange, size: 12),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${log.caloriesBurned} kcal',
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: statusColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      statusText,
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
               const SizedBox(height: 6),
               Text(
-                DateFormat('dd/MM/yy HH:mm').format(log.timestamp.toLocal()),
+                '${DateFormat('HH:mm').format(log.startTime.toLocal())} - ${DateFormat('HH:mm').format(log.endTime.toLocal())}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontSize: 11,
+                      color: AppTheme.textPrimaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                DateFormat('dd MMM yyyy').format(log.startTime.toLocal()),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 10,
                       color: AppTheme.textSecondaryColor,
                     ),
               ),
@@ -1027,7 +1067,7 @@ class _ActivityCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1041,7 +1081,7 @@ class _ActivityCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 // Always use Primary Blue for the Header Icon to match other screens

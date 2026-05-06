@@ -1,22 +1,22 @@
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+// For ApiService (if needed, but repo used)
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/api_service.dart'; // For ApiService (if needed, but repo used)
-import '../../../../core/utils/validators.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart'; // Added
-import '../../core/repositories/monitor_data_repository.dart';
 
 /// Log HbA1c Screen
 /// Allows users to record Hemoglobin A1c readings
 class LogHba1cScreen extends ConsumerStatefulWidget {
-  const LogHba1cScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogHba1cScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogHba1cScreen> createState() => _LogHba1cScreenState();
@@ -27,9 +27,18 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   final _hba1cController = TextEditingController();
   
   // State
+  bool _forcePop = false;
+  String _initialHba1c = '';
+  late DateTime _initialDateTime;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
   
+  @override
+  void initState() {
+    super.initState();
+    _initialDateTime = _selectedDateTime;
+  }
+
   @override
   void dispose() {
     _hba1cController.dispose();
@@ -93,7 +102,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       
       if (mounted) {
         Helpers.showSuccess(context, 'HbA1c reading saved successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
@@ -107,37 +116,44 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   }
   
   /// Show date time picker
-  Future<void> _selectDateTime() async {
-    final date = await showDatePicker(
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
       context: context,
-      initialDate: _selectedDateTime,
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
-      lastDate: DateTime.now(),
-    );
-    
-    if (date != null && mounted) {
-      final time = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
-      );
-
-      if (mounted) {
-        setState(() {
-          _selectedDateTime = DateTime(
-            date.year,
-            date.month,
-            date.day,
-            time?.hour ?? _selectedDateTime.hour,
-            time?.minute ?? _selectedDateTime.minute,
-          );
-        });
-      }
-    }
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
-  
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _hba1cController.text = _initialHba1c;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
+
+    final hba1cValue =
+        double.tryParse(_hba1cController.text.replaceAll(',', '.'));
+
+    final bool hasChanges = !_forcePop && 
+        (_hba1cController.text != _initialHba1c ||
+         _selectedDateTime != _initialDateTime);
 
     // Fetch thresholds
     final healthData = ref.watch(monitorDataProvider).asData?.value;
@@ -150,65 +166,89 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
     final hba1cColor = _getHba1cColor(hba1cValue, hba1cThreshold);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log HbA1c'),
-        elevation: 0,
-        centerTitle: false,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppTheme.getBorderColor(context),
-            height: 1.0,
-          ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.history),
-              onPressed: () {
-                AppRoutes.push(context, AppRoutes.hba1cDetail);
-              },
-              tooltip: 'View History',
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log HbA1c'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
             ),
           ),
-        ],
-      ),
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info & Target card
-                      _buildInfoCard(hba1cThreshold),
-                      const SizedBox(height: 20),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
+                  }
+                },
+                tooltip: 'View History',
+              ),
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(hba1cThreshold),
+                        const SizedBox(height: 20),
 
-                      // Input Section
-                      _buildInputSection(hba1cColor, hba1cThreshold),
-                      const SizedBox(height: 20),
+                        // Input Section
+                        _buildInputSection(hba1cColor, hba1cThreshold),
+                        const SizedBox(height: 20),
 
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 32),
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
 
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Reading',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                      ),
-                      const SizedBox(height: 24),
-                    ],
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: _isLoading ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -220,6 +260,20 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   }
 
   Widget _buildInfoCard(HealthThreshold? threshold) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final hba1cTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'HBA1C');
+        targetText =
+            "${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -232,7 +286,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -267,10 +321,10 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -289,7 +343,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                           Text(
                             'Target Range',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -298,7 +352,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -306,15 +360,16 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Text('HbA1c',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8))),
                       Text(
-                        'HbA1c', 
-                        style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))
-                      ),
-                      Text(
-                        threshold != null 
-                          ? '${threshold.minValue.toStringAsFixed(1)} - ${threshold.maxValue.toStringAsFixed(1)}%'
-                          : '4.0 - 7.0%',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
                       ),
                     ],
                   ),
@@ -330,7 +385,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   Widget _buildInputSection(Color? hba1cColor, HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = hba1cColor != null 
-        ? hba1cColor.withOpacity(0.05) 
+        ? hba1cColor.withValues(alpha: 0.05) 
         : (isDark ? AppTheme.midnightSurface : Colors.white);
     final borderColor = hba1cColor ?? AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
@@ -343,7 +398,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -357,7 +412,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -396,7 +451,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                       borderSide: BorderSide.none,
                     ),
                     filled: true,
-                    fillColor: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                   ),
                   onChanged: (_) => setState(() {}),
                 ),
@@ -416,9 +471,9 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 decoration: BoxDecoration(
-                  color: hba1cColor.withOpacity(0.1),
+                  color: hba1cColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: hba1cColor.withOpacity(0.2)),
+                  border: Border.all(color: hba1cColor.withValues(alpha: 0.2)),
                 ),
                 child: Text(
                   _getHba1cStatus(
@@ -453,7 +508,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -467,7 +522,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -488,10 +543,10 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           const SizedBox(height: 20),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : AppTheme.backgroundColor,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor,
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
             ),
             child: Column(
@@ -521,7 +576,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                     }
                   },
                 ),
-                Divider(height: 1, color: AppTheme.borderColor.withOpacity(0.5)),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
                 _buildCompactPickerItem(
                   label: 'Time',
                   value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),

@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart'; // Added
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../shared/widgets/notification_bell.dart';
-import '../../chat/services/chatbot_service.dart'; // Chat Service
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_data;
-import '../../profile/providers/user_profile_provider.dart'; // Ensure this is imported
-import '../providers/dashboard_providers.dart'; // Added
-import '../widgets/ai_insight_card.dart';
-import '../widgets/biometrics_section.dart';
-import '../widgets/quick_actions_grid.dart';
-import '../widgets/medication_section.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/shared/widgets/notification_bell.dart';
+import 'package:florence/features/patient/chat/services/chatbot_service.dart'; // Chat Service
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart'; // Added
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
+import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
+import 'package:florence/features/patient/dashboard/widgets/ai_insight_card.dart';
+import 'package:florence/features/patient/dashboard/widgets/biometrics_section.dart';
+import 'package:florence/features/patient/dashboard/widgets/quick_actions_grid.dart';
 
 // Model for Quick Actions to ensure consistency between Grid and Modal
 class _QuickActionItem {
@@ -49,6 +52,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
   }
 
+  /// Builds a snapshot from whatever health data is currently loaded and
+  /// fires the insight fetch (no-op if cache is still fresh).
+  void _triggerInsightFetch({bool force = false}) {
+    final healthDataState =
+        ref.read(core_data.monitorDataProvider).asData?.value;
+    if (healthDataState == null) return;
+    final snapshot = InsightSnapshot.fromHealthData(healthDataState);
+    ref.read(insightProvider.notifier).fetch(snapshot, force: force);
+  }
+
   Future<void> _safeLoadChatHistory({bool force = false}) async {
     try {
       await ref.read(chatProvider.notifier).loadHistory(force: force);
@@ -77,21 +90,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.refresh(core_data.monitorDataProvider.future),
         _safeLoadChatHistory(force: true),
       ]);
+
+      // 3. Refresh insight (force bypasses 1-hour cache on manual pull-to-refresh)
+      _triggerInsightFetch(force: true);
     } finally {
       if (mounted) {
         setState(() => _isPullRefreshing = false);
       }
     }
-  }
-
-  /// Show quick log modal
-  void _showQuickLogModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _QuickLogModal(actions: _getQuickActions()),
-    );
   }
 
   List<_QuickActionItem> _getQuickActions() {
@@ -121,6 +127,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     
     // Keep chat provider alive, but load history only after profile is ready
     ref.watch(chatProvider);
+
+    // Fire insight fetch once health data first becomes available
+    ref.listen(core_data.monitorDataProvider, (previous, next) {
+      if (next.hasValue && !(previous?.hasValue ?? false)) {
+        _triggerInsightFetch();
+      }
+    });
+
     if (userProfileAsync.hasValue) {
       // We use a post-frame callback inside a specialized widget or just let the 
       // initState/Refresh logic handle the explicit calls. 
@@ -148,6 +162,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       latestMeal = sortedMeals.last;
     }
     
+    final showQuickActions = ref.watch(patientSettingsProvider).showQuickActions;
+
     // Define consistent spacing
     const double spacing = 20.0;
 
@@ -174,43 +190,43 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Expanded(
                                 child: AIInsightCard(
-                                  insight:
-                                      'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                                   onTap: () => AppRoutes.push(
                                       context, AppRoutes.recommendations),
                                 ),
                               ),
-                              const SizedBox(width: spacing),
-                              Expanded(
-                                child: QuickActionsGrid(
-                                  actions: _getQuickActions().map((a) => (
-                                    label: a.label,
-                                    icon: a.icon,
-                                    color: a.color,
-                                    onTap: () => AppRoutes.push(context, a.route)
-                                  )).toList(),
+                              if (showQuickActions) ...[
+                                const SizedBox(width: spacing),
+                                Expanded(
+                                  child: QuickActionsGrid(
+                                    actions: _getQuickActions().map((a) => (
+                                      label: a.label,
+                                      icon: a.icon,
+                                      color: a.color,
+                                      onTap: () => AppRoutes.push(context, a.route)
+                                    )).toList(),
+                                  ),
                                 ),
-                              ),
+                              ],
                               const SizedBox(width: spacing),
                             ],
                           ),
                         )
                       else ...[
                         AIInsightCard(
-                          insight:
-                              'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                           onTap: () => AppRoutes.push(
                               context, AppRoutes.recommendations),
                         ),
-                        const SizedBox(height: spacing),
-                        QuickActionsGrid(
-                          actions: _getQuickActions().map((a) => (
-                            label: a.label,
-                            icon: a.icon,
-                            color: a.color,
-                            onTap: () => AppRoutes.push(context, a.route)
-                          )).toList(),
-                        ),
+                        if (showQuickActions) ...[
+                          const SizedBox(height: spacing),
+                          QuickActionsGrid(
+                            actions: _getQuickActions().map((a) => (
+                              label: a.label,
+                              icon: a.icon,
+                              color: a.color,
+                              onTap: () => AppRoutes.push(context, a.route)
+                            )).toList(),
+                          ),
+                        ],
                       ],
                       const SizedBox(height: spacing),
 
@@ -251,26 +267,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           child: Text('Florence'),
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.add),
-          onPressed: _showQuickLogModal,
-          tooltip: 'Quick Log',
-        ),
-        const NotificationBell(),
-        IconButton(
-          icon: const Icon(Icons.chat_bubble_outline),
-          onPressed: () => AppRoutes.push(context, AppRoutes.chat),
-          tooltip: 'AI Health Assistant',
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 4),
-          child: IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () => AppRoutes.push(context, AppRoutes.profile),
-            tooltip: 'Profile',
-          ),
-        ),
+      actions: const [
+        NotificationBell(),
+        SizedBox(width: 8),
       ],
       elevation: 0,
       bottom: PreferredSize(
@@ -302,136 +301,5 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       case 'DINNER': return 3;
       default: return 0;
     }
-  }
-}
-
-
-/// Quick log modal
-class _QuickLogModal extends StatelessWidget {
-  final List<_QuickActionItem> actions;
-
-  const _QuickLogModal({required this.actions});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min, // Prevents taking full height
-            children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              Text(
-                'Log Health Data',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 24),
-
-              // Actions Grid
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                alignment: WrapAlignment.center,
-                children: actions.map((action) {
-                  return _ModalActionButton(
-                    action: action,
-                    onTap: () {
-                      Navigator.pop(context);
-                      AppRoutes.push(context, action.route);
-                    },
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ModalActionButton extends StatelessWidget {
-  final _QuickActionItem action;
-  final VoidCallback onTap;
-
-  const _ModalActionButton({
-    required this.action,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final width = (MediaQuery.of(context).size.width - 48 - 48) / 4; // Approx 4 items per row minus spacing
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: width.clamp(70.0, 100.0), // Min 70, Max 100
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: action.color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: action.color.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: action.color.withOpacity(0.2),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Icon(
-                action.icon,
-                color: action.color,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              action.label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

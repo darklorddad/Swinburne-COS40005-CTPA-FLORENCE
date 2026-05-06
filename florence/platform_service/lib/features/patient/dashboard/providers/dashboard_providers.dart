@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core;
-import '../../core/repositories/medication_repository.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core;
+import 'package:florence/features/patient/core/repositories/medication_repository.dart';
 
 // Adapters for Dashboard to use Centralized Data Layer
 
@@ -16,9 +16,6 @@ final latestActivityProvider = Provider<AsyncValue<ActivityLog?>>((ref) {
   );
 }, isAutoDispose: true);
 
-final patientThresholdsProvider = Provider<AsyncValue<List<HealthThreshold>>>((ref) {
-  return ref.watch(core.monitorDataProvider).whenData((state) => state.healthThresholds);
-}, isAutoDispose: true);
 
 final dailyPatientLogsProvider = Provider<AsyncValue<List<DailyPatientLog>>>((ref) {
   return ref.watch(core.monitorDataProvider).whenData((state) {

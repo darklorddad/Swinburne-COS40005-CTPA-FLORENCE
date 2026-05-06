@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel, model_validator, Field, EmailStr
 from typing import Optional, Literal, List
 from supabase_auth.errors import AuthApiError
@@ -9,16 +9,42 @@ from enum import Enum
 import time
 from client import supabase
 
+# --- Conversion Helpers ---
+
+def convert_glucose_from_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value * 18.0)
+    return round(value, 1)
+
+def convert_glucose_to_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value / 18.0, 2)
+    return round(value, 2)
+
+def convert_cholesterol_from_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value * 38.67, 1)
+    return round(value, 1)
+
+def convert_cholesterol_to_base(value: Optional[float], unit: str) -> Optional[float]:
+    if value is None: return None
+    if unit == 'mg/dL':
+        return round(value / 38.67, 2)
+    return round(value, 2)
+
 # --- Constants ---
 
 DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 10.0},
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 2.6, 'max_value': 5.2},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 2.6},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 1.0, 'max_value': 2.6},
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 1.7},
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.7},
     {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
-    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
     {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
     {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
 ]
@@ -94,7 +120,16 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         if len(profile_response.data) > 1:
             raise HTTPException(status_code=500, detail="Fatal: Multiple profiles found for a single user.")
             
-        return profile_response.data[0]
+        profile = profile_response.data[0]
+        
+        # Fetch user settings to include in the profile context for unit conversion
+        settings_res = supabase.table("user_settings").select("glucose_unit, cholesterol_unit, show_quick_actions").eq("user_id", user.id).execute()
+        if settings_res.data:
+            profile['settings'] = settings_res.data[0]
+        else:
+            profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
+            
+        return profile
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")
     except HTTPException as e:
@@ -107,10 +142,12 @@ async def get_current_patient_profile(authorization: str = Header(...)):
 class UserSettingsUpdate(BaseModel):
     glucose_unit: Optional[str] = None
     cholesterol_unit: Optional[str] = None
+    show_quick_actions: Optional[bool] = None
 
 class UserSettingsResponse(BaseModel):
     glucose_unit: str
     cholesterol_unit: str
+    show_quick_actions: bool = False
 
 class PatientProfileUpdate(BaseModel):
     """Fields a patient is allowed to update on their own profile."""
@@ -149,6 +186,20 @@ class MonitorDataUpdate(BaseModel):
     value: Optional[float] = None
     measured_at: Optional[datetime] = None
 
+class DiseaseLogCreate(BaseModel):
+    condition_name: str
+    status: Literal['active', 'resolved']
+    diagnosed_date: Optional[date] = None
+    resolved_date: Optional[date] = None
+    notes: Optional[str] = None
+
+class DiseaseLogUpdate(BaseModel):
+    condition_name: Optional[str] = None
+    status: Optional[Literal['active', 'resolved']] = None
+    diagnosed_date: Optional[date] = None
+    resolved_date: Optional[date] = None
+    notes: Optional[str] = None
+
 class MealTime(str, Enum):
     BREAKFAST = 'BREAKFAST'
     LUNCH = 'LUNCH'
@@ -180,8 +231,10 @@ class DailyLogCreate(BaseModel):
 
 class ActivityLogCreate(BaseModel):
     activity_description: str
-    duration_minutes: int
-    performed_at: datetime
+    active_duration_minutes: int
+    start_time: datetime
+    end_time: datetime
+    calories_burned: Optional[int] = None
 
 class MedicationCreate(BaseModel):
     medication_id: Optional[int] = None
@@ -208,6 +261,60 @@ class MedicationIntakeCreate(BaseModel):
     taken_at: Optional[datetime] = None
     notes: Optional[str] = None
 
+class ThresholdUpdateItem(BaseModel):
+    data_type: str
+    min_value: float
+    max_value: float
+
+    @model_validator(mode='after')
+    def validate_clinical_ranges(self):
+        # 1. Logical Sanity Check
+        if self.min_value >= self.max_value:
+            raise ValueError(f"Min value ({self.min_value}) must be less than Max value ({self.max_value}) for {self.data_type}.")
+
+        # 2. Biological Absolute Limits (Format: Min, Max)
+        # These assume BASE units: mmol/L, mmHg, kg/m2, %
+        absolute_limits = {
+            'BLOOD_PRESSURE_SYSTOLIC': (50.0, 300.0),  # Below 50 is cardiogenic shock
+            'BLOOD_PRESSURE_DIASTOLIC': (30.0, 200.0), 
+            'GLUCOSE': (1.5, 50.0),                    # 1.5 mmol/L is coma-level low
+            'BMI': (10.0, 150.0),                      # Below 10 is severe starvation
+            'HBA1C': (3.0, 30.0),                      # Red blood cells barely function below 3%
+            'CHOLESTEROL_TOTAL': (1.0, 30.0),
+            'CHOLESTEROL_LDL': (0.0, 30.0),            # 0.0 allowed (some modern drugs drop it to near zero)
+            'CHOLESTEROL_HDL': (0.0, 15.0),
+            'CHOLESTEROL_TRIGLYCERIDES': (0.0, 50.0),
+        }
+
+        # 3. Apply the Limits
+        limits = absolute_limits.get(self.data_type)
+        if limits:
+            abs_min, abs_max = limits
+
+            # Check if the user's MIN target is dangerously low
+            if self.min_value < abs_min:
+                raise ValueError(
+                    f"Target minimum of {self.min_value} is dangerously low for {self.data_type}. "
+                    f"Absolute allowed minimum is {abs_min}."
+                )
+
+            # Check if the user's MAX target is dangerously high
+            if self.max_value > abs_max:
+                raise ValueError(
+                    f"Target maximum of {self.max_value} is dangerously high for {self.data_type}. "
+                    f"Absolute allowed maximum is {abs_max}."
+                )
+
+        return self
+
+class ThresholdUpdateBatch(BaseModel):
+    thresholds: List[ThresholdUpdateItem]
+
+class ClinicalDocumentCreate(BaseModel):
+    patient_id: int
+    document_path: str
+    document_type: str
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -221,11 +328,11 @@ async def get_user_settings(patient_profile: dict = Depends(get_current_patient_
     Retrieves the app settings (units of measurement) for the authenticated patient.
     """
     try:
-        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit").eq("user_id", patient_profile['user_id']).execute()
+        response = supabase.table("user_settings").select("glucose_unit, cholesterol_unit, show_quick_actions").eq("user_id", patient_profile['user_id']).execute()
         
         if not response.data:
             # Return defaults if no settings record exists yet
-            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
             
         return response.data[0]
     except Exception as e:
@@ -254,15 +361,20 @@ async def update_user_settings(
 @router.get("/me", summary="Get my own full patient profile")
 async def get_own_patient_profile(patient_profile: dict = Depends(get_current_patient_profile)):
     """
-    Retrieves the complete profile for the currently authenticated patient,
-    including details from the `patient_profiles` table.
+    Retrieves the complete profile for the currently authenticated patient.
+    Generates a fresh signed URL for the profile picture if it exists.
     """
-    # The profile_picture_url is retrieved here as part of the 'patient_profile' dictionary
-    # which comes from the 'get_current_patient_profile' dependency querying the 'patient_profiles' table.
-    
-    # Print URL to console as requested
-    print(f"DEBUG: Fetched Profile URL: {patient_profile.get('profile_picture_url')}")
-    
+    avatar_path = patient_profile.get('profile_picture_url')
+    if avatar_path:
+        try:
+            # Generate a signed URL valid for 1 hour
+            res = supabase.storage.from_("Bucket").create_signed_url(avatar_path, 3600)
+            # The response from Supabase Python client for create_signed_url is usually the URL string or a dict
+            signed_url = res if isinstance(res, str) else res.get('signedURL')
+            patient_profile['profile_picture_url'] = signed_url
+        except Exception as e:
+            print(f"DEBUG: Failed to sign avatar URL: {e}")
+
     return patient_profile
 
 @router.put("/me", summary="Update my own patient profile")
@@ -326,9 +438,47 @@ async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patie
     """
     try:
         monitor_data_response = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_profile['id']).execute()
-        return monitor_data_response.data
+        data = monitor_data_response.data
+        
+        # Convert units based on user preference
+        g_unit = patient_profile['settings']['glucose_unit']
+        c_unit = patient_profile['settings']['cholesterol_unit']
+        
+        for item in data:
+            if item['data_type'] == 'GLUCOSE':
+                item['value'] = convert_glucose_from_base(item['value'], g_unit)
+            elif 'CHOLESTEROL' in item['data_type']:
+                item['value'] = convert_cholesterol_from_base(item['value'], c_unit)
+                
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve monitor data: {str(e)}")
+
+@router.post("/me/clinical-documents", summary="Create a clinical document record")
+async def create_clinical_document(
+    doc_data: ClinicalDocumentCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Inserts a record into the clinical_documents table.
+    """
+    try:
+        # Ensure we use the patient_id from the authenticated profile for security
+        payload = {
+            "patient_id": patient_profile['id'],
+            "document_path": doc_data.document_path,
+            "document_type": doc_data.document_type
+        }
+        
+        result = supabase.table("clinical_documents").insert(payload).execute()
+
+        if not result.data:
+            raise HTTPException(status_code=500, detail="Failed to create document record")
+
+        return result.data[0]
+    except Exception as e:
+        print(f"ERROR: create_clinical_document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/me/monitor-data", summary="Add a new monitor data point for myself")
 async def add_own_monitor_data(
@@ -341,6 +491,13 @@ async def add_own_monitor_data(
     """
     insert_dict = data.model_dump(mode='json')
     insert_dict['patient_id'] = patient_profile['id']
+    
+    # Convert to base unit before saving
+    if data.data_type == MonitorDataType.GLUCOSE:
+        insert_dict['value'] = convert_glucose_to_base(data.value, patient_profile['settings']['glucose_unit'])
+    elif 'CHOLESTEROL' in data.data_type:
+        insert_dict['value'] = convert_cholesterol_to_base(data.value, patient_profile['settings']['cholesterol_unit'])
+        
     try:
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
         return new_data_response.data[0]
@@ -374,6 +531,62 @@ async def update_own_monitor_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update monitor data: {str(e)}")
 
+@router.get("/me/disease-logs", summary="Get my disease logs")
+async def get_own_disease_logs(patient_profile: dict = Depends(get_current_patient_profile)):
+    try:
+        response = supabase.table('disease_logs').select('*').eq('patient_id', patient_profile['id']).order('diagnosed_date', desc=True).execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/me/disease-logs", summary="Add a disease log")
+async def add_own_disease_log(
+    log_data: DiseaseLogCreate, 
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        insert_dict = log_data.model_dump(mode='json')
+        insert_dict['patient_id'] = patient_profile['id']
+        
+        # Logic: If status is active, ensure resolved_date is null
+        if log_data.status == 'active':
+            insert_dict['resolved_date'] = None
+            
+        response = supabase.table('disease_logs').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save disease log: {str(e)}")
+
+@router.patch("/me/disease-logs/{log_id}", summary="Update a disease log")
+async def update_own_disease_log(
+    log_id: int,
+    log_update: DiseaseLogUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        update_dict = log_update.model_dump(mode='json', exclude_unset=True)
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+
+        # Logic: If changing to active, wipe the resolved date
+        if update_dict.get('status') == 'active':
+            update_dict['resolved_date'] = None
+
+        response = supabase.table('disease_logs') \
+            .update(update_dict) \
+            .eq('id', log_id) \
+            .eq('patient_id', patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Disease log not found")
+            
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update disease log: {str(e)}")
+
 @router.get("/me/daily-logs", summary="Get all my daily logs")
 async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """
@@ -381,7 +594,14 @@ async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient
     """
     try:
         logs_response = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_profile['id']).execute()
-        return logs_response.data
+        data = logs_response.data
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        for log in data:
+            log['glucose_before_meal'] = convert_glucose_from_base(log.get('glucose_before_meal'), g_unit)
+            log['glucose_after_meal'] = convert_glucose_from_base(log.get('glucose_after_meal'), g_unit)
+            
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve daily logs: {str(e)}")
 
@@ -399,6 +619,12 @@ async def add_own_daily_log(
         # if the user only sends partial data (e.g. only glucose_after)
         data_dict = log_data.model_dump(mode='json', exclude_unset=True)
         data_dict['patient_id'] = patient_profile['id']
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        if 'glucose_before_meal' in data_dict:
+            data_dict['glucose_before_meal'] = convert_glucose_to_base(data_dict['glucose_before_meal'], g_unit)
+        if 'glucose_after_meal' in data_dict:
+            data_dict['glucose_after_meal'] = convert_glucose_to_base(data_dict['glucose_after_meal'], g_unit)
         
         # Check if row exists
         existing = supabase.table('daily_patient_logs')\
@@ -432,16 +658,61 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
     """
     try:
         thresholds_response = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_profile['id']).execute()
-        return thresholds_response.data
+        data = thresholds_response.data
+        
+        g_unit = patient_profile['settings']['glucose_unit']
+        c_unit = patient_profile['settings']['cholesterol_unit']
+
+        for t in data:
+            if t['data_type'] == 'GLUCOSE':
+                t['min_value'] = convert_glucose_from_base(t['min_value'], g_unit)
+                t['max_value'] = convert_glucose_from_base(t['max_value'], g_unit)
+            elif 'CHOLESTEROL' in t['data_type']:
+                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit)
+                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit)
+                
+        return data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve thresholds: {str(e)}")
+
+
+@router.put("/me/thresholds", summary="Update my health thresholds")
+async def update_own_thresholds(
+    data: ThresholdUpdateBatch,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Updates multiple thresholds at once, converting from user units back to base mmol/L"""
+    patient_id = patient_profile['id']
+    g_unit = patient_profile['settings']['glucose_unit']
+    c_unit = patient_profile['settings']['cholesterol_unit']
+
+    try:
+        for t in data.thresholds:
+            min_val = t.min_value
+            max_val = t.max_value
+            
+            if t.data_type == 'GLUCOSE':
+                min_val = convert_glucose_to_base(min_val, g_unit)
+                max_val = convert_glucose_to_base(max_val, g_unit)
+            elif 'CHOLESTEROL' in t.data_type:
+                min_val = convert_cholesterol_to_base(min_val, c_unit)
+                max_val = convert_cholesterol_to_base(max_val, c_unit)
+
+            supabase.table('patient_thresholds').update({
+                'min_value': min_val,
+                'max_value': max_val
+            }).eq('patient_id', patient_id).eq('data_type', t.data_type).execute()
+
+        return {"message": "Thresholds updated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update thresholds: {str(e)}")
 
 
 @router.get("/me/activity-logs", summary="Get my activity logs")
 async def get_own_activity_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """Retrieves all activity logs."""
     try:
-        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('performed_at', desc=True).execute()
+        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('start_time', desc=True).execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve activity logs: {str(e)}")
@@ -674,30 +945,70 @@ async def upload_patient_avatar(
         file_content = await file.read()
 
         # 1. Upload to Supabase Storage
-        # Note: 'upsert' options are handled differently in python client versions, 
-        # usually default upload overwrites or we handle errors.
-        # Ensure your Bucket is named "Bucket"
-        res = supabase.storage.from_("Bucket").upload(
+        supabase.storage.from_("Bucket").upload(
             file=file_content,
             path=filename,
             file_options={"content-type": file.content_type, "upsert": "true"}
         )
 
-        # 2. Get Public URL
-        # Append timestamp to query param to bust frontend cache since filename stays constant
-        public_url = supabase.storage.from_("Bucket").get_public_url(filename)
-        public_url_with_cache_bust = f"{public_url}?t={int(time.time())}"
-
-        # 3. Update Database Profile
-        update_res = supabase.table('patient_profiles').update({
-            "profile_picture_url": public_url_with_cache_bust
+        # 2. Update Database Profile with the PATH, not the URL
+        supabase.table('patient_profiles').update({
+            "profile_picture_url": filename
         }).eq('id', patient_profile['id']).execute()
 
-        return {"url": public_url_with_cache_bust}
+        # 3. Return a signed URL for immediate UI update
+        res = supabase.storage.from_("Bucket").create_signed_url(filename, 3600)
+        return {"url": res.get('signedURL'), "path": filename}
 
     except Exception as e:
         print(f"Upload Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+
+@router.post("/me/clinical-documents/upload", summary="Upload and record a clinical document")
+async def upload_clinical_document(
+    file: UploadFile = File(...),
+    document_type: str = Form(...),
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """
+    Uploads a file to the clinical-documents bucket and creates a DB record.
+    Returns the record including the generated ID and storage path.
+    """
+    try:
+        user_id = patient_profile['user_id']
+        filename_parts = file.filename.split('.')
+        file_ext = filename_parts[-1] if len(filename_parts) > 1 else "bin"
+        timestamp = int(time.time())
+        
+        # Path: {user_id}/{doc_type}/{timestamp}.{ext}
+        folder = document_type.lower().replace(" ", "_")
+        storage_path = f"{user_id}/{folder}/{timestamp}.{file_ext}"
+        
+        file_content = await file.read()
+
+        # 1. Upload to Storage
+        supabase.storage.from_("clinical-documents").upload(
+            file=file_content,
+            path=storage_path,
+            file_options={"content-type": file.content_type or "application/octet-stream", "upsert": "true"}
+        )
+
+        # 2. Create DB Record
+        result = supabase.table("clinical_documents").insert({
+            "patient_id": patient_profile['id'],
+            "document_path": storage_path,
+            "document_type": document_type
+        }).execute()
+
+        if not result.data:
+            raise Exception("Failed to insert document record into database")
+
+        return result.data[0]
+
+    except Exception as e:
+        print(f"ERROR: upload_clinical_document: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
 
 @router.post("/me/meal-photo", summary="Upload meal photo")
 async def upload_meal_photo(

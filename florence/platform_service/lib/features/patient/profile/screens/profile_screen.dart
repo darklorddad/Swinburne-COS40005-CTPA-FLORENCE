@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:package_info_plus/package_info_plus.dart';
+import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/providers/theme_provider.dart';
-import '../../../../core/services/api_service.dart'; // Added
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../main.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../chat/services/chatbot_service.dart';
-import '../../core/providers/medication_providers.dart';
-import '../../core/providers/settings_providers.dart';
-import '../../core/repositories/medication_repository.dart';
-import '../../dashboard/widgets/medication_section.dart';
-import '../providers/user_profile_provider.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/services/api_service.dart'; // Added
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/repositories/medication_repository.dart';
+import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings
@@ -30,6 +28,8 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  String _diseaseFilter = 'ACTIVE';
+
   // Mock user data (fallback)
   String _userName = 'John Doe';
   String _userEmail = 'john.doe@example.com';
@@ -154,25 +154,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   // Medication Cabinet Filter
   String _medFilter = 'Active';
 
-  // App info
-  String _appVersion = '';
-  
-  @override
-  void initState() {
-    super.initState();
-    _loadAppVersion();
-  }
-
-  Future<void> _loadAppVersion() async {
-    final packageInfo = await PackageInfo.fromPlatform();
-    if (mounted) {
-      setState(() {
-        // Display as "1.0.0 (1)"
-        _appVersion = '${packageInfo.version} (${packageInfo.buildNumber})';
-      });
-    }
-  }
-
   /// Upload Profile Picture via Backend
   Future<void> _uploadProfilePicture() async {
     final picker = ImagePicker();
@@ -201,10 +182,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         fileName
       );
 
+      // The Data Service now returns the signed URL in the response['url']
+      final String? signedUrl = response['url'];
+
       // Optimistic update
       if (mounted) {
         setState(() {
-          _profileImageUrl = response['url'];
+          if (signedUrl != null) _profileImageUrl = signedUrl;
         });
         Helpers.hideLoadingDialog(context);
         Helpers.showSuccess(context, 'Profile picture updated');
@@ -219,30 +203,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
   
-  /// Handle logout
-  Future<void> _handleLogout() async {
-    final confirmed = await Helpers.showConfirmDialog(
-      context,
-      title: 'Sign Out',
-      message: 'Are you sure you want to sign out?',
-    );
-    
-    if (confirmed) {
-      try {
-        // Clear chatbot session state
-        ref.read(chatProvider.notifier).resetSession();
-        
-        // Sign out - this triggers the onAuthStateChange listener in app.dart
-        // which handles the navigation to the login screen.
-        await supabase.auth.signOut();
-      } catch (e) {
-        if (mounted) {
-          // Fallback manual navigation if error occurs
-          AppRoutes.pushAndRemoveUntil(context, AppRoutes.login);
-        }
-      }
-    }
-  }
   
   /// Edit profile
   void _editProfile() {
@@ -375,7 +335,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SizedBox(
                           width: 100,
                           child: DropdownButtonFormField<String>(
-                            value: selectedPhoneCode,
+                            initialValue: selectedPhoneCode,
                             isExpanded: true,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
@@ -457,7 +417,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         SizedBox(
                           width: 100,
                           child: DropdownButtonFormField<String>(
-                            value: selectedEcPhoneCode,
+                            initialValue: selectedEcPhoneCode,
                             isExpanded: true,
                             decoration: InputDecoration(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
@@ -549,36 +509,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
   
   
-  /// Toggle dark mode
-  void _toggleDarkMode(bool value) {
-    ref.read(themeProvider.notifier).setTheme(
-          value ? ThemeMode.dark : ThemeMode.light,
-        );
-  }
-  
-  /// Check for updates
-  void _checkForUpdates() {
-    Helpers.showInfo(context, 'You are using the latest version ($_appVersion)');
-    // TODO: Implement version check
-  }
-  
   @override
   Widget build(BuildContext context) {
     final userProfileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profile & Settings'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: _handleLogout,
-              tooltip: 'Sign Out',
-            ),
-          ),
-        ],
+        title: const Text('My Profile'),
       ),
       body: userProfileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -618,7 +555,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.only(
+                        left: 16, right: 16, top: 16, bottom: 100),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -633,25 +571,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       // Medication Cabinet Section
                       _buildMedicationCabinetSection(),
                       const SizedBox(height: 16),
-                      
-                      // Settings section
-                      _buildSettingsSection(),
-                      const SizedBox(height: 16),
-                      
-                      // About section
-                      _buildAboutSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Sign out button
-                      OutlinedButton(
-                        onPressed: _handleLogout,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppTheme.errorColor,
-                          side: BorderSide(color: AppTheme.errorColor),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text('Sign Out'),
-                      ),
+
+                      // Disease Log Section
+                      _buildDiseaseLogSection(context, ref),
                       const SizedBox(height: 24),
                     ],
                   ),
@@ -688,7 +610,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           height: 100,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: AppTheme.primaryBlue.withOpacity(0.1),
+                            color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                             border: Border.all(color: AppTheme.borderColor),
                           ),
                           child: ClipOval(
@@ -898,7 +820,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryBlue.withOpacity(0.1),
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(Icons.medication_rounded,
@@ -989,7 +911,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           setState(() => _medFilter = label);
         }
       },
-      selectedColor: AppTheme.primaryBlue.withOpacity(0.2),
+      selectedColor: AppTheme.primaryBlue.withValues(alpha: 0.2),
       labelStyle: TextStyle(
         color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -997,7 +919,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       showCheckmark: false,
       backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withOpacity(0.05)
+          ? Colors.white.withValues(alpha: 0.05)
           : Colors.grey.shade100,
       side: BorderSide.none,
     );
@@ -1073,8 +995,374 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  Widget _buildDiseaseLogSection(BuildContext context, WidgetRef ref) {
+    final diseaseLogsAsync = ref.watch(diseaseLogProvider);
+
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionHeader('Disease Log', Icons.history_edu_outlined),
+              IconButton(
+                onPressed: () => _showDiseaseFormModal(context, ref),
+                icon: const Icon(Icons.add_circle_outline,
+                    color: AppTheme.primaryBlue),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Custom Segmented Filter Control
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildDiseaseFilterButton('ACTIVE', 'Active'),
+                _buildDiseaseFilterButton('RESOLVED', 'Resolved'),
+                _buildDiseaseFilterButton('ALL', 'All'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          diseaseLogsAsync.when(
+            data: (logs) {
+              final filteredLogs = logs.where((log) {
+                if (_diseaseFilter == 'ALL') return true;
+                return log.status.toUpperCase() == _diseaseFilter;
+              }).toList();
+
+              if (filteredLogs.isEmpty) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32),
+                  child: Center(
+                    child: Text("No disease history found.",
+                        style: TextStyle(color: Colors.grey)),
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: filteredLogs.length,
+                separatorBuilder: (context, index) => const Divider(height: 24),
+                itemBuilder: (context, index) {
+                  final log = filteredLogs[index];
+                  final isActive = log.status.toLowerCase() == 'active';
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: isActive ? Colors.red[50] : Colors.green[50],
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.medical_services_outlined,
+                          color: isActive ? Colors.red : Colors.green,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              log.conditionName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "Diagnosed: ${log.diagnosedDate != null ? DateFormat('dd MMM yyyy').format(log.diagnosedDate!) : 'Unknown'}",
+                              style: const TextStyle(
+                                  color: Colors.grey, fontSize: 13),
+                            ),
+                            if (!isActive && log.resolvedDate != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                "Resolved: ${DateFormat('dd MMM yyyy').format(log.resolvedDate!)}",
+                                style: const TextStyle(
+                                    color: Colors.grey, fontSize: 13),
+                              ),
+                            ]
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color:
+                                  isActive ? Colors.red[50] : Colors.green[50],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              isActive ? 'ACTIVE' : 'RESOLVED',
+                              style: TextStyle(
+                                color: isActive ? Colors.red : Colors.green,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          PopupMenuButton<String>(
+                            icon:
+                                const Icon(Icons.more_horiz, color: Colors.grey),
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                _showDiseaseFormModal(context, ref,
+                                    existingLog: log);
+                              } else if (value == 'resolve') {
+                                _promptResolveDate(context, ref, log);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              const PopupMenuItem(
+                                  value: 'edit', child: Text('Edit')),
+                              if (isActive)
+                                const PopupMenuItem(
+                                    value: 'resolve',
+                                    child: Text('Mark as Resolved')),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (e, _) => Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text("Error loading logs: $e"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDiseaseFilterButton(String filterValue, String label) {
+    final isSelected = _diseaseFilter == filterValue;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _diseaseFilter = filterValue;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryBlue : Colors.grey[600],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDiseaseFormModal(BuildContext context, WidgetRef ref,
+      {DiseaseLog? existingLog}) {
+    final isEditing = existingLog != null;
+    final nameController =
+        TextEditingController(text: existingLog?.conditionName ?? '');
+    String status = existingLog?.status ?? 'active';
+    DateTime? diagnosedDate = existingLog?.diagnosedDate;
+    DateTime? resolvedDate = existingLog?.resolvedDate;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isEditing ? "Edit Condition" : "Log Medical Condition",
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                    labelText: 'Condition Name',
+                    hintText: 'e.g. Type 2 Diabetes'),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: status,
+                decoration: const InputDecoration(labelText: 'Status'),
+                items: const [
+                  DropdownMenuItem(value: 'active', child: Text("Active")),
+                  DropdownMenuItem(value: 'resolved', child: Text("Resolved")),
+                ],
+                onChanged: (val) => setModalState(() {
+                  status = val!;
+                  if (status == 'active') resolvedDate = null;
+                }),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(diagnosedDate == null
+                    ? "Select Diagnosed Date"
+                    : "Diagnosed: ${DateFormat('dd MMM yyyy').format(diagnosedDate!)}"),
+                trailing: const Icon(Icons.calendar_today),
+                onTap: () async {
+                  final date = await showDatePicker(
+                      context: context,
+                      initialDate: diagnosedDate ?? DateTime.now(),
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now());
+                  if (date != null) setModalState(() => diagnosedDate = date);
+                },
+              ),
+              if (status == 'resolved')
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(resolvedDate == null
+                      ? "Select Resolved Date"
+                      : "Resolved: ${DateFormat('dd MMM yyyy').format(resolvedDate!)}"),
+                  trailing: const Icon(Icons.calendar_today),
+                  onTap: () async {
+                    final date = await showDatePicker(
+                        context: context,
+                        initialDate: resolvedDate ?? DateTime.now(),
+                        firstDate: diagnosedDate ?? DateTime(1900),
+                        lastDate: DateTime.now());
+                    if (date != null) setModalState(() => resolvedDate = date);
+                  },
+                ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (nameController.text.isNotEmpty) {
+                      final log = DiseaseLog(
+                        conditionName: nameController.text,
+                        status: status,
+                        diagnosedDate: diagnosedDate,
+                        resolvedDate: resolvedDate,
+                      );
+
+                      if (isEditing) {
+                        await ref
+                            .read(diseaseLogProvider.notifier)
+                            .updateLog(existingLog.id!, log);
+                      } else {
+                        await ref.read(diseaseLogProvider.notifier).addLog(log);
+                      }
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
+                  child: Text(isEditing ? "Save Changes" : "Save Condition"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _promptResolveDate(
+      BuildContext context, WidgetRef ref, DiseaseLog log) async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: log.diagnosedDate ?? DateTime(1900),
+      lastDate: DateTime.now(),
+      helpText: 'Select Date Resolved',
+    );
+
+    if (selectedDate != null && log.id != null) {
+      final updatedLog = DiseaseLog(
+        conditionName: log.conditionName,
+        status: 'resolved',
+        diagnosedDate: log.diagnosedDate,
+        resolvedDate: selectedDate,
+        notes: log.notes,
+      );
+
+      await ref.read(diseaseLogProvider.notifier).updateLog(log.id!, updatedLog);
+    }
+  }
+
   /// Build health profile section
   Widget _buildHealthProfileSection() {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+    final settings = ref.watch(patientSettingsProvider);
+
+    final labels = {
+      'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
+      'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
+      'GLUCOSE': 'Glucose',
+      'BMI': 'Healthy BMI',
+      'HBA1C': 'HbA1c',
+      'CHOLESTEROL_TOTAL': 'Total Cholesterol',
+      'CHOLESTEROL_LDL': 'LDL Cholesterol',
+      'CHOLESTEROL_HDL': 'HDL Cholesterol',
+      'CHOLESTEROL_TRIGLYCERIDES': 'Triglycerides'
+    };
+
+    String getUnit(String type) {
+      if (type == 'GLUCOSE') return settings.glucoseUnit;
+      if (type.contains('CHOLESTEROL')) return settings.cholesterolUnit;
+      if (type.contains('BLOOD_PRESSURE')) return 'mmHg';
+      if (type == 'HBA1C') return '%';
+      return '';
+    }
+
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1083,208 +1371,194 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildSectionHeader('Health Profile', Icons.favorite_outline),
-              IconButton(
-                icon: const Icon(Icons.edit_outlined, size: 20),
-                onPressed: _editHealthProfile,
-                tooltip: 'Edit',
+              TextButton(
+                onPressed: thresholdsAsync.value == null
+                    ? null
+                    : () => _showEditThresholdsModal(
+                        context, ref, thresholdsAsync.value!, labels, getUnit),
+                child: const Text('Edit',
+                    style: TextStyle(color: AppTheme.primaryBlue)),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          
-          const Divider(height: 24),
-          _buildInfoRow(
-            'Target Glucose Range',
-            '${_targetMin.toInt()}-${_targetMax.toInt()} mg/dL',
-            Icons.track_changes,
-          ),
-        ],
-      ),
-    );
-  }
-  
-  /// Build settings section
-  Widget _buildSettingsSection() {
-    final settings = ref.watch(patientSettingsProvider);
-
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('Settings', Icons.settings_outlined),
-          const SizedBox(height: 16),
-
-          _buildInteractiveSettingRow(
-            title: 'Glucose Unit',
-            currentValue: settings.glucoseUnit,
-            icon: Icons.straighten,
-            options: ['mmol/L', 'mg/dL'],
-            onSelect: (value) {
-              ref.read(patientSettingsProvider.notifier).updateGlucoseUnit(value);
-              Helpers.showSuccess(context, 'Glucose unit changed to $value');
-            },
-          ),
-          const Divider(height: 1),
-
-          _buildInteractiveSettingRow(
-            title: 'Cholesterol Unit',
-            currentValue: settings.cholesterolUnit,
-            icon: Icons.bloodtype_outlined,
-            options: ['mmol/L', 'mg/dL'],
-            onSelect: (value) {
-              ref.read(patientSettingsProvider.notifier).updateCholesterolUnit(value);
-              Helpers.showSuccess(context, 'Cholesterol unit changed to $value');
-            },
-          ),
-          const Divider(height: 24),
-
-          // Dark mode toggle
-          _buildSettingToggle(
-            'Dark Mode',
-            'Switch between light and dark theme',
-            Icons.dark_mode_outlined,
-            ref.watch(themeProvider) == ThemeMode.dark,
-            _toggleDarkMode,
-          ),
-          const Divider(height: 24),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInteractiveSettingRow({
-    required String title,
-    required String currentValue,
-    required IconData icon,
-    required List<String> options,
-    required Function(String) onSelect,
-  }) {
-    return InkWell(
-      onTap: () => _showUnitSelectionModal(title, currentValue, options, onSelect),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
+          thresholdsAsync.when(
+            data: (thresholds) {
+              if (thresholds.isEmpty) return const Text("No thresholds found.");
+              return Column(
+                children: thresholds.map((t) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(labels[t.dataType] ?? t.dataType,
+                            style: const TextStyle(
+                                fontSize: 15, color: Colors.grey)),
+                        Text(
+                          '${t.minValue} - ${t.maxValue} ${getUnit(t.dataType)}',
+                          style: const TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
-              ),
+                  );
+                }).toList(),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Text("Error: $e"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditThresholdsModal(
+      BuildContext context,
+      WidgetRef ref,
+      List<PatientThreshold> currentThresholds,
+      Map<String, String> labels,
+      Function(String) getUnit) {
+    final Map<String, TextEditingController> minControllers = {};
+    final Map<String, TextEditingController> maxControllers = {};
+    final formKey = GlobalKey<FormState>();
+
+    for (var t in currentThresholds) {
+      minControllers[t.dataType] =
+          TextEditingController(text: t.minValue.toString());
+      maxControllers[t.dataType] =
+          TextEditingController(text: t.maxValue.toString());
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+            left: 20,
+            right: 20,
+            top: 20),
+        child: FractionallySizedBox(
+          heightFactor: 0.8,
+          child: Form(
+            key: formKey,
+            child: Column(
+              children: [
+                const Text("Edit Health Thresholds",
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: ListView(
+                    children: currentThresholds.map((t) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                                "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: minControllers[t.dataType],
+                                    decoration: const InputDecoration(
+                                        labelText: 'Min', isDense: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final minVal = double.tryParse(value);
+                                      if (minVal == null) return 'Numbers only';
+                                      final maxVal = double.tryParse(
+                                          maxControllers[t.dataType]!.text);
+                                      if (maxVal != null && minVal >= maxVal) {
+                                        return 'Must be < Max';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: maxControllers[t.dataType],
+                                    decoration: const InputDecoration(
+                                        labelText: 'Max', isDense: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
+                                    autovalidateMode:
+                                        AutovalidateMode.onUserInteraction,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Required';
+                                      }
+                                      final maxVal = double.tryParse(value);
+                                      if (maxVal == null) return 'Numbers only';
+                                      final minVal = double.tryParse(
+                                          minControllers[t.dataType]!.text);
+                                      if (minVal != null && maxVal <= minVal) {
+                                        return 'Must be > Min';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (!formKey.currentState!.validate()) return;
+
+                      final List<PatientThreshold> updated = [];
+                      for (var t in currentThresholds) {
+                        updated.add(PatientThreshold(
+                          dataType: t.dataType,
+                          minValue:
+                              double.parse(minControllers[t.dataType]!.text),
+                          maxValue:
+                              double.parse(maxControllers[t.dataType]!.text),
+                        ));
+                      }
+                      await ref
+                          .read(patientThresholdsProvider.notifier)
+                          .updateThresholds(updated);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                    child: const Text("Save Changes"),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              currentValue,
-              style: const TextStyle(
-                fontSize: 14,
-                color: AppTheme.primaryBlue,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 8),
-            const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor, size: 20),
-          ],
+          ),
         ),
       ),
     );
   }
-
-  void _showUnitSelectionModal(
-    String title,
-    String currentValue,
-    List<String> options,
-    Function(String) onSelect,
-  ) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Select $title',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((option) {
-                  final isSelected = option == currentValue;
-                  return ListTile(
-                    title: Text(
-                      option,
-                      style: TextStyle(
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? AppTheme.primaryBlue : null,
-                      ),
-                    ),
-                    trailing: isSelected ? const Icon(Icons.check, color: AppTheme.primaryBlue) : null,
-                    onTap: () {
-                      onSelect(option);
-                      Navigator.pop(context);
-                    },
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
   
-  /// Build about section
-  Widget _buildAboutSection() {
-    return BaseCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('About', Icons.info_outline),
-          const SizedBox(height: 16),
-          
-          _buildInfoRow(
-            'App Version',
-            _appVersion,
-            Icons.phone_android,
-          ),
-          const Divider(height: 24),
-          
-          _buildSettingItem(
-            'Check for Updates',
-            'Tap to check',
-            Icons.system_update,
-            onTap: _checkForUpdates,
-            showChevron: true,
-          ),
-          const Divider(height: 24),
-          
-          _buildSettingItem(
-            'Privacy Policy',
-            'View our privacy policy',
-            Icons.privacy_tip_outlined,
-            onTap: () => Helpers.showInfo(context, 'Privacy policy coming soon'),
-            showChevron: true,
-          ),
-          const Divider(height: 24),
-          
-          _buildSettingItem(
-            'Terms of Service',
-            'View terms of service',
-            Icons.description_outlined,
-            onTap: () => Helpers.showInfo(context, 'Terms coming soon'),
-            showChevron: true,
-          ),
-        ],
-      ),
-    );
-  }
   
   /// Build section header
   Widget _buildSectionHeader(String title, IconData icon) {
@@ -1340,101 +1614,5 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
   
-  /// Build setting item (clickable)
-  Widget _buildSettingItem(
-    String title,
-    String subtitle,
-    IconData icon, {
-    VoidCallback? onTap,
-    bool showChevron = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: AppTheme.textSecondaryColor,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            if (showChevron)
-              Icon(
-                Icons.chevron_right,
-                color: AppTheme.textSecondaryColor,
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  /// Build setting toggle
-  Widget _buildSettingToggle(
-    String title,
-    String subtitle,
-    IconData icon,
-    bool value,
-    ValueChanged<bool> onChanged,
-  ) {
-    return Row(
-      children: [
-        Icon(
-          icon,
-          size: 20,
-          color: AppTheme.textSecondaryColor,
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
-          ),
-        ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: AppTheme.primaryBlue,
-        ),
-      ],
-    );
-  }
   
 }

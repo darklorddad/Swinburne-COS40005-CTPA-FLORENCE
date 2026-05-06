@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 // Admin-side imports
-import '../features/admin/dashboard/screens/admin_dashboard_screen.dart';
-import '../features/auth/screens/login_screen.dart';
-import '../features/auth/screens/register_screen.dart';
-import '../features/auth/screens/splash_screen.dart';
-import '../features/clinician/screens/clinician_home_screen.dart';
-import '../features/clinician/screens/clinician_profile_screen.dart';
-import '../features/clinician/screens/patient_detail_screen.dart';
-import '../features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
-import '../features/patient/chat/screens/chat_screen.dart';
-import '../features/patient/dashboard/screens/activity_detail_screen.dart';
-import '../features/patient/dashboard/screens/blood_pressure_detail_screen.dart';
-import '../features/patient/dashboard/screens/bmi_detail_screen.dart';
-import '../features/patient/dashboard/screens/glucose_detail_screen.dart';
-import '../features/patient/dashboard/screens/hba1c_detail_screen.dart';
-import '../features/patient/logging/screens/log_activity_screen.dart';
-import '../features/patient/logging/screens/log_blood_pressure_screen.dart';
-import '../features/patient/logging/screens/log_bmi_screen.dart';
-import '../features/patient/logging/screens/log_cholesterol_screen.dart';
-import '../features/patient/logging/screens/log_glucose_screen.dart';
-import '../features/patient/logging/screens/log_hba1c_screen.dart';
-import '../features/patient/logging/screens/log_meal_screen.dart';
-import '../features/patient/medication/screens/medication_logging_screen.dart';
-import '../features/patient/profile/screens/profile_screen.dart';
-import '../features/patient/recommendations/screens/recommendations_screen.dart';
+import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
+import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/patients/screens/patients_list_screen.dart';
+import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
+import 'package:florence/features/auth/screens/login_screen.dart';
+import 'package:florence/features/auth/screens/register_screen.dart';
+import 'package:florence/features/auth/screens/splash_screen.dart';
+import 'package:florence/features/clinician/screens/clinician_home_screen.dart';
+import 'package:florence/features/clinician/screens/clinician_profile_screen.dart';
+import 'package:florence/features/clinician/screens/patient_detail_screen.dart';
+import 'package:florence/features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
+import 'package:florence/features/patient/chat/screens/chat_screen.dart';
+import 'package:florence/features/patient/activity/screens/activity_unified_container.dart';
+import 'package:florence/features/patient/blood_pressure/screens/blood_pressure_unified_container.dart';
+import 'package:florence/features/patient/bmi/screens/bmi_unified_container.dart';
+import 'package:florence/features/patient/cholesterol/screens/cholesterol_unified_container.dart';
+import 'package:florence/features/patient/diet/screens/diet_unified_container.dart';
+import 'package:florence/features/patient/glucose/screens/glucose_unified_container.dart';
+import 'package:florence/features/patient/hba1c/screens/hba1c_unified_container.dart';
+import 'package:florence/features/patient/medication/screens/medication_logging_screen.dart';
+import 'package:florence/features/patient/notifications/screens/notifications_screen.dart';
+import 'package:florence/features/patient/profile/screens/profile_screen.dart';
+import 'package:florence/features/patient/profile/screens/settings_screen.dart';
+import 'package:florence/features/patient/recommendations/screens/recommendations_screen.dart';
 
 /// Application routing configuration
 /// Centralized navigation management
@@ -43,6 +44,8 @@ class AppRoutes {
   static const String activityDetail = '/trends/activity-detail';
   static const String bmiDetail = '/bmi-detail';
   static const String hba1cDetail = '/hba1c-detail';
+  static const String cholesterolDetail = '/cholesterol-detail';
+  static const String mealDetail = '/meal-detail';
 
   static const String chat = '/chat';
   static const String recommendations = '/recommendations';
@@ -67,11 +70,16 @@ class AppRoutes {
   static const String logBmi = '/log/bmi';
   static const String logHba1c = '/log/Hba1c';
 
-  // Clinician/Admin routes
+  // Clinician routes
   static const String clinicianDashboard = '/clinician-dashboard';
   static const String clinicianPatientDetail = '/clinician/patient-detail';
   static const String clinicianProfile = '/clinician/profile';
+
+  // Admin routes
   static const String adminDashboard = '/admin-dashboard';
+  static const String adminLogin = '/admin/login';
+  static const String adminPatientList = '/admin/patients';
+  static const String adminPatientDetail = '/admin/patient-detail';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -101,23 +109,31 @@ class AppRoutes {
         return _buildRoute(const PatientBottomNavBarShell(), settings);
 
       case trends:
-        return _buildRoute(const GlucoseDetailScreen(), settings);
+        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 0), settings);
 
       case trendsDetail:
-        return _buildRoute(
-            const GlucoseDetailScreen());
+        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 0), settings);
 
       case bloodPressureDetail:
-        return _buildRoute(const BloodPressureDetailScreen());
+        return _buildRoute(const BloodPressureUnifiedContainer(initialTab: 0));
 
       case activityDetail:
-        return _buildRoute(const ActivityDetailScreen());
+        return _buildRoute(const ActivityUnifiedContainer(initialTab: 0));
 
       case bmiDetail:
-        return _buildRoute(const BmiDetailScreen());
+        return _buildRoute(const BmiUnifiedContainer(initialTab: 0));
 
       case hba1cDetail:
-        return _buildRoute(const HbA1cDetailScreen());
+        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 0));
+
+      case cholesterolDetail:
+        return _buildRoute(const CholesterolUnifiedContainer(initialTab: 0));
+
+      case mealDetail:
+        return _buildRoute(const DietUnifiedContainer(initialTab: 0));
+
+      case notifications:
+        return _buildRoute(const NotificationsScreen());
 
       case chat:
         return _buildRoute(const ChatScreen(), settings);
@@ -128,29 +144,32 @@ class AppRoutes {
       case profile:
         return _buildRoute(const ProfileScreen(), settings);
 
+      case AppRoutes.settings:
+        return _buildRoute(const SettingsScreen(), settings);
+
       case logGlucose:
-        return _buildRoute(const LogGlucoseScreen(), settings);
+        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 1), settings);
 
       case logMeal:
-        return _buildRoute(const LogMealScreen(), settings);
+        return _buildRoute(const DietUnifiedContainer(initialTab: 1), settings);
 
       case logActivity:
-        return _buildRoute(const LogActivityScreen(), settings);
+        return _buildRoute(const ActivityUnifiedContainer(initialTab: 1), settings);
 
       case logMedication:
         return _buildRoute(const MedicationLoggingScreen(), settings);
 
       case logBloodPressure:
-        return _buildRoute(const LogBloodPressureScreen(), settings);
+        return _buildRoute(const BloodPressureUnifiedContainer(initialTab: 1), settings);
 
       case logCholesterol:
-        return _buildRoute(const LogCholesterolScreen(), settings);
+        return _buildRoute(const CholesterolUnifiedContainer(initialTab: 1), settings);
 
       case logBmi:
-        return _buildRoute(const LogBmiScreen(), settings);
+        return _buildRoute(const BmiUnifiedContainer(initialTab: 1), settings);
 
       case logHba1c:
-        return _buildRoute(const LogHba1cScreen(), settings);
+        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 1), settings);
 
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);
@@ -164,6 +183,24 @@ class AppRoutes {
       case adminDashboard:
         return _buildRoute(const AdminDashboardScreen(), settings);
 
+      case adminLogin:
+        return _buildRoute(const AdminLoginScreen(), settings);
+
+      case adminPatientList:
+        return _buildRoute(const PatientsListScreen(), settings);
+
+      case adminPatientDetail:
+        if (args is Map<String, dynamic>) {
+          return _buildRoute(AdminPatientDetailScreen(patientData: args), settings);
+        } else {
+          return _buildRoute(
+            Scaffold(
+              body: Center(child: Text('Invalid arguments for ${settings.name}')),
+            ),
+            settings,
+          );
+        }
+
       default:
         return _buildRoute(
           Scaffold(
@@ -173,9 +210,9 @@ class AppRoutes {
     }
   }
 
-  /// Helper method to build routes with transitions
-  static MaterialPageRoute _buildRoute(Widget page, [RouteSettings? settings]) {
-    return MaterialPageRoute(builder: (_) => page, settings: settings);
+  /// Helper method to build routes with premium iOS-style transitions
+  static Route<dynamic> _buildRoute(Widget page, [RouteSettings? settings]) {
+    return CupertinoPageRoute(builder: (_) => page, settings: settings);
   }
 
   /// Navigation helpers

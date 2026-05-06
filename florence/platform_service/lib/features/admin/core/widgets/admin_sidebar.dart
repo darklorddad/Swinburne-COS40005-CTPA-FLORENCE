@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../config/admin_theme.dart';
-import '../models/admin_enums.dart';
-import '../services/permission_service.dart';
-import 'permission_guard.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/features/admin/core/widgets/permission_guard.dart';
 
 /// Admin Sidebar Navigation
 /// Left sidebar menu with permission-based navigation items
@@ -218,7 +218,7 @@ class AdminSidebar extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AdminTheme.primaryLight.withOpacity(0.2),
+                  color: AdminTheme.primaryLight.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
@@ -241,7 +241,7 @@ class AdminSidebar extends StatelessWidget {
                   Text(
                     'Admin Portal',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AdminTheme.textOnDark.withOpacity(0.6),
+                          color: AdminTheme.textOnDark.withValues(alpha: 0.6),
                         ),
                   ),
                 ],
@@ -259,7 +259,7 @@ class AdminSidebar extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AdminTheme.textOnDark.withOpacity(0.5),
+              color: AdminTheme.textOnDark.withValues(alpha: 0.5),
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
             ),
@@ -287,12 +287,12 @@ class AdminSidebar extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
               color: isActive
-                  ? AdminTheme.primaryIndigo.withOpacity(0.15)
+                  ? AdminTheme.primaryIndigo.withValues(alpha: 0.15)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isActive
-                    ? AdminTheme.primaryIndigo.withOpacity(0.3)
+                    ? AdminTheme.primaryIndigo.withValues(alpha: 0.3)
                     : Colors.transparent,
                 width: 1,
               ),
@@ -304,7 +304,7 @@ class AdminSidebar extends StatelessWidget {
                   size: 20,
                   color: isActive
                       ? AdminTheme.primaryLight
-                      : AdminTheme.textOnDark.withOpacity(0.7),
+                      : AdminTheme.textOnDark.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -313,7 +313,7 @@ class AdminSidebar extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isActive
                               ? AdminTheme.textOnDark
-                              : AdminTheme.textOnDark.withOpacity(0.8),
+                              : AdminTheme.textOnDark.withValues(alpha: 0.8),
                           fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                         ),
                   ),
@@ -412,7 +412,7 @@ class AdminSidebar extends StatelessWidget {
     required VoidCallback onTap,
     Color? color,
   }) {
-    final itemColor = color ?? AdminTheme.textOnDark.withOpacity(0.6);
+    final itemColor = color ?? AdminTheme.textOnDark.withValues(alpha: 0.6);
 
     return Material(
       color: Colors.transparent,
@@ -510,12 +510,12 @@ class _AdminSidebarItemState extends State<AdminSidebarItem> {
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
                   color: widget.isActive
-                      ? AdminTheme.primaryIndigo.withOpacity(0.15)
+                      ? AdminTheme.primaryIndigo.withValues(alpha: 0.15)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
                     color: widget.isActive
-                        ? AdminTheme.primaryIndigo.withOpacity(0.3)
+                        ? AdminTheme.primaryIndigo.withValues(alpha: 0.3)
                         : Colors.transparent,
                     width: 1,
                   ),
@@ -527,7 +527,7 @@ class _AdminSidebarItemState extends State<AdminSidebarItem> {
                       size: 20,
                       color: widget.isActive
                           ? AdminTheme.primaryLight
-                          : AdminTheme.textOnDark.withOpacity(0.7),
+                          : AdminTheme.textOnDark.withValues(alpha: 0.7),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -536,7 +536,7 @@ class _AdminSidebarItemState extends State<AdminSidebarItem> {
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: widget.isActive
                                   ? AdminTheme.textOnDark
-                                  : AdminTheme.textOnDark.withOpacity(0.8),
+                                  : AdminTheme.textOnDark.withValues(alpha: 0.8),
                               fontWeight:
                                   widget.isActive ? FontWeight.w600 : FontWeight.w500,
                             ),
@@ -563,7 +563,7 @@ class _AdminSidebarItemState extends State<AdminSidebarItem> {
                       Icon(
                         _isExpanded ? Icons.expand_less : Icons.expand_more,
                         size: 20,
-                        color: AdminTheme.textOnDark.withOpacity(0.5),
+                        color: AdminTheme.textOnDark.withValues(alpha: 0.5),
                       ),
                   ],
                 ),

@@ -3,7 +3,6 @@
 library;
 
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:crypto/crypto.dart';
 
 /// Service for encrypting and decrypting sensitive data

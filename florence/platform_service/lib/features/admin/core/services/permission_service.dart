@@ -1,6 +1,6 @@
-import '../models/admin_enums.dart';
-import '../models/admin_user.dart';
-import 'admin_auth_service.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/models/admin_user.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
 
 /// Permission Service
 /// Centralized permission checking and validation

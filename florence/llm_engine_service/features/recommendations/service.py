@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timezone
 from langchain_core.messages import HumanMessage, SystemMessage
 from config import settings as global_settings
@@ -10,42 +11,27 @@ from features.recommendations.models import (
     HealthRecommendationItem,
 )
 
-_SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform, specialising in Type 2 diabetes and pre-diabetes management.
+_SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
+You will receive a patient's health summary. Generate 2–3 concise, evidence-based health recommendations.
 
-You will receive a patient's aggregated health summary for a recent monitoring period. Your task is to generate 2–6 personalised, evidence-based health recommendations.
-
-## Clinical Reference Values
-- Target blood glucose range: 70–180 mg/dL (time-in-range goal ≥70%)
-- Hyperglycaemia threshold: >180 mg/dL
-- Hypoglycaemia threshold: <70 mg/dL
-- Estimated HbA1c target: <7.0% (well-controlled); 7–8% (moderate risk); >8% (high risk)
-- Weekly physical activity target: ≥150 minutes moderate-intensity exercise
-- Medication adherence target: ≥80%
-- Recommended sleep: 7–9 hours per night
-- Carbohydrates per meal: 45–60g typical; 30–45g advised when glucose is elevated
-
-## Priority Guidelines
-- urgent: hypo_events > 0 in period, HbA1c > 9%, medication adherence < 50%
-- high: average glucose > 180 mg/dL, time_in_range < 50%, HbA1c 8–9%, medication adherence 50–70%
-- medium: average glucose 140–180 mg/dL, time_in_range 50–70%, total activity < 100 min, sleep < 6 hours
-- low: metrics near-target; general wellness optimisation
-
-## Category Definitions
-- meal: dietary changes, carbohydrate management, meal timing and composition
-- activity: physical exercise type, frequency, duration, timing relative to meals
-- sleep: sleep hygiene, duration targets, consistency
-- medication: adherence reminders, timing optimisation — do NOT recommend dose changes; advise consulting the healthcare team
-- lifestyle: stress management, hydration, general wellness behaviours
-- timing: when to check glucose, meal timing, exercise scheduling relative to medication
+## Clinical Targets
+- Glucose: 70–180 mg/dL (TIR ≥70%)
+- HbA1c: <7.0%
+- Activity: ≥150 min/week
+- Adherence: ≥80%
+- HDL Cholesterol: >40 mg/dL
+- LDL Cholesterol: <100 mg/dL
+- Triglycerides: <150 mg/dL
 
 ## Output Rules
-1. Return ONLY a raw JSON object. Do NOT use markdown code blocks, triple backticks, or any surrounding text.
-2. Generate between 2 and 6 recommendations. Sort by clinical significance — most urgent first.
-3. Never recommend specific medication dose changes. For medication concerns, always advise consulting the healthcare team.
-4. Every recommendation must have 2–5 action_items. Each must be specific and actionable, not vague (e.g. "Walk for 10 minutes after each meal" not "exercise more").
-5. The explanation.rationale must reference the specific numeric values from the patient's data that triggered the recommendation.
-6. Set expires_at to exactly 7 days after generated_at.
-7. Recommendation id format: rec_<category>_<unix_timestamp_ms> using the same ms value as generated_at.
+1. Return ONLY raw JSON. No markdown, no backticks, no conversational text.
+2. Generate exactly 2-3 recommendations. Sort by urgency.
+3. Never recommend dose changes.
+4. Each recommendation needs 2 specific action_items.
+5. Keep descriptions and rationales under 200 characters each.
+6. In triggering_data, cite specific readings from the patient's individual data when available (e.g. "Glucose 210 mg/dL after dinner" not just "high glucose"). Use the type field as a machine key and description as human-readable label.
+6. Set expires_at to 7 days after generated_at.
+7. ID format: rec_<category>_<timestamp_ms>.
 
 ## Required JSON Schema
 {
@@ -53,29 +39,29 @@ You will receive a patient's aggregated health summary for a recent monitoring p
     {
       "id": string,
       "category": "meal" | "activity" | "sleep" | "medication" | "lifestyle" | "timing",
-      "title": string (max 60 characters, specific),
-      "description": string (2-3 sentences, references patient's actual numbers),
+      "title": string,
+      "description": string,
       "priority": "urgent" | "high" | "medium" | "low",
       "status": "active",
-      "generated_at": ISO8601 string,
-      "expires_at": ISO8601 string (generated_at + 7 days),
+      "generated_at": string,
+      "expires_at": string,
       "action_items": [string],
       "explanation": {
-        "rationale": string (references specific numeric values that triggered this),
+        "rationale": string,
         "triggering_data": [
           {
             "type": string,
             "description": string,
-            "value": string (include units),
-            "timestamp": ISO8601 string
+            "value": string,
+            "timestamp": string
           }
         ],
         "evidence_links": [],
-        "expected_impact": string (what will measurably improve if the patient follows this)
+        "expected_impact": string
       }
     }
   ],
-  "generated_at": ISO8601 string,
+  "generated_at": string,
   "model_used": string,
   "analysis_period_days": integer
 }"""
@@ -86,13 +72,13 @@ class RecommendationService:
         # temperature=0.3: grounded clinical outputs with slight variation across calls
         # model: isolated per-feature config — does not affect chatbot or nutrition
         model = (
-            recommendation_settings.RECOMMENDATION_LLM_MODEL
+            recommendation_settings.LLM_MODEL
             or global_settings.LLM_MODEL
         )
         self.llm = LLMFactory.create(
-            temperature=0.3,
+            temperature=0.65,
             model=model,
-            max_tokens=recommendation_settings.RECOMMENDATION_LLM_MAX_TOKENS,
+            max_tokens=recommendation_settings.LLM_MAX_TOKENS,
         )
 
     async def generate_recommendations(
@@ -101,6 +87,73 @@ class RecommendationService:
         now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
         s = request.health_summary
+
+        # Build extended vitals section
+        extended_lines = []
+        if s.latest_bmi is not None:
+            extended_lines.append(f"- Latest BMI: {s.latest_bmi:.1f}")
+        if s.latest_systolic is not None and s.latest_diastolic is not None:
+            extended_lines.append(f"- Latest Blood Pressure: {s.latest_systolic:.0f}/{s.latest_diastolic:.0f} mmHg")
+        if s.latest_cholesterol is not None:
+            extended_lines.append(f"- Latest Total Cholesterol: {s.latest_cholesterol:.1f} mg/dL")
+        if s.latest_hdl is not None:
+            extended_lines.append(f"- Latest HDL Cholesterol: {s.latest_hdl:.1f} mg/dL")
+        if s.latest_ldl is not None:
+            extended_lines.append(f"- Latest LDL Cholesterol: {s.latest_ldl:.1f} mg/dL")
+        if s.latest_triglycerides is not None:
+            extended_lines.append(f"- Latest Triglycerides: {s.latest_triglycerides:.1f} mg/dL")
+        if s.latest_hba1c is not None:
+            extended_lines.append(f"- Latest Lab HbA1c: {s.latest_hba1c:.1f}%")
+        extended_section = ("\n" + "\n".join(extended_lines)) if extended_lines else ""
+
+        # Disease & medication context
+        disease_section = ""
+        if s.active_diseases:
+            disease_section = f"\nActive Diagnoses: {', '.join(s.active_diseases)}"
+
+        medication_section = ""
+        if s.current_medications:
+            rows = "\n".join(
+                f"  - {m.get('name','Unknown')} {m.get('amount','')} ({m.get('type','')}) — take {m.get('timing','')}"
+                for m in s.current_medications
+            )
+            medication_section = f"\nCurrent Medications:\n{rows}"
+
+        # Build recent readings sections
+        glucose_section = ""
+        if s.recent_glucose_readings:
+            rows = "\n".join(
+                f"  {r['timestamp']}: {r['value']} mg/dL"
+                for r in s.recent_glucose_readings
+            )
+            glucose_section = f"\nRecent Glucose Readings (newest first):\n{rows}"
+
+        meal_section = ""
+        if s.recent_meals:
+            rows = "\n".join(
+                f"  {m.get('type','Meal')} at {m['timestamp']}"
+                + (f": {m['description']}" if m.get('description') else "")
+                + (f", {m.get('calories',0)} kcal" if m.get('calories') else "")
+                + (f", glucose {m['glucose_before']}→{m['glucose_after']} mg/dL"
+                   if m.get('glucose_before') and m.get('glucose_after') else "")
+                for m in s.recent_meals
+            )
+            meal_section = f"\nRecent Meals:\n{rows}"
+
+        activity_section = ""
+        if s.recent_activities:
+            rows = "\n".join(
+                f"  {a.get('type','Activity')} {a.get('duration_minutes',0)}min at {a['timestamp']}"
+                + (f", {a['calories_burned']} kcal burned" if a.get('calories_burned') else "")
+                for a in s.recent_activities
+            )
+            activity_section = f"\nRecent Activities:\n{rows}"
+
+        # Previous recommendations to avoid repetition
+        prev_section = ""
+        if request.previous_recommendation_titles:
+            titles = "\n".join(f"  - {t}" for t in request.previous_recommendation_titles)
+            prev_section = f"\nIMPORTANT: The patient has already received these recommendations — do NOT repeat them, generate fresh ones:\n{titles}"
 
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.
 
@@ -112,10 +165,9 @@ Patient Health Summary ({request.analysis_period_days}-day period):
 - Time in Target Range (70–180 mg/dL): {s.time_in_range:.1f}%
 - Estimated HbA1c: {s.estimated_a1c:.1f}%
 - Total Meals Logged: {s.total_meals}
-- Average Carbohydrates per Meal: {s.average_carbs:.1f}g
+- Average Calories per Meal: {s.average_calories:.0f} kcal
 - Total Activity Minutes: {s.total_activity_minutes} minutes
-- Medication Adherence: {s.medication_adherence * 100:.0f}%
-- Average Sleep: {s.average_sleep_hours} hours/night
+- Medication Adherence (today): {s.medication_adherence * 100:.0f}%{extended_section}{disease_section}{medication_section}{glucose_section}{meal_section}{activity_section}{prev_section}
 
 Current timestamp for generated_at: {now_iso}"""
 
@@ -125,10 +177,26 @@ Current timestamp for generated_at: {now_iso}"""
                 HumanMessage(content=human_content),
             ])
 
-            # Strip any markdown fencing the model may add despite instructions
-            content = response.content.replace("```json", "").replace("```", "").strip()
+            content = response.content
+
+            # Remove <think> blocks (often returned by reasoning models like DeepSeek R1)
+            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+
+            # Find the JSON block to strip out any conversational fluff
+            start_idx = content.find('{')
+            end_idx = content.rfind('}')
+            if start_idx != -1 and end_idx != -1:
+                content = content[start_idx:end_idx + 1]
 
             data = json.loads(content)
+
+            # Ensure all triggering_data points have a timestamp to prevent Pydantic/Dart crashes
+            for rec in data.get("recommendations", []):
+                explanation = rec.get("explanation")
+                if explanation and isinstance(explanation, dict):
+                    for dp in explanation.get("triggering_data", []):
+                        if not dp.get("timestamp"):
+                            dp["timestamp"] = now_iso
 
             recommendations = [
                 HealthRecommendationItem(**item)

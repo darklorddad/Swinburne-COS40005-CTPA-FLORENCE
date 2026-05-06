@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../models/admin_enums.dart';
-import '../services/permission_service.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
 
 /// Access Denied Screen
 /// Shown when user attempts to access a page/feature without proper permissions
@@ -55,7 +55,7 @@ class AccessDeniedScreen extends StatelessWidget {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: AdminTheme.errorColor.withOpacity(0.1),
+                    color: AdminTheme.errorColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -217,10 +217,10 @@ class AccessDeniedScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AdminTheme.infoColor.withOpacity(0.1),
+                    color: AdminTheme.infoColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: AdminTheme.infoColor.withOpacity(0.3),
+                      color: AdminTheme.infoColor.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Row(
@@ -358,7 +358,7 @@ class AccessDeniedDialog extends StatelessWidget {
         width: 60,
         height: 60,
         decoration: BoxDecoration(
-          color: AdminTheme.errorColor.withOpacity(0.1),
+          color: AdminTheme.errorColor.withValues(alpha: 0.1),
           shape: BoxShape.circle,
         ),
         child: const Icon(

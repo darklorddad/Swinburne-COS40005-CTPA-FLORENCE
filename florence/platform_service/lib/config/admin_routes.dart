@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../features/admin/auth/screens/admin_login_screen.dart';
-import '../features/admin/core/widgets/access_denied_screen.dart';
-import '../features/admin/core/services/permission_service.dart';
-import '../features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/core/widgets/access_denied_screen.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
 
 /// Admin Routes Configuration
 /// Centralized routing for admin-side of the application
@@ -193,6 +194,16 @@ class AdminRoutes {
             title: 'Patients',
             route: patients,
           ),
+        );
+
+      case AdminRoutes.patientDetail:
+        return _buildGuardedRoute(
+          settings: settings,
+          requiredPermission: AdminPermission.viewAllPatients, // or viewOrgPatients
+          builder: (_) {
+            final patientData = settings.arguments as Map<String, dynamic>? ?? {};
+            return AdminPatientDetailScreen(patientData: patientData);
+          },
         );
 
       case AdminRoutes.createPatient:

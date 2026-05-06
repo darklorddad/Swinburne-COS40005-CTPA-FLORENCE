@@ -29,7 +29,7 @@ class BaseCard extends StatelessWidget {
       shape: RoundedRectangleBorder(
         borderRadius: borderRadius ?? BorderRadius.circular(12),
         side: BorderSide(
-          color: Theme.of(context).dividerColor.withOpacity(0.2),
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
           width: 1,
         ),
       ),
@@ -84,7 +84,7 @@ class InfoCard extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: (iconColor ?? Theme.of(context).colorScheme.primary)
-                  .withOpacity(0.1),
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -266,7 +266,7 @@ class ActionCard extends StatelessWidget {
             height: 40,
             decoration: BoxDecoration(
               color: (iconColor ?? Theme.of(context).colorScheme.primary)
-                  .withOpacity(0.1),
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
@@ -337,7 +337,7 @@ class AlertCard extends StatelessWidget {
     final alertColor = color ?? Theme.of(context).colorScheme.primary;
     
     return BaseCard(
-      color: alertColor.withOpacity(0.05),
+      color: alertColor.withValues(alpha: 0.05),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repositories/monitor_data_repository.dart';
-import '../models/health_data_models.dart';
+import 'package:florence/core/models/medication_models.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/disease_providers.dart';
 
 /// Main provider that fetches and holds all health data
 final monitorDataProvider = AsyncNotifierProvider<MonitorDataNotifier, HealthDataState>(MonitorDataNotifier.new, isAutoDispose: true);
@@ -36,16 +38,16 @@ final activitiesProvider = Provider<List<ActivityLog>>((ref) {
   return ref.watch(monitorDataProvider).asData?.value.activities ?? [];
 }, isAutoDispose: true);
 
-final medicationsProvider = Provider<List<MedicationLog>>((ref) {
-  return ref.watch(monitorDataProvider).asData?.value.medications ?? [];
+final patientMedicationsFromStateProvider = Provider<List<PatientMedication>>((ref) {
+  return ref.watch(monitorDataProvider).asData?.value.patientMedications ?? [];
+}, isAutoDispose: true);
+
+final diseaseLogsFromStateProvider = Provider<List<DiseaseLog>>((ref) {
+  return ref.watch(monitorDataProvider).asData?.value.diseaseLogs ?? [];
 }, isAutoDispose: true);
 
 final hba1cResultsProvider = Provider<List<HbA1cResult>>((ref) {
   return ref.watch(monitorDataProvider).asData?.value.hba1cResults ?? [];
-}, isAutoDispose: true);
-
-final sleepLogsProvider = Provider<List<SleepLog>>((ref) {
-  return ref.watch(monitorDataProvider).asData?.value.sleepLogs ?? [];
 }, isAutoDispose: true);
 
 final bloodPressureReadingsProvider = Provider<List<BloodPressureReading>>((ref) {

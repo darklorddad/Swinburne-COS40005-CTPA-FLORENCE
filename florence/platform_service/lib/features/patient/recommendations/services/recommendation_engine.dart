@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/config/environment.dart';
-import '../../../patient/core/models/health_data_models.dart';
-import '../../../patient/core/providers/monitor_data_providers.dart';
-import '../models/recommendation_models.dart';
-import 'llm_recommendation_service.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
+import 'package:florence/features/patient/recommendations/services/llm_recommendation_service.dart';
 
 final recommendationProvider =
     NotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(
@@ -40,6 +40,12 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
       endDate: DateTime.now(),
     );
 
+    // Collect current active titles so the LLM avoids repeating them
+    final previousTitles = state
+        .where((r) => r.status == RecommendationStatus.active)
+        .map((r) => r.title)
+        .toList();
+
     List<HealthRecommendation> newRecommendations;
     bool usedAI = false;
 
@@ -49,6 +55,7 @@ class RecommendationNotifier extends Notifier<List<HealthRecommendation>> {
         newRecommendations = await _llmService.generate(
           summary,
           analysisPeriodDays: daysToAnalyze,
+          previousTitles: previousTitles,
         );
         debugPrint(
           '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',

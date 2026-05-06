@@ -1,10 +1,6 @@
-/// Pattern Detection Service for FLORENCE Digital Health Platform
-/// AI-powered pattern recognition for automation triggers
+library;
 
-import 'dart:math';
-import '../../config/environment.dart';
-import '../../../features/patient/core/models/health_data_models.dart';
-// import '../../../features/patient/core/services/data_ingestion_service.dart';
+import 'package:florence/core/config/environment.dart';
 
 /// Type of detected pattern
 enum PatternType {
@@ -348,14 +344,6 @@ class PatternDetectionService {
   Future<void> _enrichPatternsWithAI(List<DetectedPattern> patterns, int hours) async {
     // AI enrichment temporarily disabled as DeepSeekService is removed
     return;
-  }
-
-  /// Calculate standard deviation
-  double _calculateStdDev(List<double> values) {
-    if (values.isEmpty) return 0;
-    final mean = values.reduce((a, b) => a + b) / values.length;
-    final variance = values.map((v) => pow(v - mean, 2)).reduce((a, b) => a + b) / values.length;
-    return sqrt(variance);
   }
 
   /// Get severity score for sorting

@@ -3,15 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'dart:math' as math;
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_data;
-import '../../dashboard/providers/dashboard_providers.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart';
 
 class CholesterolDetailScreen extends ConsumerWidget {
-  const CholesterolDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const CholesterolDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,7 +30,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logCholesterol),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logCholesterol),
               tooltip: 'Add Log',
             ),
           ),
@@ -51,10 +53,10 @@ class CholesterolDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Get thresholds (Nullable)
-          final ldlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_LDL);
-          final hdlThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_HDL);
-          final totalThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TOTAL);
-          final triThreshold = _getThreshold(thresholds, MonitorDataType.CHOLESTEROL_TRIGLYCERIDES);
+          final ldlThreshold = _getThreshold(thresholds, 'CHOLESTEROL_LDL');
+          final hdlThreshold = _getThreshold(thresholds, 'CHOLESTEROL_HDL');
+          final totalThreshold = _getThreshold(thresholds, 'CHOLESTEROL_TOTAL');
+          final triThreshold = _getThreshold(thresholds, 'CHOLESTEROL_TRIGLYCERIDES');
           
           // Construct composite latest reading from most recent available data points
           _CholesterolReading? latest;
@@ -159,7 +161,7 @@ class CholesterolDetailScreen extends ConsumerWidget {
     );
   }
 
-  HealthThreshold? _getThreshold(List<HealthThreshold> thresholds, MonitorDataType type) {
+  PatientThreshold? _getThreshold(List<PatientThreshold> thresholds, String type) {
     try {
       return thresholds.firstWhere((t) => t.dataType == type);
     } catch (_) {
@@ -269,10 +271,10 @@ class _CholesterolReading {
 
 class _RatioSection extends StatelessWidget {
   final _CholesterolReading? reading;
-  final HealthThreshold? total;
-  final HealthThreshold? ldl;
-  final HealthThreshold? hdl;
-  final HealthThreshold? tri;
+  final PatientThreshold? total;
+  final PatientThreshold? ldl;
+  final PatientThreshold? hdl;
+  final PatientThreshold? tri;
 
   const _RatioSection({
     this.reading,
@@ -338,10 +340,10 @@ class _RatioSection extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 8),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppTheme.primaryGreen.withOpacity(0.3),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -361,7 +363,7 @@ class _RatioSection extends StatelessWidget {
                           Text(
                             'Target Ranges',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -370,7 +372,7 @@ class _RatioSection extends StatelessWidget {
                       Icon(
                         Icons.chevron_right,
                         size: 20,
-                        color: AppTheme.primaryGreen.withOpacity(0.5),
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                       ),
                     ],
                   ),
@@ -450,7 +452,7 @@ class _RatioSection extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
+                        color: statusColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -488,7 +490,7 @@ class _RatioSection extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -560,17 +562,17 @@ class _LdlTargetSection extends StatelessWidget {
                               // Green Zone
                               Container(
                                 width: targetPos,
-                                color: AppTheme.primaryGreen.withOpacity(0.2),
+                                color: AppTheme.primaryGreen.withValues(alpha: 0.2),
                               ),
                               // Yellow Zone (Next 30mg/dL)
                               Container(
                                 width: (30 / maxScale) * width,
-                                color: AppTheme.warningColor.withOpacity(0.2),
+                                color: AppTheme.warningColor.withValues(alpha: 0.2),
                               ),
                               // Red Zone
                               Expanded(
                                 child: Container(
-                                  color: AppTheme.errorColor.withOpacity(0.2),
+                                  color: AppTheme.errorColor.withValues(alpha: 0.2),
                                 ),
                               ),
                             ],
@@ -619,7 +621,7 @@ class _LdlTargetSection extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 4,
                                     offset: const Offset(0, 2),
                                   )
@@ -720,7 +722,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
             height: 36,
             margin: const EdgeInsets.only(bottom: 20),
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
             padding: const EdgeInsets.all(4),
@@ -783,12 +785,12 @@ class _CompositionSectionState extends State<_CompositionSection> {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (group) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                         final r = displayData[group.x.toInt()];
                         // Map stack index to Label
@@ -869,7 +871,7 @@ class _CompositionSectionState extends State<_CompositionSection> {
 
 class _HistorySection extends StatefulWidget {
   final List<_CholesterolReading> readings;
-  final List<HealthThreshold> thresholds;
+  final List<PatientThreshold> thresholds;
 
   const _HistorySection({required this.readings, required this.thresholds});
 
@@ -926,7 +928,7 @@ class _HistorySectionState extends State<_HistorySection> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -943,7 +945,7 @@ class _HistorySectionState extends State<_HistorySection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
@@ -1060,13 +1062,13 @@ class _HistorySectionState extends State<_HistorySection> {
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     )
                   ],
                   border: Border.all(
-                    color: statusColor.withOpacity(0.3),
+                    color: statusColor.withValues(alpha: 0.3),
                     width: 1,
                   ),
                 ),
@@ -1106,7 +1108,7 @@ class _HistorySectionState extends State<_HistorySection> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: statusColor.withOpacity(0.1),
+                                color: statusColor.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -1202,7 +1204,7 @@ class _ContainerDivider extends StatelessWidget {
     return Container(
       height: 20, 
       width: 1, 
-      color: AppTheme.getBorderColor(context).withOpacity(0.5)
+      color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)
     );
   }
 }
@@ -1267,7 +1269,7 @@ class _CholesterolCard extends StatelessWidget {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -1281,7 +1283,7 @@ class _CholesterolCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: AppTheme.primaryBlue, size: 24),

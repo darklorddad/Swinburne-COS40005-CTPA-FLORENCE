@@ -108,7 +108,7 @@ class AdminTheme {
 
     // AppBar Theme
     appBarTheme: const AppBarTheme(
-      backgroundColor: surfaceColor,
+      backgroundColor: sidebarColor,
       foregroundColor: textPrimaryColor,
       elevation: 0,
       centerTitle: false,
@@ -205,12 +205,12 @@ class AdminTheme {
 
     // Data Table Theme
     dataTableTheme: DataTableThemeData(
-      headingRowColor: MaterialStateProperty.all(tableHeaderColor),
-      dataRowColor: MaterialStateProperty.resolveWith((states) {
-        if (states.contains(MaterialState.selected)) {
+      headingRowColor: WidgetStateProperty.all(tableHeaderColor),
+      dataRowColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
           return tableSelectedColor;
         }
-        if (states.contains(MaterialState.hovered)) {
+        if (states.contains(WidgetState.hovered)) {
           return tableRowHoverColor;
         }
         return null;

@@ -1,7 +1,7 @@
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/services/api_service.dart';
+import 'package:florence/core/services/api_service.dart';
 
 class SettingsRepository {
   final ApiService _apiService;
@@ -14,13 +14,15 @@ class SettingsRepository {
     return PatientSettings(
       glucoseUnit: response['glucose_unit'] ?? 'mmol/L',
       cholesterolUnit: response['cholesterol_unit'] ?? 'mmol/L',
+      showQuickActions: response['show_quick_actions'] ?? false,
     );
   }
 
-  Future<void> updateSettings({String? glucoseUnit, String? cholesterolUnit}) async {
+  Future<void> updateSettings({String? glucoseUnit, String? cholesterolUnit, bool? showQuickActions}) async {
     final Map<String, dynamic> payload = {};
     if (glucoseUnit != null) payload['glucose_unit'] = glucoseUnit;
     if (cholesterolUnit != null) payload['cholesterol_unit'] = cholesterolUnit;
+    if (showQuickActions != null) payload['show_quick_actions'] = showQuickActions;
 
     if (payload.isNotEmpty) {
       await _apiService.patch('/patients/me/settings', payload);

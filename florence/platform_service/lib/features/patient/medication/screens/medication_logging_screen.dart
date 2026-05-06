@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../dashboard/widgets/medication_section.dart';
+import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
 
 class MedicationLoggingScreen extends ConsumerWidget {
   const MedicationLoggingScreen({super.key});

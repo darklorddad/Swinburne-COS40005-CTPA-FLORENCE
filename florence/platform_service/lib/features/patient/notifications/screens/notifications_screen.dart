@@ -1,12 +1,13 @@
 /// Notifications Screen for FLORENCE Digital Health Platform
 /// Displays all notifications with filtering and actions
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/notifications/notification_service.dart';
-import '../../../../core/services/notifications/notification_models.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../config/theme.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
+import 'package:florence/core/services/notifications/notification_models.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/config/theme.dart';
 
 /// Notifications screen showing all notifications
 class NotificationsScreen extends ConsumerStatefulWidget {
@@ -179,12 +180,12 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           decoration: BoxDecoration(
             color: notification.isRead
                 ? Colors.transparent
-                : _getNotificationColor(notification.type).withOpacity(0.05),
+                : _getNotificationColor(notification.type).withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: notification.isRead
                   ? Colors.grey.shade300
-                  : _getNotificationColor(notification.type).withOpacity(0.3),
+                  : _getNotificationColor(notification.type).withValues(alpha: 0.3),
               width: 1,
             ),
           ),
@@ -198,7 +199,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
                     color: _getNotificationColor(notification.type)
-                        .withOpacity(0.1),
+                        .withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _getNotificationIcon(notification.type, 24),

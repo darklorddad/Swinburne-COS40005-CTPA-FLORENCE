@@ -1,6 +1,6 @@
-import '../models/admin_user.dart';
-import '../models/admin_enums.dart';
-import '../models/organization.dart';
+import 'package:florence/features/admin/core/models/admin_user.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/models/organization.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Admin Authentication Service
@@ -40,7 +40,7 @@ class AdminAuthService {
           lastName: supabaseUser.userMetadata?['name']?.split(' ').last ?? 'User',
           role: userRole,
           permissions: _getPermissionsForRole(userRole), // Assign default permissions for the role
-          createdAt: DateTime.parse(supabaseUser.createdAt!));
+          createdAt: DateTime.parse(supabaseUser.createdAt));
     }
   }
 

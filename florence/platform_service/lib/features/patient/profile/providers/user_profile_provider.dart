@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/services/api_service.dart';
+import 'package:florence/core/services/api_service.dart';
 
 final userProfileProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final session = Supabase.instance.client.auth.currentSession;

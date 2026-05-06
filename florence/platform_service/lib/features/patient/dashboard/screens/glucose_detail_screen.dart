@@ -1,25 +1,26 @@
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_data;
-import '../../dashboard/providers/dashboard_providers.dart';
-
 class GlucoseDetailScreen extends ConsumerWidget {
-  const GlucoseDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const GlucoseDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final glucoseAsync = ref.watch(monitorDataProvider);
     final thresholdsAsync = ref.watch(patientThresholdsProvider);
-    final dailyLogsAsync = ref.watch(dailyPatientLogsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +32,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logGlucose),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logGlucose),
               tooltip: 'Add Log',
             ),
           ),
@@ -58,9 +59,9 @@ class GlucoseDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Check if user actually has a set threshold
-          HealthThreshold? userThreshold;
+          PatientThreshold? userThreshold;
           try {
-            userThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+            userThreshold = thresholds.firstWhere((t) => t.dataType == 'GLUCOSE');
           } catch (_) {}
 
           final isDefault = userThreshold == null;
@@ -241,7 +242,6 @@ class _ChartSectionState extends State<_ChartSection> {
   }
 
   void _showInfoDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -280,7 +280,7 @@ class _ChartSectionState extends State<_ChartSection> {
         border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -295,7 +295,7 @@ class _ChartSectionState extends State<_ChartSection> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryBlue.withOpacity(0.1),
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
@@ -319,7 +319,7 @@ class _ChartSectionState extends State<_ChartSection> {
           Container(
             height: 36,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100,
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(10),
             ),
             padding: const EdgeInsets.all(4),
@@ -368,13 +368,13 @@ class _ChartSectionState extends State<_ChartSection> {
 // SECTION 1: STATISTICS SUMMARY
 // ============================================================================
 
-class _StatisticsSection extends StatelessWidget {
+class _StatisticsSection extends ConsumerWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _StatisticsSection({
-    required this.readings, 
+    required this.readings,
     this.threshold,
     this.isDefault = false,
   });
@@ -391,7 +391,7 @@ class _StatisticsSection extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return _ChartSection(
       title: 'Overview',
       icon: Icons.analytics_outlined,
@@ -403,6 +403,7 @@ class _StatisticsSection extends StatelessWidget {
       allData: readings,
       builder: (range, data) {
         final stats = _calculateStats(data);
+        final settings = ref.watch(patientSettingsProvider);
         return Column(
           children: [
             // Target Range Display
@@ -414,10 +415,10 @@ class _StatisticsSection extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.primaryGreen.withOpacity(0.3),
+                    color: AppTheme.primaryGreen.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Column(
@@ -436,7 +437,7 @@ class _StatisticsSection extends StatelessWidget {
                             Text(
                               'Target Range',
                               style: TextStyle(
-                                color: AppTheme.primaryGreen.withOpacity(0.8),
+                                color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -445,7 +446,7 @@ class _StatisticsSection extends StatelessWidget {
                         Icon(
                           Icons.chevron_right,
                           size: 20,
-                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                         ),
                       ],
                     ),
@@ -453,7 +454,7 @@ class _StatisticsSection extends StatelessWidget {
                     if (threshold != null)
                       _buildMiniTargetRow(
                         'Glucose',
-                        '${threshold!.minValue.toInt()} - ${threshold!.maxValue.toInt()} mg/dL',
+                        '${threshold!.minValue.toInt()} - ${threshold!.maxValue.toInt()} ${settings.glucoseUnit}',
                         AppTheme.primaryGreen,
                       )
                     else
@@ -469,7 +470,7 @@ class _StatisticsSection extends StatelessWidget {
             // Statistics Row
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', 'mg/dL', Colors.blue)),
+                Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', settings.glucoseUnit, Colors.blue)),
                 const SizedBox(width: 12),
                 Expanded(child: _buildStatBox(context, 'GMI', (stats['gmi'] as double) > 0 ? (stats['gmi'] as double).toStringAsFixed(1) : '--', '%', Colors.purple)),
                 const SizedBox(width: 12),
@@ -486,7 +487,7 @@ class _StatisticsSection extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -497,7 +498,7 @@ class _StatisticsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
@@ -525,9 +526,9 @@ class _StatisticsSection extends StatelessWidget {
 // SECTION 2: ANNOTATED GLUCOSE TRENDS
 // ============================================================================
 
-class _GlucoseTrendsSection extends StatelessWidget {
+class _GlucoseTrendsSection extends ConsumerWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _GlucoseTrendsSection({
@@ -537,12 +538,13 @@ class _GlucoseTrendsSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(patientSettingsProvider);
     return _ChartSection(
       title: 'Glucose Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your glucose readings over time.\n\n'
-                '• Y-Axis: Glucose (mg/dL)\n'
+                '• Y-Axis: Glucose (${settings.glucoseUnit})\n'
                 '• X-Axis: Time\n'
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
@@ -592,21 +594,36 @@ class _GlucoseTrendsSection extends StatelessWidget {
         final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
         final double maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
 
-        // Determine Y-Axis range
-        double minY = threshold != null ? (threshold!.minValue - 20).clamp(0, double.infinity) : 60;
-        double maxY = threshold != null ? threshold!.maxValue + 40 : 200;
-        
+        // 1. Check the current unit
+        final bool isMmol = settings.glucoseUnit == 'mmol/L';
+
+        // 2. Set dynamic padding and defaults based on the unit
+        final double padBottom = isMmol ? 1.0 : 20.0;
+        final double padTop = isMmol ? 3.0 : 40.0;
+        final double defaultMin = isMmol ? 2.0 : 60.0;
+        final double defaultMax = isMmol ? 15.0 : 200.0;
+        final double dataPad = isMmol ? 1.0 : 10.0;
+        final double snapInterval = isMmol ? 2.0 : 50.0;
+
+        // 3. Determine Y-Axis range dynamically
+        double minY = threshold != null
+            ? (threshold!.minValue - padBottom).clamp(0, double.infinity)
+            : defaultMin;
+        double maxY = threshold != null ? threshold!.maxValue + padTop : defaultMax;
+
         if (data.isNotEmpty) {
           double dataMin = data.map((e) => e.value).reduce(math.min);
           double dataMax = data.map((e) => e.value).reduce(math.max);
-          minY = math.min(minY, dataMin - 10);
-          maxY = math.max(maxY, dataMax + 10);
+
+          // Ensure the chart always wraps neatly around the lowest and highest data points
+          minY = math.min(minY, (dataMin - dataPad).clamp(0, double.infinity));
+          maxY = math.max(maxY, dataMax + dataPad);
         }
 
-        // Snap to grid (50) to ensure equal spacing
-        minY = (minY / 50).floor() * 50.0;
-        maxY = (maxY / 50).ceil() * 50.0;
-        if (maxY == minY) maxY += 50;
+        // Snap to grid to ensure equal spacing
+        minY = (minY / snapInterval).floor() * snapInterval;
+        maxY = (maxY / snapInterval).ceil() * snapInterval;
+        if (maxY == minY) maxY += snapInterval;
 
         return Column(
           children: [
@@ -618,8 +635,8 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -651,14 +668,14 @@ class _GlucoseTrendsSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   // 1. Safe Zone Background (Green Band)
                   rangeAnnotations: threshold != null ? RangeAnnotations(
                     horizontalRangeAnnotations: [
                       HorizontalRangeAnnotation(
                         y1: threshold!.minValue, 
                         y2: threshold!.maxValue, 
-                        color: AppTheme.primaryGreen.withOpacity(0.1)
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.1)
                       )
                     ],
                   ) : null,
@@ -666,8 +683,8 @@ class _GlucoseTrendsSection extends StatelessWidget {
                   // 2. Dotted Lines for Thresholds (Matches Trends)
                   extraLinesData: threshold != null ? ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
                   ) : null,
                   lineBarsData: [
@@ -685,7 +702,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
                           strokeColor: Colors.white,
                         ),
                       ),
-                      belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withOpacity(0.1), AppTheme.primaryBlue.withOpacity(0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
+                      belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withValues(alpha: 0.1), AppTheme.primaryBlue.withValues(alpha: 0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
                     ),
                   ],
                   lineTouchData: LineTouchData(
@@ -698,12 +715,14 @@ class _GlucoseTrendsSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) =>
+                          Colors.black.withValues(alpha: 0.8),
                       fitInsideHorizontally: true,
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
-                          final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                          final date =
+                              DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                           // Include Date, Time, Value, and Unit
                           return LineTooltipItem(
                             '${DateFormat('MMM d, y').format(date)}\n', // Date Line
@@ -714,14 +733,17 @@ class _GlucoseTrendsSection extends StatelessWidget {
                             ),
                             children: [
                               TextSpan(
-                                text: '${DateFormat('h:mm a').format(date)}\n', // Time Line
+                                text:
+                                    '${DateFormat('h:mm a').format(date)}\n', // Time Line
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 10,
                                 ),
                               ),
                               TextSpan(
-                                text: '${spot.y.toInt()} mg/dL', // Value + Unit
+                                text: isMmol
+                                    ? '${spot.y.toStringAsFixed(1)} ${settings.glucoseUnit}'
+                                    : '${spot.y.toInt()} ${settings.glucoseUnit}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -760,7 +782,7 @@ class _GlucoseTrendsSection extends StatelessWidget {
 
 class _TimeInRangeSection extends StatelessWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _TimeInRangeSection({
@@ -845,7 +867,7 @@ class _TimeInRangeSection extends StatelessWidget {
 
 class _ModalDaySection extends StatelessWidget {
   final List<MonitorData> allReadings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
   final bool isDefault;
 
   const _ModalDaySection({
@@ -881,14 +903,14 @@ class _ModalDaySection extends StatelessWidget {
           chartLines.add(LineChartBarData(
             spots: spots, 
             isCurved: true, 
-            color: AppTheme.textSecondaryColor.withOpacity(0.3), 
+            color: AppTheme.textSecondaryColor.withValues(alpha: 0.3), 
             barWidth: 1.5, 
             // Enable dots so single readings are visible
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
                 radius: 2,
-                color: AppTheme.textSecondaryColor.withOpacity(0.5),
+                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
                 strokeWidth: 0,
               ),
             ),
@@ -915,8 +937,8 @@ class _ModalDaySection extends StatelessWidget {
                     drawVerticalLine: true, // Enabled vertical grid
                     horizontalInterval: 50,
                     verticalInterval: 6,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     // Hide Y Axis Labels
@@ -931,14 +953,14 @@ class _ModalDaySection extends StatelessWidget {
                     // Hide Right Axis Labels
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   rangeAnnotations: threshold != null ? RangeAnnotations(
-                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold!.minValue, y2: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.1))],
+                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold!.minValue, y2: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.1))],
                   ) : null,
                   extraLinesData: threshold != null ? ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
                   ) : null,
                   lineBarsData: chartLines,
@@ -967,7 +989,7 @@ class _ModalDaySection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _HistorySection({required this.readings, this.threshold});
 
@@ -1005,7 +1027,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -1014,7 +1036,7 @@ class _HistorySectionState extends State<_HistorySection> {
             children: [
               Row(
                 children: [
-                  Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)),
+                  Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)), child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)),
                   const SizedBox(width: 12),
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
@@ -1086,13 +1108,13 @@ class _HistorySectionState extends State<_HistorySection> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03), 
+                    color: Colors.black.withValues(alpha: 0.03), 
                     blurRadius: 8, 
                     offset: const Offset(0, 2)
                   )
                 ],
                 border: Border.all(
-                  color: statusColor.withOpacity(0.3), 
+                  color: statusColor.withValues(alpha: 0.3), 
                   width: 1
                 ),
               ),
@@ -1130,7 +1152,7 @@ class _HistorySectionState extends State<_HistorySection> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: statusColor.withOpacity(0.1), 
+                          color: statusColor.withValues(alpha: 0.1), 
                           borderRadius: BorderRadius.circular(8)
                         ),
                         child: Text(

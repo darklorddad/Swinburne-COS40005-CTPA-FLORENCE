@@ -1,5 +1,6 @@
 /// Health Data Models for FLORENCE Digital Health Platform
 /// Comprehensive data models for patient health tracking
+library;
 
 import 'package:flutter/foundation.dart';
 
@@ -76,22 +77,28 @@ class MonitorData {
 class PatientActivityLog {
   final int id;
   final String activityDescription;
-  final int durationMinutes;
-  final DateTime performedAt;
+  final int activeDurationMinutes;
+  final DateTime startTime;
+  final DateTime endTime;
+  final int? caloriesBurned;
 
   const PatientActivityLog({
     required this.id,
     required this.activityDescription,
-    required this.durationMinutes,
-    required this.performedAt,
+    required this.activeDurationMinutes,
+    required this.startTime,
+    required this.endTime,
+    this.caloriesBurned,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'activity_description': activityDescription,
-      'duration_minutes': durationMinutes,
-      'performed_at': performedAt.toIso8601String(),
+      'active_duration_minutes': activeDurationMinutes,
+      'start_time': startTime.toIso8601String(),
+      'end_time': endTime.toIso8601String(),
+      'calories_burned': caloriesBurned,
     };
   }
 
@@ -99,8 +106,10 @@ class PatientActivityLog {
     return PatientActivityLog(
       id: json['id'] as int,
       activityDescription: json['activity_description'] as String,
-      durationMinutes: json['duration_minutes'] as int,
-      performedAt: DateTime.parse(json['performed_at'] as String),
+      activeDurationMinutes: json['active_duration_minutes'] as int,
+      startTime: DateTime.parse(json['start_time'] as String),
+      endTime: DateTime.parse(json['end_time'] as String),
+      caloriesBurned: json['calories_burned'] as int?,
     );
   }
 }
@@ -425,20 +434,26 @@ class MealLog {
 @immutable
 class ActivityLog {
   final String id;
-  final DateTime timestamp;
+  final DateTime startTime;
+  final DateTime endTime;
   final String type; // Walking, Running, Cycling, etc.
-  final int duration; // minutes
+  final int activeDurationMinutes; // minutes
   final String intensity; // Low, Moderate, High
   final int? caloriesBurned;
   final double? distance; // km
   final int? steps;
   final String? notes;
 
+  // Backward compatibility getters
+  DateTime get timestamp => startTime;
+  int get duration => activeDurationMinutes;
+
   const ActivityLog({
     required this.id,
-    required this.timestamp,
+    required this.startTime,
+    required this.endTime,
     required this.type,
-    required this.duration,
+    required this.activeDurationMinutes,
     required this.intensity,
     this.caloriesBurned,
     this.distance,
@@ -451,9 +466,10 @@ class ActivityLog {
 
   ActivityLog copyWith({
     String? id,
-    DateTime? timestamp,
+    DateTime? startTime,
+    DateTime? endTime,
     String? type,
-    int? duration,
+    int? activeDurationMinutes,
     String? intensity,
     int? caloriesBurned,
     double? distance,
@@ -462,9 +478,10 @@ class ActivityLog {
   }) {
     return ActivityLog(
       id: id ?? this.id,
-      timestamp: timestamp ?? this.timestamp,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
       type: type ?? this.type,
-      duration: duration ?? this.duration,
+      activeDurationMinutes: activeDurationMinutes ?? this.activeDurationMinutes,
       intensity: intensity ?? this.intensity,
       caloriesBurned: caloriesBurned ?? this.caloriesBurned,
       distance: distance ?? this.distance,
@@ -476,9 +493,10 @@ class ActivityLog {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'timestamp': timestamp.toIso8601String(),
+      'startTime': startTime.toIso8601String(),
+      'endTime': endTime.toIso8601String(),
       'type': type,
-      'duration': duration,
+      'activeDurationMinutes': activeDurationMinutes,
       'intensity': intensity,
       'caloriesBurned': caloriesBurned,
       'distance': distance,
@@ -490,9 +508,10 @@ class ActivityLog {
   factory ActivityLog.fromJson(Map<String, dynamic> json) {
     return ActivityLog(
       id: json['id'] as String,
-      timestamp: DateTime.parse(json['timestamp'] as String),
+      startTime: DateTime.parse(json['startTime'] as String),
+      endTime: DateTime.parse(json['endTime'] as String),
       type: json['type'] as String,
-      duration: json['duration'] as int,
+      activeDurationMinutes: json['activeDurationMinutes'] as int,
       intensity: json['intensity'] as String,
       caloriesBurned: json['caloriesBurned'] as int?,
       distance: json['distance'] != null ? (json['distance'] as num).toDouble() : null,
@@ -928,10 +947,28 @@ class HealthSummary {
   final double timeInRange; // percentage 70-180 mg/dL
   final double estimatedA1c;
   final int totalMeals;
-  final double averageCarbs;
+  final double averageCalories; // avg kcal per logged meal (carbs not stored in DB)
   final int totalActivityMinutes;
-  final double medicationAdherence;
-  final int averageSleepHours;
+  final double medicationAdherence; // today's dose adherence from schedule API
+
+  // Extended vitals (optional — populated when patient has logged them)
+  final double? latestBmi;
+  final double? latestSystolic;
+  final double? latestDiastolic;
+  final double? latestCholesterol; // total cholesterol
+  final double? latestHdl;
+  final double? latestLdl;
+  final double? latestTriglycerides;
+  final double? latestHba1c;
+
+  // Disease & medication context (live from disease_logs + patient_medications tables)
+  final List<String> activeDiseaseNames;           // active condition names e.g. ["Type 2 Diabetes"]
+  final List<Map<String, dynamic>> currentMedications; // [{name, amount, timing, type}]
+
+  // Individual recent readings for pattern-based recommendations
+  final List<Map<String, dynamic>> recentGlucoseReadings; // last 10: {value, timestamp}
+  final List<Map<String, dynamic>> recentMeals;  // last 5: {type, description, calories, glucose_before, glucose_after, timestamp}
+  final List<Map<String, dynamic>> recentActivities; // last 5: {type, duration_minutes, calories_burned, timestamp}
 
   const HealthSummary({
     required this.startDate,
@@ -944,10 +981,22 @@ class HealthSummary {
     required this.timeInRange,
     required this.estimatedA1c,
     required this.totalMeals,
-    required this.averageCarbs,
+    required this.averageCalories,
     required this.totalActivityMinutes,
     required this.medicationAdherence,
-    required this.averageSleepHours,
+    this.latestBmi,
+    this.latestSystolic,
+    this.latestDiastolic,
+    this.latestCholesterol,
+    this.latestHdl,
+    this.latestLdl,
+    this.latestTriglycerides,
+    this.latestHba1c,
+    this.activeDiseaseNames = const [],
+    this.currentMedications = const [],
+    this.recentGlucoseReadings = const [],
+    this.recentMeals = const [],
+    this.recentActivities = const [],
   });
 
   bool get isWellControlled => timeInRange >= 70 && hypoEvents < 4;
@@ -964,10 +1013,22 @@ class HealthSummary {
       'timeInRange': timeInRange,
       'estimatedA1c': estimatedA1c,
       'totalMeals': totalMeals,
-      'averageCarbs': averageCarbs,
+      'averageCalories': averageCalories,
       'totalActivityMinutes': totalActivityMinutes,
       'medicationAdherence': medicationAdherence,
-      'averageSleepHours': averageSleepHours,
+      'latestBmi': latestBmi,
+      'latestSystolic': latestSystolic,
+      'latestDiastolic': latestDiastolic,
+      'latestCholesterol': latestCholesterol,
+      'latestHdl': latestHdl,
+      'latestLdl': latestLdl,
+      'latestTriglycerides': latestTriglycerides,
+      'latestHba1c': latestHba1c,
+      'activeDiseaseNames': activeDiseaseNames,
+      'currentMedications': currentMedications,
+      'recentGlucoseReadings': recentGlucoseReadings,
+      'recentMeals': recentMeals,
+      'recentActivities': recentActivities,
     };
   }
 
@@ -983,10 +1044,27 @@ class HealthSummary {
       timeInRange: (json['timeInRange'] as num).toDouble(),
       estimatedA1c: (json['estimatedA1c'] as num).toDouble(),
       totalMeals: json['totalMeals'] as int,
-      averageCarbs: (json['averageCarbs'] as num).toDouble(),
+      averageCalories: (json['averageCalories'] as num).toDouble(),
       totalActivityMinutes: json['totalActivityMinutes'] as int,
       medicationAdherence: (json['medicationAdherence'] as num).toDouble(),
-      averageSleepHours: json['averageSleepHours'] as int,
+      latestBmi: (json['latestBmi'] as num?)?.toDouble(),
+      latestSystolic: (json['latestSystolic'] as num?)?.toDouble(),
+      latestDiastolic: (json['latestDiastolic'] as num?)?.toDouble(),
+      latestCholesterol: (json['latestCholesterol'] as num?)?.toDouble(),
+      latestHdl: (json['latestHdl'] as num?)?.toDouble(),
+      latestLdl: (json['latestLdl'] as num?)?.toDouble(),
+      latestTriglycerides: (json['latestTriglycerides'] as num?)?.toDouble(),
+      latestHba1c: (json['latestHba1c'] as num?)?.toDouble(),
+      activeDiseaseNames: (json['activeDiseaseNames'] as List<dynamic>?)
+              ?.map((e) => e as String).toList() ?? [],
+      currentMedications: (json['currentMedications'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      recentGlucoseReadings: (json['recentGlucoseReadings'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      recentMeals: (json['recentMeals'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
+      recentActivities: (json['recentActivities'] as List<dynamic>?)
+              ?.map((e) => e as Map<String, dynamic>).toList() ?? [],
     );
   }
 }

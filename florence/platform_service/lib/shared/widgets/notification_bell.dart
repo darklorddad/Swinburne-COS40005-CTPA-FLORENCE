@@ -1,10 +1,11 @@
 /// Notification Bell Widget for FLORENCE Digital Health Platform
 /// Displays notification icon with unread count badge
+library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../core/services/notifications/notification_service.dart';
-import '../../features/patient/notifications/screens/notifications_screen.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 
 /// Notification bell icon with badge
 class NotificationBell extends ConsumerWidget {
@@ -21,12 +22,7 @@ class NotificationBell extends ConsumerWidget {
         IconButton(
           icon: const Icon(Icons.notifications_outlined),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const NotificationsScreen(),
-              ),
-            );
+            AppRoutes.push(context, AppRoutes.notifications);
           },
           tooltip: 'Notifications',
         ),

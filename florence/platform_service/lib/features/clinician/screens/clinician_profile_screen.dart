@@ -257,7 +257,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       
                       // Gender
                       DropdownButtonFormField<String>(
-                        value: _selectedGender,
+                        initialValue: _selectedGender,
                         decoration: const InputDecoration(
                           labelText: 'Gender',
                           prefixIcon: Icon(Icons.people_outline),

@@ -1,12 +1,13 @@
 import 'dart:math' as math;
-import 'dart:ui';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/recommendation_engine.dart';
-import '../models/recommendation_models.dart';
-import '../../profile/providers/user_profile_provider.dart';
-import '../../../../core/utils/helpers.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/config/theme.dart';
 
 // ══════════════════════════════════════════════════════════════
 // CATEGORY THEME DEFINITIONS
@@ -23,9 +24,8 @@ class _CatTheme {
     required this.icon,
   });
 
-  Color get glow => primary.withValues(alpha: 0.20);
-  Color get tag => primary.withValues(alpha: 0.12);
-  Color get tagBorder => primary.withValues(alpha: 0.25);
+  Color get tag       => primary.withValues(alpha: 0.10);
+  Color get tagBorder => primary.withValues(alpha: 0.22);
 }
 
 const _kThemes = {
@@ -40,8 +40,8 @@ const _kThemes = {
     icon: Icons.restaurant_outlined,
   ),
   RecommendationCategory.activity: _CatTheme(
-    primary: Color(0xFF22D3EE),
-    secondary: Color(0xFF0891B2),
+    primary: Color(0xFF10B981),
+    secondary: Color(0xFF059669),
     icon: Icons.directions_run_rounded,
   ),
   RecommendationCategory.lifestyle: _CatTheme(
@@ -55,8 +55,8 @@ const _kThemes = {
     icon: Icons.access_time_outlined,
   ),
   RecommendationCategory.medication: _CatTheme(
-    primary: Color(0xFF60A5FA),
-    secondary: Color(0xFF2563EB),
+    primary: Color(0xFF2563EB),
+    secondary: Color(0xFF1D4ED8),
     icon: Icons.medication_outlined,
   ),
 };
@@ -64,28 +64,60 @@ const _kThemes = {
 _CatTheme _themeFor(RecommendationCategory cat) =>
     _kThemes[cat] ?? _kThemes[RecommendationCategory.lifestyle]!;
 
-// ══════════════════════════════════════════════════════════════
-// THEME-AWARE COLOR TOKENS
-// ══════════════════════════════════════════════════════════════
-
-class _RecsColors {
-  final bool isDark;
-  const _RecsColors(this.isDark);
-
-  Color get bg         => isDark ? const Color(0xFF080D1A) : const Color(0xFFF0F4FA);
-  Color get accent     => isDark ? const Color(0xFF38BDF8) : const Color(0xFF2563EB);
-  Color get cardBg     => isDark ? const Color(0xCC0A1029) : Colors.white;
-  Color get cardBorder => isDark ? const Color(0x2E38BDF8) : const Color(0x1F2563EB);
-  Color get txtPrimary => isDark ? const Color(0xFFCBD5E1) : const Color(0xFF1E293B);
-  Color get txtMuted   => isDark ? const Color(0x8ACBD5E1) : const Color(0xFF64748B);
-  Color get divider    => isDark ? const Color(0x1ACBD5E1) : const Color(0xFFE2E8F0);
-  double get orbOpacity1 => isDark ? 0.60 : 0.08;
-  double get orbOpacity2 => isDark ? 0.50 : 0.06;
-  double get orbOpacity3 => isDark ? 0.40 : 0.05;
-  bool get useBlur     => isDark;
+String _dataSourceLabel(String type) {
+  const labels = {
+    // Glucose
+    'average_glucose': 'Glucose',
+    'glucose': 'Glucose',
+    'hyper_events': 'Glucose',
+    'hypo_events': 'Glucose',
+    'time_in_range': 'Glucose',
+    'estimated_a1c': 'HbA1c',
+    'hba1c': 'HbA1c',
+    'latest_hba1c': 'HbA1c',
+    // Activity & meals
+    'total_activity_minutes': 'Activity',
+    'activity': 'Activity',
+    'average_calories': 'Meal',
+    'calories': 'Meal',
+    'meal': 'Meal',
+    // Medication & diagnosis
+    'medication_adherence': 'Medication',
+    'medication': 'Medication',
+    'current_medications': 'Medication',
+    'active_diseases': 'Diagnosis',
+    'disease': 'Diagnosis',
+    'diagnosis': 'Diagnosis',
+    // Vitals
+    'latest_bmi': 'BMI',
+    'bmi': 'BMI',
+    'latest_systolic': 'BP',
+    'latest_diastolic': 'BP',
+    'blood_pressure': 'BP',
+    // Cholesterol breakdown
+    'latest_cholesterol': 'Cholesterol',
+    'cholesterol': 'Cholesterol',
+    'latest_hdl': 'HDL',
+    'hdl': 'HDL',
+    'latest_ldl': 'LDL',
+    'ldl': 'LDL',
+    'latest_triglycerides': 'Triglycerides',
+    'triglycerides': 'Triglycerides',
+  };
+  final key = type.toLowerCase();
+  if (labels.containsKey(key)) return labels[key]!;
+  return type
+      .replaceAll('_', ' ')
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1))
+      .join(' ');
 }
 
-// ── Helpers ────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════════
+
 int _computeScore(List<HealthRecommendation> recs) {
   int s = 85;
   for (final r in recs) {
@@ -99,25 +131,14 @@ int _computeScore(List<HealthRecommendation> recs) {
   return s.clamp(20, 95);
 }
 
-/// Returns (startColor, endColor, stateLabel, orbTint) based on vitality score.
-/// Phase 2: orbTint drives background orb colour shift (WHOOP++ atmosphere).
-(Color, Color, String, Color) _scoreState(int score) {
-  if (score >= 75) {
-    return (const Color(0xFF22D3EE), const Color(0xFF10B981), 'Thriving', const Color(0xFF22D3EE));
-  }
-  if (score >= 50) {
-    return (const Color(0xFF38BDF8), const Color(0xFF4F46E5), 'Rising', const Color(0xFF38BDF8));
-  }
-  if (score >= 30) {
-    return (const Color(0xFFFBBF24), const Color(0xFFF59E0B), 'Straining', const Color(0xFFFBBF24));
-  }
-  return (
-    const Color(0xFFF87171), const Color(0xFFEF4444), 'Depleted',
-    const Color(0xFFF87171), // red
-  );
+/// Returns (ringStart, ringEnd, stateLabel).
+(Color, Color, String) _scoreState(int score) {
+  if (score >= 75) return (const Color(0xFF22D3EE), const Color(0xFF10B981), 'Thriving');
+  if (score >= 50) return (const Color(0xFF38BDF8), const Color(0xFF4F46E5), 'Rising');
+  if (score >= 30) return (const Color(0xFFFBBF24), const Color(0xFFF59E0B), 'Straining');
+  return (const Color(0xFFF87171), const Color(0xFFEF4444), 'Depleted');
 }
 
-/// Priority sort order: urgent first, then high, medium, low.
 int _priorityOrder(RecommendationPriority p) {
   switch (p) {
     case RecommendationPriority.urgent: return 0;
@@ -136,6 +157,15 @@ String _urgencyLabel(RecommendationPriority p) {
   }
 }
 
+Color _urgencyColor(RecommendationPriority p) {
+  switch (p) {
+    case RecommendationPriority.urgent: return AppTheme.errorColor;
+    case RecommendationPriority.high:   return AppTheme.warningColor;
+    case RecommendationPriority.medium: return AppTheme.infoColor;
+    case RecommendationPriority.low:    return AppTheme.successColor;
+  }
+}
+
 double _priorityFill(RecommendationPriority p) {
   switch (p) {
     case RecommendationPriority.urgent: return 0.95;
@@ -145,33 +175,10 @@ double _priorityFill(RecommendationPriority p) {
   }
 }
 
-double _urgencyOpacity(RecommendationPriority p) {
-  switch (p) {
-    case RecommendationPriority.urgent: return 1.0;
-    case RecommendationPriority.high:   return 0.80;
-    case RecommendationPriority.medium: return 0.50;
-    case RecommendationPriority.low:    return 0.25;
-  }
-}
-
-String _greeting() {
-  final h = DateTime.now().hour;
-  if (h < 12) return 'Good morning,';
-  if (h < 17) return 'Good afternoon,';
-  return 'Good evening,';
-}
-
-String _dateLabel() {
-  final n = DateTime.now();
-  const days   = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
-  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN',
-                  'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-  return '${days[n.weekday - 1]}, ${months[n.month - 1]} ${n.day}';
-}
-
 // ══════════════════════════════════════════════════════════════
 // SCREEN
 // ══════════════════════════════════════════════════════════════
+
 class RecommendationsScreen extends ConsumerStatefulWidget {
   const RecommendationsScreen({super.key});
 
@@ -187,28 +194,14 @@ class _RecommendationsScreenState
   bool _isGenerating = false;
   String? _expandedId;
   int _streakDays = 0;
-
-  // Phase 2 state
-  RecommendationCategory? _activeFilter; // null = All
-  bool _showMilestone = false;
+  RecommendationCategory? _activeFilter;
+  RecommendationPriority? _priorityFilter;
   bool _celebTriggered = false;
 
-  // Phase 1 controllers
   late final AnimationController _scoreCtrl;
-  late final AnimationController _waveCtrl;
   late final AnimationController _staggerCtrl;
+  late final AnimationController _celebCtrl;
   late final Animation<double> _scoreAnim;
-
-  // Phase 2 controllers
-  late final AnimationController _breatheCtrl;  // 3000ms, repeat reversing
-  late final AnimationController _celebCtrl;    // 1200ms, forward once
-  late final AnimationController _loadMsgCtrl;  // 1500ms, repeat (loading messages)
-
-  static const _loadingMessages = [
-    'Reading glucose patterns…',
-    'Cross-referencing activity logs…',
-    'Generating personalised insights…',
-  ];
 
   @override
   void initState() {
@@ -217,25 +210,12 @@ class _RecommendationsScreenState
         vsync: this, duration: const Duration(milliseconds: 1600));
     _scoreAnim = CurvedAnimation(parent: _scoreCtrl, curve: Curves.easeOutCubic);
 
-    _waveCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 5))
-      ..repeat();
-
     _staggerCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 900))
       ..forward();
 
-    // Phase 2
-    _breatheCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 3000))
-      ..repeat(reverse: true);
-
     _celebCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1200));
-
-    _loadMsgCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1500))
-      ..repeat();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAndLoad();
@@ -246,11 +226,8 @@ class _RecommendationsScreenState
   @override
   void dispose() {
     _scoreCtrl.dispose();
-    _waveCtrl.dispose();
     _staggerCtrl.dispose();
-    _breatheCtrl.dispose();
     _celebCtrl.dispose();
-    _loadMsgCtrl.dispose();
     super.dispose();
   }
 
@@ -275,25 +252,14 @@ class _RecommendationsScreenState
     }
     await prefs.setString('recs_last_visit', today.toIso8601String());
     await prefs.setInt('recs_streak', _streakDays);
-
-    // Phase 2: milestone detection
-    if (_streakDays == 7 || _streakDays == 30 || _streakDays == 100) {
-      if (mounted) {
-        setState(() => _showMilestone = true);
-        Future.delayed(const Duration(seconds: 4), () {
-          if (mounted) setState(() => _showMilestone = false);
-        });
-      }
-    } else if (mounted) {
-      setState(() {});
-    }
+    if (mounted) setState(() {});
   }
 
   String _freshnessLabel(DateTime generatedAt) {
     final diff = DateTime.now().difference(generatedAt);
     if (diff.inMinutes < 60) return 'Updated ${diff.inMinutes}m ago';
-    if (diff.inHours < 24) return 'Updated ${diff.inHours}h ago';
-    if (diff.inHours < 48) return 'Updated yesterday';
+    if (diff.inHours < 24)   return 'Updated ${diff.inHours}h ago';
+    if (diff.inHours < 48)   return 'Updated yesterday';
     return 'Stale · tap to refresh';
   }
 
@@ -329,7 +295,6 @@ class _RecommendationsScreenState
     }
   }
 
-  /// Phase 2: fire celebration particles once per session when score ≥ 75 and streak ≥ 2.
   void _maybeCelebrate(int score) {
     if (!_celebTriggered && score >= 75 && _streakDays >= 2) {
       _celebTriggered = true;
@@ -339,71 +304,73 @@ class _RecommendationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final c = _RecsColors(Theme.of(context).brightness == Brightness.dark);
-
     final recs   = ref.watch(recommendationProvider);
     final active = recs.where((r) => r.isActive).toList();
+    final history = recs.where((r) => !r.isActive).toList()
+      ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
     final score  = _computeScore(active);
+    final (ringStart, ringEnd, stateLabel) = _scoreState(score);
 
-    final (ringStart, ringEnd, stateLabel, orbTint) = _scoreState(score);
-
-    // Trigger celebration check after frame
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(score));
 
-    // Apply category filter for the recommendation list
-    final filtered = _activeFilter == null
-        ? active
-        : active.where((r) => r.category == _activeFilter).toList();
-
-    final profileAsync = ref.watch(userProfileProvider);
-    final profileMap = profileAsync.asData?.value;
-    final firstName =
-        profileMap?['first_name'] as String? ??
-        profileMap?['name'] as String? ??
-        'there';
+    final filtered = active.where((r) {
+      if (_activeFilter != null && r.category != _activeFilter) return false;
+      if (_priorityFilter != null && r.priority != _priorityFilter) return false;
+      return true;
+    }).toList();
 
     return Scaffold(
-      backgroundColor: c.bg,
+      backgroundColor: AppTheme.getBackgroundColor(context),
+      appBar: AppBar(
+        title: const Text('AI Health Insights'),
+        elevation: 0,
+        centerTitle: false,
+        bottom: _isGenerating
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(minHeight: 2),
+              )
+            : null,
+      ),
       body: Stack(
         children: [
-          _Orbs(c: c, stateColor: orbTint),
-          SafeArea(
-            child: (_isGenerating && active.isEmpty)
-                ? _buildLoading(c)
-                : RefreshIndicator(
-                    onRefresh: _generateRecommendations,
-                    color: c.accent,
-                    backgroundColor: c.isDark ? const Color(0xFF0D1A3A) : Colors.white,
-                    child: CustomScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      slivers: [
-                        SliverToBoxAdapter(child: _buildHeader(firstName, c)),
-                        SliverToBoxAdapter(child: _buildDateBand(c)),
-                        SliverToBoxAdapter(
-                          child: _buildVitalityCard(score, active, c, ringStart, ringEnd, stateLabel),
-                        ),
-                        // Phase 2: Top Insight hero card
-                        if (active.isNotEmpty)
-                          SliverToBoxAdapter(child: _buildTopInsight(active, c)),
-                        SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, c)),
-                        SliverToBoxAdapter(child: _buildRefreshBtn(c)),
-                        // Phase 2: Filter pills
-                        if (active.isNotEmpty)
-                          SliverToBoxAdapter(child: _buildFilterPills(active, c)),
-                        if (filtered.isEmpty && !_isGenerating)
-                          SliverToBoxAdapter(child: _buildEmptyHint(c)),
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (_, i) => _buildRecCard(filtered[i], i, c),
-                            childCount: filtered.length,
-                          ),
-                        ),
-                        const SliverToBoxAdapter(child: SizedBox(height: 40)),
-                      ],
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: RefreshIndicator(
+            onRefresh: _generateRecommendations,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+              child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildVitalityCard(score, active, ringStart, ringEnd, stateLabel),
+                ),
+                SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, active)),
+                if (filtered.isEmpty && !_isGenerating)
+                  SliverToBoxAdapter(child: _buildEmptyHint()),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) => _buildRecCard(filtered[i], i),
+                    childCount: filtered.length,
+                  ),
+                ),
+                if (history.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                      child: _RecommendationHistorySection(history: history),
                     ),
                   ),
+                const SliverToBoxAdapter(child: SizedBox(height: 40)),
+              ],
+            ),
+            ),
           ),
-          // Phase 2: Celebration particles overlay
+            ),
+          ),
+          // Celebration particles overlay
           if (!_celebTriggered || _celebCtrl.isAnimating)
             Positioned.fill(
               child: AnimatedBuilder(
@@ -425,762 +392,830 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Shared card builder ───────────────────────────────────────
-  Widget _buildCard({
-    required _RecsColors c,
-    required Widget child,
-    BorderRadius? borderRadius,
-    List<BoxShadow>? shadows,
-    Border? border,
-    Color? color,
-  }) {
-    final br = borderRadius ?? BorderRadius.circular(16);
-    final decoration = BoxDecoration(
-      color: color ?? c.cardBg,
-      borderRadius: br,
-      border: border ?? Border.all(color: c.cardBorder),
-      boxShadow: c.useBlur
-          ? null
-          : (shadows ??
-              [
-                BoxShadow(
-                  color: const Color(0xFF2563EB).withValues(alpha: 0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 4),
-                ),
-              ]),
-    );
-
-    if (c.useBlur) {
-      return ClipRRect(
-        borderRadius: br,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(decoration: decoration, child: child),
-        ),
-      );
-    }
-    return Container(decoration: decoration, child: child);
-  }
-
-  // ── Header ───────────────────────────────────────────────────
-  Widget _buildHeader(String firstName, _RecsColors c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _LiveChip(accent: c.accent),
-                    const SizedBox(width: 8),
-                    // Phase 2: milestone banner or normal streak pill
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 400),
-                      child: _showMilestone
-                          ? _buildMilestoneBanner(c)
-                          : _buildStreakPill(c),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _greeting(),
-                  style: TextStyle(
-                    color: c.txtPrimary,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w300,
-                    height: 1.1,
-                  ),
-                ),
-                Text(
-                  '$firstName.',
-                  style: TextStyle(
-                    color: c.accent,
-                    fontSize: 32,
-                    fontWeight: FontWeight.w300,
-                    fontStyle: FontStyle.italic,
-                    height: 1.1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: c.isDark
-                    ? const [Color(0xFF1E2D5A), Color(0xFF0F1A3A)]
-                    : [
-                        const Color(0xFF2563EB).withValues(alpha: 0.12),
-                        const Color(0xFF2563EB).withValues(alpha: 0.06),
-                      ],
-              ),
-              border: Border.all(color: c.accent.withValues(alpha: 0.20), width: 1.5),
-              boxShadow: [
-                BoxShadow(
-                  color: c.accent.withValues(alpha: 0.08),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: const Center(
-              child: Text('💙', style: TextStyle(fontSize: 22)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStreakPill(_RecsColors c) {
-    return Container(
-      key: const ValueKey('streak'),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.accent.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.accent.withValues(alpha: 0.30)),
-      ),
-      child: Text(
-        '🔥 $_streakDays-day streak',
-        style: TextStyle(
-          fontSize: 11,
-          color: c.accent,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
-  /// Phase 2: gold-bordered milestone banner shown for 4s on 7/30/100-day hits.
-  Widget _buildMilestoneBanner(_RecsColors c) {
-    final milestoneDay = [7, 30, 100].firstWhere(
-      (d) => d == _streakDays,
-      orElse: () => _streakDays,
-    );
-    return Container(
-      key: const ValueKey('milestone'),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFBBF24).withValues(alpha: 0.40),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Text(
-        '🎉 $milestoneDay-day milestone!',
-        style: const TextStyle(
-          fontSize: 11,
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
-
-  // ── Date band ────────────────────────────────────────────────
-  Widget _buildDateBand(_RecsColors c) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            height: 1,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  c.accent.withValues(alpha: 0.13),
-                  c.accent.withValues(alpha: 0.13),
-                  Colors.transparent,
-                ],
-                stops: const [0, 0.3, 0.7, 1],
-              ),
-            ),
-          ),
-          Container(
-            color: c.bg,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: Text(
-              _dateLabel(),
-              style: TextStyle(
-                color: c.accent.withValues(alpha: 0.31),
-                fontSize: 8.5,
-                letterSpacing: 2.5,
-                fontWeight: FontWeight.w400,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Vitality card ────────────────────────────────────────────
-  /// Phase 2: ringStart/ringEnd/stateLabel passed in so we don't call _scoreState twice.
+  // ── Vitality card ─────────────────────────────────────────────
   Widget _buildVitalityCard(
     int score,
     List<HealthRecommendation> active,
-    _RecsColors c,
     Color ringStart,
     Color ringEnd,
     String stateLabel,
   ) {
+    final count = active.length;
+    final stateIcon = score >= 50 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: _buildCard(
-        c: c,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: c.accent.withValues(alpha: 0.19)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 22, 22, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'VITALITY INDEX · TODAY',
-                    style: TextStyle(
-                      color: c.accent.withValues(alpha: 0.45),
-                      fontSize: 8.5,
-                      letterSpacing: 3,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      // Phase 2: breathing score ring
-                      Column(
-                        children: [
-                          AnimatedBuilder(
-                            animation: Listenable.merge([_scoreAnim, _breatheCtrl]),
-                            builder: (_, __) {
-                              final breathe = Tween<double>(begin: 0.97, end: 1.03)
-                                  .evaluate(CurvedAnimation(
-                                parent: _breatheCtrl,
-                                curve: Curves.easeInOut,
-                              ));
-                              final glowOpacity = Tween<double>(begin: 0.3, end: 0.6)
-                                  .evaluate(CurvedAnimation(
-                                parent: _breatheCtrl,
-                                curve: Curves.easeInOut,
-                              ));
-                              return Transform.scale(
-                                scale: breathe,
-                                child: SizedBox(
-                                  width: 100,
-                                  height: 100,
-                                  child: CustomPaint(
-                                    painter: _ScoreRingPainter(
-                                      progress: _scoreAnim.value * score / 100,
-                                      displayScore: (score * _scoreAnim.value).round(),
-                                      ringStart: ringStart,
-                                      ringEnd: ringEnd,
-                                      glowOpacity: glowOpacity,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            stateLabel,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: ringEnd,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              stateLabel,
-                              style: TextStyle(
-                                color: c.txtPrimary,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w300,
-                                fontStyle: FontStyle.italic,
-                                height: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              active.isEmpty
-                                  ? 'Your health data is being analysed. Check back soon.'
-                                  : 'You have ${active.length} active health signal${active.length == 1 ? '' : 's'}. Review each for personalised guidance.',
-                              style: TextStyle(
-                                color: c.txtMuted,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w300,
-                                height: 1.65,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            // HRV strip
-            Container(
-              height: 52,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(color: c.divider),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: AppTheme.getBorderColor(context)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+          child: Column(
+            children: [
+              // "VITALITY INDEX" label
+              Text(
+                'VITALITY INDEX',
+                style: TextStyle(
+                  color: AppTheme.getTextSecondaryColor(context),
+                  fontSize: 11,
+                  letterSpacing: 1.8,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: Row(
+              const SizedBox(height: 16),
+
+              // Score ring (centred, larger)
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: AnimatedBuilder(
+                  animation: _scoreAnim,
+                  builder: (_, __) => CustomPaint(
+                    painter: _ScoreRingPainter(
+                      progress: _scoreAnim.value * score / 100,
+                      displayScore: (score * _scoreAnim.value).round(),
+                      ringStart: ringStart,
+                      ringEnd: ringEnd,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // State pill + streak row
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
                 children: [
-                  Text(
-                    'HRV',
-                    style: TextStyle(
-                      color: c.accent.withValues(alpha: 0.22),
-                      fontSize: 8,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w500,
+                  // State pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: ringStart.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ClipRect(
-                      child: AnimatedBuilder(
-                        animation: _waveCtrl,
-                        builder: (_, __) => CustomPaint(
-                          painter: _HrvWavePainter(
-                            phase: _waveCtrl.value,
-                            waveColor: c.accent,
-                          ),
-                          child: const SizedBox(height: 30),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  RichText(
-                    text: const TextSpan(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        TextSpan(
-                          text: '52',
+                        Icon(stateIcon, size: 14, color: ringStart),
+                        const SizedBox(width: 4),
+                        Text(
+                          stateLabel,
                           style: TextStyle(
-                            color: Color(0xFFFBBF24),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        TextSpan(
-                          text: ' ms',
-                          style: TextStyle(
-                            color: Color(0x7FFBBF24),
-                            fontSize: 10,
+                            color: ringStart,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Phase 2: Top Insight hero card (Oura "One Big Thing") ─────
-  Widget _buildTopInsight(List<HealthRecommendation> active, _RecsColors c) {
-    // Sort by priority and pick the top one
-    final sorted = List<HealthRecommendation>.from(active)
-      ..sort((a, b) => _priorityOrder(a.priority).compareTo(_priorityOrder(b.priority)));
-    final top = sorted.first;
-    final catTheme = _themeFor(top.category);
-
-    final cardChild = Stack(
-      children: [
-        // Category gradient wash
-        Positioned(
-          top: 0, left: 0, right: 0,
-          child: Container(
-            height: 100,
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  catTheme.primary.withValues(alpha: c.isDark ? 0.08 : 0.05),
-                  catTheme.secondary.withValues(alpha: 0.02),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Large icon with glow
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(18),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      catTheme.primary.withValues(alpha: 0.22),
-                      catTheme.secondary.withValues(alpha: 0.14),
-                    ],
-                  ),
-                  border: Border.all(color: catTheme.primary.withValues(alpha: 0.35)),
-                  boxShadow: [
-                    BoxShadow(color: catTheme.glow, blurRadius: 20, spreadRadius: 2),
-                  ],
-                ),
-                child: Center(
-                  child: Icon(catTheme.icon, color: catTheme.primary, size: 28),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'TODAY\'S TOP INSIGHT',
-                      style: TextStyle(
-                        color: catTheme.primary.withValues(alpha: 0.70),
-                        fontSize: 8,
-                        letterSpacing: 2.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      top.title,
-                      style: TextStyle(
-                        color: c.isDark ? const Color(0xFFEEF2FF) : const Color(0xFF1E293B),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      top.explanation?.expectedImpact.isNotEmpty == true
-                          ? top.explanation!.expectedImpact
-                          : top.description,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: c.txtMuted,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w300,
-                        height: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    GestureDetector(
-                      onTap: () {
-                        // Scroll down to full list by expanding the card
-                        setState(() {
-                          _activeFilter = null;
-                          _expandedId = top.id;
-                        });
-                      },
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'See all recommendations',
-                            style: TextStyle(
-                              color: catTheme.primary,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                            ),
+                  // Streak
+                  if (_streakDays > 0)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🔥', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 4),
+                        Text(
+                          '$_streakDays-day streak',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primaryBlue,
                           ),
-                          const SizedBox(width: 4),
-                          Icon(Icons.arrow_forward_rounded, size: 13, color: catTheme.primary),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Description text (centred)
+              Text(
+                active.isEmpty
+                    ? 'Your health data is being analysed.'
+                    : 'You have $count active health signal${count == 1 ? '' : 's'}. Review each for personalised guidance.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.getTextSecondaryColor(context),
+                  height: 1.5,
                 ),
               ),
-            ],
-          ),
-        ),
-      ],
-    );
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              catTheme.primary.withValues(alpha: 0.28),
-              catTheme.secondary.withValues(alpha: 0.18),
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.all(1.5),
-        child: c.useBlur
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(21),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: c.cardBg,
-                      borderRadius: BorderRadius.circular(21),
+              // "N signals" pill
+              if (count > 0) ...[
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25)),
+                  ),
+                  child: Text(
+                    '$count signal${count == 1 ? '' : 's'}',
+                    style: const TextStyle(
+                      color: AppTheme.primaryBlue,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: cardChild,
                   ),
                 ),
-              )
-            : Container(
-                decoration: BoxDecoration(
-                  color: c.cardBg,
-                  borderRadius: BorderRadius.circular(21),
-                  boxShadow: [
-                    BoxShadow(
-                      color: catTheme.primary.withValues(alpha: 0.12),
-                      blurRadius: 24,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: cardChild,
-              ),
-      ),
-    );
-  }
-
-  // ── Phase 2: Category filter pills ───────────────────────────
-  Widget _buildFilterPills(List<HealthRecommendation> all, _RecsColors c) {
-    final presentCategories = all.map((r) => r.category).toSet().toList();
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 8, 0, 4),
-      child: SizedBox(
-        height: 36,
-        child: ListView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          children: [
-            // "All" pill
-            _FilterPill(
-              label: 'All',
-              isSelected: _activeFilter == null,
-              color: c.accent,
-              onTap: () => setState(() => _activeFilter = null),
-            ),
-            ...presentCategories.map((cat) {
-              final theme = _themeFor(cat);
-              final label = cat.name[0].toUpperCase() + cat.name.substring(1);
-              return _FilterPill(
-                label: label,
-                isSelected: _activeFilter == cat,
-                color: theme.primary,
-                onTap: () => setState(
-                  () => _activeFilter = _activeFilter == cat ? null : cat,
-                ),
-              );
-            }),
-          ],
+              ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // ── Section header ───────────────────────────────────────────
-  Widget _buildSectionHeader(int count, List<HealthRecommendation> recs, _RecsColors c) {
+  // ── Section header (with inline refresh + filter actions) ─────
+  Widget _buildSectionHeader(
+      int count, List<HealthRecommendation> recs, List<HealthRecommendation> all) {
     final generatedAt = recs.isNotEmpty ? recs.first.generatedAt : DateTime.now();
-    final diff = DateTime.now().difference(generatedAt);
+    final isStale = DateTime.now().difference(generatedAt).inHours >= 24;
     final freshnessText = _freshnessLabel(generatedAt);
-    final isStale = diff.inHours >= 24;
-
-    final freshnessWidget = GestureDetector(
-      onTap: isStale ? _generateRecommendations : null,
-      child: Text(
-        freshnessText,
-        style: TextStyle(
-          fontSize: 11,
-          color: isStale ? Colors.amber : c.txtMuted,
-        ),
-      ),
-    );
+    final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 8),
+      padding: const EdgeInsets.fromLTRB(16, 20, 8, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Title row with action buttons ──
           Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                'Your recommendations',
-                style: TextStyle(
-                  color: c.txtPrimary,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w300,
-                  fontStyle: FontStyle.italic,
+              Expanded(
+                child: Text(
+                  'Your recommendations',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const Spacer(),
-              Text(
-                '$count SIGNALS',
-                style: TextStyle(
-                  color: c.accent.withValues(alpha: 0.28),
-                  fontSize: 8.5,
-                  letterSpacing: 1.5,
-                  fontWeight: FontWeight.w500,
+              // Refresh icon button
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: IconButton(
+                  padding: EdgeInsets.zero,
+                  onPressed: _isGenerating ? null : _generateRecommendations,
+                  icon: _isGenerating
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryBlue,
+                          ),
+                        )
+                      : Icon(Icons.refresh_rounded,
+                          size: 20,
+                          color: AppTheme.textSecondaryColor),
+                  tooltip: 'Regenerate',
                 ),
               ),
+              const SizedBox(width: 2),
+              // Filter button with optional active dot
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: all.isNotEmpty ? () => _openFilterSheet(all) : null,
+                    icon: Icon(Icons.tune_rounded,
+                        size: 15,
+                        color: hasFilter
+                            ? AppTheme.primaryBlue
+                            : AppTheme.textSecondaryColor),
+                    label: Text(
+                      'Filter',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: hasFilter
+                            ? AppTheme.primaryBlue
+                            : AppTheme.textSecondaryColor,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: hasFilter
+                            ? AppTheme.primaryBlue
+                            : AppTheme.borderColor,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  if (hasFilter)
+                    Positioned(
+                      top: -3,
+                      right: -3,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppTheme.primaryBlue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              if (hasFilter) ...[
+                const SizedBox(width: 4),
+                TextButton(
+                  onPressed: () => setState(
+                      () { _activeFilter = null; _priorityFilter = null; }),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.textSecondaryColor,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Clear',
+                      style: TextStyle(fontSize: 12)),
+                ),
+              ],
+              const SizedBox(width: 8),
             ],
           ),
-          if (recs.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            freshnessWidget,
-          ],
+
+          // ── Subtitle: freshness · signal count ──
+          Padding(
+            padding: const EdgeInsets.only(top: 2, right: 8),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: isStale ? _generateRecommendations : null,
+                  child: Text(
+                    freshnessText,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isStale
+                          ? AppTheme.warningColor
+                          : AppTheme.textSecondaryColor,
+                    ),
+                  ),
+                ),
+                if (count > 0) ...[
+                  Text(
+                    '  ·  ',
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: AppTheme.textSecondaryColor),
+                  ),
+                  Text(
+                    '$count signal${count == 1 ? '' : 's'}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.primaryBlue,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );
   }
 
-  // ── Empty hint ───────────────────────────────────────────────
-  Widget _buildEmptyHint(_RecsColors c) {
+  // ── Filter bottom sheet ───────────────────────────────────────
+  void _openFilterSheet(List<HealthRecommendation> all) {
+    final presentCategories = all.map((r) => r.category).toSet().toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                  20, 12, 20, MediaQuery.of(ctx).viewInsets.bottom + 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.getBorderColor(context),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Text(
+                        'Filter Recommendations',
+                        style:
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                      ),
+                      const Spacer(),
+                      if (_activeFilter != null || _priorityFilter != null)
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _activeFilter = null;
+                              _priorityFilter = null;
+                            });
+                            setSheetState(() {});
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppTheme.textSecondaryColor,
+                            padding: EdgeInsets.zero,
+                          ),
+                          child: const Text('Clear all'),
+                        ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+                  // Category section
+                  Text(
+                    'BY TYPE',
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: presentCategories.map((cat) {
+                      final catTheme = _themeFor(cat);
+                      final label =
+                          cat.name[0].toUpperCase() + cat.name.substring(1);
+                      final isSelected = _activeFilter == cat;
+                      return FilterChip(
+                        label: Text(label),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setState(() => _activeFilter = val ? cat : null);
+                          setSheetState(() {});
+                        },
+                        selectedColor:
+                            catTheme.primary.withValues(alpha: 0.13),
+                        checkmarkColor: catTheme.primary,
+                        avatar: Icon(catTheme.icon,
+                            size: 14,
+                            color: isSelected
+                                ? catTheme.primary
+                                : AppTheme.textSecondaryColor),
+                        showCheckmark: false,
+                        labelStyle: TextStyle(
+                          fontSize: 13,
+                          color: isSelected
+                              ? catTheme.primary
+                              : AppTheme.textSecondaryColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        side: BorderSide(
+                          color: isSelected
+                              ? catTheme.primary
+                              : AppTheme.getBorderColor(ctx),
+                        ),
+                        backgroundColor: AppTheme.getSurfaceColor(ctx),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 20),
+                  // Priority section
+                  Text(
+                    'BY PRIORITY',
+                    style: TextStyle(
+                      color: AppTheme.textSecondaryColor,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: RecommendationPriority.values.map((p) {
+                      final urgColor = _urgencyColor(p);
+                      final label = _urgencyLabel(p);
+                      final isSelected = _priorityFilter == p;
+                      return FilterChip(
+                        label: Text(label),
+                        selected: isSelected,
+                        onSelected: (val) {
+                          setState(() => _priorityFilter = val ? p : null);
+                          setSheetState(() {});
+                        },
+                        selectedColor: urgColor.withValues(alpha: 0.10),
+                        checkmarkColor: urgColor,
+                        showCheckmark: false,
+                        avatar: Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: urgColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        labelStyle: TextStyle(
+                          fontSize: 13,
+                          color: isSelected
+                              ? urgColor
+                              : AppTheme.textSecondaryColor,
+                          fontWeight: isSelected
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                        ),
+                        side: BorderSide(
+                          color: isSelected ? urgColor : AppTheme.getBorderColor(ctx),
+                        ),
+                        backgroundColor: AppTheme.getSurfaceColor(ctx),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Apply',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ── Empty hint ────────────────────────────────────────────────
+  Widget _buildEmptyHint() {
+    String message;
+    if (_activeFilter != null && _priorityFilter != null) {
+      final catLabel = _activeFilter!.name[0].toUpperCase() +
+          _activeFilter!.name.substring(1);
+      message =
+          'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} $catLabel recommendations right now.';
+    } else if (_activeFilter != null) {
+      final catLabel = _activeFilter!.name[0].toUpperCase() +
+          _activeFilter!.name.substring(1);
+      message = 'No $catLabel recommendations right now.';
+    } else if (_priorityFilter != null) {
+      message =
+          'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} recommendations right now.';
+    } else {
+      message =
+          'Tap the refresh icon above to analyse your recent health data.';
+    }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
       child: Text(
-        _activeFilter != null
-            ? 'No ${_activeFilter!.name} recommendations right now.'
-            : 'Tap "Regenerate Analysis" to analyse your recent health data.',
-        style: TextStyle(
-          color: c.txtMuted.withValues(alpha: 0.60),
-          fontSize: 13,
-          fontWeight: FontWeight.w300,
-          height: 1.6,
-          fontStyle: FontStyle.italic,
+        message,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppTheme.textSecondaryColor,
+          height: 1.5,
         ),
       ),
     );
   }
 
-  // ── Recommendation card ──────────────────────────────────────
-  Widget _buildRecCard(HealthRecommendation rec, int index, _RecsColors c) {
-    final catTheme = _themeFor(rec.category);
-    final isOpen = _expandedId == rec.id;
-
-    // Stagger animation
-    final delay = (index * 0.1).clamp(0.0, 0.7);
-    final end   = (delay + 0.45).clamp(0.0, 1.0);
-    final slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.12),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _staggerCtrl,
-      curve: Interval(delay, end, curve: Curves.easeOut),
-    ));
-    final fadeAnim = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _staggerCtrl,
-        curve: Interval(delay, end),
-      ),
-    );
-
-    // Urgency bar opacity; for urgent, pulse via _staggerCtrl sin()
-    final baseOpacity = _urgencyOpacity(rec.priority);
+  // ── Recommendation card ───────────────────────────────────────
+  Widget _buildRecCard(HealthRecommendation rec, int index) {
+    final delay    = (index * 0.12).clamp(0.0, 0.7);
+    final end      = (delay + 0.45).clamp(0.0, 1.0);
+    final fadeAnim = Tween<double>(begin: 0, end: 1)
+        .animate(CurvedAnimation(parent: _staggerCtrl, curve: Interval(delay, end)));
 
     return FadeTransition(
       opacity: fadeAnim,
-      child: SlideTransition(
-        position: slideAnim,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-          child: GestureDetector(
-            onTap: () => setState(
-                () => _expandedId = isOpen ? null : rec.id),
-            child: Stack(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+        child: _buildCardBody(rec, index),
+      ),
+    );
+  }
+
+  Widget _buildCardBody(HealthRecommendation rec, int index) {
+    final catTheme     = _themeFor(rec.category);
+    final isOpen       = _expandedId == rec.id;
+    final urgencyColor = _urgencyColor(rec.priority);
+
+    return GestureDetector(
+      onTap: () => setState(() => _expandedId = isOpen ? null : rec.id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeInOutCubic,
+        decoration: BoxDecoration(
+          color: AppTheme.getSurfaceColor(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isOpen
+                ? catTheme.primary.withValues(alpha: 0.40)
+                : AppTheme.getBorderColor(context),
+          ),
+          boxShadow: isOpen
+              ? [BoxShadow(
+                  color: catTheme.primary.withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                )]
+              : [],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Card body
-                _buildCardBody(rec, isOpen, catTheme, c),
-                // Urgency left bar
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: rec.priority == RecommendationPriority.urgent
-                      ? AnimatedBuilder(
-                          animation: _staggerCtrl,
-                          builder: (_, __) {
-                            final pulse = (math.sin(_staggerCtrl.value * math.pi * 4) * 0.25 + 0.75)
-                                .clamp(0.5, 1.0);
-                            return ClipRRect(
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(22),
-                                bottomLeft: Radius.circular(22),
-                              ),
-                              child: Container(
-                                width: 3,
-                                color: catTheme.primary.withValues(alpha: baseOpacity * pulse),
-                              ),
-                            );
-                          },
-                        )
-                      : ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(22),
-                            bottomLeft: Radius.circular(22),
-                          ),
-                          child: Container(
-                            width: 3,
-                            color: catTheme.primary.withValues(alpha: baseOpacity),
+
+                // ── Gradient header ──────────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                      colors: [
+                        catTheme.primary.withValues(alpha: 0.12),
+                        catTheme.primary.withValues(alpha: 0.04),
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: catTheme.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(catTheme.icon, color: catTheme.primary, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        rec.categoryLabel.toUpperCase(),
+                        style: TextStyle(
+                          color: catTheme.primary,
+                          fontSize: 11,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: urgencyColor.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: urgencyColor.withValues(alpha: 0.25)),
+                        ),
+                        child: Text(
+                          _urgencyLabel(rec.priority),
+                          style: TextStyle(
+                            color: urgencyColor,
+                            fontSize: 11,
+                            letterSpacing: 0.8,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
+                      ),
+                    ],
+                  ),
                 ),
+
+                // ── White body ───────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      // Title
+                      Text(
+                        rec.title,
+                        style: GoogleFonts.atkinsonHyperlegible(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w400,
+                          height: 1.3,
+                          color: AppTheme.getTextPrimaryColor(context),
+                        ),
+                      ),
+
+
+                      // Expanded content
+                      if (isOpen) ...[
+
+                        // Key metric pill — first triggering data point
+                        if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.getBackgroundColor(context),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  rec.explanation!.triggeringData.first.description,
+                                  style: TextStyle(
+                                    color: AppTheme.getTextSecondaryColor(context),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  rec.explanation!.triggeringData.first.value,
+                                  style: TextStyle(
+                                    color: catTheme.primary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+
+                        // Rationale / description
+                        const SizedBox(height: 12),
+                        Text(
+                          rec.explanation?.rationale.isNotEmpty == true
+                              ? rec.explanation!.rationale
+                              : rec.description,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.getTextSecondaryColor(context),
+                            height: 1.6,
+                          ),
+                        ),
+
+                        // Steps to take
+                        if (rec.actionItems.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          Text(
+                            'STEPS TO TAKE',
+                            style: TextStyle(
+                              color: AppTheme.getTextSecondaryColor(context),
+                              fontSize: 11,
+                              letterSpacing: 1.8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ...rec.actionItems.take(3).toList().asMap().entries.map((e) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 6),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${e.key + 1}.',
+                                    style: TextStyle(
+                                      color: catTheme.primary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      e.value,
+                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppTheme.getTextPrimaryColor(context),
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+
+                        // DATA ANALYSED BASED ON chips
+                        if (rec.explanation?.triggeringData.isNotEmpty == true) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            'DATA ANALYSED BASED ON:',
+                            style: TextStyle(
+                              color: AppTheme.getTextSecondaryColor(context),
+                              fontSize: 11,
+                              letterSpacing: 1.8,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: rec.explanation!.triggeringData
+                                .map((dp) => _dataSourceLabel(dp.type))
+                                .toSet()
+                                .map((label) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: catTheme.primary.withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: catTheme.primary.withValues(alpha: 0.22),
+                                        ),
+                                      ),
+                                      child: Text(
+                                        label.toUpperCase(),
+                                        style: TextStyle(
+                                          color: catTheme.primary,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                          ),
+                        ],
+
+                        // Priority bar
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: _priorityFill(rec.priority),
+                                  minHeight: 4,
+                                  backgroundColor: AppTheme.borderColor,
+                                  valueColor: AlwaysStoppedAnimation<Color>(catTheme.primary),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              rec.priorityLabel,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: catTheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
               ],
             ),
           ),
@@ -1189,708 +1224,37 @@ class _RecommendationsScreenState
     );
   }
 
-  Widget _buildCardBody(
-    HealthRecommendation rec,
-    bool isOpen,
-    _CatTheme catTheme,
-    _RecsColors c,
-  ) {
-    final cardDecoration = BoxDecoration(
-      borderRadius: BorderRadius.circular(22),
-      color: c.cardBg,
-      border: Border.all(
-        color: isOpen
-            ? catTheme.primary.withValues(alpha: 0.38)
-            : catTheme.primary.withValues(alpha: 0.14),
-      ),
-      boxShadow: isOpen
-          ? [
-              BoxShadow(
-                color: catTheme.glow,
-                blurRadius: 22,
-                spreadRadius: 2,
-              ),
-            ]
-          : (c.useBlur
-              ? []
-              : [
-                  BoxShadow(
-                    color: const Color(0xFF2563EB).withValues(alpha: 0.06),
-                    blurRadius: 12,
-                    offset: const Offset(0, 3),
-                  ),
-                ]),
-    );
-
-    final cardContent = AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      decoration: cardDecoration,
-      child: Stack(
-        children: [
-          // Gradient wash
-          Positioned(
-            top: 0, left: 0, right: 0,
-            child: Container(
-              height: 80,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(22)),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    catTheme.primary.withValues(alpha: isOpen ? 0.18 : 0.09),
-                    catTheme.secondary.withValues(alpha: isOpen ? 0.08 : 0.03),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
-          // Content
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Icon badge
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                catTheme.primary.withValues(alpha: 0.20),
-                                catTheme.secondary.withValues(alpha: 0.12),
-                              ],
-                            ),
-                            border: Border.all(
-                                color: catTheme.primary.withValues(alpha: 0.28)),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: catTheme.glow, blurRadius: 14),
-                            ],
-                          ),
-                          child: Center(
-                            child: Icon(catTheme.icon,
-                                color: catTheme.primary, size: 20),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        // Title area
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                rec.categoryLabel.toUpperCase(),
-                                style: TextStyle(
-                                  color: catTheme.primary,
-                                  fontSize: 8,
-                                  letterSpacing: 2.5,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                rec.title,
-                                style: TextStyle(
-                                  color: c.isDark
-                                      ? const Color(0xFFEEF2FF)
-                                      : const Color(0xFF1E293B),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.25,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                rec.explanation?.expectedImpact
-                                        .isNotEmpty == true
-                                    ? rec.explanation!.expectedImpact
-                                    : rec.description,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: c.txtMuted,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w300,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Urgency badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 9, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: catTheme.tag,
-                            borderRadius: BorderRadius.circular(20),
-                            border:
-                                Border.all(color: catTheme.tagBorder),
-                          ),
-                          child: Text(
-                            _urgencyLabel(rec.priority),
-                            style: TextStyle(
-                              color: catTheme.primary,
-                              fontSize: 7.5,
-                              letterSpacing: 1.2,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    // Action item tags
-                    if (rec.actionItems.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: rec.actionItems.take(2).map((t) {
-                          return Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: catTheme.tag,
-                              borderRadius:
-                                  BorderRadius.circular(20),
-                              border: Border.all(
-                                  color: catTheme.tagBorder),
-                            ),
-                            child: Text(
-                              t.toUpperCase(),
-                              style: TextStyle(
-                                color: catTheme.primary,
-                                fontSize: 7.5,
-                                letterSpacing: 1,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    // Toggle arrow
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: AnimatedRotation(
-                        turns: isOpen ? 0.5 : 0,
-                        duration:
-                            const Duration(milliseconds: 260),
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isOpen
-                                  ? const Color(0x30FFFFFF)
-                                  : const Color(0x18FFFFFF),
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            size: 16,
-                            color: isOpen
-                                ? const Color(0x80FFFFFF)
-                                : const Color(0x40FFFFFF),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Expandable body
-              AnimatedSize(
-                duration: const Duration(milliseconds: 380),
-                curve: Curves.easeInOutCubic,
-                child: isOpen
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(
-                            18, 0, 18, 18),
-                        child: Column(
-                          crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              height: 1,
-                              color: catTheme.primary.withValues(alpha: 0.10),
-                              margin: const EdgeInsets.only(
-                                  bottom: 14),
-                            ),
-                            Text(
-                              rec.description,
-                              style: TextStyle(
-                                color: c.txtMuted,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w300,
-                                height: 1.7,
-                              ),
-                            ),
-                            if (rec.explanation != null &&
-                                rec.explanation!.rationale.isNotEmpty) ...[
-                              const SizedBox(height: 8),
-                              Text(
-                                rec.explanation!.rationale,
-                                style: TextStyle(
-                                  color:
-                                      catTheme.primary.withValues(alpha: 0.55),
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w300,
-                                  height: 1.6,
-                                ),
-                              ),
-                            ],
-                            const SizedBox(height: 14),
-                            // Metric bar
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius:
-                                        BorderRadius.circular(3),
-                                    child: Container(
-                                      height: 3,
-                                      color: c.isDark
-                                          ? const Color(0x12FFFFFF)
-                                          : const Color(0xFFE2E8F0),
-                                      child: FractionallySizedBox(
-                                        alignment:
-                                            Alignment.centerLeft,
-                                        widthFactor: _priorityFill(
-                                            rec.priority),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(
-                                                    3),
-                                            gradient: LinearGradient(
-                                              colors: [
-                                                catTheme.secondary,
-                                                catTheme.primary,
-                                              ],
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: catTheme.glow,
-                                                blurRadius: 8,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  rec.priorityLabel,
-                                  style: TextStyle(
-                                    color: catTheme.primary
-                                        .withValues(alpha: 0.70),
-                                    fontSize: 9.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-
-    if (c.useBlur) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: cardContent,
-        ),
-      );
-    }
-    return cardContent;
-  }
-
-  // ── Refresh button ───────────────────────────────────────────
-  Widget _buildRefreshBtn(_RecsColors c) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-      child: Center(
-        child: OutlinedButton(
-          onPressed: _isGenerating ? null : _generateRecommendations,
-          style: OutlinedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-            shape: const StadiumBorder(),
-            side: BorderSide(color: c.accent.withValues(alpha: 0.16)),
-            backgroundColor: c.accent.withValues(alpha: 0.04),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_isGenerating)
-                SizedBox(
-                  width: 11,
-                  height: 11,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 1.5,
-                    color: c.accent,
-                  ),
-                )
-              else
-                Text('◉',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: c.accent.withValues(alpha: 0.33))),
-              const SizedBox(width: 8),
-              Text(
-                'REGENERATE ANALYSIS',
-                style: TextStyle(
-                  color: c.accent.withValues(alpha: 0.44),
-                  fontSize: 9.5,
-                  letterSpacing: 2.5,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Phase 2: AI Personality Loading state ─────────────────────
-  Widget _buildLoading(_RecsColors c) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Pulsing sparkle icon
-          AnimatedBuilder(
-            animation: _breatheCtrl,
-            builder: (_, __) {
-              final pulse = Tween<double>(begin: 0.85, end: 1.15)
-                  .evaluate(CurvedAnimation(
-                parent: _breatheCtrl,
-                curve: Curves.easeInOut,
-              ));
-              final glow = Tween<double>(begin: 0.25, end: 0.60)
-                  .evaluate(CurvedAnimation(
-                parent: _breatheCtrl,
-                curve: Curves.easeInOut,
-              ));
-              return Transform.scale(
-                scale: pulse,
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        c.accent.withValues(alpha: glow * 0.35),
-                        Colors.transparent,
-                      ],
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.accent.withValues(alpha: glow * 0.4),
-                        blurRadius: 24,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: c.accent.withValues(alpha: 0.85),
-                    size: 34,
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'FLORENCE IS ANALYSING YOUR HEALTH DATA',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: c.accent.withValues(alpha: 0.45),
-              fontSize: 9,
-              letterSpacing: 2.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'AI is reading your\nhealth signals…',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: c.txtPrimary.withValues(alpha: 0.31),
-              fontSize: 17,
-              fontWeight: FontWeight.w300,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          // Cycling sub-messages
-          AnimatedBuilder(
-            animation: _loadMsgCtrl,
-            builder: (_, __) {
-              final idx = (_loadMsgCtrl.value * _loadingMessages.length).floor()
-                  .clamp(0, _loadingMessages.length - 1);
-              return AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                child: Text(
-                  _loadingMessages[idx],
-                  key: ValueKey(idx),
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: c.txtMuted.withValues(alpha: 0.70),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w300,
-                    fontStyle: FontStyle.italic,
-                    height: 1.5,
-                  ),
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// PHASE 2: FILTER PILL WIDGET
-// ══════════════════════════════════════════════════════════════
-class _FilterPill extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _FilterPill({
-    required this.label,
-    required this.isSelected,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? color : color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? color : color.withValues(alpha: 0.30),
-            width: 1.2,
-          ),
-          boxShadow: isSelected
-              ? [BoxShadow(color: color.withValues(alpha: 0.25), blurRadius: 8)]
-              : [],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : color,
-            fontSize: 12,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// BACKGROUND ORBS
-// ══════════════════════════════════════════════════════════════
-/// Phase 2: accepts [stateColor] to tint orbs based on health score state.
-class _Orbs extends StatelessWidget {
-  final _RecsColors c;
-  final Color stateColor;
-  const _Orbs({required this.c, required this.stateColor});
-
-  @override
-  Widget build(BuildContext context) {
-    // Blend stateColor into the default blue orb base
-    final o1 = Color.lerp(const Color(0xFF1D4ED8), stateColor, 0.55)!;
-    final o2 = Color.lerp(const Color(0xFF4F46E5), stateColor, 0.35)!;
-    final o3 = Color.lerp(const Color(0xFF7C3AED), stateColor, 0.25)!;
-
-    return Positioned.fill(
-      child: Stack(
-        children: [
-          _orb(top: -100, left: -80,  size: 320, color: o1.withValues(alpha: c.orbOpacity1)),
-          _orb(top: -60,  right: -60, size: 240, color: o2.withValues(alpha: c.orbOpacity2)),
-          _orb(top: 340,  left: -80,  size: 280, color: o3.withValues(alpha: c.orbOpacity3)),
-          _orb(bottom: 80, right: -60, size: 260, color: o1.withValues(alpha: c.orbOpacity3)),
-        ],
-      ),
-    );
-  }
-
-  Widget _orb({
-    double? top, double? bottom, double? left, double? right,
-    required double size, required Color color,
-  }) {
-    return Positioned(
-      top: top, bottom: bottom, left: left, right: right,
-      child: ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: 48, sigmaY: 48),
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [color, Colors.transparent],
-              stops: const [0.0, 0.7],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ══════════════════════════════════════════════════════════════
-// PULSING DOT / LIVE CHIP
-// ══════════════════════════════════════════════════════════════
-class _LiveChip extends StatefulWidget {
-  final Color accent;
-  const _LiveChip({required this.accent});
-
-  @override
-  State<_LiveChip> createState() => _LiveChipState();
-}
-
-class _LiveChipState extends State<_LiveChip>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 2400))
-      ..repeat(reverse: true);
-    _anim = Tween<double>(begin: 1.0, end: 0.30)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: widget.accent.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: widget.accent.withValues(alpha: 0.20)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedBuilder(
-            animation: _anim,
-            builder: (_, __) => Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: widget.accent.withValues(alpha: _anim.value),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.accent.withValues(alpha: _anim.value * 0.5),
-                    blurRadius: 6,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'AI · HEALTH INSIGHTS',
-            style: TextStyle(
-              color: widget.accent,
-              fontSize: 8.5,
-              letterSpacing: 2,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ══════════════════════════════════════════════════════════════
 // SCORE RING PAINTER
 // ══════════════════════════════════════════════════════════════
+
 class _ScoreRingPainter extends CustomPainter {
-  final double progress;     // 0.0–1.0
+  final double progress;
   final int displayScore;
   final Color ringStart;
   final Color ringEnd;
-  final double glowOpacity;  // Phase 2: breathing glow
 
   const _ScoreRingPainter({
     required this.progress,
     required this.displayScore,
     required this.ringStart,
     required this.ringEnd,
-    this.glowOpacity = 0.08,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 7;
+    final radius = size.width / 2 - 12;
     final rect   = Rect.fromCircle(center: center, radius: radius);
 
-    // Track — opacity pulses with glowOpacity
+    // Track
     canvas.drawCircle(
       center, radius,
       Paint()
-        ..color = ringStart.withValues(alpha: glowOpacity)
-        ..strokeWidth = 5.5
+        ..color = ringStart.withValues(alpha: 0.12)
+        ..strokeWidth = 11
         ..style = PaintingStyle.stroke,
     );
 
@@ -1909,7 +1273,7 @@ class _ScoreRingPainter extends CustomPainter {
         false,
         Paint()
           ..shader = shader
-          ..strokeWidth = 5.5
+          ..strokeWidth = 11
           ..style = PaintingStyle.stroke
           ..strokeCap = StrokeCap.round,
       );
@@ -1921,9 +1285,8 @@ class _ScoreRingPainter extends CustomPainter {
         text: '$displayScore',
         style: TextStyle(
           color: ringStart,
-          fontSize: 28,
+          fontSize: 26,
           fontWeight: FontWeight.w700,
-          shadows: [Shadow(color: ringStart.withValues(alpha: 0.40), blurRadius: 20)],
         ),
       ),
       textDirection: TextDirection.ltr,
@@ -1935,7 +1298,7 @@ class _ScoreRingPainter extends CustomPainter {
       text: TextSpan(
         text: '/ 100',
         style: TextStyle(
-          color: ringStart.withValues(alpha: 0.25),
+          color: ringStart.withValues(alpha: 0.40),
           fontSize: 8,
           letterSpacing: 1,
         ),
@@ -1950,62 +1313,247 @@ class _ScoreRingPainter extends CustomPainter {
       old.progress != progress ||
       old.displayScore != displayScore ||
       old.ringStart != ringStart ||
-      old.ringEnd != ringEnd ||
-      old.glowOpacity != glowOpacity;
+      old.ringEnd != ringEnd;
 }
 
 // ══════════════════════════════════════════════════════════════
-// HRV WAVE PAINTER
+// RECOMMENDATION HISTORY SECTION
 // ══════════════════════════════════════════════════════════════
-class _HrvWavePainter extends CustomPainter {
-  final double phase; // 0.0–1.0
-  final Color waveColor;
 
-  const _HrvWavePainter({required this.phase, required this.waveColor});
+class _RecommendationHistorySection extends StatefulWidget {
+  final List<HealthRecommendation> history;
+
+  const _RecommendationHistorySection({required this.history});
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = waveColor.withValues(alpha: 0.21)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
+  State<_RecommendationHistorySection> createState() =>
+      _RecommendationHistorySectionState();
+}
 
-    const pw = 100.0; // pattern width
-    final offset = phase * pw;
-    final mid = size.height / 2;
+class _RecommendationHistorySectionState
+    extends State<_RecommendationHistorySection> {
+  int _currentPage = 0;
+  static const int _itemsPerPage = 5;
 
-    final path = Path();
-    for (double sx = -offset; sx < size.width + pw; sx += pw) {
-      path.moveTo(sx, mid);
-      path.lineTo(sx + 16, mid);
-      path.lineTo(sx + 22, mid - 8);
-      path.lineTo(sx + 28, mid + 8);
-      path.lineTo(sx + 34, mid);
-      path.lineTo(sx + 50, mid);
-      path.lineTo(sx + 56, mid - 4);
-      path.lineTo(sx + 62, mid + 4);
-      path.lineTo(sx + 68, mid);
-      path.lineTo(sx + pw, mid);
-    }
-    canvas.drawPath(path, paint);
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = widget.history;
+    final totalItems = items.length;
+    final totalPages = (totalItems / _itemsPerPage).ceil();
+    if (_currentPage >= totalPages && totalPages > 0) _currentPage = totalPages - 1;
+
+    final start = _currentPage * _itemsPerPage;
+    final end = math.min(start + _itemsPerPage, totalItems);
+    final currentItems = items.sublist(start, end);
+
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header row ──────────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.history,
+                      color: AppTheme.primaryBlue,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    'History',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              // Pagination controls
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: _currentPage > 0
+                        ? () => setState(() => _currentPage--)
+                        : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1
+                        ? () => setState(() => _currentPage++)
+                        : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          if (currentItems.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: Text(
+                  'No history available',
+                  style: TextStyle(color: AppTheme.textSecondaryColor),
+                ),
+              ),
+            ),
+
+          ...currentItems.map((rec) {
+            final theme = _themeFor(rec.category);
+
+            // Status badge
+            final String statusLabel;
+            final Color statusColor;
+            if (rec.isExpired && rec.status == RecommendationStatus.active) {
+              statusLabel = 'EXPIRED';
+              statusColor = AppTheme.warningColor;
+            } else if (rec.status == RecommendationStatus.completed) {
+              statusLabel = 'COMPLETED';
+              statusColor = AppTheme.primaryGreen;
+            } else {
+              statusLabel = 'DISMISSED';
+              statusColor = AppTheme.textSecondaryColor;
+            }
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.midnightSurface : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: statusColor.withValues(alpha: 0.3),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Left: category icon + title
+                  Expanded(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: theme.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(theme.icon,
+                              size: 16, color: theme.primary),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            rec.title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppTheme.textPrimaryColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Right: status badge + date
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        DateFormat('dd/MM/yy HH:mm')
+                            .format(rec.generatedAt.toLocal()),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: AppTheme.textSecondaryColor,
+                            ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(_HrvWavePainter old) =>
-      old.phase != phase || old.waveColor != waveColor;
 }
 
 // ══════════════════════════════════════════════════════════════
-// PHASE 2: PARTICLE PAINTER (celebration burst)
+// PARTICLE PAINTER (celebration burst)
 // ══════════════════════════════════════════════════════════════
+
 class _ParticlePainter extends CustomPainter {
-  final double progress; // 0.0 → 1.0 (forward once)
+  final double progress;
   final Color ringStart;
   final Color ringEnd;
 
-  static final _rng = math.Random(42); // seeded for consistency
+  static final _rng = math.Random(42);
   static final _particles = List.generate(10, (i) {
     final angle = (i / 10) * math.pi * 2 + _rng.nextDouble() * 0.4;
     final speed = 80.0 + _rng.nextDouble() * 120.0;
@@ -2021,27 +1569,17 @@ class _ParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height * 0.32);
+    final center  = Offset(size.width / 2, size.height * 0.32);
     final opacity = (1.0 - progress).clamp(0.0, 1.0);
 
     for (final p in _particles) {
       final dist = p.speed * progress;
-      final dx = math.cos(p.angle) * dist;
-      final dy = math.sin(p.angle) * dist;
-      final pos = center + Offset(dx, dy);
-
-      final color = Color.lerp(ringStart, ringEnd, progress)!
-          .withValues(alpha: opacity * 0.85);
-
-      canvas.drawCircle(
-        pos,
-        p.size * (1.0 - progress * 0.5),
-        Paint()..color = color,
-      );
+      final pos  = center + Offset(math.cos(p.angle) * dist, math.sin(p.angle) * dist);
+      final color = Color.lerp(ringStart, ringEnd, progress)!.withValues(alpha: opacity * 0.85);
+      canvas.drawCircle(pos, p.size * (1.0 - progress * 0.5), Paint()..color = color);
     }
   }
 
   @override
-  bool shouldRepaint(_ParticlePainter old) =>
-      old.progress != progress;
+  bool shouldRepaint(_ParticlePainter old) => old.progress != progress;
 }
