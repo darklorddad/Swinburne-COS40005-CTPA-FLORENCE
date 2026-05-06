@@ -29,16 +29,18 @@ if not exist "!ADB_EXE!" (
 :WIN_CHECK_CONNECTION
 set "WIRELESS_IP=" & set "USB_FOUND=0"
 
-for /f "tokens=1" %%i in ('""!ADB_EXE!" devices 2^>nul ^| findstr /r /c:"^[0-9].*:5555.*device""') do set "WIRELESS_IP=%%i"
-for /f "tokens=1" %%i in ('""!ADB_EXE!" devices 2^>nul ^| findstr /v "List" ^| findstr "device" ^| findstr /v ":5555""') do set "USB_FOUND=1"
+:: [FIXED]: Switched to backticks and usebackq to avoid quote-stripping parser crashes
+for /f "usebackq tokens=1" %%i in (`"!ADB_EXE!" devices 2^>nul ^| findstr /r /c:"^[0-9].*:5555.*device"`) do set "WIRELESS_IP=%%i"
+for /f "usebackq tokens=1" %%i in (`"!ADB_EXE!" devices 2^>nul ^| findstr /v "List" ^| findstr "device" ^| findstr /v ":5555"`) do set "USB_FOUND=1"
 
 if defined WIRELESS_IP (
     echo %c_green%  [^v] Connected wirelessly to !WIRELESS_IP!%c_reset%
     goto WIN_LAUNCH
 )
 
+:: [FIXED]: Escaped parentheses with ^ to prevent early block closure
 if "!USB_FOUND!"=="1" ( echo %c_yellow%  [!] USB device detected, but wireless is NOT active.%c_reset%
-) else ( echo %c_red%  [!] No devices detected (USB or wireless).%c_reset% )
+) else ( echo %c_red%  [!] No devices detected ^(USB or wireless^).%c_reset% )
 
 echo.
 echo   [1] %c_green%Quick reconnect%c_reset% (Connect via IP - no USB needed)
