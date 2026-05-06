@@ -712,7 +712,12 @@ async def update_own_thresholds(
 async def get_own_activity_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """Retrieves all activity logs."""
     try:
-        response = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_profile['id']).order('start_time', desc=True).execute()
+        # Use aliasing to match the frontend model keys
+        response = supabase.table('patient_activity_logs') \
+            .select('*, performed_at:start_time, duration_minutes:active_duration_minutes') \
+            .eq('patient_id', patient_profile['id']) \
+            .order('start_time', desc=True) \
+            .execute()
         return response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve activity logs: {str(e)}")
