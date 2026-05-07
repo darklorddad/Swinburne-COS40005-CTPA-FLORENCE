@@ -41,6 +41,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   DateTime _selectedDateTime = DateTime.now();
 
   // AI Auto-Fill State
+  bool _useAiAutofill = true;
   bool _isAnalyzing = false;
   Uint8List? _fileBytes;
   String? _selectedFileName;
@@ -72,7 +73,8 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           ],
         ),
         content: const Text(
-          'Upload a photo or PDF of your lab report, and our AI will automatically extract your HbA1c reading for you.',
+          'When enabled, selecting a lab report will automatically trigger our AI engine to extract your HbA1c value.\n\n'
+          'Note: Analysis only happens when the image is first selected.',
         ),
         actions: [
           TextButton(
@@ -97,61 +99,65 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           color: backgroundColor,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        padding: const EdgeInsets.all(24),
         child: SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Upload Lab Report',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.info_outline, color: AppTheme.primaryBlue),
-                    onPressed: _showAiInfoDialog,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildPhotoOption(
-                    context,
-                    title: 'Camera',
-                    icon: Icons.camera_alt_outlined,
-                    color: AppTheme.primaryBlue,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-                      if (photo != null) {
-                        final bytes = await photo.readAsBytes();
-                        _processFile(bytes, photo.name, false);
-                      }
-                    },
-                  ),
-                  _buildPhotoOption(
-                    context,
-                    title: 'Gallery',
-                    icon: Icons.photo_library_outlined,
-                    color: AppTheme.primaryGreen,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                      if (image != null) {
-                        final bytes = await image.readAsBytes();
-                        _processFile(bytes, image.name, false);
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ],
+                ),
+                Text(
+                  'Add Lab Report',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 24),
+
+                // 1. Camera
+                _buildPhotoOption(
+                  context,
+                  title: 'Take Photo',
+                  icon: Icons.camera_alt_rounded,
+                  color: AppTheme.primaryBlue,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await _picker.pickImage(
+                        source: ImageSource.camera, maxWidth: 800);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      _processFile(bytes, image.name, false);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // 2. Photo Gallery
+                _buildPhotoOption(
+                  context,
+                  title: 'Choose Photo',
+                  icon: Icons.photo_library_rounded,
+                  color: AppTheme.accentPurple,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final image = await _picker.pickImage(
+                        source: ImageSource.gallery, maxWidth: 800);
+                    if (image != null) {
+                      final bytes = await image.readAsBytes();
+                      _processFile(bytes, image.name, false);
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -169,14 +175,21 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: AppTheme.getBorderColor(context)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
+            border: Border.all(color: AppTheme.getBorderColor(context)),
+            borderRadius: BorderRadius.circular(16)),
+        child: Row(
           children: [
-            Icon(icon, size: 32, color: color),
-            const SizedBox(height: 8),
-            Text(title, style: Theme.of(context).textTheme.bodyMedium),
+            Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: Icon(icon, color: color, size: 24)),
+            const SizedBox(width: 16),
+            Expanded(
+                child: Text(title,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 16))),
+            Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
           ],
         ),
       ),
@@ -190,6 +203,11 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       _isPdf = isPdf;
       _isAnalyzing = true;
     });
+
+    if (!_useAiAutofill) {
+      setState(() => _isAnalyzing = false);
+      return;
+    }
 
     await _analyzeLabReport(bytes, filename, isPdf);
   }
@@ -432,30 +450,24 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         ),
         body: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
-          child: Stack(
-            children: [
-              SingleChildScrollView(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 600),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Info & Target card
-                            _buildInfoCard(hba1cThreshold),
-                            const SizedBox(height: 20),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(hba1cThreshold),
+                        const SizedBox(height: 20),
 
-                            // AI Auto-Fill Section
-                            _buildAiToggleSection(),
-                            const SizedBox(height: 20),
-
-                            // Input Section
-                            _buildInputSection(hba1cColor, hba1cThreshold),
-                            const SizedBox(height: 20),
+                        // The new unified HbA1c Panel Card
+                        _buildHba1cPanelSection(hba1cColor, hba1cThreshold),
+                        const SizedBox(height: 20),
 
                         // Date and time
                         _buildDateTimeSection(),
@@ -476,86 +488,370 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               ),
             ),
           ),
-          if (_isAnalyzing)
-              Positioned.fill(
-                child: Container(
-                  color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.7),
-                  child: Center(
-                    child: Card(
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                      child: const Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(),
-                            SizedBox(height: 16),
-                            Text('Analyzing lab report...', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
   }
 
-  Widget _buildAiToggleSection() {
+  Widget _buildHba1cPanelSection(Color? hba1cColor, HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: containerColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.auto_awesome, color: AppTheme.primaryBlue, size: 20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with AI Toggle
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.science_outlined,
+                  size: 24,
+                  color: titleIconColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'HbA1c Panel',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const Spacer(),
+
+              // AI Toggle Switch Group
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () =>
+                        setState(() => _useAiAutofill = !_useAiAutofill),
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.05)
+                            : AppTheme.backgroundColor,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: _useAiAutofill
+                              ? AppTheme.primaryBlue
+                              : AppTheme.borderColor,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.auto_awesome,
+                            size: 16,
+                            color: _useAiAutofill
+                                ? AppTheme.primaryBlue
+                                : AppTheme.textSecondaryColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Auto',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: _useAiAutofill
+                                  ? AppTheme.primaryBlue
+                                  : AppTheme.textSecondaryColor,
+                              fontSize: 14,
+                              height: 1.0,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          SizedBox(
+                            height: 28,
+                            width: 44,
+                            child: Transform.scale(
+                              scale: 0.9,
+                              child: Switch(
+                                value: _useAiAutofill,
+                                activeThumbColor: Colors.white,
+                                activeTrackColor: AppTheme.primaryBlue,
+                                inactiveThumbColor: Colors.white,
+                                inactiveTrackColor: Colors.grey.shade300,
+                                trackOutlineColor:
+                                    WidgetStateProperty.all(Colors.transparent),
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                                onChanged: (val) =>
+                                    setState(() => _useAiAutofill = val),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.info_outline,
+                        size: 22, color: AppTheme.textSecondaryColor),
+                    onPressed: _showAiInfoDialog,
+                    visualDensity: VisualDensity.compact,
+                    constraints:
+                        const BoxConstraints.tightFor(width: 40, height: 40),
+                    padding: EdgeInsets.zero,
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
+
+          // Image Picker Box
+          InkWell(
+            onTap: _isAnalyzing ? null : _showImageSourcePicker,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 160,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : AppTheme.backgroundColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppTheme.borderColor),
+              ),
+              child: _fileBytes != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (!_isPdf)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.memory(_fileBytes!, fit: BoxFit.cover),
+                          )
+                        else
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.picture_as_pdf,
+                                  size: 48, color: Colors.redAccent),
+                              const SizedBox(height: 12),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 20),
+                                child: Text(
+                                  _selectedFileName ?? 'Document.pdf',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _fileBytes = null;
+                                _selectedFileName = null;
+                                _isPdf = false;
+                              });
+                            },
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.black54,
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
+                            ),
+                          ),
+                        ),
+                        if (_isAnalyzing)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              color: Colors.black45,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const CircularProgressIndicator(
+                                      color: Colors.white),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    _useAiAutofill
+                                        ? 'Analyzing...'
+                                        : 'Processing...',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      shadows: [
+                                        Shadow(
+                                            blurRadius: 4,
+                                            color: Colors.black54),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.add_a_photo_outlined,
+                          size: 28,
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Add Lab Report',
+                          style: TextStyle(
+                            color: AppTheme.textSecondaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        if (_useAiAutofill) ...[
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Analysis runs on selection',
+                            style: TextStyle(
+                              color: AppTheme.primaryBlue,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Input Box
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
+              ),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('AI Auto-Fill', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(
-                  _fileBytes != null ? 'Report attached' : 'Scan lab report',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _fileBytes != null ? AppTheme.primaryGreen : AppTheme.textSecondaryColor,
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      'Value (%)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    if (_useAiAutofill) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Leave blank for auto-extract',
+                        style: TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: TextFormField(
+                        controller: _hba1cController,
+                        validator: Validators.hba1c,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: hba1cColor ?? AppTheme.textPrimaryColor,
+                            ),
+                        decoration: InputDecoration(
+                          hintText: '---',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '%',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
+                ),
+                if (hba1cColor != null) ...[
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: hba1cColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: hba1cColor.withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        _getHba1cStatus(
+                          double.tryParse(_hba1cController.text.replaceAll(',', '.')),
+                          threshold,
+                        ).toUpperCase(),
+                        style: TextStyle(
+                          color: hba1cColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          if (_fileBytes != null)
-            IconButton(
-              icon: const Icon(Icons.close, size: 20),
-              onPressed: () => setState(() {
-                _fileBytes = null;
-                _selectedFileName = null;
-              }),
-            )
-          else
-            TextButton(
-              onPressed: _showImageSourcePicker,
-              child: const Text('Scan'),
-            ),
         ],
       ),
     );
@@ -679,118 +975,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInputSection(Color? hba1cColor, HealthThreshold? threshold) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final containerColor = hba1cColor != null 
-        ? hba1cColor.withValues(alpha: 0.05) 
-        : (isDark ? AppTheme.midnightSurface : Colors.white);
-    final borderColor = hba1cColor ?? AppTheme.getBorderColor(context);
-    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: titleIconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.pie_chart_outline,
-                  color: titleIconColor,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                'HbA1c Level (%)',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: TextFormField(
-                  controller: _hba1cController,
-                  validator: Validators.hba1c,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: hba1cColor ?? AppTheme.textPrimaryColor,
-                      ),
-                  decoration: InputDecoration(
-                    hintText: '---',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(16),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
-                  ),
-                  onChanged: (_) => setState(() {}),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '%',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
-          ),
-          if (hba1cColor != null) ...[
-            const SizedBox(height: 20),
-            Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: hba1cColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: hba1cColor.withValues(alpha: 0.2)),
-                ),
-                child: Text(
-                  _getHba1cStatus(
-                    double.tryParse(_hba1cController.text.replaceAll(',', '.')),
-                    threshold,
-                  ).toUpperCase(),
-                  style: TextStyle(
-                    color: hba1cColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
