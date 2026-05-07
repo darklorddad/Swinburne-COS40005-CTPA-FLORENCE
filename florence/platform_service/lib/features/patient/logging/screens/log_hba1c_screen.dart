@@ -252,10 +252,13 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
       if (mounted && result != null) {
         setState(() {
-          if (result['hba1c'] != null && result['hba1c']['value'] != null) {
-            _hba1cController.text = result['hba1c']['value'].toString();
-          } else if (result['hba1c'] != null) {
-            _hba1cController.text = result['hba1c'].toString();
+          final val = result['hba1c'] ?? result['value'] ?? result['hba1c_level'] ?? result['result'];
+          if (val != null) {
+            if (val is Map) {
+              _hba1cController.text = (val['value'] ?? val['amount'] ?? '').toString();
+            } else {
+              _hba1cController.text = val.toString();
+            }
           }
         });
         Helpers.showSuccess(
@@ -499,7 +502,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.science_outlined,
+                  Icons.bloodtype_outlined,
                   size: 24,
                   color: titleIconColor,
                 ),
@@ -727,60 +730,80 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
           const SizedBox(height: 20),
 
-          // The Input Field contained in a distinct box
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              // A subtle inner background colour to differentiate from the main card
-              color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title & Subtitle Group
-                Row(
-                  children: [
-                    Text(
-                      'Value (%)',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                    ),
-                    if (_useAiAutofill) ...[
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Leave blank for auto-extract',
-                        style: TextStyle(
-                          color: AppTheme.primaryBlue,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+          // The Input Field
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(
+                    'Level (%)',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
+                  ),
+                  if (_useAiAutofill) ...[
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Leave blank for auto-extract',
+                      style: TextStyle(
+                        color: AppTheme.primaryBlue,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                    ],
+                    ),
                   ],
-                ),
-                const SizedBox(height: 16),
-
-                // The Input Field
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                        child: _buildGridLabField(
-                            'HbA1c',
-                            _hba1cController,
-                            '%',
-                            Icons.bloodtype_outlined,
-                            '5.5')),
-                  ],
-                ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 150,
+                    child: TextFormField(
+                      controller: _hba1cController,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      textInputAction: TextInputAction.done,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                            fontSize: 56,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimaryColor,
+                          ),
+                      onChanged: (_) => setState(() {}),
+                      validator: (val) {
+                        if (val == null || val.isEmpty) return 'Required';
+                        final num = double.tryParse(val.replaceAll(',', '.'));
+                        if (num == null) return 'Invalid';
+                        if (num < 3.0 || num > 20.0) return 'Range:\n3.0 - 20.0';
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide.none,
+                        ),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
+                        hintText: '---',
+                        hintStyle: const TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '%',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -997,59 +1020,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildGridLabField(String label, TextEditingController controller, String unit, IconData icon, String placeholder) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final double minValid = 3.0;
-    final double maxValid = 20.0;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 13,
-              ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          textInputAction: TextInputAction.next,
-          onChanged: (_) => setState(() {}),
-          validator: (val) {
-            if (val == null || val.isEmpty) return 'Required';
-            final num = double.tryParse(val.replaceAll(',', '.'));
-            if (num == null) return 'Invalid';
-            if (num < minValid || num > maxValid) return 'Range:\n$minValid - $maxValid';
-            return null;
-          },
-          decoration: InputDecoration(
-            hintText: 'e.g. $placeholder',
-            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
-            filled: true,
-            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: AppTheme.primaryBlue,
-                width: 2,
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
