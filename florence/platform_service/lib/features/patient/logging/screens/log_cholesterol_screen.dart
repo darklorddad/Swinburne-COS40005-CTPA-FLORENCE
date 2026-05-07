@@ -937,8 +937,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Title & Subtitle Group
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
                     Text(
                       'Values ($currentUnit)',
@@ -948,24 +947,14 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                           ),
                     ),
                     if (_useAiAutofill) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            size: 14,
-                            color: AppTheme.primaryBlue,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Leave blank for auto-extract',
-                            style: TextStyle(
-                              color: AppTheme.primaryBlue,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Leave blank for auto-extract',
+                        style: TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ],
