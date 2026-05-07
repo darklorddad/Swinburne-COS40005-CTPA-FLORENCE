@@ -32,21 +32,26 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
   final _apiService = ApiService();
   final _hba1cController = TextEditingController();
   
-  // State
+  bool _isScanning = false;
+  final ImagePicker _picker = ImagePicker();
+  bool _useAiAutofill = true;
+  Uint8List? _fileBytes;
+  String? _selectedFileName;
+  bool _isPdf = false;
+  bool _isAnalyzing = false;
   bool _forcePop = false;
   String _initialHba1c = '';
   late DateTime _initialDateTime;
   bool _isLoading = false;
-  DateTime _selectedDateTime = DateTime.now();
+  // Initialize with seconds stripped for clean database grouping
+  DateTime _selectedDateTime = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    DateTime.now().day,
+    DateTime.now().hour,
+    DateTime.now().minute,
+  );
 
-  // AI Auto-Fill State
-  bool _useAiAutofill = true;
-  bool _isAnalyzing = false;
-  Uint8List? _fileBytes;
-  String? _selectedFileName;
-  bool _isPdf = false;
-  final ImagePicker _picker = ImagePicker();
-  
   @override
   void initState() {
     super.initState();
@@ -263,87 +268,54 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     }
   }
 
-  /// Handle save
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    // Foolproof 1: Prevent logging in the future
-    if (_selectedDateTime.isAfter(DateTime.now())) {
-      Helpers.showError(context, 'Cannot log readings in the future.');
-      return;
-    }
-
-    // Foolproof 2: Prevent duplicate logs
-    final existingData = ref.read(monitorDataProvider).asData?.value.allMonitorData ?? [];
-    final isDuplicate = existingData.any((d) {
-      if (d.dataType != MonitorDataType.HBA1C) return false;
-      
-      // Convert DB time to local to match user selection
-      final localDate = d.measuredAt.toLocal();
-      
-      return localDate.year == _selectedDateTime.year &&
-             localDate.month == _selectedDateTime.month &&
-             localDate.day == _selectedDateTime.day &&
-             localDate.hour == _selectedDateTime.hour &&
-             localDate.minute == _selectedDateTime.minute;
-    });
-
-    if (isDuplicate) {
-      Helpers.showError(context, 'An HbA1c reading for this time already exists.');
-      return;
-    }
-    
     Helpers.hideKeyboard(context);
     setState(() => _isLoading = true);
-    
+
     try {
-      // Foolproof 3: Handle comma vs dot and use tryParse for crash safety
-      final normalizedText = _hba1cController.text.replaceAll(',', '.');
-      final value = double.tryParse(normalizedText);
-
-      if (value == null) {
-        throw const FormatException('Invalid number format');
-      }
-
+      final repo = ref.read(monitorDataRepositoryProvider);
       int? documentId;
+
+      // STEP 1: If a file was selected, upload it to Data Service to persist in Storage
       if (_fileBytes != null && _selectedFileName != null) {
-        try {
-          final uploadRes = await _apiService.uploadFile(
-            '/patients/me/clinical-documents/upload',
-            'file',
-            _fileBytes!,
-            _selectedFileName!,
-            additionalFields: {'document_type': 'LAB_REPORT'},
-          );
-          if (uploadRes != null && uploadRes['document'] != null) {
-            documentId = uploadRes['document']['id'];
-          }
-        } catch (e) {
-          debugPrint('Failed to upload document: $e');
-        }
+        final uploadRes = await _apiService.uploadFile(
+          '/patients/me/clinical-documents/upload',
+          'file',
+          _fileBytes!,
+          _selectedFileName!,
+          additionalFields: {'document_type': 'HBA1C_REPORT'},
+        );
+
+        documentId = uploadRes['id'];
       }
 
-      // Use repository to add data
-      // Convert to UTC to ensure global consistency
-      await ref.read(monitorDataRepositoryProvider).addMonitorData(
-        'HBA1C',
-        value,
-        _selectedDateTime.toUtc(),
-        documentId: documentId,
-      );
-      
-      // Invalidate provider to refresh dashboard
+      // STEP 2: Save the actual biometrics, linking them to the document record
+      final text = _hba1cController.text.trim().replaceAll(',', '.');
+      if (text.isNotEmpty) {
+        await repo.addMonitorData(
+          'HBA1C',
+          double.parse(text),
+          _selectedDateTime.toUtc(),
+          documentId: documentId,
+        );
+      } else {
+        throw Exception("Please enter a value.");
+      }
+
       ref.invalidate(monitorDataProvider);
-      
+
       if (mounted) {
-        Helpers.showSuccess(context, 'HbA1c reading saved successfully!');
+        Helpers.showSuccess(
+            context, 'HbA1c data and lab report saved successfully!');
         AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
-        Helpers.showError(context, 'Failed to save HbA1c reading: ${e.toString()}');
+        Helpers.showError(context, 'Failed to save data: ${e.toString()}');
       }
     } finally {
       if (mounted) {
@@ -386,15 +358,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
   @override
   Widget build(BuildContext context) {
-
-    final hba1cValue =
-        double.tryParse(_hba1cController.text.replaceAll(',', '.'));
-
-    final bool hasChanges = !_forcePop && 
-        (_hba1cController.text != _initialHba1c ||
-         _selectedDateTime != _initialDateTime ||
-         _fileBytes != null);
-
     // Fetch thresholds
     final healthData = ref.watch(monitorDataProvider).asData?.value;
     HealthThreshold? hba1cThreshold;
@@ -404,7 +367,10 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       );
     } catch (_) {}
 
-    final hba1cColor = _getHba1cColor(hba1cValue, hba1cThreshold);
+    final bool hasChanges = !_forcePop &&
+        (_hba1cController.text != _initialHba1c ||
+            _selectedDateTime != _initialDateTime ||
+            _fileBytes != null);
 
     return PopScope(
       canPop: !hasChanges,
@@ -472,7 +438,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                         const SizedBox(height: 20),
 
                         // The new unified HbA1c Panel Card
-                        _buildHba1cPanelSection(hba1cColor, hba1cThreshold),
+                        _buildHba1cPanelSection(),
                         const SizedBox(height: 20),
 
                         // Date and time
@@ -499,7 +465,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     );
   }
 
-  Widget _buildHba1cPanelSection(Color? hba1cColor, HealthThreshold? threshold) {
+  Widget _buildHba1cPanelSection() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -813,30 +779,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                             '5.5')),
                   ],
                 ),
-                if (hba1cColor != null && _hba1cController.text.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: hba1cColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: hba1cColor.withValues(alpha: 0.2)),
-                      ),
-                      child: Text(
-                        _getHba1cStatus(
-                          double.tryParse(_hba1cController.text.replaceAll(',', '.')),
-                          threshold,
-                        ).toUpperCase(),
-                        style: TextStyle(
-                          color: hba1cColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
@@ -845,21 +787,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     );
   }
 
-  Widget _buildInfoCard(HealthThreshold? threshold) {
-    final thresholdsAsync = ref.watch(patientThresholdsProvider);
-
-    String targetText = "Target: Loading...";
-    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
-      try {
-        final hba1cTarget =
-            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'HBA1C');
-        targetText =
-            "${hba1cTarget.minValue.toStringAsFixed(1)} - ${hba1cTarget.maxValue.toStringAsFixed(1)} %";
-      } catch (e) {
-        targetText = "Target: Not set";
-      }
-    }
-
+  Widget _buildInfoCard(HealthThreshold? hba1cT) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
@@ -889,11 +817,16 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'HbA1c reflects your average blood sugar level over the past 2-3 months.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.infoColor,
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'HbA1c reflects your average blood sugar level over the past 2-3 months.',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.infoColor,
+                          ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -943,22 +876,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('HbA1c',
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: AppTheme.primaryGreen.withValues(alpha: 0.8))),
-                      Text(
-                        targetText,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.primaryGreen),
-                      ),
-                    ],
-                  ),
+                  _buildMiniTargetRow('HbA1c', hba1cT != null ? '${hba1cT.minValue.toStringAsFixed(1)} - ${hba1cT.maxValue.toStringAsFixed(1)} %' : 'Not Set', AppTheme.primaryGreen),
                 ],
               ),
             ),
@@ -1034,7 +952,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                     final picked = await showDatePicker(
                       context: context,
                       initialDate: _selectedDateTime,
-                      firstDate: DateTime.now().subtract(const Duration(days: 365 * 2)),
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
                       lastDate: DateTime.now(),
                     );
                     if (picked != null) {
@@ -1176,23 +1094,13 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     );
   }
 
-  Color? _getHba1cColor(double? value, HealthThreshold? threshold) {
-    if (value == null) return null;
-    final min = threshold?.minValue ?? 4.0;
-    final max = threshold?.maxValue ?? 7.0;
-
-    if (value > max) return AppTheme.errorColor;
-    if (value < min) return AppTheme.warningColor;
-    return AppTheme.primaryGreen;
-  }
-
-  String _getHba1cStatus(double? value, HealthThreshold? threshold) {
-    if (value == null) return '';
-    final min = threshold?.minValue ?? 4.0;
-    final max = threshold?.maxValue ?? 7.0;
-
-    if (value > max) return 'High';
-    if (value < min) return 'Low';
-    return 'Normal';
+  Widget _buildMiniTargetRow(String label, String val, Color color) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
+        Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      ],
+    );
   }
 }
