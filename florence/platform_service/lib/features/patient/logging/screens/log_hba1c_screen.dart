@@ -495,7 +495,8 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                 ),
               ),
             ),
-            if (_isAnalyzing)
+          ),
+          if (_isAnalyzing)
               Positioned.fill(
                 child: Container(
                   color: Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.7),
