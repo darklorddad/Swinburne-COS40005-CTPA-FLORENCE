@@ -800,7 +800,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                     color: AppTheme.textSecondaryColor, 
                     size: 20
                   ),
-                  suffixText: '%',
                   filled: true,
                   fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
