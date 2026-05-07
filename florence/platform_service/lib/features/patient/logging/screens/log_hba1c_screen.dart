@@ -252,13 +252,37 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
       if (mounted && result != null) {
         setState(() {
-          final val = result['hba1c'] ?? result['value'] ?? result['hba1c_level'] ?? result['result'];
-          if (val != null) {
-            if (val is Map) {
-              _hba1cController.text = (val['value'] ?? val['amount'] ?? '').toString();
-            } else {
-              _hba1cController.text = val.toString();
+          String? extractedValue;
+          
+          // 1. Try common keys case-insensitively
+          final keysToTry = ['hba1c', 'hba1c_level', 'value', 'result', 'hemoglobin_a1c', 'total'];
+          for (final key in result.keys) {
+            if (keysToTry.contains(key.toLowerCase())) {
+              final val = result[key];
+              if (val is Map) {
+                extractedValue = (val['value'] ?? val['amount'] ?? '').toString();
+              } else {
+                extractedValue = val.toString();
+              }
+              if (extractedValue != null && extractedValue.isNotEmpty) break;
             }
+          }
+          
+          // 2. Fallback: find the first numeric value in the map
+          if (extractedValue == null || extractedValue.isEmpty) {
+            for (final val in result.values) {
+              if (val is num) {
+                extractedValue = val.toString();
+                break;
+              } else if (val is String && double.tryParse(val) != null) {
+                extractedValue = val;
+                break;
+              }
+            }
+          }
+          
+          if (extractedValue != null && extractedValue.isNotEmpty) {
+            _hba1cController.text = extractedValue;
           }
         });
         Helpers.showSuccess(
@@ -441,7 +465,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                         const SizedBox(height: 20),
 
                         // The new unified HbA1c Panel Card
-                        _buildHba1cPanelSection(),
+                        _buildHba1cPanelSection(hba1cThreshold),
                         const SizedBox(height: 20),
 
                         // Date and time
@@ -468,8 +492,11 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
     );
   }
 
-  Widget _buildHba1cPanelSection() {
+  Widget _buildHba1cPanelSection(HealthThreshold? threshold) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hba1cValue = double.tryParse(_hba1cController.text.replaceAll(',', '.'));
+    final statusColor = _getHba1cColor(hba1cValue, threshold);
+    final statusText = _getHba1cStatus(hba1cValue, threshold);
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
@@ -731,79 +758,122 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           const SizedBox(height: 20),
 
           // The Input Field
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Level (%)',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                        ),
-                  ),
-                  if (_useAiAutofill) ...[
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Leave blank for auto-extract',
-                      style: TextStyle(
-                        color: AppTheme.primaryBlue,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ],
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 150,
-                    child: TextFormField(
-                      controller: _hba1cController,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      textInputAction: TextInputAction.done,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                            fontSize: 56,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimaryColor,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'Level (%)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
                           ),
-                      onChanged: (_) => setState(() {}),
-                      validator: (val) {
-                        if (val == null || val.isEmpty) return 'Required';
-                        final num = double.tryParse(val.replaceAll(',', '.'));
-                        if (num == null) return 'Invalid';
-                        if (num < 3.0 || num > 20.0) return 'Range:\n3.0 - 20.0';
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          borderSide: BorderSide.none,
+                    ),
+                    if (_useAiAutofill) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Leave blank for auto-extract',
+                        style: TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
-                        filled: true,
-                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
-                        hintText: '---',
-                        hintStyle: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                    const Spacer(),
+                    if (statusColor != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              statusText == 'High' ? Icons.arrow_upward : (statusText == 'Low' ? Icons.arrow_downward : Icons.check),
+                              size: 12,
+                              color: statusColor,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              statusText.toUpperCase(),
+                              style: TextStyle(
+                                color: statusColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _hba1cController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  textInputAction: TextInputAction.done,
+                  onChanged: (_) => setState(() {}),
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Required';
+                    final num = double.tryParse(val.replaceAll(',', '.'));
+                    if (num == null) return 'Invalid';
+                    if (num < 3.0 || num > 20.0) return 'Range:\n3.0 - 20.0';
+                    return null;
+                  },
+                  style: TextStyle(
+                    color: statusColor ?? AppTheme.textPrimaryColor,
+                    fontWeight: statusColor != null ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'e.g. 5.5',
+                    prefixIcon: Icon(
+                      Icons.bloodtype_outlined, 
+                      color: statusColor ?? AppTheme.textSecondaryColor, 
+                      size: 20
+                    ),
+                    suffixText: '%',
+                    filled: true,
+                    fillColor: statusColor != null 
+                        ? statusColor.withValues(alpha: 0.05) 
+                        : (isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: statusColor != null 
+                          ? BorderSide(color: statusColor.withValues(alpha: 0.5), width: 1)
+                          : BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: statusColor != null 
+                          ? BorderSide(color: statusColor.withValues(alpha: 0.5), width: 1)
+                          : BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: statusColor ?? AppTheme.primaryBlue,
+                        width: 2,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '%',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1062,6 +1132,24 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         ),
       ),
     );
+  }
+
+  Color? _getHba1cColor(double? value, HealthThreshold? threshold) {
+    if (value == null) return null;
+    final min = threshold?.minValue ?? 4.0;
+    final max = threshold?.maxValue ?? 5.6;
+    if (value < min) return AppTheme.warningColor;
+    if (value > max) return AppTheme.errorColor;
+    return AppTheme.primaryGreen;
+  }
+
+  String _getHba1cStatus(double? value, HealthThreshold? threshold) {
+    if (value == null) return '';
+    final min = threshold?.minValue ?? 4.0;
+    final max = threshold?.maxValue ?? 5.6;
+    if (value < min) return 'Low';
+    if (value > max) return 'High';
+    return 'Normal';
   }
 
   Widget _buildMiniTargetRow(String label, String val, Color color) {
