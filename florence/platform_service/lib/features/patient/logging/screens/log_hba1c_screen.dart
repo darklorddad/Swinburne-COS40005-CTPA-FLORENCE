@@ -1,11 +1,10 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/utils/formatters.dart';
-import 'dart:convert';
-import 'dart:typed_data';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/services/api_service.dart';
 import 'package:florence/core/utils/helpers.dart';
@@ -156,6 +155,28 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                     }
                   },
                 ),
+                const SizedBox(height: 12),
+
+                // 3. Document / PDF Picker
+                _buildPhotoOption(
+                  context,
+                  title: 'Upload Document (PDF)',
+                  icon: Icons.picture_as_pdf_rounded,
+                  color: Colors.redAccent,
+                  onTap: () async {
+                    Navigator.pop(context);
+                    FilePickerResult? result = await FilePicker.pickFiles(
+                      type: FileType.custom,
+                      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+                      withData: true,
+                    );
+                    if (result != null && result.files.single.bytes != null) {
+                      final file = result.files.single;
+                      final isPdf = file.extension?.toLowerCase() == 'pdf';
+                      _processFile(file.bytes!, file.name, isPdf);
+                    }
+                  },
+                ),
               ],
             ),
           ),
@@ -209,51 +230,36 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       return;
     }
 
-    await _analyzeLabReport(bytes, filename, isPdf);
-  }
-
-  Future<void> _analyzeLabReport(Uint8List fileBytes, String filename, bool isPdf) async {
     try {
-      final llmUrl = '${Environment.llmEngineServiceUrl}/biometrics/parse-lab-report';
-      final session = Supabase.instance.client.auth.currentSession;
-      
-      final request = http.MultipartRequest('POST', Uri.parse(llmUrl));
-      request.headers.addAll({
-        'Authorization': 'Bearer ${session?.accessToken}',
-      });
-      
-      request.fields['report_type'] = 'hba1c';
-      request.fields['target_unit'] = '%';
-      
-      request.files.add(http.MultipartFile.fromBytes(
-        'file', 
-        fileBytes, 
-        filename: filename,
-      ));
+      // 1. Send the BYTES directly to LLM Engine for analysis (Stateless)
+      // We use the baseUrlOverride to hit the LLM Engine instead of Data Service
+      final result = await _apiService.uploadFile(
+        '/biometrics/parse-lab-report',
+        'file',
+        bytes,
+        filename,
+        baseUrlOverride: Environment.llmEngineServiceUrl,
+        additionalFields: {
+          'report_type': 'hba1c',
+          'target_unit': '%',
+        },
+      );
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        
-        if (mounted) {
-          setState(() {
-            if (data['hba1c'] != null && data['hba1c']['value'] != null) {
-              _hba1cController.text = data['hba1c']['value'].toString();
-            }
-            _isAnalyzing = false;
-          });
-          Helpers.showSuccess(context, 'Lab report analyzed successfully!');
-        }
-      } else {
-        throw Exception('Failed to analyze report');
+      if (mounted && result != null) {
+        setState(() {
+          if (result['hba1c'] != null && result['hba1c']['value'] != null) {
+            _hba1cController.text = result['hba1c']['value'].toString();
+          } else if (result['hba1c'] != null) {
+            _hba1cController.text = result['hba1c'].toString();
+          }
+        });
+        Helpers.showSuccess(
+            context, 'Report parsed successfully! Please verify the values.');
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isAnalyzing = false);
-        Helpers.showError(context, 'Could not analyze report. Please enter manually.');
-      }
+      if (mounted) Helpers.showError(context, 'Failed to parse report: $e');
+    } finally {
+      if (mounted) setState(() => _isAnalyzing = false);
     }
   }
 
@@ -755,10 +761,11 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
           const SizedBox(height: 20),
 
-          // Input Box
+          // The Input Field contained in a distinct box
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
+              // A subtle inner background colour to differentiate from the main card
               color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
@@ -768,6 +775,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Title & Subtitle Group
                 Row(
                   children: [
                     Text(
@@ -791,42 +799,22 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
+
+                // The Input Field
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: TextFormField(
-                        controller: _hba1cController,
-                        validator: Validators.hba1c,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: hba1cColor ?? AppTheme.textPrimaryColor,
-                            ),
-                        decoration: InputDecoration(
-                          hintText: '---',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      '%',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
+                        child: _buildGridLabField(
+                            'HbA1c',
+                            _hba1cController,
+                            '%',
+                            Icons.bloodtype_outlined,
+                            '5.5')),
                   ],
                 ),
-                if (hba1cColor != null) ...[
-                  const SizedBox(height: 20),
+                if (hba1cColor != null && _hba1cController.text.isNotEmpty) ...[
+                  const SizedBox(height: 16),
                   Center(
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -1091,6 +1079,59 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGridLabField(String label, TextEditingController controller, String unit, IconData icon, String placeholder) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final double minValid = 3.0;
+    final double maxValid = 20.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.next,
+          onChanged: (_) => setState(() {}),
+          validator: (val) {
+            if (val == null || val.isEmpty) return 'Required';
+            final num = double.tryParse(val.replaceAll(',', '.'));
+            if (num == null) return 'Invalid';
+            if (num < minValid || num > maxValid) return 'Range:\n$minValid - $maxValid';
+            return null;
+          },
+          decoration: InputDecoration(
+            hintText: 'e.g. $placeholder',
+            prefixIcon: Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            filled: true,
+            fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: AppTheme.primaryBlue,
+                width: 2,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
