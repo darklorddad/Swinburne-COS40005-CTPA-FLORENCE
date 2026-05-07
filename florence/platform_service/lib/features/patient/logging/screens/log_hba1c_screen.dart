@@ -5,7 +5,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/services/api_service.dart';
@@ -147,25 +146,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                       if (image != null) {
                         final bytes = await image.readAsBytes();
                         _processFile(bytes, image.name, false);
-                      }
-                    },
-                  ),
-                  _buildPhotoOption(
-                    context,
-                    title: 'Files',
-                    icon: Icons.description_outlined,
-                    color: AppTheme.warningColor,
-                    onTap: () async {
-                      Navigator.pop(context);
-                      FilePickerResult? result = await FilePicker.platform.pickFiles(
-                        type: FileType.custom,
-                        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
-                        withData: true,
-                      );
-                      if (result != null && result.files.single.bytes != null) {
-                        final file = result.files.single;
-                        final isPdf = file.extension?.toLowerCase() == 'pdf';
-                        _processFile(file.bytes!, file.name, isPdf);
                       }
                     },
                   ),
