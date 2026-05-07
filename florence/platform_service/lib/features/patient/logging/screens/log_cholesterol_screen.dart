@@ -922,65 +922,94 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
           const SizedBox(height: 20),
 
-          // The 2x2 Grid
-          Row(
-            children: [
-              Text(
-                'Values ($currentUnit)',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+          // The 2x2 Grid contained in a distinct box
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              // A subtle inner background colour to differentiate from the main card
+              color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
-              if (_useAiAutofill) ...[
-                const SizedBox(width: 8),
-                const Text(
-                  'Leave blank for auto-extract',
-                  style: TextStyle(
-                    color: AppTheme.primaryBlue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title & Subtitle Group
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Values ($currentUnit)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    if (_useAiAutofill) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            size: 14,
+                            color: AppTheme.primaryBlue,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Leave blank for auto-extract',
+                            style: TextStyle(
+                              color: AppTheme.primaryBlue,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // The 4 Input Fields
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: _buildGridLabField(
+                            'Total',
+                            _totalController,
+                            currentUnit,
+                            Icons.bloodtype_outlined,
+                            '5.0',
+                            '150')),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _buildGridLabField('LDL', _ldlController, currentUnit,
+                            Icons.arrow_downward, '2.5', '100')),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: _buildGridLabField('HDL', _hdlController, currentUnit,
+                            Icons.arrow_upward, '1.5', '50')),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _buildGridLabField(
+                            'Triglycerides',
+                            _triglyceridesController,
+                            currentUnit,
+                            Icons.water_drop_outlined,
+                            '1.7',
+                            '150')),
+                  ],
                 ),
               ],
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                  child: _buildGridLabField(
-                      'Total',
-                      _totalController,
-                      currentUnit,
-                      Icons.bloodtype_outlined,
-                      '5.0',
-                      '150')),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _buildGridLabField('LDL', _ldlController, currentUnit,
-                      Icons.arrow_downward, '2.5', '100')),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                  child: _buildGridLabField('HDL', _hdlController, currentUnit,
-                      Icons.arrow_upward, '1.5', '50')),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _buildGridLabField(
-                      'Triglycerides',
-                      _triglyceridesController,
-                      currentUnit,
-                      Icons.water_drop_outlined,
-                      '1.7',
-                      '150')),
-            ],
+            ),
           ),
         ],
       ),
