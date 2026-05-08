@@ -4,8 +4,9 @@ import 'package:flutter/cupertino.dart';
 // Admin-side imports
 import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
-import 'package:florence/features/admin/patients/screens/patients_list_screen.dart';
-import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
+// Note: We are using the new PatientDirectoryScreen instead of the old PatientsListScreen
+import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart'; 
+
 import 'package:florence/features/auth/screens/login_screen.dart';
 import 'package:florence/features/auth/screens/register_screen.dart';
 import 'package:florence/features/auth/screens/splash_screen.dart';
@@ -180,6 +181,7 @@ class AppRoutes {
       case clinicianProfile:
         return _buildRoute(const ClinicianProfileScreen(), settings);
 
+      // --- ADMIN ROUTES ---
       case adminDashboard:
         return _buildRoute(const AdminDashboardScreen(), settings);
 
@@ -187,19 +189,11 @@ class AppRoutes {
         return _buildRoute(const AdminLoginScreen(), settings);
 
       case adminPatientList:
-        return _buildRoute(const PatientsListScreen(), settings);
+        return _buildRoute(const PatientDirectoryScreen(), settings);
 
       case adminPatientDetail:
-        if (args is Map<String, dynamic>) {
-          return _buildRoute(AdminPatientDetailScreen(patientData: args), settings);
-        } else {
-          return _buildRoute(
-            Scaffold(
-              body: Center(child: Text('Invalid arguments for ${settings.name}')),
-            ),
-            settings,
-          );
-        }
+        // Routed to a placeholder until the new Admin Patient Detail screen is built
+        return _buildRoute(const _PlaceholderScreen(title: 'Admin Patient Detail'), settings);
 
       default:
         return _buildRoute(

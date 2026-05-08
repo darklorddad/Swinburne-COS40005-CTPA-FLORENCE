@@ -1,493 +1,504 @@
 import 'package:flutter/material.dart';
 import 'package:florence/config/admin_theme.dart';
-import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
-import 'package:florence/features/admin/core/services/permission_service.dart';
-import 'package:florence/config/admin_routes.dart';
 
-/// Admin Dashboard
-/// System-wide overview with patient metrics, recent activity, and quick actions
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
-
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final bool _isLoading = false;
-
-  // Mock data tailored for Chronic Disease Monitoring MVP
-  final Map<String, dynamic> _systemMetrics = {
-    'totalPatients': 142,
-    'highRiskPatients': 18,
-    'totalClinicians': 12,
-    'activeDevices': 89,
-  };
-
-  @override
   Widget build(BuildContext context) {
-    final currentUser = PermissionService().currentUser;
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    final padding = isMobile ? 16.0 : 32.0;
-
-    return AdminScaffold(
-      title: 'Admin Dashboard',
-      currentRoute: AdminRoutes.adminDashboard,
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1200),
+    return Scaffold(
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Assuming your Sidebar Widget is here (260px width)
+          // const AdminSidebar(), 
+          
+          Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.all(padding),
+              padding: const EdgeInsets.all(32.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Welcome Header
-                  _buildWelcomeHeader(currentUser, isMobile),
-
-                  SizedBox(height: isMobile ? 24 : 32),
-
-                  // Gradient KPI Cards
-                  _buildSystemMetrics(isMobile),
-
-                  SizedBox(height: isMobile ? 24 : 32),
-
-                  // Main Content Grid
-                  LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth < 900) {
-                        return Column(
+                  _buildHeader(context),
+                  const SizedBox(height: 32),
+                  _buildMetricCards(context),
+                  const SizedBox(height: 32),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Left Column (Feed)
+                      Expanded(
+                        flex: 7,
+                        child: _buildActionFeed(context),
+                      ),
+                      const SizedBox(width: 24),
+                      // Right Column (Quick Actions & Activity)
+                      Expanded(
+                        flex: 4,
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            _buildQuickActions(isMobile),
-                            SizedBox(height: isMobile ? 16 : 24),
-                            _buildHighRiskPatientsList(isMobile),
-                            SizedBox(height: isMobile ? 16 : 24),
-                            _buildRecentActivity(isMobile),
+                            _buildQuickActions(context),
+                            const SizedBox(height: 24),
+                            _buildRecentActivity(context),
                           ],
-                        );
-                      }
-
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Left Column: Priority Data (High Risk Patients)
-                          Expanded(
-                            flex: 7,
-                            child: _buildHighRiskPatientsList(isMobile),
-                          ),
-                          const SizedBox(width: 24),
-                          // Right Column: Actions & Logs
-                          Expanded(
-                            flex: 4,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                _buildQuickActions(isMobile),
-                                const SizedBox(height: 24),
-                                _buildRecentActivity(isMobile),
-                              ],
-                            ),
-                          ),
-                        ],
-                      );
-                    },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildWelcomeHeader(dynamic currentUser, bool isMobile) {
-    final hour = DateTime.now().hour;
-    String greeting = hour < 12 ? 'Good Morning' : (hour < 18 ? 'Good Afternoon' : 'Good Evening');
+  Widget _buildHeader(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Good Morning, Admin',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+        Row(
+          children: [
+            SizedBox(
+              width: 300,
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search patients, doctors.',
+                  prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AdminTheme.outlineVariant),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: const BorderSide(color: AdminTheme.primary),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.notifications_none_rounded, color: AdminTheme.onSurfaceVariant),
+                  onPressed: () {},
+                ),
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(color: AdminTheme.error, shape: BoxShape.circle),
+                  ),
+                )
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.help_outline_rounded, color: AdminTheme.onSurfaceVariant),
+              onPressed: () {},
+            ),
+            const SizedBox(width: 8),
+            const CircleAvatar(
+              radius: 18,
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 
+  Widget _buildMetricCards(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _MetricCard(
+            title: 'Total Patients',
+            value: '142',
+            subtitle: '↑ 12%',
+            subtitleColor: AdminTheme.primary,
+            subtitleBg: AdminTheme.primaryContainer.withValues(alpha: 0.3),
+            icon: Icons.people_outline,
+            iconColor: AdminTheme.primary,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _MetricCard(
+            title: 'High-Risk Patients',
+            value: '18',
+            subtitle: 'Needs attention',
+            subtitleColor: AdminTheme.error,
+            subtitleBg: Colors.transparent,
+            icon: Icons.warning_amber_rounded,
+            iconColor: AdminTheme.error,
+            isAlert: true,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _MetricCard(
+            title: 'Active Clinicians',
+            value: '12',
+            subtitle: 'On duty',
+            subtitleColor: AdminTheme.onSurfaceVariant,
+            subtitleBg: Colors.transparent,
+            icon: Icons.medical_services_outlined,
+            iconColor: AdminTheme.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionFeed(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$greeting, ${currentUser?.firstName ?? 'Admin'}!',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w800,
-                fontSize: isMobile ? 24 : 32,
-                color: AdminTheme.textPrimaryColor,
-              ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Action Required Feed', style: Theme.of(context).textTheme.titleLarge),
+            TextButton(
+              onPressed: () {},
+              style: TextButton.styleFrom(foregroundColor: AdminTheme.primary),
+              child: const Text('View All'),
+            ),
+          ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          'Here is the current status of the Florence Health Platform.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AdminTheme.textSecondaryColor,
-                fontSize: isMobile ? 14 : 16,
+        const SizedBox(height: 16),
+        Card(
+          child: Column(
+            children: [
+              _FeedItem(
+                name: 'Sarah Jenkins',
+                alert: 'Critical Glucose Spike',
+                doctor: 'Dr. Emily Chen',
+                isHighRisk: true,
+                avatarUrl: 'https://i.pravatar.cc/150?img=5',
               ),
+              const Divider(height: 1, color: AdminTheme.outlineVariant),
+              _FeedItem(
+                name: 'Marcus Johnson',
+                alert: 'Elevated Blood Pressure',
+                doctor: 'Dr. Robert Smith',
+                isHighRisk: true,
+                avatarUrl: 'https://i.pravatar.cc/150?img=12',
+              ),
+              const Divider(height: 1, color: AdminTheme.outlineVariant),
+              _FeedItem(
+                name: 'Elena Rodriguez',
+                alert: 'Missed Medication Dose',
+                doctor: 'Dr. Emily Chen',
+                isHighRisk: false,
+                avatarUrl: 'https://i.pravatar.cc/150?img=9',
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildSystemMetrics(bool isMobile) {
-    return ResponsiveGrid(
-      minChildWidth: isMobile ? 150 : 250,
-      spacing: isMobile ? 12 : 24,
-      runSpacing: isMobile ? 12 : 24,
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _GradientStatCard(
-          title: 'Total Patients',
-          value: _systemMetrics['totalPatients'].toString(),
-          icon: Icons.personal_injury_rounded,
-          gradientColors: const [Color(0xFF4F46E5), Color(0xFF818CF8)], // Indigo
-          subtitle: 'Active in system',
-          onTap: () => Navigator.pushNamed(context, AdminRoutes.patients),
-        ),
-        _GradientStatCard(
-          title: 'High Risk Patients',
-          value: _systemMetrics['highRiskPatients'].toString(),
-          icon: Icons.warning_rounded,
-          gradientColors: const [Color(0xFFE11D48), Color(0xFFFB7185)], // Rose/Red
-          subtitle: 'Requires attention',
-          onTap: () => Navigator.pushNamed(context, AdminRoutes.patients),
-        ),
-        _GradientStatCard(
-          title: 'Clinicians',
-          value: _systemMetrics['totalClinicians'].toString(),
-          icon: Icons.medical_services_rounded,
-          gradientColors: const [Color(0xFF0D9488), Color(0xFF2DD4BF)], // Teal
-          subtitle: 'Healthcare providers',
-          onTap: () => Navigator.pushNamed(context, AdminRoutes.users),
-        ),
-        _GradientStatCard(
-          title: 'Connected Devices',
-          value: _systemMetrics['activeDevices'].toString(),
-          icon: Icons.watch_rounded,
-          gradientColors: const [Color(0xFFD97706), Color(0xFFFBBF24)], // Amber
-          subtitle: 'Wearables synced',
-          onTap: () {}, // Future feature
-        ),
+        Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionButton(icon: Icons.person_add_outlined, label: 'Add Patient'),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _QuickActionButton(icon: Icons.medical_information_outlined, label: 'Add Clinician'),
+            ),
+          ],
+        )
       ],
     );
   }
 
-  Widget _buildHighRiskPatientsList(bool isMobile) {
+  Widget _buildRecentActivity(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Recent Activity', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(24), // ADDED the Padding widget here
+            child: Column(
+              children: [
+                _ActivityItem(
+                  icon: Icons.person_add,
+                  iconBg: AdminTheme.primaryContainer.withValues(alpha: 0.5),
+                  title: 'New Patient Registered: John Doe',
+                  time: '10 Mins Ago',
+                  isLast: false,
+                ),
+                _ActivityItem(
+                  icon: Icons.check_circle_outline,
+                  iconBg: AdminTheme.surfaceContainerHighest, // This will now work!
+                  title: 'Dr. Smith completed rounds',
+                  time: '1 Hour Ago',
+                  isLast: false,
+                ),
+                _ActivityItem(
+                  icon: Icons.warning_amber_rounded,
+                  iconBg: AdminTheme.errorContainer,
+                  iconColor: AdminTheme.error,
+                  title: 'Alert generated for Marcus Johnson',
+                  time: '2 Hours Ago',
+                  isLast: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Helper Widgets
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final Color subtitleColor;
+  final Color subtitleBg;
+  final IconData icon;
+  final Color iconColor;
+  final bool isAlert;
+
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.subtitleColor,
+    required this.subtitleBg,
+    required this.icon,
+    required this.iconColor,
+    this.isAlert = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
-      margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    'High Risk Patients (Action Needed)',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: isMobile ? 18 : 20,
-                        ),
-                    overflow: TextOverflow.ellipsis,
+                Text(title, style: Theme.of(context).textTheme.labelSmall),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isAlert ? AdminTheme.errorContainer.withValues(alpha: 0.5) : AdminTheme.primaryContainer.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
                   ),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, AdminRoutes.patients),
-                  child: const Text('View All'),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildPatientListTile('Jordan Lee', 'Recent glucose spike (12.5 mmol/L)', 'Dr. Sarah', true),
-            const Divider(),
-            _buildPatientListTile('Maria Garcia', 'Missed 3 medication logs', 'Dr. Ahmed', true),
-            const Divider(),
-            _buildPatientListTile('Robert Chen', 'High BP trend detected', 'Dr. Sarah', true),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(value, style: Theme.of(context).textTheme.displaySmall),
+                const SizedBox(width: 12),
+                Container(
+                  padding: subtitleBg != Colors.transparent ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4) : EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    color: subtitleBg,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    subtitle,
+                    style: TextStyle(color: subtitleColor, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildPatientListTile(String name, String alertMsg, String doctor, bool isHighRisk) {
+class _FeedItem extends StatelessWidget {
+  final String name;
+  final String alert;
+  final String doctor;
+  final bool isHighRisk;
+  final String avatarUrl;
+
+  const _FeedItem({required this.name, required this.alert, required this.doctor, required this.isHighRisk, required this.avatarUrl});
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.all(24.0),
       child: Row(
         children: [
-          CircleAvatar(
-            backgroundColor: isHighRisk ? Colors.red.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.1),
-            child: Icon(
-              Icons.person,
-              color: isHighRisk ? AdminTheme.errorColor : AdminTheme.primaryIndigo,
-            ),
-          ),
+          CircleAvatar(radius: 24, backgroundImage: NetworkImage(avatarUrl)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 4),
-                Text(alertMsg, style: TextStyle(color: AdminTheme.errorColor, fontSize: 13, fontWeight: FontWeight.w500)),
+                Row(
+                  children: [
+                    Icon(
+                      isHighRisk ? Icons.priority_high_rounded : Icons.medical_information, 
+                      size: 16, 
+                      color: isHighRisk ? AdminTheme.error : AdminTheme.onSurfaceVariant
+                    ),
+                    const SizedBox(width: 4),
+                    Text(alert, style: TextStyle(color: isHighRisk ? AdminTheme.error : AdminTheme.onSurfaceVariant, fontSize: 14)),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 16, color: AdminTheme.outline),
+                    const SizedBox(width: 4),
+                    Text(doctor, style: const TextStyle(color: AdminTheme.outline, fontSize: 14)),
+                  ],
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(doctor, style: TextStyle(color: AdminTheme.textSecondaryColor, fontSize: 13)),
-              const SizedBox(height: 4),
-              Icon(Icons.chevron_right, color: AdminTheme.textLightColor, size: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isHighRisk ? AdminTheme.errorContainer : AdminTheme.surfaceContainer,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  isHighRisk ? 'High Risk' : 'Medium Risk',
+                  style: TextStyle(
+                    color: isHighRisk ? AdminTheme.onErrorContainer : AdminTheme.onSurfaceVariant,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: () {},
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AdminTheme.onSurface,
+                  side: const BorderSide(color: AdminTheme.secondary),
+                  backgroundColor: AdminTheme.secondary.withValues(alpha: 0.1),
+                ),
+                child: const Text('Review'),
+              ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(bool isMobile) {
-    return Card(
-      margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Actions',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: isMobile ? 18 : 20,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _buildActionButton(
-                  icon: Icons.person_add_rounded,
-                  label: 'Add Patient',
-                  color: AdminTheme.primaryIndigo,
-                  onPressed: () => Navigator.pushNamed(context, AdminRoutes.createPatient),
-                ),
-                _buildActionButton(
-                  icon: Icons.medical_information_rounded,
-                  label: 'Add Clinician',
-                  color: AdminTheme.accentTeal,
-                  onPressed: () => Navigator.pushNamed(context, AdminRoutes.createUser),
-                ),
-                _buildActionButton(
-                  icon: Icons.settings_rounded,
-                  label: 'Settings',
-                  color: AdminTheme.textSecondaryColor,
-                  onPressed: () => Navigator.pushNamed(context, AdminRoutes.settings),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({required IconData icon, required String label, required Color color, required VoidCallback onPressed}) {
-    return OutlinedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: color,
-        side: BorderSide(color: color.withValues(alpha: 0.3)),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-
-  Widget _buildRecentActivity(bool isMobile) {
-    return Card(
-      margin: EdgeInsets.zero, // FIX: Removes default Flutter card margin
-      elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.05),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Recent System Activity',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: isMobile ? 18 : 20,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            _buildActivityItem(
-              icon: Icons.warning_amber_rounded,
-              title: 'Risk Level Elevated',
-              subtitle: 'Jordan Lee updated to HIGH risk',
-              time: '1 hour ago',
-              color: AdminTheme.errorColor,
-            ),
-            _buildActivityItem(
-              icon: Icons.person_add_rounded,
-              title: 'New Patient Registered',
-              subtitle: 'Emily Chen joined the platform',
-              time: '3 hours ago',
-              color: AdminTheme.successColor,
-            ),
-            _buildActivityItem(
-              icon: Icons.assignment_ind_rounded,
-              title: 'Clinician Assigned',
-              subtitle: 'Dr. Sarah assigned to 3 new patients',
-              time: '1 day ago',
-              color: AdminTheme.primaryIndigo,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({required IconData icon, required String title, required String subtitle, required String time, required Color color}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: color, size: 20),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                const SizedBox(height: 2),
-                Text(subtitle, style: TextStyle(color: AdminTheme.textSecondaryColor, fontSize: 13)),
-              ],
-            ),
-          ),
-          Text(time, style: TextStyle(color: AdminTheme.textLightColor, fontSize: 11)),
+          )
         ],
       ),
     );
   }
 }
 
-/// Custom Gradient Card Widget for KPIs
-class _GradientStatCard extends StatelessWidget {
-  final String title;
-  final String value;
+class _QuickActionButton extends StatelessWidget {
   final IconData icon;
-  final List<Color> gradientColors;
-  final String subtitle;
-  final VoidCallback onTap;
+  final String label;
 
-  const _GradientStatCard({
-    required this.title,
-    required this.value,
-    required this.icon,
-    required this.gradientColors,
-    required this.subtitle,
-    required this.onTap,
-  });
+  const _QuickActionButton({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradientColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors.last.withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+    return Card(
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            children: [
+              Icon(icon, color: AdminTheme.primary, size: 32),
+              const SizedBox(height: 16),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+            ],
           ),
-        ],
+        ),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, color: Colors.white, size: 24),
-                    ),
-                    const Icon(Icons.arrow_outward_rounded, color: Colors.white70, size: 20),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    height: 1.1,
+    );
+  }
+}
+
+class _ActivityItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconBg;
+  final Color? iconColor;
+  final String title;
+  final String time;
+  final bool isLast;
+
+  const _ActivityItem({required this.icon, required this.iconBg, this.iconColor, required this.title, required this.time, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                child: Icon(icon, size: 16, color: iconColor ?? AdminTheme.primary),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    color: AdminTheme.surfaceContainerHighest,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    height: 1.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 12,
-                    height: 1.1,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, color: AdminTheme.onSurface)),
+                  const SizedBox(height: 4),
+                  Text(time, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AdminTheme.onSurfaceVariant)),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
