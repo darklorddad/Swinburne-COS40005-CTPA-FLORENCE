@@ -187,12 +187,21 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
     final pageItems = sortedReadings.sublist(startIndex, endIndex);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with Pagination
-          Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with Pagination
+              Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
@@ -253,8 +262,8 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.dividerColor),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -315,6 +324,8 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
               },
             ),
         ],
+      ),
+        ),
       ),
     );
   }

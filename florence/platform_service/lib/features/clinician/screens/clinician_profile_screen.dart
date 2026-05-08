@@ -132,6 +132,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Clinician Profile'),
+        elevation: 0,
         actions: [
           if (!_isEditing)
             IconButton(
@@ -154,6 +155,13 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
               ],
             ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2.0),
+          child: Container(
+            color: AppTheme.dividerColor,
+            height: 1.0,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
