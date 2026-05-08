@@ -1,9 +1,13 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/services/automation/pattern_detection_service.dart';
 import 'package:florence/core/services/notifications/notification_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Notification Provider
 final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);
@@ -18,7 +22,6 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
 
   @override
   List<HealthNotification> build() {
-    // Ensure timer is cancelled when provider is disposed/invalidated
     ref.onDispose(() {
       _monitoringTimer?.cancel();
     });
@@ -26,6 +29,14 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
     if (Environment.enableAutomation) {
       _startAutomationMonitoring();
     }
+
+    // Restart timer when user changes the check interval in settings
+    ref.listen(patientSettingsProvider, (previous, next) {
+      if (previous?.automationCheckInterval != next.automationCheckInterval) {
+        _restartTimer(next.automationCheckInterval);
+      }
+    });
+
     return [];
   }
 
@@ -38,15 +49,20 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
   int get unreadCount => unreadNotifications.length;
   int get criticalCount => criticalNotifications.length;
 
-  /// Start automated pattern monitoring
-  void _startAutomationMonitoring() {
-    // Check every 15 minutes (configurable)
+  void _restartTimer(int minutes) {
+    _monitoringTimer?.cancel();
     _monitoringTimer = Timer.periodic(
-      Duration(minutes: Environment.automationCheckInterval),
+      Duration(minutes: minutes),
       (_) => _checkForTriggers(),
     );
+  }
 
-    // Initial check
+  void _startAutomationMonitoring() {
+    final interval = ref.read(patientSettingsProvider).automationCheckInterval;
+    _monitoringTimer = Timer.periodic(
+      Duration(minutes: interval),
+      (_) => _checkForTriggers(),
+    );
     _checkForTriggers();
   }
 
@@ -54,33 +70,46 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
   Future<void> _checkForTriggers() async {
     if (!Environment.enableAutomation) return;
 
-    // Reset daily counter
     final now = DateTime.now();
     if (_lastCheckDate == null || _lastCheckDate!.day != now.day) {
       _notificationsToday = 0;
       _lastCheckDate = now;
     }
-
-    // Don't exceed daily limit
-    if (_notificationsToday >= Environment.maxNotificationsPerDay) {
-      return;
-    }
+    if (_notificationsToday >= Environment.maxNotificationsPerDay) return;
 
     try {
-      // Detect patterns
-      final patterns = await _patternService.detectPatterns(
-        hoursToAnalyze: 24,
-        useAI: true,
-      );
+      final healthData = ref.read(monitorDataProvider).asData?.value;
+      if (healthData == null) return;
 
-      // Generate notifications for detected patterns
-      for (var pattern in patterns) {
+      // Glucose: high/critical patterns via requiresAction guard
+      final patterns = _patternService.detectPatternsFromData(healthData);
+      for (final pattern in patterns) {
         if (pattern.requiresAction) {
           await _generateNotificationForPattern(pattern);
         }
       }
+
+      // Activity drop: medium severity — dedicated check bypasses requiresAction
+      final twoDaysAgo = now.subtract(const Duration(days: 2));
+      final hasRecentActivity =
+          healthData.activities.any((a) => a.startTime.isAfter(twoDaysAgo));
+      if (!hasRecentActivity && healthData.activities.isNotEmpty) {
+        await sendMotivation(
+          'No activity logged in 2 days. Even a 10-minute walk helps manage glucose and mood!',
+        );
+      }
+
+      // High-carb meal: medium severity — dedicated check bypasses requiresAction
+      if (healthData.meals.isNotEmpty) {
+        final lastMeal = healthData.meals.first;
+        if (lastMeal.carbs > 80) {
+          await sendEducationalTip(
+            'Your last meal had ${lastMeal.carbs.toStringAsFixed(0)}g of carbs. A short walk after eating can help reduce glucose spikes.',
+          );
+        }
+      }
     } catch (e) {
-      print('Error in automation monitoring: $e');
+      debugPrint('Automation check error: $e');
     }
   }
 
@@ -354,6 +383,189 @@ Tap to see detailed trends!
     );
 
     await addNotification(notification);
+  }
+
+  /// Called immediately after a glucose reading is saved.
+  /// Fires an alert if the value is outside the safe range.
+  Future<void> checkAfterGlucoseLog(double valueMgDl) async {
+    if (valueMgDl > Environment.glucoseHigh) {
+      await addNotification(HealthNotification(
+        id: 'notif_glucose_high_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: valueMgDl > 250
+            ? NotificationPriority.critical
+            : NotificationPriority.high,
+        title: 'High Glucose Reading',
+        message:
+            'Reading of ${valueMgDl.toStringAsFixed(0)} mg/dL logged. Consider a short walk or checking your recent meals.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'trending_up',
+      ));
+    } else if (valueMgDl < Environment.glucoseLow) {
+      await addNotification(HealthNotification(
+        id: 'notif_glucose_low_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.critical,
+        title: 'Low Glucose Alert',
+        message:
+            'Reading of ${valueMgDl.toStringAsFixed(0)} mg/dL. If you feel symptoms, have a fast-acting carb.',
+        createdAt: DateTime.now(),
+        actionUrl: '/log/glucose',
+        iconName: 'trending_down',
+      ));
+    }
+  }
+
+  /// Called immediately after a meal is saved.
+  /// Fires an educational tip if the meal is high-calorie.
+  Future<void> checkAfterMealLog(int? calories) async {
+    if (calories == null || calories <= 600) return;
+    await sendEducationalTip(
+      'Your last meal had $calories kcal. A 10–15 minute walk after eating can help reduce glucose spikes.',
+    );
+  }
+
+  /// Fired after an activity is saved.
+  Future<void> checkAfterActivityLog(int? durationMinutes) async {
+    if (durationMinutes == null) return;
+    if (durationMinutes >= 30) {
+      await sendAchievement(
+        'Great workout!',
+        'You logged $durationMinutes minutes of activity. Keep it up!',
+      );
+    } else {
+      await sendEducationalTip(
+        'Short sessions count! Even $durationMinutes minutes of movement helps manage glucose. Aim for 30+ minutes when you can.',
+      );
+    }
+  }
+
+  /// Fired after a blood pressure reading is saved.
+  Future<void> checkAfterBloodPressureLog(double? systolic, double? diastolic) async {
+    if (systolic == null || diastolic == null) return;
+    if (systolic >= 180 || diastolic >= 120) {
+      await addNotification(HealthNotification(
+        id: 'notif_bp_crisis_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.critical,
+        title: 'Hypertensive Crisis',
+        message: 'BP of ${systolic.toStringAsFixed(0)}/${diastolic.toStringAsFixed(0)} mmHg is dangerously high. Seek medical attention immediately.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'warning',
+      ));
+    } else if (systolic >= 140 || diastolic >= 90) {
+      await addNotification(HealthNotification(
+        id: 'notif_bp_high_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.high,
+        title: 'High Blood Pressure',
+        message: 'BP of ${systolic.toStringAsFixed(0)}/${diastolic.toStringAsFixed(0)} mmHg is above normal. Consider reducing sodium and stress.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'monitor_heart',
+      ));
+    }
+  }
+
+  /// Fired after BMI is calculated and saved.
+  Future<void> checkAfterBmiLog(double? bmi) async {
+    if (bmi == null) return;
+    if (bmi >= 30) {
+      await sendEducationalTip(
+        'BMI of ${bmi.toStringAsFixed(1)} is in the obese range. Gradual weight loss through diet and activity can significantly improve glucose control.',
+      );
+    } else if (bmi >= 25) {
+      await sendEducationalTip(
+        'BMI of ${bmi.toStringAsFixed(1)} is in the overweight range. Small lifestyle changes can make a big difference for your diabetes management.',
+      );
+    } else if (bmi < 18.5) {
+      await sendEducationalTip(
+        'BMI of ${bmi.toStringAsFixed(1)} is below the healthy range. Speak with your doctor about a nutrition plan.',
+      );
+    }
+  }
+
+  /// Fired after a cholesterol reading is saved.
+  Future<void> checkAfterCholesterolLog(double? total, double? ldl, double? hdl) async {
+    if (ldl != null && ldl > 130) {
+      await addNotification(HealthNotification(
+        id: 'notif_chol_ldl_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.high,
+        title: 'High LDL Cholesterol',
+        message: 'LDL of ${ldl.toStringAsFixed(0)} mg/dL is above the 130 mg/dL target. Reducing saturated fats and increasing activity can help.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'bloodtype',
+      ));
+    } else if (total != null && total > 200) {
+      await sendEducationalTip(
+        'Total cholesterol of ${total.toStringAsFixed(0)} mg/dL is borderline high. A heart-healthy diet can help bring it down.',
+      );
+    }
+  }
+
+  /// Fired after an HbA1c reading is saved.
+  Future<void> checkAfterHba1cLog(double value) async {
+    if (value > Environment.hba1cTarget) {
+      await addNotification(HealthNotification(
+        id: 'notif_hba1c_high_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: value > 9.0 ? NotificationPriority.critical : NotificationPriority.high,
+        title: 'HbA1c Above Target',
+        message: 'HbA1c of ${value.toStringAsFixed(1)}% is above your ${Environment.hba1cTarget.toStringAsFixed(1)}% target. Check your recommendations for next steps.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'pie_chart',
+      ));
+    } else {
+      await sendAchievement(
+        'HbA1c on Target!',
+        'HbA1c of ${value.toStringAsFixed(1)}% is within your target range. Great glucose control!',
+      );
+    }
+  }
+
+  /// Called when the dashboard loads health data.
+  /// Checks for activity drop and whether a weekly summary is due.
+  Future<void> checkDashboardTriggers(HealthDataState healthData) async {
+    await _checkActivityDrop(healthData);
+    await _checkWeeklySummary(healthData);
+  }
+
+  Future<void> _checkActivityDrop(HealthDataState healthData) async {
+    if (healthData.activities.isEmpty) return;
+    final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
+    final hasRecentActivity =
+        healthData.activities.any((a) => a.startTime.isAfter(twoDaysAgo));
+    if (!hasRecentActivity) {
+      await sendMotivation(
+        'No activity logged in 2 days. Even a 10-minute walk helps manage glucose and mood!',
+      );
+    }
+  }
+
+  Future<void> _checkWeeklySummary(HealthDataState healthData) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSentMs = prefs.getInt('lam_last_weekly_summary') ?? 0;
+    final lastSent = DateTime.fromMillisecondsSinceEpoch(lastSentMs);
+    if (DateTime.now().difference(lastSent).inDays < 7) return;
+
+    final now = DateTime.now();
+    final summary = healthData.getHealthSummary(
+      startDate: now.subtract(const Duration(days: 7)),
+      endDate: now,
+    );
+
+    await sendWeeklySummary({
+      'averageGlucose': summary.averageGlucose,
+      'timeInRange': summary.timeInRange,
+      'totalActivityMinutes': summary.totalActivityMinutes,
+    });
+
+    await prefs.setInt('lam_last_weekly_summary', now.millisecondsSinceEpoch);
   }
 
   /// Manual trigger check (for testing)

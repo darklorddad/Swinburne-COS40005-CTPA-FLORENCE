@@ -38,13 +38,31 @@ class GlucoseChart extends StatelessWidget {
   }
 
   LineChartData _glucoseChartData(List<GlucoseReading> sortedReadings) {
-    final bool isMmol = unit == 'mmol/L';
+    final minY = _getMinY();
+    final maxY = _getMaxY();
+    final range = maxY - minY;
+    
+    // Calculate dynamic interval to prevent overlapping labels
+    double interval = 50.0;
+    if (range <= 15) {
+      interval = 2.0;
+    } else if (range <= 30) {
+      interval = 5.0;
+    } else if (range <= 60) {
+      interval = 10.0;
+    } else if (range <= 150) {
+      interval = 25.0;
+    } else if (range <= 300) {
+      interval = 50.0;
+    } else {
+      interval = 100.0;
+    }
     
     return LineChartData(
       gridData: FlGridData(
         show: true,
         drawVerticalLine: true,
-        horizontalInterval: isMmol ? 2.0 : 50.0,
+        horizontalInterval: interval,
         getDrawingHorizontalLine: (value) {
           if (value == highThreshold || value == lowThreshold) {
             return FlLine(
@@ -105,10 +123,10 @@ class GlucoseChart extends StatelessWidget {
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            interval: isMmol ? 2.0 : 50.0,
+            interval: interval,
             getTitlesWidget: (value, meta) {
               return Text(
-                isMmol ? value.toStringAsFixed(1) : value.toInt().toString(),
+                interval < 5.0 ? value.toStringAsFixed(1) : value.toInt().toString(),
                 style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 10,
@@ -124,14 +142,14 @@ class GlucoseChart extends StatelessWidget {
         border: Border(
           bottom: BorderSide(color: Colors.grey[300]!),
           left: BorderSide(color: Colors.grey[300]!),
-          right: BorderSide(color: Colors.transparent),
-          top: BorderSide(color: Colors.transparent),
+          right: const BorderSide(color: Colors.transparent),
+          top: const BorderSide(color: Colors.transparent),
         ),
       ),
       minX: 0,
-      maxX: sortedReadings.length - 1,
-      minY: _getMinY(),
-      maxY: _getMaxY(),
+      maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
+      minY: minY,
+      maxY: maxY,
       rangeAnnotations: RangeAnnotations(
         horizontalRangeAnnotations: [
           HorizontalRangeAnnotation(

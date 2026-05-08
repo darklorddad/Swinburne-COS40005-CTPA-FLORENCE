@@ -22,6 +22,9 @@ abstract class DataService {
   /// Get health data for a specific patient
   Future<PatientHealthData> getPatientHealthData(String patientId);
   
+  /// Get a single patient by ID
+  Future<Patient> getPatient(String patientId);
+  
   /// Get clinician notes for a specific patient
   Future<List<ClinicianNote>> getClinicianNotes(String patientId);
 
@@ -33,7 +36,19 @@ abstract class DataService {
 
   /// Unassign a patient from the current clinician
   Future<void> unassignPatient(String patientId);
+
+  /// Add a clinical note to a patient
+  Future<void> addPatientNote(String patientId, String noteContent);
+
+  /// Update the risk level for a patient
+  Future<void> updatePatientRiskLevel(String patientId, String riskLevel);
   
+  /// Get thresholds for a patient
+  Future<List<Map<String, dynamic>>> getPatientThresholds(String patientId);
+
+  /// Set thresholds for a patient
+  Future<void> setPatientThresholds(String patientId, List<Map<String, dynamic>> thresholds);
+
   /// Add a new patient
   Future<Patient> addPatient(Patient patient);
   

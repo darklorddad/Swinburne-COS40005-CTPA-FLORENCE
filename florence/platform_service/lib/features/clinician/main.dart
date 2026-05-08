@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:florence/features/clinician/screens/clinician_home_screen.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());

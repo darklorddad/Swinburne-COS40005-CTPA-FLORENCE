@@ -37,14 +37,25 @@ class ThresholdNotifier extends AsyncNotifier<List<PatientThreshold>> {
 
   Future<void> updateThresholds(List<PatientThreshold> updatedThresholds) async {
     final api = ApiService();
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async {
+    
+    // Save the current healthy state before we try anything risky
+    final previousState = state; 
+    
+    try {
       final payload = {
         "thresholds": updatedThresholds.map((t) => t.toJson()).toList()
       };
       await api.put('/patients/me/thresholds', payload);
-      return _fetchThresholds();
-    });
+      
+      // If successful, fetch the newly updated data
+      state = AsyncData(await _fetchThresholds()); 
+    } catch (e) {
+      // If it fails, instantly put the good data back so the UI doesn't break
+      state = previousState; 
+      
+      // Toss the error up to the UI so it can show a SnackBar
+      rethrow; 
+    }
   }
 }
 

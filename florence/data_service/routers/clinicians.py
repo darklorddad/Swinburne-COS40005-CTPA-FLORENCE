@@ -250,8 +250,13 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         thresholds = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_id).execute().data
         notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
         
-        # ADD THIS LINE to fetch activity
-        activity_logs = supabase.table('patient_activity_logs').select('*').eq('patient_id', patient_id).order('performed_at', desc=True).execute().data
+        # Fetch activity using correct DB columns aliased for the frontend
+        # Rename 'start_time' to 'performed_at' and 'active_duration_minutes' to 'duration_minutes'
+        activity_logs = supabase.table('patient_activity_logs') \
+            .select('*, performed_at:start_time, duration_minutes:active_duration_minutes') \
+            .eq('patient_id', patient_id) \
+            .order('start_time', desc=True) \
+            .execute().data
 
         return {
             "profile": patient_profile,

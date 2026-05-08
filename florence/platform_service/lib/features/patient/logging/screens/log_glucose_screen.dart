@@ -10,6 +10,7 @@ import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/core/utils/validators.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
@@ -381,6 +382,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       
       // Invalidate provider to refresh dashboard
       ref.invalidate(monitorDataProvider);
+
+      // LAM: fire notification if reading is out of range
+      ref.read(notificationProvider.notifier).checkAfterGlucoseLog(glucoseValue);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');

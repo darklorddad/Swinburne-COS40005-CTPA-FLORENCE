@@ -19,17 +19,21 @@ class NotificationsScreen extends ConsumerStatefulWidget {
 
 class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   NotificationType? _selectedFilter;
+  bool _showUnreadOnly = false;
 
   @override
   Widget build(BuildContext context) {
     final allNotifications = ref.watch(notificationProvider);
     final notifier = ref.read(notificationProvider.notifier);
 
-    final filteredNotifications = _selectedFilter == null
-        ? allNotifications
-        : allNotifications
-            .where((n) => n.type == _selectedFilter)
-            .toList();
+    // Combined filter logic
+    var filtered = _showUnreadOnly
+        ? allNotifications.where((n) => !n.isRead).toList()
+        : List<HealthNotification>.from(allNotifications);
+    if (_selectedFilter != null) {
+      filtered = filtered.where((n) => n.type == _selectedFilter).toList();
+    }
+    final filteredNotifications = filtered;
 
     // Group notifications by time
     final today = <HealthNotification>[];
@@ -43,7 +47,6 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     final weekStart = todayStart.subtract(const Duration(days: 7));
 
     for (var notification in filteredNotifications) {
-      // FIX: Convert to local time before comparing against local day buckets
       final localCreatedAt = notification.createdAt.toLocal();
 
       if (localCreatedAt.isAfter(todayStart)) {
@@ -61,37 +64,10 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       appBar: AppBar(
         title: const Text('Notifications'),
         actions: [
-          // Filter dropdown
-          PopupMenuButton<NotificationType?>(
-            icon: const Icon(Icons.filter_list),
-            tooltip: 'Filter',
-            onSelected: (type) {
-              setState(() => _selectedFilter = type);
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: null,
-                child: Text('All Notifications'),
-              ),
-              const PopupMenuDivider(),
-              ...NotificationType.values.map((type) => PopupMenuItem(
-                    value: type,
-                    child: Row(
-                      children: [
-                        _getNotificationIcon(type, 20),
-                        const SizedBox(width: 12),
-                        Text(_getNotificationTypeName(type)),
-                      ],
-                    ),
-                  )),
-            ],
-          ),
           // Mark all as read
           IconButton(
             icon: const Icon(Icons.done_all),
-            onPressed: () {
-              notifier.markAllAsRead();
-            },
+            onPressed: () => notifier.markAllAsRead(),
             tooltip: 'Mark all as read',
           ),
           // Clear all
@@ -104,27 +80,122 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   'Clear All Notifications',
                   'Are you sure you want to clear all notifications?',
                 );
-                if (confirmed) {
-                  notifier.clearAll();
-                }
+                if (confirmed) notifier.clearAll();
               },
               tooltip: 'Clear all',
             ),
           ),
         ],
       ),
-      body: filteredNotifications.isEmpty
-          ? _buildEmptyState()
-          : ListView(
-              children: [
-                if (today.isNotEmpty) _buildGroup('Today', today, notifier),
-                if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday, notifier),
-                if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek, notifier),
-                if (older.isNotEmpty) _buildGroup('Older', older, notifier),
-                const SizedBox(height: 24),
-              ],
+      body: Column(
+        children: [
+          // DEBUG: remove before demo
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: OutlinedButton.icon(
+              onPressed: () => notifier.checkNow(),
+              icon: const Icon(Icons.bug_report_outlined, size: 16),
+              label: const Text('Trigger LAM Check Now'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.textSecondaryColor,
+                side: BorderSide(color: AppTheme.borderColor),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
             ),
+          ),
+          const SizedBox(height: 12),
+          _buildFilterChips(allNotifications),
+          const SizedBox(height: 8),
+          if (filteredNotifications.isEmpty)
+            Expanded(child: _buildEmptyState())
+          else
+            Expanded(
+              child: ListView(
+                children: [
+                  if (today.isNotEmpty) _buildGroup('Today', today, notifier),
+                  if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday, notifier),
+                  if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek, notifier),
+                  if (older.isNotEmpty) _buildGroup('Older', older, notifier),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
+  }
+
+  Widget _buildFilterChips(List<HealthNotification> all) {
+    int countFor(NotificationType? type, bool unreadOnly) {
+      Iterable<HealthNotification> list =
+          unreadOnly ? all.where((n) => !n.isRead) : all;
+      if (type != null) list = list.where((n) => n.type == type);
+      return list.length;
+    }
+
+    final chips = <({String label, NotificationType? type, bool unread})>[
+      (label: 'All',          type: null,                          unread: false),
+      (label: 'Unread',       type: null,                          unread: true),
+      (label: 'Alerts',       type: NotificationType.alert,        unread: false),
+      (label: 'Tips',         type: NotificationType.educational,  unread: false),
+      (label: 'Achievements', type: NotificationType.achievement,  unread: false),
+      (label: 'Summaries',    type: NotificationType.summary,      unread: false),
+      (label: 'Motivational', type: NotificationType.motivational, unread: false),
+    ];
+
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final c = chips[i];
+          final isSelected = c.unread
+              ? _showUnreadOnly && _selectedFilter == null
+              : !_showUnreadOnly && _selectedFilter == c.type;
+          final count = countFor(c.type, c.unread);
+          final color = _chipColor(c.type, c.unread);
+
+          return FilterChip(
+            label: count > 0
+                ? Text('${c.label}  $count')
+                : Text(c.label),
+            selected: isSelected,
+            onSelected: (_) {
+              setState(() {
+                if (c.unread) {
+                  _showUnreadOnly = true;
+                  _selectedFilter = null;
+                } else {
+                  _showUnreadOnly = false;
+                  _selectedFilter = c.type;
+                }
+              });
+            },
+            showCheckmark: false,
+            selectedColor: color.withValues(alpha: 0.15),
+            side: BorderSide(
+              color: isSelected ? color : AppTheme.borderColor,
+            ),
+            labelStyle: TextStyle(
+              color: isSelected ? color : AppTheme.textSecondaryColor,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 13,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          );
+        },
+      ),
+    );
+  }
+
+  Color _chipColor(NotificationType? type, bool unread) {
+    if (unread) return AppTheme.warningColor;
+    if (type == null) return AppTheme.primaryBlue;
+    return _getNotificationColor(type);
   }
 
   /// Build notification group
@@ -164,12 +235,9 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       },
       child: InkWell(
         onTap: () {
-          // Mark as read
           if (!notification.isRead) {
             notifier.markAsRead(notification.id);
           }
-
-          // Navigate if action URL exists
           if (notification.actionUrl != null) {
             Navigator.pop(context);
             Navigator.pushNamed(context, notification.actionUrl!);
@@ -198,8 +266,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: _getNotificationColor(notification.type)
-                        .withValues(alpha: 0.1),
+                    color: _getNotificationColor(notification.type).withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: _getNotificationIcon(notification.type, 24),
@@ -223,7 +290,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         notification.message,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondaryColor,
                         ),
@@ -231,7 +298,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(
+                          const Icon(
                             Icons.access_time,
                             size: 14,
                             color: AppTheme.textSecondaryColor,
@@ -239,7 +306,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                           const SizedBox(width: 4),
                           Text(
                             Formatters.timeAgo(notification.createdAt),
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               color: AppTheme.textSecondaryColor,
                             ),
@@ -291,6 +358,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
 
   /// Build empty state
   Widget _buildEmptyState() {
+    String label;
+    if (_showUnreadOnly) {
+      label = 'No unread notifications';
+    } else if (_selectedFilter != null) {
+      label = 'No ${_getNotificationTypeName(_selectedFilter!).toLowerCase()}';
+    } else {
+      label = 'No notifications';
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -302,10 +378,8 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            _selectedFilter == null
-                ? 'No notifications'
-                : 'No ${_getNotificationTypeName(_selectedFilter!).toLowerCase()}',
-            style: TextStyle(
+            label,
+            style: const TextStyle(
               fontSize: 18,
               color: AppTheme.textSecondaryColor,
             ),
@@ -364,7 +438,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       case NotificationType.reminder:
         return 'Reminders';
       case NotificationType.educational:
-        return 'Educational';
+        return 'Tips';
       case NotificationType.motivational:
         return 'Motivational';
       case NotificationType.summary:

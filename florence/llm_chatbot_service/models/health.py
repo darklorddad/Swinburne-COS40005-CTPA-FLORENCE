@@ -20,8 +20,10 @@ class ActivityLog(BaseModel):
     id: int
     patient_id: int
     activity_description: str
-    duration_minutes: int
-    performed_at: datetime
+    active_duration_minutes: int
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    calories_burned: Optional[int] = None
 
 
 class DailyLog(BaseModel):

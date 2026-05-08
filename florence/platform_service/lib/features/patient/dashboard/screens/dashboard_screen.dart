@@ -5,6 +5,7 @@ import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/shared/widgets/notification_bell.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/chat/services/chatbot_service.dart'; // Chat Service
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
@@ -12,6 +13,8 @@ import 'package:florence/features/patient/core/providers/settings_providers.dart
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart'; // Added
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
+import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
 import 'package:florence/features/patient/dashboard/widgets/ai_insight_card.dart';
 import 'package:florence/features/patient/dashboard/widgets/biometrics_section.dart';
 import 'package:florence/features/patient/dashboard/widgets/quick_actions_grid.dart';
@@ -50,6 +53,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     });
   }
 
+  /// Builds a snapshot from whatever health data is currently loaded and
+  /// fires the insight fetch (no-op if cache is still fresh).
+  void _triggerInsightFetch({bool force = false}) {
+    final healthDataState =
+        ref.read(core_data.monitorDataProvider).asData?.value;
+    if (healthDataState == null) return;
+    final snapshot = InsightSnapshot.fromHealthData(healthDataState);
+    ref.read(insightProvider.notifier).fetch(snapshot, force: force);
+  }
+
   Future<void> _safeLoadChatHistory({bool force = false}) async {
     try {
       await ref.read(chatProvider.notifier).loadHistory(force: force);
@@ -78,6 +91,9 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         ref.refresh(core_data.monitorDataProvider.future),
         _safeLoadChatHistory(force: true),
       ]);
+
+      // 3. Refresh insight (force bypasses 1-hour cache on manual pull-to-refresh)
+      _triggerInsightFetch(force: true);
     } finally {
       if (mounted) {
         setState(() => _isPullRefreshing = false);
@@ -112,6 +128,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     
     // Keep chat provider alive, but load history only after profile is ready
     ref.watch(chatProvider);
+
+    // Fire insight fetch and LAM checks once health data first becomes available
+    ref.listen(core_data.monitorDataProvider, (previous, next) {
+      if (next.hasValue && !(previous?.hasValue ?? false)) {
+        _triggerInsightFetch();
+        // LAM: check activity drop and weekly summary on dashboard open
+        ref
+            .read(notificationProvider.notifier)
+            .checkDashboardTriggers(next.value!);
+      }
+    });
+
     if (userProfileAsync.hasValue) {
       // We use a post-frame callback inside a specialized widget or just let the 
       // initState/Refresh logic handle the explicit calls. 
@@ -167,8 +195,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             children: [
                               Expanded(
                                 child: AIInsightCard(
-                                  insight:
-                                      'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                                   onTap: () => AppRoutes.push(
                                       context, AppRoutes.recommendations),
                                 ),
@@ -192,8 +218,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         )
                       else ...[
                         AIInsightCard(
-                          insight:
-                              'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!',
                           onTap: () => AppRoutes.push(
                               context, AppRoutes.recommendations),
                         ),

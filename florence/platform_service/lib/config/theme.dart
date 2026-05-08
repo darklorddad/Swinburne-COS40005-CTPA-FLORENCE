@@ -515,6 +515,18 @@ class AppTheme {
         : borderColor;
   }
 
+  static Color getSurfaceColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? midnightSurface : surfaceColor;
+
+  static Color getBackgroundColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? midnightBackground : backgroundColor;
+
+  static Color getTextPrimaryColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? const Color(0xFFF9FAFB) : textPrimaryColor;
+
+  static Color getTextSecondaryColor(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark ? const Color(0xFF9CA3AF) : textSecondaryColor;
+
   /// Get color based on glucose level
   static Color getGlucoseColor(double value, double min, double max) {
     if (value < min) return glucoseLow;

@@ -128,11 +128,38 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                 },
               ),
             ],
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'Patients'),
-                Tab(text: 'Priority Alerts'),
-              ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: TabBar(
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: AppTheme.textSecondary,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  padding: const EdgeInsets.all(4),
+                  tabs: const [
+                    Tab(text: 'Patients'),
+                    Tab(text: 'Priority Alerts'),
+                  ],
+                ),
+              ),
             ),
           ),
           body: _isLoading
@@ -173,9 +200,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                                     _showFilters = !_showFilters;
                                   });
                                 },
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
                               ),
                             ),
                             onChanged: (value) {
@@ -284,9 +308,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                                 _showFilters = !_showFilters;
                               });
                             },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         onChanged: (value) {

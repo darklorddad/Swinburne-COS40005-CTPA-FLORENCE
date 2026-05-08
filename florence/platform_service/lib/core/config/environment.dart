@@ -27,6 +27,7 @@ class Environment {
   static const String dataServiceUrl = String.fromEnvironment(
     'DATA_SERVICE_URL',
     defaultValue: 'https://dev-ds-florence-dhp.vercel.app',
+    // defaultValue: 'https://ds-git-clinician-2026-04-10-florence-dhp.vercel.app',
   );
 
   /// Chatbot Service URL

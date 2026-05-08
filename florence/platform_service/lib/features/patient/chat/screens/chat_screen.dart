@@ -253,9 +253,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.getSurfaceColor(context),
         border: Border(
-          bottom: BorderSide(color: AppTheme.borderColor),
+          bottom: BorderSide(color: AppTheme.getBorderColor(context)),
         ),
       ),
       child: Column(
@@ -368,7 +368,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               decoration: BoxDecoration(
                 color: message.isUser
                     ? AppTheme.primaryBlue
-                    : Colors.grey.shade200,
+                    : Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFF2A2A2A)
+                        : Colors.grey.shade200,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(16),
                   topRight: const Radius.circular(16),
@@ -382,19 +384,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   p: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: message.isUser
                             ? Colors.white
-                            : AppTheme.textPrimaryColor,
+                            : AppTheme.getTextPrimaryColor(context),
                         height: 1.4,
                       ),
                   strong: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: message.isUser
                         ? Colors.white
-                        : AppTheme.textPrimaryColor,
+                        : AppTheme.getTextPrimaryColor(context),
                   ),
                   listBullet: TextStyle(
                     color: message.isUser
                         ? Colors.white
-                        : AppTheme.textPrimaryColor,
+                        : AppTheme.getTextPrimaryColor(context),
                   ),
                 ),
               ),
@@ -427,7 +429,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.grey.shade200,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? const Color(0xFF2A2A2A)
+                  : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -478,9 +482,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppTheme.getSurfaceColor(context),
         border: Border(
-          bottom: BorderSide(color: AppTheme.borderColor),
+          bottom: BorderSide(color: AppTheme.getBorderColor(context)),
         ),
       ),
       child: SafeArea(
@@ -497,9 +501,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     Expanded(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.backgroundColor,
+                      color: AppTheme.getBackgroundColor(context),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppTheme.borderColor),
+                      border: Border.all(color: AppTheme.getBorderColor(context)),
                     ),
                     child: Row(
                       children: [
