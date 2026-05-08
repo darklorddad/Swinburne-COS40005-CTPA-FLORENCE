@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/services/automation/pattern_detection_service.dart';
 import 'package:florence/core/services/notifications/notification_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Notification Provider
 final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);
@@ -347,6 +349,87 @@ Tap to see detailed trends!
     );
 
     await addNotification(notification);
+  }
+
+  /// Called immediately after a glucose reading is saved.
+  /// Fires an alert if the value is outside the safe range.
+  Future<void> checkAfterGlucoseLog(double valueMgDl) async {
+    if (valueMgDl > Environment.glucoseHigh) {
+      await addNotification(HealthNotification(
+        id: 'notif_glucose_high_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: valueMgDl > 250
+            ? NotificationPriority.critical
+            : NotificationPriority.high,
+        title: 'High Glucose Reading',
+        message:
+            'Reading of ${valueMgDl.toStringAsFixed(0)} mg/dL logged. Consider a short walk or checking your recent meals.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'trending_up',
+      ));
+    } else if (valueMgDl < Environment.glucoseLow) {
+      await addNotification(HealthNotification(
+        id: 'notif_glucose_low_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.critical,
+        title: 'Low Glucose Alert',
+        message:
+            'Reading of ${valueMgDl.toStringAsFixed(0)} mg/dL. If you feel symptoms, have a fast-acting carb.',
+        createdAt: DateTime.now(),
+        actionUrl: '/log/glucose',
+        iconName: 'trending_down',
+      ));
+    }
+  }
+
+  /// Called immediately after a meal is saved.
+  /// Fires an educational tip if the meal is high-calorie.
+  Future<void> checkAfterMealLog(int? calories) async {
+    if (calories == null || calories <= 600) return;
+    await sendEducationalTip(
+      'Your last meal had $calories kcal. A 10–15 minute walk after eating can help reduce glucose spikes.',
+    );
+  }
+
+  /// Called when the dashboard loads health data.
+  /// Checks for activity drop and whether a weekly summary is due.
+  Future<void> checkDashboardTriggers(HealthDataState healthData) async {
+    await _checkActivityDrop(healthData);
+    await _checkWeeklySummary(healthData);
+  }
+
+  Future<void> _checkActivityDrop(HealthDataState healthData) async {
+    if (healthData.activities.isEmpty) return;
+    final twoDaysAgo = DateTime.now().subtract(const Duration(days: 2));
+    final hasRecentActivity =
+        healthData.activities.any((a) => a.startTime.isAfter(twoDaysAgo));
+    if (!hasRecentActivity) {
+      await sendMotivation(
+        'No activity logged in 2 days. Even a 10-minute walk helps manage glucose and mood!',
+      );
+    }
+  }
+
+  Future<void> _checkWeeklySummary(HealthDataState healthData) async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastSentMs = prefs.getInt('lam_last_weekly_summary') ?? 0;
+    final lastSent = DateTime.fromMillisecondsSinceEpoch(lastSentMs);
+    if (DateTime.now().difference(lastSent).inDays < 7) return;
+
+    final now = DateTime.now();
+    final summary = healthData.getHealthSummary(
+      startDate: now.subtract(const Duration(days: 7)),
+      endDate: now,
+    );
+
+    await sendWeeklySummary({
+      'averageGlucose': summary.averageGlucose,
+      'timeInRange': summary.timeInRange,
+      'totalActivityMinutes': summary.totalActivityMinutes,
+    });
+
+    await prefs.setInt('lam_last_weekly_summary', now.millisecondsSinceEpoch);
   }
 
   /// Manual trigger check (for testing)
