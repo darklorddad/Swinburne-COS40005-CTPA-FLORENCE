@@ -9,6 +9,7 @@ import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
@@ -335,6 +336,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       await Future.wait(tasks);
 
       ref.invalidate(monitorDataProvider);
+      ref.read(notificationProvider.notifier).checkAfterCholesterolLog(
+        double.tryParse(_totalController.text.trim().replaceAll(',', '.')),
+        double.tryParse(_ldlController.text.trim().replaceAll(',', '.')),
+        double.tryParse(_hdlController.text.trim().replaceAll(',', '.')),
+      );
 
       if (mounted) {
         Helpers.showSuccess(
@@ -922,65 +928,83 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
           const SizedBox(height: 20),
 
-          // The 2x2 Grid
-          Row(
-            children: [
-              Text(
-                'Values ($currentUnit)',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
+          // The 2x2 Grid contained in a distinct box
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              // A subtle inner background colour to differentiate from the main card
+              color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
               ),
-              if (_useAiAutofill) ...[
-                const SizedBox(width: 8),
-                const Text(
-                  'Leave blank for auto-extract',
-                  style: TextStyle(
-                    color: AppTheme.primaryBlue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title & Subtitle Group
+                Row(
+                  children: [
+                    Text(
+                      'Values ($currentUnit)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    if (_useAiAutofill) ...[
+                      const SizedBox(width: 8),
+                      const Text(
+                        'Leave blank for auto-extract',
+                        style: TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // The 4 Input Fields
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: _buildGridLabField(
+                            'Total',
+                            _totalController,
+                            currentUnit,
+                            Icons.bloodtype_outlined,
+                            '5.0',
+                            '150')),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _buildGridLabField('LDL', _ldlController, currentUnit,
+                            Icons.arrow_downward, '2.5', '100')),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                        child: _buildGridLabField('HDL', _hdlController, currentUnit,
+                            Icons.arrow_upward, '1.5', '50')),
+                    const SizedBox(width: 16),
+                    Expanded(
+                        child: _buildGridLabField(
+                            'Triglycerides',
+                            _triglyceridesController,
+                            currentUnit,
+                            Icons.water_drop_outlined,
+                            '1.7',
+                            '150')),
+                  ],
                 ),
               ],
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                  child: _buildGridLabField(
-                      'Total',
-                      _totalController,
-                      currentUnit,
-                      Icons.bloodtype_outlined,
-                      '5.0',
-                      '150')),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _buildGridLabField('LDL', _ldlController, currentUnit,
-                      Icons.arrow_downward, '2.5', '100')),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                  child: _buildGridLabField('HDL', _hdlController, currentUnit,
-                      Icons.arrow_upward, '1.5', '50')),
-              const SizedBox(width: 16),
-              Expanded(
-                  child: _buildGridLabField(
-                      'Triglycerides',
-                      _triglyceridesController,
-                      currentUnit,
-                      Icons.water_drop_outlined,
-                      '1.7',
-                      '150')),
-            ],
+            ),
           ),
         ],
       ),

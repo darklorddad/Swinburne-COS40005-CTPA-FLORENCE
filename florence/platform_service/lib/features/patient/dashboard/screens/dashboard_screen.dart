@@ -5,6 +5,7 @@ import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/shared/widgets/notification_bell.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/chat/services/chatbot_service.dart'; // Chat Service
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
@@ -128,10 +129,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // Keep chat provider alive, but load history only after profile is ready
     ref.watch(chatProvider);
 
-    // Fire insight fetch once health data first becomes available
+    // Fire insight fetch and LAM checks once health data first becomes available
     ref.listen(core_data.monitorDataProvider, (previous, next) {
       if (next.hasValue && !(previous?.hasValue ?? false)) {
         _triggerInsightFetch();
+        // LAM: check activity drop and weekly summary on dashboard open
+        ref
+            .read(notificationProvider.notifier)
+            .checkDashboardTriggers(next.value!);
       }
     });
 

@@ -67,22 +67,28 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
       child: Column(
         children: [
           Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+            ),
+            color: Colors.white,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.timer, color: AppTheme.primaryColor),
+                  const Row(
+                    children: [
+                      Icon(Icons.timer_outlined, color: AppTheme.textSecondary, size: 20),
                       SizedBox(width: 8),
                       Text(
                         'Time in Range',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   // Simple visual bar
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8),
@@ -117,10 +123,10 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
             mainAxisSpacing: 16,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard('Average', '${_calculateAverage().toInt()} mg/dL'),
-              _buildStatCard('Variability', '12.5%'), // Mock calculation
-              _buildStatCard('Readings', widget.readings.length.toString()),
-              _buildStatCard('Lowest', '${_minGlucose().toInt()} mg/dL'),
+              _buildStatCard('Average', '${_calculateAverage().toInt()} mg/dL', isUp: false, color: AppTheme.primaryColor),
+              _buildStatCard('Variability', '12.5%', isUp: false, color: AppTheme.secondaryColor), // Mock calculation
+              _buildStatCard('Readings', widget.readings.length.toString(), color: AppTheme.accentColor),
+              _buildStatCard('Lowest', '${_minGlucose().toInt()} mg/dL', isUp: false, color: AppTheme.lowRiskColor),
             ],
           ),
         ],
@@ -132,21 +138,34 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Glucose Trends',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              const Row(
+                children: [
+                  Icon(Icons.trending_up, color: AppTheme.textSecondary, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'Glucose Trends',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               SizedBox(
                 height: 250,
                 child: GlucoseChart(
                   readings: widget.readings,
                   unit: ref.watch(patientSettingsProvider).glucoseUnit,
-                  hbA1cReadings: [], // Only glucose
+                  hbA1cReadings: const [], // Only glucose
                 ),
               ),
             ],
@@ -168,12 +187,21 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
     final pageItems = sortedReadings.sublist(startIndex, endIndex);
 
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header with Pagination
-          Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        elevation: 0,
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with Pagination
+              Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
@@ -234,8 +262,8 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.dividerColor),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.4), width: 1.5),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -297,24 +325,54 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
             ),
         ],
       ),
+        ),
+      ),
     );
   }
 
-  Widget _buildStatCard(String label, String value) {
+  Widget _buildStatCard(String label, String value, {bool? isUp, Color? color}) {
+    final bgColor = color?.withValues(alpha: 0.1) ?? Colors.white;
+    final borderColor = color?.withValues(alpha: 0.3) ?? AppTheme.dividerColor;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.dividerColor),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w600)),
+              if (isUp != null)
+                Icon(
+                  isUp ? Icons.arrow_upward : Icons.arrow_downward,
+                  size: 14,
+                  color: isUp ? AppTheme.highRiskColor : AppTheme.lowRiskColor,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value, 
+            style: TextStyle(
+              fontSize: 20, 
+              fontWeight: FontWeight.bold,
+              color: color ?? AppTheme.textPrimary,
+            ),
+          ),
         ],
       ),
     );

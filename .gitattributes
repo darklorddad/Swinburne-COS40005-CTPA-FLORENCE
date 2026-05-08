@@ -1,0 +1,65 @@
+# ----------------------------------------------------------------------
+# AUDIT COMMANDS
+# ----------------------------------------------------------------------
+# Captures extensions where they exist and labels files without them as 
+# [no_extension].
+# > find . -type f -not -path '*/.*' | awk -F. '{print (NF>1 && 
+#    $NF!~/\//) ? $NF : "[no_extension]"}' | sort | uniq -c | sort -nr
+
+# This will print the full path to every file that doesn't have a dot in 
+# its name.
+# > find . -type f -not -path '*/.*' -not -name "*.*"
+
+# ----------------------------------------------------------------------
+# GLOBAL
+# ----------------------------------------------------------------------
+# Automatically detect text files and normalise line endings to LF 
+# in the repository. Converts to CRLF on Windows checkouts.
+* text=auto
+
+# ----------------------------------------------------------------------
+# SCRIPTS (Strict Line Endings)
+# ----------------------------------------------------------------------
+# These MUST have LF endings to execute in Linux/Unix/macOS environments.
+*.sh            text eol=lf
+*.py            text eol=lf
+*.kotlin_module text eol=lf
+*.kts           text eol=lf
+
+# ----------------------------------------------------------------------
+# IMAGES and MULTIMEDIA (Binary)
+# ----------------------------------------------------------------------
+*.png           binary
+*.PNG           binary
+*.jpg           binary
+*.jpeg          binary
+*.webp          binary
+*.ico           binary
+*.mp4           binary
+
+# ----------------------------------------------------------------------
+# DOCUMENTS and DESIGN (Binary)
+# ----------------------------------------------------------------------
+*.pdf           binary
+*.docx          binary
+*.pptx          binary
+*.xlsx          binary
+*.drawio        binary
+
+# ----------------------------------------------------------------------
+# SPECIALISED DATA FILES (Binary)
+# ----------------------------------------------------------------------
+# Marking as binary to prevent corruption during EOL normalisation.
+*.len           binary
+*.flat          binary
+*.tab           binary
+*.tab_i         binary
+*.keystream     binary
+*.at            binary
+*.stamp         binary
+
+# ----------------------------------------------------------------------
+# FONTS (Binary)
+# ----------------------------------------------------------------------
+*.ttf           binary
+*.otf           binary

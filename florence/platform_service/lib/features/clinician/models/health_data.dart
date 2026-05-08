@@ -67,6 +67,20 @@ class ActivityData {
   });
 }
 
+class BmiReading {
+  final DateTime timestamp;
+  final double value; // BMI value
+  final double weight; // kg
+  final double height; // cm
+  
+  BmiReading({
+    required this.timestamp,
+    required this.value,
+    required this.weight,
+    required this.height,
+  });
+}
+
 class MealEntry {
   final DateTime timestamp;
   final String mealType; // e.g., "Breakfast", "Lunch", "Dinner", "Snack"
@@ -135,6 +149,7 @@ class PatientHealthData {
   final List<HbA1cReading> hbA1cReadings;
   final List<BloodPressureReading> bloodPressureReadings;
   final List<CholesterolReading> cholesterolReadings;
+  final List<BmiReading> bmiReadings;
   final List<ActivityData> activityData;
   final List<MealEntry> mealEntries;
   final List<AutomatedAction> automatedActions;
@@ -151,6 +166,7 @@ class PatientHealthData {
     required this.hbA1cReadings,
     required this.bloodPressureReadings,
     required this.cholesterolReadings,
+    required this.bmiReadings,
     required this.activityData,
     required this.mealEntries,
     required this.automatedActions,
