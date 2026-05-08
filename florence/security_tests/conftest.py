@@ -1,12 +1,14 @@
 """
 Shared fixtures for FLORENCE security tests.
 """
-import os
 import pytest
 
 
-ENGINE_URL = os.getenv("LLM_ENGINE_URL", "https://dev-llmes-florence-dhp.vercel.app")
-CHAT_URL = os.getenv("LLM_CHAT_URL", "https://dev-llmcs-florence-dhp.vercel.app")
+ENGINE_URL = "https://dev-llmes-florence-dhp.vercel.app"
+CHAT_URL = "https://dev-llmcs-florence-dhp.vercel.app"
+
+# Paste your patient JWT here to run chatbot tests (leave as None to skip them)
+TEST_TOKEN = None
 
 
 def minimal_health_summary() -> dict:
@@ -71,8 +73,7 @@ def chat_url():
 
 @pytest.fixture(scope="session")
 def auth_token():
-    token = os.getenv("FLORENCE_TEST_TOKEN")
-    return token
+    return TEST_TOKEN
 
 
 @pytest.fixture(scope="session")
