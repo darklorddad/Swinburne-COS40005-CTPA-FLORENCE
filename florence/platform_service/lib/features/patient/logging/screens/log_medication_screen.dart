@@ -9,7 +9,6 @@ import 'package:florence/shared/widgets/card_widgets.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
-import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Log Medication Screen
@@ -82,9 +81,6 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       );
       
       ref.invalidate(monitorDataProvider);
-      ref.read(notificationProvider.notifier).checkAfterMedicationLog(
-        _medicationNameController.text.trim(),
-      );
 
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');

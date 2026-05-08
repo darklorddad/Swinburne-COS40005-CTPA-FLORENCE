@@ -494,19 +494,6 @@ Tap to see detailed trends!
     }
   }
 
-  /// Fired after a medication is logged.
-  Future<void> checkAfterMedicationLog(String medicationName) async {
-    await addNotification(HealthNotification(
-      id: 'notif_med_logged_${DateTime.now().millisecondsSinceEpoch}',
-      type: NotificationType.reminder,
-      priority: NotificationPriority.low,
-      title: 'Medication Logged',
-      message: '$medicationName recorded. Consistent medication tracking helps your care team provide better recommendations.',
-      createdAt: DateTime.now(),
-      iconName: 'medication',
-    ));
-  }
-
   /// Called when the dashboard loads health data.
   /// Checks for activity drop and whether a weekly summary is due.
   Future<void> checkDashboardTriggers(HealthDataState healthData) async {
