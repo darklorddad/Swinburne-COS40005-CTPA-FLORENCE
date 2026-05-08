@@ -392,6 +392,121 @@ Tap to see detailed trends!
     );
   }
 
+  /// Fired after an activity is saved.
+  Future<void> checkAfterActivityLog(int? durationMinutes) async {
+    if (durationMinutes == null) return;
+    if (durationMinutes >= 30) {
+      await sendAchievement(
+        'Great workout!',
+        'You logged $durationMinutes minutes of activity. Keep it up!',
+      );
+    } else {
+      await sendEducationalTip(
+        'Short sessions count! Even $durationMinutes minutes of movement helps manage glucose. Aim for 30+ minutes when you can.',
+      );
+    }
+  }
+
+  /// Fired after a blood pressure reading is saved.
+  Future<void> checkAfterBloodPressureLog(double? systolic, double? diastolic) async {
+    if (systolic == null || diastolic == null) return;
+    if (systolic >= 180 || diastolic >= 120) {
+      await addNotification(HealthNotification(
+        id: 'notif_bp_crisis_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.critical,
+        title: 'Hypertensive Crisis',
+        message: 'BP of ${systolic.toStringAsFixed(0)}/${diastolic.toStringAsFixed(0)} mmHg is dangerously high. Seek medical attention immediately.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'warning',
+      ));
+    } else if (systolic >= 140 || diastolic >= 90) {
+      await addNotification(HealthNotification(
+        id: 'notif_bp_high_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.high,
+        title: 'High Blood Pressure',
+        message: 'BP of ${systolic.toStringAsFixed(0)}/${diastolic.toStringAsFixed(0)} mmHg is above normal. Consider reducing sodium and stress.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'monitor_heart',
+      ));
+    }
+  }
+
+  /// Fired after BMI is calculated and saved.
+  Future<void> checkAfterBmiLog(double? bmi) async {
+    if (bmi == null) return;
+    if (bmi >= 30) {
+      await sendEducationalTip(
+        'BMI of ${bmi.toStringAsFixed(1)} is in the obese range. Gradual weight loss through diet and activity can significantly improve glucose control.',
+      );
+    } else if (bmi >= 25) {
+      await sendEducationalTip(
+        'BMI of ${bmi.toStringAsFixed(1)} is in the overweight range. Small lifestyle changes can make a big difference for your diabetes management.',
+      );
+    } else if (bmi < 18.5) {
+      await sendEducationalTip(
+        'BMI of ${bmi.toStringAsFixed(1)} is below the healthy range. Speak with your doctor about a nutrition plan.',
+      );
+    }
+  }
+
+  /// Fired after a cholesterol reading is saved.
+  Future<void> checkAfterCholesterolLog(double? total, double? ldl, double? hdl) async {
+    if (ldl != null && ldl > 130) {
+      await addNotification(HealthNotification(
+        id: 'notif_chol_ldl_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: NotificationPriority.high,
+        title: 'High LDL Cholesterol',
+        message: 'LDL of ${ldl.toStringAsFixed(0)} mg/dL is above the 130 mg/dL target. Reducing saturated fats and increasing activity can help.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'bloodtype',
+      ));
+    } else if (total != null && total > 200) {
+      await sendEducationalTip(
+        'Total cholesterol of ${total.toStringAsFixed(0)} mg/dL is borderline high. A heart-healthy diet can help bring it down.',
+      );
+    }
+  }
+
+  /// Fired after an HbA1c reading is saved.
+  Future<void> checkAfterHba1cLog(double value) async {
+    if (value > Environment.hba1cTarget) {
+      await addNotification(HealthNotification(
+        id: 'notif_hba1c_high_${DateTime.now().millisecondsSinceEpoch}',
+        type: NotificationType.alert,
+        priority: value > 9.0 ? NotificationPriority.critical : NotificationPriority.high,
+        title: 'HbA1c Above Target',
+        message: 'HbA1c of ${value.toStringAsFixed(1)}% is above your ${Environment.hba1cTarget.toStringAsFixed(1)}% target. Check your recommendations for next steps.',
+        createdAt: DateTime.now(),
+        actionUrl: '/recommendations',
+        iconName: 'pie_chart',
+      ));
+    } else {
+      await sendAchievement(
+        'HbA1c on Target!',
+        'HbA1c of ${value.toStringAsFixed(1)}% is within your target range. Great glucose control!',
+      );
+    }
+  }
+
+  /// Fired after a medication is logged.
+  Future<void> checkAfterMedicationLog(String medicationName) async {
+    await addNotification(HealthNotification(
+      id: 'notif_med_logged_${DateTime.now().millisecondsSinceEpoch}',
+      type: NotificationType.reminder,
+      priority: NotificationPriority.low,
+      title: 'Medication Logged',
+      message: '$medicationName recorded. Consistent medication tracking helps your care team provide better recommendations.',
+      createdAt: DateTime.now(),
+      iconName: 'medication',
+    ));
+  }
+
   /// Called when the dashboard loads health data.
   /// Checks for activity drop and whether a weekly summary is due.
   Future<void> checkDashboardTriggers(HealthDataState healthData) async {
