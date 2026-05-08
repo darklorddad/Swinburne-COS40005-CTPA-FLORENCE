@@ -364,7 +364,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         final bmiTarget =
             thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
         targetText =
-            "${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)}";
+            "${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)} kg/m²";
       } catch (e) {
         targetText = "Target: Not set";
       }

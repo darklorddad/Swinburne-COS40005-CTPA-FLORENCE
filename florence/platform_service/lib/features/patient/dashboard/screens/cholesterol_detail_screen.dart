@@ -1,15 +1,17 @@
-import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'dart:math' as math;
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/layout/responsive_layout_system.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 class CholesterolDetailScreen extends ConsumerWidget {
   final VoidCallback? onSwitchToLog;
@@ -269,7 +271,7 @@ class _CholesterolReading {
 // 1. RATIO DONUT & TARGETS (OVERVIEW)
 // ============================================================================
 
-class _RatioSection extends StatelessWidget {
+class _RatioSection extends ConsumerWidget {
   final _CholesterolReading? reading;
   final PatientThreshold? total;
   final PatientThreshold? ldl;
@@ -285,7 +287,7 @@ class _RatioSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final ratio = reading?.ratio ?? 0.0;
     // Use non-HDL cholesterol as the "bad" portion for the chart representation
     // Total = HDL + Non-HDL. So Non-HDL = Total - HDL.
@@ -295,6 +297,7 @@ class _RatioSection extends StatelessWidget {
     final valNonHdl = (valTotal > valHdl) ? valTotal - valHdl : 0.0;
     
     final hasData = ratio > 0;
+    final settings = ref.watch(patientSettingsProvider);
 
     String statusText;
     Color statusColor;
@@ -378,13 +381,13 @@ class _RatioSection extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   // Targets List
-                  _buildMiniTargetRow('Total', total != null ? '${total!.minValue.toInt()} - ${total!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Total', total != null ? '${total!.minValue.toInt()} - ${total!.maxValue.toInt()} ${settings.cholesterolUnit}' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('LDL', ldl != null ? '${ldl!.minValue.toInt()} - ${ldl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('LDL', ldl != null ? '${ldl!.minValue.toInt()} - ${ldl!.maxValue.toInt()} ${settings.cholesterolUnit}' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('HDL', hdl != null ? '${hdl!.minValue.toInt()} - ${hdl!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('HDL', hdl != null ? '${hdl!.minValue.toInt()} - ${hdl!.maxValue.toInt()} ${settings.cholesterolUnit}' : 'Not Set', AppTheme.primaryGreen),
                   const SizedBox(height: 4),
-                  _buildMiniTargetRow('Triglycerides', tri != null ? '${tri!.minValue.toInt()} - ${tri!.maxValue.toInt()} mg/dL' : 'Not Set', AppTheme.primaryGreen),
+                  _buildMiniTargetRow('Triglycerides', tri != null ? '${tri!.minValue.toInt()} - ${tri!.maxValue.toInt()} ${settings.cholesterolUnit}' : 'Not Set', AppTheme.primaryGreen),
                 ],
               ),
             ),
