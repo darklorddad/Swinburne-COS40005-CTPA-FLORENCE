@@ -89,6 +89,20 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       ),
       body: Column(
         children: [
+          // DEBUG: remove before demo
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: OutlinedButton.icon(
+              onPressed: () => notifier.checkNow(),
+              icon: const Icon(Icons.bug_report_outlined, size: 16),
+              label: const Text('Trigger LAM Check Now'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.textSecondaryColor,
+                side: BorderSide(color: AppTheme.borderColor),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
           _buildFilterChips(allNotifications),
           const SizedBox(height: 8),
