@@ -51,7 +51,7 @@ Leave it as `None` to skip chatbot tests.
 ### Recommendations + meal tests (no auth needed)
 
 ```bash
-pytest test_recommendation_injection.py test_meal_vision_injection.py -v
+python -m pytest test_recommendation_injection.py test_meal_vision_injection.py -vv
 ```
 
 ### Chatbot tests (requires token)
