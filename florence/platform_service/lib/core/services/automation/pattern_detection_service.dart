@@ -1,6 +1,7 @@
 library;
 
 import 'package:florence/core/config/environment.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Type of detected pattern
 enum PatternType {
@@ -358,6 +359,81 @@ class PatternDetectionService {
       case PatternSeverity.low:
         return 1;
     }
+  }
+
+  /// Detects patterns from live Riverpod health data.
+  /// Uses [HealthDataState] directly — replaces the commented-out _dataService approach.
+  List<DetectedPattern> detectPatternsFromData(HealthDataState data) {
+    final patterns = <DetectedPattern>[];
+    final now = DateTime.now();
+
+    // Glucose spike or drop — check most recent reading only
+    if (data.glucoseReadings.isNotEmpty) {
+      final latest = data.glucoseReadings.first; // sorted newest-first
+
+      if (latest.value > Environment.glucoseHigh) {
+        patterns.add(DetectedPattern(
+          id: 'pattern_spike_${latest.id}',
+          type: PatternType.glucoseSpike,
+          severity:
+              latest.value > 250 ? PatternSeverity.critical : PatternSeverity.high,
+          description:
+              'Glucose reading of ${latest.value.toStringAsFixed(0)} mg/dL detected.',
+          detectedAt: latest.timestamp,
+          dataPointIds: [latest.id],
+          metadata: {'value': latest.value},
+        ));
+      } else if (latest.value < Environment.glucoseLow) {
+        patterns.add(DetectedPattern(
+          id: 'pattern_drop_${latest.id}',
+          type: PatternType.glucoseDrop,
+          severity: PatternSeverity.critical,
+          description:
+              'Low glucose of ${latest.value.toStringAsFixed(0)} mg/dL. Have a fast-acting carb.',
+          detectedAt: latest.timestamp,
+          dataPointIds: [latest.id],
+          metadata: {'value': latest.value},
+        ));
+      }
+    }
+
+    // Low activity — no activity logged in the past 2 days
+    final twoDaysAgo = now.subtract(const Duration(days: 2));
+    final hasRecentActivity =
+        data.activities.any((a) => a.startTime.isAfter(twoDaysAgo));
+    if (!hasRecentActivity && data.activities.isNotEmpty) {
+      patterns.add(DetectedPattern(
+        id: 'pattern_low_activity_${now.millisecondsSinceEpoch}',
+        type: PatternType.lowActivity,
+        severity: PatternSeverity.medium,
+        description: 'No activity logged in the past 2 days.',
+        detectedAt: now,
+        dataPointIds: [],
+        metadata: {},
+      ));
+    }
+
+    // High-carb meal — most recent meal over 80g carbs
+    if (data.meals.isNotEmpty) {
+      final lastMeal = data.meals.first; // sorted newest-first
+      if (lastMeal.carbs > 80) {
+        patterns.add(DetectedPattern(
+          id: 'pattern_high_carb_${lastMeal.id}',
+          type: PatternType.highCarbs,
+          severity: PatternSeverity.medium,
+          description:
+              'Last meal had ${lastMeal.carbs.toStringAsFixed(0)}g of carbs.',
+          detectedAt: lastMeal.timestamp,
+          dataPointIds: [lastMeal.id],
+          metadata: {'carbs': lastMeal.carbs},
+        ));
+      }
+    }
+
+    patterns.sort(
+      (a, b) => _severityScore(b.severity).compareTo(_severityScore(a.severity)),
+    );
+    return patterns;
   }
 
   /// Check for patterns that need immediate action

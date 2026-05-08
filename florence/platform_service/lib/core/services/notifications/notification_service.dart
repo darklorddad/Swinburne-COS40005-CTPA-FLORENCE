@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/services/automation/pattern_detection_service.dart';
 import 'package:florence/core/services/notifications/notification_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 
 /// Notification Provider
 final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);
@@ -54,33 +55,25 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
   Future<void> _checkForTriggers() async {
     if (!Environment.enableAutomation) return;
 
-    // Reset daily counter
     final now = DateTime.now();
     if (_lastCheckDate == null || _lastCheckDate!.day != now.day) {
       _notificationsToday = 0;
       _lastCheckDate = now;
     }
-
-    // Don't exceed daily limit
-    if (_notificationsToday >= Environment.maxNotificationsPerDay) {
-      return;
-    }
+    if (_notificationsToday >= Environment.maxNotificationsPerDay) return;
 
     try {
-      // Detect patterns
-      final patterns = await _patternService.detectPatterns(
-        hoursToAnalyze: 24,
-        useAI: true,
-      );
+      final healthData = ref.read(monitorDataProvider).asData?.value;
+      if (healthData == null) return;
 
-      // Generate notifications for detected patterns
-      for (var pattern in patterns) {
+      final patterns = _patternService.detectPatternsFromData(healthData);
+      for (final pattern in patterns) {
         if (pattern.requiresAction) {
           await _generateNotificationForPattern(pattern);
         }
       }
     } catch (e) {
-      print('Error in automation monitoring: $e');
+      debugPrint('Automation check error: $e');
     }
   }
 
