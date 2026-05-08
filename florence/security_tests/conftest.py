@@ -11,6 +11,17 @@ CHAT_URL = "https://dev-llmcs-florence-dhp.vercel.app"
 # Paste your patient JWT here to run chatbot tests (leave as None to skip them)
 TEST_TOKEN = None
 
+
+def _token_is_set() -> bool:
+    """Returns True only if TEST_TOKEN is a real token — not Python None and not
+    the exact word 'none' (any casing). Partial matches like 'asknoneofyourbusiness'
+    are NOT treated as None."""
+    if TEST_TOKEN is None:
+        return False
+    if isinstance(TEST_TOKEN, str) and TEST_TOKEN.strip().lower() == "none":
+        return False
+    return True
+
 # ── Endpoint label mapping ────────────────────────────────────────────────────
 _ENDPOINT_LABELS = {
     "test_recommendation_injection": "POST /recommendations/generate",
@@ -114,6 +125,10 @@ def pytest_sessionfinish(session, exitstatus):
     print(f"{'='*52}")
     for file_key, label in _ENDPOINT_LABELS.items():
         if file_key not in _results:
+            # Chatbot skipped because TEST_TOKEN is None
+            if file_key == "test_chatbot_injection" and not _token_is_set():
+                print(f"{label}")
+                print(f"  Skipped — TEST_TOKEN set to None")
             continue
         passed = len(_results[file_key]["passed"])
         failed = len(_results[file_key]["failed"])
@@ -197,7 +212,7 @@ def chat_url():
 
 @pytest.fixture(scope="session")
 def auth_token():
-    return TEST_TOKEN
+    return TEST_TOKEN if _token_is_set() else None
 
 
 @pytest.fixture(scope="session")
