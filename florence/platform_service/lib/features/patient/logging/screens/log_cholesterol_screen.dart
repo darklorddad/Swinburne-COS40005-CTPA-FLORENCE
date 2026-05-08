@@ -9,6 +9,7 @@ import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
@@ -335,6 +336,11 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       await Future.wait(tasks);
 
       ref.invalidate(monitorDataProvider);
+      ref.read(notificationProvider.notifier).checkAfterCholesterolLog(
+        double.tryParse(_totalController.text.trim().replaceAll(',', '.')),
+        double.tryParse(_ldlController.text.trim().replaceAll(',', '.')),
+        double.tryParse(_hdlController.text.trim().replaceAll(',', '.')),
+      );
 
       if (mounted) {
         Helpers.showSuccess(

@@ -4,6 +4,7 @@ import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/core/utils/validators.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
@@ -78,6 +79,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
       );
       
       ref.invalidate(monitorDataProvider);
+      ref.read(notificationProvider.notifier).checkAfterBloodPressureLog(sys, dia);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Blood pressure logged successfully!');
