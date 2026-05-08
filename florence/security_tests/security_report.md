@@ -1,6 +1,6 @@
 # FLORENCE Security Test Report
 
-Generated: 2026-05-08 20:38:30
+Generated: 2026-05-08 21:20:14
 
 ---
 
@@ -11,7 +11,8 @@ Generated: 2026-05-08 20:38:30
 | `POST /recommendations/generate` | 15 | 15 | 0 | 0.0% |
 | `POST /nutrition/analyze` | 4 | 4 | 0 | 0.0% |
 | `POST /chat/message` | 0 | 0 | 0 | N/A |
-| **Overall** | **19** | **19** | **0** | **0.0%** |
+| `POST /recommendations/generate (quality)` | 8 | 8 | 0 | 0.0% |
+| **Overall** | **27** | **27** | **0** | **0.0%** |
 
 ---
 
@@ -52,6 +53,17 @@ Generated: 2026-05-08 20:38:30
 
 ### `POST /chat/message`
 
+
+### `POST /recommendations/generate (quality)`
+
+- ✅ PASS — `test_consistency_structure`
+- ✅ PASS — `test_consistency_recommendation_count`
+- ✅ PASS — `test_faithfulness_disease_referenced`
+- ✅ PASS — `test_faithfulness_bmi_not_misrepresented`
+- ✅ PASS — `test_faithfulness_activity_acknowledged`
+- ✅ PASS — `test_hallucination_no_unprescribed_medications`
+- ✅ PASS — `test_hallucination_no_implausible_calorie_values`
+- ✅ PASS — `test_hallucination_no_unknown_diseases`
 
 ---
 

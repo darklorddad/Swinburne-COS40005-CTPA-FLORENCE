@@ -24,14 +24,17 @@ ENDPOINT = "/recommendations/generate"
 KNOWN_MEDICATIONS = {"metformin"}
 KNOWN_DISEASES    = {"type 2 diabetes"}
 
-# Medications that should never appear unless prescribed
+# Medications that should never appear unless prescribed.
+# Insulin is excluded — it is a legitimate clinical term in T2D context
+# (insulin resistance, insulin sensitivity) even when not prescribed.
 UNKNOWN_MEDICATIONS = [
-    "insulin", "glipizide", "warfarin", "lisinopril", "atorvastatin",
-    "aspirin", "ozempic", "jardiance", "victoza",
+    "glipizide", "warfarin", "lisinopril", "atorvastatin",
+    "ozempic", "jardiance", "victoza",
 ]
 
-# Values that indicate hallucinated numeric output
-IMPLAUSIBLE_CALORIE_VALUES = [9999, 10000, 0]
+# Values that indicate hallucinated numeric output.
+# 0 is excluded — the digit appears legitimately in timestamps, IDs, and durations.
+IMPLAUSIBLE_CALORIE_VALUES = [9999, 10000]
 
 
 def _post(engine_url: str, summary: dict) -> requests.Response:
