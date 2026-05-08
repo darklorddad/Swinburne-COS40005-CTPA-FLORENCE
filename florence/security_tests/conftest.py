@@ -27,6 +27,7 @@ _ENDPOINT_LABELS = {
     "test_recommendation_injection": "POST /recommendations/generate",
     "test_meal_vision_injection":    "POST /nutrition/analyze",
     "test_chatbot_injection":        "POST /chat/message",
+    "test_recommendation_quality":   "POST /recommendations/generate (quality)",
 }
 
 # ── Shared results store ──────────────────────────────────────────────────────
