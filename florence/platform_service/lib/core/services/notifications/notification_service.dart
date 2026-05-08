@@ -6,6 +6,7 @@ import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/services/automation/pattern_detection_service.dart';
 import 'package:florence/core/services/notifications/notification_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Notification Provider
@@ -21,7 +22,6 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
 
   @override
   List<HealthNotification> build() {
-    // Ensure timer is cancelled when provider is disposed/invalidated
     ref.onDispose(() {
       _monitoringTimer?.cancel();
     });
@@ -29,6 +29,14 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
     if (Environment.enableAutomation) {
       _startAutomationMonitoring();
     }
+
+    // Restart timer when user changes the check interval in settings
+    ref.listen(patientSettingsProvider, (previous, next) {
+      if (previous?.automationCheckInterval != next.automationCheckInterval) {
+        _restartTimer(next.automationCheckInterval);
+      }
+    });
+
     return [];
   }
 
@@ -41,15 +49,20 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
   int get unreadCount => unreadNotifications.length;
   int get criticalCount => criticalNotifications.length;
 
-  /// Start automated pattern monitoring
-  void _startAutomationMonitoring() {
-    // Check every 15 minutes (configurable)
+  void _restartTimer(int minutes) {
+    _monitoringTimer?.cancel();
     _monitoringTimer = Timer.periodic(
-      Duration(minutes: Environment.automationCheckInterval),
+      Duration(minutes: minutes),
       (_) => _checkForTriggers(),
     );
+  }
 
-    // Initial check
+  void _startAutomationMonitoring() {
+    final interval = ref.read(patientSettingsProvider).automationCheckInterval;
+    _monitoringTimer = Timer.periodic(
+      Duration(minutes: interval),
+      (_) => _checkForTriggers(),
+    );
     _checkForTriggers();
   }
 
@@ -68,10 +81,31 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
       final healthData = ref.read(monitorDataProvider).asData?.value;
       if (healthData == null) return;
 
+      // Glucose: high/critical patterns via requiresAction guard
       final patterns = _patternService.detectPatternsFromData(healthData);
       for (final pattern in patterns) {
         if (pattern.requiresAction) {
           await _generateNotificationForPattern(pattern);
+        }
+      }
+
+      // Activity drop: medium severity — dedicated check bypasses requiresAction
+      final twoDaysAgo = now.subtract(const Duration(days: 2));
+      final hasRecentActivity =
+          healthData.activities.any((a) => a.startTime.isAfter(twoDaysAgo));
+      if (!hasRecentActivity && healthData.activities.isNotEmpty) {
+        await sendMotivation(
+          'No activity logged in 2 days. Even a 10-minute walk helps manage glucose and mood!',
+        );
+      }
+
+      // High-carb meal: medium severity — dedicated check bypasses requiresAction
+      if (healthData.meals.isNotEmpty) {
+        final lastMeal = healthData.meals.first;
+        if (lastMeal.carbs > 80) {
+          await sendEducationalTip(
+            'Your last meal had ${lastMeal.carbs.toStringAsFixed(0)}g of carbs. A short walk after eating can help reduce glucose spikes.',
+          );
         }
       }
     } catch (e) {

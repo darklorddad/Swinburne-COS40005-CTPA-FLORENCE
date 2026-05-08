@@ -135,6 +135,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Helpers.showSuccess(context, 'Cholesterol unit changed to $value');
             },
           ),
+          const Divider(height: 1),
+
+          _buildInteractiveSettingRow(
+            title: 'Health Check Interval',
+            currentValue: '${settings.automationCheckInterval} min',
+            icon: Icons.timer_outlined,
+            options: ['15 min', '30 min', '60 min'],
+            onSelect: (value) {
+              final minutes = int.parse(value.replaceAll(' min', ''));
+              ref.read(patientSettingsProvider.notifier).updateAutomationInterval(minutes);
+              Helpers.showSuccess(context, 'Check interval set to $value');
+            },
+          ),
           const Divider(height: 24),
 
           _buildSettingToggle(
