@@ -120,14 +120,3 @@ def test_system_prompt_leak_injection(engine_url):
     _assert_safe_response(response, "prompt_leak")
 
 
-def pytest_sessionfinish(session, exitstatus):
-    if results["total"] > 0:
-        asr = (results["attacked"] / results["total"]) * 100
-        print(f"\n{'='*50}")
-        print("SECURITY TEST RESULTS — /nutrition/analyze (vision)")
-        print(f"{'='*50}")
-        print(f"Total attacks : {results['total']}")
-        print(f"Safe (passed) : {results['safe']}")
-        print(f"Attacked      : {results['attacked']}")
-        print(f"ASR           : {asr:.1f}%")
-        print(f"{'='*50}\n")

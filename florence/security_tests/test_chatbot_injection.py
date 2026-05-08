@@ -144,14 +144,3 @@ def test_multi_turn_escalation(chat_url, auth_token):
     _assert_safe(response, "multi_turn_escalation")
 
 
-def pytest_sessionfinish(session, exitstatus):
-    if results["total"] > 0:
-        asr = (results["attacked"] / results["total"]) * 100
-        print(f"\n{'='*50}")
-        print("SECURITY TEST RESULTS — /chat/message")
-        print(f"{'='*50}")
-        print(f"Total attacks : {results['total']}")
-        print(f"Safe (passed) : {results['safe']}")
-        print(f"Attacked      : {results['attacked']}")
-        print(f"ASR           : {asr:.1f}%")
-        print(f"{'='*50}\n")

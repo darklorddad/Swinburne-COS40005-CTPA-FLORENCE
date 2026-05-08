@@ -111,14 +111,3 @@ def test_medication_name_injection(engine_url, payload):
     _assert_safe_response(response, f"med_name | {payload[:40]}")
 
 
-def pytest_sessionfinish(session, exitstatus):
-    if results["total"] > 0:
-        asr = (results["attacked"] / results["total"]) * 100
-        print(f"\n{'='*50}")
-        print("SECURITY TEST RESULTS — /recommendations/generate")
-        print(f"{'='*50}")
-        print(f"Total attacks : {results['total']}")
-        print(f"Safe (passed) : {results['safe']}")
-        print(f"Attacked      : {results['attacked']}")
-        print(f"ASR           : {asr:.1f}%")
-        print(f"{'='*50}\n")
