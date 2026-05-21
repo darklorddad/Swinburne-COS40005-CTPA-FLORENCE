@@ -742,9 +742,13 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                 // for catching swipes before they hit the absolute edge.
                 return NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification scrollInfo) {
-                    // Trigger the load 300 pixels BEFORE they hit the edge to prevent swiping fatigue
-                    if (!_isLoadingMore && scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
-                      _loadMoreData();
+                    // 1. Only listen to actual movement updates
+                    if (scrollInfo is ScrollUpdateNotification) {
+                      // Trigger the load 300 pixels BEFORE they hit the edge to prevent swiping fatigue
+                      if (!_isLoadingMore && scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                        // 2. Defer the state update until AFTER the current scroll frame completes
+                        Future.microtask(() => _loadMoreData());
+                      }
                     }
                     return false; // Don't block the scroll event
                   },
@@ -861,6 +865,9 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                             ),
                           ],
                           lineTouchData: LineTouchData(
+                            touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+                              // Safely swallows interrupted touch events during scrolling
+                            },
                             getTouchedSpotIndicator: (barData, spotIndexes) {
                               return spotIndexes.map((index) {
                                 return TouchedSpotIndicatorData(
