@@ -537,6 +537,36 @@ class _GlucoseTrendsSection extends ConsumerWidget {
     this.isDefault = false,
   });
 
+  List<FlSpot> _getAggregatedSpots(List<MonitorData> data, String range) {
+    if (data.isEmpty) return [];
+
+    // For Daily, show exact, raw data points
+    if (range == '1D') {
+      return data
+          .map((d) =>
+              FlSpot(d.measuredAt.millisecondsSinceEpoch.toDouble(), d.value))
+          .toList();
+    }
+
+    // For Weekly, Bi-Weekly, and Monthly, group by Day and calculate the Average
+    final Map<DateTime, List<double>> groupedByDay = {};
+    for (var d in data) {
+      final local = d.measuredAt.toLocal();
+      // Snap to noon of that day so the point sits nicely in the middle of the date column
+      final day = DateTime(local.year, local.month, local.day, 12);
+      groupedByDay.putIfAbsent(day, () => []).add(d.value);
+    }
+
+    final List<FlSpot> spots = [];
+    groupedByDay.forEach((date, values) {
+      final average = values.reduce((a, b) => a + b) / values.length;
+      spots.add(FlSpot(date.millisecondsSinceEpoch.toDouble(), average));
+    });
+
+    spots.sort((a, b) => a.x.compareTo(b.x)); // Ensure chronological order
+    return spots;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(patientSettingsProvider);
@@ -605,15 +635,19 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         final double dataPad = isMmol ? 1.0 : 10.0;
         final double snapInterval = isMmol ? 2.0 : 50.0;
 
-        // 3. Determine Y-Axis range dynamically
+        // 1. GET AGGREGATED SPOTS
+        final chartSpots = _getAggregatedSpots(data, range);
+
+        // 2. Determine Y-Axis range dynamically based on AGGREGATED spots
         double minY = threshold != null
             ? (threshold!.minValue - padBottom).clamp(0, double.infinity)
             : defaultMin;
-        double maxY = threshold != null ? threshold!.maxValue + padTop : defaultMax;
+        double maxY =
+            threshold != null ? threshold!.maxValue + padTop : defaultMax;
 
-        if (data.isNotEmpty) {
-          double dataMin = data.map((e) => e.value).reduce(math.min);
-          double dataMax = data.map((e) => e.value).reduce(math.max);
+        if (chartSpots.isNotEmpty) {
+          double dataMin = chartSpots.map((e) => e.y).reduce(math.min);
+          double dataMax = chartSpots.map((e) => e.y).reduce(math.max);
 
           // Ensure the chart always wraps neatly around the lowest and highest data points
           minY = math.min(minY, (dataMin - dataPad).clamp(0, double.infinity));
@@ -631,7 +665,11 @@ class _GlucoseTrendsSection extends ConsumerWidget {
               height: 250,
               child: LineChart(
                 LineChartData(
-                  minX: minX, maxX: maxX, minY: minY, maxY: maxY,
+                  clipData: const FlClipData.all(),
+                  minX: minX,
+                  maxX: maxX,
+                  minY: minY,
+                  maxY: maxY,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
@@ -689,7 +727,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                   ) : null,
                   lineBarsData: [
                     LineChartBarData(
-                      spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
+                      spots: chartSpots,
                       isCurved: true,
                       color: AppTheme.primaryBlue,
                       barWidth: 2,
@@ -721,8 +759,10 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                       fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
-                          final date =
-                              DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                          final date = DateTime.fromMillisecondsSinceEpoch(
+                              spot.x.toInt());
+                          final isAggregated = range != '1D';
+
                           // Include Date, Time, Value, and Unit
                           return LineTooltipItem(
                             '${DateFormat('MMM d, y').format(date)}\n', // Date Line
@@ -733,8 +773,9 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                             ),
                             children: [
                               TextSpan(
-                                text:
-                                    '${DateFormat('h:mm a').format(date)}\n', // Time Line
+                                text: isAggregated
+                                    ? 'Daily Average\n'
+                                    : '${DateFormat('h:mm a').format(date)}\n', // Time Line
                                 style: const TextStyle(
                                   color: Colors.white70,
                                   fontSize: 10,
