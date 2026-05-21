@@ -700,8 +700,8 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
 
         switch (range) {
           case '1D':
-            interval = 21600000; // 6 hours
-            dateFormat = DateFormat("h a\nd/M\nEEE"); // e.g. 12 PM \n 15/5 \n Fri
+            interval = 3600000; // 1 hour
+            dateFormat = DateFormat("h a"); 
             break;
           case '7D':
             interval = 86400000; // 1 day
@@ -786,7 +786,9 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                   final totalDays = math.max(1.0, (maxX - minX) / 86400000);
 
                   if (range == '1D') {
-                    chartWidth = math.max(constraints.maxWidth, totalDays * constraints.maxWidth);
+                    // Give it 1200 pixels per day to fit 24 hourly labels perfectly
+                    final pixelsPerDay = math.max(constraints.maxWidth, 1200.0);
+                    chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
                   } else if (range == '7D') {
                     final pixelsPerDay = constraints.maxWidth / 7;
                     chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
@@ -876,10 +878,23 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                                     return const SizedBox.shrink();
                                   }
                                   final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                                  
+                                  String labelText;
+                                  if (range == '1D') {
+                                    // If it's midnight, show the Date & Day. Otherwise, just the Hour.
+                                    if (date.hour == 0) {
+                                      labelText = DateFormat("12 AM\nd/M\nEEE").format(date);
+                                    } else {
+                                      labelText = DateFormat("h a").format(date);
+                                    }
+                                  } else {
+                                    labelText = dateFormat.format(date);
+                                  }
+
                                   return Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: Text(
-                                      dateFormat.format(date),
+                                      labelText,
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 10,
