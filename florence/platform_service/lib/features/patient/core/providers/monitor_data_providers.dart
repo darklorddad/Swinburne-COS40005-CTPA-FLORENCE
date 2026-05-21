@@ -1,15 +1,16 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/core/models/medication_models.dart';
-import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Main provider that fetches and holds all health data
 final monitorDataProvider = AsyncNotifierProvider<MonitorDataNotifier, HealthDataState>(MonitorDataNotifier.new, isAutoDispose: true);
 
 class MonitorDataNotifier extends AsyncNotifier<HealthDataState> {
   int _offset = 0;
-  final int _limit = 50;
+  final int _limit = 20;
   bool _hasReachedMax = false;
 
   @override

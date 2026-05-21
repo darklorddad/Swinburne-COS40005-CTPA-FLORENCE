@@ -1,13 +1,14 @@
-import 'dart:math';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:florence/core/services/api_service.dart';
+import 'dart:math';
+
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/models/medication_models.dart';
+import 'package:florence/core/services/api_service.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Payload class for all health data
 class HealthDataState {
@@ -255,7 +256,7 @@ class MonitorDataRepository {
 
   MonitorDataRepository(this._apiService);
 
-  Future<List<MonitorData>> fetchMonitorDataPage({int limit = 50, int offset = 0}) async {
+  Future<List<MonitorData>> fetchMonitorDataPage({int limit = 20, int offset = 0}) async {
     final response = await _apiService.get('/patients/me/monitor-data?limit=$limit&offset=$offset');
     if (response is List) {
       return response.map((e) => MonitorData.fromJson(e)).toList();
@@ -263,7 +264,7 @@ class MonitorDataRepository {
     return [];
   }
 
-  Future<HealthDataState> fetchAllData({int limit = 50, int offset = 0}) async {
+  Future<HealthDataState> fetchAllData({int limit = 20, int offset = 0}) async {
     // EXECUTE ALL REQUESTS IN PARALLEL FOR EFFICIENCY
     // This minimizes the initial load time to the slowest individual request
     final results = await Future.wait([
