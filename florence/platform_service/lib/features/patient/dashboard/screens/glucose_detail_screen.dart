@@ -1149,38 +1149,39 @@ class _ModalDaySection extends StatelessWidget {
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
-        final Map<int, List<FlSpot>> lines = {};
-        for (var r in data) {
+        // 1. Put all readings into a single array. No need to group by day anymore!
+        final List<FlSpot> scatterSpots = data.map((r) {
           final localDate = r.measuredAt.toLocal();
-          final key = localDate.year * 10000 + localDate.month * 100 + localDate.day;
           final x = localDate.hour + (localDate.minute / 60.0);
-          lines.putIfAbsent(key, () => []).add(FlSpot(x, r.value));
+          return FlSpot(x, r.value);
+        }).toList();
+
+        // 2. Adjust dot opacity based on the range to create a density heatmap.
+        double dotOpacity;
+        switch (range) {
+          case '1Y': dotOpacity = 0.15; break;
+          case '14D': dotOpacity = 0.4; break;
+          case '7D': dotOpacity = 0.6; break;
+          default: dotOpacity = 0.8;
         }
-        List<LineChartBarData> chartLines = [];
-        lines.forEach((_, spots) {
-          spots.sort((a, b) => a.x.compareTo(b.x));
-          chartLines.add(LineChartBarData(
-            spots: spots, 
-            isCurved: true, 
-            color: AppTheme.textSecondaryColor.withValues(alpha: 0.3), 
-            barWidth: 1.5, 
+
+        // 3. Create a single transparent line that only renders the dots
+        List<LineChartBarData> chartLines = [
+          LineChartBarData(
+            spots: scatterSpots,
+            isCurved: false,
+            color: Colors.transparent, // This completely hides the "spaghetti" lines
+            barWidth: 0,
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
-                radius: 2,
-                color: AppTheme.textSecondaryColor.withValues(alpha: 0.5),
+                radius: 3.5, 
+                color: AppTheme.textSecondaryColor.withValues(alpha: dotOpacity),
                 strokeWidth: 0,
               ),
             ),
-          ));
-        });
-
-        if (chartLines.isEmpty) {
-          chartLines.add(LineChartBarData(
-            spots: [],
-            color: Colors.transparent,
-          ));
-        }
+          )
+        ];
 
         return Column(
           children: [
@@ -1200,10 +1201,14 @@ class _ModalDaySection extends StatelessWidget {
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) {
-                        if (v == 0 || v == 24) return const SizedBox();
-                        return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
-                      }),
+                      sideTitles: SideTitles(
+                        showTitles: true, 
+                        interval: 6, 
+                        getTitlesWidget: (v, _) {
+                          if (v == 0 || v == 24) return const SizedBox();
+                          return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
+                        }
+                      ),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -1219,6 +1224,8 @@ class _ModalDaySection extends StatelessWidget {
                     ],
                   ) : null,
                   lineBarsData: chartLines,
+                  // Disable touch tooltips for this specific graph so tapping the dense cloud doesn't lag
+                  lineTouchData: const LineTouchData(enabled: false), 
                 ),
               ),
             ),
@@ -1228,7 +1235,7 @@ class _ModalDaySection extends StatelessWidget {
                 const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
                 const SizedBox(width: 12),
               ],
-              const _LegendItem('Daily Traces', AppTheme.textSecondaryColor),
+              const _LegendItem('Reading Density', AppTheme.textSecondaryColor, isCircle: true),
             ]),
           ],
         );
