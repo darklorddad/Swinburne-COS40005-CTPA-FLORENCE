@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 // Admin-side imports
 import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 // Note: We are using the new PatientDirectoryScreen instead of the old PatientsListScreen
 import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart'; 
 
