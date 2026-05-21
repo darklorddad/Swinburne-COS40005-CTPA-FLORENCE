@@ -193,7 +193,7 @@ class _ChartSection extends StatefulWidget {
     required this.infoText,
     required this.builder,
     required this.allData,
-    this.ranges = const ['1D', '7D', '14D', '30D'],
+    this.ranges = const ['1D', '7D', '14D', '1Y'],
   });
 
   @override
@@ -233,11 +233,16 @@ class _ChartSectionState extends State<_ChartSection> {
 
   String _getRangeLabel(String key) {
     switch (key) {
-      case '1D': return 'Daily';
-      case '7D': return 'Weekly';
-      case '14D': return 'Bi-Weekly';
-      case '30D': return 'Monthly';
-      default: return key;
+      case '1D':
+        return 'Daily';
+      case '7D':
+        return 'Weekly';
+      case '14D':
+        return 'Bi-Weekly';
+      case '1Y':
+        return 'Yearly';
+      default:
+        return key;
     }
   }
 
@@ -540,7 +545,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
   List<FlSpot> _getAggregatedSpots(List<MonitorData> data, String range) {
     if (data.isEmpty) return [];
 
-    // For Daily, show exact, raw data points
+    // Daily: Show exact, raw data points
     if (range == '1D') {
       return data
           .map((d) =>
@@ -548,22 +553,30 @@ class _GlucoseTrendsSection extends ConsumerWidget {
           .toList();
     }
 
-    // For Weekly, Bi-Weekly, and Monthly, group by Day and calculate the Average
-    final Map<DateTime, List<double>> groupedByDay = {};
+    final Map<DateTime, List<double>> groupedData = {};
+
     for (var d in data) {
       final local = d.measuredAt.toLocal();
-      // Snap to noon of that day so the point sits nicely in the middle of the date column
-      final day = DateTime(local.year, local.month, local.day, 12);
-      groupedByDay.putIfAbsent(day, () => []).add(d.value);
+      DateTime groupKey;
+
+      if (range == '1Y') {
+        // YEARLY: Group by Month (Set to the 15th of the month to center the data point)
+        groupKey = DateTime(local.year, local.month, 15, 12);
+      } else {
+        // WEEKLY / BI-WEEKLY: Group by Day (Set to noon)
+        groupKey = DateTime(local.year, local.month, local.day, 12);
+      }
+
+      groupedData.putIfAbsent(groupKey, () => []).add(d.value);
     }
 
     final List<FlSpot> spots = [];
-    groupedByDay.forEach((date, values) {
+    groupedData.forEach((date, values) {
       final average = values.reduce((a, b) => a + b) / values.length;
       spots.add(FlSpot(date.millisecondsSinceEpoch.toDouble(), average));
     });
 
-    spots.sort((a, b) => a.x.compareTo(b.x)); // Ensure chronological order
+    spots.sort((a, b) => a.x.compareTo(b.x));
     return spots;
   }
 
@@ -579,40 +592,37 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
-        // Enforce a fixed time window based on selected range (1D, 7D, etc.)
-        final now = DateTime.now();
-        
         DateTime startOfWindow;
         DateTime endOfWindow;
         double interval;
         DateFormat dateFormat;
 
+        final now = DateTime.now();
+        // Snap 'now' to next hour to avoid odd minutes
+        endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
+
         if (range == '1D') {
-          // Fixed Today View (00:00 to 24:00)
           startOfWindow = DateTime(now.year, now.month, now.day);
           endOfWindow = startOfWindow.add(const Duration(days: 1));
           interval = 14400000; // 4 hours
           dateFormat = DateFormat('h a');
         } else {
-          // Rolling Window for others (e.g., last 7 days ending now)
-          // Snap 'now' to next hour to avoid odd minutes
-          endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
-          
           switch (range) {
             case '7D':
               startOfWindow = endOfWindow.subtract(const Duration(days: 7));
               interval = 86400000; // 1 day
-              dateFormat = DateFormat('d/M');
+              dateFormat = DateFormat('E'); // e.g., Mon, Tue
               break;
             case '14D':
               startOfWindow = endOfWindow.subtract(const Duration(days: 14));
-              interval = 172800000; // 2 days
+              interval = 86400000 * 2; // 2 days
               dateFormat = DateFormat('d/M');
               break;
-            case '30D':
-              startOfWindow = endOfWindow.subtract(const Duration(days: 30));
-              interval = 432000000; // 5 days
-              dateFormat = DateFormat('d/M');
+            case '1Y':
+              // Exact 12 months ago from today
+              startOfWindow = DateTime(now.year - 1, now.month, now.day);
+              interval = 86400000 * 30.44; // Roughly 1 month in milliseconds
+              dateFormat = DateFormat('MMM yy'); // e.g., Jan 26
               break;
             default:
               startOfWindow = endOfWindow.subtract(const Duration(days: 7));
@@ -661,15 +671,41 @@ class _GlucoseTrendsSection extends ConsumerWidget {
 
         return Column(
           children: [
-            SizedBox(
-              height: 250,
-              child: LineChart(
-                LineChartData(
-                  clipData: const FlClipData.all(),
-                  minX: minX,
-                  maxX: maxX,
-                  minY: minY,
-                  maxY: maxY,
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Calculate dynamic width to allow scrolling
+                double chartWidth = constraints.maxWidth;
+
+                // Assign a minimum pixel width per point to force scrolling on mobile
+                if (range == '1D') {
+                  chartWidth = math.max(
+                      constraints.maxWidth, 24 * 30.0); // 30px per hour
+                } else if (range == '7D') {
+                  chartWidth =
+                      math.max(constraints.maxWidth, 7 * 60.0); // 60px per day
+                } else if (range == '14D') {
+                  chartWidth =
+                      math.max(constraints.maxWidth, 14 * 50.0); // 50px per day
+                } else if (range == '1Y') {
+                  chartWidth = math.max(
+                      constraints.maxWidth, 12 * 60.0); // 60px per month
+                }
+
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  reverse:
+                      true, // Forces scroll position to start at the far right (most recent)
+                  physics: const BouncingScrollPhysics(),
+                  child: SizedBox(
+                    width: chartWidth,
+                    height: 250,
+                    child: LineChart(
+                      LineChartData(
+                        clipData: const FlClipData.all(),
+                        minX: minX,
+                        maxX: maxX,
+                        minY: minY,
+                        maxY: maxY,
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
@@ -797,9 +833,11 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                         }).toList();
                       },
                     ),
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
             if (threshold != null) ...[
               const SizedBox(height: 16),
