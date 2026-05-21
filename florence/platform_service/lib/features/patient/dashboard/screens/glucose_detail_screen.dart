@@ -532,6 +532,8 @@ class _GlucoseTrendsSection extends ConsumerStatefulWidget {
 class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
+  bool _hasMoreData = true; // Track if we hit the end of the database
+  int _previousDataCount = 0;
 
   @override
   void initState() {
@@ -543,6 +545,10 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   @override
   void didUpdateWidget(covariant _GlucoseTrendsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // If the data array grew, we successfully loaded more.
+    if (widget.allReadings.length > oldWidget.allReadings.length) {
+      _hasMoreData = true;
+    }
     // If the user switches tabs (Daily -> Yearly), check again if we need to auto-load
     WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
   }
@@ -556,16 +562,17 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   void _checkAutoLoad() {
     if (!mounted || !_scrollController.hasClients) return;
     
-    // THE FIX FOR 'YEARLY': If the chart is so small that it cannot scroll 
-    // (maxScrollExtent is 0), automatically fetch more data so the user isn't stuck!
-    if (_scrollController.position.maxScrollExtent < 50 && !_isLoadingMore) {
+    // Only auto-load if we aren't loading AND we haven't hit the end of the data
+    if (_hasMoreData && _scrollController.position.maxScrollExtent < 50 && !_isLoadingMore) {
       _loadMoreData();
     }
   }
 
   Future<void> _loadMoreData() async {
-    if (_isLoadingMore) return;
+    if (_isLoadingMore || !_hasMoreData) return;
     setState(() => _isLoadingMore = true);
+    
+    _previousDataCount = widget.allReadings.length;
     
     try {
       await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
@@ -573,9 +580,18 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
       debugPrint('Error loading more data: $e');
     } finally {
       if (mounted) {
-        setState(() => _isLoadingMore = false);
-        // Double check if we STILL need more data to fill the screen after the fetch
-        WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+        setState(() {
+          _isLoadingMore = false;
+          // If the length didn't change after the fetch, we reached the end of the DB
+          if (widget.allReadings.length <= _previousDataCount) {
+            _hasMoreData = false; 
+          }
+        });
+        
+        // Check if we need to load again only if we actually got new data
+        if (_hasMoreData) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+        }
       }
     }
   }
@@ -632,9 +648,26 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
         final now = DateTime.now();
         endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
 
+        // 1. Define a maximum number of days we render in the scroll view to prevent GPU lag
+        int maxDaysToRender;
+        switch (range) {
+          case '1D': maxDaysToRender = 14; break;  // Max 14 screens wide
+          case '7D': maxDaysToRender = 90; break;  // Max ~13 screens wide
+          case '14D': maxDaysToRender = 180; break; // Max ~13 screens wide
+          case '1Y': maxDaysToRender = 730; break; // Max 2 years
+          default: maxDaysToRender = 30;
+        }
+
+        DateTime absoluteStart = endOfWindow.subtract(Duration(days: maxDaysToRender));
+
         if (widget.allReadings.isNotEmpty) {
           final firstDate = widget.allReadings.first.measuredAt.toLocal();
           startOfWindow = DateTime(firstDate.year, firstDate.month, firstDate.day);
+          
+          // 2. Clamp the start date to our maximum lookback limit
+          if (startOfWindow.isBefore(absoluteStart)) {
+            startOfWindow = absoluteStart;
+          }
         } else {
           startOfWindow = endOfWindow.subtract(const Duration(days: 7));
         }
@@ -672,7 +705,10 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
         final double dataPad = isMmol ? 1.0 : 10.0;
         final double snapInterval = isMmol ? 2.0 : 50.0;
 
-        final chartSpots = _getAggregatedSpots(widget.allReadings, range);
+        // 3. Filter spots to strictly those within our calculated minX and maxX
+        final chartSpots = _getAggregatedSpots(widget.allReadings, range)
+            .where((spot) => spot.x >= minX && spot.x <= maxX)
+            .toList();
 
         double minY = widget.threshold != null
             ? (widget.threshold!.minValue - padBottom).clamp(0, double.infinity)
@@ -745,7 +781,10 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                     // 1. Only listen to actual movement updates
                     if (scrollInfo is ScrollUpdateNotification) {
                       // Trigger the load 300 pixels BEFORE they hit the edge to prevent swiping fatigue
-                      if (!_isLoadingMore && scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                      // ADDED: Check _hasMoreData so we don't spam requests at the end of the list
+                      if (!_isLoadingMore && 
+                          _hasMoreData && 
+                          scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
                         // 2. Defer the state update until AFTER the current scroll frame completes
                         Future.microtask(() => _loadMoreData());
                       }
