@@ -1,13 +1,19 @@
 import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/config/admin_theme.dart';
 import 'package:florence/config/routes.dart';
+import 'package:florence/features/admin/core/providers/admin_providers.dart';
+import 'package:florence/features/admin/core/models/admin_models.dart';
 
-class AdminDashboardScreen extends StatelessWidget {
+class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final metricsAsync = ref.watch(adminMetricsProvider);
+    final patientsAsync = ref.watch(adminPatientsProvider);
+
     return Scaffold(
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -21,18 +27,28 @@ class AdminDashboardScreen extends StatelessWidget {
                 children: [
                   _buildHeader(context),
                   const SizedBox(height: 32),
-                  _buildMetricCards(context),
+                  
+                  // LIVE METRICS
+                  metricsAsync.when(
+                    data: (metrics) => _buildMetricCards(context, metrics),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Text('Error loading metrics: $err', style: const TextStyle(color: AdminTheme.error)),
+                  ),
+                  
                   const SizedBox(height: 32),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Left Column (Feed)
+                      // LIVE FEED
                       Expanded(
                         flex: 7,
-                        child: _buildActionFeed(context),
+                        child: patientsAsync.when(
+                          data: (patients) => _buildActionFeed(context, patients),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (err, stack) => Text('Failed to load feed: $err'),
+                        ),
                       ),
                       const SizedBox(width: 24),
-                      // Right Column (Quick Actions & Activity)
                       Expanded(
                         flex: 4,
                         child: Column(
@@ -59,10 +75,7 @@ class AdminDashboardScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          'Good Morning, Admin',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+        Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium),
         Row(
           children: [
             SizedBox(
@@ -74,58 +87,27 @@ class AdminDashboardScreen extends StatelessWidget {
                   filled: true,
                   fillColor: Colors.white,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AdminTheme.outlineVariant),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: AdminTheme.primary),
-                  ),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.outlineVariant)),
+                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.primary)),
                 ),
               ),
             ),
             const SizedBox(width: 16),
-            Stack(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications_none_rounded, color: AdminTheme.onSurfaceVariant),
-                  onPressed: () {},
-                ),
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(color: AdminTheme.error, shape: BoxShape.circle),
-                  ),
-                )
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.help_outline_rounded, color: AdminTheme.onSurfaceVariant),
-              onPressed: () {},
-            ),
-            const SizedBox(width: 8),
-            const CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage('https://picsum.photos/id/83/200'),
-            ),
+            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11')),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildMetricCards(BuildContext context) {
+  Widget _buildMetricCards(BuildContext context, AdminMetrics metrics) {
     return Row(
       children: [
         Expanded(
           child: _MetricCard(
             title: 'Total Patients',
-            value: '42',
-            subtitle: '↑ 12%',
+            value: metrics.totalPatients.toString(),
+            subtitle: 'Active accounts',
             subtitleColor: AdminTheme.primary,
             subtitleBg: AdminTheme.primaryContainer.withValues(alpha: 0.3),
             icon: Icons.people_outline,
@@ -136,7 +118,7 @@ class AdminDashboardScreen extends StatelessWidget {
         Expanded(
           child: _MetricCard(
             title: 'High-Risk Patients',
-            value: '18',
+            value: metrics.highRiskPatients.toString(),
             subtitle: 'Needs attention',
             subtitleColor: AdminTheme.error,
             subtitleBg: Colors.transparent,
@@ -149,7 +131,7 @@ class AdminDashboardScreen extends StatelessWidget {
         Expanded(
           child: _MetricCard(
             title: 'Active Clinicians',
-            value: '12',
+            value: metrics.activeClinicians.toString(),
             subtitle: 'On duty',
             subtitleColor: AdminTheme.onSurfaceVariant,
             subtitleBg: Colors.transparent,
@@ -161,7 +143,10 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionFeed(BuildContext context) {
+  Widget _buildActionFeed(BuildContext context, List<AdminPatient> patients) {
+    // Filter to show only high-risk patients in the feed, take top 5
+    final highRiskPatients = patients.where((p) => p.isHighRisk).take(5).toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -170,49 +155,51 @@ class AdminDashboardScreen extends StatelessWidget {
           children: [
             Text('Action Required Feed', style: Theme.of(context).textTheme.titleLarge),
             TextButton(
-              onPressed: () {},
+              onPressed: () => Navigator.pushNamed(context, AppRoutes.adminPatientList),
               style: TextButton.styleFrom(foregroundColor: AdminTheme.primary),
               child: const Text('View All'),
             ),
           ],
         ),
         const SizedBox(height: 16),
-        Card(
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
-            borderRadius: BorderRadius.circular(12),
+        if (highRiskPatients.isEmpty)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(32.0),
+              child: Center(child: Text('No high-risk patients currently require action.', style: TextStyle(color: AdminTheme.outline))),
+            ),
+          )
+        else
+          Card(
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: highRiskPatients.asMap().entries.map((entry) {
+                final patient = entry.value;
+                final isLast = entry.key == highRiskPatients.length - 1;
+                return Column(
+                  children: [
+                    _FeedItem(
+                      name: patient.name,
+                      alert: 'Requires review', // Could be populated from DB if a "latest_alert" field exists
+                      doctor: patient.clinicianName ?? 'Unassigned',
+                      isHighRisk: patient.isHighRisk,
+                      avatarUrl: 'https://i.pravatar.cc/150?u=${patient.id}',
+                    ),
+                    if (!isLast) const Divider(height: 1, color: AdminTheme.outlineVariant),
+                  ],
+                );
+              }).toList(),
+            ),
           ),
-          child: Column(
-            children: [
-              _FeedItem(
-                name: 'Mohd Haris',
-                alert: 'Critical Glucose Spike',
-                doctor: 'Dr. Darren Tan',
-                isHighRisk: true,
-                avatarUrl: 'https://picsum.photos/id/120/200',
-              ),
-              const Divider(height: 1, color: AdminTheme.outlineVariant),
-              _FeedItem(
-                name: 'Wong Chee Keong',
-                alert: 'Elevated Blood Pressure',
-                doctor: 'Dr. Christina Wong',
-                isHighRisk: true,
-                avatarUrl: 'https://picsum.photos/id/67/200',
-              ),
-              const Divider(height: 1, color: AdminTheme.outlineVariant),
-              _FeedItem(
-                name: 'Sarah Felicia',
-                alert: 'Missed Medication Dose',
-                doctor: 'Dr. Putri Anisa',
-                isHighRisk: false,
-                avatarUrl: 'https://picsum.photos/id/124/200',
-              ),
-            ],
-          ),
-        ),
       ],
     );
   }
+
+  // --- Keep your existing _buildQuickActions, _buildRecentActivity, _MetricCard, _FeedItem, _QuickActionButton, _ActivityItem below this line exactly as they are ---
+  // ...
 
   Widget _buildQuickActions(BuildContext context) {
     return Column(
