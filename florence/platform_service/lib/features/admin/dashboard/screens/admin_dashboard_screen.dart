@@ -1,5 +1,7 @@
+import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:florence/config/admin_theme.dart';
+import 'package:florence/config/routes.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -10,9 +12,7 @@ class AdminDashboardScreen extends StatelessWidget {
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Assuming your Sidebar Widget is here (260px width)
-          // const AdminSidebar(), 
-          
+          const AdminSidebar(currentRoute: AppRoutes.adminDashboard),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(32.0),
@@ -110,7 +110,7 @@ class AdminDashboardScreen extends StatelessWidget {
             const SizedBox(width: 8),
             const CircleAvatar(
               radius: 18,
-              backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11'),
+              backgroundImage: NetworkImage('https://picsum.photos/id/83/200'),
             ),
           ],
         ),
@@ -124,7 +124,7 @@ class AdminDashboardScreen extends StatelessWidget {
         Expanded(
           child: _MetricCard(
             title: 'Total Patients',
-            value: '142',
+            value: '42',
             subtitle: '↑ 12%',
             subtitleColor: AdminTheme.primary,
             subtitleBg: AdminTheme.primaryContainer.withValues(alpha: 0.3),
@@ -178,30 +178,34 @@ class AdminDashboardScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Card(
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Column(
             children: [
               _FeedItem(
-                name: 'Sarah Jenkins',
+                name: 'Mohd Haris',
                 alert: 'Critical Glucose Spike',
-                doctor: 'Dr. Emily Chen',
+                doctor: 'Dr. Darren Tan',
                 isHighRisk: true,
-                avatarUrl: 'https://i.pravatar.cc/150?img=5',
+                avatarUrl: 'https://picsum.photos/id/120/200',
               ),
               const Divider(height: 1, color: AdminTheme.outlineVariant),
               _FeedItem(
-                name: 'Marcus Johnson',
+                name: 'Wong Chee Keong',
                 alert: 'Elevated Blood Pressure',
-                doctor: 'Dr. Robert Smith',
+                doctor: 'Dr. Christina Wong',
                 isHighRisk: true,
-                avatarUrl: 'https://i.pravatar.cc/150?img=12',
+                avatarUrl: 'https://picsum.photos/id/67/200',
               ),
               const Divider(height: 1, color: AdminTheme.outlineVariant),
               _FeedItem(
-                name: 'Elena Rodriguez',
+                name: 'Sarah Felicia',
                 alert: 'Missed Medication Dose',
-                doctor: 'Dr. Emily Chen',
+                doctor: 'Dr. Putri Anisa',
                 isHighRisk: false,
-                avatarUrl: 'https://i.pravatar.cc/150?img=9',
+                avatarUrl: 'https://picsum.photos/id/124/200',
               ),
             ],
           ),
@@ -238,8 +242,12 @@ class AdminDashboardScreen extends StatelessWidget {
         Text('Recent Activity', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         Card(
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(24), // ADDED the Padding widget here
+            padding: const EdgeInsets.all(24),
             child: Column(
               children: [
                 _ActivityItem(
@@ -251,7 +259,7 @@ class AdminDashboardScreen extends StatelessWidget {
                 ),
                 _ActivityItem(
                   icon: Icons.check_circle_outline,
-                  iconBg: AdminTheme.surfaceContainerHighest, // This will now work!
+                  iconBg: AdminTheme.surfaceContainerHighest,
                   title: 'Dr. Smith completed rounds',
                   time: '1 Hour Ago',
                   isLast: false,
@@ -298,6 +306,10 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -306,7 +318,15 @@ class _MetricCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(title, style: Theme.of(context).textTheme.labelSmall),
+                Text(
+                  title, 
+                  style: const TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w600,
+                    color: AdminTheme.onSurfaceVariant,
+                    letterSpacing: 0.3,
+                  ),
+                ),
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -433,6 +453,10 @@ class _QuickActionButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+            borderRadius: BorderRadius.circular(12),
+          ),
       child: InkWell(
         onTap: () {},
         borderRadius: BorderRadius.circular(8),
