@@ -587,9 +587,9 @@ class _GlucoseTrendsSection extends ConsumerWidget {
       title: 'Glucose Trends',
       icon: Icons.show_chart,
       infoText: 'Visualizes your glucose readings over time.\n\n'
-                '• Y-Axis: Glucose (${settings.glucoseUnit})\n'
-                '• X-Axis: Time\n'
-                '• Green Band: Readings within your target safe zone.',
+          '• Y-Axis: Glucose (${settings.glucoseUnit})\n'
+          '• X-Axis: Time\n'
+          '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
         DateTime startOfWindow;
@@ -601,34 +601,35 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         // Snap 'now' to next hour to avoid odd minutes
         endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
 
-        if (range == '1D') {
-          startOfWindow = DateTime(now.year, now.month, now.day);
-          endOfWindow = startOfWindow.add(const Duration(days: 1));
-          interval = 14400000; // 4 hours
-          dateFormat = DateFormat('h a');
+        // HISTORY: Allow scrolling back to the very first log for ALL views
+        if (allReadings.isNotEmpty) {
+          final firstDate = allReadings.first.measuredAt.toLocal();
+          startOfWindow = DateTime(firstDate.year, firstDate.month, firstDate.day);
         } else {
-          switch (range) {
-            case '7D':
-              startOfWindow = endOfWindow.subtract(const Duration(days: 7));
-              interval = 86400000; // 1 day
-              dateFormat = DateFormat('E'); // e.g., Mon, Tue
-              break;
-            case '14D':
-              startOfWindow = endOfWindow.subtract(const Duration(days: 14));
-              interval = 86400000 * 2; // 2 days
-              dateFormat = DateFormat('d/M');
-              break;
-            case '1Y':
-              // Exact 12 months ago from today
-              startOfWindow = DateTime(now.year - 1, now.month, now.day);
-              interval = 86400000 * 30.44; // Roughly 1 month in milliseconds
-              dateFormat = DateFormat('MMM yy'); // e.g., Jan 26
-              break;
-            default:
-              startOfWindow = endOfWindow.subtract(const Duration(days: 7));
-              interval = 86400000;
-              dateFormat = DateFormat('d/M');
-          }
+          startOfWindow = endOfWindow.subtract(const Duration(days: 7));
+        }
+
+        // Set dynamic intervals and formats based on the view
+        switch (range) {
+          case '1D':
+            interval = 21600000; // 6 hours
+            dateFormat = DateFormat("d/M\nh a"); // e.g. 15/5 \n 12 PM
+            break;
+          case '7D':
+            interval = 86400000; // 1 day
+            dateFormat = DateFormat("d/M\nE"); // e.g. 15/5 \n Fri
+            break;
+          case '14D':
+            interval = 86400000 * 2; // 2 days
+            dateFormat = DateFormat("d/M\nE"); // e.g. 15/5 \n Fri
+            break;
+          case '1Y':
+            interval = 86400000 * 30.44; // ~1 month
+            dateFormat = DateFormat('MMM yy'); // e.g. Jan 26
+            break;
+          default:
+            interval = 86400000;
+            dateFormat = DateFormat('d/M');
         }
 
         final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
@@ -645,10 +646,10 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         final double dataPad = isMmol ? 1.0 : 10.0;
         final double snapInterval = isMmol ? 2.0 : 50.0;
 
-        // 1. GET AGGREGATED SPOTS
-        final chartSpots = _getAggregatedSpots(data, range);
+        // 3. FORCE ALL VIEWS TO USE FULL HISTORY (Fixes the Daily scroll bug)
+        final chartSpots = _getAggregatedSpots(allReadings, range);
 
-        // 2. Determine Y-Axis range dynamically based on AGGREGATED spots
+        // 4. Determine Y-Axis range dynamically based on spots
         double minY = threshold != null
             ? (threshold!.minValue - padBottom).clamp(0, double.infinity)
             : defaultMin;
@@ -659,7 +660,6 @@ class _GlucoseTrendsSection extends ConsumerWidget {
           double dataMin = chartSpots.map((e) => e.y).reduce(math.min);
           double dataMax = chartSpots.map((e) => e.y).reduce(math.max);
 
-          // Ensure the chart always wraps neatly around the lowest and highest data points
           minY = math.min(minY, (dataMin - dataPad).clamp(0, double.infinity));
           maxY = math.max(maxY, dataMax + dataPad);
         }
@@ -669,181 +669,261 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         maxY = (maxY / snapInterval).ceil() * snapInterval;
         if (maxY == minY) maxY += snapInterval;
 
+        // 5. Dynamic Helper Description
+        String viewDescription = "";
+        if (range == '1D') {
+          viewDescription = "Displaying exact readings. Swipe right to see past days.";
+        } else if (range == '7D') {
+          viewDescription = "Displaying daily averages. One screen equals 7 days.";
+        } else if (range == '14D') {
+          viewDescription = "Displaying daily averages. One screen equals 14 days.";
+        } else if (range == '1Y') {
+          viewDescription = "Displaying monthly averages. One screen equals 6 months.";
+        }
+
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Dynamic Description Text
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0, left: 4.0),
+              child: Text(
+                viewDescription,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondaryColor,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
             LayoutBuilder(
               builder: (context, constraints) {
-                // Calculate dynamic width to allow scrolling
                 double chartWidth = constraints.maxWidth;
 
-                // Assign a minimum pixel width per point to force scrolling on mobile
-                if (range == '1D') {
-                  chartWidth = math.max(
-                      constraints.maxWidth, 24 * 30.0); // 30px per hour
-                } else if (range == '7D') {
-                  chartWidth =
-                      math.max(constraints.maxWidth, 7 * 60.0); // 60px per day
-                } else if (range == '14D') {
-                  chartWidth =
-                      math.max(constraints.maxWidth, 14 * 50.0); // 50px per day
-                } else if (range == '1Y') {
-                  chartWidth = math.max(
-                      constraints.maxWidth, 12 * 60.0); // 60px per month
+                // Expand width for historical scrolling based on total time
+                if (allReadings.isNotEmpty) {
+                  // Make sure total days is at least 1 to prevent shrinking the chart
+                  final totalDays = math.max(1.0, (maxX - minX) / 86400000);
+
+                  if (range == '1D') {
+                    // Ensures exactly 1 day fits on the screen at once (Scrollable)
+                    chartWidth = math.max(constraints.maxWidth, totalDays * constraints.maxWidth);
+                  } else if (range == '7D') {
+                    final pixelsPerDay = constraints.maxWidth / 7;
+                    chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
+                  } else if (range == '14D') {
+                    final pixelsPerDay = constraints.maxWidth / 14;
+                    chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
+                  } else if (range == '1Y') {
+                    final pixelsPerMonth = constraints.maxWidth / 6;
+                    final totalMonths = totalDays / 30.44;
+                    chartWidth = math.max(constraints.maxWidth, totalMonths * pixelsPerMonth);
+                  }
                 }
 
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  reverse:
-                      true, // Forces scroll position to start at the far right (most recent)
+                  reverse: true, // Forces scroll to start at the far right (Today)
                   physics: const BouncingScrollPhysics(),
                   child: SizedBox(
                     width: chartWidth,
                     height: 250,
                     child: LineChart(
                       LineChartData(
-                        clipData: const FlClipData.all(),
+                        clipData: const FlClipData.all(), // Prevents line bleeding
                         minX: minX,
                         maxX: maxX,
                         minY: minY,
                         maxY: maxY,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 30,
-                        interval: interval,
-                        getTitlesWidget: (val, meta) {
-                          // Prevent edge labels from clipping strictly at the bounds
-                          if (val <= meta.min || val >= meta.max) {
-                            return const SizedBox.shrink();
-                          }
-
-                          final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              dateFormat.format(date),
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppTheme.textSecondaryColor,
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: true,
+                          getDrawingHorizontalLine: (_) => FlLine(
+                              color: AppTheme.getBorderColor(context)
+                                  .withValues(alpha: 0.2),
+                              strokeWidth: 1),
+                          getDrawingVerticalLine: (_) => FlLine(
+                              color: AppTheme.getBorderColor(context)
+                                  .withValues(alpha: 0.2),
+                              strokeWidth: 1),
+                        ),
+                        titlesData: FlTitlesData(
+                          leftTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 42, // INCREASED to fit two lines of text
+                              interval: interval,
+                              getTitlesWidget: (val, meta) {
+                                if (val <= meta.min || val >= meta.max) {
+                                  return const SizedBox.shrink();
+                                }
+                                final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    dateFormat.format(date),
+                                    textAlign: TextAlign.center, // Centers the two lines of text
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppTheme.textSecondaryColor,
+                                      height: 1.3,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        borderData: FlBorderData(
+                            show: true,
+                            border: Border.all(
+                                color: AppTheme.getBorderColor(context)
+                                    .withValues(alpha: 0.5))),
+                        rangeAnnotations: threshold != null
+                            ? RangeAnnotations(
+                                horizontalRangeAnnotations: [
+                                  HorizontalRangeAnnotation(
+                                      y1: threshold!.minValue,
+                                      y2: threshold!.maxValue,
+                                      color: AppTheme.primaryGreen
+                                          .withValues(alpha: 0.1))
+                                ],
+                              )
+                            : null,
+                        extraLinesData: threshold != null
+                            ? ExtraLinesData(
+                                horizontalLines: [
+                                  HorizontalLine(
+                                      y: threshold!.minValue,
+                                      color: AppTheme.primaryGreen
+                                          .withValues(alpha: 0.8),
+                                      strokeWidth: 1,
+                                      dashArray: [4, 4]),
+                                  HorizontalLine(
+                                      y: threshold!.maxValue,
+                                      color: AppTheme.primaryGreen
+                                          .withValues(alpha: 0.8),
+                                      strokeWidth: 1,
+                                      dashArray: [4, 4]),
+                                ],
+                              )
+                            : null,
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: chartSpots,
+                            
+                            // PERFORMANCE FIX 1: Disable expensive curve math if rendering huge sets of raw data
+                            isCurved: range != '1D' && chartSpots.length < 100, 
+                            
+                            color: AppTheme.primaryBlue,
+                            barWidth: range == '1D' ? 1.5 : 2, // Thinner line for dense data
+                            
+                            // PERFORMANCE FIX 2: Hide dots if there are too many, preventing lag spikes
+                            dotData: FlDotData(
+                              show: chartSpots.length <= 60, 
+                              getDotPainter: (spot, percent, barData, index) =>
+                                  FlDotCirclePainter(
+                                radius: 3,
+                                color: AppTheme.primaryBlue,
+                                strokeWidth: 1.5,
+                                strokeColor: Colors.white,
                               ),
                             ),
-                          );
-                        },
-                      ),
-                    ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
-                  // 1. Safe Zone Background (Green Band)
-                  rangeAnnotations: threshold != null ? RangeAnnotations(
-                    horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(
-                        y1: threshold!.minValue, 
-                        y2: threshold!.maxValue, 
-                        color: AppTheme.primaryGreen.withValues(alpha: 0.1)
-                      )
-                    ],
-                  ) : null,
-                  
-                  // 2. Dotted Lines for Thresholds (Matches Trends)
-                  extraLinesData: threshold != null ? ExtraLinesData(
-                    horizontalLines: [
-                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
-                    ],
-                  ) : null,
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: chartSpots,
-                      isCurved: true,
-                      color: AppTheme.primaryBlue,
-                      barWidth: 2,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(
-                          radius: 3, // Visible dots
-                          color: AppTheme.primaryBlue,
-                          strokeWidth: 1.5,
-                          strokeColor: Colors.white,
+                            belowBarData: BarAreaData(
+                                show: true,
+                                gradient: LinearGradient(
+                                    colors: [
+                                      AppTheme.primaryBlue
+                                          .withValues(alpha: 0.1),
+                                      AppTheme.primaryBlue.withValues(alpha: 0)
+                                    ],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter)),
+                          ),
+                        ],
+                        lineTouchData: LineTouchData(
+                          getTouchedSpotIndicator: (barData, spotIndexes) {
+                            return spotIndexes.map((index) {
+                              return TouchedSpotIndicatorData(
+                                const FlLine(
+                                    color: AppTheme.textSecondaryColor,
+                                    strokeWidth: 1),
+                                FlDotData(
+                                    show: true,
+                                    getDotPainter: (spot, percent, bar, index) =>
+                                        FlDotCirclePainter(
+                                            radius: 4,
+                                            color: AppTheme.primaryBlue,
+                                            strokeColor: Colors.white)),
+                              );
+                            }).toList();
+                          },
+                          touchTooltipData: LineTouchTooltipData(
+                            getTooltipColor: (touchedSpot) =>
+                                Colors.black.withValues(alpha: 0.8),
+                            fitInsideHorizontally: true,
+                            fitInsideVertically: true,
+                            getTooltipItems: (touchedSpots) {
+                              return touchedSpots.map((spot) {
+                                final date = DateTime.fromMillisecondsSinceEpoch(
+                                    spot.x.toInt());
+                                final isAggregated = range != '1D';
+
+                                return LineTooltipItem(
+                                  '${DateFormat('MMM d, y').format(date)}\n',
+                                  const TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 10,
+                                  ),
+                                  children: [
+                                    TextSpan(
+                                      text: isAggregated
+                                          ? 'Daily Average\n'
+                                          : '${DateFormat('h:mm a').format(date)}\n',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    TextSpan(
+                                      text: isMmol
+                                          ? '${spot.y.toStringAsFixed(1)} ${settings.glucoseUnit}'
+                                          : '${spot.y.toInt()} ${settings.glucoseUnit}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        height: 1.5,
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList();
+                            },
+                          ),
                         ),
                       ),
-                      belowBarData: BarAreaData(show: true, gradient: LinearGradient(colors: [AppTheme.primaryBlue.withValues(alpha: 0.1), AppTheme.primaryBlue.withValues(alpha: 0)], begin: Alignment.topCenter, end: Alignment.bottomCenter)),
-                    ),
-                  ],
-                  lineTouchData: LineTouchData(
-                    getTouchedSpotIndicator: (barData, spotIndexes) {
-                      return spotIndexes.map((index) {
-                        return TouchedSpotIndicatorData(
-                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
-                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
-                        );
-                      }).toList();
-                    },
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) =>
-                          Colors.black.withValues(alpha: 0.8),
-                      fitInsideHorizontally: true,
-                      fitInsideVertically: true,
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((spot) {
-                          final date = DateTime.fromMillisecondsSinceEpoch(
-                              spot.x.toInt());
-                          final isAggregated = range != '1D';
-
-                          // Include Date, Time, Value, and Unit
-                          return LineTooltipItem(
-                            '${DateFormat('MMM d, y').format(date)}\n', // Date Line
-                            const TextStyle(
-                              color: Colors.white70,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 10,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: isAggregated
-                                    ? 'Daily Average\n'
-                                    : '${DateFormat('h:mm a').format(date)}\n', // Time Line
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 10,
-                                ),
-                              ),
-                              TextSpan(
-                                text: isMmol
-                                    ? '${spot.y.toStringAsFixed(1)} ${settings.glucoseUnit}'
-                                    : '${spot.y.toInt()} ${settings.glucoseUnit}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          );
-                        }).toList();
-                      },
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              },
+            ),
             if (threshold != null) ...[
               const SizedBox(height: 16),
               Wrap(
-                spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
                 children: [
-                  const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
+                  const _LegendItem('Target Range', AppTheme.primaryGreen,
+                      isBox: true),
                 ],
               ),
             ],
