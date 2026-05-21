@@ -529,6 +529,21 @@ class _GlucoseTrendsSection extends ConsumerStatefulWidget {
   ConsumerState<_GlucoseTrendsSection> createState() => _GlucoseTrendsSectionState();
 }
 
+class _GlucoseTrendsSection extends ConsumerStatefulWidget {
+  final List<MonitorData> allReadings;
+  final PatientThreshold? threshold;
+  final bool isDefault;
+
+  const _GlucoseTrendsSection({
+    required this.allReadings,
+    this.threshold,
+    this.isDefault = false,
+  });
+
+  @override
+  ConsumerState<_GlucoseTrendsSection> createState() => _GlucoseTrendsSectionState();
+}
+
 class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
@@ -536,7 +551,15 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   @override
   void initState() {
     super.initState();
-    _scrollController.addListener(_onScroll);
+    // Check if we need to auto-load immediately after the widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+  }
+
+  @override
+  void didUpdateWidget(covariant _GlucoseTrendsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the user switches tabs (Daily -> Yearly), check again if we need to auto-load
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
   }
 
   @override
@@ -545,26 +568,27 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
     super.dispose();
   }
 
-  void _onScroll() {
-    // Detects when the user has scrolled to the far left (deepest into the past)
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 20) {
-      if (!_isLoadingMore) {
-        _loadMoreData();
-      }
+  void _checkAutoLoad() {
+    if (!mounted || !_scrollController.hasClients) return;
+    
+    // THE FIX FOR 'YEARLY': If the chart is so small that it cannot scroll 
+    // (maxScrollExtent is 0), automatically fetch more data so the user isn't stuck!
+    if (_scrollController.position.maxScrollExtent < 50 && !_isLoadingMore) {
+      _loadMoreData();
     }
   }
 
   Future<void> _loadMoreData() async {
     if (_isLoadingMore) return;
-    
     setState(() => _isLoadingMore = true);
+    
+    // TODO: Add Riverpod pagination trigger here when ready.
+    // Example: await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
 
-    try {
-      await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
-    } finally {
-      if (mounted) {
-        setState(() => _isLoadingMore = false);
-      }
+    if (mounted) {
+      setState(() => _isLoadingMore = false);
+      // Double check if we STILL need more data to fill the screen after the fetch
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
     }
   }
 
@@ -726,175 +750,186 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                   }
                 }
 
-                return SingleChildScrollView(
-                  controller: _scrollController,
-                  scrollDirection: Axis.horizontal,
-                  reverse: true,
-                  physics: const BouncingScrollPhysics(),
-                  child: SizedBox(
-                    width: chartWidth,
-                    height: 250,
-                    child: LineChart(
-                      LineChartData(
-                        clipData: const FlClipData.all(),
-                        minX: minX,
-                        maxX: maxX,
-                        minY: minY,
-                        maxY: maxY,
-                        gridData: FlGridData(
-                          show: true,
-                          drawVerticalLine: true,
-                          getDrawingHorizontalLine: (_) => FlLine(
-                              color: AppTheme.getBorderColor(context).withValues(alpha: 0.2),
-                              strokeWidth: 1),
-                          getDrawingVerticalLine: (_) => FlLine(
-                              color: AppTheme.getBorderColor(context).withValues(alpha: 0.2),
-                              strokeWidth: 1),
-                        ),
-                        titlesData: FlTitlesData(
-                          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 42,
-                              interval: interval,
-                              getTitlesWidget: (val, meta) {
-                                if (val <= meta.min || val >= meta.max) {
-                                  return const SizedBox.shrink();
-                                }
-                                final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Text(
-                                    dateFormat.format(date),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: AppTheme.textSecondaryColor,
-                                      height: 1.3,
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                        ),
-                        borderData: FlBorderData(
+                // THE FIX FOR 'DAILY': Using NotificationListener is much more reliable 
+                // for catching swipes before they hit the absolute edge.
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    // Trigger the load 300 pixels BEFORE they hit the edge to prevent swiping fatigue
+                    if (!_isLoadingMore && scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                      _loadMoreData();
+                    }
+                    return false; // Don't block the scroll event
+                  },
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    reverse: true,
+                    physics: const BouncingScrollPhysics(),
+                    child: SizedBox(
+                      width: chartWidth,
+                      height: 250,
+                      child: LineChart(
+                        LineChartData(
+                          clipData: const FlClipData.all(),
+                          minX: minX,
+                          maxX: maxX,
+                          minY: minY,
+                          maxY: maxY,
+                          gridData: FlGridData(
                             show: true,
-                            border: Border.all(
-                                color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
-                        rangeAnnotations: widget.threshold != null
-                            ? RangeAnnotations(
-                                horizontalRangeAnnotations: [
-                                  HorizontalRangeAnnotation(
-                                      y1: widget.threshold!.minValue,
-                                      y2: widget.threshold!.maxValue,
-                                      color: AppTheme.primaryGreen.withValues(alpha: 0.1))
-                                ],
-                              )
-                            : null,
-                        extraLinesData: widget.threshold != null
-                            ? ExtraLinesData(
-                                horizontalLines: [
-                                  HorizontalLine(
-                                      y: widget.threshold!.minValue,
-                                      color: AppTheme.primaryGreen.withValues(alpha: 0.8),
-                                      strokeWidth: 1,
-                                      dashArray: [4, 4]),
-                                  HorizontalLine(
-                                      y: widget.threshold!.maxValue,
-                                      color: AppTheme.primaryGreen.withValues(alpha: 0.8),
-                                      strokeWidth: 1,
-                                      dashArray: [4, 4]),
-                                ],
-                              )
-                            : null,
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: chartSpots,
-                            isCurved: true, // Always curved
-                            color: AppTheme.primaryBlue,
-                            barWidth: range == '1D' ? 1.5 : 2,
-                            dotData: FlDotData(
-                              show: true, // Always show dots
-                              getDotPainter: (spot, percent, barData, index) =>
-                                  FlDotCirclePainter(
-                                radius: 3,
-                                color: AppTheme.primaryBlue,
-                                strokeWidth: 1.5,
-                                strokeColor: Colors.white,
+                            drawVerticalLine: true,
+                            getDrawingHorizontalLine: (_) => FlLine(
+                                color: AppTheme.getBorderColor(context).withValues(alpha: 0.2),
+                                strokeWidth: 1),
+                            getDrawingVerticalLine: (_) => FlLine(
+                                color: AppTheme.getBorderColor(context).withValues(alpha: 0.2),
+                                strokeWidth: 1),
+                          ),
+                          titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 42,
+                                interval: interval,
+                                getTitlesWidget: (val, meta) {
+                                  if (val <= meta.min || val >= meta.max) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      dateFormat.format(date),
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: AppTheme.textSecondaryColor,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                            belowBarData: BarAreaData(
-                                show: true,
-                                gradient: LinearGradient(
-                                    colors: [
-                                      AppTheme.primaryBlue.withValues(alpha: 0.1),
-                                      AppTheme.primaryBlue.withValues(alpha: 0)
-                                    ],
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter)),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                           ),
-                        ],
-                        lineTouchData: LineTouchData(
-                          getTouchedSpotIndicator: (barData, spotIndexes) {
-                            return spotIndexes.map((index) {
-                              return TouchedSpotIndicatorData(
-                                const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
-                                FlDotData(
-                                    show: true,
-                                    getDotPainter: (spot, percent, bar, index) =>
-                                        FlDotCirclePainter(
-                                            radius: 4,
-                                            color: AppTheme.primaryBlue,
-                                            strokeColor: Colors.white)),
-                              );
-                            }).toList();
-                          },
-                          touchTooltipData: LineTouchTooltipData(
-                            getTooltipColor: (touchedSpot) =>
-                                Colors.black.withValues(alpha: 0.8),
-                            fitInsideHorizontally: true,
-                            fitInsideVertically: true,
-                            getTooltipItems: (touchedSpots) {
-                              return touchedSpots.map((spot) {
-                                final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                                final isAggregated = range != '1D';
-
-                                return LineTooltipItem(
-                                  '${DateFormat('MMM d, y').format(date)}\n',
-                                  const TextStyle(
-                                    color: Colors.white70,
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 10,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: isAggregated
-                                          ? 'Daily Average\n'
-                                          : '${DateFormat('h:mm a').format(date)}\n',
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                    TextSpan(
-                                      text: isMmol
-                                          ? '${spot.y.toStringAsFixed(1)} ${settings.glucoseUnit}'
-                                          : '${spot.y.toInt()} ${settings.glucoseUnit}',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        height: 1.5,
-                                      ),
-                                    ),
+                          borderData: FlBorderData(
+                              show: true,
+                              border: Border.all(
+                                  color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
+                          rangeAnnotations: widget.threshold != null
+                              ? RangeAnnotations(
+                                  horizontalRangeAnnotations: [
+                                    HorizontalRangeAnnotation(
+                                        y1: widget.threshold!.minValue,
+                                        y2: widget.threshold!.maxValue,
+                                        color: AppTheme.primaryGreen.withValues(alpha: 0.1))
                                   ],
+                                )
+                              : null,
+                          extraLinesData: widget.threshold != null
+                              ? ExtraLinesData(
+                                  horizontalLines: [
+                                    HorizontalLine(
+                                        y: widget.threshold!.minValue,
+                                        color: AppTheme.primaryGreen.withValues(alpha: 0.8),
+                                        strokeWidth: 1,
+                                        dashArray: [4, 4]),
+                                    HorizontalLine(
+                                        y: widget.threshold!.maxValue,
+                                        color: AppTheme.primaryGreen.withValues(alpha: 0.8),
+                                        strokeWidth: 1,
+                                        dashArray: [4, 4]),
+                                  ],
+                                )
+                              : null,
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: chartSpots,
+                              isCurved: true, 
+                              color: AppTheme.primaryBlue,
+                              barWidth: range == '1D' ? 1.5 : 2,
+                              dotData: FlDotData(
+                                show: true,
+                                getDotPainter: (spot, percent, barData, index) =>
+                                    FlDotCirclePainter(
+                                  radius: 3,
+                                  color: AppTheme.primaryBlue,
+                                  strokeWidth: 1.5,
+                                  strokeColor: Colors.white,
+                                ),
+                              ),
+                              belowBarData: BarAreaData(
+                                  show: true,
+                                  gradient: LinearGradient(
+                                      colors: [
+                                        AppTheme.primaryBlue.withValues(alpha: 0.1),
+                                        AppTheme.primaryBlue.withValues(alpha: 0)
+                                      ],
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter)),
+                            ),
+                          ],
+                          lineTouchData: LineTouchData(
+                            getTouchedSpotIndicator: (barData, spotIndexes) {
+                              return spotIndexes.map((index) {
+                                return TouchedSpotIndicatorData(
+                                  const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
+                                  FlDotData(
+                                      show: true,
+                                      getDotPainter: (spot, percent, bar, index) =>
+                                          FlDotCirclePainter(
+                                              radius: 4,
+                                              color: AppTheme.primaryBlue,
+                                              strokeColor: Colors.white)),
                                 );
                               }).toList();
                             },
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipColor: (touchedSpot) =>
+                                  Colors.black.withValues(alpha: 0.8),
+                              fitInsideHorizontally: true,
+                              fitInsideVertically: true,
+                              getTooltipItems: (touchedSpots) {
+                                return touchedSpots.map((spot) {
+                                  final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                                  final isAggregated = range != '1D';
+
+                                  return LineTooltipItem(
+                                    '${DateFormat('MMM d, y').format(date)}\n',
+                                    const TextStyle(
+                                      color: Colors.white70,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 10,
+                                    ),
+                                    children: [
+                                      TextSpan(
+                                        text: isAggregated
+                                            ? 'Daily Average\n'
+                                            : '${DateFormat('h:mm a').format(date)}\n',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: isMmol
+                                            ? '${spot.y.toStringAsFixed(1)} ${settings.glucoseUnit}'
+                                            : '${spot.y.toInt()} ${settings.glucoseUnit}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          height: 1.5,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }).toList();
+                              },
+                            ),
                           ),
                         ),
                       ),
