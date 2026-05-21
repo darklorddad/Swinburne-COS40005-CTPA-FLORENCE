@@ -675,7 +675,7 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
         switch (range) {
           case '1D':
             interval = 21600000; // 6 hours
-            dateFormat = DateFormat("d/M\nh a"); // e.g. 15/5 \n 12 PM
+            dateFormat = DateFormat("h a\nd/M\nEEE"); // e.g. 12 PM \n 15/5 \n Fri
             break;
           case '7D':
             interval = 86400000; // 1 day
@@ -817,7 +817,7 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                             bottomTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                reservedSize: 42,
+                                reservedSize: range == '1D' ? 60 : 42,
                                 interval: interval,
                                 getTitlesWidget: (val, meta) {
                                   if (val <= meta.min || val >= meta.max) {
