@@ -646,9 +646,30 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
         DateFormat dateFormat;
 
         final now = DateTime.now();
-        endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
 
-        // 1. Define a maximum number of days we render in the scroll view to prevent GPU lag
+        // 1. Adjust endOfWindow to create a proportional gap ahead of the current time
+        switch (range) {
+          case '1D':
+            // Exact readings: Add a 6-hour gap ahead
+            endOfWindow = now.add(const Duration(hours: 6));
+            break;
+          case '7D':
+            // Aggregated points sit at 12 PM. Pushing to tomorrow night gives ~1.5 days gap
+            endOfWindow = DateTime(now.year, now.month, now.day, 23, 59).add(const Duration(days: 1));
+            break;
+          case '14D':
+            // Pushing 2.5 days ahead for Bi-Weekly
+            endOfWindow = DateTime(now.year, now.month, now.day, 23, 59).add(const Duration(days: 2));
+            break;
+          case '1Y':
+            // Aggregated points sit on the 15th. Pushing to the 15th of next month gives a 1-month gap
+            endOfWindow = DateTime(now.year, now.month + 1, 15);
+            break;
+          default:
+            endOfWindow = now.add(const Duration(hours: 1));
+        }
+
+        // 2. Define a maximum number of days we render in the scroll view to prevent GPU lag
         int maxDaysToRender;
         switch (range) {
           case '1D': maxDaysToRender = 14; break;  // Max 14 screens wide
