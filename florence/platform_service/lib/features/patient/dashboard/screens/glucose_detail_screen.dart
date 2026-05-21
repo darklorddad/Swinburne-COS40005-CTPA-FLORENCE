@@ -535,6 +535,11 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   bool _hasMoreData = true; // Track if we hit the end of the database
   int _previousDataCount = 0;
 
+  // NEW: Controls how wide the canvas is allowed to be
+  int _dailyVisualLimit = 14;
+  // NEW: Prevents rapid-fire canvas expansion while scrolling
+  bool _isPaginating = false;
+
   @override
   void initState() {
     super.initState();
@@ -672,7 +677,7 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
         // 2. Define a maximum number of days we render in the scroll view to prevent GPU lag
         int maxDaysToRender;
         switch (range) {
-          case '1D': maxDaysToRender = 14; break;  // Max 14 screens wide
+          case '1D': maxDaysToRender = _dailyVisualLimit; break;  // Dynamic expansion
           case '7D': maxDaysToRender = 90; break;  // Max ~13 screens wide
           case '14D': maxDaysToRender = 180; break; // Max ~13 screens wide
           case '1Y': maxDaysToRender = 730; break; // Max 2 years
