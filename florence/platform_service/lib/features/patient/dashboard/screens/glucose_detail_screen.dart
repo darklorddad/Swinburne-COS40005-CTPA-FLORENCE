@@ -833,10 +833,10 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                         }).toList();
                       },
                     ),
-                      ),
-                    ),
                   ),
-                );
+                ),
+              ),
+            );
               },
             ),
             if (threshold != null) ...[
