@@ -835,10 +835,9 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                     ),
                   ),
                 ),
-              ),
-            ),
-              },
-            ),
+              );
+            },
+          ),
             if (threshold != null) ...[
               const SizedBox(height: 16),
               Wrap(
