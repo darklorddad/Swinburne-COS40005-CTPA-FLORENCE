@@ -805,13 +805,39 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                 return NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification scrollInfo) {
                     if (scrollInfo is ScrollUpdateNotification) {
-                      if (!_isLoadingMore &&
-                          _hasMoreData &&
-                          scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
-                        Future.microtask(() => _loadMoreData());
+                      if (!_isPaginating && scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                        
+                        // 1. If we have fetched ALL data from the DB, check if the visual 
+                        // canvas already covers the oldest reading. If it does, stop expanding.
+                        if (!_hasMoreData && widget.allReadings.isNotEmpty) {
+                          final oldestDataDate = widget.allReadings.first.measuredAt;
+                          final currentRenderLimit = DateTime.now().subtract(Duration(days: _dailyVisualLimit));
+                          
+                          if (currentRenderLimit.isBefore(oldestDataDate)) {
+                            return false; // Stop paginating, we've shown everything
+                          }
+                        }
+
+                        // 2. Lock the pagination and expand the canvas by 14 days
+                        setState(() {
+                          _isPaginating = true;
+                          if (range == '1D') _dailyVisualLimit += 14;
+                        });
+
+                        // 3. Fetch more data from the database if there is more to get
+                        if (_hasMoreData) {
+                          _loadMoreData().then((_) {
+                            if (mounted) setState(() => _isPaginating = false);
+                          });
+                        } else {
+                          // If no DB fetch is needed, just wait for the canvas to resize, then unlock
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) setState(() => _isPaginating = false);
+                          });
+                        }
                       }
                     }
-                    return false;
+                    return false; 
                   },
                   child: SingleChildScrollView(
                     controller: _scrollController,
