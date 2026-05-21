@@ -1,15 +1,14 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-
 import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/providers/theme_provider.dart';
 import 'package:florence/core/utils/helpers.dart';
-import 'package:florence/main.dart';
-import 'package:florence/shared/widgets/card_widgets.dart';
 import 'package:florence/features/patient/chat/services/chatbot_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/main.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -93,7 +92,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     child: const Text('Sign Out'),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 84),
                 ],
               ),
             ),
