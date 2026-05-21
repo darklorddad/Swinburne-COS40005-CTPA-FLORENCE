@@ -5,7 +5,7 @@ class AdminTheme {
   // Brand Colors
   static const Color surface = Color(0xFFFAF9F6);
   static const Color surfaceContainer = Color(0xFFEEEEEB);
-  static const Color primary = Color(0xFF456551);
+  static const Color primary = Color(0xFF3B5A36); // Original: 0xFF456551
   static const Color primaryContainer = Color(0xFF9CBFA7);
   static const Color onPrimaryContainer = Color(0xFF2F4E3C);
   static const Color secondary = Color(0xFF446650);

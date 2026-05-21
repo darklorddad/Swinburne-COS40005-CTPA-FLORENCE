@@ -1,13 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:florence/config/admin_theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
+import 'package:florence/features/admin/core/providers/admin_providers.dart';
+import 'package:florence/features/admin/core/models/admin_models.dart';
 
-class PatientDirectoryScreen extends StatelessWidget {
+class PatientDirectoryScreen extends ConsumerStatefulWidget {
   const PatientDirectoryScreen({super.key});
 
   @override
+  ConsumerState<PatientDirectoryScreen> createState() => _PatientDirectoryScreenState();
+}
+
+class _PatientDirectoryScreenState extends ConsumerState<PatientDirectoryScreen> {
+  String _searchQuery = '';
+  String _filterRisk = 'all';
+
+  @override
   Widget build(BuildContext context) {
+    final patientsAsync = ref.watch(adminPatientsProvider);
+
     return Scaffold(
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -19,10 +33,6 @@ class PatientDirectoryScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Top Header (Same as Dashboard)
-                  // _buildHeader(context),
-                  // const SizedBox(height: 48),
-
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -35,15 +45,6 @@ class PatientDirectoryScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodyLarge),
                         ],
                       ),
-                      // OutlinedButton( // Register New Patient Button variant
-                      //   onPressed: () {},
-                      //   style: OutlinedButton.styleFrom(
-                      //     foregroundColor: AdminTheme.surface,
-                      //     side: const BorderSide(color: AdminTheme.secondary),
-                      //     backgroundColor: AdminTheme.primary.withValues(alpha: 1.0),
-                      //   ),
-                      //   child: const Text('Register New Patient'),
-                      // ),
                       FilledButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.person_add_alt_1),
@@ -64,8 +65,9 @@ class PatientDirectoryScreen extends StatelessWidget {
                       SizedBox(
                         width: 400,
                         child: TextField(
+                          onChanged: (value) => setState(() => _searchQuery = value),
                           decoration: InputDecoration(
-                            hintText: 'Search by name, ID, or condition...',
+                            hintText: 'Search by name or ID...',
                             prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
                             filled: true,
                             fillColor: Colors.white,
@@ -74,25 +76,33 @@ class PatientDirectoryScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                               borderSide: const BorderSide(color: AdminTheme.outlineVariant),
                             ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AdminTheme.primary),
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           border: Border.all(color: AdminTheme.outlineVariant),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Row(
-                          children: const [
-                            Icon(Icons.filter_list, color: AdminTheme.outline, size: 20),
-                            SizedBox(width: 8),
-                            Text('Filter by Risk Level', style: TextStyle(color: AdminTheme.onSurfaceVariant)),
-                            SizedBox(width: 16),
-                            Icon(Icons.keyboard_arrow_down, color: AdminTheme.outline, size: 20),
-                          ],
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _filterRisk,
+                            icon: const Icon(Icons.filter_list, color: AdminTheme.outline, size: 20),
+                            items: const [
+                              DropdownMenuItem(value: 'all', child: Text('All Risk Levels')),
+                              DropdownMenuItem(value: 'low', child: Text('Low Risk')),
+                              DropdownMenuItem(value: 'medium', child: Text('Medium Risk')),
+                              DropdownMenuItem(value: 'high', child: Text('High Risk')),
+                            ],
+                            onChanged: (value) => setState(() => _filterRisk = value ?? 'all'),
+                          ),
                         ),
                       ),
                     ],
@@ -104,57 +114,48 @@ class PatientDirectoryScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        DataTable(
-                          headingTextStyle: Theme.of(context).textTheme.labelSmall,
-                          dataTextStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AdminTheme.onSurface),
-                          headingRowColor: WidgetStateProperty.all(AdminTheme.surface),
-                          dividerThickness: 1,
-                          columns: const [
-                            DataColumn(label: Text('Patient ID')),
-                            DataColumn(label: Text('Name')),
-                            DataColumn(label: Text('Assigned Clinician')),
-                            DataColumn(label: Text('Risk Level')),
-                            DataColumn(label: Text('Last Sync Date')),
-                            DataColumn(label: Text('Actions')),
-                          ],
-                          rows: [
-                            _buildDataRow('#PT-8842', 'Wong Chee Keong', 'Dr. Christina Wong', 'High Risk', true, 'Oct 24, 2025 · 09:41 AM'),
-                            _buildDataRow('#PT-8901', 'Angel Ting', 'Dr. Philip', 'Low Risk', false, 'Oct 23, 2025 · 14:22 PM'),
-                            _buildDataRow('#PT-9112', 'Sarah Felicia', 'Dr. Putri Anisa', 'Medium Risk', false, 'Oct 23, 2025 · 11:05 AM', isMedium: true),
-                            _buildDataRow('#PT-9155', 'Marcus Chandra', 'Dr. Devi', 'Low Risk', false, 'Oct 22, 2025 · 08:30 AM'),
-                          ],
-                        ),
-                        const Divider(height: 1),
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Showing 1 to 4 of 128 patients', style: TextStyle(color: AdminTheme.outline)),
-                              Row(
-                                children: [
-                                  OutlinedButton(
-                                    onPressed: null, 
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      side: const BorderSide(color: AdminTheme.outlineVariant),
-                                      ),
-                                    child: const Icon(Icons.chevron_left, size: 20),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  OutlinedButton(
-                                    onPressed: () {}, 
-                                    style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      side: const BorderSide(color: AdminTheme.outlineVariant),
-                                      ),
-                                    child: const Icon(Icons.chevron_right, size: 20, color: AdminTheme.outline),
-                                  ),
-                                ],
-                              )
-                            ],
+                        patientsAsync.when(
+                          data: (patients) {
+                            // Apply Search & Risk Filters
+                            final filteredPatients = patients.where((p) {
+                              final matchesSearch = p.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+                                                    p.id.toString().contains(_searchQuery);
+                              final matchesRisk = _filterRisk == 'all' || p.riskLevel.toLowerCase() == _filterRisk;
+                              return matchesSearch && matchesRisk;
+                            }).toList();
+
+                            if (filteredPatients.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.all(48.0),
+                                child: Center(child: Text('No patients found matching your criteria.', style: TextStyle(color: AdminTheme.outline))),
+                              );
+                            }
+
+                            return DataTable(
+                              headingTextStyle: Theme.of(context).textTheme.labelSmall,
+                              dataTextStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AdminTheme.onSurface),
+                              headingRowColor: WidgetStateProperty.all(AdminTheme.surface),
+                              dividerThickness: 1,
+                              columns: const [
+                                DataColumn(label: Text('Patient ID')),
+                                DataColumn(label: Text('Name')),
+                                DataColumn(label: Text('Assigned Clinician')),
+                                DataColumn(label: Text('Risk Level')),
+                                DataColumn(label: Text('Last Assessment')),
+                                DataColumn(label: Text('Actions')),
+                              ],
+                              rows: filteredPatients.map((patient) => _buildDataRow(patient)).toList(),
+                            );
+                          },
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(48.0),
+                            child: Center(child: CircularProgressIndicator(color: AdminTheme.primary)),
                           ),
-                        )
+                          error: (error, stack) => Padding(
+                            padding: const EdgeInsets.all(48.0),
+                            child: Center(child: Text('Error loading patients: $error', style: const TextStyle(color: AdminTheme.error))),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -167,42 +168,52 @@ class PatientDirectoryScreen extends StatelessWidget {
     );
   }
 
-  DataRow _buildDataRow(String id, String name, String doctor, String riskLabel, bool isHighRisk, String syncDate, {bool isMedium = false}) {
-    Color badgeColor = isHighRisk ? AdminTheme.errorContainer : (isMedium ? AdminTheme.surfaceContainerHighest : AdminTheme.primaryFixed);
-    Color textColor = isHighRisk ? AdminTheme.onErrorContainer : (isMedium ? AdminTheme.onSurfaceVariant : AdminTheme.onPrimaryFixed);
+  DataRow _buildDataRow(AdminPatient patient) {
+    Color badgeColor = patient.isHighRisk ? AdminTheme.errorContainer : (patient.isMediumRisk ? AdminTheme.surfaceContainerHighest : AdminTheme.primaryFixed);
+    Color textColor = patient.isHighRisk ? AdminTheme.onErrorContainer : (patient.isMediumRisk ? AdminTheme.onSurfaceVariant : AdminTheme.onPrimaryFixed);
     
+    // Format the date if it exists
+    final formattedDate = patient.lastRiskAssessment != null 
+        ? DateFormat('MMM dd, yyyy · hh:mm a').format(DateTime.parse(patient.lastRiskAssessment!).toLocal())
+        : 'Never Assessed';
+
     return DataRow(
       cells: [
-        DataCell(Text(id, style: const TextStyle(color: AdminTheme.outline))),
-        DataCell(Text(name, style: const TextStyle(fontWeight: FontWeight.w600))),
+        DataCell(Text('#PT-${patient.id.toString().padLeft(4, '0')}', style: const TextStyle(color: AdminTheme.outline))),
+        DataCell(Text(patient.name, style: const TextStyle(fontWeight: FontWeight.w600))),
         DataCell(
           Row(
             children: [
-              const CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://picsum.photos/id/101/200')),
+              CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=${patient.clinicianName}')),
               const SizedBox(width: 8),
-              Text(doctor),
+              Text(patient.clinicianName ?? 'Unassigned'),
             ],
           )
         ),
         DataCell(
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: badgeColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
+            decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(16)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(width: 6, height: 6, decoration: BoxDecoration(color: textColor, shape: BoxShape.circle)),
                 const SizedBox(width: 6),
-                Text(riskLabel, style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                Text(patient.riskLevel, style: TextStyle(color: textColor, fontSize: 12, fontWeight: FontWeight.bold)),
               ],
             ),
           )
         ),
-        DataCell(Text(syncDate, style: const TextStyle(color: AdminTheme.outline))),
-        DataCell(IconButton(icon: const Icon(Icons.more_vert, color: AdminTheme.outline), onPressed: () {})),
+        DataCell(Text(formattedDate, style: const TextStyle(color: AdminTheme.outline))),
+        DataCell(
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: AdminTheme.outline), 
+            onPressed: () {
+              // Navigate to patient detail
+              // Navigator.pushNamed(context, AdminRoutes.patientDetail.replaceAll(':id', patient.id.toString()));
+            }
+          )
+        ),
       ],
     );
   }
