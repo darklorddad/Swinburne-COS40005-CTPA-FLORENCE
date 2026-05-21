@@ -555,12 +555,16 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   }
 
   Future<void> _loadMoreData() async {
+    // 1. Update local UI state to show a loading spinner if you want one
     setState(() => _isLoadingMore = true);
-    
-    // TODO: Add Riverpod pagination trigger here when ready.
-    // Example: await ref.read(monitorDataProvider.notifier).fetchNextPage();
 
-    setState(() => _isLoadingMore = false);
+    // 2. Trigger the Riverpod pagination
+    await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
+
+    // 3. Ensure the widget is still mounted before calling setState again
+    if (mounted) {
+      setState(() => _isLoadingMore = false);
+    }
   }
 
   List<FlSpot> _getAggregatedSpots(List<MonitorData> data, String range) {
