@@ -681,96 +681,190 @@ class _FloatingBarSection extends StatelessWidget {
                 '• Bar Height: Difference between Systolic and Diastolic.',
       allData: readings,
       builder: (range, data) {
-        // For bar chart, too many points look bad. Limit or aggregate if needed.
-        // Here we simply show the data points available in range.
         
-        return Column(
-          children: [
-            SizedBox(
-              height: 250,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: 200, minY: 40,
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: range == '1D' ? (data.isNotEmpty ? data.length / 6 : 1) : 1,
-                        getTitlesWidget: (v, meta) {
-                          if (v.toInt() >= data.length) return const SizedBox();
+        // 1. Generate appropriate Bar Groups based on the selected range
+        List<BarChartGroupData> barGroups;
+        
+        if (range == '1D') {
+          // Group daily readings into 24 fixed hourly buckets
+          Map<int, List<_BpReading>> hourlyMap = {};
+          for (var r in data) {
+            int hr = r.timestamp.toLocal().hour;
+            hourlyMap.putIfAbsent(hr, () => []).add(r);
+          }
+          
+          barGroups = List.generate(25, (hour) {
+            if (hourlyMap.containsKey(hour)) {
+              // Average the readings if there are multiple in the same hour
+              var list = hourlyMap[hour]!;
+              double sys = list.map((e) => e.systolic).reduce((a, b) => a + b) / list.length;
+              double dia = list.map((e) => e.diastolic).reduce((a, b) => a + b) / list.length;
+              
+              return BarChartGroupData(
+                x: hour,
+                barRods: [
+                  BarChartRodData(
+                    toY: sys,
+                    fromY: dia,
+                    color: AppTheme.primaryBlue.withValues(alpha: 0.6),
+                    width: 12,
+                    borderRadius: BorderRadius.circular(4),
+                  )
+                ],
+              );
+            } else {
+              // Create an invisible placeholder bar to maintain the 24-hour spacing
+              return BarChartGroupData(
+                x: hour,
+                barRods: [
+                  BarChartRodData(toY: 0, fromY: 0, color: Colors.transparent, width: 12)
+                ],
+              );
+            }
+          });
+        } else {
+          // Default behavior for 7D, 14D, 30D (Show sequentially)
+          barGroups = data.asMap().entries.map((entry) {
+            final r = entry.value;
+            return BarChartGroupData(
+              x: entry.key,
+              barRods: [
+                BarChartRodData(
+                  toY: r.systolic,
+                  fromY: r.diastolic,
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.6),
+                  width: 12,
+                  borderRadius: BorderRadius.circular(4),
+                )
+              ],
+            );
+          }).toList();
+        }
 
-                          final int index = v.toInt();
-                          final int total = data.length;
-                          bool shouldSkip = false;
-
-                          // Smartly skip labels to avoid clutter
-                          switch (range) {
-                            case '1D':
-                              if (total > 12) {
-                                shouldSkip = index % 3 != 0; // Show every 3rd
-                              } else if (total > 5) shouldSkip = index % 2 != 0; // Show every 2nd
-                              break;
-                            case '30D':
-                              if (total > 15) {
-                                shouldSkip = index % 5 != 0; // Show every 5th
-                              } else if (total > 8) shouldSkip = index % 3 != 0; // Show every 3rd
-                              break;
-                            default: // 7D, 14D
-                              if (total > 10) shouldSkip = index % 2 != 0;
-                              break;
-                          }
-
-                          // But, always show the first and last label for context
-                          if (index == 0 || index == total - 1) {
-                            shouldSkip = false;
-                          }
-
-                          if (shouldSkip) return const SizedBox();
-
-                          final date = data[index].timestamp.toLocal();
-                          final text = range == '1D'
-                              ? DateFormat('h a').format(date)
-                              : DateFormat('d/M').format(date);
-
-                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
-                        })),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))), // Added border
-                  barTouchData: BarTouchData(
-                    touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
-                      getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                         final r = data[group.x.toInt()];
-                         return BarTooltipItem(
-                           '${r.systolic.toInt()}/${r.diastolic.toInt()}',
-                           const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                           children: [TextSpan(text: '\nPulse: ${r.pulsePressure.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.white70))],
-                         );
-                      }
-                    )
-                  ),
-                  barGroups: data.asMap().entries.map((entry) {
-                    final r = entry.value;
-                    return BarChartGroupData(
-                      x: entry.key,
-                      barRods: [
-                        BarChartRodData(
-                          toY: r.systolic,
-                          fromY: r.diastolic,
-                          color: AppTheme.primaryBlue.withValues(alpha: 0.6),
-                          width: 12,
-                          borderRadius: BorderRadius.circular(4),
+        // 2. Define the Base Chart
+        Widget chart = BarChart(
+          BarChartData(
+            alignment: range == '1D' ? BarChartAlignment.spaceAround : BarChartAlignment.spaceAround,
+            maxY: 200, minY: 40,
+            titlesData: FlTitlesData(
+              leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  interval: range == '1D' ? 1 : (data.isNotEmpty ? data.length / 6 : 1),
+                  reservedSize: 30,
+                  getTitlesWidget: (v, meta) {
+                    // Hourly Labels for Daily View
+                    if (range == '1D') {
+                      if (v <= 0 || v >= 24) return const SizedBox(); 
+                      int hour = v.toInt();
+                      String ampm = hour >= 12 ? 'PM' : 'AM';
+                      int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          '$displayHour $ampm', 
+                          style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor)
                         )
-                      ],
+                      );
+                    }
+
+                    // Standard Date Labels for >1D Views
+                    if (v.toInt() >= data.length || v.toInt() < 0) return const SizedBox();
+                    final int index = v.toInt();
+                    final int total = data.length;
+                    bool shouldSkip = false;
+
+                    switch (range) {
+                      case '30D':
+                        if (total > 15) shouldSkip = index % 5 != 0;
+                        else if (total > 8) shouldSkip = index % 3 != 0;
+                        break;
+                      default: // 7D, 14D
+                        if (total > 10) shouldSkip = index % 2 != 0;
+                        break;
+                    }
+
+                    if (index == 0 || index == total - 1) shouldSkip = false;
+                    if (shouldSkip) return const SizedBox();
+
+                    final date = data[index].timestamp.toLocal();
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 8), 
+                      child: Text(DateFormat('d/M').format(date), style: const TextStyle(fontSize: 10))
                     );
-                  }).toList(),
+                  }
                 ),
               ),
+            ),
+            gridData: FlGridData(
+              show: true, 
+              drawVerticalLine: false, 
+              getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)
+            ),
+            borderData: FlBorderData(
+              show: true, 
+              border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))
+            ),
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  // Prevent tooltips from showing on the invisible placeholder bars
+                  if (rod.toY == 0 && rod.fromY == 0) return null;
+
+                  if (range == '1D') {
+                    final pulse = (rod.toY - (rod.fromY ?? 0)).toInt();
+                    return BarTooltipItem(
+                      '${rod.toY.toInt()}/${rod.fromY?.toInt() ?? 0}',
+                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      children: [TextSpan(text: '\nPulse: $pulse', style: const TextStyle(fontSize: 10, color: Colors.white70))],
+                    );
+                  } else {
+                    final r = data[group.x.toInt()];
+                    return BarTooltipItem(
+                      '${r.systolic.toInt()}/${r.diastolic.toInt()}',
+                      const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                      children: [TextSpan(text: '\nPulse: ${r.pulsePressure.toInt()}', style: const TextStyle(fontSize: 10, color: Colors.white70))],
+                    );
+                  }
+                }
+              )
+            ),
+            barGroups: barGroups,
+          ),
+        );
+
+        // 3. Render Chart (Wrapped in ScrollView if Daily)
+        return Column(
+          children: [
+            if (range == '1D')
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Text(
+                  "Scroll horizontally to view all 24 hours.",
+                  style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor, fontStyle: FontStyle.italic),
+                ),
+              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (range == '1D') {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    reverse: true, // Auto-aligns the scroll view to the right (most recent part of the day)
+                    physics: const BouncingScrollPhysics(),
+                    child: SizedBox(
+                      width: math.max(constraints.maxWidth, 1200), // 50px per hour minimum
+                      height: 250,
+                      child: chart,
+                    ),
+                  );
+                }
+                return SizedBox(height: 250, child: chart);
+              }
             ),
             const SizedBox(height: 12),
             Row(
