@@ -48,25 +48,21 @@ class GlucoseDetailScreen extends ConsumerWidget {
       body: glucoseAsync.when(
         data: (dataList) {
           // 1. Global Data Prep
-          // Filter glucose readings from the consolidated dataList
           final allReadings = dataList
               .where((d) => d.dataType == MonitorDataType.GLUCOSE)
               .toList();
 
-          // Sort ascending for charts logic (Timeline needs X-axis increasing)
+          // Sort ascending for charts logic
           allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
           final thresholds = thresholdsAsync.value ?? [];
           
-          // Check if user actually has a set threshold
           PatientThreshold? userThreshold;
           try {
             userThreshold = thresholds.firstWhere((t) => t.dataType == 'GLUCOSE');
           } catch (_) {}
 
           final isDefault = userThreshold == null;
-          
-          // Use user's threshold or safe default
           final effectiveThreshold = userThreshold;
 
           return RefreshIndicator(
@@ -170,7 +166,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
               ],
             ),
           );
-    },
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error loading glucose: $err')),
       ),
@@ -185,7 +181,7 @@ class _ChartSection extends StatefulWidget {
   final String infoText;
   final Widget Function(String range, List<MonitorData> filteredData) builder;
   final List<MonitorData> allData;
-  final List<String> ranges; // Internal keys: 1D, 7D, 14D, 30D
+  final List<String> ranges;
 
   const _ChartSection({
     required this.title,
@@ -215,7 +211,6 @@ class _ChartSectionState extends State<_ChartSection> {
     final now = DateTime.now();
     
     if (_selectedRange == '1D') {
-      // For Daily, filter from start of TODAY (00:00) to show calendar day
       final startOfDay = DateTime(now.year, now.month, now.day);
       return widget.allData.where((d) => d.measuredAt.isAfter(startOfDay)).toList();
     }
@@ -224,7 +219,7 @@ class _ChartSectionState extends State<_ChartSection> {
     switch (_selectedRange) {
       case '7D': duration = const Duration(days: 7); break;
       case '14D': duration = const Duration(days: 14); break;
-      case '30D': duration = const Duration(days: 30); break;
+      case '1Y': duration = const Duration(days: 365); break;
       default: duration = const Duration(days: 7); break;
     }
     final cutoff = now.subtract(duration);
@@ -233,16 +228,11 @@ class _ChartSectionState extends State<_ChartSection> {
 
   String _getRangeLabel(String key) {
     switch (key) {
-      case '1D':
-        return 'Daily';
-      case '7D':
-        return 'Weekly';
-      case '14D':
-        return 'Bi-Weekly';
-      case '1Y':
-        return 'Yearly';
-      default:
-        return key;
+      case '1D': return 'Daily';
+      case '7D': return 'Weekly';
+      case '14D': return 'Bi-Weekly';
+      case '1Y': return 'Yearly';
+      default: return key;
     }
   }
 
@@ -294,7 +284,6 @@ class _ChartSectionState extends State<_ChartSection> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
             children: [
               Container(
@@ -319,8 +308,6 @@ class _ChartSectionState extends State<_ChartSection> {
             ],
           ),
           const SizedBox(height: 16),
-          
-          // Timeline Tabs
           Container(
             height: 36,
             decoration: BoxDecoration(
@@ -343,7 +330,7 @@ class _ChartSectionState extends State<_ChartSection> {
                       child: Text(
                         _getRangeLabel(range),
                         style: TextStyle(
-                          fontSize: 11, // Smaller text to fit words
+                          fontSize: 11, 
                           fontWeight: FontWeight.w600,
                           color: isSelected 
                             ? Colors.white 
@@ -360,8 +347,6 @@ class _ChartSectionState extends State<_ChartSection> {
             ),
           ),
           const SizedBox(height: 20),
-
-          // Content
           widget.builder(_selectedRange, filteredData),
         ],
       ),
@@ -411,7 +396,6 @@ class _StatisticsSection extends ConsumerWidget {
         final settings = ref.watch(patientSettingsProvider);
         return Column(
           children: [
-            // Target Range Display
             InkWell(
               onTap: () => Navigator.of(context).pushNamed('/profile'),
               borderRadius: BorderRadius.circular(12),
@@ -472,7 +456,6 @@ class _StatisticsSection extends ConsumerWidget {
                 ),
               ),
             ),
-            // Statistics Row
             Row(
               children: [
                 Expanded(child: _buildStatBox(context, 'Average', (stats['avg'] as double) > 0 ? (stats['avg'] as double).toStringAsFixed(0) : '--', settings.glucoseUnit, Colors.blue)),
@@ -528,10 +511,10 @@ class _StatisticsSection extends ConsumerWidget {
 }
 
 // ============================================================================
-// SECTION 2: ANNOTATED GLUCOSE TRENDS
+// SECTION 2: ANNOTATED GLUCOSE TRENDS (SCROLLABLE & PAGINATED)
 // ============================================================================
 
-class _GlucoseTrendsSection extends ConsumerWidget {
+class _GlucoseTrendsSection extends ConsumerStatefulWidget {
   final List<MonitorData> allReadings;
   final PatientThreshold? threshold;
   final bool isDefault;
@@ -542,15 +525,49 @@ class _GlucoseTrendsSection extends ConsumerWidget {
     this.isDefault = false,
   });
 
+  @override
+  ConsumerState<_GlucoseTrendsSection> createState() => _GlucoseTrendsSectionState();
+}
+
+class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    // Detects when the user has scrolled to the far left (deepest into the past)
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 20) {
+      if (!_isLoadingMore) {
+        _loadMoreData();
+      }
+    }
+  }
+
+  Future<void> _loadMoreData() async {
+    setState(() => _isLoadingMore = true);
+    
+    // TODO: Add Riverpod pagination trigger here when ready.
+    // Example: await ref.read(monitorDataProvider.notifier).fetchNextPage();
+
+    setState(() => _isLoadingMore = false);
+  }
+
   List<FlSpot> _getAggregatedSpots(List<MonitorData> data, String range) {
     if (data.isEmpty) return [];
 
-    // Daily: Show exact, raw data points
     if (range == '1D') {
-      return data
-          .map((d) =>
-              FlSpot(d.measuredAt.millisecondsSinceEpoch.toDouble(), d.value))
-          .toList();
+      return data.map((d) => FlSpot(d.measuredAt.millisecondsSinceEpoch.toDouble(), d.value)).toList();
     }
 
     final Map<DateTime, List<double>> groupedData = {};
@@ -560,10 +577,8 @@ class _GlucoseTrendsSection extends ConsumerWidget {
       DateTime groupKey;
 
       if (range == '1Y') {
-        // YEARLY: Group by Month (Set to the 15th of the month to center the data point)
         groupKey = DateTime(local.year, local.month, 15, 12);
       } else {
-        // WEEKLY / BI-WEEKLY: Group by Day (Set to noon)
         groupKey = DateTime(local.year, local.month, local.day, 12);
       }
 
@@ -581,7 +596,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final settings = ref.watch(patientSettingsProvider);
     return _ChartSection(
       title: 'Glucose Trends',
@@ -590,7 +605,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
           '• Y-Axis: Glucose (${settings.glucoseUnit})\n'
           '• X-Axis: Time\n'
           '• Green Band: Readings within your target safe zone.',
-      allData: allReadings,
+      allData: widget.allReadings,
       builder: (range, data) {
         DateTime startOfWindow;
         DateTime endOfWindow;
@@ -598,18 +613,15 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         DateFormat dateFormat;
 
         final now = DateTime.now();
-        // Snap 'now' to next hour to avoid odd minutes
         endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
 
-        // HISTORY: Allow scrolling back to the very first log for ALL views
-        if (allReadings.isNotEmpty) {
-          final firstDate = allReadings.first.measuredAt.toLocal();
+        if (widget.allReadings.isNotEmpty) {
+          final firstDate = widget.allReadings.first.measuredAt.toLocal();
           startOfWindow = DateTime(firstDate.year, firstDate.month, firstDate.day);
         } else {
           startOfWindow = endOfWindow.subtract(const Duration(days: 7));
         }
 
-        // Set dynamic intervals and formats based on the view
         switch (range) {
           case '1D':
             interval = 21600000; // 6 hours
@@ -621,7 +633,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
             break;
           case '14D':
             interval = 86400000 * 2; // 2 days
-            dateFormat = DateFormat("d/M\nE"); // e.g. 15/5 \n Fri
+            dateFormat = DateFormat("d/M\nE");
             break;
           case '1Y':
             interval = 86400000 * 30.44; // ~1 month
@@ -635,10 +647,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
         final double maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
 
-        // 1. Check the current unit
         final bool isMmol = settings.glucoseUnit == 'mmol/L';
-
-        // 2. Set dynamic padding and defaults based on the unit
         final double padBottom = isMmol ? 1.0 : 20.0;
         final double padTop = isMmol ? 3.0 : 40.0;
         final double defaultMin = isMmol ? 2.0 : 60.0;
@@ -646,15 +655,12 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         final double dataPad = isMmol ? 1.0 : 10.0;
         final double snapInterval = isMmol ? 2.0 : 50.0;
 
-        // 3. FORCE ALL VIEWS TO USE FULL HISTORY (Fixes the Daily scroll bug)
-        final chartSpots = _getAggregatedSpots(allReadings, range);
+        final chartSpots = _getAggregatedSpots(widget.allReadings, range);
 
-        // 4. Determine Y-Axis range dynamically based on spots
-        double minY = threshold != null
-            ? (threshold!.minValue - padBottom).clamp(0, double.infinity)
+        double minY = widget.threshold != null
+            ? (widget.threshold!.minValue - padBottom).clamp(0, double.infinity)
             : defaultMin;
-        double maxY =
-            threshold != null ? threshold!.maxValue + padTop : defaultMax;
+        double maxY = widget.threshold != null ? widget.threshold!.maxValue + padTop : defaultMax;
 
         if (chartSpots.isNotEmpty) {
           double dataMin = chartSpots.map((e) => e.y).reduce(math.min);
@@ -664,12 +670,10 @@ class _GlucoseTrendsSection extends ConsumerWidget {
           maxY = math.max(maxY, dataMax + dataPad);
         }
 
-        // Snap to grid to ensure equal spacing
         minY = (minY / snapInterval).floor() * snapInterval;
         maxY = (maxY / snapInterval).ceil() * snapInterval;
         if (maxY == minY) maxY += snapInterval;
 
-        // 5. Dynamic Helper Description
         String viewDescription = "";
         if (range == '1D') {
           viewDescription = "Displaying exact readings. Swipe right to see past days.";
@@ -684,7 +688,6 @@ class _GlucoseTrendsSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dynamic Description Text
             Padding(
               padding: const EdgeInsets.only(bottom: 16.0, left: 4.0),
               child: Text(
@@ -700,13 +703,10 @@ class _GlucoseTrendsSection extends ConsumerWidget {
               builder: (context, constraints) {
                 double chartWidth = constraints.maxWidth;
 
-                // Expand width for historical scrolling based on total time
-                if (allReadings.isNotEmpty) {
-                  // Make sure total days is at least 1 to prevent shrinking the chart
+                if (widget.allReadings.isNotEmpty) {
                   final totalDays = math.max(1.0, (maxX - minX) / 86400000);
 
                   if (range == '1D') {
-                    // Ensures exactly 1 day fits on the screen at once (Scrollable)
                     chartWidth = math.max(constraints.maxWidth, totalDays * constraints.maxWidth);
                   } else if (range == '7D') {
                     final pixelsPerDay = constraints.maxWidth / 7;
@@ -722,15 +722,16 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                 }
 
                 return SingleChildScrollView(
+                  controller: _scrollController,
                   scrollDirection: Axis.horizontal,
-                  reverse: true, // Forces scroll to start at the far right (Today)
+                  reverse: true,
                   physics: const BouncingScrollPhysics(),
                   child: SizedBox(
                     width: chartWidth,
                     height: 250,
                     child: LineChart(
                       LineChartData(
-                        clipData: const FlClipData.all(), // Prevents line bleeding
+                        clipData: const FlClipData.all(),
                         minX: minX,
                         maxX: maxX,
                         minY: minY,
@@ -739,21 +740,18 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                           show: true,
                           drawVerticalLine: true,
                           getDrawingHorizontalLine: (_) => FlLine(
-                              color: AppTheme.getBorderColor(context)
-                                  .withValues(alpha: 0.2),
+                              color: AppTheme.getBorderColor(context).withValues(alpha: 0.2),
                               strokeWidth: 1),
                           getDrawingVerticalLine: (_) => FlLine(
-                              color: AppTheme.getBorderColor(context)
-                                  .withValues(alpha: 0.2),
+                              color: AppTheme.getBorderColor(context).withValues(alpha: 0.2),
                               strokeWidth: 1),
                         ),
                         titlesData: FlTitlesData(
-                          leftTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
+                          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                           bottomTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
-                              reservedSize: 42, // INCREASED to fit two lines of text
+                              reservedSize: 42,
                               interval: interval,
                               getTitlesWidget: (val, meta) {
                                 if (val <= meta.min || val >= meta.max) {
@@ -764,7 +762,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                                   padding: const EdgeInsets.only(top: 8.0),
                                   child: Text(
                                     dateFormat.format(date),
-                                    textAlign: TextAlign.center, // Centers the two lines of text
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
                                       fontSize: 10,
                                       color: AppTheme.textSecondaryColor,
@@ -775,40 +773,34 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                               },
                             ),
                           ),
-                          topTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
-                          rightTitles: const AxisTitles(
-                              sideTitles: SideTitles(showTitles: false)),
+                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                         ),
                         borderData: FlBorderData(
                             show: true,
                             border: Border.all(
-                                color: AppTheme.getBorderColor(context)
-                                    .withValues(alpha: 0.5))),
-                        rangeAnnotations: threshold != null
+                                color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
+                        rangeAnnotations: widget.threshold != null
                             ? RangeAnnotations(
                                 horizontalRangeAnnotations: [
                                   HorizontalRangeAnnotation(
-                                      y1: threshold!.minValue,
-                                      y2: threshold!.maxValue,
-                                      color: AppTheme.primaryGreen
-                                          .withValues(alpha: 0.1))
+                                      y1: widget.threshold!.minValue,
+                                      y2: widget.threshold!.maxValue,
+                                      color: AppTheme.primaryGreen.withValues(alpha: 0.1))
                                 ],
                               )
                             : null,
-                        extraLinesData: threshold != null
+                        extraLinesData: widget.threshold != null
                             ? ExtraLinesData(
                                 horizontalLines: [
                                   HorizontalLine(
-                                      y: threshold!.minValue,
-                                      color: AppTheme.primaryGreen
-                                          .withValues(alpha: 0.8),
+                                      y: widget.threshold!.minValue,
+                                      color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                                       strokeWidth: 1,
                                       dashArray: [4, 4]),
                                   HorizontalLine(
-                                      y: threshold!.maxValue,
-                                      color: AppTheme.primaryGreen
-                                          .withValues(alpha: 0.8),
+                                      y: widget.threshold!.maxValue,
+                                      color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                                       strokeWidth: 1,
                                       dashArray: [4, 4]),
                                 ],
@@ -817,16 +809,11 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                         lineBarsData: [
                           LineChartBarData(
                             spots: chartSpots,
-                            
-                            // PERFORMANCE FIX 1: Disable expensive curve math if rendering huge sets of raw data
-                            isCurved: range != '1D' && chartSpots.length < 100, 
-                            
+                            isCurved: true, // Always curved
                             color: AppTheme.primaryBlue,
-                            barWidth: range == '1D' ? 1.5 : 2, // Thinner line for dense data
-                            
-                            // PERFORMANCE FIX 2: Hide dots if there are too many, preventing lag spikes
+                            barWidth: range == '1D' ? 1.5 : 2,
                             dotData: FlDotData(
-                              show: true, 
+                              show: true, // Always show dots
                               getDotPainter: (spot, percent, barData, index) =>
                                   FlDotCirclePainter(
                                 radius: 3,
@@ -839,8 +826,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                                 show: true,
                                 gradient: LinearGradient(
                                     colors: [
-                                      AppTheme.primaryBlue
-                                          .withValues(alpha: 0.1),
+                                      AppTheme.primaryBlue.withValues(alpha: 0.1),
                                       AppTheme.primaryBlue.withValues(alpha: 0)
                                     ],
                                     begin: Alignment.topCenter,
@@ -851,9 +837,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                           getTouchedSpotIndicator: (barData, spotIndexes) {
                             return spotIndexes.map((index) {
                               return TouchedSpotIndicatorData(
-                                const FlLine(
-                                    color: AppTheme.textSecondaryColor,
-                                    strokeWidth: 1),
+                                const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
                                 FlDotData(
                                     show: true,
                                     getDotPainter: (spot, percent, bar, index) =>
@@ -871,8 +855,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                             fitInsideVertically: true,
                             getTooltipItems: (touchedSpots) {
                               return touchedSpots.map((spot) {
-                                final date = DateTime.fromMillisecondsSinceEpoch(
-                                    spot.x.toInt());
+                                final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                                 final isAggregated = range != '1D';
 
                                 return LineTooltipItem(
@@ -915,15 +898,14 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                 );
               },
             ),
-            if (threshold != null) ...[
+            if (widget.threshold != null) ...[
               const SizedBox(height: 16),
               Wrap(
                 spacing: 12,
                 runSpacing: 8,
                 alignment: WrapAlignment.center,
                 children: [
-                  const _LegendItem('Target Range', AppTheme.primaryGreen,
-                      isBox: true),
+                  const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
                 ],
               ),
             ],
@@ -978,7 +960,7 @@ class _TimeInRangeSection extends StatelessWidget {
               child: SizedBox(
                 height: 36,
                 child: total == 0 
-                  ? Container(color: Colors.grey.shade200) // Empty state
+                  ? Container(color: Colors.grey.shade200) 
                   : Row(
                       children: [
                         if (lowPct > 0) Expanded(flex: (lowPct * 10).toInt(), child: Container(color: AppTheme.errorColor)),
@@ -1040,17 +1022,14 @@ class _ModalDaySection extends StatelessWidget {
       title: 'Daily Patterns',
       icon: Icons.auto_graph_outlined,
       infoText: 'Overlays multiple days onto a single 24h axis to spot recurring patterns.\n\n'
-                '• Y-Axis: Glucose (mg/dL)\n'
+                '• Y-Axis: Glucose\n'
                 '• X-Axis: Hour of day (0-24)\n'
                 '• Green Band: Readings within your target safe zone.',
       allData: allReadings,
       builder: (range, data) {
         final Map<int, List<FlSpot>> lines = {};
         for (var r in data) {
-          // Convert to local time so the hour (0-24) matches the user's timezone
           final localDate = r.measuredAt.toLocal();
-          
-          // Use unique date identifier (YYYYMMDD) so distinct days don't merge
           final key = localDate.year * 10000 + localDate.month * 100 + localDate.day;
           final x = localDate.hour + (localDate.minute / 60.0);
           lines.putIfAbsent(key, () => []).add(FlSpot(x, r.value));
@@ -1063,7 +1042,6 @@ class _ModalDaySection extends StatelessWidget {
             isCurved: true, 
             color: AppTheme.textSecondaryColor.withValues(alpha: 0.3), 
             barWidth: 1.5, 
-            // Enable dots so single readings are visible
             dotData: FlDotData(
               show: true,
               getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
@@ -1075,10 +1053,9 @@ class _ModalDaySection extends StatelessWidget {
           ));
         });
 
-        // CRITICAL FIX: If no data, add an empty series to force chart lines/grid to render
         if (chartLines.isEmpty) {
           chartLines.add(LineChartBarData(
-            spots: [], // No dummy points, just an empty series
+            spots: [],
             color: Colors.transparent,
           ));
         }
@@ -1092,23 +1069,21 @@ class _ModalDaySection extends StatelessWidget {
                   minX: 0, maxX: 24, minY: 40, maxY: 250,
                   gridData: FlGridData(
                     show: true,
-                    drawVerticalLine: true, // Enabled vertical grid
+                    drawVerticalLine: true,
                     horizontalInterval: 50,
                     verticalInterval: 6,
                     getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                     getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
-                    // Hide Y Axis Labels
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(showTitles: true, interval: 6, getTitlesWidget: (v, _) {
-                        if (v == 0 || v == 24) return const SizedBox(); // Hide first & last
+                        if (v == 0 || v == 24) return const SizedBox();
                         return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
                       }),
                     ),
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    // Hide Right Axis Labels
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
                   borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
@@ -1126,7 +1101,6 @@ class _ModalDaySection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            // Legend
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               if (threshold != null) ...[
                 const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
@@ -1165,7 +1139,6 @@ class _HistorySectionState extends State<_HistorySection> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
 
-    // Data is passed sorted ASC by parent. Reverse it here for Latest First.
     final sortedReadings = widget.readings.reversed.toList();
 
     final totalItems = sortedReadings.length;
@@ -1176,7 +1149,6 @@ class _HistorySectionState extends State<_HistorySection> {
     final end = math.min(start + _itemsPerPage, totalItems);
     final currentItems = sortedReadings.sublist(start, end);
 
-    // Get threshold from backend data (no fallback)
     final t = widget.threshold;
 
     return Container(
@@ -1199,7 +1171,6 @@ class _HistorySectionState extends State<_HistorySection> {
                   Text('History', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
                 ],
               ),
-              // Navigation arrows
               Row(
                 children: [
                   IconButton(
@@ -1234,11 +1205,6 @@ class _HistorySectionState extends State<_HistorySection> {
             )
           else
             ...currentItems.map((item) {
-            // Unique Status Logic for Glucose
-            // LOW (< Min) = Critical/Red
-            // HIGH (> Max) = Warning/Amber
-            // NORMAL = Green
-            
             String statusText;
             Color statusColor;
             
@@ -1279,7 +1245,6 @@ class _HistorySectionState extends State<_HistorySection> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Left: Value
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
@@ -1302,8 +1267,6 @@ class _HistorySectionState extends State<_HistorySection> {
                       ),
                     ],
                   ),
-                  
-                  // Right: Date and Status Badge
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
