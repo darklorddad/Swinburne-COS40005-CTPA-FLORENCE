@@ -500,12 +500,82 @@ class _StatisticsSection extends StatelessWidget {
   }
 }
 
-class _DualTrendSection extends StatelessWidget {
+// ============================================================================
+// SECTION 2: DUAL PRESSURE TRENDS (SCROLLABLE & PAGINATED)
+// ============================================================================
+
+class _DualTrendSection extends ConsumerStatefulWidget {
   final List<_BpReading> readings;
   final PatientThreshold? sysThreshold;
   final PatientThreshold? diaThreshold;
 
   const _DualTrendSection({required this.readings, this.sysThreshold, this.diaThreshold});
+
+  @override
+  ConsumerState<_DualTrendSection> createState() => _DualTrendSectionState();
+}
+
+class _DualTrendSectionState extends ConsumerState<_DualTrendSection> {
+  final ScrollController _scrollController = ScrollController();
+  
+  bool _isLoadingMore = false;
+  bool _hasMoreData = true; 
+  int _previousDataCount = 0;
+  int _dailyVisualLimit = 14; 
+  bool _isPaginating = false; 
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+  }
+
+  @override
+  void didUpdateWidget(covariant _DualTrendSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.readings.length > oldWidget.readings.length) {
+      _hasMoreData = true;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkAutoLoad() {
+    if (!mounted || !_scrollController.hasClients) return;
+    if (_hasMoreData && _scrollController.position.maxScrollExtent < 50 && !_isLoadingMore) {
+      _loadMoreData();
+    }
+  }
+
+  Future<void> _loadMoreData() async {
+    if (_isLoadingMore || !_hasMoreData) return;
+    setState(() => _isLoadingMore = true);
+    
+    _previousDataCount = widget.readings.length;
+    
+    try {
+      await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
+    } catch (e) {
+      debugPrint('Error loading more data: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+          if (widget.readings.length <= _previousDataCount) {
+            _hasMoreData = false; 
+          }
+        });
+        if (_hasMoreData) {
+          WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -516,136 +586,271 @@ class _DualTrendSection extends StatelessWidget {
                 '• Y-Axis: Pressure (mmHg)\n'
                 '• X-Axis: Time\n'
                 '• Shaded Band: Readings within your target safe zone.',
-      allData: readings,
-      builder: (range, data) {
-        double minX, maxX;
-        if (range == '1D') {
-           final now = DateTime.now();
-          // For Daily view, always show today's full 24h range
-          final startOfDay = DateTime(now.year, now.month, now.day);
-          minX = startOfDay.millisecondsSinceEpoch.toDouble();
-          maxX = startOfDay.add(const Duration(days: 1)).millisecondsSinceEpoch.toDouble();
-        } else if (data.isNotEmpty) {
-           minX = data.first.timestamp.millisecondsSinceEpoch.toDouble();
-           maxX = data.last.timestamp.millisecondsSinceEpoch.toDouble();
-           if (minX == maxX) { minX -= 3600000; maxX += 3600000; } 
-        } else {
-           final now = DateTime.now();
-           Duration d = const Duration(days: 7);
-           if (range == '14D') {
-             d = const Duration(days: 14);
-           } else if (range == '30D') d = const Duration(days: 30);
-           minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
-           maxX = now.millisecondsSinceEpoch.toDouble();
+      allData: widget.readings,
+      builder: (range, _) { // We ignore the filtered data here to handle it dynamically below
+        
+        DateTime startOfWindow;
+        DateTime endOfWindow;
+        double interval;
+        DateFormat dateFormat;
+
+        final now = DateTime.now();
+
+        // 1. Set End Padding and X-Axis Interval logic
+        switch (range) {
+          case '1D':
+            endOfWindow = now.add(const Duration(hours: 6));
+            interval = 3600000; // 1 hour
+            dateFormat = DateFormat("h a");
+            break;
+          case '7D':
+            endOfWindow = DateTime(now.year, now.month, now.day, 23, 59).add(const Duration(days: 1));
+            interval = 86400000;
+            dateFormat = DateFormat("d/M\nE");
+            break;
+          case '14D':
+            endOfWindow = DateTime(now.year, now.month, now.day, 23, 59).add(const Duration(days: 2));
+            interval = 86400000 * 2;
+            dateFormat = DateFormat("d/M\nE");
+            break;
+          case '30D':
+            endOfWindow = DateTime(now.year, now.month + 1, 15);
+            interval = 86400000 * 7; 
+            dateFormat = DateFormat('d/M');
+            break;
+          default:
+            endOfWindow = now.add(const Duration(hours: 1));
+            interval = 86400000;
+            dateFormat = DateFormat('d/M');
         }
 
-        return Column(
-          children: [
-            SizedBox(
-              height: 250,
-              child: LineChart(
-                LineChartData(
-                  minX: minX, maxX: maxX, minY: 40, maxY: 180,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        interval: (maxX - minX) / (range == '1D' ? 6 : 4), // More ticks for daily view
-                        getTitlesWidget: (value, meta) {
-                          // Aggressively hide labels near the start and end
-                          // Using meta.min/max ensures we match the chart's actual viewport
-                          final tolerance = (meta.max - meta.min) * 0.05; // 5% margin
-                          if (value <= meta.min + tolerance || value >= meta.max - tolerance) {
-                            return const SizedBox();
-                          }
+        // 2. Control Visual Canvas Rendering Limits
+        int maxDaysToRender;
+        switch (range) {
+          case '1D': maxDaysToRender = _dailyVisualLimit; break;
+          case '7D': maxDaysToRender = 90; break;
+          case '14D': maxDaysToRender = 180; break;
+          case '30D': maxDaysToRender = 730; break;
+          default: maxDaysToRender = 30;
+        }
 
-                          final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                          // 1D shows Time (h a), others show Date (d/M)
-                          final text = range == '1D' 
-                              ? DateFormat('h a').format(date) 
-                              : DateFormat('d/M').format(date);
-                          return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
-                        },
-                      ),
-                    ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
-                  // Safe Zones
-                  rangeAnnotations: RangeAnnotations(
-                    horizontalRangeAnnotations: [
-                      if (sysThreshold != null)
-                        HorizontalRangeAnnotation(y1: sysThreshold!.minValue, y2: sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.05)),
-                      if (diaThreshold != null)
-                        HorizontalRangeAnnotation(y1: diaThreshold!.minValue, y2: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.05)),
-                    ]
-                  ),
-                  // Dotted Threshold Lines
-                  extraLinesData: ExtraLinesData(
-                    horizontalLines: [
-                      if (sysThreshold != null) ...[
-                        HorizontalLine(y: sysThreshold!.minValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
-                      ],
-                      if (diaThreshold != null) ...[
-                        HorizontalLine(y: diaThreshold!.minValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
-                      ],
-                    ],
-                  ),
-                  lineBarsData: [
-                    // Systolic Line
-                    LineChartBarData(
-                      spots: data.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.systolic)).toList(),
-                      color: AppTheme.primaryRed, barWidth: 2, isCurved: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryRed, strokeWidth: 1.5, strokeColor: Colors.white),
-                      ),
-                    ),
-                    // Diastolic Line
-                    LineChartBarData(
-                      spots: data.map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.diastolic)).toList(),
-                      color: AppTheme.primaryBlue, barWidth: 2, isCurved: true,
-                      dotData: FlDotData(
-                         show: true,
-                         getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeWidth: 1.5, strokeColor: Colors.white),
-                      ),
-                    ),
-                  ],
-                  lineTouchData: LineTouchData(
-                    getTouchedSpotIndicator: (barData, spotIndexes) {
-                      return spotIndexes.map((index) {
-                        return TouchedSpotIndicatorData(
-                          // Thinner line (0.5)
-                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 0.5),
-                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
-                        );
-                      }).toList();
-                    },
-                    touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
-                      getTooltipItems: (touchedSpots) {
-                        return touchedSpots.map((spot) {
-                           final isSys = spot.barIndex == 0;
-                           return LineTooltipItem(
-                             '${isSys ? "Sys" : "Dia"}: ${spot.y.toInt()}',
-                             const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-                           );
-                        }).toList();
-                      }
-                    )
-                  )
-                ),
+        DateTime absoluteStart = endOfWindow.subtract(Duration(days: maxDaysToRender));
+
+        if (widget.readings.isNotEmpty) {
+          final firstDate = widget.readings.first.timestamp.toLocal();
+          startOfWindow = DateTime(firstDate.year, firstDate.month, firstDate.day);
+          if (startOfWindow.isBefore(absoluteStart)) {
+            startOfWindow = absoluteStart;
+          }
+        } else {
+          startOfWindow = endOfWindow.subtract(const Duration(days: 7));
+        }
+
+        final double minX = startOfWindow.millisecondsSinceEpoch.toDouble();
+        final double maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
+
+        // 3. Filter spots strictly within the rendering limits
+        final sysSpots = widget.readings
+            .map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.systolic))
+            .where((s) => s.x >= minX && s.x <= maxX)
+            .toList();
+            
+        final diaSpots = widget.readings
+            .map((r) => FlSpot(r.timestamp.millisecondsSinceEpoch.toDouble(), r.diastolic))
+            .where((s) => s.x >= minX && s.x <= maxX)
+            .toList();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 16.0, left: 4.0),
+              child: Text(
+                range == '1D' ? "Displaying exact readings. Swipe right to see past days." : "Displaying trends over time.",
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondaryColor, fontStyle: FontStyle.italic),
               ),
+            ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                double chartWidth = constraints.maxWidth;
+
+                if (widget.readings.isNotEmpty) {
+                  final totalDays = math.max(1.0, (maxX - minX) / 86400000);
+
+                  if (range == '1D') {
+                    final pixelsPerDay = math.max(constraints.maxWidth, 1200.0);
+                    chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
+                  } else if (range == '7D') {
+                    final pixelsPerDay = constraints.maxWidth / 7;
+                    chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
+                  } else if (range == '14D') {
+                    final pixelsPerDay = constraints.maxWidth / 14;
+                    chartWidth = math.max(constraints.maxWidth, totalDays * pixelsPerDay);
+                  } else if (range == '30D') {
+                    final pixelsPerMonth = constraints.maxWidth / 2;
+                    final totalMonths = totalDays / 30.44;
+                    chartWidth = math.max(constraints.maxWidth, totalMonths * pixelsPerMonth);
+                  }
+                }
+
+                return NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    if (scrollInfo is ScrollUpdateNotification) {
+                      if (!_isPaginating && scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                        
+                        // Stop expanding if we've rendered the oldest point
+                        if (!_hasMoreData && widget.readings.isNotEmpty) {
+                          final oldestDataDate = widget.readings.first.timestamp;
+                          final currentRenderLimit = DateTime.now().subtract(Duration(days: _dailyVisualLimit));
+                          if (currentRenderLimit.isBefore(oldestDataDate)) return false;
+                        }
+
+                        setState(() {
+                          _isPaginating = true;
+                          if (range == '1D') _dailyVisualLimit += 14;
+                        });
+
+                        if (_hasMoreData) {
+                          _loadMoreData().then((_) {
+                            if (mounted) setState(() => _isPaginating = false);
+                          });
+                        } else {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) setState(() => _isPaginating = false);
+                          });
+                        }
+                      }
+                    }
+                    return false; 
+                  },
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    scrollDirection: Axis.horizontal,
+                    reverse: true,
+                    physics: const BouncingScrollPhysics(),
+                    child: SizedBox(
+                      width: chartWidth,
+                      height: 250,
+                      child: LineChart(
+                        LineChartData(
+                          minX: minX, maxX: maxX, minY: 40, maxY: 180,
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: true,
+                            getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                            getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                          ),
+                          titlesData: FlTitlesData(
+                            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            bottomTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: range == '1D' ? 60 : 42,
+                                interval: interval,
+                                getTitlesWidget: (val, meta) {
+                                  if (val <= meta.min || val >= meta.max) {
+                                    return const SizedBox.shrink();
+                                  }
+                                  final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
+                                  
+                                  String labelText;
+                                  if (range == '1D') {
+                                    // Handle midnight format crossover
+                                    if (date.hour == 0) {
+                                      labelText = DateFormat("12 AM\nd/M\nEEE").format(date);
+                                    } else {
+                                      labelText = DateFormat("h a").format(date);
+                                    }
+                                  } else {
+                                    labelText = dateFormat.format(date);
+                                  }
+
+                                  return Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text(
+                                      labelText,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(fontSize: 10, color: AppTheme.textSecondaryColor, height: 1.3),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          ),
+                          borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
+                          rangeAnnotations: RangeAnnotations(
+                            horizontalRangeAnnotations: [
+                              if (widget.sysThreshold != null)
+                                HorizontalRangeAnnotation(y1: widget.sysThreshold!.minValue, y2: widget.sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.05)),
+                              if (widget.diaThreshold != null)
+                                HorizontalRangeAnnotation(y1: widget.diaThreshold!.minValue, y2: widget.diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.05)),
+                            ]
+                          ),
+                          extraLinesData: ExtraLinesData(
+                            horizontalLines: [
+                              if (widget.sysThreshold != null) ...[
+                                HorizontalLine(y: widget.sysThreshold!.minValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                                HorizontalLine(y: widget.sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                              ],
+                              if (widget.diaThreshold != null) ...[
+                                HorizontalLine(y: widget.diaThreshold!.minValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                                HorizontalLine(y: widget.diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                              ],
+                            ],
+                          ),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: sysSpots,
+                              color: AppTheme.primaryRed, barWidth: 2, isCurved: true,
+                              dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryRed, strokeWidth: 1.5, strokeColor: Colors.white)),
+                            ),
+                            LineChartBarData(
+                              spots: diaSpots,
+                              color: AppTheme.primaryBlue, barWidth: 2, isCurved: true,
+                              dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeWidth: 1.5, strokeColor: Colors.white)),
+                            ),
+                          ],
+                          lineTouchData: LineTouchData(
+                            touchCallback: (FlTouchEvent event, LineTouchResponse? touchResponse) {
+                              // Safely swallows interrupted touch events during scrolling
+                            },
+                            getTouchedSpotIndicator: (barData, spotIndexes) {
+                              return spotIndexes.map((index) {
+                                return TouchedSpotIndicatorData(
+                                  const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 0.5),
+                                  FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
+                                );
+                              }).toList();
+                            },
+                            touchTooltipData: LineTouchTooltipData(
+                              getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
+                              getTooltipItems: (touchedSpots) {
+                                return touchedSpots.map((spot) {
+                                   final isSys = spot.barIndex == 0;
+                                   // Rebuilt tooltips to safely rely on Spot coordinates rather than array indexing
+                                   final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
+                                   return LineTooltipItem(
+                                     '${DateFormat('MMM d, h:mm a').format(date)}\n',
+                                     const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 10),
+                                     children: [
+                                       TextSpan(
+                                         text: '${isSys ? "Sys" : "Dia"}: ${spot.y.toInt()} mmHg',
+                                         style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                       ),
+                                     ]
+                                   );
+                                }).toList();
+                              }
+                            )
+                          )
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             Wrap(
