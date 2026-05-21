@@ -778,18 +778,14 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
                 // for catching swipes before they hit the absolute edge.
                 return NotificationListener<ScrollNotification>(
                   onNotification: (ScrollNotification scrollInfo) {
-                    // 1. Only listen to actual movement updates
                     if (scrollInfo is ScrollUpdateNotification) {
-                      // Trigger the load 300 pixels BEFORE they hit the edge to prevent swiping fatigue
-                      // ADDED: Check _hasMoreData so we don't spam requests at the end of the list
-                      if (!_isLoadingMore && 
-                          _hasMoreData && 
+                      if (!_isLoadingMore &&
+                          _hasMoreData &&
                           scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
-                        // 2. Defer the state update until AFTER the current scroll frame completes
                         Future.microtask(() => _loadMoreData());
                       }
                     }
-                    return false; // Don't block the scroll event
+                    return false;
                   },
                   child: SingleChildScrollView(
                     controller: _scrollController,
