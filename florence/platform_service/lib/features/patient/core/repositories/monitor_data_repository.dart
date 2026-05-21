@@ -255,17 +255,25 @@ class MonitorDataRepository {
 
   MonitorDataRepository(this._apiService);
 
-  Future<HealthDataState> fetchAllData() async {
+  Future<List<MonitorData>> fetchMonitorDataPage({int limit = 50, int offset = 0}) async {
+    final response = await _apiService.get('/patients/me/monitor-data?limit=$limit&offset=$offset');
+    if (response is List) {
+      return response.map((e) => MonitorData.fromJson(e)).toList();
+    }
+    return [];
+  }
+
+  Future<HealthDataState> fetchAllData({int limit = 50, int offset = 0}) async {
     // EXECUTE ALL REQUESTS IN PARALLEL FOR EFFICIENCY
     // This minimizes the initial load time to the slowest individual request
     final results = await Future.wait([
-      _fetchThresholds(),                            // Index 0
-      _apiService.get('/patients/me/monitor-data'),  // Index 1
-      _fetchActivities(),                            // Index 2
-      _fetchMeals(),                                 // Index 3
-      _fetchPatientMedications(),                    // Index 4
-      _fetchDiseaseLogs(),                           // Index 5
-      _fetchMedicationAdherence(),                   // Index 6
+      _fetchThresholds(),                                              // Index 0
+      _apiService.get('/patients/me/monitor-data?limit=$limit&offset=$offset'), // Index 1
+      _fetchActivities(),                                              // Index 2
+      _fetchMeals(),                                                   // Index 3
+      _fetchPatientMedications(),                                      // Index 4
+      _fetchDiseaseLogs(),                                             // Index 5
+      _fetchMedicationAdherence(),                                     // Index 6
     ]);
 
     // Extract results
