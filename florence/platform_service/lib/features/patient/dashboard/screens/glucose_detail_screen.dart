@@ -826,7 +826,7 @@ class _GlucoseTrendsSection extends ConsumerWidget {
                             
                             // PERFORMANCE FIX 2: Hide dots if there are too many, preventing lag spikes
                             dotData: FlDotData(
-                              show: chartSpots.length <= 60, 
+                              show: true, 
                               getDotPainter: (spot, percent, barData, index) =>
                                   FlDotCirclePainter(
                                 radius: 3,
