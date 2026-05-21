@@ -1124,10 +1124,10 @@ class _TimeInRangeSection extends StatelessWidget {
 }
 
 // ============================================================================
-// SECTION 4: MODAL DAY
+// SECTION 4: MODAL DAY (SCROLLABLE & 1-HOUR INTERVALS)
 // ============================================================================
 
-class _ModalDaySection extends StatelessWidget {
+class _ModalDaySection extends StatefulWidget {
   final List<MonitorData> allReadings;
   final PatientThreshold? threshold;
   final bool isDefault;
@@ -1139,6 +1139,33 @@ class _ModalDaySection extends StatelessWidget {
   });
 
   @override
+  State<_ModalDaySection> createState() => _ModalDaySectionState();
+}
+
+class _ModalDaySectionState extends State<_ModalDaySection> {
+  final ScrollController _scrollController = ScrollController();
+  final double _chartWidth = 1200.0; // 1200px total / 24 hours = 50px per hour
+
+  @override
+  void initState() {
+    super.initState();
+    // Automatically scroll to 8 AM after the widget builds
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        // 50 pixels per hour * 8 hours = 400 pixels
+        // This places 8:00 AM near the left edge of the screen
+        _scrollController.jumpTo(400.0);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return _ChartSection(
       title: 'Daily Patterns',
@@ -1147,16 +1174,16 @@ class _ModalDaySection extends StatelessWidget {
                 '• Y-Axis: Glucose\n'
                 '• X-Axis: Hour of day (0-24)\n'
                 '• Green Band: Readings within your target safe zone.',
-      allData: allReadings,
+      allData: widget.allReadings,
       builder: (range, data) {
-        // 1. Put all readings into a single array. No need to group by day anymore!
+        // 1. Gather Scatter Spots
         final List<FlSpot> scatterSpots = data.map((r) {
           final localDate = r.measuredAt.toLocal();
           final x = localDate.hour + (localDate.minute / 60.0);
           return FlSpot(x, r.value);
         }).toList();
 
-        // 2. Adjust dot opacity based on the range to create a density heatmap.
+        // 2. Adjust Opacity based on data density
         double dotOpacity;
         switch (range) {
           case '1Y': dotOpacity = 0.15; break;
@@ -1165,12 +1192,11 @@ class _ModalDaySection extends StatelessWidget {
           default: dotOpacity = 0.8;
         }
 
-        // 3. Create a single transparent line that only renders the dots
         List<LineChartBarData> chartLines = [
           LineChartBarData(
             spots: scatterSpots,
             isCurved: false,
-            color: Colors.transparent, // This completely hides the "spaghetti" lines
+            color: Colors.transparent, // Keeps the lines invisible
             barWidth: 0,
             dotData: FlDotData(
               show: true,
@@ -1185,53 +1211,93 @@ class _ModalDaySection extends StatelessWidget {
 
         return Column(
           children: [
-            SizedBox(
-              height: 250,
-              child: LineChart(
-                LineChartData(
-                  minX: 0, maxX: 24, minY: 40, maxY: 250,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: true,
-                    horizontalInterval: 50,
-                    verticalInterval: 6,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true, 
-                        interval: 6, 
-                        getTitlesWidget: (v, _) {
-                          if (v == 0 || v == 24) return const SizedBox();
-                          return Text('${v.toInt()}:00', style: const TextStyle(fontSize: 9));
-                        }
-                      ),
-                    ),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
-                  rangeAnnotations: threshold != null ? RangeAnnotations(
-                    horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: threshold!.minValue, y2: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.1))],
-                  ) : null,
-                  extraLinesData: threshold != null ? ExtraLinesData(
-                    horizontalLines: [
-                      HorizontalLine(y: threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
-                    ],
-                  ) : null,
-                  lineBarsData: chartLines,
-                  // Disable touch tooltips for this specific graph so tapping the dense cloud doesn't lag
-                  lineTouchData: const LineTouchData(enabled: false), 
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12.0),
+              child: Text(
+                "Scroll horizontally to view all 24 hours.",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppTheme.textSecondaryColor,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            // 3. Wrap in a horizontal scroll view with a LayoutBuilder
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Use the larger of the screen width or 1200 pixels
+                final double finalWidth = math.max(constraints.maxWidth, _chartWidth);
+
+                return SingleChildScrollView(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: SizedBox(
+                    width: finalWidth,
+                    height: 250,
+                    child: LineChart(
+                      LineChartData(
+                        minX: 0, maxX: 24, minY: 40, maxY: 250,
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: true,
+                          horizontalInterval: 50,
+                          verticalInterval: 1, // Draw a grid line for every hour
+                          getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                          getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                        ),
+                        titlesData: FlTitlesData(
+                          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true, 
+                              interval: 1, // Label every 1 hour
+                              reservedSize: 30,
+                              getTitlesWidget: (v, _) {
+                                if (v <= 0 || v >= 24) return const SizedBox(); // Hide 0 and 24 to prevent edge clipping
+                                
+                                int hour = v.toInt();
+                                String ampm = hour >= 12 ? 'PM' : 'AM';
+                                int displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Text(
+                                    '$displayHour $ampm', 
+                                    style: TextStyle(
+                                      fontSize: 10, 
+                                      color: AppTheme.textSecondaryColor,
+                                      fontWeight: FontWeight.w500
+                                    )
+                                  ),
+                                );
+                              }
+                            ),
+                          ),
+                          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
+                        rangeAnnotations: widget.threshold != null ? RangeAnnotations(
+                          horizontalRangeAnnotations: [HorizontalRangeAnnotation(y1: widget.threshold!.minValue, y2: widget.threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.1))],
+                        ) : null,
+                        extraLinesData: widget.threshold != null ? ExtraLinesData(
+                          horizontalLines: [
+                            HorizontalLine(y: widget.threshold!.minValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                            HorizontalLine(y: widget.threshold!.maxValue, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                          ],
+                        ) : null,
+                        lineBarsData: chartLines,
+                        lineTouchData: const LineTouchData(enabled: false), 
+                      ),
+                    ),
+                  ),
+                );
+              }
+            ),
+            const SizedBox(height: 16),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              if (threshold != null) ...[
+              if (widget.threshold != null) ...[
                 const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
                 const SizedBox(width: 12),
               ],
