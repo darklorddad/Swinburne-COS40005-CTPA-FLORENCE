@@ -1424,6 +1424,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final Map<String, TextEditingController> maxControllers = {};
     final formKey = GlobalKey<FormState>();
 
+    // State to hold backend errors mapped to their specific data_type
+    Map<String, String> backendErrors = {};
+    String? generalError;
+
     for (var t in currentThresholds) {
       minControllers[t.dataType] =
           TextEditingController(text: t.minValue.toString());
@@ -1436,122 +1440,302 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-            left: 20,
-            right: 20,
-            top: 20),
-        child: FractionallySizedBox(
-          heightFactor: 0.8,
-          child: Form(
-            key: formKey,
-            child: Column(
-              children: [
-                const Text("Edit Health Thresholds",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 16),
-                Expanded(
-                  child: ListView(
-                    children: currentThresholds.map((t) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 8),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: minControllers[t.dataType],
-                                    decoration: const InputDecoration(
-                                        labelText: 'Min', isDense: true),
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true),
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      final minVal = double.tryParse(value);
-                                      if (minVal == null) return 'Numbers only';
-                                      final maxVal = double.tryParse(
-                                          maxControllers[t.dataType]!.text);
-                                      if (maxVal != null && minVal >= maxVal) {
-                                        return 'Must be < Max';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: maxControllers[t.dataType],
-                                    decoration: const InputDecoration(
-                                        labelText: 'Max', isDense: true),
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true),
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Required';
-                                      }
-                                      final maxVal = double.tryParse(value);
-                                      if (maxVal == null) return 'Numbers only';
-                                      final minVal = double.tryParse(
-                                          minControllers[t.dataType]!.text);
-                                      if (minVal != null && maxVal <= minVal) {
-                                        return 'Must be > Min';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (!formKey.currentState!.validate()) return;
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              left: 20,
+              right: 20,
+              top: 20),
+          child: FractionallySizedBox(
+            heightFactor: 0.8,
+            child: Form(
+              key: formKey,
+              child: Column(
+                children: [
+                  const Text("Edit Health Thresholds",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
 
-                      final List<PatientThreshold> updated = [];
-                      for (var t in currentThresholds) {
-                        updated.add(PatientThreshold(
-                          dataType: t.dataType,
-                          minValue:
-                              double.parse(minControllers[t.dataType]!.text),
-                          maxValue:
-                              double.parse(maxControllers[t.dataType]!.text),
-                        ));
-                      }
-                      await ref
-                          .read(patientThresholdsProvider.notifier)
-                          .updateThresholds(updated);
-                      if (context.mounted) Navigator.pop(context);
-                    },
-                    child: const Text("Save Changes"),
+                  // Optional general error banner at the top
+                  if (generalError != null)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(generalError!,
+                          style:
+                              TextStyle(color: Colors.red.shade800, fontSize: 13)),
+                    ),
+
+                  Expanded(
+                    child: ListView(
+                      children: currentThresholds.map((t) {
+                        final hasError = backendErrors.containsKey(t.dataType);
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 24.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                  "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: hasError ? Colors.red.shade800 : null,
+                                  )),
+                              const SizedBox(height: 8),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: minControllers[t.dataType],
+                                      decoration: InputDecoration(
+                                        labelText: 'Min',
+                                        isDense: true,
+                                        enabledBorder: hasError
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700),
+                                              )
+                                            : null,
+                                        focusedBorder: hasError
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700,
+                                                    width: 2),
+                                              )
+                                            : null,
+                                      ),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true, signed: true),
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Required';
+                                        }
+                                        final minVal = double.tryParse(value);
+                                        if (minVal == null) return 'Numbers only';
+                                        if (minVal < 0) return 'Cannot be negative';
+                                        return null;
+                                      },
+                                      onChanged: (_) {
+                                        if (hasError) {
+                                          setModalState(() =>
+                                              backendErrors.remove(t.dataType));
+                                        }
+                                        formKey.currentState?.validate();
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: maxControllers[t.dataType],
+                                      decoration: InputDecoration(
+                                        labelText: 'Max',
+                                        isDense: true,
+                                        enabledBorder: hasError
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700),
+                                              )
+                                            : null,
+                                        focusedBorder: hasError
+                                            ? OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                                borderSide: BorderSide(
+                                                    color: Colors.red.shade700,
+                                                    width: 2),
+                                              )
+                                            : null,
+                                      ),
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true, signed: true),
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      validator: (value) {
+                                        if (value == null || value.isEmpty) {
+                                          return 'Required';
+                                        }
+                                        final maxVal = double.tryParse(value);
+                                        if (maxVal == null) return 'Numbers only';
+                                        if (maxVal < 0) return 'Cannot be negative';
+
+                                        final minVal = double.tryParse(
+                                            minControllers[t.dataType]!.text);
+                                        if (minVal != null && maxVal <= minVal) {
+                                          final minStr = minVal % 1 == 0
+                                              ? minVal.toInt().toString()
+                                              : minVal.toString();
+                                          return 'Must be higher than $minStr';
+                                        }
+                                        return null;
+                                      },
+                                      onChanged: (_) {
+                                        if (hasError) {
+                                          setModalState(() =>
+                                              backendErrors.remove(t.dataType));
+                                        }
+                                        formKey.currentState?.validate();
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (hasError)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.error_outline,
+                                          color: Colors.red.shade800, size: 14),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: Text(
+                                          backendErrors[t.dataType]!,
+                                          style: TextStyle(
+                                              color: Colors.red.shade800,
+                                              fontSize: 12),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-              ],
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (!formKey.currentState!.validate()) return;
+
+                        setModalState(() {
+                          backendErrors.clear();
+                          generalError = null;
+                        });
+
+                        final settings = ref.read(patientSettingsProvider);
+                        final List<PatientThreshold> updated = [];
+
+                        for (var t in currentThresholds) {
+                          double convertedMin =
+                              double.parse(minControllers[t.dataType]!.text);
+                          double convertedMax =
+                              double.parse(maxControllers[t.dataType]!.text);
+
+                          // Convert Glucose back to mmol/L (Divide by 18.0)
+                          if (t.dataType == 'GLUCOSE' &&
+                              settings.glucoseUnit == 'mg/dL') {
+                            convertedMin = convertedMin / 18.0;
+                            convertedMax = convertedMax / 18.0;
+                          }
+                          // Convert Cholesterol back to mmol/L
+                          else if (t.dataType.startsWith('CHOLESTEROL') &&
+                              settings.cholesterolUnit == 'mg/dL') {
+                            // Note: Backend uses 38.67 for all cholesterol types including Triglycerides
+                            convertedMin = convertedMin / 38.67;
+                            convertedMax = convertedMax / 38.67;
+                          }
+
+                          updated.add(PatientThreshold(
+                            dataType: t.dataType,
+                            minValue: convertedMin,
+                            maxValue: convertedMax,
+                          ));
+                        }
+
+                        try {
+                          await ref
+                              .read(patientThresholdsProvider.notifier)
+                              .updateThresholds(updated);
+                          if (context.mounted) Navigator.pop(context);
+                        } catch (e) {
+                          if (context.mounted) {
+                            setModalState(() {
+                              String errorStr = e.toString();
+                              bool foundSpecificError = false;
+
+                              final matches = RegExp(
+                                      r'msg:\s*Value error,\s*(.*?)(?:,\s*input:|})')
+                                  .allMatches(errorStr);
+
+                              for (final match in matches) {
+                                final msg = match.group(1)!.trim();
+
+                                for (var t in currentThresholds) {
+                                  if (msg.contains(t.dataType)) {
+                                    // 1. Clean the base message
+                                    String cleanMsg = msg.replaceAll(
+                                        ' for ${t.dataType}', '');
+
+                                    // 2. Determine if this specific metric needs to be converted back for the UI
+                                    bool isGlucoseMgdl = t.dataType == 'GLUCOSE' &&
+                                        settings.glucoseUnit == 'mg/dL';
+                                    bool isCholMgdl = t.dataType.startsWith('CHOLESTEROL') &&
+                                        settings.cholesterolUnit == 'mg/dL';
+
+                                    if (isGlucoseMgdl || isCholMgdl) {
+                                      double multiplier = 1.0;
+                                      if (t.dataType == 'GLUCOSE') {
+                                        multiplier = 18.0;
+                                      } else {
+                                        // Note: Backend uses 38.67 for all cholesterol types
+                                        multiplier = 38.67;
+                                      }
+
+                                      // 3. Find any decimals in the error string and multiply them
+                                      cleanMsg = cleanMsg.replaceAllMapped(
+                                          RegExp(r'\d+\.\d+'), (m) {
+                                        double? val =
+                                            double.tryParse(m.group(0)!);
+                                        if (val != null) {
+                                          // Multiply, round to 1 decimal place, and remove '.0' if it's a whole number
+                                          return (val * multiplier)
+                                              .toStringAsFixed(1)
+                                              .replaceAll(RegExp(r'\.0$'), '');
+                                        }
+                                        return m.group(0)!;
+                                      });
+                                    }
+
+                                    backendErrors[t.dataType] = cleanMsg;
+                                    foundSpecificError = true;
+                                  }
+                                }
+                              }
+
+                              if (!foundSpecificError) {
+                                generalError =
+                                    "Some values were rejected. Please review your inputs.";
+                              }
+                            });
+                          }
+                        }
+                      },
+                      child: const Text("Save Changes"),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/core/utils/validators.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_providers;
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
@@ -138,6 +139,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       // Refresh providers
       ref.invalidate(userProfileProvider);
       ref.invalidate(core_providers.monitorDataProvider);
+      ref.read(notificationProvider.notifier).checkAfterBmiLog(_calculatedBmi);
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged and profile updated!');
@@ -362,7 +364,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         final bmiTarget =
             thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
         targetText =
-            "${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)}";
+            "${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)} kg/m²";
       } catch (e) {
         targetText = "Target: Not set";
       }

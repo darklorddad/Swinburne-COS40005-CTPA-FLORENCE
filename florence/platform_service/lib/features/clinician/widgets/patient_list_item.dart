@@ -63,36 +63,15 @@ class PatientListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            patient.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: AppTheme.textPrimary,
-                            ),
-                          ),
-                        ),
-                        // Risk Status Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: riskColor),
-                          ),
-                          child: Text(
-                            patient.riskLevel.name.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: riskColor,
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      patient.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppTheme.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -119,23 +98,42 @@ class PatientListItem extends StatelessWidget {
               
               const SizedBox(width: 12),
               
-              // Last update info
+              // Right side info (Status pill and Last Update)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: riskColor, width: 1.5),
+                    ),
+                    child: Text(
+                      patient.riskLevel.name.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: riskColor,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   const Text(
                     'Last Update',
                     style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 12,
                       color: AppTheme.textTertiary,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Text(
                     _formatLastUpdate(patient.lastSync),
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
                       color: AppTheme.textSecondary,
                     ),
                   ),

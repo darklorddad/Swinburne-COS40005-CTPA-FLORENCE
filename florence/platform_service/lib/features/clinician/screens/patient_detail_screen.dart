@@ -12,6 +12,7 @@ import 'package:florence/features/clinician/screens/hba1c_analytics_screen.dart'
 import 'package:florence/features/clinician/screens/blood_pressure_analytics_screen.dart';
 import 'package:florence/features/clinician/screens/cholesterol_analytics_screen.dart';
 import 'package:florence/features/clinician/screens/activity_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/bmi_analytics_screen.dart';
 import 'package:intl/intl.dart';
 
 class _ChatMessage {
@@ -284,37 +285,45 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           title: Text(_patient!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
           elevation: 0,
           bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(60),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(30),
-              ),
-          child: TabBar(
-            controller: _tabController,
-            indicator: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+            preferredSize: const Size.fromHeight(62), // 60 for tabs + 2 for border
+            child: Column(
+              children: [
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    labelColor: AppTheme.primaryColor,
+                    unselectedLabelColor: AppTheme.textSecondary,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    indicatorSize: TabBarIndicatorSize.tab,
+                    dividerColor: Colors.transparent,
+                    padding: const EdgeInsets.all(4),
+                    tabs: const [
+                      Tab(text: 'Overview'),
+                      Tab(text: 'Historical Data'), // Changed from Health Data
+                    ],
+                  ),
+                ),
+                Container(
+                  color: AppTheme.dividerColor,
+                  height: 1.0,
                 ),
               ],
-            ),
-            labelColor: AppTheme.primaryColor,
-            unselectedLabelColor: AppTheme.textSecondary,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            indicatorSize: TabBarIndicatorSize.tab,
-            dividerColor: Colors.transparent,
-            padding: const EdgeInsets.all(4),
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Historical Data'), // Changed from Health Data
-            ],
-          ),
             ),
           ),
         ),
@@ -364,42 +373,80 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
         ),
         
-        // Bento Box Style Grid for Stats
-        GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 1.35, // Adjusted to give a bit more vertical space
+        // Health Metrics Stack
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildBentoStatCard(
+            _buildHealthMetricCard(
               'Glucose', 
               _healthData!.glucoseReadings.isNotEmpty ? '${_healthData!.glucoseReadings.last.value.toInt()}' : '--', 
               'mg/dL',
-              Icons.water_drop, 
-              AppTheme.getRiskColor(_healthData!.glucoseReadings.isNotEmpty ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value) : 'low'),
+              Icons.water_drop_outlined, 
+              _healthData!.glucoseReadings.isNotEmpty ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value) : 'no_data',
+              _healthData!.glucoseReadings.isNotEmpty ? _healthData!.glucoseReadings.last.timestamp : null,
             ),
-            _buildBentoStatCard(
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
               'Blood Pressure', 
               _healthData!.bloodPressureReadings.isNotEmpty ? '${_healthData!.bloodPressureReadings.last.systolic.toInt()}/${_healthData!.bloodPressureReadings.last.diastolic.toInt()}' : '--', 
               'mmHg',
-              Icons.favorite, 
-              AppTheme.getRiskColor(_healthData!.bloodPressureReadings.isNotEmpty ? _getBPRiskLevel(_healthData!.bloodPressureReadings.last.systolic, _healthData!.bloodPressureReadings.last.diastolic) : 'low'),
+              Icons.monitor_heart_outlined, 
+              _healthData!.bloodPressureReadings.isNotEmpty ? _getBPRiskLevel(_healthData!.bloodPressureReadings.last.systolic, _healthData!.bloodPressureReadings.last.diastolic) : 'no_data',
+              _healthData!.bloodPressureReadings.isNotEmpty ? _healthData!.bloodPressureReadings.last.timestamp : null,
             ),
-            _buildBentoStatCard(
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
               'HbA1c', 
               _healthData!.hbA1cReadings.isNotEmpty ? '${_healthData!.hbA1cReadings.last.value}' : '--', 
               '%',
-              Icons.pie_chart, 
-              AppTheme.getRiskColor(_healthData!.hbA1cReadings.isNotEmpty ? _getHbA1cRiskLevel(_healthData!.hbA1cReadings.last.value) : 'low'),
+              Icons.pie_chart_outline, 
+              _healthData!.hbA1cReadings.isNotEmpty ? _getHbA1cRiskLevel(_healthData!.hbA1cReadings.last.value) : 'no_data',
+              _healthData!.hbA1cReadings.isNotEmpty ? _healthData!.hbA1cReadings.last.timestamp : null,
             ),
-            _buildBentoStatCard(
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
+              'Cholesterol', 
+              _healthData!.cholesterolReadings.isNotEmpty ? '${_healthData!.cholesterolReadings.last.total}' : '--', 
+              'mg/dL', // or unit depending on data
+              Icons.bloodtype_outlined, 
+              _healthData!.cholesterolReadings.isNotEmpty ? _getCholesterolRiskLevel(_healthData!.cholesterolReadings.last.total, _healthData!.cholesterolReadings.last.ldl, _healthData!.cholesterolReadings.last.triglycerides) : 'no_data',
+              _healthData!.cholesterolReadings.isNotEmpty ? _healthData!.cholesterolReadings.last.timestamp : null,
+            ),
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
+              'Activity', 
+              _healthData!.activityData.isNotEmpty ? '${_healthData!.activityData.last.activeMinutes}' : '--', 
+              'min',
+              Icons.directions_run_outlined, 
+              _healthData!.activityData.isNotEmpty ? _getActivityRiskLevel(_healthData!.activityData.last.steps, _healthData!.activityData.last.activeMinutes) : 'no_data',
+              _healthData!.activityData.isNotEmpty ? _healthData!.activityData.last.date : null,
+            ),
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
               'BMI', 
-              _calculateBMI(_healthData!.weight, _healthData!.height).toStringAsFixed(1), 
+              _healthData!.weight > 0 ? _calculateBMI(_healthData!.weight, _healthData!.height).toStringAsFixed(1) : '--', 
               'kg/m²',
-              Icons.monitor_weight, 
-              AppTheme.getRiskColor(_getBMIRiskLevel(_calculateBMI(_healthData!.weight, _healthData!.height))),
+              Icons.monitor_weight_outlined, 
+              _healthData!.weight > 0 ? _getBMIRiskLevel(_calculateBMI(_healthData!.weight, _healthData!.height)) : 'no_data',
+              _patient!.lastSync,
+            ),
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
+              'Diet', 
+              _healthData!.mealEntries.isNotEmpty ? '${_healthData!.mealEntries.last.nutritionSummary['calories']?.toInt() ?? '--'}' : '--', 
+              'kcal',
+              Icons.restaurant_outlined, 
+              _healthData!.mealEntries.isNotEmpty ? 'low' : 'no_data',
+              _healthData!.mealEntries.isNotEmpty ? _healthData!.mealEntries.last.timestamp : null,
+            ),
+            const SizedBox(height: 12),
+            _buildHealthMetricCard(
+              'Medication', 
+              _healthData!.medications.isNotEmpty ? '${_healthData!.medications.length}' : '--', 
+              'active',
+              Icons.medication_outlined, 
+              _healthData!.medications.isNotEmpty ? 'low' : 'no_data',
+              _healthData!.medications.isNotEmpty ? (_healthData!.medications.last.startDate ?? _patient!.lastSync) : null,
             ),
           ],
         ),
@@ -554,69 +601,123 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     );
   }
   
-  Widget _buildBentoStatCard(String label, String value, String unit, IconData icon, Color color) {
+  Widget _buildHealthMetricCard(String label, String value, String unit, IconData icon, String riskLevel, DateTime? lastUpdated) {
+    Color bgColor;
+    String statusText;
+    
+    switch (riskLevel) {
+      case 'high':
+        bgColor = AppTheme.highRiskColor;
+        statusText = 'High';
+        break;
+      case 'no_data':
+        bgColor = Colors.blueGrey.shade600;
+        statusText = 'No Data';
+        break;
+      case 'medium':
+      case 'low':
+      default:
+        bgColor = AppTheme.secondaryColor;
+        statusText = 'Normal';
+        break;
+    }
+
+    String timeText = 'No history';
+    if (lastUpdated != null) {
+      final diff = DateTime.now().difference(lastUpdated);
+      if (diff.inDays > 30) {
+        timeText = 'Last updated: ${diff.inDays ~/ 30} months ago';
+      } else if (diff.inDays > 0) {
+        timeText = 'Last updated: ${diff.inDays} days ago';
+      } else if (diff.inHours > 0) {
+        timeText = 'Last updated: ${diff.inHours} hours ago';
+      } else if (diff.inMinutes > 0) {
+        timeText = 'Last updated: ${diff.inMinutes} minutes ago';
+      } else {
+        timeText = 'Last updated: Just now';
+      }
+    }
+
     return Container(
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1), // Solid tinted background based on risk
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
+              Row(
+                children: [
+                  Icon(icon, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: color.withValues(alpha: 0.5), width: 1),
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(icon, size: 16, color: color),
+                child: Text(
+                  statusText,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),
+          const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
                 value,
-                style: TextStyle(
-                  fontSize: 26,
+                style: const TextStyle(
+                  fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: color,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(width: 4),
               Text(
                 unit,
                 style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textSecondary,
+                  fontSize: 16,
+                  color: Colors.white,
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            timeText,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
           ),
         ],
       ),
     );
   }
 
-  // Helper Methods for Bento Box Risk Levels
+  // Helper Methods for Risk Levels
   String _getGlucoseRiskLevel(double value) {
     if (value < 70 || value > 180) return 'high';
     if (value > 140) return 'medium';
@@ -635,15 +736,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return 'low';
   }
   
-  String _getBMIRiskLevel(double bmi) {
-    if (bmi >= 30.0) return 'high';
-    if (bmi >= 25.0) return 'medium';
+  String _getCholesterolRiskLevel(double total, double ldl, double trig) {
+    if (total >= 240 || ldl >= 160 || trig >= 200) return 'high';
+    if (total >= 200 || ldl >= 130 || trig >= 150) return 'medium';
+    return 'low';
+  }
+  
+  String _getActivityRiskLevel(int steps, int minutes) {
+    if (steps == 0 && minutes == 0) return 'no_data';
+    // Simplified placeholder risk level for activity
     return 'low';
   }
   
   double _calculateBMI(double weightKg, double heightCm) {
     if (heightCm == 0) return 0;
     return weightKg / ((heightCm / 100) * (heightCm / 100));
+  }
+  
+  String _getBMIRiskLevel(double bmi) {
+    if (bmi >= 30.0) return 'high';
+    if (bmi >= 25.0) return 'medium';
+    return 'low';
   }
   
   Widget _buildHistoricalDataTab() {
@@ -670,31 +783,49 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       padding: const EdgeInsets.all(16),
       children: [
         // BMI Card
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Body Mass Index',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BmiAnalyticsScreen(
+                patient: _patient!,
+                readings: _healthData!.bmiReadings,
+                currentWeight: _healthData!.weight,
+                currentHeight: _healthData!.height,
+              ),
+            ),
+          ),
+          child: Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Body Mass Index',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                BMIGauge(
-                  bmi: bmi,
-                  weight: _healthData!.weight,
-                  height: _healthData!.height,
-                  isMetric: _isMetric,
-                  onUnitChanged: (val) => setState(() => _isMetric = val),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  BMIGauge(
+                    bmi: bmi,
+                    weight: _healthData!.weight,
+                    height: _healthData!.height,
+                    isMetric: _isMetric,
+                    onUnitChanged: (val) => setState(() => _isMetric = val),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

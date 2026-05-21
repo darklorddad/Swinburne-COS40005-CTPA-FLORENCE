@@ -9,6 +9,7 @@ import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart'; // Added
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart'; // Added
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 
@@ -188,7 +189,10 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       
       // Invalidate to refresh dashboard
       ref.invalidate(monitorDataProvider);
-      
+      ref.read(notificationProvider.notifier).checkAfterActivityLog(
+        int.tryParse(_activeDurationController.text.trim()),
+      );
+
       if (mounted) {
         Helpers.showSuccess(context, 'Activity logged successfully!');
         AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);

@@ -13,6 +13,7 @@ import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 /// Log Meal Screen
@@ -303,7 +304,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       );
       
       ref.invalidate(monitorDataProvider);
-      
+
+      // LAM: fire educational tip if meal is high-calorie
+      ref.read(notificationProvider.notifier).checkAfterMealLog(calories);
+
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
         AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);

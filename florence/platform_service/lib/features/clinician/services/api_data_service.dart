@@ -230,10 +230,23 @@ class ApiDataService implements DataService {
       
       mealEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-      // Parse BMI from monitor data (take latest)
+      // Parse BMI from monitor data
       double weight = 70.0; // Default
       double height = 170.0; // Default
       final bmiRecords = monitorData.where((r) => r['data_type'] == 'BMI').toList();
+      
+      final bmiReadings = bmiRecords.map((r) {
+        final val = (r['value'] as num).toDouble();
+        final w = val * (1.7 * 1.7);
+        return BmiReading(
+          timestamp: DateTime.parse(r['measured_at']),
+          value: val,
+          weight: w,
+          height: 170.0,
+        );
+      }).toList();
+      bmiReadings.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
       if (bmiRecords.isNotEmpty) {
         // Reverse calculate weight if we assume height (or fetch height from profile if available)
         // For now, we'll just use the BMI value to display, but the model asks for weight/height.
@@ -250,6 +263,7 @@ class ApiDataService implements DataService {
         hbA1cReadings: hba1c,
         bloodPressureReadings: bpReadings,
         cholesterolReadings: cholReadings,
+        bmiReadings: bmiReadings,
         activityData: _parseActivityData(activityLogs),
         mealEntries: mealEntries, 
         automatedActions: [], 

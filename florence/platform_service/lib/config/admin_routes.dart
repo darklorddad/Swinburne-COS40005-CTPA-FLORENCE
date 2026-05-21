@@ -3,6 +3,7 @@ import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
 import 'package:florence/features/admin/core/widgets/access_denied_screen.dart';
 import 'package:florence/features/admin/core/services/permission_service.dart';
 import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart';
 import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
 
 /// Admin Routes Configuration
@@ -34,6 +35,7 @@ class AdminRoutes {
 
   // Patients
   static const String patients = '/admin/patients';
+  static const String patientDirectory = '/admin/patients/directory';
   static const String patientDetail = '/admin/patients/:id';
   static const String createPatient = '/admin/patients/create';
   static const String editPatient = '/admin/patients/:id/edit';
@@ -196,15 +198,28 @@ class AdminRoutes {
           ),
         );
 
-      case AdminRoutes.patientDetail:
+      case AdminRoutes.patientDirectory:
         return _buildGuardedRoute(
           settings: settings,
-          requiredPermission: AdminPermission.viewAllPatients, // or viewOrgPatients
-          builder: (_) {
-            final patientData = settings.arguments as Map<String, dynamic>? ?? {};
-            return AdminPatientDetailScreen(patientData: patientData);
-          },
+          anyPermissions: [
+            AdminPermission.viewAllPatients,
+            AdminPermission.viewOrgPatients,
+          ],
+          builder: (_) => _PlaceholderScreen(
+            title: 'Patient Directory',
+            route: patientDirectory,
+          ),
         );
+
+      // case AdminRoutes.patientDetail:
+      //   return _buildGuardedRoute(
+      //     settings: settings,
+      //     requiredPermission: AdminPermission.viewAllPatients, // or viewOrgPatients
+      //     builder: (_) {
+      //       final patientData = settings.arguments as Map<String, dynamic>? ?? {};
+      //       return AdminPatientDetailScreen();
+      //     },
+      //   );
 
       case AdminRoutes.createPatient:
         return _buildGuardedRoute(

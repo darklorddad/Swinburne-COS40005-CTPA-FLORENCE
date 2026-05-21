@@ -81,7 +81,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       );
       
       ref.invalidate(monitorDataProvider);
-      
+
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');
         AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
