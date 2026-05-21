@@ -49,15 +49,15 @@ class AdminRegistration(BaseModel):
 
 
 DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 5.5}, 
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.6},
     {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-    # Detailed Cholesterol
-    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
-    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
-    # BP
+    # Detailed Cholesterol (in mmol/L)
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 0.0, 'max_value': 5.1},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 2.5},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 1.0, 'max_value': 2.5}, 
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 1.7},
+    # BP (in mmHg)
     {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
     {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
 ]

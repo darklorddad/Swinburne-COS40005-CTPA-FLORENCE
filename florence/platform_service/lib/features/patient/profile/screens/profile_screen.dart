@@ -1,15 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
-
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/services/api_service.dart'; // Added
 import 'package:florence/core/utils/formatters.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/core/utils/validators.dart';
-import 'package:florence/shared/widgets/card_widgets.dart';
-import 'package:florence/shared/widgets/input_widgets.dart';
 import 'package:florence/features/patient/core/providers/disease_providers.dart';
 import 'package:florence/features/patient/core/providers/medication_providers.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
@@ -17,6 +10,12 @@ import 'package:florence/features/patient/core/providers/threshold_providers.dar
 import 'package:florence/features/patient/core/repositories/medication_repository.dart';
 import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/shared/widgets/card_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 /// Profile & Settings Screen
 /// Unified screen for user profile, health info, and app settings
@@ -42,8 +41,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _emergencyContactRelationship = 'Not set';
   double? _height;
   double? _weight;
-  double _targetMin = 70.0;
-  double _targetMax = 180.0;
 
   final List<Map<String, String>> _countryCodes = [
     {'code': '+1', 'name': 'USA/CAN'},
