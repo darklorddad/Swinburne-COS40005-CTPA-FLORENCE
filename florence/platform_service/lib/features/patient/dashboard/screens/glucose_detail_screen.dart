@@ -529,21 +529,6 @@ class _GlucoseTrendsSection extends ConsumerStatefulWidget {
   ConsumerState<_GlucoseTrendsSection> createState() => _GlucoseTrendsSectionState();
 }
 
-class _GlucoseTrendsSection extends ConsumerStatefulWidget {
-  final List<MonitorData> allReadings;
-  final PatientThreshold? threshold;
-  final bool isDefault;
-
-  const _GlucoseTrendsSection({
-    required this.allReadings,
-    this.threshold,
-    this.isDefault = false,
-  });
-
-  @override
-  ConsumerState<_GlucoseTrendsSection> createState() => _GlucoseTrendsSectionState();
-}
-
 class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
@@ -582,13 +567,16 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
     if (_isLoadingMore) return;
     setState(() => _isLoadingMore = true);
     
-    // TODO: Add Riverpod pagination trigger here when ready.
-    // Example: await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
-
-    if (mounted) {
-      setState(() => _isLoadingMore = false);
-      // Double check if we STILL need more data to fill the screen after the fetch
-      WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+    try {
+      await ref.read(core_data.monitorDataProvider.notifier).fetchNextPage();
+    } catch (e) {
+      debugPrint('Error loading more data: $e');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoadingMore = false);
+        // Double check if we STILL need more data to fill the screen after the fetch
+        WidgetsBinding.instance.addPostFrameCallback((_) => _checkAutoLoad());
+      }
     }
   }
 
