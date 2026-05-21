@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:florence/config/admin_theme.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 
 class PatientDirectoryScreen extends StatelessWidget {
   const PatientDirectoryScreen({super.key});
@@ -10,8 +12,7 @@ class PatientDirectoryScreen extends StatelessWidget {
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // const AdminSidebar(),
-          
+          const AdminSidebar(currentRoute: AppRoutes.adminPatientList),
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(32.0),
@@ -34,10 +35,24 @@ class PatientDirectoryScreen extends StatelessWidget {
                             style: Theme.of(context).textTheme.bodyLarge),
                         ],
                       ),
+                      // OutlinedButton( // Register New Patient Button variant
+                      //   onPressed: () {},
+                      //   style: OutlinedButton.styleFrom(
+                      //     foregroundColor: AdminTheme.surface,
+                      //     side: const BorderSide(color: AdminTheme.secondary),
+                      //     backgroundColor: AdminTheme.primary.withValues(alpha: 1.0),
+                      //   ),
+                      //   child: const Text('Register New Patient'),
+                      // ),
                       FilledButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.person_add_alt_1),
                         label: const Text('Register New Patient'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AdminTheme.primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        ),
                       ),
                     ],
                   ),
@@ -92,7 +107,7 @@ class PatientDirectoryScreen extends StatelessWidget {
                         DataTable(
                           headingTextStyle: Theme.of(context).textTheme.labelSmall,
                           dataTextStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AdminTheme.onSurface),
-                          headingRowColor: MaterialStateProperty.all(AdminTheme.surface),
+                          headingRowColor: WidgetStateProperty.all(AdminTheme.surface),
                           dividerThickness: 1,
                           columns: const [
                             DataColumn(label: Text('Patient ID')),
@@ -103,10 +118,10 @@ class PatientDirectoryScreen extends StatelessWidget {
                             DataColumn(label: Text('Actions')),
                           ],
                           rows: [
-                            _buildDataRow('#PT-8842', 'Eleanor Vance', 'Dr. H. Montague', 'High Risk', true, 'Oct 24, 2023 · 09:41 AM'),
-                            _buildDataRow('#PT-8901', 'Jameson Locke', 'NP S. Carter', 'Low Risk', false, 'Oct 23, 2023 · 14:22 PM'),
-                            _buildDataRow('#PT-9112', 'Sarah Connor', 'Dr. H. Montague', 'Medium Risk', false, 'Oct 23, 2023 · 11:05 AM', isMedium: true),
-                            _buildDataRow('#PT-9155', 'Marcus Fenix', 'PA R. Santiago', 'Low Risk', false, 'Oct 22, 2023 · 08:30 AM'),
+                            _buildDataRow('#PT-8842', 'Wong Chee Keong', 'Dr. Christina Wong', 'High Risk', true, 'Oct 24, 2025 · 09:41 AM'),
+                            _buildDataRow('#PT-8901', 'Angel Ting', 'Dr. Philip', 'Low Risk', false, 'Oct 23, 2025 · 14:22 PM'),
+                            _buildDataRow('#PT-9112', 'Sarah Felicia', 'Dr. Putri Anisa', 'Medium Risk', false, 'Oct 23, 2025 · 11:05 AM', isMedium: true),
+                            _buildDataRow('#PT-9155', 'Marcus Chandra', 'Dr. Devi', 'Low Risk', false, 'Oct 22, 2025 · 08:30 AM'),
                           ],
                         ),
                         const Divider(height: 1),
@@ -120,14 +135,20 @@ class PatientDirectoryScreen extends StatelessWidget {
                                 children: [
                                   OutlinedButton(
                                     onPressed: null, 
-                                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      side: const BorderSide(color: AdminTheme.outlineVariant),
+                                      ),
                                     child: const Icon(Icons.chevron_left, size: 20),
                                   ),
                                   const SizedBox(width: 8),
                                   OutlinedButton(
                                     onPressed: () {}, 
-                                    style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
-                                    child: const Icon(Icons.chevron_right, size: 20),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      side: const BorderSide(color: AdminTheme.outlineVariant),
+                                      ),
+                                    child: const Icon(Icons.chevron_right, size: 20, color: AdminTheme.outline),
                                   ),
                                 ],
                               )
@@ -157,7 +178,7 @@ class PatientDirectoryScreen extends StatelessWidget {
         DataCell(
           Row(
             children: [
-              const CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=3')),
+              const CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://picsum.photos/id/101/200')),
               const SizedBox(width: 8),
               Text(doctor),
             ],
