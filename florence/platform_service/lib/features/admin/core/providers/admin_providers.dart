@@ -66,6 +66,20 @@ class AdminRepository {
       throw Exception('Failed to assign clinician: $e');
     }
   }
+
+  // Fetch recent admin activity logs (for the dashboard)
+  Future<List<AdminActivity>> fetchRecentActivity() async {
+    try {
+      final response = await _apiService.get('/admin/recent-activity');
+      if (response is List) {
+        return response.map((json) => AdminActivity.fromJson(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (e) {
+      print("AdminRepository Error fetching activity: $e");
+      throw Exception('Failed to load activity: $e');
+    }
+  }
 }
 
 // ==========================================
@@ -99,4 +113,10 @@ final adminMetricsProvider = Provider.autoDispose<AsyncValue<AdminMetrics>>((ref
       connectedDevices: 89,
     );
   });
+});
+
+/// Fetches the recent system activity feed
+final adminActivityProvider = FutureProvider.autoDispose<List<AdminActivity>>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  return repository.fetchRecentActivity();
 });
