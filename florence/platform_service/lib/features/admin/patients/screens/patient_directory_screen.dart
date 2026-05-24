@@ -184,7 +184,7 @@ class _PatientDirectoryScreenState extends ConsumerState<PatientDirectoryScreen>
         DataCell(
           Row(
             children: [
-              CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=${patient.clinicianName}')),
+              CircleAvatar(radius: 12, backgroundImage: NetworkImage('https://picsum.photos/id/128/200/300')),
               const SizedBox(width: 8),
               Text(patient.clinicianName ?? 'Unassigned'),
             ],

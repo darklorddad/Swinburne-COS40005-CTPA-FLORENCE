@@ -5,6 +5,7 @@ import 'package:florence/config/admin_theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/admin/core/providers/admin_providers.dart';
 import 'package:florence/features/admin/core/models/admin_models.dart';
+import 'package:florence/features/admin/patients/widgets/add_patient_dialog.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -93,7 +94,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11')),
+            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/479/200/300')),
           ],
         ),
       ],
@@ -155,7 +156,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           children: [
             Text('Action Required Feed', style: Theme.of(context).textTheme.titleLarge),
             TextButton(
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.adminPatientList),
+              onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.adminPatientList),
               style: TextButton.styleFrom(foregroundColor: AdminTheme.primary),
               child: const Text('View All'),
             ),
@@ -210,7 +211,16 @@ class AdminDashboardScreen extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: _QuickActionButton(icon: Icons.person_add_outlined, label: 'Add Patient'),
+              child: _QuickActionButton(
+                icon: Icons.person_add_outlined,
+                label: 'Add Patient',
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false, // Prevents closing by tapping outside
+                    builder: (context) => const AddPatientDialog(),
+                  );
+                },),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -434,8 +444,9 @@ class _FeedItem extends StatelessWidget {
 class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
-  const _QuickActionButton({required this.icon, required this.label});
+  const _QuickActionButton({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +456,7 @@ class _QuickActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 32),

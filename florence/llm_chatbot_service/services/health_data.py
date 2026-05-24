@@ -62,6 +62,9 @@ class HealthDataService:
         
         filtered_data = []
         for item in raw_data:
+            # Fallback to created_at if start_time is missing
+            if not item.get("start_time"):
+                item["start_time"] = item.get("created_at")
             filtered_data.append(ActivityLog(**item))
         
         filtered_data.sort(key=lambda x: x.start_time, reverse=True)
