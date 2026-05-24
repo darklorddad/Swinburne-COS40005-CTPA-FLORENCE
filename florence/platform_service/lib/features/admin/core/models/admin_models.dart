@@ -56,3 +56,30 @@ class AdminMetrics {
     required this.connectedDevices,
   });
 }
+
+@immutable
+class AdminActivity {
+  final String id;
+  final String title;
+  final String subtitle;
+  final DateTime timestamp;
+  final String iconType;
+
+  const AdminActivity({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.timestamp,
+    required this.iconType,
+  });
+
+  factory AdminActivity.fromJson(Map<String, dynamic> json) {
+    return AdminActivity(
+      id: json['id'] ?? '',
+      title: json['title'] ?? 'System Event',
+      subtitle: json['subtitle'] ?? '',
+      timestamp: DateTime.parse(json['timestamp']),
+      iconType: json['icon_type'] ?? 'update',
+    );
+  }
+}
