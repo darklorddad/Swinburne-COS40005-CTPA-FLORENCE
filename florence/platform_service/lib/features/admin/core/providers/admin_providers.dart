@@ -42,6 +42,30 @@ class AdminRepository {
       throw Exception('Registration failed: $e');
     }
   }
+
+  /// Update Patient Risk Level
+  Future<void> updatePatientRiskLevel(int patientId, String riskLevel) async {
+    try {
+      await _apiService.put('/admin/patients/$patientId', {
+        'risk_level': riskLevel.toUpperCase(),
+      });
+    } catch (e) {
+      print("AdminRepository Error updating risk: $e");
+      throw Exception('Failed to update risk level: $e');
+    }
+  }
+
+  /// Assign Clinician to Patient
+  Future<void> assignClinicianToPatient(int patientId, int? clinicianId) async {
+    try {
+      await _apiService.put('/admin/patients/$patientId/assign-clinician', {
+        'clinician_id': clinicianId,
+      });
+    } catch (e) {
+      print("AdminRepository Error assigning clinician: $e");
+      throw Exception('Failed to assign clinician: $e');
+    }
+  }
 }
 
 // ==========================================
