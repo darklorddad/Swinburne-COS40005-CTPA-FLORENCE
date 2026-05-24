@@ -127,3 +127,28 @@ async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinici
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to assign clinician: {str(e)}")
 
+@router.get("/recent-activity", summary="Get recent system activities")
+async def get_recent_activity():
+    """
+    Dynamically generates recent activity events based on recent risk assessments.
+    """
+    try:
+        # Fetch the 5 most recently assessed patients
+        response = supabase.table('patient_profiles').select(
+            'id, name, risk_level, last_risk_assessment'
+        ).not_.is_('last_risk_assessment', 'null').order('last_risk_assessment', desc=True).limit(5).execute()
+
+        activities = []
+        for p in response.data:
+            is_high = p.get('risk_level', '').upper() == 'HIGH'
+            activities.append({
+                "id": str(p['id']),
+                "title": "Risk Level Elevated" if is_high else "Risk Assessment Updated",
+                "subtitle": f"{p['name']} updated to {p['risk_level']} risk",
+                "timestamp": p['last_risk_assessment'],
+                "icon_type": "warning" if is_high else "update"
+            })
+        
+        return activities
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch activity: {str(e)}")
