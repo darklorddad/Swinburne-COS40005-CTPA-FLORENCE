@@ -5,6 +5,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:florence/features/admin/dashboard/screens/admin_dashboard_screen.dart';
 import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
 import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
+import 'package:florence/features/admin/patients/screens/admin_patient_detail_screen.dart';
+import 'package:florence/features/admin/core/models/admin_models.dart';
 // Note: We are using the new PatientDirectoryScreen instead of the old PatientsListScreen
 import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart'; 
 
@@ -193,8 +195,10 @@ class AppRoutes {
         return _buildRoute(const PatientDirectoryScreen(), settings);
 
       case adminPatientDetail:
-        // Routed to a placeholder until the new Admin Patient Detail screen is built
-        return _buildRoute(const _PlaceholderScreen(title: 'Admin Patient Detail'), settings);
+        if (args is AdminPatient) {
+          return _buildRoute(AdminPatientDetailScreen(patient: args), settings);
+        }
+        return _buildRoute(const _PlaceholderScreen(title: 'Error: Missing Patient Data'), settings);
 
       default:
         return _buildRoute(

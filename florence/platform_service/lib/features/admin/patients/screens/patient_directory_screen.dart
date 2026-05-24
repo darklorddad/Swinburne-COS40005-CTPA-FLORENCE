@@ -209,8 +209,12 @@ class _PatientDirectoryScreenState extends ConsumerState<PatientDirectoryScreen>
           IconButton(
             icon: const Icon(Icons.edit_outlined, color: AdminTheme.outline), 
             onPressed: () {
-              // Navigate to patient detail
-              // Navigator.pushNamed(context, AdminRoutes.patientDetail.replaceAll(':id', patient.id.toString()));
+              // Navigate to the detail screen, passing the actual patient model
+              Navigator.pushReplacementNamed(
+                context, 
+                AppRoutes.adminPatientDetail,
+                arguments: patient, 
+              );
             }
           )
         ),

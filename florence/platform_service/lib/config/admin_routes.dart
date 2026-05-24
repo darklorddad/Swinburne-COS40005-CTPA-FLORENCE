@@ -4,7 +4,7 @@ import 'package:florence/features/admin/core/widgets/access_denied_screen.dart';
 import 'package:florence/features/admin/core/services/permission_service.dart';
 import 'package:florence/features/admin/core/models/admin_enums.dart';
 import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart';
-import 'package:florence/features/admin/patients/screens/patient_detail_screen.dart';
+import 'package:florence/features/admin/patients/screens/admin_patient_detail_screen.dart';
 
 /// Admin Routes Configuration
 /// Centralized routing for admin-side of the application
