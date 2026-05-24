@@ -42,6 +42,44 @@ class AdminRepository {
       throw Exception('Registration failed: $e');
     }
   }
+
+  /// Update Patient Risk Level
+  Future<void> updatePatientRiskLevel(int patientId, String riskLevel) async {
+    try {
+      await _apiService.put('/admin/patients/$patientId', {
+        'risk_level': riskLevel.toUpperCase(),
+      });
+    } catch (e) {
+      print("AdminRepository Error updating risk: $e");
+      throw Exception('Failed to update risk level: $e');
+    }
+  }
+
+  /// Assign Clinician to Patient
+  Future<void> assignClinicianToPatient(int patientId, int? clinicianId) async {
+    try {
+      await _apiService.put('/admin/patients/$patientId/assign-clinician', {
+        'clinician_id': clinicianId,
+      });
+    } catch (e) {
+      print("AdminRepository Error assigning clinician: $e");
+      throw Exception('Failed to assign clinician: $e');
+    }
+  }
+
+  // Fetch recent admin activity logs (for the dashboard)
+  Future<List<AdminActivity>> fetchRecentActivity() async {
+    try {
+      final response = await _apiService.get('/admin/recent-activity');
+      if (response is List) {
+        return response.map((json) => AdminActivity.fromJson(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (e) {
+      print("AdminRepository Error fetching activity: $e");
+      throw Exception('Failed to load activity: $e');
+    }
+  }
 }
 
 // ==========================================
@@ -75,4 +113,10 @@ final adminMetricsProvider = Provider.autoDispose<AsyncValue<AdminMetrics>>((ref
       connectedDevices: 89,
     );
   });
+});
+
+/// Fetches the recent system activity feed
+final adminActivityProvider = FutureProvider.autoDispose<List<AdminActivity>>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  return repository.fetchRecentActivity();
 });
