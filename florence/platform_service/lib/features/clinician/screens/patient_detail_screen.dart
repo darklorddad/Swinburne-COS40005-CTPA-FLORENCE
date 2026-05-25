@@ -2820,7 +2820,26 @@ class _ClinicianMedicationFormDialogState
         .then((res) => res is List ? res : []);
     _freqFuture = ApiService()
         .get('/clinicians/medications/frequencies')
-        .then((res) => res is List ? res : []);
+        .then((res) {
+      final List<dynamic> frequencies = res is List ? res : [];
+
+      if (widget.isEdit && widget.medication != null) {
+        try {
+          final m = widget.medication;
+          setState(() {
+            _selectedFrequency = frequencies.firstWhere(
+              (f) =>
+                  f['id'] == m.frequencyId ||
+                  f['patient_text'].toString().toLowerCase() ==
+                      m.frequency.toString().toLowerCase(),
+            );
+          });
+        } catch (e) {
+          debugPrint('ℹ️ Could not find matching dropdown frequency element: $e');
+        }
+      }
+      return frequencies;
+    });
 
     if (widget.isEdit && widget.medication != null) {
       final m = widget.medication;
@@ -2828,13 +2847,16 @@ class _ClinicianMedicationFormDialogState
       _amountController.text = m.dosage ?? "";
       _selectedType = _medicationTypes.contains(m.route) ? m.route : 'Tablet';
 
-      try {
-        _selectedTimings = m.timingInstructions != null
-            ? List<String>.from(m.timingInstructions)
-            : ['ANYTIME'];
-      } catch (e) {
-        _selectedTimings = ['ANYTIME'];
-        debugPrint('ℹ️ Medication model does not contain timingInstructions field. Using defaults.');
+      if (m is Medication) {
+        _selectedTimings = List<String>.from(m.timingInstructions);
+      } else {
+        try {
+          _selectedTimings = m.timingInstructions != null
+              ? List<String>.from(m.timingInstructions)
+              : ['ANYTIME'];
+        } catch (_) {
+          _selectedTimings = ['ANYTIME'];
+        }
       }
     }
   }
@@ -3097,12 +3119,28 @@ class _ClinicianMedicationFormDialogState
                               final m = widget.medication;
 
                               if (m != null) {
-                                if (m is Medication) {
+                                // Aggressive cascading checks to find the ID no matter how it's formatted
+                                try {
                                   medicationId = m.id;
-                                } else {
-                                  try { medicationId = m.id; } catch (_) {}
-                                  try { if (medicationId == null) medicationId = m.toJson()['id']; } catch (_) {}
-                                }
+                                } catch (_) {}
+                                try {
+                                  if (medicationId == null) {
+                                    medicationId =
+                                        int.tryParse(m.id.toString());
+                                  }
+                                } catch (_) {}
+                                try {
+                                  if (medicationId == null) {
+                                    medicationId = int.tryParse(
+                                        m.toJson()['id'].toString());
+                                  }
+                                } catch (_) {}
+                                try {
+                                  if (medicationId == null) {
+                                    medicationId =
+                                        int.tryParse(m['id'].toString());
+                                  }
+                                } catch (_) {}
                               }
 
                               if (medicationId != null) {

@@ -128,7 +128,9 @@ class Medication {
   final String name;
   final String dosage; // e.g., "500 mg"
   final String frequency; // e.g., "Twice daily"
+  final int? frequencyId;
   final String route; // e.g., "Oral"
+  final List<String> timingInstructions;
   final String? notes;
   final DateTime? startDate;
 
@@ -137,20 +139,62 @@ class Medication {
     required this.name,
     required this.dosage,
     required this.frequency,
+    this.frequencyId,
     required this.route,
+    required this.timingInstructions,
     this.notes,
     this.startDate,
   });
 
   factory Medication.fromJson(Map<String, dynamic> json) {
+    // 1. Safe extraction of timing instructions array
+    List<String> timings = [];
+    if (json['timing_instructions'] != null && json['timing_instructions'] is List) {
+      try {
+        timings = (json['timing_instructions'] as List)
+            .map((e) => e.toString())
+            .toList();
+      } catch (_) {}
+    }
+    if (timings.isEmpty) {
+      timings = ['ANYTIME'];
+    }
+
+    // 2. Safe extraction of medication name supporting all custom/dictionary key mutations
+    String resolvedName = 'Unknown Medication';
+    if (json['name'] != null && json['name'].toString().isNotEmpty) {
+      resolvedName = json['name'].toString();
+    } else if (json['custom_medication_name'] != null &&
+        json['custom_medication_name'].toString().isNotEmpty) {
+      resolvedName = json['custom_medication_name'].toString();
+    } else if (json['medication'] != null &&
+        json['medication']['brand_name'] != null) {
+      resolvedName = json['medication']['brand_name'].toString();
+    } else if (json['medication_dictionary'] != null &&
+        json['medication_dictionary']['brand_name'] != null) {
+      resolvedName = json['medication_dictionary']['brand_name'].toString();
+    }
+
     return Medication(
-      id: json['id'] as int?,
-      name: json['name'] ?? json['custom_medication_name'] ?? '',
-      dosage: json['dosage'] ?? json['amount'] ?? '',
-      frequency: json['frequency'] ?? '',
+      id: json['id'] != null
+          ? int.tryParse(json['id'].toString())
+          : (json['medication_id'] != null
+              ? int.tryParse(json['medication_id'].toString())
+              : null),
+      name: resolvedName,
+      dosage: (json['dosage'] ?? json['amount'] ?? '1').toString(),
+      frequency: json['frequency'] ??
+          json['dosage_frequencies']?['patient_text'] ??
+          '',
+      frequencyId: json['frequency_id'] as int?,
       route: json['route'] ?? json['medication_type'] ?? 'Tablet',
+      timingInstructions: timings,
       notes: json['notes'],
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'])
+          : (json['created_at'] != null
+              ? DateTime.parse(json['created_at'])
+              : null),
     );
   }
 
@@ -160,7 +204,9 @@ class Medication {
       'name': name,
       'dosage': dosage,
       'frequency': frequency,
+      'frequency_id': frequencyId,
       'route': route,
+      'timing_instructions': timingInstructions,
       'notes': notes,
       'start_date': startDate?.toIso8601String(),
     };
