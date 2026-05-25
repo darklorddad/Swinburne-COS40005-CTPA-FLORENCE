@@ -1,6 +1,5 @@
 /// Recommendation Models for FLORENCE Digital Health Platform
 /// AI-generated health recommendations with explainability
-library;
 
 import 'package:flutter/foundation.dart';
 
