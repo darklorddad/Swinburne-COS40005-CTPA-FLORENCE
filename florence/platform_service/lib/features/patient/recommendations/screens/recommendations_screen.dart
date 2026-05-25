@@ -128,10 +128,15 @@ int _computeVitalityIndex(core_repo.HealthDataState? data) {
     endDate: DateTime.now(),
   );
 
+  // If they haven't logged ANYTHING in 7 days, plummet the score to show severe lack of tracking
+  if (summary.totalReadings == 0 && summary.totalActivityMinutes == 0 && summary.totalMeals == 0) {
+    return 25; // "Depleted" status due to unmonitored risk
+  }
+
   // 1. Glucose Control (40 pts)
-  double glucoseScore = (summary.timeInRange / 100.0) * 40.0;
-  if (summary.timeInRange == 0 && summary.totalReadings == 0) {
-    glucoseScore = 30.0; // Give benefit of doubt if no data
+  double glucoseScore = 0.0;
+  if (summary.totalReadings > 0) {
+    glucoseScore = (summary.timeInRange / 100.0) * 40.0;
   }
 
   // 2. Activity (30 pts)
@@ -139,8 +144,12 @@ int _computeVitalityIndex(core_repo.HealthDataState? data) {
   if (activityScore > 30.0) activityScore = 30.0;
 
   // 3. Adherence (30 pts)
-  double adherenceScore = summary.medicationAdherence * 30.0;
-  if (summary.currentMedications.isEmpty) adherenceScore = 30.0; // Free points if no meds
+  double adherenceScore = 0.0;
+  if (summary.currentMedications.isNotEmpty) {
+    adherenceScore = summary.medicationAdherence * 30.0;
+  } else {
+    adherenceScore = 30.0; // Free points if no meds needed
+  }
 
   return (glucoseScore + activityScore + adherenceScore).clamp(20, 100).toInt();
 }
@@ -1013,8 +1022,20 @@ class _RecommendationsScreenState
 
   // ── Empty hint ────────────────────────────────────────────────
   Widget _buildEmptyHint() {
+    final healthData = ref.read(core_data.monitorDataProvider).value;
+    bool hasRecentData = false;
+    
+    if (healthData != null) {
+      final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+      hasRecentData = healthData.allMonitorData.any((d) => d.measuredAt.toLocal().isAfter(weekAgo)) ||
+                      healthData.meals.any((m) => m.timestamp.toLocal().isAfter(weekAgo)) ||
+                      healthData.activities.any((a) => a.startTime.toLocal().isAfter(weekAgo));
+    }
+
     String message;
-    if (_activeFilter != null && _priorityFilter != null) {
+    if (!hasRecentData) {
+      message = "We don't have enough recent health data to analyse. Start logging your glucose, meals, or activity to receive personalised AI recommendations!";
+    } else if (_activeFilter != null && _priorityFilter != null) {
       final catLabel = _activeFilter!.name[0].toUpperCase() +
           _activeFilter!.name.substring(1);
       message =
