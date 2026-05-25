@@ -402,10 +402,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
       setState(() => _isLoading = true);
       try {
         await ApiService().signOut();
-        
-        if (mounted) {
-          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/login', (route) => false);
-        }
       } catch (e) {
         if (mounted) {
           setState(() => _isLoading = false);
