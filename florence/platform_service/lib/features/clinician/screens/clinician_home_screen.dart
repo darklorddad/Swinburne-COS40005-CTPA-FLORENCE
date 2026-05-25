@@ -80,18 +80,23 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
       // Apply last update filter
       final now = DateTime.now();
       bool updateMatches = true;
-      if (_selectedUpdateFilter == 1) {
-        // Today only
-        updateMatches = now.difference(patient.lastSync).inHours < 24;
-      } else if (_selectedUpdateFilter == 2) {
-        // Last 3 days
-        updateMatches = now.difference(patient.lastSync).inHours < 72;
-      } else if (_selectedUpdateFilter == 3) {
-        // Last week
-        updateMatches = now.difference(patient.lastSync).inDays < 7;
-      } else if (_selectedUpdateFilter == 4) {
-        // Last 3 weeks
-        updateMatches = now.difference(patient.lastSync).inDays < 21;
+      final lastUpdate = patient.lastUpdate ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+      switch (_selectedUpdateFilter) {
+        case 1: // Today only
+          updateMatches = now.difference(lastUpdate).inHours < 24;
+          break;
+        case 2: // Last 3 days
+          updateMatches = now.difference(lastUpdate).inHours < 72;
+          break;
+        case 3: // Last week
+          updateMatches = now.difference(lastUpdate).inDays < 7;
+          break;
+        case 4: // Last 3 weeks
+          updateMatches = now.difference(lastUpdate).inDays < 21;
+          break;
+        default:
+          updateMatches = true;
       }
       
       return (nameMatches || idMatches) && riskMatches && updateMatches;
