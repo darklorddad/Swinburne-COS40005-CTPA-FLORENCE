@@ -1515,7 +1515,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         if (value == null || value.isEmpty) {
                                           return 'Required';
                                         }
-                                        final minVal = double.tryParse(value);
+                                        final minVal = double.tryParse(value.replaceAll(',', '.'));
                                         if (minVal == null) return 'Numbers only';
                                         if (minVal < 0) return 'Cannot be negative';
                                         return null;
@@ -1563,12 +1563,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                         if (value == null || value.isEmpty) {
                                           return 'Required';
                                         }
-                                        final maxVal = double.tryParse(value);
+                                        final maxVal = double.tryParse(value.replaceAll(',', '.'));
                                         if (maxVal == null) return 'Numbers only';
                                         if (maxVal < 0) return 'Cannot be negative';
 
                                         final minVal = double.tryParse(
-                                            minControllers[t.dataType]!.text);
+                                            minControllers[t.dataType]!.text.replaceAll(',', '.'));
                                         if (minVal != null && maxVal <= minVal) {
                                           final minStr = minVal % 1 == 0
                                               ? minVal.toInt().toString()
@@ -1629,9 +1629,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                         for (var t in currentThresholds) {
                           double convertedMin =
-                              double.parse(minControllers[t.dataType]!.text);
+                              double.parse(minControllers[t.dataType]!.text.replaceAll(',', '.'));
                           double convertedMax =
-                              double.parse(maxControllers[t.dataType]!.text);
+                              double.parse(maxControllers[t.dataType]!.text.replaceAll(',', '.'));
 
                           // Note: The backend handles conversion to base units automatically
                           // based on the user's settings, so we send the raw values.

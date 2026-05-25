@@ -897,7 +897,7 @@ class _HistorySectionState extends State<_HistorySection> {
     if (value == null) return AppTheme.textSecondaryColor;
 
     try {
-      final t = widget.thresholds.firstWhere((t) => t.dataType == type);
+      final t = widget.thresholds.firstWhere((t) => t.dataType == type.name);
 
       if (type == MonitorDataType.CHOLESTEROL_HDL) {
         // HDL: Higher is better. Low is bad.
@@ -1007,7 +1007,7 @@ class _HistorySectionState extends State<_HistorySection> {
               // Helper to safely get threshold values
               double? getLimit(MonitorDataType type, {bool isMin = false}) {
                 try {
-                  final t = widget.thresholds.firstWhere((t) => t.dataType == type);
+                  final t = widget.thresholds.firstWhere((t) => t.dataType == type.name);
                   return isMin ? t.minValue : t.maxValue;
                 } catch (_) {
                   return null;

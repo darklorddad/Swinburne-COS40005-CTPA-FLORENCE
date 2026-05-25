@@ -546,7 +546,7 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
         'medication_id': isCustom ? (widget.isEdit ? widget.medication!.medicationId : null) : _selectedDictionaryItem!['id'],
         'custom_medication_name': isCustom ? _nameController.text.trim() : null,
         'frequency_id': _selectedFrequency?['id'],
-        'amount': _amountController.text.trim(),
+        'amount': _amountController.text.trim().replaceAll(',', '.'),
         'medication_type': _selectedType,
         'timing_instructions': _selectedTimings,
         'status': 'CURRENT',
@@ -762,7 +762,7 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                             validator: (val) => val == null || val.isEmpty ? 'Required' : null,
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.\,]?\d*')),
                             ],
                             decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 1.5"),
                           ),
