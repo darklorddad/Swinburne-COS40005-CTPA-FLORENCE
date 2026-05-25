@@ -107,7 +107,7 @@ async def register_user(user_data: UserRegistration):
             patient_profile = supabase.table('patient_profiles').insert(profile_data).execute().data[0]
             
             # Default settings to mmol/L
-            supabase.table('user_settings').insert({
+            supabase.table('user_settings').upsert({
                 'user_id': new_user.id,
                 'glucose_unit': 'mmol/L',
                 'cholesterol_unit': 'mmol/L',
@@ -127,7 +127,7 @@ async def register_user(user_data: UserRegistration):
             supabase.table('clinician_profiles').insert(profile_data).execute()
 
             # Default settings to mmol/L for clinicians
-            supabase.table('user_settings').insert({
+            supabase.table('user_settings').upsert({
                 'user_id': new_user.id,
                 'glucose_unit': 'mmol/L',
                 'cholesterol_unit': 'mmol/L',
