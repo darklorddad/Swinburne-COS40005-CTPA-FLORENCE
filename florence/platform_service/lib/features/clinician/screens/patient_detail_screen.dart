@@ -706,9 +706,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   // Helper Methods for Risk Levels
   String _getGlucoseRiskLevel(double value) {
-    final mgDl = value * 18.018;
-    if (mgDl < 70 || mgDl > 180) return 'high';
-    if (mgDl > 140) return 'medium';
+    // Normalize the incoming value to mmol/L for standardized logic
+    // If the incoming value is in mg/dL, convert it back to mmol/L
+    double mmolValue = (_glucoseUnit == 'mg/dL') ? (value / 18.018) : value;
+
+    // Perform comparison using normalized mmol/L units
+    if (mmolValue < 3.9 || mmolValue > 10.0) return 'high';
+    if (mmolValue > 7.8) return 'medium';
     return 'low';
   }
 
