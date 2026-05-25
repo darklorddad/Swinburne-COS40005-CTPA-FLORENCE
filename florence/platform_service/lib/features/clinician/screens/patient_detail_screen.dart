@@ -43,6 +43,20 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   bool _isMetric = true;
   String _glucoseUnit = 'mmol/L';
   String _cholesterolUnit = 'mmol/L';
+
+  double _displayGlucose(double value) {
+    if (_glucoseUnit == 'mg/dL') {
+      return value * 18.018;
+    }
+    return value;
+  }
+
+  double _displayCholesterol(double value) {
+    if (_cholesterolUnit == 'mg/dL') {
+      return value * 38.67;
+    }
+    return value;
+  }
   
   /*
   // Chatbot state
@@ -376,12 +390,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHealthMetricCard(
-              'Glucose', 
-              _healthData!.glucoseReadings.isNotEmpty ? '${_healthData!.glucoseReadings.last.value.toInt()}' : '--', 
-              'mg/dL',
-              Icons.water_drop_outlined, 
-              _healthData!.glucoseReadings.isNotEmpty ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value) : 'no_data',
-              _healthData!.glucoseReadings.isNotEmpty ? _healthData!.glucoseReadings.last.timestamp : null,
+              'Glucose',
+              _healthData!.glucoseReadings.isNotEmpty
+                  ? _displayGlucose(_healthData!.glucoseReadings.last.value)
+                      .toStringAsFixed(_glucoseUnit == 'mmol/L' ? 1 : 0)
+                  : '--',
+              _glucoseUnit,
+              Icons.water_drop_outlined,
+              _healthData!.glucoseReadings.isNotEmpty
+                  ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value)
+                  : 'no_data',
+              _healthData!.glucoseReadings.isNotEmpty
+                  ? _healthData!.glucoseReadings.last.timestamp
+                  : null,
             ),
             const SizedBox(height: 12),
             _buildHealthMetricCard(
@@ -403,12 +424,22 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             ),
             const SizedBox(height: 12),
             _buildHealthMetricCard(
-              'Cholesterol', 
-              _healthData!.cholesterolReadings.isNotEmpty ? '${_healthData!.cholesterolReadings.last.total}' : '--', 
-              'mg/dL', // or unit depending on data
-              Icons.bloodtype_outlined, 
-              _healthData!.cholesterolReadings.isNotEmpty ? _getCholesterolRiskLevel(_healthData!.cholesterolReadings.last.total, _healthData!.cholesterolReadings.last.ldl, _healthData!.cholesterolReadings.last.triglycerides) : 'no_data',
-              _healthData!.cholesterolReadings.isNotEmpty ? _healthData!.cholesterolReadings.last.timestamp : null,
+              'Cholesterol',
+              _healthData!.cholesterolReadings.isNotEmpty
+                  ? _displayCholesterol(_healthData!.cholesterolReadings.last.total)
+                      .toStringAsFixed(_cholesterolUnit == 'mmol/L' ? 1 : 0)
+                  : '--',
+              _cholesterolUnit,
+              Icons.bloodtype_outlined,
+              _healthData!.cholesterolReadings.isNotEmpty
+                  ? _getCholesterolRiskLevel(
+                      _healthData!.cholesterolReadings.last.total,
+                      _healthData!.cholesterolReadings.last.ldl,
+                      _healthData!.cholesterolReadings.last.triglycerides)
+                  : 'no_data',
+              _healthData!.cholesterolReadings.isNotEmpty
+                  ? _healthData!.cholesterolReadings.last.timestamp
+                  : null,
             ),
             const SizedBox(height: 12),
             _buildHealthMetricCard(
@@ -655,26 +686,31 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   // Helper Methods for Risk Levels
   String _getGlucoseRiskLevel(double value) {
-    if (value < 70 || value > 180) return 'high';
-    if (value > 140) return 'medium';
+    final mgDl = value * 18.018;
+    if (mgDl < 70 || mgDl > 180) return 'high';
+    if (mgDl > 140) return 'medium';
     return 'low';
   }
-  
+
   String _getBPRiskLevel(double systolic, double diastolic) {
     if (systolic >= 140 || diastolic >= 90) return 'high';
     if (systolic >= 130 || diastolic >= 80) return 'medium';
     return 'low';
   }
-  
+
   String _getHbA1cRiskLevel(double value) {
     if (value >= 8.0) return 'high';
     if (value >= 7.0) return 'medium';
     return 'low';
   }
-  
+
   String _getCholesterolRiskLevel(double total, double ldl, double trig) {
-    if (total >= 240 || ldl >= 160 || trig >= 200) return 'high';
-    if (total >= 200 || ldl >= 130 || trig >= 150) return 'medium';
+    final totalMgDl = total * 38.67;
+    final ldlMgDl = ldl * 38.67;
+    final trigMgDl = trig * 38.67;
+
+    if (totalMgDl >= 240 || ldlMgDl >= 160 || trigMgDl >= 200) return 'high';
+    if (totalMgDl >= 200 || ldlMgDl >= 130 || trigMgDl >= 150) return 'medium';
     return 'low';
   }
   
