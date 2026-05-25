@@ -528,6 +528,8 @@ class _ActivityItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(title, style: const TextStyle(fontSize: 14, color: AdminTheme.onSurface)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 13, color: AdminTheme.onSurfaceVariant)),
                   const SizedBox(height: 4),
                   Text(time, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AdminTheme.onSurfaceVariant)),
                 ],
