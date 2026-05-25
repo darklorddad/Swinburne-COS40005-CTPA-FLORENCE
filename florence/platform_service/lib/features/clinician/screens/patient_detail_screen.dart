@@ -1,19 +1,18 @@
-import 'package:flutter/material.dart';
-import 'package:florence/features/clinician/models/patient.dart';
-import 'package:florence/features/clinician/models/health_data.dart';
 import 'package:florence/features/clinician/models/clinician_note.dart';
-import 'package:florence/features/clinician/services/api_data_service.dart';
-import 'package:florence/features/clinician/services/data_service.dart';
-import 'package:florence/features/clinician/services/api_service.dart';
-import 'package:florence/features/clinician/widgets/risk_indicator.dart';
-import 'package:florence/features/clinician/widgets/bmi_gauge.dart';
-import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/models/health_data.dart';
+import 'package:florence/features/clinician/models/patient.dart';
+import 'package:florence/features/clinician/screens/activity_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/blood_pressure_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/bmi_analytics_screen.dart';
+import 'package:florence/features/clinician/screens/cholesterol_analytics_screen.dart';
 import 'package:florence/features/clinician/screens/glucose_analytics_screen.dart';
 import 'package:florence/features/clinician/screens/hba1c_analytics_screen.dart';
-import 'package:florence/features/clinician/screens/blood_pressure_analytics_screen.dart';
-import 'package:florence/features/clinician/screens/cholesterol_analytics_screen.dart';
-import 'package:florence/features/clinician/screens/activity_analytics_screen.dart';
-import 'package:florence/features/clinician/screens/bmi_analytics_screen.dart';
+import 'package:florence/features/clinician/services/api_data_service.dart';
+import 'package:florence/features/clinician/services/api_service.dart';
+import 'package:florence/features/clinician/services/data_service.dart';
+import 'package:florence/features/clinician/theme/app_theme.dart';
+import 'package:florence/features/clinician/widgets/bmi_gauge.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 class _ChatMessage {
@@ -1529,84 +1528,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     );
   }
 
-  Widget _buildEmbeddedThresholdsCard() {
-    if (_patientThresholds == null || _patientThresholds!.isEmpty) {
-      return Card(
-        elevation: 0,
-        margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppTheme.dividerColor),
-        ),
-        child: const Padding(
-          padding: EdgeInsets.all(16),
-          child: Text('No custom health targets configured yet.',
-              style: TextStyle(color: AppTheme.textSecondary)),
-        ),
-      );
-    }
-
-    final labels = {
-      'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
-      'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
-      'GLUCOSE': 'Glucose Target',
-      'BMI': 'Target BMI',
-      'HBA1C': 'Target HbA1c',
-      'CHOLESTEROL_TOTAL': 'Total Cholesterol',
-      'CHOLESTEROL_LDL': 'LDL Cholesterol',
-      'CHOLESTEROL_HDL': 'HDL Cholesterol',
-      'CHOLESTEROL_TRIGLYCERIDES': 'Triglycerides'
-    };
-
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.dividerColor),
-      ),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: _patientThresholds!.map((threshold) {
-            final type = threshold['data_type'] ?? '';
-            final displayName = labels[type] ?? type.replaceAll('_', ' ');
-
-            String unit = '';
-            if (type == 'GLUCOSE') unit = ' mg/dL';
-            if (type.contains('CHOLESTEROL')) unit = ' mg/dL';
-            if (type.contains('BLOOD_PRESSURE')) unit = ' mmHg';
-            if (type == 'HBA1C') unit = ' %';
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    displayName,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.textPrimary),
-                  ),
-                  Text(
-                    '${(threshold['min_value'] as num).toStringAsFixed(1)} - ${(threshold['max_value'] as num).toStringAsFixed(1)}$unit',
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-      ),
-    );
-  }
-
   Widget _buildClinicalNotesCard() {
     return Card(
       elevation: 0,
@@ -2262,35 +2183,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   
   
   
-  void _showScheduleFollowupDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Schedule Follow-up'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Select follow-up type and date'),
-            // Add date picker and dropdown for follow-up type
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Schedule follow-up
-              Navigator.pop(context);
-            },
-            child: const Text('Schedule'),
-          ),
-        ],
-      ),
-    );
-  }
-  
   Future<void> _showEditPatientProfileDialog() async {
     final nameCtrl = TextEditingController(text: _patient!.name);
     final phoneCtrl = TextEditingController(text: _patient!.contactInfo);
@@ -2409,34 +2301,5 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         }
       }
     }
-  }
-
-  void _showRequestDataDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Request Health Data'),
-        content: const Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Select data type to request from the patient'),
-            // Add checkboxes for different data types
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Send request
-              Navigator.pop(context);
-            },
-            child: const Text('Send Request'),
-          ),
-        ],
-      ),
-    );
   }
 }
