@@ -1675,42 +1675,47 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // --- MEDICAL CONDITION ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('Medical Condition', Icons.medical_services_outlined),
-            IconButton(
-              icon: const Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Condition editing coming soon')),
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
+        // --- 1. MEDICAL CONDITIONS CARD ---
         Card(
           elevation: 0,
-          margin: EdgeInsets.zero,
+          color: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
             side: const BorderSide(color: AppTheme.dividerColor),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.medical_services_outlined, size: 20, color: AppTheme.primaryColor),
+                        SizedBox(width: 8),
+                        Text(
+                          'Medical Conditions',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 18, color: AppTheme.textSecondary),
+                      onPressed: _showEditDiseasesDialog,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: SegmentedButton<String>(
                         segments: const [
-                          ButtonSegment(value: 'ACTIVE', label: Text('Active')),
-                          ButtonSegment(value: 'RESOLVED', label: Text('Resolved')),
-                          ButtonSegment(value: 'ALL', label: Text('All')),
+                          ButtonSegment(value: 'ACTIVE', label: Text('Active', style: TextStyle(fontSize: 13))),
+                          ButtonSegment(value: 'RESOLVED', label: Text('Resolved', style: TextStyle(fontSize: 13))),
+                          ButtonSegment(value: 'ALL', label: Text('All', style: TextStyle(fontSize: 13))),
                         ],
                         selected: {_diseaseFilter},
                         onSelectionChanged: (newSelection) {
@@ -1719,124 +1724,217 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                           });
                         },
                         style: SegmentedButton.styleFrom(
-                          padding: EdgeInsets.zero,
                           visualDensity: VisualDensity.compact,
+                          selectedBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          selectedForegroundColor: AppTheme.primaryColor,
                         ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 16),
-                Text(
-                  _patient!.activeDiseasesText,
-                  style: const TextStyle(fontSize: 15, height: 1.4, color: AppTheme.textPrimary),
-                ),
+                _buildFilteredDiseaseList(),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
 
-        // --- TARGET HEALTH THRESHOLDS ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('Target Health Thresholds', Icons.tune_rounded),
-            IconButton(
-              icon: const Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-              onPressed: _showThresholdsDialog,
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        _buildEmbeddedThresholdsCard(),
-        const SizedBox(height: 24),
-
-        // --- MEDICATIONS CABINET ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('Current Medications', Icons.medication_outlined),
-            IconButton(
-              icon: const Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Medication management coming soon')),
-                );
-              },
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (_healthData!.medications.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Text('No active medications recorded.', style: TextStyle(color: AppTheme.textSecondary)),
-          )
-        else
-          ..._healthData!.medications.map((m) => Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppTheme.dividerColor),
-            ),
-            child: Row(
+        // --- 2. TARGET HEALTH THRESHOLDS CARD ---
+        Card(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppTheme.dividerColor),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppTheme.secondaryColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.tune_rounded, size: 20, color: AppTheme.primaryColor),
+                        SizedBox(width: 8),
+                        Text(
+                          'Health Thresholds',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 18, color: AppTheme.textSecondary),
+                      onPressed: _showEditThresholdsDialog,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            m.name,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: AppTheme.dividerColor.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              m.dosage,
-                              style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _buildNutrientChip('Route', m.route, AppTheme.primaryColor),
-                          _buildNutrientChip('Frequency', m.frequency, AppTheme.lowRiskColor),
-                          if (m.startDate != null)
-                            _buildNutrientChip('Started', DateFormat('MMM d, yyyy').format(m.startDate!), AppTheme.accentColor),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+                const SizedBox(height: 8),
+                _buildEmbeddedThresholdsList(),
               ],
             ),
-          )),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // --- 3. CURRENT MEDICATIONS CARD ---
+        Card(
+          elevation: 0,
+          color: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: AppTheme.dividerColor),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.medication_outlined, size: 20, color: AppTheme.primaryColor),
+                        SizedBox(width: 8),
+                        Text(
+                          'Current Medications',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit, size: 18, color: AppTheme.textSecondary),
+                      onPressed: _showEditMedicationsDialog,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildMedicalCabinetList(),
+              ],
+            ),
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _buildFilteredDiseaseList() {
+    if (_patient!.activeDiseases.isEmpty) {
+      return const Text('No conditions logged.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14));
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: _patient!.activeDiseases.map((condition) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6.0),
+          child: Row(
+            children: [
+              const Icon(Icons.lens, size: 6, color: AppTheme.primaryColor),
+              const SizedBox(width: 10),
+              Text(
+                condition,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: AppTheme.textPrimary),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildEmbeddedThresholdsList() {
+    final labels = {
+      'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
+      'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
+      'GLUCOSE': 'Glucose',
+      'BMI': 'Healthy BMI',
+      'HBA1C': 'HbA1c',
+      'CHOLESTEROL_TOTAL': 'Total Cholesterol',
+      'CHOLESTEROL_LDL': 'LDL Cholesterol',
+      'CHOLESTEROL_HDL': 'HDL Cholesterol',
+      'CHOLESTEROL_TRIGLYCERIDES': 'Triglycerides'
+    };
+
+    return Column(
+      children: _healthData!.thresholds.map((t) {
+        final type = t['data_type'] ?? '';
+        final displayName = labels[type] ?? type.replaceAll('_', ' ');
+        
+        String unit = '';
+        if (type == 'GLUCOSE' || type.contains('CHOLESTEROL')) unit = ' mg/dL';
+        if (type.contains('BLOOD_PRESSURE')) unit = ' mmHg';
+        if (type == 'HBA1C') unit = ' %';
+
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(displayName, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
+                  Text(
+                    '${(t['min_value'] as num).toStringAsFixed(1)} - ${(t['max_value'] as num).toStringAsFixed(1)}$unit',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: AppTheme.dividerColor),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildMedicalCabinetList() {
+    if (_healthData!.medications.isEmpty) {
+      return const Text('No active medications recorded.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14));
+    }
+
+    return Column(
+      children: _healthData!.medications.map((m) {
+        return Column(
+          children: [
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 20),
+              ),
+              title: Text(m.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+              subtitle: Text('${m.dosage} • ${m.frequency}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+              trailing: Text(m.route, style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.primaryColor, fontSize: 13)),
+            ),
+            const Divider(height: 1, color: AppTheme.dividerColor),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  void _showEditDiseasesDialog() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Condition editing coming soon')),
+    );
+  }
+
+  void _showEditThresholdsDialog() {
+    _showThresholdsDialog();
+  }
+
+  void _showEditMedicationsDialog() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Medication management coming soon')),
     );
   }
 
