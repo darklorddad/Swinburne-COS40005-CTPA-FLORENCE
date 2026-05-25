@@ -352,16 +352,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       padding: const EdgeInsets.all(16),
       children: [
         // --- SECTION 1: PERSONAL INFORMATION ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
-            IconButton(
-              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
-              onPressed: _showEditPatientProfileDialog,
-            ),
-          ],
-        ),
+        _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
         const SizedBox(height: 8),
         _buildPatientHeaderCard(),
         
@@ -2196,8 +2187,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Container(
-          width: MediaQuery.of(context).size.width * 0.55,
-          constraints: const BoxConstraints(maxWidth: 650),
+          width: MediaQuery.of(context).size.width * 0.85,
+          constraints: const BoxConstraints(maxWidth: 460),
           padding: const EdgeInsets.all(24),
           child: StatefulBuilder(
             builder: (context, setDialogState) => SingleChildScrollView(
@@ -2215,46 +2206,30 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person)),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: ageCtrl,
-                          decoration: const InputDecoration(labelText: 'Age', prefixIcon: Icon(Icons.cake)),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : null,
-                          items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                          onChanged: (v) => setDialogState(() => selectedGender = v),
-                          decoration: const InputDecoration(labelText: 'Gender', prefixIcon: Icon(Icons.wc_outlined)),
-                        ),
-                      ),
-                    ],
+                  TextFormField(
+                    controller: ageCtrl,
+                    decoration: const InputDecoration(labelText: 'Age', prefixIcon: Icon(Icons.cake)),
+                    keyboardType: TextInputType.number,
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: phoneCtrl,
-                          decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
-                          keyboardType: TextInputType.phone,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: DropdownButtonFormField<RiskLevel>(
-                          value: selectedRisk,
-                          items: RiskLevel.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name[0] + r.name.substring(1).toLowerCase()))).toList(),
-                          onChanged: (v) => setDialogState(() => selectedRisk = v!),
-                          decoration: const InputDecoration(labelText: 'Risk Level', prefixIcon: Icon(Icons.gpp_maybe)),
-                        ),
-                      ),
-                    ],
+                  DropdownButtonFormField<String>(
+                    value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : null,
+                    items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                    onChanged: (v) => setDialogState(() => selectedGender = v),
+                    decoration: const InputDecoration(labelText: 'Gender', prefixIcon: Icon(Icons.wc_outlined)),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: phoneCtrl,
+                    decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
+                    keyboardType: TextInputType.phone,
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<RiskLevel>(
+                    value: selectedRisk,
+                    items: RiskLevel.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name[0] + r.name.substring(1).toLowerCase()))).toList(),
+                    onChanged: (v) => setDialogState(() => selectedRisk = v!),
+                    decoration: const InputDecoration(labelText: 'Risk Level', prefixIcon: Icon(Icons.gpp_maybe)),
                   ),
                   const SizedBox(height: 24),
                   const Text('Emergency Contact', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -2263,24 +2238,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     controller: ecNameCtrl,
                     decoration: const InputDecoration(labelText: 'Contact Name', prefixIcon: Icon(Icons.contact_page_outlined)),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: ecRelCtrl,
-                          decoration: const InputDecoration(labelText: 'Relationship', prefixIcon: Icon(Icons.family_restroom_outlined)),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          controller: ecPhoneCtrl,
-                          decoration: const InputDecoration(labelText: 'Contact Phone', prefixIcon: Icon(Icons.phone_callback_outlined)),
-                          keyboardType: TextInputType.phone,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: ecRelCtrl,
+                    decoration: const InputDecoration(labelText: 'Relationship', prefixIcon: Icon(Icons.family_restroom_outlined)),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: ecPhoneCtrl,
+                    decoration: const InputDecoration(labelText: 'Contact Phone', prefixIcon: Icon(Icons.phone_callback_outlined)),
+                    keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 32),
                   Row(
