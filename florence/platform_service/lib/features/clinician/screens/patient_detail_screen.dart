@@ -147,57 +147,95 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
 
-  Future<void> _showUpdateRiskDialog() async {
-    RiskLevel selectedRisk = _patient!.riskLevel;
+  Future<void> _showThresholdsDialog() async {
+    setState(() => _isLoading = true);
+    try {
+      final thresholds = await _dataService.getPatientThresholds(widget.patientId);
+      setState(() => _isLoading = false);
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Health Thresholds'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: thresholds.isEmpty
+                ? const Text('No thresholds defined.')
+                : ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: thresholds.length,
+                    itemBuilder: (context, index) {
+                      final t = thresholds[index];
+                      return ListTile(
+                        title: Text(t['data_type']?.toString().replaceAll('_', ' ') ?? 'Unknown'),
+                        subtitle: Text('Min: ${t['min_value']} - Max: ${t['max_value']}'),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.edit_outlined, size: 20),
+                          onPressed: () => _showEditSingleThresholdDialog(t),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+          ],
+        ),
+      );
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading thresholds: $e')));
+    }
+  }
+
+  Future<void> _showEditSingleThresholdDialog(Map<String, dynamic> threshold) async {
+    final minController = TextEditingController(text: threshold['min_value'].toString());
+    final maxController = TextEditingController(text: threshold['max_value'].toString());
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Update Risk Level'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: RiskLevel.values.map((risk) {
-                  return RadioListTile<RiskLevel>(
-                    title: Text(risk.name.toUpperCase()),
-                    value: risk,
-                    groupValue: selectedRisk,
-                    activeColor: AppTheme.getRiskColor(risk.name),
-                    onChanged: (value) {
-                      setDialogState(() {
-                        if (value != null) selectedRisk = value;
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Update'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      builder: (context) => AlertDialog(
+        title: Text('Edit ${threshold['data_type']}'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: minController,
+              decoration: const InputDecoration(labelText: 'Minimum Value'),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: maxController,
+              decoration: const InputDecoration(labelText: 'Maximum Value'),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
+        ],
+      ),
     );
 
-    if (confirmed == true && selectedRisk != _patient!.riskLevel && mounted) {
+    if (confirmed == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        await _dataService.updatePatientRiskLevel(widget.patientId, selectedRisk.name);
-        await _loadPatientData();
+        final List<Map<String, dynamic>> updatedThresholds = [
+          {
+            'data_type': threshold['data_type'],
+            'min_value': double.parse(minController.text),
+            'max_value': double.parse(maxController.text),
+          }
+        ];
+        await _dataService.setPatientThresholds(widget.patientId, updatedThresholds);
+        Navigator.pop(context); // Close the list dialog
+        _showThresholdsDialog(); // Re-open to show updated values
       } catch (e) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-        }
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error updating threshold: $e')));
       }
     }
   }
@@ -1615,12 +1653,18 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                             AppTheme.textSecondary,
                             Colors.white,
                           ),
+                          _buildHeaderPill(
+                            _patient!.riskLevel.name.toUpperCase(), 
+                            Icons.warning_amber_rounded,
+                            riskColor,
+                            Colors.white,
+                          ),
                           GestureDetector(
-                            onTap: _showUpdateRiskDialog,
+                            onTap: _showThresholdsDialog,
                             child: _buildHeaderPill(
-                              _patient!.riskLevel.name.toUpperCase() + ' (Edit)', 
-                              Icons.warning_amber_rounded,
-                              riskColor,
+                              'Thresholds', 
+                              Icons.tune,
+                              AppTheme.primaryColor,
                               Colors.white,
                             ),
                           ),
