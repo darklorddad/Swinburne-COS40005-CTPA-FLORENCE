@@ -16,6 +16,7 @@ import 'package:florence/features/patient/core/providers/threshold_providers.dar
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -330,6 +331,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Handle save
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log readings in the future.');
       return;
     }
     
@@ -757,6 +763,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: TextFormField(
                   controller: _glucoseController,
                   focusNode: _glucoseFocusNode,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.\,]?\d*')),
+                  ],
                   validator: (val) {
                     if (val == null || val.isEmpty) return 'Required';
                     final num = double.tryParse(val.replaceAll(',', '.'));
@@ -1599,6 +1608,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         TextFormField(
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                           textInputAction: TextInputAction.done,
                           onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
