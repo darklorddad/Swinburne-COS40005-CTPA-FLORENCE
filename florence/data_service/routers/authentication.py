@@ -106,6 +106,14 @@ async def register_user(user_data: UserRegistration):
             }
             patient_profile = supabase.table('patient_profiles').insert(profile_data).execute().data[0]
             
+            # Default settings to mmol/L
+            supabase.table('user_settings').insert({
+                'user_id': new_user.id,
+                'glucose_unit': 'mmol/L',
+                'cholesterol_unit': 'mmol/L',
+                'show_quick_actions': False
+            }).execute()
+
             thresholds_to_insert = [
                 {**threshold, 'patient_id': patient_profile['id']} for threshold in DEFAULT_THRESHOLDS
             ]
@@ -117,6 +125,14 @@ async def register_user(user_data: UserRegistration):
                 "organisation_id": user_data.organisation_id,
             }
             supabase.table('clinician_profiles').insert(profile_data).execute()
+
+            # Default settings to mmol/L for clinicians
+            supabase.table('user_settings').insert({
+                'user_id': new_user.id,
+                'glucose_unit': 'mmol/L',
+                'cholesterol_unit': 'mmol/L',
+                'show_quick_actions': False
+            }).execute()
         
         return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
 

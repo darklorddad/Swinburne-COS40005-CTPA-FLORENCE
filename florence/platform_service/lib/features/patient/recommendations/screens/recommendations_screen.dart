@@ -264,32 +264,55 @@ class _RecommendationsScreenState
   }
 
   Future<void> _checkAndLoad() async {
-    final active = ref.read(recommendationProvider).where((r) => r.isActive).toList();
-    if (active.isEmpty) {
-      await _generateRecommendations();
-    } else {
+    // Read the current state of the async provider
+    final recs = ref.read(recommendationProvider).value ?? [];
+    final active = recs.where((r) => r.isActive).toList();
+    
+    // Check if we need to generate Daily (No active daily from today)
+    final hasRecentDaily = active.any((r) => 
+        r.timeframe == 'daily' && 
+        DateTime.now().difference(r.generatedAt).inHours < 24);
+        
+    // Check if we need to generate Weekly (No active weekly from last 7 days)
+    final hasRecentWeekly = active.any((r) => 
+        r.timeframe == 'weekly' && 
+        DateTime.now().difference(r.generatedAt).inDays < 7);
+
+    bool generatedAny = false;
+    
+    if (!hasRecentDaily) {
+      await _generateRecommendations(timeframe: 'daily', hideToast: true);
+      generatedAny = true;
+    }
+    
+    if (!hasRecentWeekly) {
+      await _generateRecommendations(timeframe: 'weekly', hideToast: true);
+      generatedAny = true;
+    }
+    
+    if (!generatedAny) {
       _scoreCtrl.forward();
     }
   }
 
-  Future<void> _generateRecommendations() async {
+  Future<void> _generateRecommendations({required String timeframe, bool hideToast = false}) async {
     setState(() => _isGenerating = true);
     _scoreCtrl.reset();
     try {
       final usedAI = await ref
           .read(recommendationProvider.notifier)
-          .generateRecommendations(daysToAnalyze: 7);
+          .generateRecommendations(timeframe: timeframe);
       _staggerCtrl.forward(from: 0);
       _scoreCtrl.forward();
-      if (mounted) {
+      if (mounted && !hideToast) {
         if (usedAI) {
-          Helpers.showSuccess(context, 'AI analysis complete');
+          Helpers.showSuccess(context, '${timeframe[0].toUpperCase()}${timeframe.substring(1)} AI analysis complete');
         } else {
           Helpers.showWarning(context, 'AI unavailable — showing general recommendations');
         }
       }
     } catch (_) {
-      if (mounted) Helpers.showError(context, 'Failed to generate insights');
+      if (mounted && !hideToast) Helpers.showError(context, 'Failed to generate insights');
     } finally {
       if (mounted) setState(() => _isGenerating = false);
     }
@@ -304,20 +327,7 @@ class _RecommendationsScreenState
 
   @override
   Widget build(BuildContext context) {
-    final recs   = ref.watch(recommendationProvider);
-    final active = recs.where((r) => r.isActive).toList();
-    final history = recs.where((r) => !r.isActive).toList()
-      ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
-    final score  = _computeScore(active);
-    final (ringStart, ringEnd, stateLabel) = _scoreState(score);
-
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(score));
-
-    final filtered = active.where((r) {
-      if (_activeFilter != null && r.category != _activeFilter) return false;
-      if (_priorityFilter != null && r.priority != _priorityFilter) return false;
-      return true;
-    }).toList();
+    final recsAsync = ref.watch(recommendationProvider);
 
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
@@ -325,69 +335,121 @@ class _RecommendationsScreenState
         title: const Text('AI Health Insights'),
         elevation: 0,
         centerTitle: false,
-        bottom: _isGenerating
+        bottom: _isGenerating || recsAsync.isLoading
             ? const PreferredSize(
                 preferredSize: Size.fromHeight(2),
                 child: LinearProgressIndicator(minHeight: 2),
               )
             : null,
       ),
-      body: Stack(
-        children: [
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 900),
-              child: RefreshIndicator(
-            onRefresh: _generateRecommendations,
-            child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-              child: CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _buildVitalityCard(score, active, ringStart, ringEnd, stateLabel),
-                ),
-                SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, active)),
-                if (filtered.isEmpty && !_isGenerating)
-                  SliverToBoxAdapter(child: _buildEmptyHint()),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (_, i) => _buildRecCard(filtered[i], i),
-                    childCount: filtered.length,
-                  ),
-                ),
-                if (history.isNotEmpty)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                      child: _RecommendationHistorySection(history: history),
+      body: recsAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text('Error: $err')),
+        data: (recs) {
+          final active = recs.where((r) => r.isActive).toList();
+          final history = recs.where((r) => !r.isActive).toList()
+            ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
+          
+          final score  = _computeScore(active);
+          final (ringStart, ringEnd, stateLabel) = _scoreState(score);
+
+          WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(score));
+
+          final filtered = active.where((r) {
+            if (_activeFilter != null && r.category != _activeFilter) return false;
+            if (_priorityFilter != null && r.priority != _priorityFilter) return false;
+            return true;
+          }).toList();
+
+          final dailyRecs = filtered.where((r) => r.timeframe == 'daily').toList();
+          final weeklyRecs = filtered.where((r) => r.timeframe == 'weekly').toList();
+
+          return Stack(
+            children: [
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      await _generateRecommendations(timeframe: 'daily');
+                      await _generateRecommendations(timeframe: 'weekly');
+                    },
+                    child: ScrollConfiguration(
+                      behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+                      child: CustomScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: _buildVitalityCard(score, active, ringStart, ringEnd, stateLabel),
+                          ),
+                          SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, active)),
+                          if (filtered.isEmpty && !_isGenerating)
+                            SliverToBoxAdapter(child: _buildEmptyHint()),
+                          
+                          if (dailyRecs.isNotEmpty) ...[
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
+                                child: Text("Daily Recommendations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ),
+                            ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (_, i) => _buildRecCard(dailyRecs[i], i),
+                                childCount: dailyRecs.length,
+                              ),
+                            ),
+                          ],
+
+                          if (weeklyRecs.isNotEmpty) ...[
+                            const SliverToBoxAdapter(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
+                                child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ),
+                            ),
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (_, i) => _buildRecCard(weeklyRecs[i], dailyRecs.length + i),
+                                childCount: weeklyRecs.length,
+                              ),
+                            ),
+                          ],
+
+                          if (history.isNotEmpty)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                                child: _RecommendationHistorySection(history: history),
+                              ),
+                            ),
+                          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                        ],
+                      ),
                     ),
                   ),
-                const SliverToBoxAdapter(child: SizedBox(height: 40)),
-              ],
-            ),
-            ),
-          ),
-            ),
-          ),
-          // Celebration particles overlay
-          if (!_celebTriggered || _celebCtrl.isAnimating)
-            Positioned.fill(
-              child: AnimatedBuilder(
-                animation: _celebCtrl,
-                builder: (_, __) {
-                  if (_celebCtrl.value == 0) return const SizedBox.shrink();
-                  return CustomPaint(
-                    painter: _ParticlePainter(
-                      progress: _celebCtrl.value,
-                      ringStart: ringStart,
-                      ringEnd: ringEnd,
-                    ),
-                  );
-                },
+                ),
               ),
-            ),
-        ],
+              // Celebration particles overlay
+              if (!_celebTriggered || _celebCtrl.isAnimating)
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _celebCtrl,
+                    builder: (_, __) {
+                      if (_celebCtrl.value == 0) return const SizedBox.shrink();
+                      return CustomPaint(
+                        painter: _ParticlePainter(
+                          progress: _celebCtrl.value,
+                          ringStart: ringStart,
+                          ringEnd: ringEnd,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -564,7 +626,10 @@ class _RecommendationsScreenState
                 height: 40,
                 child: IconButton(
                   padding: EdgeInsets.zero,
-                  onPressed: _isGenerating ? null : _generateRecommendations,
+                  onPressed: _isGenerating ? null : () async {
+                    await _generateRecommendations(timeframe: 'daily');
+                    await _generateRecommendations(timeframe: 'weekly');
+                  },
                   icon: _isGenerating
                       ? SizedBox(
                           width: 16,
@@ -655,7 +720,10 @@ class _RecommendationsScreenState
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: isStale ? _generateRecommendations : null,
+                  onTap: isStale ? () async {
+                    await _generateRecommendations(timeframe: 'daily');
+                    await _generateRecommendations(timeframe: 'weekly');
+                  } : null,
                   child: Text(
                     freshnessText,
                     style: TextStyle(

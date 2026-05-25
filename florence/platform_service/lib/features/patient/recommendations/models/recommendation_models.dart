@@ -1,6 +1,5 @@
 /// Recommendation Models for FLORENCE Digital Health Platform
 /// AI-generated health recommendations with explainability
-library;
 
 import 'package:flutter/foundation.dart';
 
@@ -33,6 +32,7 @@ enum RecommendationStatus {
 @immutable
 class HealthRecommendation {
   final String id;
+  final String timeframe; // 'daily' or 'weekly'
   final RecommendationCategory category;
   final String title;
   final String description;
@@ -46,6 +46,7 @@ class HealthRecommendation {
 
   const HealthRecommendation({
     required this.id,
+    required this.timeframe,
     required this.category,
     required this.title,
     required this.description,
@@ -106,6 +107,7 @@ class HealthRecommendation {
 
   HealthRecommendation copyWith({
     String? id,
+    String? timeframe,
     RecommendationCategory? category,
     String? title,
     String? description,
@@ -119,6 +121,7 @@ class HealthRecommendation {
   }) {
     return HealthRecommendation(
       id: id ?? this.id,
+      timeframe: timeframe ?? this.timeframe,
       category: category ?? this.category,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -135,6 +138,7 @@ class HealthRecommendation {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'timeframe': timeframe,
       'category': category.name,
       'title': title,
       'description': description,
@@ -151,6 +155,7 @@ class HealthRecommendation {
   factory HealthRecommendation.fromJson(Map<String, dynamic> json) {
     return HealthRecommendation(
       id: json['id'] as String,
+      timeframe: json['timeframe'] as String? ?? 'weekly',
       category: RecommendationCategory.values.firstWhere(
         (e) => e.name == json['category'],
       ),

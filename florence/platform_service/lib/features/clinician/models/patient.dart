@@ -10,6 +10,9 @@ class Patient {
   final DateTime? lastUpdate;
   final String contactInfo;
   final String? photoUrl;
+  final String? emergencyContactName;
+  final String? emergencyContactRelationship;
+  final String? emergencyContactPhone;
 
   Patient({
     required this.id,
@@ -21,6 +24,9 @@ class Patient {
     this.lastUpdate,
     required this.contactInfo,
     this.photoUrl,
+    this.emergencyContactName,
+    this.emergencyContactRelationship,
+    this.emergencyContactPhone,
   });
 
   // Helper method to get color for risk level
