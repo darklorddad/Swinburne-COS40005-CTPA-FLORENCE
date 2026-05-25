@@ -179,7 +179,7 @@ class MonitorDataType(str, Enum):
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
     # Foolproof 3: Database integrity check (must be positive, physiological value)
-    value: float = Field(..., gt=0, lt=1000, description="Must be a positive physiological value")
+    value: float = Field(..., gt=0, lt=3000, description="Must be a positive physiological value")
     measured_at: datetime
 
 class MonitorDataUpdate(BaseModel):
@@ -274,16 +274,18 @@ class ThresholdUpdateItem(BaseModel):
 
         # 2. Biological Absolute Limits (Format: Min, Max)
         # These assume BASE units: mmol/L, mmHg, kg/m2, %
+        # 2. Biological Absolute Limits (Format: Min, Max)
+        # These bounds accommodate BOTH mmol/L and mg/dL to pass initial Pydantic validation
         absolute_limits = {
-            'BLOOD_PRESSURE_SYSTOLIC': (50.0, 300.0),  # Below 50 is cardiogenic shock
+            'BLOOD_PRESSURE_SYSTOLIC': (50.0, 300.0),  
             'BLOOD_PRESSURE_DIASTOLIC': (30.0, 200.0), 
-            'GLUCOSE': (1.5, 50.0),                    # 1.5 mmol/L is coma-level low
-            'BMI': (10.0, 150.0),                      # Below 10 is severe starvation
-            'HBA1C': (3.0, 30.0),                      # Red blood cells barely function below 3%
-            'CHOLESTEROL_TOTAL': (1.0, 30.0),
-            'CHOLESTEROL_LDL': (0.0, 30.0),            # 0.0 allowed (some modern drugs drop it to near zero)
-            'CHOLESTEROL_HDL': (0.0, 15.0),
-            'CHOLESTEROL_TRIGLYCERIDES': (0.0, 50.0),
+            'GLUCOSE': (1.5, 1000.0),                  # Accommodates up to 1000 mg/dL
+            'BMI': (10.0, 150.0),                      
+            'HBA1C': (3.0, 30.0),                      
+            'CHOLESTEROL_TOTAL': (0.0, 1500.0),
+            'CHOLESTEROL_LDL': (0.0, 1500.0),          
+            'CHOLESTEROL_HDL': (0.0, 500.0),
+            'CHOLESTEROL_TRIGLYCERIDES': (0.0, 3000.0),
         }
 
         # 3. Apply the Limits

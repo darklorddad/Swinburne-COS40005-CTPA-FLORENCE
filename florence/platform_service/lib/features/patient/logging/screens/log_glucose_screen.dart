@@ -755,7 +755,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: TextFormField(
                   controller: _glucoseController,
                   focusNode: _glucoseFocusNode,
-                  validator: Validators.glucose,
+                  validator: (val) {
+                    if (val == null || val.isEmpty) return 'Required';
+                    final num = double.tryParse(val.replaceAll(',', '.'));
+                    if (num == null) return 'Invalid';
+                    if (num < minValid || num > maxValid) return 'Range:\n$minValid - $maxValid';
+                    return null;
+                  },
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   textInputAction: TextInputAction.done,

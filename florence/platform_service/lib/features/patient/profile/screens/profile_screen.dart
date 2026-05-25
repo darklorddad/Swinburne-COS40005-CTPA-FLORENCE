@@ -1633,19 +1633,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           double convertedMax =
                               double.parse(maxControllers[t.dataType]!.text);
 
-                          // Convert Glucose back to mmol/L (Divide by 18.0)
-                          if (t.dataType == 'GLUCOSE' &&
-                              settings.glucoseUnit == 'mg/dL') {
-                            convertedMin = convertedMin / 18.0;
-                            convertedMax = convertedMax / 18.0;
-                          }
-                          // Convert Cholesterol back to mmol/L
-                          else if (t.dataType.startsWith('CHOLESTEROL') &&
-                              settings.cholesterolUnit == 'mg/dL') {
-                            // Note: Backend uses 38.67 for all cholesterol types including Triglycerides
-                            convertedMin = convertedMin / 38.67;
-                            convertedMax = convertedMax / 38.67;
-                          }
+                          // Note: The backend handles conversion to base units automatically
+                          // based on the user's settings, so we send the raw values.
 
                           updated.add(PatientThreshold(
                             dataType: t.dataType,
@@ -1674,39 +1663,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                                 for (var t in currentThresholds) {
                                   if (msg.contains(t.dataType)) {
-                                    // 1. Clean the base message
+                                    // Clean the base message
                                     String cleanMsg = msg.replaceAll(
                                         ' for ${t.dataType}', '');
-
-                                    // 2. Determine if this specific metric needs to be converted back for the UI
-                                    bool isGlucoseMgdl = t.dataType == 'GLUCOSE' &&
-                                        settings.glucoseUnit == 'mg/dL';
-                                    bool isCholMgdl = t.dataType.startsWith('CHOLESTEROL') &&
-                                        settings.cholesterolUnit == 'mg/dL';
-
-                                    if (isGlucoseMgdl || isCholMgdl) {
-                                      double multiplier = 1.0;
-                                      if (t.dataType == 'GLUCOSE') {
-                                        multiplier = 18.0;
-                                      } else {
-                                        // Note: Backend uses 38.67 for all cholesterol types
-                                        multiplier = 38.67;
-                                      }
-
-                                      // 3. Find any decimals in the error string and multiply them
-                                      cleanMsg = cleanMsg.replaceAllMapped(
-                                          RegExp(r'\d+\.\d+'), (m) {
-                                        double? val =
-                                            double.tryParse(m.group(0)!);
-                                        if (val != null) {
-                                          // Multiply, round to 1 decimal place, and remove '.0' if it's a whole number
-                                          return (val * multiplier)
-                                              .toStringAsFixed(1)
-                                              .replaceAll(RegExp(r'\.0$'), '');
-                                        }
-                                        return m.group(0)!;
-                                      });
-                                    }
 
                                     backendErrors[t.dataType] = cleanMsg;
                                     foundSpecificError = true;
