@@ -49,8 +49,8 @@ class AdminRegistration(BaseModel):
 
 
 DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 5.5}, 
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.6},
+    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 10.0}, 
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.7},
     {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
     # Detailed Cholesterol (in mmol/L)
     {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 0.0, 'max_value': 5.1},

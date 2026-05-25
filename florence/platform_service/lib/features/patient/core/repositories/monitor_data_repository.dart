@@ -104,8 +104,13 @@ class HealthDataState {
         ? allGlucoseValues.reduce((a, b) => a + b) / allGlucoseValues.length
         : 0.0;
 
+    // Detect unit securely (mmol/L is rarely above 40.0; mg/dL is rarely below 40.0)
+    final bool isMmol = allGlucoseValues.isNotEmpty && avgGlucose < 40.0;
+    final double highBound = isMmol ? 10.0 : 180.0;
+    final double lowBound = isMmol ? 3.9 : 70.0;
+
     // 5. Calculate Time In Range using the combined list
-    final inRangeCount = allGlucoseValues.where((v) => v >= 70 && v <= 180).length;
+    final inRangeCount = allGlucoseValues.where((v) => v >= lowBound && v <= highBound).length;
     final timeInRange = allGlucoseValues.isNotEmpty
         ? (inRangeCount / allGlucoseValues.length) * 100
         : 0.0;
@@ -135,11 +140,12 @@ class HealthDataState {
       stdDev = sqrt(sumSquaredDiff / allGlucoseValues.length);
     }
 
-    final hyperEvents = allGlucoseValues.where((v) => v > 180).length;
-    final hypoEvents = allGlucoseValues.where((v) => v < 70).length;
+    final hyperEvents = allGlucoseValues.where((v) => v > highBound).length;
+    final hypoEvents = allGlucoseValues.where((v) => v < lowBound).length;
 
-    // Calculate Estimated A1c: (Avg Glucose + 46.7) / 28.7
-    final estimatedA1c = avgGlucose > 0 ? (avgGlucose + 46.7) / 28.7 : 0.0;
+    // Calculate Estimated A1c: Formula strictly requires mg/dL
+    final double avgMgDl = isMmol ? (avgGlucose * 18.0) : avgGlucose;
+    final estimatedA1c = avgMgDl > 0 ? (avgMgDl + 46.7) / 28.7 : 0.0;
 
     // Latest single-value vitals
     final sortedBmi = [...bmiResults]..sort((a, b) => b.testDate.compareTo(a.testDate));

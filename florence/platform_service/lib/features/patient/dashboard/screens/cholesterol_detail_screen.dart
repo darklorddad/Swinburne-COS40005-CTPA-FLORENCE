@@ -525,8 +525,12 @@ class _LdlTargetSection extends StatelessWidget {
     }
 
     final ldl = reading?.ldl ?? 0.0;
+    
+    // Dynamically adjust the base scale depending on the unit size
+    final double defaultMaxScale = target! < 15.0 ? 5.0 : 200.0; 
+    
     // Scale must accommodate the Target OR the User's Value (whichever is larger), plus buffer
-    final double maxScale = math.max(200.0, math.max(target! * 1.5, ldl * 1.2));
+    final double maxScale = math.max(defaultMaxScale, math.max(target! * 1.5, ldl * 1.2));
     
     return _CholesterolCard(
       title: 'LDL Performance',
@@ -702,11 +706,14 @@ class _CompositionSectionState extends State<_CompositionSection> {
   Widget build(BuildContext context) {
     final displayData = _filterData();
     
+    // Determine base scale from the first reading
+    final bool isMmol = displayData.isNotEmpty && (displayData.first.effectiveTotal < 15.0);
+    double maxY = isMmol ? 6.5 : 240.0;
+    
     // Calculate dynamic Max Y based on Total Cholesterol formula (HDL + LDL + Tri/5)
-    double maxY = 240;
     if (displayData.isNotEmpty) {
       final maxStack = displayData.map((r) => (r.hdl ?? 0) + (r.ldl ?? 0) + ((r.triglycerides ?? 0) / 5)).reduce(math.max);
-      maxY = math.max(240, maxStack * 1.2);
+      maxY = math.max(maxY, maxStack * 1.2);
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -890,7 +897,7 @@ class _HistorySectionState extends State<_HistorySection> {
     if (value == null) return AppTheme.textSecondaryColor;
 
     try {
-      final t = widget.thresholds.firstWhere((t) => t.dataType == type);
+      final t = widget.thresholds.firstWhere((t) => t.dataType == type.name);
 
       if (type == MonitorDataType.CHOLESTEROL_HDL) {
         // HDL: Higher is better. Low is bad.
@@ -1000,7 +1007,7 @@ class _HistorySectionState extends State<_HistorySection> {
               // Helper to safely get threshold values
               double? getLimit(MonitorDataType type, {bool isMin = false}) {
                 try {
-                  final t = widget.thresholds.firstWhere((t) => t.dataType == type);
+                  final t = widget.thresholds.firstWhere((t) => t.dataType == type.name);
                   return isMin ? t.minValue : t.maxValue;
                 } catch (_) {
                   return null;

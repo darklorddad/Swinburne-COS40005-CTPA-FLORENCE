@@ -626,6 +626,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   child: TextFormField(
                     controller: _caloriesController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     decoration: InputDecoration(
                       hintText: 'e.g. 500',
                       filled: true,
@@ -960,6 +963,12 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                       ],
+                      validator: (val) {
+                        if (val == null || val.trim().isEmpty) return 'Required';
+                        if (int.tryParse(val.trim()) == null) return 'Invalid';
+                        if (int.parse(val.trim()) <= 0) return '> 0';
+                        return null;
+                      },
                       style: TextStyle(
                         fontSize: 56,
                         fontWeight: FontWeight.bold,

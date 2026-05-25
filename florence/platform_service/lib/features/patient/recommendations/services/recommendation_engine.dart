@@ -78,7 +78,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
       }
     } else {
       debugPrint('[RecommendationEngine] AI disabled, using rule-based logic.');
-      newRecommendations = _generateRuleBasedRecommendations(summary, timeframe);
+      newRecommendations = _generateRuleBasedRecommendations(summary, timeframe, healthData);
     }
 
     try {
@@ -102,11 +102,17 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
 
   /// Rule-based fallback — used when AI is disabled or the LLM call fails.
   List<HealthRecommendation> _generateRuleBasedRecommendations(
-      HealthSummary summary, String timeframe) {
+      HealthSummary summary, String timeframe, HealthDataState healthData) {
     final recommendations = <HealthRecommendation>[];
 
+    HealthThreshold? t;
+    try {
+      t = healthData.healthThresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+    } catch (_) {}
+    final highBound = t?.maxValue ?? Environment.glucoseHigh;
+
     // High glucose
-    if (summary.averageGlucose > Environment.glucoseHigh) {
+    if (summary.averageGlucose > highBound) {
       recommendations.add(HealthRecommendation(
         id: 'rec_glucose_high_${DateTime.now().millisecondsSinceEpoch}',
         timeframe: timeframe,

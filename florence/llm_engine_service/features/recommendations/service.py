@@ -88,6 +88,12 @@ class RecommendationService:
         now_iso = now.isoformat()
         s = request.health_summary
 
+        # Dynamically infer units based on values
+        g_unit = "mmol/L" if s.average_glucose < 40.0 else "mg/dL"
+        g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
+        
+        c_unit = "mmol/L" if (s.latest_cholesterol and s.latest_cholesterol < 15.0) else "mg/dL"
+
         # Build extended vitals section
         extended_lines = []
         if s.latest_bmi is not None:
@@ -163,11 +169,11 @@ class RecommendationService:
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.{quantity_rule}
 
 Patient Health Summary ({request.analysis_period_days}-day period):
-- Average Blood Glucose: {s.average_glucose:.1f} mg/dL
-- Glucose Variability (Std Dev): {s.glucose_std_dev:.1f} mg/dL
-- Hyperglycaemia Events (>180 mg/dL): {s.hyper_events}
-- Hypoglycaemia Events (<70 mg/dL): {s.hypo_events}
-- Time in Target Range (70–180 mg/dL): {s.time_in_range:.1f}%
+- Average Blood Glucose: {s.average_glucose:.1f} {g_unit}
+- Glucose Variability (Std Dev): {s.glucose_std_dev:.1f} {g_unit}
+- Hyperglycaemia Events: {s.hyper_events}
+- Hypoglycaemia Events: {s.hypo_events}
+- Time in Target Range ({g_target}): {s.time_in_range:.1f}%
 - Estimated HbA1c: {s.estimated_a1c:.1f}%
 - Total Meals Logged: {s.total_meals}
 - Average Calories per Meal: {s.average_calories:.0f} kcal

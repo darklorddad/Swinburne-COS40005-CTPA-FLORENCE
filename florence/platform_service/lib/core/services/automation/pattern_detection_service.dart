@@ -370,26 +370,33 @@ class PatternDetectionService {
     // Glucose spike or drop — check most recent reading only
     if (data.glucoseReadings.isNotEmpty) {
       final latest = data.glucoseReadings.first; // sorted newest-first
+      HealthThreshold? t;
+      try {
+        t = data.healthThresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+      } catch (_) {}
+      
+      final highBound = t?.maxValue ?? Environment.glucoseHigh;
+      final lowBound = t?.minValue ?? Environment.glucoseLow;
 
-      if (latest.value > Environment.glucoseHigh) {
+      if (latest.value > highBound) {
         patterns.add(DetectedPattern(
           id: 'pattern_spike_${latest.id}',
           type: PatternType.glucoseSpike,
           severity:
-              latest.value > 250 ? PatternSeverity.critical : PatternSeverity.high,
+              latest.value > (highBound * 1.4) ? PatternSeverity.critical : PatternSeverity.high,
           description:
-              'Glucose reading of ${latest.value.toStringAsFixed(0)} mg/dL detected.',
+              'Glucose reading of ${latest.value.toStringAsFixed(1)} detected outside target range.',
           detectedAt: latest.timestamp,
           dataPointIds: [latest.id],
           metadata: {'value': latest.value},
         ));
-      } else if (latest.value < Environment.glucoseLow) {
+      } else if (latest.value < lowBound) {
         patterns.add(DetectedPattern(
           id: 'pattern_drop_${latest.id}',
           type: PatternType.glucoseDrop,
           severity: PatternSeverity.critical,
           description:
-              'Low glucose of ${latest.value.toStringAsFixed(0)} mg/dL. Have a fast-acting carb.',
+              'Low glucose of ${latest.value.toStringAsFixed(1)}. Have a fast-acting carb.',
           detectedAt: latest.timestamp,
           dataPointIds: [latest.id],
           metadata: {'value': latest.value},

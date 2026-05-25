@@ -23,16 +23,18 @@ def convert_glucose_to_base(value: Optional[float], unit: str) -> Optional[float
         return round(value / 18.0, 2)
     return round(value, 2)
 
-def convert_cholesterol_from_base(value: Optional[float], unit: str) -> Optional[float]:
+def convert_cholesterol_from_base(value: Optional[float], unit: str, is_trig: bool = False) -> Optional[float]:
     if value is None: return None
     if unit == 'mg/dL':
-        return round(value * 38.67, 1)
+        factor = 88.57 if is_trig else 38.67
+        return round(value * factor, 1)
     return round(value, 1)
 
-def convert_cholesterol_to_base(value: Optional[float], unit: str) -> Optional[float]:
+def convert_cholesterol_to_base(value: Optional[float], unit: str, is_trig: bool = False) -> Optional[float]:
     if value is None: return None
     if unit == 'mg/dL':
-        return round(value / 38.67, 2)
+        factor = 88.57 if is_trig else 38.67
+        return round(value / factor, 2)
     return round(value, 2)
 
 # --- Constants ---
@@ -179,7 +181,7 @@ class MonitorDataType(str, Enum):
 class MonitorDataCreate(BaseModel):
     data_type: MonitorDataType
     # Foolproof 3: Database integrity check (must be positive, physiological value)
-    value: float = Field(..., gt=0, lt=1000, description="Must be a positive physiological value")
+    value: float = Field(..., gt=0, lt=3000, description="Must be a positive physiological value")
     measured_at: datetime
 
 class MonitorDataUpdate(BaseModel):
@@ -274,16 +276,18 @@ class ThresholdUpdateItem(BaseModel):
 
         # 2. Biological Absolute Limits (Format: Min, Max)
         # These assume BASE units: mmol/L, mmHg, kg/m2, %
+        # 2. Biological Absolute Limits (Format: Min, Max)
+        # These bounds accommodate BOTH mmol/L and mg/dL to pass initial Pydantic validation
         absolute_limits = {
-            'BLOOD_PRESSURE_SYSTOLIC': (50.0, 300.0),  # Below 50 is cardiogenic shock
+            'BLOOD_PRESSURE_SYSTOLIC': (50.0, 300.0),  
             'BLOOD_PRESSURE_DIASTOLIC': (30.0, 200.0), 
-            'GLUCOSE': (1.5, 50.0),                    # 1.5 mmol/L is coma-level low
-            'BMI': (10.0, 150.0),                      # Below 10 is severe starvation
-            'HBA1C': (3.0, 30.0),                      # Red blood cells barely function below 3%
-            'CHOLESTEROL_TOTAL': (1.0, 30.0),
-            'CHOLESTEROL_LDL': (0.0, 30.0),            # 0.0 allowed (some modern drugs drop it to near zero)
-            'CHOLESTEROL_HDL': (0.0, 15.0),
-            'CHOLESTEROL_TRIGLYCERIDES': (0.0, 50.0),
+            'GLUCOSE': (1.5, 1000.0),                  # Accommodates up to 1000 mg/dL
+            'BMI': (10.0, 150.0),                      
+            'HBA1C': (3.0, 30.0),                      
+            'CHOLESTEROL_TOTAL': (0.0, 1500.0),
+            'CHOLESTEROL_LDL': (0.0, 1500.0),          
+            'CHOLESTEROL_HDL': (0.0, 500.0),
+            'CHOLESTEROL_TRIGLYCERIDES': (0.0, 3000.0),
         }
 
         # 3. Apply the Limits
@@ -468,7 +472,8 @@ async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patie
             if item['data_type'] == 'GLUCOSE':
                 item['value'] = convert_glucose_from_base(item['value'], g_unit)
             elif 'CHOLESTEROL' in item['data_type']:
-                item['value'] = convert_cholesterol_from_base(item['value'], c_unit)
+                is_trig = (item['data_type'] == 'CHOLESTEROL_TRIGLYCERIDES')
+                item['value'] = convert_cholesterol_from_base(item['value'], c_unit, is_trig)
                 
         return data
     except Exception as e:
@@ -516,7 +521,8 @@ async def add_own_monitor_data(
     if data.data_type == MonitorDataType.GLUCOSE:
         insert_dict['value'] = convert_glucose_to_base(data.value, patient_profile['settings']['glucose_unit'])
     elif 'CHOLESTEROL' in data.data_type:
-        insert_dict['value'] = convert_cholesterol_to_base(data.value, patient_profile['settings']['cholesterol_unit'])
+        is_trig = (data.data_type == 'CHOLESTEROL_TRIGLYCERIDES')
+        insert_dict['value'] = convert_cholesterol_to_base(data.value, patient_profile['settings']['cholesterol_unit'], is_trig)
         
     try:
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
@@ -688,8 +694,9 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
                 t['min_value'] = convert_glucose_from_base(t['min_value'], g_unit)
                 t['max_value'] = convert_glucose_from_base(t['max_value'], g_unit)
             elif 'CHOLESTEROL' in t['data_type']:
-                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit)
-                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit)
+                is_trig = (t['data_type'] == 'CHOLESTEROL_TRIGLYCERIDES')
+                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit, is_trig)
+                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit, is_trig)
                 
         return data
     except Exception as e:
@@ -715,8 +722,9 @@ async def update_own_thresholds(
                 min_val = convert_glucose_to_base(min_val, g_unit)
                 max_val = convert_glucose_to_base(max_val, g_unit)
             elif 'CHOLESTEROL' in t.data_type:
-                min_val = convert_cholesterol_to_base(min_val, c_unit)
-                max_val = convert_cholesterol_to_base(max_val, c_unit)
+                is_trig = (t.data_type == 'CHOLESTEROL_TRIGLYCERIDES')
+                min_val = convert_cholesterol_to_base(min_val, c_unit, is_trig)
+                max_val = convert_cholesterol_to_base(max_val, c_unit, is_trig)
 
             supabase.table('patient_thresholds').update({
                 'min_value': min_val,
