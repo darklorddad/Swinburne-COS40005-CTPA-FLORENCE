@@ -147,6 +147,7 @@ class Medication {
   });
 
   factory Medication.fromJson(Map<String, dynamic> json) {
+    // 1. Safe extraction of timing instructions array
     List<String> timings = [];
     if (json['timing_instructions'] != null) {
       try {
@@ -157,16 +158,37 @@ class Medication {
       timings = ['ANYTIME'];
     }
 
+    // 2. Safe extraction of medication name supporting all custom/dictionary key mutations
+    String resolvedName = 'Unknown Medication';
+    if (json['name'] != null && json['name'].toString().isNotEmpty) {
+      resolvedName = json['name'].toString();
+    } else if (json['custom_medication_name'] != null &&
+        json['custom_medication_name'].toString().isNotEmpty) {
+      resolvedName = json['custom_medication_name'].toString();
+    } else if (json['medication'] != null &&
+        json['medication']['brand_name'] != null) {
+      resolvedName = json['medication']['brand_name'].toString();
+    } else if (json['medication_dictionary'] != null &&
+        json['medication_dictionary']['brand_name'] != null) {
+      resolvedName = json['medication_dictionary']['brand_name'].toString();
+    }
+
     return Medication(
       id: json['id'] as int?,
-      name: json['name'] ?? json['custom_medication_name'] ?? '',
-      dosage: json['dosage'] ?? json['amount'] ?? '',
-      frequency: json['frequency'] ?? '',
+      name: resolvedName,
+      dosage: (json['dosage'] ?? json['amount'] ?? '1').toString(),
+      frequency: json['frequency'] ??
+          json['dosage_frequencies']?['patient_text'] ??
+          '',
       frequencyId: json['frequency_id'] as int?,
       route: json['route'] ?? json['medication_type'] ?? 'Tablet',
       timingInstructions: timings,
       notes: json['notes'],
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
+      startDate: json['start_date'] != null
+          ? DateTime.parse(json['start_date'])
+          : (json['created_at'] != null
+              ? DateTime.parse(json['created_at'])
+              : null),
     );
   }
 
