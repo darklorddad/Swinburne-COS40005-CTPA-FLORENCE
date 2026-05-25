@@ -1,6 +1,6 @@
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:florence/core/services/api_service.dart';
 
 class SettingsRepository {
@@ -9,7 +9,14 @@ class SettingsRepository {
   SettingsRepository(this._apiService);
 
   Future<PatientSettings> getSettings() async {
-    final response = await _apiService.get('/patients/me/settings');
+    final user = Supabase.instance.client.auth.currentUser;
+    final role = user?.appMetadata['role']?.toString().toUpperCase() ?? 'PATIENT';
+    
+    final endpoint = (role == 'CLINICIAN') 
+        ? '/clinicians/me/settings' 
+        : '/patients/me/settings';
+
+    final response = await _apiService.get(endpoint);
     
     return PatientSettings(
       glucoseUnit: response['glucose_unit'] ?? 'mmol/L',
@@ -25,7 +32,14 @@ class SettingsRepository {
     if (showQuickActions != null) payload['show_quick_actions'] = showQuickActions;
 
     if (payload.isNotEmpty) {
-      await _apiService.patch('/patients/me/settings', payload);
+      final user = Supabase.instance.client.auth.currentUser;
+      final role = user?.appMetadata['role']?.toString().toUpperCase() ?? 'PATIENT';
+      
+      if (role == 'CLINICIAN') {
+        await _apiService.put('/clinicians/me/settings', payload);
+      } else {
+        await _apiService.patch('/patients/me/settings', payload);
+      }
     }
   }
 }

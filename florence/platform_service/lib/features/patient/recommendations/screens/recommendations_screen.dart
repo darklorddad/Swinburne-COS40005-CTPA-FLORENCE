@@ -6,6 +6,8 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart' as core_repo;
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/config/theme.dart';
 
@@ -118,17 +120,29 @@ String _dataSourceLabel(String type) {
 // HELPERS
 // ══════════════════════════════════════════════════════════════
 
-int _computeScore(List<HealthRecommendation> recs) {
-  int s = 85;
-  for (final r in recs) {
-    switch (r.priority) {
-      case RecommendationPriority.urgent: s -= 15; break;
-      case RecommendationPriority.high:   s -= 8;  break;
-      case RecommendationPriority.medium: s -= 4;  break;
-      case RecommendationPriority.low:    break;
-    }
+/// Computes a clinical 0-100 score based on actual health metrics
+int _computeVitalityIndex(core_repo.HealthDataState? data) {
+  if (data == null) return 85;
+  final summary = data.getHealthSummary(
+    startDate: DateTime.now().subtract(const Duration(days: 7)),
+    endDate: DateTime.now(),
+  );
+
+  // 1. Glucose Control (40 pts)
+  double glucoseScore = (summary.timeInRange / 100.0) * 40.0;
+  if (summary.timeInRange == 0 && summary.totalReadings == 0) {
+    glucoseScore = 30.0; // Give benefit of doubt if no data
   }
-  return s.clamp(20, 95);
+
+  // 2. Activity (30 pts)
+  double activityScore = (summary.totalActivityMinutes / 150.0) * 30.0;
+  if (activityScore > 30.0) activityScore = 30.0;
+
+  // 3. Adherence (30 pts)
+  double adherenceScore = summary.medicationAdherence * 30.0;
+  if (summary.currentMedications.isEmpty) adherenceScore = 30.0; // Free points if no meds
+
+  return (glucoseScore + activityScore + adherenceScore).clamp(20, 100).toInt();
 }
 
 /// Returns (ringStart, ringEnd, stateLabel).
@@ -264,47 +278,81 @@ class _RecommendationsScreenState
   }
 
   Future<void> _checkAndLoad() async {
-    // Read the current state of the async provider
-    final recs = ref.read(recommendationProvider).value ?? [];
-    final active = recs.where((r) => r.isActive).toList();
-    
-    // Check if we need to generate Daily (No active daily from today)
-    final hasRecentDaily = active.any((r) => 
-        r.timeframe == 'daily' && 
-        DateTime.now().difference(r.generatedAt).inHours < 24);
-        
-    // Check if we need to generate Weekly (No active weekly from last 7 days)
-    final hasRecentWeekly = active.any((r) => 
-        r.timeframe == 'weekly' && 
-        DateTime.now().difference(r.generatedAt).inDays < 7);
+    try {
+      // WAIT for the database fetch to complete first!
+      final recs = await ref.read(recommendationProvider.future);
+      if (!mounted) return;
 
-    bool generatedAny = false;
-    
-    if (!hasRecentDaily) {
-      await _generateRecommendations(timeframe: 'daily', hideToast: true);
-      generatedAny = true;
-    }
-    
-    if (!hasRecentWeekly) {
-      await _generateRecommendations(timeframe: 'weekly', hideToast: true);
-      generatedAny = true;
-    }
-    
-    if (!generatedAny) {
-      _scoreCtrl.forward();
+      // Get latest data timestamp
+      final healthData = ref.read(core_data.monitorDataProvider).value;
+      DateTime? latestDataTime;
+      if (healthData != null) {
+        final times = [
+          if (healthData.allMonitorData.isNotEmpty) healthData.allMonitorData.first.measuredAt,
+          if (healthData.meals.isNotEmpty) healthData.meals.first.timestamp,
+          if (healthData.activities.isNotEmpty) healthData.activities.first.startTime,
+        ];
+        if (times.isNotEmpty) {
+          times.sort((a, b) => b.compareTo(a));
+          latestDataTime = times.first;
+        }
+      }
+
+      // Check SharedPreferences for last generation timestamp (avoids infinite loops if AI returns 0)
+      final prefs = await SharedPreferences.getInstance();
+      final lastDailyCheckStr = prefs.getString('last_daily_ai_check');
+      final lastWeeklyCheckStr = prefs.getString('last_weekly_ai_check');
+      
+      DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr) : null;
+      DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr) : null;
+      
+      // Needs Daily if: never checked, checked >24h ago, or new data was logged AFTER the last check
+      bool needsDaily = lastDailyCheck == null || 
+                        DateTime.now().difference(lastDailyCheck).inHours >= 24 || 
+                        (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck));
+                        
+      // Needs Weekly if: never checked, or checked >7 days ago
+      bool needsWeekly = lastWeeklyCheck == null || 
+                         DateTime.now().difference(lastWeeklyCheck).inDays >= 7;
+
+      bool generatedAny = false;
+      
+      if (needsDaily) {
+        await _generateRecommendations(timeframe: 'daily', hideToast: true);
+        generatedAny = true;
+      }
+      
+      if (needsWeekly && mounted) {
+        await _generateRecommendations(timeframe: 'weekly', hideToast: true);
+        generatedAny = true;
+      }
+      
+      if (!generatedAny && mounted) {
+        _scoreCtrl.forward();
+      }
+    } catch (e) {
+      debugPrint("Failed to load initial recommendations: $e");
     }
   }
 
   Future<void> _generateRecommendations({required String timeframe, bool hideToast = false}) async {
+    if (!mounted) return;
     setState(() => _isGenerating = true);
     _scoreCtrl.reset();
     try {
       final usedAI = await ref
           .read(recommendationProvider.notifier)
           .generateRecommendations(timeframe: timeframe);
+      
+      // Save generation timestamp to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('last_${timeframe}_ai_check', DateTime.now().toIso8601String());
+      
+      if (!mounted) return; // Prevent setState after dispose
+      
       _staggerCtrl.forward(from: 0);
       _scoreCtrl.forward();
-      if (mounted && !hideToast) {
+      if (!hideToast) {
         if (usedAI) {
           Helpers.showSuccess(context, '${timeframe[0].toUpperCase()}${timeframe.substring(1)} AI analysis complete');
         } else {
@@ -350,7 +398,8 @@ class _RecommendationsScreenState
           final history = recs.where((r) => !r.isActive).toList()
             ..sort((a, b) => b.generatedAt.compareTo(a.generatedAt));
           
-          final score  = _computeScore(active);
+          // Use Clinical Calculation for Vitality Index
+          final score = _computeVitalityIndex(ref.watch(core_data.monitorDataProvider).value);
           final (ringStart, ringEnd, stateLabel) = _scoreState(score);
 
           WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(score));

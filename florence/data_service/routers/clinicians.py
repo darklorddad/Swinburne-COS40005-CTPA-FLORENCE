@@ -110,6 +110,34 @@ async def update_own_clinician_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
+@router.get("/me/settings", summary="Get my clinician unit settings")
+async def get_clinician_settings(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves the unit settings for the authenticated clinician."""
+    try:
+        res = supabase.table('user_settings').select('*').eq('user_id', clinician_profile['user_id']).execute()
+        if not res.data:
+            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch settings: {str(e)}")
+
+@router.put("/me/settings", summary="Update my clinician unit settings")
+async def update_clinician_settings(
+    settings_data: dict,
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Updates or creates the unit settings for the authenticated clinician."""
+    try:
+        res = supabase.table('user_settings').upsert({
+            'user_id': clinician_profile['user_id'],
+            'glucose_unit': settings_data.get('glucose_unit', 'mmol/L'),
+            'cholesterol_unit': settings_data.get('cholesterol_unit', 'mmol/L'),
+            'updated_at': 'now()'
+        }).execute()
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update settings: {str(e)}")
+
 @router.get("/me/patients", summary="Get a list of all patients assigned to me")
 async def get_assigned_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves a list of all patients assigned to the currently authenticated clinician."""
@@ -282,6 +310,13 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
         disease_logs = supabase.table('disease_logs').select('*').eq('patient_id', patient_id).execute().data
         
+        # Fetch medications with related dictionary and frequency data
+        medications = supabase.table('patient_medications').select('''
+            *,
+            medication_dictionary(*),
+            dosage_frequencies(*)
+        ''').eq('patient_id', patient_id).eq('status', 'CURRENT').execute().data
+        
         # Fetch activity using correct DB columns aliased for the frontend
         # Rename 'start_time' to 'performed_at' and 'active_duration_minutes' to 'duration_minutes'
         activity_logs = supabase.table('patient_activity_logs') \
@@ -297,7 +332,8 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
             "thresholds": thresholds,
             "notes": notes,
             "activity_logs": activity_logs,
-            "disease_logs": disease_logs
+            "disease_logs": disease_logs,
+            "medications": medications
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):
