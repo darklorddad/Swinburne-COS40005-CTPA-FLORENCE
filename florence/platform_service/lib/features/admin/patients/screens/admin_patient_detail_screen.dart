@@ -39,7 +39,10 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
       await repo.updatePatientRiskLevel(widget.patient.id, newRisk);
       
       setState(() => _currentRisk = newRisk);
+
+      // Refresh both the patients list and the activity feed
       ref.invalidate(adminPatientsProvider); // Refresh dashboard/lists
+      ref.invalidate(adminActivityProvider); // Refresh activity feed
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -72,7 +75,13 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Clinician assigned successfully.'), backgroundColor: AdminTheme.primary),
         );
-        Navigator.pop(context); // Go back to directory
+        if (Navigator.canPop(context)) {
+          // If we came from the directory normally, pop back to it
+          Navigator.pop(context);
+        } else {
+          // If the history is empty (e.g., page refresh), force route back to directory
+          Navigator.pushReplacementNamed(context, AppRoutes.adminPatientList);
+        }
       }
     } catch (e) {
       if (mounted) {

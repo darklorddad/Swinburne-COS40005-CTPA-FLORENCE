@@ -1,26 +1,72 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/core/models/medication_models.dart';
-import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Main provider that fetches and holds all health data
 final monitorDataProvider = AsyncNotifierProvider<MonitorDataNotifier, HealthDataState>(MonitorDataNotifier.new, isAutoDispose: true);
 
 class MonitorDataNotifier extends AsyncNotifier<HealthDataState> {
+  int _offset = 0;
+  final int _limit = 20;
+  bool _hasReachedMax = false;
+
   @override
   Future<HealthDataState> build() async {
+    _offset = 0;
+    _hasReachedMax = false;
     final repository = ref.read(monitorDataRepositoryProvider);
-    return repository.fetchAllData();
+    return repository.fetchAllData(limit: _limit, offset: _offset);
   }
-  
+
   /// Force refresh of data
   Future<void> refresh() async {
+    _offset = 0;
+    _hasReachedMax = false;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-       final repository = ref.read(monitorDataRepositoryProvider);
-       return repository.fetchAllData();
+      final repository = ref.read(monitorDataRepositoryProvider);
+      return repository.fetchAllData(limit: _limit, offset: _offset);
     });
+  }
+
+  Future<void> fetchNextPage() async {
+    if (state.isLoading || _hasReachedMax) return;
+
+    debugPrint('🔥 SWIPE DETECTED: Fetching older data! Current offset: $_offset');
+
+    final repository = ref.read(monitorDataRepositoryProvider);
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    _offset += _limit;
+
+    // We don't set state to loading here to keep the UI stable while fetching
+    try {
+      final newMonitorData = await repository.fetchMonitorDataPage(
+        limit: _limit,
+        offset: _offset,
+      );
+
+      debugPrint('✅ SUCCESS: Fetched ${newMonitorData.length} older logs!');
+
+      if (newMonitorData.length < _limit) {
+        _hasReachedMax = true;
+        debugPrint('🏁 REACHED END: No more data to fetch.');
+      }
+
+      // We need to re-process the HealthDataState with the appended monitor data
+      // For simplicity in this implementation, we append to allMonitorData 
+      // and let the UI logic handle the filtering/sorting as it already does.
+      state = AsyncValue.data(currentState.copyWith(
+        allMonitorData: [...currentState.allMonitorData, ...newMonitorData],
+      ));
+    } catch (e, stack) {
+      _offset -= _limit; // Rollback offset on error
+      debugPrint('❌ ERROR fetching next page: $e');
+    }
   }
 }
 

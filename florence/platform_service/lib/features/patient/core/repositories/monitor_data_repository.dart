@@ -1,13 +1,14 @@
-import 'dart:math';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:florence/core/services/api_service.dart';
+import 'dart:math';
+
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/core/models/medication_models.dart';
+import 'package:florence/core/services/api_service.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Payload class for all health data
 class HealthDataState {
@@ -255,17 +256,25 @@ class MonitorDataRepository {
 
   MonitorDataRepository(this._apiService);
 
-  Future<HealthDataState> fetchAllData() async {
+  Future<List<MonitorData>> fetchMonitorDataPage({int limit = 20, int offset = 0}) async {
+    final response = await _apiService.get('/patients/me/monitor-data?limit=$limit&offset=$offset&order=measured_at.desc');
+    if (response is List) {
+      return response.map((e) => MonitorData.fromJson(e)).toList();
+    }
+    return [];
+  }
+
+  Future<HealthDataState> fetchAllData({int limit = 20, int offset = 0}) async {
     // EXECUTE ALL REQUESTS IN PARALLEL FOR EFFICIENCY
     // This minimizes the initial load time to the slowest individual request
     final results = await Future.wait([
-      _fetchThresholds(),                            // Index 0
-      _apiService.get('/patients/me/monitor-data'),  // Index 1
-      _fetchActivities(),                            // Index 2
-      _fetchMeals(),                                 // Index 3
-      _fetchPatientMedications(),                    // Index 4
-      _fetchDiseaseLogs(),                           // Index 5
-      _fetchMedicationAdherence(),                   // Index 6
+      _fetchThresholds(),                                              // Index 0
+      _apiService.get('/patients/me/monitor-data?limit=$limit&offset=$offset&order=measured_at.desc'), // Index 1
+      _fetchActivities(),                                              // Index 2
+      _fetchMeals(),                                                   // Index 3
+      _fetchPatientMedications(),                                      // Index 4
+      _fetchDiseaseLogs(),                                             // Index 5
+      _fetchMedicationAdherence(),                                     // Index 6
     ]);
 
     // Extract results
@@ -651,7 +660,7 @@ class MonitorDataRepository {
 
   Future<List<ActivityLog>> _fetchActivities() async {
     try {
-      final activityData = await _apiService.get('/patients/me/activity-logs');
+      final activityData = await _apiService.get('/patients/me/activity-logs?order=start_time.desc');
       final activities = <ActivityLog>[];
       if (activityData is List) {
         for (var item in activityData) {
@@ -679,7 +688,7 @@ class MonitorDataRepository {
 
   Future<List<MealLog>> _fetchMeals() async {
     try {
-      final mealData = await _apiService.get('/patients/me/daily-logs');
+      final mealData = await _apiService.get('/patients/me/daily-logs?order=log_date.desc');
       final meals = <MealLog>[];
       if (mealData is List) {
         for (var item in mealData) {

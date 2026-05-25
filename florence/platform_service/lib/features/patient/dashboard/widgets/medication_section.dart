@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/models/medication_models.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/features/patient/core/providers/medication_providers.dart';
 import 'package:florence/features/patient/core/repositories/medication_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ==========================================
 // 1. PROVIDERS
@@ -467,11 +466,11 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
   Map<String, dynamic>? _selectedDictionaryItem; // Holds the dictionary object if they pick a verified one
   dynamic _selectedFrequency;      // Holds the frequency object
   
-  String _selectedType = 'TABLET';
+  String _selectedType = 'Tablet';
   List<String> _selectedTimings = ['ANYTIME'];
 
   // Fixed lists based on database schema constraints
-  final List<String> _medicationTypes = ['TABLET', 'CAPSULE', 'INJECTION', 'LIQUID', 'INHALER', 'OTHER'];
+  final List<String> _medicationTypes = ['Tablet', 'Capsule', 'Injection', 'ml', 'Inhaler', 'Other'];
   final List<String> _timingInstructions = [
     'BEFORE_BREAKFAST', 'WITH_BREAKFAST', 'AFTER_BREAKFAST',
     'BEFORE_LUNCH', 'WITH_LUNCH', 'AFTER_LUNCH',
@@ -513,7 +512,7 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
       
       _nameController.text = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? "";
       _amountController.text = med.amount;
-      _selectedType = _medicationTypes.contains(med.medicationType) ? med.medicationType! : 'TABLET';
+      _selectedType = _medicationTypes.contains(med.medicationType) ? med.medicationType! : 'Tablet';
       
       // --- THE FIX: RESTORE DICTIONARY ITEM ---
       // If the medication has an ID, re-assign it to the selected item
@@ -748,12 +747,11 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                 
                 const SizedBox(height: 16),
 
-                // 2. AMOUNT, TYPE & FREQUENCY ROW
+                // 2. AMOUNT & TYPE ROW
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -762,15 +760,10 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                           TextFormField(
                             controller: _amountController,
                             validator: (val) => val == null || val.isEmpty ? 'Required' : null,
-                            
-                            // 1. Pops up the number keyboard on mobile
                             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            
-                            // 2. ONLY allows digits and a single decimal point
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                             ],
-                            
                             decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 1.5"),
                           ),
                         ],
@@ -778,7 +771,6 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      flex: 2,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -808,58 +800,57 @@ class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 8),
-                          freqAsync.when(
-                            loading: () => const Center(child: CircularProgressIndicator()),
-                            error: (e, s) => const Text("Error"),
-                            data: (frequencies) {
-                              // Match frequency if editing
-                              if (widget.isEdit && _selectedFrequency == null) {
-                                try {
-                                  _selectedFrequency = frequencies.firstWhere(
-                                    (f) => f['id'] == widget.medication!.frequencyId
-                                  );
-                                } catch (_) {}
-                              }
+                  ],
+                ),
 
-                              return LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return DropdownButtonFormField<dynamic>(
-                                    initialValue: _selectedFrequency,
-                                    isExpanded: true,
-                                    validator: (val) => val == null ? 'Required' : null,
-                                    dropdownColor: menuBackgroundColor,
-                                    borderRadius: BorderRadius.circular(16),
-                                    elevation: 4,
-                                    icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
-                                    decoration: _getCustomInputDecoration(context, hint: "Select freq"),
-                                    items: frequencies.map((f) {
-                                      return DropdownMenuItem(
-                                        value: f, 
-                                        child: ConstrainedBox(
-                                          constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
-                                          child: Text(
-                                            f['patient_text'] ?? f['latin_code'],
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        )
-                                      );
-                                    }).toList(),
-                                    onChanged: _onFrequencyChanged,
-                                  );
-                                }
-                              );
-                            },
-                          ),
-                        ],
-                      ),
+                const SizedBox(height: 16),
+
+                // 3. FREQUENCY ROW
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    freqAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (e, s) => const Text("Error"),
+                      data: (frequencies) {
+                        if (widget.isEdit && _selectedFrequency == null) {
+                          try {
+                            _selectedFrequency = frequencies.firstWhere(
+                              (f) => f['id'] == widget.medication!.frequencyId
+                            );
+                          } catch (_) {}
+                        }
+
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            return DropdownButtonFormField<dynamic>(
+                              initialValue: _selectedFrequency,
+                              isExpanded: true,
+                              validator: (val) => val == null ? 'Required' : null,
+                              dropdownColor: menuBackgroundColor,
+                              borderRadius: BorderRadius.circular(16),
+                              elevation: 4,
+                              icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                              decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
+                              items: frequencies.map((f) {
+                                return DropdownMenuItem(
+                                  value: f, 
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                    child: Text(
+                                      f['patient_text'] ?? f['latin_code'],
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  )
+                                );
+                              }).toList(),
+                              onChanged: _onFrequencyChanged,
+                            );
+                          }
+                        );
+                      },
                     ),
                   ],
                 ),
