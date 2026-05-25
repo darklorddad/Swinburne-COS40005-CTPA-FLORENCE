@@ -418,7 +418,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               _glucoseUnit,
               Icons.water_drop_outlined,
               _healthData!.glucoseReadings.isNotEmpty
-                  ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value)
+                  ? _getGlucoseRiskLevel(
+                      _healthData!.glucoseReadings.last.value, _glucoseUnit)
                   : 'no_data',
               _healthData!.glucoseReadings.isNotEmpty
                   ? _healthData!.glucoseReadings.last.timestamp
@@ -705,10 +706,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   // Helper Methods for Risk Levels
-  String _getGlucoseRiskLevel(double value) {
+  String _getGlucoseRiskLevel(double rawValue, String unit) {
     // Normalize the incoming value to mmol/L for standardized logic
     // If the incoming value is in mg/dL, convert it back to mmol/L
-    double mmolValue = (_glucoseUnit == 'mg/dL') ? (value / 18.018) : value;
+    double mmolValue = (unit == 'mg/dL') ? (rawValue / 18.018) : rawValue;
 
     // Perform comparison using normalized mmol/L units
     if (mmolValue < 3.9 || mmolValue > 10.0) return 'high';
