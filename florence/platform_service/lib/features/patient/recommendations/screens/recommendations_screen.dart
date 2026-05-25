@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart' as core_repo;
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/config/theme.dart';
 
@@ -120,7 +121,7 @@ String _dataSourceLabel(String type) {
 // ══════════════════════════════════════════════════════════════
 
 /// Computes a clinical 0-100 score based on actual health metrics
-int _computeVitalityIndex(core_data.HealthDataState? data) {
+int _computeVitalityIndex(core_repo.HealthDataState? data) {
   if (data == null) return 85;
   final summary = data.getHealthSummary(
     startDate: DateTime.now().subtract(const Duration(days: 7)),
