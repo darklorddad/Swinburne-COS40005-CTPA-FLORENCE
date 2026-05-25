@@ -9,7 +9,14 @@ import 'package:florence/core/config/environment.dart';
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+  // Silence the keyevent channel discard warnings (harmless framework noise)
+  // ignore: deprecated_member_use
+  ServicesBinding.instance.defaultBinaryMessenger.setMockDecodedMessageHandler(
+    SystemChannels.keyEvent,
+    (message) async => null,
+  );
+
   // Initialize Supabase
   await _initializeSupabase();
 
