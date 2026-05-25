@@ -335,17 +335,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            switch (_tabController.index) {
-              case 0:
-                _showScheduleFollowupDialog();
-                break;
-              case 1:
-                _showRequestDataDialog();
-                break;
-            }
-          },
-          child: Icon(_tabController.index == 0 ? Icons.calendar_today : Icons.sync),
+          onPressed: _showEditPatientDialog,
+          child: const Icon(Icons.edit),
         ),
       ),
     );
@@ -1676,37 +1667,65 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 color: Colors.white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  const Icon(Icons.phone_outlined, size: 18, color: AppTheme.textSecondary),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      _patient!.contactInfo,
-                      style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
                   Row(
-                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      TextButton.icon(
-                        icon: const Icon(Icons.message_outlined, size: 16),
-                        label: const Text('Message'),
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          foregroundColor: AppTheme.primaryColor,
-                          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      const Icon(Icons.phone_outlined, size: 18, color: AppTheme.textSecondary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _patient!.contactInfo,
+                          style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary, fontWeight: FontWeight.w500),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Opening chat with ${_patient!.name}...')),
-                          );
-                        },
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          TextButton.icon(
+                            icon: const Icon(Icons.message_outlined, size: 16),
+                            label: const Text('Message'),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              foregroundColor: AppTheme.primaryColor,
+                              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                            ),
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Opening chat with ${_patient!.name}...')),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ],
                   ),
+                  if (_patient!.emergencyContactName != null) ...[
+                    const Divider(height: 24),
+                    Row(
+                      children: [
+                        const Icon(Icons.emergency_outlined, size: 18, color: Colors.red),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Emergency: ${_patient!.emergencyContactName}',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                '${_patient!.emergencyContactRelationship} • ${_patient!.emergencyContactPhone}',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1991,6 +2010,82 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     );
   }
   
+  Future<void> _showEditPatientDialog() async {
+    final nameController = TextEditingController(text: _patient!.name);
+    final phoneController = TextEditingController(text: _patient!.contactInfo);
+    final ecNameController = TextEditingController(text: _patient!.emergencyContactName);
+    final ecPhoneController = TextEditingController(text: _patient!.emergencyContactPhone);
+    final ecRelController = TextEditingController(text: _patient!.emergencyContactRelationship);
+    RiskLevel selectedRisk = _patient!.riskLevel;
+    String? selectedGender = _patient!.gender;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit Patient Profile'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : null,
+                  items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                  onChanged: (v) => setDialogState(() => selectedGender = v),
+                  decoration: const InputDecoration(labelText: 'Gender'),
+                ),
+                const SizedBox(height: 12),
+                TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone Number')),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<RiskLevel>(
+                  value: selectedRisk,
+                  items: RiskLevel.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name.toUpperCase()))).toList(),
+                  onChanged: (v) => setDialogState(() => selectedRisk = v!),
+                  decoration: const InputDecoration(labelText: 'Risk Level'),
+                ),
+                const Divider(height: 32),
+                const Text('Emergency Contact', style: TextStyle(fontWeight: FontWeight.bold)),
+                TextField(controller: ecNameController, decoration: const InputDecoration(labelText: 'Contact Name')),
+                TextField(controller: ecRelController, decoration: const InputDecoration(labelText: 'Relationship')),
+                TextField(controller: ecPhoneController, decoration: const InputDecoration(labelText: 'Contact Phone')),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
+          ],
+        ),
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        // Note: This requires adding updatePatientProfile to DataService and ApiDataService
+        // For now, we'll use a generic map update via ApiService if available or update the service
+        final api = ApiService();
+        await api.put('/clinicians/me/patients/${widget.patientId}/profile', {
+          'name': nameController.text.trim(),
+          'phone_number': phoneController.text.trim(),
+          'gender': selectedGender,
+          'risk_level': selectedRisk.name.toUpperCase(),
+          'emergency_contact_name': ecNameController.text.trim(),
+          'emergency_contact_relationship': ecRelController.text.trim(),
+          'emergency_contact_phone': ecPhoneController.text.trim(),
+        });
+        await _loadPatientData();
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        }
+      }
+    }
+  }
+
   void _showRequestDataDialog() {
     showDialog(
       context: context,

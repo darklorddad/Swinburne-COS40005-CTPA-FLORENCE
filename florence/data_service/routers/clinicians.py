@@ -71,6 +71,15 @@ class ClinicianProfileUpdate(BaseModel):
     phone_number: Optional[str] = None
     gender: Optional[str] = None
 
+class PatientProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    risk_level: Optional[RiskLevel] = None
+    emergency_contact_name: Optional[str] = None
+    emergency_contact_relationship: Optional[str] = None
+    emergency_contact_phone: Optional[str] = None
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -231,6 +240,28 @@ async def unassign_patient(patient_id: int, clinician_profile: dict = Depends(ge
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to unassign patient: {str(e)}")
+
+@router.put("/me/patients/{patient_id}/profile", summary="Update assigned patient details")
+async def update_assigned_patient_profile(
+    patient_id: int,
+    update_data: PatientProfileUpdate,
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Updates the profile of a patient assigned to the clinician."""
+    # Verify patient is assigned
+    check = supabase.table('patient_profiles').select('id').eq('id', patient_id).eq('clinician_id', clinician_profile['id']).execute()
+    if not check.data:
+        raise HTTPException(status_code=404, detail="Patient not found or not assigned to this clinician.")
+
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+
+    try:
+        updated = supabase.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
+        return updated.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update patient profile: {str(e)}")
 
 @router.get("/me/patients/{patient_id}", summary="Get full profile & data for an assigned patient only")
 async def get_assigned_patient_details(patient_id: int, clinician_profile: dict = Depends(get_current_clinician_profile)):
