@@ -428,7 +428,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               'kg/m²',
               Icons.monitor_weight_outlined, 
               _healthData!.weight > 0 ? _getBMIRiskLevel(_calculateBMI(_healthData!.weight, _healthData!.height)) : 'no_data',
-              _patient!.lastSync,
+              _patient!.lastUpdate,
             ),
             const SizedBox(height: 12),
             _buildHealthMetricCard(
@@ -446,7 +446,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               'active',
               Icons.medication_outlined, 
               _healthData!.medications.isNotEmpty ? 'low' : 'no_data',
-              _healthData!.medications.isNotEmpty ? (_healthData!.medications.last.startDate ?? _patient!.lastSync) : null,
+              _healthData!.medications.isNotEmpty ? (_healthData!.medications.last.startDate ?? _patient!.lastUpdate) : null,
             ),
           ],
         ),
@@ -1651,7 +1651,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                             const Icon(Icons.medical_services_outlined, size: 14, color: AppTheme.primaryColor),
                             const SizedBox(width: 6),
                             Text(
-                              _patient!.conditionName,
+                              _patient!.activeDiseasesText,
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,

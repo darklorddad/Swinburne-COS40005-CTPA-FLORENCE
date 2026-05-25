@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
 import 'package:florence/features/clinician/services/api_data_service.dart';
@@ -379,37 +380,26 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
+    final confirmed = await Helpers.showConfirmDialog(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmText: 'Sign Out',
+      cancelText: 'Cancel',
+      isDangerous: true,
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed) {
+      setState(() => _isLoading = true);
       try {
         await ApiService().signOut();
       } catch (e) {
-        debugPrint('Logout error: $e');
-      }
-      
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to sign out: $e')),
+          );
+        }
       }
     }
   }

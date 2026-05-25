@@ -85,7 +85,7 @@ class PatientListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      patient.conditionName,
+                      patient.activeDiseasesText,
                       style: const TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
@@ -130,7 +130,7 @@ class PatientListItem extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    _formatLastUpdate(patient.lastSync),
+                    _formatLastUpdate(patient.lastUpdate),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -146,9 +146,11 @@ class PatientListItem extends StatelessWidget {
     );
   }
 
-  String _formatLastUpdate(DateTime lastSync) {
+  String _formatLastUpdate(DateTime? lastUpdate) {
+    if (lastUpdate == null) return 'No data';
+    
     final now = DateTime.now();
-    final difference = now.difference(lastSync);
+    final difference = now.difference(lastUpdate);
     
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -157,7 +159,7 @@ class PatientListItem extends StatelessWidget {
     } else if (difference.inDays < 1) {
       return '${difference.inHours}h ago';
     } else {
-      return DateFormat('MMM d, h:mm a').format(lastSync);
+      return DateFormat('MMM d').format(lastUpdate);
     }
   }
 }

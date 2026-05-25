@@ -105,7 +105,7 @@ async def update_own_clinician_profile(
 async def get_assigned_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves a list of all patients assigned to the currently authenticated clinician."""
     try:
-        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level').eq('clinician_id', clinician_profile['id']).execute()
+        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level, disease_logs(*), patient_monitor_data(measured_at)').eq('clinician_id', clinician_profile['id']).execute()
         return patients_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve assigned patients: {str(e)}")
@@ -187,7 +187,7 @@ async def get_available_patients(clinician_profile: dict = Depends(get_current_c
     """Retrieves a list of patients who are not currently assigned to any clinician."""
     try:
         # Fetch patients where clinician_id is NULL
-        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level').is_('clinician_id', 'null').execute()
+        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level, disease_logs(*), patient_monitor_data(measured_at)').is_('clinician_id', 'null').execute()
         return patients_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve available patients: {str(e)}")
@@ -249,6 +249,7 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         daily_logs = supabase.table('daily_patient_logs').select('*').eq('patient_id', patient_id).execute().data
         thresholds = supabase.table('patient_thresholds').select('*').eq('patient_id', patient_id).execute().data
         notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
+        disease_logs = supabase.table('disease_logs').select('*').eq('patient_id', patient_id).execute().data
         
         # Fetch activity using correct DB columns aliased for the frontend
         # Rename 'start_time' to 'performed_at' and 'active_duration_minutes' to 'duration_minutes'
@@ -264,7 +265,8 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
             "daily_logs": daily_logs,
             "thresholds": thresholds,
             "notes": notes,
-            "activity_logs": activity_logs # Add this
+            "activity_logs": activity_logs,
+            "disease_logs": disease_logs
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):
