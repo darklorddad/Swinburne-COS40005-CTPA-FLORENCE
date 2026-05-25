@@ -3144,7 +3144,7 @@ class _ClinicianMedicationFormDialogState
                               }
 
                               if (medicationId != null) {
-                                await ApiService().put(
+                                await ApiService().patch(
                                     '/clinicians/medications/$medicationId',
                                     payload);
                               } else {

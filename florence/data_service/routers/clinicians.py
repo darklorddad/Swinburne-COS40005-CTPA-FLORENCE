@@ -271,7 +271,7 @@ async def add_patient_medication(
         raise HTTPException(status_code=500, detail=f"Failed to insert medication entry: {str(e)}")
 
 
-@router.put("/medications/{medication_id}")
+@router.patch("/medications/{medication_id}")
 async def update_patient_medication(
     medication_id: int, 
     payload: ClinicianMedicationPayload, 
