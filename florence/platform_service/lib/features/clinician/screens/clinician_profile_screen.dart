@@ -391,25 +391,28 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Logout'),
           ),
         ],
       ),
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed == true) {
+      setState(() => _isLoading = true);
       try {
         await ApiService().signOut();
+        
+        if (mounted) {
+          Navigator.of(context, rootNavigator: true).pushNamedAndRemoveUntil('/login', (route) => false);
+        }
       } catch (e) {
-        debugPrint('Logout error: $e');
-      }
-      
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to logout: $e')),
+          );
+        }
       }
     }
   }
