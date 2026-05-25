@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
-from datetime import date
+from datetime import date, datetime
 
 from client import supabase
 from routers.authentication import get_current_admin_user
@@ -87,6 +87,8 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
         raise HTTPException(status_code=400, detail="No update data provided.")
 
     try:
+        if 'risk_level' in update_dict:
+            update_dict['last_risk_assessment'] = datetime.now().isoformat()
         updated_profile_response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_id).execute()
         if not updated_profile_response.data:
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
