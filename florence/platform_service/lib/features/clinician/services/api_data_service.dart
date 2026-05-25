@@ -32,7 +32,7 @@ class ApiDataService implements DataService {
       return (data as List).map((json) {
         final diseaseLogs = json['disease_logs'] as List? ?? [];
         final activeDiseases = diseaseLogs
-            .where((log) => log['status'] == 'ACTIVE')
+            .where((log) => log['status']?.toString().toLowerCase() == 'active')
             .map((log) => log['condition_name']?.toString() ?? 'Unknown')
             .toList();
 
@@ -62,7 +62,7 @@ class ApiDataService implements DataService {
       return (data as List).map((json) {
         final diseaseLogs = json['disease_logs'] as List? ?? [];
         final activeDiseases = diseaseLogs
-            .where((log) => log['status'] == 'ACTIVE')
+            .where((log) => log['status']?.toString().toLowerCase() == 'active')
             .map((log) => log['condition_name']?.toString() ?? 'Unknown')
             .toList();
 
@@ -140,7 +140,7 @@ class ApiDataService implements DataService {
 
       final diseaseLogs = data['disease_logs'] as List? ?? [];
       final activeDiseases = diseaseLogs
-          .where((log) => log['status'] == 'ACTIVE')
+          .where((log) => log['status']?.toString().toLowerCase() == 'active')
           .map((log) => log['condition_name']?.toString() ?? 'Unknown')
           .toList();
 
