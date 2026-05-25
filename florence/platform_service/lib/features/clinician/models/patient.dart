@@ -10,7 +10,7 @@ class Patient {
   final DateTime lastSync;
   final String contactInfo;
   final String? photoUrl;
-  
+
   Patient({
     required this.id,
     required this.name,
