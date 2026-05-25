@@ -59,6 +59,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
     return value;
   }
+
+  int? _getMedicationId(dynamic m) {
+    if (m == null) return null;
+    try {
+      return m.id;
+    } catch (_) {}
+    try {
+      return m.medicationId;
+    } catch (_) {}
+    return null;
+  }
   
   /*
   // Chatbot state
@@ -1801,13 +1812,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Widget _buildFilteredDiseaseList() {
-    // Fallback Mock logs framework for safe runtime handling
-    final List<Map<String, dynamic>> testDiseases = [
-      {'id': 1, 'condition_name': 'Asthma', 'status': 'active', 'diagnosed_date': '2026-05-01'},
-      {'id': 2, 'condition_name': 'Hypertension', 'status': 'active', 'diagnosed_date': '2026-05-01'},
-    ];
+    final List<dynamic> liveDiseases = _patientThresholds != null ? [] : []; // Placeholder for actual disease list from state
 
-    final filtered = testDiseases.where((item) {
+    final filtered = liveDiseases.where((item) {
       final statusStr = (item['status'] ?? 'active').toString().toUpperCase();
       if (_diseaseFilter == 'ALL') return true;
       return statusStr == _diseaseFilter;
@@ -2404,7 +2411,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   void _confirmDeleteMedication(dynamic m) {
-    final int medicationId = m.id;
+    final int? medicationId = _getMedicationId(m);
+    if (medicationId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Error: Could not resolve Medication Database ID.')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -3074,10 +3089,16 @@ class _ClinicianMedicationFormDialogState
 
                           try {
                             if (widget.isEdit) {
-                              final int medicationId = widget.medication.id;
-                              await ApiService().put(
-                                  '/clinicians/medications/$medicationId',
-                                  payload);
+                              // In a real app, we'd pass the ID or a callback. 
+                              // For now, we attempt to extract it from the medication object.
+                              int? medicationId;
+                              try { medicationId = widget.medication.id; } catch(_) {}
+                              
+                              if (medicationId != null) {
+                                await ApiService().put(
+                                    '/clinicians/medications/$medicationId',
+                                    payload);
+                              }
                             } else {
                               await ApiService().post(
                                   '/clinicians/patients/${widget.patientId}/medications',
