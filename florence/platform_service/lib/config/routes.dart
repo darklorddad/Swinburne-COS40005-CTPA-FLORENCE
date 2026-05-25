@@ -7,6 +7,8 @@ import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
 import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 import 'package:florence/features/admin/patients/screens/admin_patient_detail_screen.dart';
 import 'package:florence/features/admin/core/models/admin_models.dart';
+import 'package:florence/features/admin/organizations/screens/organization_directory_screen.dart';
+import 'package:florence/features/admin/organizations/screens/organization_detail_screen.dart';
 // Note: We are using the new PatientDirectoryScreen instead of the old PatientsListScreen
 import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart'; 
 
@@ -84,6 +86,8 @@ class AppRoutes {
   static const String adminLogin = '/admin/login';
   static const String adminPatientList = '/admin/patients';
   static const String adminPatientDetail = '/admin/patient-detail';
+  static const String organizations = '/admin/organizations';
+  static const String organizationDetail = '/admin/organization-detail';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -199,6 +203,15 @@ class AppRoutes {
           return _buildRoute(AdminPatientDetailScreen(patient: args), settings);
         }
         return _buildRoute(const _PlaceholderScreen(title: 'Error: Missing Patient Data'), settings);
+
+      case organizations:
+        return _buildRoute(const OrganizationDirectoryScreen(), settings);
+
+      case organizationDetail:
+        if (args is AdminOrganization) {
+          return _buildRoute(OrganizationDetailScreen(organization: args), settings);
+        }
+        return _buildRoute(const _PlaceholderScreen(title: 'Error: Missing Data'), settings);
 
       default:
         return _buildRoute(

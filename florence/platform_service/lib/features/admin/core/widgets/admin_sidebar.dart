@@ -52,6 +52,16 @@ class AdminSidebar extends StatelessWidget {
                     }
                   },
                 ),
+                _SidebarItem(
+                  icon: Icons.business_rounded,
+                  label: 'Organizations',
+                  isActive: currentRoute == AppRoutes.organizations,
+                  onTap: () {
+                    if (currentRoute != AppRoutes.organizations) {
+                      Navigator.pushReplacementNamed(context, AppRoutes.organizations);
+                    }
+                  },
+                ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Divider(color: AdminTheme.outlineVariant, height: 1),

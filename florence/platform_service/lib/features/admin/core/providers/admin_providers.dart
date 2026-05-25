@@ -80,6 +80,30 @@ class AdminRepository {
       throw Exception('Failed to load activity: $e');
     }
   }
+
+  Future<List<AdminOrganization>> fetchOrganizations() async {
+    try {
+      final response = await _apiService.get('/admin/organisations');
+      if (response is List) {
+        return response.map((json) => AdminOrganization.fromJson(json as Map<String, dynamic>)).toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to load organizations: $e');
+    }
+  }
+
+  Future<void> saveOrganization(Map<String, dynamic> data, {int? id}) async {
+    try {
+      if (id == null) {
+        await _apiService.post('/admin/organisations', data);
+      } else {
+        await _apiService.patch('/admin/organisations/$id', data);
+      }
+    } catch (e) {
+      throw Exception('Failed to save organization: $e');
+    }
+  }
 }
 
 // ==========================================
@@ -119,4 +143,9 @@ final adminMetricsProvider = Provider.autoDispose<AsyncValue<AdminMetrics>>((ref
 final adminActivityProvider = FutureProvider.autoDispose<List<AdminActivity>>((ref) async {
   final repository = ref.watch(adminRepositoryProvider);
   return repository.fetchRecentActivity();
+});
+
+final adminOrganizationsProvider = FutureProvider.autoDispose<List<AdminOrganization>>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  return repository.fetchOrganizations();
 });
