@@ -12,7 +12,9 @@ import 'package:florence/features/clinician/services/api_service.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:florence/features/clinician/widgets/bmi_gauge.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 class PatientDetailScreen extends StatefulWidget {
@@ -1768,17 +1770,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.medication_outlined, size: 20, color: AppTheme.primaryColor),
+                        Icon(Icons.medication_outlined,
+                            size: 20, color: AppTheme.primaryColor),
                         SizedBox(width: 8),
                         Text(
                           'Current Medications',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary),
                         ),
                       ],
                     ),
                     IconButton(
-                      icon: const Icon(Icons.edit, size: 18, color: AppTheme.textSecondary),
-                      onPressed: _showEditMedicationsDialog,
+                      icon: const Icon(Icons.add_circle_outline_rounded,
+                          size: 22, color: AppTheme.primaryColor),
+                      tooltip: 'Add New Medication',
+                      onPressed: _showAddMedicationDialog,
                     ),
                   ],
                 ),
@@ -2030,12 +2038,20 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Widget _buildMedicalCabinetList() {
-    if (_healthData!.medications.isEmpty) {
-      return const Text('No active medications recorded.', style: TextStyle(color: AppTheme.textSecondary, fontSize: 14));
+    if (_healthData?.medications == null || _healthData!.medications.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Text('No active medications recorded.',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+      );
     }
 
     return Column(
       children: _healthData!.medications.map((m) {
+        final formStr = (m.route).toLowerCase();
+        final dosageStr = m.dosage;
+        final freqStr = (m.frequency).toLowerCase();
+
         return Column(
           children: [
             ListTile(
@@ -2046,17 +2062,58 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   color: AppTheme.secondaryColor.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.medication, color: AppTheme.secondaryColor, size: 20),
+                child: const Icon(Icons.medication,
+                    color: AppTheme.secondaryColor, size: 20),
               ),
-              title: Text(m.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              subtitle: Text('${m.dosage} • ${m.frequency}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
-              trailing: Text(m.route, style: const TextStyle(fontWeight: FontWeight.w600, color: AppTheme.primaryColor, fontSize: 13)),
+              title: Text(m.name,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: AppTheme.textPrimary)),
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text('$formStr • $dosageStr • $freqStr',
+                    style: const TextStyle(
+                        color: AppTheme.textSecondary, fontSize: 13)),
+              ),
+              trailing: PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert_rounded,
+                    color: AppTheme.textSecondary, size: 20),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onSelected: (action) => _handleMedicationAction(action, m),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'edit',
+                    child: Text('Edit Details'),
+                  ),
+                  const PopupMenuDivider(),
+                  PopupMenuItem(
+                    value: 'delete',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.delete_outline, size: 16, color: Colors.red),
+                        SizedBox(width: 6),
+                        Text('Remove', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
             const Divider(height: 1, color: AppTheme.dividerColor),
           ],
         );
       }).toList(),
     );
+  }
+
+  void _handleMedicationAction(String action, dynamic medication) {
+    if (action == 'edit') {
+      _showEditMedicationDialog(medication);
+    } else if (action == 'delete') {
+      _confirmDeleteMedication(medication);
+    }
   }
 
   void _handleDiseaseAction(String action, Map<String, dynamic> disease) {
@@ -2071,43 +2128,99 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
 
+  Future<void> _uiSelectDatePicker(
+      BuildContext context, TextEditingController targetController) async {
+    final DateTime? selected = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2101),
+    );
+    if (selected != null) {
+      final monthsList = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+      final dayString = selected.day.toString().padLeft(2, '0');
+      targetController.text =
+          "$dayString ${monthsList[selected.month - 1]} ${selected.year}";
+    }
+  }
+
   Future<void> _showAddDiseaseDialog() async {
     final conditionCtrl = TextEditingController();
+    final dateCtrl = TextEditingController(text: "26 May 2026");
+    String selectedStatus = 'active';
+
     await showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85,
-          constraints: const BoxConstraints(maxWidth: 440),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Add Medical Condition',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const Divider(height: 24),
-              TextFormField(
-                controller: conditionCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Condition Name',
-                    hintText: 'e.g. Type 2 Diabetes'),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel')),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Add')),
-                ],
-              )
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            constraints: const BoxConstraints(maxWidth: 440),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Add Medical Condition',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Divider(height: 24),
+                TextFormField(
+                  controller: conditionCtrl,
+                  decoration: const InputDecoration(
+                      labelText: 'Condition Name', hintText: 'e.g. Asthma'),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedStatus,
+                  decoration: const InputDecoration(labelText: 'Status Context'),
+                  items: const [
+                    DropdownMenuItem(value: 'active', child: Text('Active')),
+                    DropdownMenuItem(
+                        value: 'resolved', child: Text('Resolved')),
+                  ],
+                  onChanged: (v) => setModalState(() => selectedStatus = v!),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: dateCtrl,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Diagnosed Date',
+                    suffixIcon: Icon(Icons.calendar_today_outlined, size: 18),
+                  ),
+                  onTap: () => _uiSelectDatePicker(context, dateCtrl),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel')),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Add Entry')),
+                  ],
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -2117,39 +2230,68 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   Future<void> _showEditDiseaseDialog(Map<String, dynamic> disease) async {
     final conditionCtrl =
         TextEditingController(text: disease['condition_name']);
+    final dateCtrl =
+        TextEditingController(text: disease['diagnosed_date'] ?? '26 May 2026');
+    String selectedStatus = disease['status'] ?? 'active';
+
     await showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85,
-          constraints: const BoxConstraints(maxWidth: 440),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Edit Medical Condition',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              const Divider(height: 24),
-              TextFormField(
-                controller: conditionCtrl,
-                decoration: const InputDecoration(labelText: 'Condition Name'),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancel')),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Save')),
-                ],
-              )
-            ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.85,
+            constraints: const BoxConstraints(maxWidth: 440),
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Edit Medical Condition',
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Divider(height: 24),
+                TextFormField(
+                  controller: conditionCtrl,
+                  decoration: const InputDecoration(labelText: 'Condition Name'),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedStatus,
+                  decoration: const InputDecoration(labelText: 'Status Context'),
+                  items: const [
+                    DropdownMenuItem(value: 'active', child: Text('Active')),
+                    DropdownMenuItem(
+                        value: 'resolved', child: Text('Resolved')),
+                  ],
+                  onChanged: (v) => setModalState(() => selectedStatus = v!),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: dateCtrl,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Diagnosed Date',
+                    suffixIcon: Icon(Icons.calendar_today_outlined, size: 18),
+                  ),
+                  onTap: () => _uiSelectDatePicker(context, dateCtrl),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancel')),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Save Changes')),
+                  ],
+                )
+              ],
+            ),
           ),
         ),
       ),
@@ -2181,9 +2323,44 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     _showThresholdsDialog();
   }
 
+  void _confirmDeleteMedication(dynamic m) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Medication?'),
+        content: Text(
+            'Are you sure you want to discard ${m.name} from this schedule profile?'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showEditMedicationsDialog() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Medication management coming soon')),
+    _showAddMedicationDialog();
+  }
+
+  void _showAddMedicationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => ClinicianMedicationFormDialog(
+          isEdit: false, patientId: widget.patientId),
+    );
+  }
+
+  void _showEditMedicationDialog(dynamic medication) {
+    showDialog(
+      context: context,
+      builder: (context) => ClinicianMedicationFormDialog(
+          isEdit: true, medication: medication, patientId: widget.patientId),
     );
   }
 
@@ -2433,6 +2610,373 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   
   
   
+}
+
+class ClinicianMedicationFormDialog extends StatefulWidget {
+  final bool isEdit;
+  final dynamic medication;
+  final String patientId;
+
+  const ClinicianMedicationFormDialog({
+    super.key,
+    required this.isEdit,
+    this.medication,
+    required this.patientId,
+  });
+
+  @override
+  State<ClinicianMedicationFormDialog> createState() =>
+      _ClinicianMedicationFormDialogState();
+}
+
+class _ClinicianMedicationFormDialogState
+    extends State<ClinicianMedicationFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+
+  late Future<List<dynamic>> _dictFuture;
+  late Future<List<dynamic>> _freqFuture;
+
+  Map<String, dynamic>? _selectedDictionaryItem;
+  dynamic _selectedFrequency;
+
+  String _selectedType = 'Tablet';
+  List<String> _selectedTimings = ['ANYTIME'];
+
+  final List<String> _medicationTypes = [
+    'Tablet',
+    'Capsule',
+    'Injection',
+    'ml',
+    'Inhaler',
+    'Other'
+  ];
+  final List<String> _timingInstructions = [
+    'BEFORE_BREAKFAST',
+    'WITH_BREAKFAST',
+    'AFTER_BREAKFAST',
+    'BEFORE_LUNCH',
+    'WITH_LUNCH',
+    'AFTER_LUNCH',
+    'BEFORE_DINNER',
+    'WITH_DINNER',
+    'AFTER_DINNER',
+    'BEFORE_SUPPER',
+    'WITH_SUPPER',
+    'AFTER_SUPPER',
+    'WITH_SNACK',
+    'BEFORE_BED',
+    'EMPTY_STOMACH',
+    'AS_NEEDED',
+    'ANYTIME'
+  ];
+
+  int _getDosesFromFrequency(dynamic freq) {
+    if (freq == null) return 1;
+    final text = (freq['patient_text'] ?? freq['latin_code']).toString().toLowerCase();
+    if (text.contains('twice') || text == 'bid' || text.contains('2 times')) return 2;
+    if (text.contains('three') || text == 'tid' || text.contains('3 times')) return 3;
+    if (text.contains('four') || text == 'qid' || text.contains('4 times')) return 4;
+    return 1;
+  }
+
+  void _onFrequencyChanged(dynamic val) {
+    setState(() {
+      _selectedFrequency = val;
+      int requiredDoses = _getDosesFromFrequency(val);
+
+      while (_selectedTimings.length < requiredDoses) {
+        _selectedTimings.add('ANYTIME');
+      }
+      if (_selectedTimings.length > requiredDoses) {
+        _selectedTimings = _selectedTimings.sublist(0, requiredDoses);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _dictFuture = ApiService()
+        .get('/clinicians/medications/dictionary')
+        .then((res) => res is List ? res : []);
+    _freqFuture = ApiService()
+        .get('/clinicians/medications/frequencies')
+        .then((res) => res is List ? res : []);
+
+    if (widget.isEdit && widget.medication != null) {
+      final m = widget.medication;
+      _nameController.text = m.name ?? "";
+      _amountController.text = m.dosage ?? "";
+      _selectedType = _medicationTypes.contains(m.route) ? m.route : 'Tablet';
+
+      _selectedTimings = m.timingInstructions != null
+          ? List<String>.from(m.timingInstructions)
+          : ['ANYTIME'];
+    }
+  }
+
+  InputDecoration _getCustomInputDecoration(String hint, {Widget? suffixIcon}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+          color: AppTheme.textSecondary.withValues(alpha: 0.5), fontSize: 14),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      suffixIcon: suffixIcon,
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.dividerColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+      ),
+    );
+  }
+
+  String _getOrdinalLabel(int index) {
+    const ordinals = ["1st", "2nd", "3rd", "4th", "5th"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "${index}th";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        width: 480,
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(widget.isEdit ? "Edit Medication" : "Add Medication",
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(context)),
+                  ],
+                ),
+                const Divider(height: 20),
+                const Text("Medication Name",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 8),
+                FutureBuilder<List<dynamic>>(
+                  future: _dictFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const Text("Error loading dictionary data");
+                    }
+
+                    final dictionary =
+                        snapshot.data!.cast<Map<String, dynamic>>();
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Autocomplete<Map<String, dynamic>>(
+                          initialValue:
+                              TextEditingValue(text: _nameController.text),
+                          displayStringForOption: (option) =>
+                              (option['brand_name'] ?? option['generic_name'])
+                                  .toString(),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) {
+                              return const Iterable<Map<String,
+                                  dynamic>>.empty();
+                            }
+                            return dictionary.where((med) {
+                              final brand =
+                                  (med['brand_name']?.toString() ?? '')
+                                      .toLowerCase();
+                              final query = textEditingValue.text.toLowerCase();
+                              return brand.contains(query);
+                            });
+                          },
+                          onSelected: (selection) => setState(
+                              () => _selectedDictionaryItem = selection),
+                          fieldViewBuilder: (context, controller, focusNode,
+                              onFieldSubmitted) {
+                            controller.addListener(() {
+                              _nameController.text = controller.text;
+                            });
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              validator: (val) => val == null || val.isEmpty
+                                  ? 'Required field'
+                                  : null,
+                              decoration: _getCustomInputDecoration(
+                                  "Search dictionary or type custom name...",
+                                  suffixIcon:
+                                      const Icon(Icons.search, size: 18)),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Amount",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13)),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _amountController,
+                            validator: (val) => val == null || val.isEmpty
+                                ? 'Required'
+                                : null,
+                            decoration: _getCustomInputDecoration("e.g. 1, 1.5"),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Type",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13)),
+                          const SizedBox(height: 8),
+                          DropdownButtonFormField<String>(
+                            value: _selectedType,
+                            decoration: _getCustomInputDecoration("Type"),
+                            items: _medicationTypes
+                                .map((t) =>
+                                    DropdownMenuItem(value: t, child: Text(t)))
+                                .toList(),
+                            onChanged: (val) =>
+                                setState(() => _selectedType = val!),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text("Frequency",
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                const SizedBox(height: 8),
+                FutureBuilder<List<dynamic>>(
+                  future: _freqFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const Text("Error loading frequencies");
+                    }
+
+                    final frequencies = snapshot.data!;
+                    return DropdownButtonFormField<dynamic>(
+                      value: _selectedFrequency,
+                      hint: const Text("Select frequency pattern"),
+                      decoration: _getCustomInputDecoration("Select frequency"),
+                      items: frequencies
+                          .map((f) => DropdownMenuItem(
+                              value: f,
+                              child: Text(f['patient_text'] ?? f['latin_code'])))
+                          .toList(),
+                      onChanged: _onFrequencyChanged,
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                const Divider(),
+                const Text("Specific Timings",
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const SizedBox(height: 12),
+                ...List.generate(_selectedTimings.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 90,
+                          child: Text(
+                              "${_selectedTimings.length > 1 ? _getOrdinalLabel(index + 1) : 'Daily'} Dose:",
+                              style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13)),
+                        ),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedTimings[index],
+                            decoration: _getCustomInputDecoration("Timing"),
+                            items: _timingInstructions.map((t) {
+                              final formatted =
+                                  t.replaceAll('_', ' ').toLowerCase();
+                              return DropdownMenuItem(
+                                  value: t,
+                                  child: Text(formatted[0].toUpperCase() +
+                                      formatted.substring(1)));
+                            }).toList(),
+                            onChanged: (val) =>
+                                setState(() => _selectedTimings[index] = val!),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Cancel"),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        if (_formKey.currentState!.validate()) {
+                          Navigator.pop(context);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white),
+                      child:
+                          Text(widget.isEdit ? "Save Changes" : "Add Medication"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+extension on _PatientDetailScreenState {
   Future<void> _showEditPatientProfileDialog() async {
     final nameCtrl = TextEditingController(text: _patient!.name);
     final phoneCtrl = TextEditingController(text: _patient!.contactInfo);

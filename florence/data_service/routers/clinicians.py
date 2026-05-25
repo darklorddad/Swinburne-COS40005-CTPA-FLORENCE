@@ -110,6 +110,24 @@ async def update_own_clinician_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
+@router.get("/medications/dictionary", summary="Get medication dictionary for autocomplete")
+async def get_clinician_medication_dictionary(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves the global medication dictionary for clinicians."""
+    try:
+        res = supabase.table('medication_dictionary').select('*').order('brand_name').execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch medication dictionary: {str(e)}")
+
+@router.get("/medications/frequencies", summary="Get dosage frequency options")
+async def get_clinician_dosage_frequencies(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves the global dosage frequencies for clinicians."""
+    try:
+        res = supabase.table('dosage_frequencies').select('*').execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch dosage frequencies: {str(e)}")
+
 @router.get("/me/settings", summary="Get my clinician unit settings")
 async def get_clinician_settings(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves the unit settings for the authenticated clinician."""
