@@ -94,6 +94,39 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
     }
   }
 
+  Future<void> _unassignClinician() async {
+    setState(() => _isLoading = true);
+    try {
+      final repo = ref.read(adminRepositoryProvider);
+      
+      // Sending 'null' tells the backend to remove the clinician
+      await repo.assignClinicianToPatient(widget.patient.id, null);
+      
+      ref.invalidate(adminPatientsProvider); // Refresh dashboard/lists
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Clinician unassigned successfully.'), backgroundColor: AdminTheme.primary),
+        );
+        
+        // Smart routing back to the directory
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.adminPatientList);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: AdminTheme.error),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = widget.patient;
@@ -231,6 +264,21 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                       const Icon(Icons.medical_information_outlined, color: AdminTheme.outline, size: 20),
                                       const SizedBox(width: 12),
                                       Text(p.clinicianName ?? 'Unassigned', style: const TextStyle(fontWeight: FontWeight.w500)),
+                                      // --- ONLY SHOW 'UNASSIGN' IF A DOCTOR IS ASSIGNED ---
+                                      if (p.clinicianName != 'Unassigned') ...[
+                                        const Spacer(),
+                                        TextButton.icon(
+                                          onPressed: _isLoading ? null : _unassignClinician,
+                                          icon: const Icon(Icons.person_remove_outlined, size: 16),
+                                          label: const Text('Unassign'),
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: AdminTheme.error, // Red text for destructive action
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 ),
