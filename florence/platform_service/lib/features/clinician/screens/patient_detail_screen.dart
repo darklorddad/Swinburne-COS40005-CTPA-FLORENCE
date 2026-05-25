@@ -15,14 +15,6 @@ import 'package:florence/features/clinician/widgets/bmi_gauge.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class _ChatMessage {
-  final String text;
-  final bool isUser;
-  final DateTime timestamp;
-
-  _ChatMessage({required this.text, required this.isUser, required this.timestamp});
-}
-
 class PatientDetailScreen extends StatefulWidget {
   final String patientId;
   final int initialTab;
