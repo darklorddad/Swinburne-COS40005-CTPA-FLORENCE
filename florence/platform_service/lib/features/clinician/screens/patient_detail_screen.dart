@@ -2613,7 +2613,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   
 }
 
-class ClinicianMedicationFormDialog extends ConsumerStatefulWidget {
+class ClinicianMedicationFormDialog extends StatefulWidget {
   final bool isEdit;
   final dynamic medication;
   final String patientId;
@@ -2626,16 +2626,19 @@ class ClinicianMedicationFormDialog extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<ClinicianMedicationFormDialog> createState() =>
+  State<ClinicianMedicationFormDialog> createState() =>
       _ClinicianMedicationFormDialogState();
 }
 
 class _ClinicianMedicationFormDialogState
-    extends ConsumerState<ClinicianMedicationFormDialog> {
+    extends State<ClinicianMedicationFormDialog> {
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+
+  late Future<List<dynamic>> _dictFuture;
+  late Future<List<dynamic>> _freqFuture;
 
   Map<String, dynamic>? _selectedDictionaryItem;
   dynamic _selectedFrequency;
@@ -2697,11 +2700,18 @@ class _ClinicianMedicationFormDialogState
   @override
   void initState() {
     super.initState();
+    _dictFuture = ApiService()
+        .get('/patients/medications/dictionary')
+        .then((res) => res is List ? res : []);
+    _freqFuture = ApiService()
+        .get('/patients/medications/frequencies')
+        .then((res) => res is List ? res : []);
+
     if (widget.isEdit && widget.medication != null) {
       final m = widget.medication;
       _nameController.text = m.name ?? "";
       _amountController.text = m.dosage ?? "";
-      _selectedType = _medicationTypes.contains(m.form) ? m.form : 'Tablet';
+      _selectedType = _medicationTypes.contains(m.route) ? m.route : 'Tablet';
 
       _selectedTimings = m.timingInstructions != null
           ? List<String>.from(m.timingInstructions)
@@ -2737,9 +2747,6 @@ class _ClinicianMedicationFormDialogState
 
   @override
   Widget build(BuildContext context) {
-    final dictAsync = ref.watch(medicationDictionaryProvider);
-    final freqAsync = ref.watch(dosageFrequenciesProvider);
-
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
@@ -2767,12 +2774,18 @@ class _ClinicianMedicationFormDialogState
                 const Text("Medication Name",
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 8),
-                dictAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, s) => const Text("Error loading dictionary data"),
-                  data: (dictionaryList) {
+                FutureBuilder<List<dynamic>>(
+                  future: _dictFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const Text("Error loading dictionary data");
+                    }
+
                     final dictionary =
-                        dictionaryList.cast<Map<String, dynamic>>();
+                        snapshot.data!.cast<Map<String, dynamic>>();
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         return Autocomplete<Map<String, dynamic>>(
@@ -2868,10 +2881,17 @@ class _ClinicianMedicationFormDialogState
                 const Text("Frequency",
                     style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                 const SizedBox(height: 8),
-                freqAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (e, s) => const Text("Error loading frequencies"),
-                  data: (frequencies) {
+                FutureBuilder<List<dynamic>>(
+                  future: _freqFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const LinearProgressIndicator();
+                    }
+                    if (snapshot.hasError || !snapshot.hasData) {
+                      return const Text("Error loading frequencies");
+                    }
+
+                    final frequencies = snapshot.data!;
                     return DropdownButtonFormField<dynamic>(
                       value: _selectedFrequency,
                       hint: const Text("Select frequency pattern"),
