@@ -24,10 +24,22 @@ class ApiService {
   }
 
   Future<dynamic> get(String endpoint) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient GET to $endpoint: No token found (User logging out).');
+      if (endpoint.contains('logs') || 
+          endpoint.contains('schedule') || 
+          endpoint.contains('thresholds') || 
+          endpoint.contains('medications') || 
+          endpoint.contains('monitor-data')) {
+        return [];
+      }
+      return {};
+    }
     try {
       var response = await http.get(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
       );
 
       if (response.statusCode == 401) {
@@ -60,10 +72,15 @@ class ApiService {
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient POST to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       var response = await http.post(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
         body: jsonEncode(data),
       );
 
@@ -88,10 +105,15 @@ class ApiService {
   }
 
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient PUT to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       var response = await http.put(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
         body: jsonEncode(data),
       );
 
@@ -116,10 +138,15 @@ class ApiService {
   }
 
   Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient PATCH to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       final response = await http.patch(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
         body: jsonEncode(data),
       );
       return _processResponse(response);
@@ -130,10 +157,15 @@ class ApiService {
   }
 
   Future<dynamic> delete(String endpoint) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient DELETE to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       final response = await http.delete(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
       );
       return _processResponse(response);
     } catch (e) {
