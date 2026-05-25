@@ -277,6 +277,11 @@ class _DietStatsSection extends StatelessWidget {
     double totalSpike = 0;
     int spikeCount = 0;
     
+    // Infer if data is mmol/L (values < 40)
+    final bool isMmol = logs.any((l) => (l.glucoseBeforeMeal ?? 100) < 40);
+    final double stableLimit = isMmol ? 1.7 : 30.0;
+    final double warningLimit = isMmol ? 2.8 : 50.0;
+
     for (var log in logs) {
       if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
         final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
@@ -284,7 +289,7 @@ class _DietStatsSection extends StatelessWidget {
         spikeCount++;
         pairCount++;
         
-        if (spike < 30) {
+        if (spike < stableLimit) {
           stableCount++;
         }
       }
@@ -329,7 +334,7 @@ class _DietStatsSection extends StatelessWidget {
               'Avg Spike', 
               spikeCount > 0 ? (avgSpike > 0 ? '+' : '') + avgSpike.toStringAsFixed(0) : '--', 
               'mg/dL', 
-              avgSpike > 50 ? AppTheme.errorColor : (avgSpike > 30 ? AppTheme.warningColor : AppTheme.primaryGreen)
+              avgSpike > warningLimit ? AppTheme.errorColor : (avgSpike > stableLimit ? AppTheme.warningColor : AppTheme.primaryGreen)
             )
           ),
           const SizedBox(width: 12),
@@ -447,11 +452,15 @@ class _DietImpactChart extends StatelessWidget {
       }
       if (avg > maxVal) maxVal = avg;
 
+      final bool isMmol = recentLogs.any((l) => (l.glucoseBeforeMeal ?? 100) < 40);
+      final double stableLimit = isMmol ? 1.7 : 30.0;
+      final double warningLimit = isMmol ? 2.8 : 50.0;
+
       // Color logic
       Color barColor = AppTheme.primaryGreen;
-      if (avg > 50) {
+      if (avg > warningLimit) {
         barColor = AppTheme.errorColor;
-      } else if (avg > 30) barColor = AppTheme.warningColor;
+      } else if (avg > stableLimit) barColor = AppTheme.warningColor;
       
       barGroups.add(
         BarChartGroupData(
@@ -660,17 +669,26 @@ class _HistorySectionState extends State<_HistorySection> {
     if (log.glucoseBeforeMeal != null && log.glucoseAfterMeal != null) {
       final spike = log.glucoseAfterMeal! - log.glucoseBeforeMeal!;
       
+      final bool isMmol = log.glucoseBeforeMeal! < 40;
+      final double stableLimit = isMmol ? 1.7 : 30.0;
+      final double warningLimit = isMmol ? 2.8 : 50.0;
+
       // Show range instead of just delta
-      valueText = '${log.glucoseBeforeMeal!.toInt()} → ${log.glucoseAfterMeal!.toInt()}';
-      unitText = 'mg/dL';
+      valueText = isMmol 
+          ? '${log.glucoseBeforeMeal!.toStringAsFixed(1)} → ${log.glucoseAfterMeal!.toStringAsFixed(1)}'
+          : '${log.glucoseBeforeMeal!.toInt()} → ${log.glucoseAfterMeal!.toInt()}';
+      unitText = isMmol ? 'mmol/L' : 'mg/dL';
       
       // Delta text
-      deltaText = '${spike > 0 ? '+' : ''}${spike.toInt()}';
+      deltaText = '${spike > 0 ? '+' : ''}${isMmol ? spike.toStringAsFixed(1) : spike.toInt()}';
 
-      if (spike > 50) {
+      if (spike > warningLimit) {
         statusColor = AppTheme.errorColor;
-      } else if (spike > 30) statusColor = AppTheme.warningColor;
-      else statusColor = AppTheme.primaryGreen;
+      } else if (spike > stableLimit) {
+        statusColor = AppTheme.warningColor;
+      } else {
+        statusColor = AppTheme.primaryGreen;
+      }
     }
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1063,15 +1081,25 @@ class _TrafficLightCalendar extends StatelessWidget {
                 cellColor = AppTheme.primaryBlue;
                 textColor = Colors.white;
                 tooltip = 'Meal logged (Incomplete Pair)';
-              } else if (maxSpike > 50) {
-                cellColor = AppTheme.errorColor;
-                textColor = Colors.white;
-                tooltip = 'High Spike: +${maxSpike.toInt()}';
-              } else if (maxSpike > 30) {
-                cellColor = AppTheme.warningColor;
-                textColor = Colors.white;
-                tooltip = 'Moderate: +${maxSpike.toInt()}';
               } else {
+                final bool isMmol = maxSpike < 15.0; // Spikes > 15 are definitely mg/dL
+                final double stableLimit = isMmol ? 1.7 : 30.0;
+                final double warningLimit = isMmol ? 2.8 : 50.0;
+
+                if (maxSpike > warningLimit) {
+                  cellColor = AppTheme.errorColor;
+                  textColor = Colors.white;
+                  tooltip = 'High Spike: +${maxSpike.toStringAsFixed(1)}';
+                } else if (maxSpike > stableLimit) {
+                  cellColor = AppTheme.warningColor;
+                  textColor = Colors.white;
+                  tooltip = 'Moderate: +${maxSpike.toStringAsFixed(1)}';
+                } else {
+                  cellColor = AppTheme.primaryGreen;
+                  textColor = Colors.white;
+                  tooltip = 'Stable: +${maxSpike.toStringAsFixed(1)}';
+                }
+              }
                 cellColor = AppTheme.primaryGreen;
                 textColor = Colors.white;
                 tooltip = 'Stable: +${maxSpike.toInt()}';

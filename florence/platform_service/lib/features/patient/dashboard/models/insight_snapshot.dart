@@ -66,9 +66,14 @@ class InsightSnapshot {
       latestGlucose = recentReadings
           .reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b)
           .value;
-      hyperEvents = values.where((v) => v > 180).length;
-      hypoEvents = values.where((v) => v < 70).length;
-      final inRange = values.where((v) => v >= 70 && v <= 180).length;
+      // Infer unit to pass correct bounds
+      final bool isMmol = avgGlucose! < 40.0;
+      final double highBound = isMmol ? 10.0 : 180.0;
+      final double lowBound = isMmol ? 3.9 : 70.0;
+
+      hyperEvents = values.where((v) => v > highBound).length;
+      hypoEvents = values.where((v) => v < lowBound).length;
+      final inRange = values.where((v) => v >= lowBound && v <= highBound).length;
       timeInRange = inRange / values.length;
     }
 
