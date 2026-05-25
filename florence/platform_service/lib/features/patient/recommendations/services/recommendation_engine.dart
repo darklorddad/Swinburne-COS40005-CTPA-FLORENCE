@@ -9,11 +9,12 @@ import 'package:florence/features/patient/recommendations/services/llm_recommend
 import 'package:florence/core/services/api_service.dart';
 
 final recommendationProvider =
-    AsyncNotifierProvider.autoDispose<RecommendationNotifier, List<HealthRecommendation>>(
+    AsyncNotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(
   RecommendationNotifier.new,
+  isAutoDispose: true,
 );
 
-class RecommendationNotifier extends AutoDisposeAsyncNotifier<List<HealthRecommendation>> {
+class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
   final LlmRecommendationService _llmService = LlmRecommendationService();
   final ApiService _apiService = ApiService();
 
