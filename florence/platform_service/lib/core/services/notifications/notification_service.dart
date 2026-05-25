@@ -8,6 +8,7 @@ import 'package:florence/core/services/notifications/notification_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
 
 /// Notification Provider
 final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);

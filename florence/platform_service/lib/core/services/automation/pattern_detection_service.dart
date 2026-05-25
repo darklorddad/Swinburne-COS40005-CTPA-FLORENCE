@@ -2,6 +2,7 @@ library;
 
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
 
 /// Type of detected pattern
 enum PatternType {

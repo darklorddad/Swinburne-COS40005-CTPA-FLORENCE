@@ -5,6 +5,7 @@ import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 import 'package:florence/features/patient/recommendations/services/llm_recommendation_service.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 
 import 'package:florence/core/services/api_service.dart';
 
@@ -65,7 +66,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
           timeframe: timeframe,
           analysisPeriodDays: daysToAnalyze,
           previousTitles: previousTitles,
-        );
+                );
         debugPrint(
           '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',
         );
@@ -74,7 +75,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
         debugPrint(
           '[RecommendationEngine] LLM failed, using rule-based fallback. Error: $e',
         );
-        newRecommendations = _generateRuleBasedRecommendations(summary, timeframe);
+        newRecommendations = _generateRuleBasedRecommendations(summary, timeframe, healthData);
       }
     } else {
       debugPrint('[RecommendationEngine] AI disabled, using rule-based logic.');
