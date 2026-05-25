@@ -94,7 +94,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/479/200/300')),
+            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/200/200/200')),
           ],
         ),
       ],
@@ -205,7 +205,6 @@ class AdminDashboardScreen extends ConsumerWidget {
                       alert: alertText,
                       doctor: patient.clinicianName ?? 'Unassigned',
                       isHighRisk: patient.isHighRisk,
-                      avatarUrl: 'https://i.pravatar.cc/150?u=${patient.id}',
                     ),
                     if (!isLast) const Divider(height: 1, color: AdminTheme.outlineVariant),
                   ],
@@ -240,10 +239,10 @@ class AdminDashboardScreen extends ConsumerWidget {
                   );
                 },),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _QuickActionButton(icon: Icons.medical_information_outlined, label: 'Add Clinician'),
-            ),
+            // const SizedBox(width: 16),
+            // Expanded(
+            //   child: _QuickActionButton(icon: Icons.medical_information_outlined, label: 'Add Clinician'),
+            // ),
           ],
         )
       ],
@@ -396,9 +395,8 @@ class _FeedItem extends StatelessWidget {
   final String alert;
   final String doctor;
   final bool isHighRisk;
-  final String avatarUrl;
 
-  const _FeedItem({required this.name, required this.alert, required this.doctor, required this.isHighRisk, required this.avatarUrl});
+  const _FeedItem({required this.name, required this.alert, required this.doctor, required this.isHighRisk});
 
   @override
   Widget build(BuildContext context) {
@@ -406,7 +404,18 @@ class _FeedItem extends StatelessWidget {
       padding: const EdgeInsets.all(24.0),
       child: Row(
         children: [
-          CircleAvatar(radius: 24, backgroundImage: NetworkImage(avatarUrl)),
+          CircleAvatar(
+            radius: 24, 
+            backgroundColor: AdminTheme.surfaceContainerHighest,
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 20, 
+                color: AdminTheme.onSurfaceVariant
+              ),
+            ),
+          ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(

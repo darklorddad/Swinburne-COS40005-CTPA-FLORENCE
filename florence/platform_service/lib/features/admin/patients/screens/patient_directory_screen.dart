@@ -236,16 +236,7 @@ class _PatientDirectoryScreenState
             style: const TextStyle(color: AdminTheme.outline))),
         DataCell(Text(patient.name,
             style: const TextStyle(fontWeight: FontWeight.w600))),
-        DataCell(Row(
-          children: [
-            CircleAvatar(
-                radius: 12,
-                backgroundImage:
-                    NetworkImage('https://picsum.photos/id/128/200/300')),
-            const SizedBox(width: 8),
-            Text(patient.clinicianName ?? 'Unassigned'),
-          ],
-        )),
+        DataCell(Text(patient.clinicianName ?? 'Unassigned', style: const TextStyle(fontWeight: FontWeight.w500))),
         DataCell(Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
