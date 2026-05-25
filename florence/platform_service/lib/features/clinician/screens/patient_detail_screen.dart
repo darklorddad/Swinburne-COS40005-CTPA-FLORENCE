@@ -1609,7 +1609,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     children: [
                       Row(
                         children: [
-                          Flexible(
+                          Expanded(
                             child: Text(
                               _patient!.name,
                               style: const TextStyle(
@@ -1619,18 +1619,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.person_remove_outlined, size: 24, color: AppTheme.textSecondary),
-                            tooltip: 'Unassign Patient',
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                            style: IconButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              padding: const EdgeInsets.all(8),
-                            ),
-                            onPressed: _showUnassignConfirmation,
                           ),
                         ],
                       ),

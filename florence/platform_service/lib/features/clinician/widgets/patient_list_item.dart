@@ -98,41 +98,29 @@ class PatientListItem extends StatelessWidget {
               
               const SizedBox(width: 12),
               
-              // Right side info (Status pill and Last Update)
+              // Right side info (Edit action and Last Update)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: riskColor, width: 1.5),
-                    ),
-                    child: Text(
-                      patient.riskLevel.name.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: riskColor,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_note_rounded,
+                        color: AppTheme.primaryColor, size: 26),
+                    tooltip: 'Edit Patient Details',
+                    onPressed: onTap,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 4),
                   const Text(
                     'Last Update',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: AppTheme.textTertiary,
                     ),
                   ),
-                  const SizedBox(height: 2),
                   Text(
                     _formatLastUpdate(patient.lastUpdate),
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 12,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textSecondary,
                     ),
