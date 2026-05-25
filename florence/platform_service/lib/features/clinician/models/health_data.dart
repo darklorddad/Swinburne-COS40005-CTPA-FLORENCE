@@ -149,9 +149,11 @@ class Medication {
   factory Medication.fromJson(Map<String, dynamic> json) {
     // 1. Safe extraction of timing instructions array
     List<String> timings = [];
-    if (json['timing_instructions'] != null) {
+    if (json['timing_instructions'] != null && json['timing_instructions'] is List) {
       try {
-        timings = List<String>.from(json['timing_instructions']);
+        timings = (json['timing_instructions'] as List)
+            .map((e) => e.toString())
+            .toList();
       } catch (_) {}
     }
     if (timings.isEmpty) {
