@@ -3119,12 +3119,28 @@ class _ClinicianMedicationFormDialogState
                               final m = widget.medication;
 
                               if (m != null) {
-                                if (m is Medication) {
+                                // Aggressive cascading checks to find the ID no matter how it's formatted
+                                try {
                                   medicationId = m.id;
-                                } else {
-                                  try { medicationId = m.id; } catch (_) {}
-                                  try { if (medicationId == null) medicationId = m.toJson()['id']; } catch (_) {}
-                                }
+                                } catch (_) {}
+                                try {
+                                  if (medicationId == null) {
+                                    medicationId =
+                                        int.tryParse(m.id.toString());
+                                  }
+                                } catch (_) {}
+                                try {
+                                  if (medicationId == null) {
+                                    medicationId = int.tryParse(
+                                        m.toJson()['id'].toString());
+                                  }
+                                } catch (_) {}
+                                try {
+                                  if (medicationId == null) {
+                                    medicationId =
+                                        int.tryParse(m['id'].toString());
+                                  }
+                                } catch (_) {}
                               }
 
                               if (medicationId != null) {
