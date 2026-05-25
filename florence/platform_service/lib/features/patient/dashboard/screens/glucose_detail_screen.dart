@@ -443,7 +443,7 @@ class _StatisticsSection extends ConsumerWidget {
                     if (threshold != null)
                       _buildMiniTargetRow(
                         'Glucose',
-                        '${threshold!.minValue.toInt()} - ${threshold!.maxValue.toInt()} ${settings.glucoseUnit}',
+                        '${threshold!.minValue.toDouble()} - ${threshold!.maxValue.toDouble()} ${settings.glucoseUnit}',
                         AppTheme.primaryGreen,
                       )
                     else

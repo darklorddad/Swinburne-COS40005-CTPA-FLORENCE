@@ -499,12 +499,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
   
-  /// Edit health profile
-  void _editHealthProfile() {
-    Helpers.showInfo(context, 'Edit health profile feature coming soon');
-    // TODO: Navigate to edit health profile screen
-  }
-  
   
   @override
   Widget build(BuildContext context) {
