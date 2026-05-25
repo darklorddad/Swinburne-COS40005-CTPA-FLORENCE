@@ -30,6 +30,30 @@ class PatientProfileAdminUpdate(BaseModel):
 class AssignClinician(BaseModel):
     clinician_id: Optional[int] = None # Use None to unassign
 
+class OrganisationCreate(BaseModel):
+    name: str
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    sector: Optional[str] = None
+    facility_type: Optional[str] = None
+    full_address: Optional[str] = None
+    state: Optional[str] = None
+    is_24_hours: bool = False
+    operating_hours: Optional[str] = None
+
+class OrganisationUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    email: Optional[str] = None
+    website: Optional[str] = None
+    sector: Optional[str] = None
+    facility_type: Optional[str] = None
+    full_address: Optional[str] = None
+    state: Optional[str] = None
+    is_24_hours: Optional[bool] = None
+    operating_hours: Optional[str] = None
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -40,7 +64,7 @@ router = APIRouter(
 
 # --- Endpoints ---
 
-@router.get("/patients", summary="Get a list of all patients")
+@router.get("/patients", summary="GHOST SERVER")
 async def get_all_patients():
     """Retrieves a list of all patient profiles in the system."""
     try:
@@ -91,7 +115,7 @@ async def get_all_patients():
             latest_alert = patient_alerts.get(pid)
             if latest_alert == "Normal":
                 latest_alert = None
-            
+
             processed_patient = {
                 "id": pid,
                 "Name": patient.get("name"),
@@ -188,3 +212,72 @@ async def get_recent_activity():
         return activities
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch activity: {str(e)}")
+
+@router.get("/organisations", summary="Get a list of all organisations")
+async def get_all_organisations():
+    try:
+        # Fetch organisations
+        orgs_res = supabase.table('organisations').select('*').execute()
+        
+        # For MVP, we can fetch all patients and clinicians to calculate counts
+        patients_res = supabase.table('patient_profiles').select('organisation_id').execute()
+        clinicians_res = supabase.table('clinician_profiles').select('organisation_id').execute()
+
+        # Count mappings
+        patient_counts = {}
+        for p in patients_res.data:
+            oid = p.get('organisation_id')
+            if oid:
+                patient_counts[oid] = patient_counts.get(oid, 0) + 1
+                
+        clinician_counts = {}
+        for c in clinicians_res.data:
+            oid = c.get('organisation_id')
+            if oid:
+                clinician_counts[oid] = clinician_counts.get(oid, 0) + 1
+
+        processed_orgs = []
+        for org in orgs_res.data:
+            org_id = org['id']
+            org['patient_count'] = patient_counts.get(org_id, 0)
+            org['clinician_count'] = clinician_counts.get(org_id, 0)
+            processed_orgs.append(org)
+
+        return processed_orgs
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve organisations: {str(e)}")
+
+@router.post("/organisations", summary="Create an organisation")
+async def create_organisation(org_data: OrganisationCreate):
+    try:
+        insert_dict = org_data.model_dump(exclude_unset=True)
+        response = supabase.table('organisations').insert(insert_dict).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create organisation: {str(e)}")
+
+@router.patch("/organisations/{org_id}", summary="Update an organisation")
+async def update_organisation(org_id: int, org_data: OrganisationUpdate):
+    try:
+        update_dict = org_data.model_dump(exclude_unset=True)
+        if not update_dict:
+            raise HTTPException(status_code=400, detail="No data to update")
+            
+        response = supabase.table('organisations').update(update_dict).eq('id', org_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Organisation not found")
+        return response.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update organisation: {str(e)}")
+
+@router.delete("/organisations/{org_id}", summary="Delete an organisation")
+async def delete_organisation(org_id: int):
+    try:
+        response = supabase.table('organisations').delete().eq('id', org_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Organisation not found")
+        return {"message": "Deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete organisation: {str(e)}")
