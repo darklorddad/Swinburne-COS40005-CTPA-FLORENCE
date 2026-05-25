@@ -4,6 +4,7 @@ import 'package:florence/features/clinician/models/health_data.dart';
 import 'package:florence/features/clinician/models/clinician_note.dart';
 import 'package:florence/features/clinician/services/api_data_service.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
+import 'package:florence/features/clinician/services/api_service.dart';
 import 'package:florence/features/clinician/widgets/risk_indicator.dart';
 import 'package:florence/features/clinician/widgets/bmi_gauge.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
