@@ -272,7 +272,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       // Gender
                       DropdownButtonFormField<String>(
                         value: _selectedGender,
-                        enabled: _isEditing,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Gender',
@@ -284,13 +283,15 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                             child: Text(gender),
                           );
                         }).toList(),
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() {
-                              _selectedGender = value;
-                            });
-                          }
-                        },
+                        onChanged: _isEditing
+                            ? (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedGender = value;
+                                  });
+                                }
+                              }
+                            : null,
                       ),
 
                       const SizedBox(height: 20),

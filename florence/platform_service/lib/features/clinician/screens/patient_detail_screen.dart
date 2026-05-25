@@ -387,7 +387,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           margin: EdgeInsets.zero,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppTheme.dividerColor),
+            side: const BorderSide(color: AppTheme.dividerColor),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -1721,7 +1721,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.dividerColor),
+          side: const BorderSide(color: AppTheme.dividerColor),
         ),
         child: const Padding(
           padding: EdgeInsets.all(16),
@@ -1748,7 +1748,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.dividerColor),
+        side: const BorderSide(color: AppTheme.dividerColor),
       ),
       color: Colors.white,
       child: Padding(
