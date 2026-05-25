@@ -64,7 +64,7 @@ router = APIRouter(
 
 # --- Endpoints ---
 
-@router.get("/patients", summary="GHOST SERVER")
+@router.get("/patients", summary="Get a list of all patients")
 async def get_all_patients():
     """Retrieves a list of all patient profiles in the system."""
     try:
