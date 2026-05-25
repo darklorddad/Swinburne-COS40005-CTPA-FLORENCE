@@ -174,7 +174,11 @@ class Medication {
     }
 
     return Medication(
-      id: json['id'] as int?,
+      id: json['id'] != null
+          ? int.tryParse(json['id'].toString())
+          : (json['medication_id'] != null
+              ? int.tryParse(json['medication_id'].toString())
+              : null),
       name: resolvedName,
       dosage: (json['dosage'] ?? json['amount'] ?? '1').toString(),
       frequency: json['frequency'] ??
