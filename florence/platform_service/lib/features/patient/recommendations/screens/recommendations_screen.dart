@@ -1279,32 +1279,6 @@ class _RecommendationsScreenState
                             ),
                           ],
                         ),
-
-                        // Action Buttons
-                        const SizedBox(height: 20),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton(
-                              onPressed: () => ref.read(recommendationProvider.notifier).dismissRecommendation(rec.id),
-                              style: TextButton.styleFrom(
-                                foregroundColor: AppTheme.textSecondaryColor,
-                              ),
-                              child: const Text("Dismiss"),
-                            ),
-                            const SizedBox(width: 8),
-                            ElevatedButton.icon(
-                              onPressed: () => ref.read(recommendationProvider.notifier).completeRecommendation(rec.id),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: catTheme.primary,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                              ),
-                              icon: const Icon(Icons.check, size: 16),
-                              label: const Text("Complete"),
-                            ),
-                          ],
-                        ),
                       ],
                     ],
                   ),
