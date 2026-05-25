@@ -50,6 +50,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   String _diseaseFilter = 'ACTIVE';
   // Metric/Imperial toggle for BMI
   bool _isMetric = true;
+  String _glucoseUnit = 'mmol/L';
+  String _cholesterolUnit = 'mmol/L';
   
   /*
   // Chatbot state
@@ -76,12 +78,26 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       final notes = await _dataService.getClinicianNotes(widget.patientId);
       final thresholds = await _dataService.getPatientThresholds(widget.patientId);
       
+      String gUnit = 'mmol/L';
+      String cUnit = 'mmol/L';
+      try {
+        final settings = await ApiService().get('/clinicians/me/settings');
+        if (settings != null) {
+          gUnit = settings['glucose_unit'] ?? 'mmol/L';
+          cUnit = settings['cholesterol_unit'] ?? 'mmol/L';
+        }
+      } catch (e) {
+        debugPrint('Failed loading clinician units context in detail screen: $e');
+      }
+
       if (mounted) {
         setState(() {
           _patient = patient;
           _healthData = healthData;
           _notes = notes;
           _patientThresholds = thresholds;
+          _glucoseUnit = gUnit;
+          _cholesterolUnit = cUnit;
           _isLoading = false;
         });
 

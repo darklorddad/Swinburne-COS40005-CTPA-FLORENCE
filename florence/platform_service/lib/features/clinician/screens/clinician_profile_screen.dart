@@ -253,7 +253,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       // Name
                       TextFormField(
                         controller: _nameController,
-                        enabled: _isEditing,
+                        readOnly: !_isEditing,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Full Name',
@@ -270,36 +270,45 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       const SizedBox(height: 20),
 
                       // Gender
-                      DropdownButtonFormField<String>(
-                        value: _selectedGender,
-                        style: const TextStyle(color: AppTheme.textPrimary),
-                        decoration: const InputDecoration(
-                          labelText: 'Gender',
-                          prefixIcon: Icon(Icons.wc_outlined),
+                      if (_isEditing)
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
+                          items: _genders.map((gender) {
+                            return DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            }
+                          },
+                        )
+                      else
+                        TextFormField(
+                          initialValue: _selectedGender ?? 'Not Set',
+                          readOnly: true,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
                         ),
-                        items: _genders.map((gender) {
-                          return DropdownMenuItem(
-                            value: gender,
-                            child: Text(gender),
-                          );
-                        }).toList(),
-                        onChanged: _isEditing
-                            ? (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _selectedGender = value;
-                                  });
-                                }
-                              }
-                            : null,
-                      ),
 
                       const SizedBox(height: 20),
 
                       // Mobile Phone
                       TextFormField(
                         controller: _mobileController,
-                        enabled: _isEditing,
+                        readOnly: !_isEditing,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
@@ -312,32 +321,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                           }
                           return null;
                         },
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      // Action Buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if (!_isEditing)
-                            ElevatedButton.icon(
-                              onPressed: _toggleEdit,
-                              icon: const Icon(Icons.edit, size: 18),
-                              label: const Text('Edit Profile'),
-                            )
-                          else ...[
-                            OutlinedButton(
-                              onPressed: _cancelEdit,
-                              child: const Text('Cancel'),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton(
-                              onPressed: _saveProfile,
-                              child: const Text('Save Changes'),
-                            ),
-                          ],
-                        ],
                       ),
                     ],
                   ),
