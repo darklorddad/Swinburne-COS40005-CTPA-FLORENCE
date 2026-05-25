@@ -38,6 +38,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   PatientHealthData? _healthData;
   List<ClinicianNote>? _notes;
   List<Map<String, dynamic>>? _patientThresholds;
+  List<dynamic> _diseaseLogs = [];
   bool _isLoading = true;
   String? _error;
   String _diseaseFilter = 'ACTIVE';
@@ -100,6 +101,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       final notes = await _dataService.getClinicianNotes(widget.patientId);
       final thresholds = await _dataService.getPatientThresholds(widget.patientId);
       
+      // FETCH FULL DISEASE LOGS FROM THE NEW ROUTE:
+      final diseaseRes = await ApiService().get('/clinicians/patients/${widget.patientId}/diseases');
+      final List<dynamic> loadedDiseases = diseaseRes is List ? diseaseRes : [];
+
       String gUnit = 'mmol/L';
       String cUnit = 'mmol/L';
       try {
@@ -118,6 +123,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           _healthData = healthData;
           _notes = notes;
           _patientThresholds = thresholds;
+          _diseaseLogs = loadedDiseases;
           _glucoseUnit = gUnit;
           _cholesterolUnit = cUnit;
           _isLoading = false;
@@ -1811,15 +1817,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Widget _buildFilteredDiseaseList() {
-    // Connect directly to your live dynamic state list fetched from the backend router
-    // Fallback to empty list if data hasn't loaded yet
-    final List<dynamic> liveDiseases = _patient?.activeDiseases ?? []; 
+    if (_diseaseLogs.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Center(
+          child: Text('No medical conditions recorded.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+        ),
+      );
+    }
 
-    final filtered = liveDiseases.where((item) {
-      // If the item is just a string (from the Patient model's activeDiseases list), 
-      // we treat it as active. If we need full DiseaseLog objects, we'd need to fetch them.
-      if (item is String) return _diseaseFilter == 'ACTIVE' || _diseaseFilter == 'ALL';
-      
+    final filtered = _diseaseLogs.where((item) {
       final statusStr = (item['status'] ?? 'active').toString().toUpperCase();
       if (_diseaseFilter == 'ALL') return true;
       return statusStr == _diseaseFilter;
@@ -1842,11 +1850,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = filtered[index];
-        final bool isString = item is String;
         
-        final name = isString ? item : (item['condition_name'] ?? 'Unknown');
-        final status = isString ? 'active' : (item['status'] ?? 'active').toString().toLowerCase();
-        final date = isString ? 'Not Set' : (item['diagnosed_date'] ?? 'Not Set');
+        final name = item['condition_name'] ?? 'Unknown';
+        final status = (item['status'] ?? 'active').toString().toLowerCase();
+        final date = item['diagnosed_date'] ?? 'Not Set';
         final isActive = status == 'active';
 
         return Container(
@@ -1907,7 +1914,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   ),
                 ),
                 const SizedBox(width: 4),
-                if (!isString) PopupMenuButton<String>(
+                PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded,
                       color: AppTheme.textSecondary, size: 20),
                   padding: EdgeInsets.zero,
@@ -3088,15 +3095,22 @@ class _ClinicianMedicationFormDialogState
 
                           try {
                             if (widget.isEdit) {
-                              // In a real app, we'd pass the ID or a callback. 
-                              // For now, we attempt to extract it from the medication object.
+                              // DEFENSIVE FIX: Extract the medication identifier safely
                               int? medicationId;
-                              try { medicationId = widget.medication.id; } catch(_) {}
+                              final m = widget.medication;
+                              if (m != null) {
+                                try { medicationId = m.id; } catch (_) {}
+                                try { if (medicationId == null) medicationId = m.medicationId; } catch (_) {}
+                                try { if (medicationId == null) medicationId = m.toJson()['id']; } catch (_) {}
+                                try { if (medicationId == null) medicationId = m.toJson()['medication_id']; } catch (_) {}
+                              }
                               
                               if (medicationId != null) {
                                 await ApiService().put(
                                     '/clinicians/medications/$medicationId',
                                     payload);
+                              } else {
+                                throw Exception('Could not resolve medication object identifier.');
                               }
                             } else {
                               await ApiService().post(

@@ -231,6 +231,18 @@ async def remove_patient_disease(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to purge record entry: {str(e)}")
 
+@router.get("/patients/{patient_id}/diseases")
+async def get_patient_disease_logs(
+    patient_id: str, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Fetches the full medical condition rows containing dates, status, and IDs for a patient."""
+    try:
+        res = supabase.table("disease_logs").select("*").eq("patient_id", patient_id).order("diagnosed_date", desc=True).execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch disease logs: {str(e)}")
+
 # =========================================================================
 # CLINICAL MEDICATION MANAGEMENT
 # =========================================================================
