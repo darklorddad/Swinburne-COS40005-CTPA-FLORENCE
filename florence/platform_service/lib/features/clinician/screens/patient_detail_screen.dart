@@ -418,7 +418,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               _glucoseUnit,
               Icons.water_drop_outlined,
               _healthData!.glucoseReadings.isNotEmpty
-                  ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value)
+                  ? _getGlucoseRiskLevel(
+                      _healthData!.glucoseReadings.last.value, _glucoseUnit)
                   : 'no_data',
               _healthData!.glucoseReadings.isNotEmpty
                   ? _healthData!.glucoseReadings.last.timestamp
@@ -489,84 +490,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               _healthData!.mealEntries.isNotEmpty ? _healthData!.mealEntries.last.timestamp : null,
             ),
             const SizedBox(height: 12),
-            _buildHealthMetricCard(
-              'Medication', 
-              _healthData!.medications.isNotEmpty ? '${_healthData!.medications.length}' : '--', 
-              'active',
-              Icons.medication_outlined, 
-              _healthData!.medications.isNotEmpty ? 'low' : 'no_data',
-              _healthData!.medications.isNotEmpty ? (_healthData!.medications.last.startDate ?? _patient!.lastUpdate) : null,
-            ),
           ],
-        ),
-        
-        const SizedBox(height: 24),
-        
-        // Detected Patterns Card
-        Card(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(Icons.monitor_heart_outlined, color: AppTheme.textSecondary, size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      'Detected Patterns',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (_healthData!.detectedPatterns.isEmpty)
-                  const Text('No significant patterns detected at this time.', style: TextStyle(color: AppTheme.textSecondary)),
-                Column(
-                  children: _healthData!.detectedPatterns.map((pattern) => 
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.only(top: 6),
-                            child: Icon(
-                              Icons.circle,
-                              size: 8,
-                              color: AppTheme.textSecondary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              pattern,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                height: 1.5,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ).toList(),
-                ),
-              ],
-            ),
-          ),
         ),
         
         const SizedBox(height: 24),
@@ -705,10 +629,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   // Helper Methods for Risk Levels
-  String _getGlucoseRiskLevel(double value) {
-    final mgDl = value * 18.018;
-    if (mgDl < 70 || mgDl > 180) return 'high';
-    if (mgDl > 140) return 'medium';
+  String _getGlucoseRiskLevel(double rawValue, String unit) {
+    // Normalize the incoming value to mmol/L for standardized logic
+    // If the incoming value is in mg/dL, convert it back to mmol/L
+    double mmolValue = (unit == 'mg/dL') ? (rawValue / 18.018) : rawValue;
+
+    // Perform comparison using normalized mmol/L units
+    if (mmolValue < 3.9 || mmolValue > 10.0) return 'high';
+    if (mmolValue > 7.8) return 'medium';
     return 'low';
   }
 
