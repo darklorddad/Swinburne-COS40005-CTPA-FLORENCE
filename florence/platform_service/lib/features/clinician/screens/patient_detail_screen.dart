@@ -340,7 +340,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ],
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _showEditPatientDialog,
+          onPressed: _showEditPatientProfileDialog,
           child: const Icon(Icons.edit),
         ),
       ),
