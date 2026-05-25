@@ -149,7 +149,7 @@ class AdminSidebar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Sarah Anderson',
+                  'Farah Ann',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,

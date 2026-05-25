@@ -16,6 +16,7 @@ import 'package:florence/features/patient/core/providers/threshold_providers.dar
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -330,6 +331,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   /// Handle save
   Future<void> _handleSave() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    if (_selectedDateTime.isAfter(DateTime.now())) {
+      Helpers.showError(context, 'Cannot log readings in the future.');
       return;
     }
     
@@ -710,8 +716,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final currentUnit = settings.glucoseUnit;
     final isMmol = currentUnit == 'mmol/L';
 
-    final double minValid = isMmol ? 1.0 : 20.0;
-    final double maxValid = isMmol ? 35.0 : 600.0;
+    // Widen absolute biological limits to prevent blocking valid readings 
+    // that lie inside or slightly outside custom target ranges.
+    double minValid = isMmol ? 0.1 : 10.0;
+    double maxValid = isMmol ? 60.0 : 1000.0;
+
+    // Dynamically expand if the user's custom threshold somehow exceeds even these extremes
+    if (threshold != null) {
+      if (threshold.minValue < minValid) minValid = threshold.minValue;
+      if (threshold.maxValue > maxValid) maxValid = threshold.maxValue;
+    }
 
     // Tint the whole card background based on status
     final containerColor = glucoseColor != null 
@@ -757,6 +771,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                 child: TextFormField(
                   controller: _glucoseController,
                   focusNode: _glucoseFocusNode,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.\,]?\d*')),
+                  ],
                   validator: (val) {
                     if (val == null || val.isEmpty) return 'Required';
                     final num = double.tryParse(val.replaceAll(',', '.'));
@@ -1599,6 +1616,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                         TextFormField(
                           controller: _caloriesController,
                           keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
                           textInputAction: TextInputAction.done,
                           onChanged: (_) => setState(() {}),
                           decoration: InputDecoration(
