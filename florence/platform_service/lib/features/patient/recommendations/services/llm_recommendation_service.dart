@@ -62,7 +62,7 @@ class LlmRecommendationService {
 
     return rawList
         .map((item) {
-          final map = _toCamelCase(item as Map<String, dynamic>);
+          final map = item as Map<String, dynamic>;
           map['timeframe'] = timeframe;
           return HealthRecommendation.fromJson(map);
         })
@@ -103,39 +103,4 @@ class LlmRecommendationService {
     };
   }
 
-  /// Converts a snake_case recommendation JSON map from the backend into the
-  /// camelCase keys expected by [HealthRecommendation.fromJson].
-  Map<String, dynamic> _toCamelCase(Map<String, dynamic> raw) {
-    final result = <String, dynamic>{
-      'id': raw['id'],
-      'category': raw['category'],
-      'title': raw['title'],
-      'description': raw['description'],
-      'priority': raw['priority'],
-      'status': raw['status'] ?? 'active',
-      'generatedAt': raw['generated_at'],
-      'expiresAt': raw['expires_at'],
-      'actionItems': raw['action_items'],
-      'dataSources': null,
-    };
-
-    final exp = raw['explanation'] as Map<String, dynamic>?;
-    if (exp != null) {
-      result['explanation'] = {
-        'rationale': exp['rationale'],
-        'expectedImpact': exp['expected_impact'],
-        'evidenceLinks': exp['evidence_links'] ?? <String>[],
-        'triggeringData': (exp['triggering_data'] as List<dynamic>? ?? [])
-            .map((d) => {
-                  'type': d['type'],
-                  'description': d['description'],
-                  'value': d['value'],
-                  'timestamp': d['timestamp'],
-                })
-            .toList(),
-      };
-    }
-
-    return result;
-  }
 }

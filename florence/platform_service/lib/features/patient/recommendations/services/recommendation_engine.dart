@@ -87,8 +87,12 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
         'recommendations': newRecommendations.map((r) => r.toJson()).toList()
       });
       
-      // Reload from database
-      ref.invalidateSelf();
+      // Reload from database if provider is still alive
+      try {
+        ref.invalidateSelf();
+      } catch (_) {
+        // Ignore if provider was already disposed (e.g. user left screen)
+      }
     } catch (e) {
       debugPrint('[RecommendationEngine] Failed to save recommendations: $e');
     }

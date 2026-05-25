@@ -264,47 +264,57 @@ class _RecommendationsScreenState
   }
 
   Future<void> _checkAndLoad() async {
-    // Read the current state of the async provider
-    final recs = ref.read(recommendationProvider).value ?? [];
-    final active = recs.where((r) => r.isActive).toList();
-    
-    // Check if we need to generate Daily (No active daily from today)
-    final hasRecentDaily = active.any((r) => 
-        r.timeframe == 'daily' && 
-        DateTime.now().difference(r.generatedAt).inHours < 24);
-        
-    // Check if we need to generate Weekly (No active weekly from last 7 days)
-    final hasRecentWeekly = active.any((r) => 
-        r.timeframe == 'weekly' && 
-        DateTime.now().difference(r.generatedAt).inDays < 7);
+    try {
+      // WAIT for the database fetch to complete first!
+      final recs = await ref.read(recommendationProvider.future);
+      if (!mounted) return;
 
-    bool generatedAny = false;
-    
-    if (!hasRecentDaily) {
-      await _generateRecommendations(timeframe: 'daily', hideToast: true);
-      generatedAny = true;
-    }
-    
-    if (!hasRecentWeekly) {
-      await _generateRecommendations(timeframe: 'weekly', hideToast: true);
-      generatedAny = true;
-    }
-    
-    if (!generatedAny) {
-      _scoreCtrl.forward();
+      final active = recs.where((r) => r.isActive).toList();
+      
+      // Check if we need to generate Daily (No active daily from today)
+      final hasRecentDaily = active.any((r) => 
+          r.timeframe == 'daily' && 
+          DateTime.now().difference(r.generatedAt).inHours < 24);
+          
+      // Check if we need to generate Weekly (No active weekly from last 7 days)
+      final hasRecentWeekly = active.any((r) => 
+          r.timeframe == 'weekly' && 
+          DateTime.now().difference(r.generatedAt).inDays < 7);
+
+      bool generatedAny = false;
+      
+      if (!hasRecentDaily) {
+        await _generateRecommendations(timeframe: 'daily', hideToast: true);
+        generatedAny = true;
+      }
+      
+      if (!hasRecentWeekly && mounted) {
+        await _generateRecommendations(timeframe: 'weekly', hideToast: true);
+        generatedAny = true;
+      }
+      
+      if (!generatedAny && mounted) {
+        _scoreCtrl.forward();
+      }
+    } catch (e) {
+      debugPrint("Failed to load initial recommendations: $e");
     }
   }
 
   Future<void> _generateRecommendations({required String timeframe, bool hideToast = false}) async {
+    if (!mounted) return;
     setState(() => _isGenerating = true);
     _scoreCtrl.reset();
     try {
       final usedAI = await ref
           .read(recommendationProvider.notifier)
           .generateRecommendations(timeframe: timeframe);
+      
+      if (!mounted) return; // Prevent setState after dispose
+      
       _staggerCtrl.forward(from: 0);
       _scoreCtrl.forward();
-      if (mounted && !hideToast) {
+      if (!hideToast) {
         if (usedAI) {
           Helpers.showSuccess(context, '${timeframe[0].toUpperCase()}${timeframe.substring(1)} AI analysis complete');
         } else {
