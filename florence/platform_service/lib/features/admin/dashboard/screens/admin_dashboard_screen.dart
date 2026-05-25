@@ -122,7 +122,7 @@ class AdminDashboardScreen extends ConsumerWidget {
             value: metrics.highRiskPatients.toString(),
             subtitle: 'Needs attention',
             subtitleColor: AdminTheme.error,
-            subtitleBg: Colors.transparent,
+            subtitleBg: AdminTheme.errorContainer.withValues(alpha: 0.5),
             icon: Icons.warning_amber_rounded,
             iconColor: AdminTheme.error,
             isAlert: true,
@@ -131,13 +131,27 @@ class AdminDashboardScreen extends ConsumerWidget {
         const SizedBox(width: 24),
         Expanded(
           child: _MetricCard(
-            title: 'Active Clinicians',
-            value: metrics.activeClinicians.toString(),
-            subtitle: 'On duty',
-            subtitleColor: AdminTheme.onSurfaceVariant,
-            subtitleBg: Colors.transparent,
-            icon: Icons.medical_services_outlined,
-            iconColor: AdminTheme.primary,
+            title: 'Hypoglycemia',
+            value: metrics.hypoPatients.toString(),
+            subtitle: 'Recent Alerts',
+            subtitleColor: const Color(0xFFE65100), // Amber/Orange
+            subtitleBg: const Color(0xFFFFE0B2).withValues(alpha: 0.5),
+            icon: Icons.trending_down_rounded,
+            iconColor: const Color(0xFFE65100),
+            isAlert: metrics.hypoPatients > 0,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _MetricCard(
+            title: 'Hyperglycemia',
+            value: metrics.hyperPatients.toString(),
+            subtitle: 'Recent Alerts',
+            subtitleColor: const Color(0xFFD32F2F), // Red
+            subtitleBg: const Color(0xFFFFCDD2).withValues(alpha: 0.5),
+            icon: Icons.trending_up_rounded,
+            iconColor: const Color(0xFFD32F2F),
+            isAlert: metrics.hyperPatients > 0,
           ),
         ),
       ],
@@ -145,8 +159,8 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildActionFeed(BuildContext context, List<AdminPatient> patients) {
-    // Filter to show only high-risk patients in the feed, take top 5
-    final highRiskPatients = patients.where((p) => p.isHighRisk).take(5).toList();
+    // Show ANY patient that requires attention (High Risk, Hypo, or Hyper)
+    final attentionPatients = patients.where((p) => p.requiresAttention).take(6).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -163,11 +177,11 @@ class AdminDashboardScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 16),
-        if (highRiskPatients.isEmpty)
+        if (attentionPatients.isEmpty)
           const Card(
             child: Padding(
               padding: EdgeInsets.all(32.0),
-              child: Center(child: Text('No high-risk patients currently require action.', style: TextStyle(color: AdminTheme.outline))),
+              child: Center(child: Text('All patient vitals are stable. ✅', style: TextStyle(color: AdminTheme.outline))),
             ),
           )
         else
@@ -177,14 +191,18 @@ class AdminDashboardScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
-              children: highRiskPatients.asMap().entries.map((entry) {
+              children: attentionPatients.asMap().entries.map((entry) {
                 final patient = entry.value;
-                final isLast = entry.key == highRiskPatients.length - 1;
+                final isLast = entry.key == attentionPatients.length - 1;
+                
+                // Determine what text to show in the feed based on their status
+                String alertText = patient.latestAlert ?? 'Flagged as High Risk';
+                
                 return Column(
                   children: [
                     _FeedItem(
                       name: patient.name,
-                      alert: 'Requires review', // Could be populated from DB if a "latest_alert" field exists
+                      alert: alertText,
                       doctor: patient.clinicianName ?? 'Unassigned',
                       isHighRisk: patient.isHighRisk,
                       avatarUrl: 'https://i.pravatar.cc/150?u=${patient.id}',

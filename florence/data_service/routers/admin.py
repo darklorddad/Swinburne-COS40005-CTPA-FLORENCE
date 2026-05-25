@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from client import supabase
 from routers.authentication import get_current_admin_user
@@ -53,14 +53,47 @@ async def get_all_patients():
             "clinician_profiles(name)"
         ).execute()
 
+        # 2. Fetch Recent Glucose (Last 24 Hours) for Hypo/Hyper alerts
+        yesterday = (datetime.now() - timedelta(days=1)).isoformat()
+        glucose_res = supabase.table('patient_monitor_data')\
+            .select('patient_id, value')\
+            .eq('data_type', 'GLUCOSE')\
+            .gte('measured_at', yesterday)\
+            .order('measured_at', desc=True)\
+            .execute()
+
+        # 3. Determine the latest alert per patient
+        patient_alerts = {}
+        for row in glucose_res.data:
+            pid = row['patient_id']
+            if pid not in patient_alerts:
+                val = row['value']
+                # Dynamic check for both mmol/L (usually < 25) and mg/dL (usually > 25)
+                is_mgdl = val > 25
+                hypo_thresh = 70.0 if is_mgdl else 3.9
+                hyper_thresh = 180.0 if is_mgdl else 10.0
+                
+                if val < hypo_thresh:
+                    patient_alerts[pid] = "Hypoglycemic Event"
+                elif val > hyper_thresh:
+                    patient_alerts[pid] = "Hyperglycemic Event"
+                else:
+                    patient_alerts[pid] = "Normal"
+
         # Process the data to create the desired flat structure
         processed_patients = []
         for patient in patients_response.data:
             org_data = patient.get('organisations')
             clinician_data = patient.get('clinician_profiles')
+            pid = patient.get("id")
+
+            # Attach alert if critical
+            latest_alert = patient_alerts.get(pid)
+            if latest_alert == "Normal":
+                latest_alert = None
             
             processed_patient = {
-                "id": patient.get("id"),
+                "id": pid,
                 "Name": patient.get("name"),
                 "Phone Number": patient.get("phone_number"),
                 "Gender": patient.get("gender"),
@@ -71,7 +104,8 @@ async def get_all_patients():
                 "Emergency Contact Phone Number": patient.get("emergency_contact_phone"),
                 "Clinician Name": clinician_data.get("name") if clinician_data else None,
                 "Risk Level": patient.get("risk_level"),
-                "Last Risk Assessment": patient.get("last_risk_assessment")
+                "Last Risk Assessment": patient.get("last_risk_assessment"),
+                "Latest Alert": latest_alert
             }
             processed_patients.append(processed_patient)
             
