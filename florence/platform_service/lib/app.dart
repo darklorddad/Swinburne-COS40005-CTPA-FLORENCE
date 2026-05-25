@@ -255,7 +255,12 @@ class _AppState extends ConsumerState<App> {
 
       // Clear admin session state as well
       AdminAuthService().logout();
-      navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+
+      // Ensure we clear the stack and go to login
+      navigator.pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
     }
   }
 
