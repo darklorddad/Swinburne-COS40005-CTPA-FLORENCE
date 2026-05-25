@@ -1903,10 +1903,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         final displayName = labels[type] ?? type.replaceAll('_', ' ');
         final iconData = icons[type] ?? Icons.analytics_outlined;
 
+        double minValue = (t['min_value'] as num).toDouble();
+        double maxValue = (t['max_value'] as num).toDouble();
         String unit = '';
-        if (type == 'GLUCOSE' || type.contains('CHOLESTEROL')) unit = ' mg/dL';
-        if (type.contains('BLOOD_PRESSURE')) unit = ' mmHg';
-        if (type == 'HBA1C') unit = ' %';
+
+        if (type == 'GLUCOSE') {
+          unit = ' $_glucoseUnit';
+          if (_glucoseUnit == 'mg/dL') {
+            minValue = minValue * 18.018;
+            maxValue = maxValue * 18.018;
+          }
+        } else if (type.contains('CHOLESTEROL')) {
+          unit = ' $_cholesterolUnit';
+          if (_cholesterolUnit == 'mg/dL') {
+            minValue = minValue * 38.67;
+            maxValue = maxValue * 38.67;
+          }
+        } else if (type.contains('BLOOD_PRESSURE')) {
+          unit = ' mmHg';
+        } else if (type == 'HBA1C') {
+          unit = ' %';
+        }
 
         return Column(
           children: [
@@ -1935,7 +1952,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      '${(t['min_value'] as num).toStringAsFixed(1)} - ${(t['max_value'] as num).toStringAsFixed(1)}$unit',
+                      '${minValue.toStringAsFixed(1)} - ${maxValue.toStringAsFixed(1)}$unit',
                       style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
