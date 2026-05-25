@@ -110,11 +110,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
         await _dataService.updateClinicianProfile(updatedClinician);
 
-        await ApiService().put('/clinicians/me/settings', {
-          'glucose_unit': _glucoseUnit,
-          'cholesterol_unit': _cholesterolUnit,
-        });
-
         if (mounted) {
           setState(() {
             _clinician = updatedClinician;
@@ -134,6 +129,73 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
         }
       }
     }
+  }
+
+  Future<void> _saveInlineSettings() async {
+    try {
+      await ApiService().put('/clinicians/me/settings', {
+        'glucose_unit': _glucoseUnit,
+        'cholesterol_unit': _cholesterolUnit,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Preferences updated successfully!'),
+              duration: Duration(seconds: 1)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update preferences: $e')),
+        );
+      }
+    }
+  }
+
+  void _showOnTheSpotUnitSelector(String title, List<String> options,
+      String currentSelection, Function(String) onSelected) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select $title',
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              ...options.map((option) => ListTile(
+                    title: Text(option,
+                        style: TextStyle(
+                          color: option == currentSelection
+                              ? AppTheme.primaryColor
+                              : AppTheme.textPrimary,
+                          fontWeight: option == currentSelection
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        )),
+                    trailing: option == currentSelection
+                        ? const Icon(Icons.check, color: AppTheme.primaryColor)
+                        : null,
+                    onTap: () {
+                      onSelected(option);
+                      Navigator.pop(context);
+                    },
+                  )),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _cancelEdit() {
@@ -253,7 +315,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       // Name
                       TextFormField(
                         controller: _nameController,
-                        enabled: _isEditing,
+                        readOnly: !_isEditing,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         decoration: const InputDecoration(
                           labelText: 'Full Name',
@@ -270,36 +332,45 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                       const SizedBox(height: 20),
 
                       // Gender
-                      DropdownButtonFormField<String>(
-                        value: _selectedGender,
-                        style: const TextStyle(color: AppTheme.textPrimary),
-                        decoration: const InputDecoration(
-                          labelText: 'Gender',
-                          prefixIcon: Icon(Icons.wc_outlined),
+                      if (_isEditing)
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
+                          items: _genders.map((gender) {
+                            return DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            }
+                          },
+                        )
+                      else
+                        TextFormField(
+                          initialValue: _selectedGender ?? 'Not Set',
+                          readOnly: true,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
                         ),
-                        items: _genders.map((gender) {
-                          return DropdownMenuItem(
-                            value: gender,
-                            child: Text(gender),
-                          );
-                        }).toList(),
-                        onChanged: _isEditing
-                            ? (value) {
-                                if (value != null) {
-                                  setState(() {
-                                    _selectedGender = value;
-                                  });
-                                }
-                              }
-                            : null,
-                      ),
 
                       const SizedBox(height: 20),
 
                       // Mobile Phone
                       TextFormField(
                         controller: _mobileController,
-                        enabled: _isEditing,
+                        readOnly: !_isEditing,
                         style: const TextStyle(color: AppTheme.textPrimary),
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
@@ -314,7 +385,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         },
                       ),
 
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
                       // Action Buttons
                       Row(
@@ -325,15 +396,31 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                               onPressed: _toggleEdit,
                               icon: const Icon(Icons.edit, size: 18),
                               label: const Text('Edit Profile'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
                             )
                           else ...[
                             OutlinedButton(
                               onPressed: _cancelEdit,
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
                               child: const Text('Cancel'),
                             ),
                             const SizedBox(width: 12),
                             ElevatedButton(
                               onPressed: _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
                               child: const Text('Save Changes'),
                             ),
                           ],
@@ -363,53 +450,54 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
-                      if (_isEditing) ...[
-                        DropdownButtonFormField<String>(
-                          value: _glucoseUnit,
-                          decoration: const InputDecoration(
-                              labelText: 'Glucose Unit',
-                              prefixIcon: Icon(Icons.water_drop)),
-                          items: ['mmol/L', 'mg/dL']
-                              .map((u) =>
-                                  DropdownMenuItem(value: u, child: Text(u)))
-                              .toList(),
-                          onChanged: (val) =>
-                              setState(() => _glucoseUnit = val!),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.water_drop_outlined,
+                            color: AppTheme.primaryColor),
+                        title: const Text('Glucose Unit'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_glucoseUnit,
+                                style: const TextStyle(
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.bold)),
+                            const Icon(Icons.chevron_right,
+                                size: 20, color: AppTheme.textTertiary),
+                          ],
                         ),
-                        const SizedBox(height: 20),
-                        DropdownButtonFormField<String>(
-                          value: _cholesterolUnit,
-                          decoration: const InputDecoration(
-                              labelText: 'Cholesterol Unit',
-                              prefixIcon: Icon(Icons.bloodtype)),
-                          items: ['mmol/L', 'mg/dL']
-                              .map((u) =>
-                                  DropdownMenuItem(value: u, child: Text(u)))
-                              .toList(),
-                          onChanged: (val) =>
-                              setState(() => _cholesterolUnit = val!),
+                        onTap: () => _showOnTheSpotUnitSelector(
+                            'Glucose Unit', ['mmol/L', 'mg/dL'], _glucoseUnit,
+                            (newUnit) async {
+                          setState(() => _glucoseUnit = newUnit);
+                          await _saveInlineSettings();
+                        }),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.bloodtype_outlined,
+                            color: AppTheme.primaryColor),
+                        title: const Text('Cholesterol Unit'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_cholesterolUnit,
+                                style: const TextStyle(
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.bold)),
+                            const Icon(Icons.chevron_right,
+                                size: 20, color: AppTheme.textTertiary),
+                          ],
                         ),
-                      ] else ...[
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.water_drop_outlined,
-                              color: AppTheme.primaryColor),
-                          title: const Text('Glucose'),
-                          trailing: Text(_glucoseUnit,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                        const Divider(height: 1),
-                        ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.bloodtype_outlined,
-                              color: AppTheme.primaryColor),
-                          title: const Text('Cholesterol'),
-                          trailing: Text(_cholesterolUnit,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold)),
-                        ),
-                      ],
+                        onTap: () => _showOnTheSpotUnitSelector(
+                            'Cholesterol Unit',
+                            ['mmol/L', 'mg/dL'],
+                            _cholesterolUnit, (newUnit) async {
+                          setState(() => _cholesterolUnit = newUnit);
+                          await _saveInlineSettings();
+                        }),
+                      ),
                     ],
                   ),
                 ),
@@ -468,15 +556,20 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _handleLogout,
                     icon: const Icon(Icons.logout, color: AppTheme.highRiskColor),
-                    label: const Text('Logout', style: TextStyle(color: AppTheme.highRiskColor, fontWeight: FontWeight.bold)),
+                    label: const Text('Logout',
+                        style: TextStyle(
+                            color: AppTheme.highRiskColor,
+                            fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppTheme.highRiskColor, width: 1.5),
+                      side: const BorderSide(
+                          color: AppTheme.highRiskColor, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
-                
+
               const SizedBox(height: 32),
             ],
           ),

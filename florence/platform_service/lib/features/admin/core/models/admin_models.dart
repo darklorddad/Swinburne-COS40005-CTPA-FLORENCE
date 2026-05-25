@@ -93,3 +93,54 @@ class AdminActivity {
     );
   }
 }
+
+@immutable
+class AdminOrganization {
+  final int id;
+  final String name;
+  final String? phoneNumber;
+  final String? email;
+  final String? website;
+  final String? sector;
+  final String? facilityType;
+  final String? fullAddress;
+  final String? state;
+  final bool is24Hours;
+  final String? operatingHours;
+  final int patientCount;
+  final int clinicianCount;
+
+  const AdminOrganization({
+    required this.id,
+    required this.name,
+    this.phoneNumber,
+    this.email,
+    this.website,
+    this.sector,
+    this.facilityType,
+    this.fullAddress,
+    this.state,
+    this.is24Hours = false,
+    this.operatingHours,
+    this.patientCount = 0,
+    this.clinicianCount = 0,
+  });
+
+  factory AdminOrganization.fromJson(Map<String, dynamic> json) {
+    return AdminOrganization(
+      id: json['id'] as int,
+      name: json['name'] ?? 'Unnamed',
+      phoneNumber: json['phone_number'],
+      email: json['email'],
+      website: json['website'],
+      sector: json['sector'],
+      facilityType: json['facility_type'],
+      fullAddress: json['full_address'],
+      state: json['state'],
+      is24Hours: json['is_24_hours'] ?? false,
+      operatingHours: json['operating_hours'],
+      patientCount: json['patient_count'] ?? 0,
+      clinicianCount: json['clinician_count'] ?? 0,
+    );
+  }
+}

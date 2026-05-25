@@ -309,6 +309,22 @@ class ApiDataService implements DataService {
         weight = latestBmi * (1.7 * 1.7);
       }
 
+      // Parse medications
+      final medsData = data['medications'] as List? ?? [];
+      final medications = medsData.map((m) {
+        final dict = m['medication_dictionary'] as Map<String, dynamic>?;
+        final freq = m['dosage_frequencies'] as Map<String, dynamic>?;
+        
+        return Medication(
+          name: dict?['brand_name'] ?? m['custom_medication_name'] ?? 'Unknown',
+          dosage: m['amount'] ?? '',
+          frequency: freq?['patient_text'] ?? 'Not specified',
+          route: m['medication_type'] ?? 'Oral',
+          startDate: m['created_at'] != null ? DateTime.parse(m['created_at']) : null,
+          notes: m['notes'],
+        );
+      }).toList();
+
       return PatientHealthData(
         patientId: patientId,
         weight: weight,
@@ -321,7 +337,7 @@ class ApiDataService implements DataService {
         activityData: _parseActivityData(activityLogs),
         mealEntries: mealEntries, 
         automatedActions: [], 
-        medications: [], 
+        medications: medications, 
         aiGeneratedSummary: 'Patient data loaded successfully.',
         detectedPatterns: [], 
         recommendations: [], 

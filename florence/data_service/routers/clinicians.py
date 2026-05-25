@@ -80,6 +80,27 @@ class PatientProfileUpdate(BaseModel):
     emergency_contact_relationship: Optional[str] = None
     emergency_contact_phone: Optional[str] = None
 
+# --- MEDICAL CONDITIONS (DISEASE) SCHEMAS ---
+class DiseaseCreate(BaseModel):
+    condition_name: str
+    status: str  # 'active' or 'resolved'
+    diagnosed_date: str
+
+class DiseaseUpdate(BaseModel):
+    condition_name: Optional[str] = None
+    status: Optional[str] = None
+    diagnosed_date: Optional[str] = None
+
+# --- MEDICATION SCHEMAS ---
+class ClinicianMedicationPayload(BaseModel):
+    medication_id: Optional[int] = None
+    custom_medication_name: Optional[str] = None
+    amount: str
+    medication_type: str
+    frequency_id: int
+    timing_instructions: List[str]
+    status: str = "CURRENT"
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -110,6 +131,24 @@ async def update_own_clinician_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
+@router.get("/medications/dictionary", summary="Get medication dictionary for autocomplete")
+async def get_clinician_medication_dictionary(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves the global medication dictionary for clinicians."""
+    try:
+        res = supabase.table('medication_dictionary').select('*').order('brand_name').execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch medication dictionary: {str(e)}")
+
+@router.get("/medications/frequencies", summary="Get dosage frequency options")
+async def get_clinician_dosage_frequencies(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves the global dosage frequencies for clinicians."""
+    try:
+        res = supabase.table('dosage_frequencies').select('*').execute()
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch dosage frequencies: {str(e)}")
+
 @router.get("/me/settings", summary="Get my clinician unit settings")
 async def get_clinician_settings(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves the unit settings for the authenticated clinician."""
@@ -137,6 +176,118 @@ async def update_clinician_settings(
         return res.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update settings: {str(e)}")
+
+# =========================================================================
+# MEDICAL CONDITIONS (DISEASES) MANAGEMENT
+# =========================================================================
+
+@router.post("/patients/{patient_id}/diseases")
+async def add_patient_disease(
+    patient_id: str, 
+    payload: DiseaseCreate, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Allows a clinician to log a brand new medical diagnosis for a specific patient."""
+    try:
+        db_payload = {
+            "patient_id": patient_id,
+            "condition_name": payload.condition_name,
+            "status": payload.status.lower(),
+            "diagnosed_date": payload.diagnosed_date
+        }
+        res = supabase.table("disease_logs").insert(db_payload).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to append disease record: {str(e)}")
+
+
+@router.put("/diseases/{disease_id}")
+async def update_patient_disease(
+    disease_id: int, 
+    payload: DiseaseUpdate, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Updates an existing condition record."""
+    try:
+        update_data = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+        if "status" in update_data:
+            update_data["status"] = update_data["status"].lower()
+
+        res = supabase.table("disease_logs").update(update_data).eq("id", disease_id).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to modify disease log: {str(e)}")
+
+
+@router.delete("/diseases/{disease_id}")
+async def remove_patient_disease(
+    disease_id: int, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Permanently purges a medical condition record."""
+    try:
+        supabase.table("disease_logs").delete().eq("id", disease_id).execute()
+        return {"status": "success", "detail": f"Condition record {disease_id} dropped successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to purge record entry: {str(e)}")
+
+# =========================================================================
+# CLINICAL MEDICATION MANAGEMENT
+# =========================================================================
+
+@router.post("/patients/{patient_id}/medications")
+async def add_patient_medication(
+    patient_id: str, 
+    payload: ClinicianMedicationPayload, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Assigns an entirely new active medical schedule profile to a patient."""
+    try:
+        db_payload = {
+            "patient_id": patient_id,
+            "medication_id": payload.medication_id,
+            "custom_medication_name": payload.custom_medication_name,
+            "amount": payload.amount,
+            "medication_type": payload.medication_type,
+            "frequency_id": payload.frequency_id,
+            "timing_instructions": payload.timing_instructions,
+            "status": payload.status.upper()
+        }
+        res = supabase.table("patient_medications").insert(db_payload).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to insert medication entry: {str(e)}")
+
+
+@router.put("/medications/{medication_id}")
+async def update_patient_medication(
+    medication_id: int, 
+    payload: ClinicianMedicationPayload, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Updates dose, type form layout definitions or frequency schedules for a medication."""
+    try:
+        update_data = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+        if "status" in update_data:
+            update_data["status"] = update_data["status"].upper()
+
+        res = supabase.table("patient_medications").update(update_data).eq("id", medication_id).execute()
+        return {"status": "success", "data": res.data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save schedule changes: {str(e)}")
+
+
+@router.delete("/medications/{medication_id}")
+async def remove_patient_medication(
+    medication_id: int, 
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Discards a medication entry permanently."""
+    try:
+        supabase.table("patient_medications").delete().eq("id", medication_id).execute()
+        return {"status": "success", "detail": f"Medication entry {medication_id} dropped successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to clear target medication from database: {str(e)}")
 
 @router.get("/me/patients", summary="Get a list of all patients assigned to me")
 async def get_assigned_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
@@ -310,6 +461,13 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
         disease_logs = supabase.table('disease_logs').select('*').eq('patient_id', patient_id).execute().data
         
+        # Fetch medications with related dictionary and frequency data
+        medications = supabase.table('patient_medications').select('''
+            *,
+            medication_dictionary(*),
+            dosage_frequencies(*)
+        ''').eq('patient_id', patient_id).eq('status', 'CURRENT').execute().data
+        
         # Fetch activity using correct DB columns aliased for the frontend
         # Rename 'start_time' to 'performed_at' and 'active_duration_minutes' to 'duration_minutes'
         activity_logs = supabase.table('patient_activity_logs') \
@@ -325,7 +483,8 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
             "thresholds": thresholds,
             "notes": notes,
             "activity_logs": activity_logs,
-            "disease_logs": disease_logs
+            "disease_logs": disease_logs,
+            "medications": medications
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):
