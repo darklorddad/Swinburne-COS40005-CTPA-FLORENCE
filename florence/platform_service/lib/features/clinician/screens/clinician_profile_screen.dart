@@ -57,7 +57,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
         });
 
         try {
-          final settings = await ApiService().get('/patients/me/settings');
+          final settings = await ApiService().get('/clinicians/me/settings');
           if (settings != null && mounted) {
             setState(() {
               _glucoseUnit = settings['glucose_unit'] ?? 'mmol/L';
@@ -110,7 +110,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
         await _dataService.updateClinicianProfile(updatedClinician);
 
-        await ApiService().put('/patients/me/settings', {
+        await ApiService().put('/clinicians/me/settings', {
           'glucose_unit': _glucoseUnit,
           'cholesterol_unit': _cholesterolUnit,
         });

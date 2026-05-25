@@ -110,6 +110,34 @@ async def update_own_clinician_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
+@router.get("/me/settings", summary="Get my clinician unit settings")
+async def get_clinician_settings(clinician_profile: dict = Depends(get_current_clinician_profile)):
+    """Retrieves the unit settings for the authenticated clinician."""
+    try:
+        res = supabase.table('user_settings').select('*').eq('user_id', clinician_profile['user_id']).execute()
+        if not res.data:
+            return {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch settings: {str(e)}")
+
+@router.put("/me/settings", summary="Update my clinician unit settings")
+async def update_clinician_settings(
+    settings_data: dict,
+    clinician_profile: dict = Depends(get_current_clinician_profile)
+):
+    """Updates or creates the unit settings for the authenticated clinician."""
+    try:
+        res = supabase.table('user_settings').upsert({
+            'user_id': clinician_profile['user_id'],
+            'glucose_unit': settings_data.get('glucose_unit', 'mmol/L'),
+            'cholesterol_unit': settings_data.get('cholesterol_unit', 'mmol/L'),
+            'updated_at': 'now()'
+        }).execute()
+        return res.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update settings: {str(e)}")
+
 @router.get("/me/patients", summary="Get a list of all patients assigned to me")
 async def get_assigned_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves a list of all patients assigned to the currently authenticated clinician."""
