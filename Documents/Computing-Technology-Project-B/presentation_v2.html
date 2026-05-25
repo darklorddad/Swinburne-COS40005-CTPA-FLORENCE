@@ -135,19 +135,19 @@ h1,h2,h3{font-family:'Fraunces',serif}
 /* ── PATIENT: LOG GRID ── */
 .log-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem;margin-top:1rem}
 .log-card{background:#fff;padding:1.3rem 1.4rem;border-radius:10px;box-shadow:0 2px 10px rgba(27,42,107,.07);display:flex;align-items:flex-start;gap:1rem}
-.log-card i{font-size:1.5rem;color:var(--blue);flex-shrink:0;margin-top:2px}
+.log-card i{font-size:1.5rem;color:var(--success);flex-shrink:0;margin-top:2px}
 .log-title{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:900;color:var(--navy-2);margin-bottom:.25rem}
 .log-items{font-size:.96rem;color:var(--text-dim);line-height:1.55}
 
 /* ── PATIENT: SEE LIST ── */
 .see-list{list-style:none;display:flex;flex-direction:column;gap:.9rem;margin-top:1rem}
 .see-list li{display:flex;align-items:flex-start;gap:.8rem;font-size:clamp(1rem,1.5vw,1.1rem);color:var(--navy);line-height:1.65}
-.see-list li i{color:var(--blue);flex-shrink:0;margin-top:3px;font-size:1rem}
+.see-list li i{color:var(--success);flex-shrink:0;margin-top:3px;font-size:1rem}
 
 /* ── PATIENT: AI FEATURE TILES ── */
 .ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.1rem;margin-top:.8rem}
-.ai-tile{background:#fff;padding:1.2rem 1.3rem;border-top:2.5px solid var(--blue);border-radius:0 0 10px 10px;box-shadow:0 2px 8px rgba(27,42,107,.07)}
-.ai-tile-icon{font-size:1.3rem;color:var(--blue);margin-bottom:.55rem}
+.ai-tile{background:#fff;padding:1.2rem 1.3rem;border-top:2.5px solid var(--success);border-radius:0 0 10px 10px;box-shadow:0 2px 8px rgba(27,42,107,.07)}
+.ai-tile-icon{font-size:1.3rem;color:var(--success);margin-bottom:.55rem}
 .ai-tile-name{font-family:'Fraunces',serif;font-size:1rem;font-weight:900;color:var(--navy-2);margin-bottom:.3rem}
 .ai-tile-desc{font-size:.96rem;color:var(--text-dim);line-height:1.5}
 .ai-tile.wow{border-top-color:var(--navy-2)}
@@ -595,8 +595,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
 <div class="slide" id="slide-13">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
-  <div class="slide-label up d1">patient role · 1 of 3</div>
-  <h2 class="title-md up d2" style="margin-top:.3rem">Everything in one place.<br><span class="text-blue">No more scattered records.</span></h2>
+  <div class="slide-label up d1" style="background:rgba(5,150,105,.09);border-color:rgba(5,150,105,.28);color:var(--success)">patient role · 1 of 3</div>
+  <h2 class="title-md up d2" style="margin-top:.3rem">Everything in one place.<br><span class="text-success">No more scattered records.</span></h2>
   <p class="body-md up d3" style="max-width:680px;margin-top:.4rem">Patients log their health data daily — directly in the app. FLORENCE learns from every entry.</p>
   <div class="log-grid up d4">
     <div class="log-card">
@@ -624,8 +624,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
     <div class="col">
-      <div class="slide-label up d1">patient role · 2 of 3</div>
-      <h2 class="title-md up d2" style="margin-top:.3rem">Your health, at a glance.<br><span class="text-blue">Every single morning.</span></h2>
+      <div class="slide-label up d1" style="background:rgba(5,150,105,.09);border-color:rgba(5,150,105,.28);color:var(--success)">patient role · 2 of 3</div>
+      <h2 class="title-md up d2" style="margin-top:.3rem">Your health, at a glance.<br><span class="text-success">Every single morning.</span></h2>
       <div class="rule up d3"></div>
       <ul class="see-list up d4">
         <li><i class="fa-solid fa-sun"></i>A one-sentence AI Daily Insight summarizing today's health status — waiting on the dashboard every morning.</li>
@@ -648,31 +648,31 @@ h1,h2,h3{font-family:'Fraunces',serif}
 <div class="slide" id="slide-15">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
-  <div class="slide-label up d1">patient role · 3 of 3</div>
-  <h2 class="title-md up d2" style="margin-top:.3rem;margin-bottom:1rem">The parts that make<br><span class="text-blue">FLORENCE different.</span></h2>
+  <div class="slide-label up d1" style="background:rgba(5,150,105,.09);border-color:rgba(5,150,105,.28);color:var(--success)">patient role · 3 of 3</div>
+  <h2 class="title-md up d2" style="margin-top:.3rem;margin-bottom:1rem">The parts that make<br><span class="text-success">FLORENCE different.</span></h2>
   <div class="ai-grid up d3">
     <div class="ai-tile">
-      <div class="ai-tile-icon"><i class="fa-solid fa-sun"></i></div>
+      <div class="ai-tile-icon"><i class="fa-solid fa-sun" style="color:var(--amber)"></i></div>
       <div class="ai-tile-name">AI Daily Insight</div>
       <div class="ai-tile-desc">One AI-written sentence every morning. Tells you exactly where you stand — before you even ask.</div>
     </div>
     <div class="ai-tile">
-      <div class="ai-tile-icon"><i class="fa-solid fa-lightbulb"></i></div>
+      <div class="ai-tile-icon"><i class="fa-solid fa-lightbulb" style="color:var(--success)"></i></div>
       <div class="ai-tile-name">Personalized Recommendations</div>
       <div class="ai-tile-desc">2–3 priority actions ranked Urgent → On Track. Based on your actual logged data, not generic advice.</div>
     </div>
-    <div class="ai-tile wow">
-      <div class="ai-tile-icon"><i class="fa-solid fa-robot"></i></div>
+    <div class="ai-tile wow" style="border-top-color:var(--navy-2)">
+      <div class="ai-tile-icon"><i class="fa-solid fa-robot" style="color:var(--navy-2)"></i></div>
       <div class="ai-tile-name">AI Health Chatbot</div>
       <div class="ai-tile-desc">Ask anything about your health. FLORENCE knows your history and answers in context.</div>
     </div>
     <div class="ai-tile" style="grid-column:1/2;margin-left:auto;width:100%">
-      <div class="ai-tile-icon"><i class="fa-solid fa-camera"></i></div>
+      <div class="ai-tile-icon"><i class="fa-solid fa-camera" style="color:var(--success)"></i></div>
       <div class="ai-tile-name">Meal Vision</div>
       <div class="ai-tile-desc">Snap a photo of any meal. AI reads the calories and macros. No manual entry.</div>
     </div>
     <div class="ai-tile" style="grid-column:2/3;width:100%">
-      <div class="ai-tile-icon"><i class="fa-solid fa-file-medical"></i></div>
+      <div class="ai-tile-icon"><i class="fa-solid fa-file-medical" style="color:var(--success)"></i></div>
       <div class="ai-tile-name">Lab Report Reader</div>
       <div class="ai-tile-desc">Upload a blood test photo. AI extracts your numbers and explains what they mean.</div>
     </div>
