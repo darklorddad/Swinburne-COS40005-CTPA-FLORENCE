@@ -63,11 +63,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   int? _getMedicationId(dynamic m) {
     if (m == null) return null;
+    if (m is Medication) return m.id;
     try { return m.id; } catch (_) {}
-    try { return m.medicationId; } catch (_) {}
-    // If it's a model instance with serialization methods:
     try { return m.toJson()['id']; } catch (_) {}
-    try { return m.toJson()['medication_id']; } catch (_) {}
     return null;
   }
   
@@ -3095,16 +3093,18 @@ class _ClinicianMedicationFormDialogState
 
                           try {
                             if (widget.isEdit) {
-                              // DEFENSIVE FIX: Extract the medication identifier safely
                               int? medicationId;
                               final m = widget.medication;
+
                               if (m != null) {
-                                try { medicationId = m.id; } catch (_) {}
-                                try { if (medicationId == null) medicationId = m.medicationId; } catch (_) {}
-                                try { if (medicationId == null) medicationId = m.toJson()['id']; } catch (_) {}
-                                try { if (medicationId == null) medicationId = m.toJson()['medication_id']; } catch (_) {}
+                                if (m is Medication) {
+                                  medicationId = m.id;
+                                } else {
+                                  try { medicationId = m.id; } catch (_) {}
+                                  try { if (medicationId == null) medicationId = m.toJson()['id']; } catch (_) {}
+                                }
                               }
-                              
+
                               if (medicationId != null) {
                                 await ApiService().put(
                                     '/clinicians/medications/$medicationId',
