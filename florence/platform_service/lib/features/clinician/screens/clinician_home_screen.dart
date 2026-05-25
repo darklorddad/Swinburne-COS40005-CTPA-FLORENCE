@@ -242,12 +242,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                         ),
                       ],
                     ),
-          floatingActionButton: FloatingActionButton(
-            child: const Icon(Icons.add),
-            onPressed: () {
-              _showAddPatientDialog();
-            },
-          ),
         ),
       );
     }
@@ -479,12 +473,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {
-          _showAddPatientDialog();
-        },
       ),
     );
   }
