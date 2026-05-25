@@ -2700,10 +2700,10 @@ class _ClinicianMedicationFormDialogState
   void initState() {
     super.initState();
     _dictFuture = ApiService()
-        .get('/patients/medications/dictionary')
+        .get('/clinicians/medications/dictionary')
         .then((res) => res is List ? res : []);
     _freqFuture = ApiService()
-        .get('/patients/medications/frequencies')
+        .get('/clinicians/medications/frequencies')
         .then((res) => res is List ? res : []);
 
     if (widget.isEdit && widget.medication != null) {
