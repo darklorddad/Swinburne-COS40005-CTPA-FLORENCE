@@ -315,6 +315,26 @@ class ClinicalDocumentCreate(BaseModel):
     document_path: str
     document_type: str
 
+class RecommendationCreate(BaseModel):
+    id: str
+    timeframe: Literal['daily', 'weekly']
+    category: str
+    title: str
+    description: str
+    priority: str
+    status: str = 'active'
+    generated_at: datetime
+    expires_at: Optional[datetime] = None
+    action_items: List[str] = []
+    explanation: Optional[dict] = None
+    data_sources: Optional[dict] = None
+
+class RecommendationBatchCreate(BaseModel):
+    recommendations: List[RecommendationCreate]
+
+class RecommendationUpdate(BaseModel):
+    status: Literal['active', 'completed', 'dismissed']
+
 # --- Router Definition ---
 
 router = APIRouter(
@@ -1045,6 +1065,65 @@ async def upload_meal_photo(
     except Exception as e:
         print(f"Upload Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")
+
+# --- Recommendation Endpoints ---
+
+@router.get("/me/recommendations", summary="Get my recommendations")
+async def get_own_recommendations(patient_profile: dict = Depends(get_current_patient_profile)):
+    """Retrieves all recommendations (daily and weekly) for the patient."""
+    try:
+        response = supabase.table('patient_recommendations') \
+            .select('*') \
+            .eq('patient_id', patient_profile['id']) \
+            .order('generated_at', desc=True) \
+            .execute()
+        return response.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve recommendations: {str(e)}")
+
+@router.post("/me/recommendations", summary="Save new recommendations in bulk")
+async def save_recommendations(
+    data: RecommendationBatchCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Saves a batch of LLM-generated recommendations to the database."""
+    try:
+        insert_data = []
+        for rec in data.recommendations:
+            rec_dict = rec.model_dump(mode='json')
+            rec_dict['patient_id'] = patient_profile['id']
+            insert_data.append(rec_dict)
+        
+        if insert_data:
+            # Upsert ensures that if we retry a request, we just overwrite the ID
+            response = supabase.table('patient_recommendations').upsert(insert_data).execute()
+            return response.data
+        return []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save recommendations: {str(e)}")
+
+@router.patch("/me/recommendations/{rec_id}", summary="Update recommendation status")
+async def update_recommendation_status(
+    rec_id: str,
+    update_data: RecommendationUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Marks a recommendation as completed or dismissed."""
+    try:
+        response = supabase.table('patient_recommendations') \
+            .update({'status': update_data.status}) \
+            .eq('id', rec_id) \
+            .eq('patient_id', patient_profile['id']) \
+            .execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Recommendation not found or access denied")
+            
+        return response.data[0]
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update recommendation: {str(e)}")
 
 # --- Global Medication Endpoints ---
 

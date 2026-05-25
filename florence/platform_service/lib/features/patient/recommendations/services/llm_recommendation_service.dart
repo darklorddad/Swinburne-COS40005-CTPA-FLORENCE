@@ -20,6 +20,7 @@ class LlmRecommendationService {
   /// so the caller can transparently fall back to rule-based logic.
   Future<List<HealthRecommendation>> generate(
     HealthSummary summary, {
+    required String timeframe,
     int analysisPeriodDays = 7,
     List<String> previousTitles = const [],
   }) async {
@@ -60,9 +61,11 @@ class LlmRecommendationService {
     final rawList = data['recommendations'] as List<dynamic>;
 
     return rawList
-        .map((item) => HealthRecommendation.fromJson(
-              _toCamelCase(item as Map<String, dynamic>),
-            ))
+        .map((item) {
+          final map = _toCamelCase(item as Map<String, dynamic>);
+          map['timeframe'] = timeframe;
+          return HealthRecommendation.fromJson(map);
+        })
         .toList();
   }
 

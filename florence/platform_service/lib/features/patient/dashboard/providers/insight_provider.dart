@@ -71,7 +71,7 @@ class InsightNotifier extends AsyncNotifier<String?> {
   /// Fallback chain: first active recommendation → dummy text.
   String _fallback() {
     try {
-      final recs = ref.read(recommendationProvider);
+      final recs = ref.read(recommendationProvider).value ?? [];
       final firstActive = recs.where((r) => r.isActive).firstOrNull;
       if (firstActive != null && firstActive.description.isNotEmpty) {
         return firstActive.description;
