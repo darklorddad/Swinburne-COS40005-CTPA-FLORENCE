@@ -23,6 +23,8 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
   
   // Dropdown values
   String? _selectedGender;
+  String _glucoseUnit = 'mmol/L';
+  String _cholesterolUnit = 'mmol/L';
   
   bool _isEditing = false;
   bool _isLoading = true;
@@ -51,8 +53,24 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
           _nameController.text = clinician.name;
           _mobileController.text = clinician.phoneNumber;
           _selectedGender = clinician.gender.isNotEmpty ? clinician.gender : null;
-          _isLoading = false;
+          _isLoading = true;
         });
+
+        try {
+          final settings = await ApiService().get('/clinicians/me/settings');
+          if (settings != null && mounted) {
+            setState(() {
+              _glucoseUnit = settings['glucose_unit'] ?? 'mmol/L';
+              _cholesterolUnit = settings['cholesterol_unit'] ?? 'mmol/L';
+            });
+          }
+        } catch (e) {
+          debugPrint('Failed loading unit settings: $e');
+        }
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -79,6 +97,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate() && _clinician != null) {
+      setState(() => _isLoading = true);
       try {
         final updatedClinician = Clinician(
           id: _clinician!.id,
@@ -91,10 +110,16 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
         await _dataService.updateClinicianProfile(updatedClinician);
 
+        await ApiService().put('/clinicians/me/settings', {
+          'glucose_unit': _glucoseUnit,
+          'cholesterol_unit': _cholesterolUnit,
+        });
+
         if (mounted) {
           setState(() {
             _clinician = updatedClinician;
             _isEditing = false;
+            _isLoading = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully')),
@@ -102,6 +127,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
         }
       } catch (e) {
         if (mounted) {
+          setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error updating profile: $e')),
           );
@@ -134,28 +160,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
       appBar: AppBar(
         title: const Text('Clinician Profile'),
         elevation: 0,
-        actions: [
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: _toggleEdit,
-              tooltip: 'Edit Profile',
-            )
-          else
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(
-                  onPressed: _cancelEdit,
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: _saveProfile,
-                  child: const Text('Save'),
-                ),
-              ],
-            ),
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(2.0),
           child: Container(
@@ -229,88 +233,6 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
               
               const SizedBox(height: 32),
               
-              // Personal Information Section
-              const Text(
-                'Personal Information',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      // Name
-                      TextFormField(
-                        controller: _nameController,
-                        enabled: _isEditing,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          prefixIcon: Icon(Icons.person_outline),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // Gender
-                      DropdownButtonFormField<String>(
-                        initialValue: _selectedGender,
-                        decoration: const InputDecoration(
-                          labelText: 'Gender',
-                          prefixIcon: Icon(Icons.people_outline),
-                        ),
-                        items: _genders.map((gender) {
-                          return DropdownMenuItem(
-                            value: gender,
-                            child: Text(gender),
-                          );
-                        }).toList(),
-                        onChanged: _isEditing
-                            ? (value) {
-                                setState(() {
-                                  _selectedGender = value!;
-                                });
-                              }
-                            : null,
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // Mobile Phone
-                      TextFormField(
-                        controller: _mobileController,
-                        enabled: _isEditing,
-                        keyboardType: TextInputType.phone,
-                        decoration: const InputDecoration(
-                          labelText: 'Mobile Phone Number',
-                          prefixIcon: Icon(Icons.phone_outlined),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Please enter mobile number';
-                          }
-                          return null;
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              
-              const SizedBox(height: 32),
-              
               // Account Information Section
               const Text(
                 'Account Information',
@@ -321,7 +243,191 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Name
+                      TextFormField(
+                        controller: _nameController,
+                        enabled: _isEditing,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: const InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Gender
+                      DropdownButtonFormField<String>(
+                        value: _selectedGender,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        decoration: const InputDecoration(
+                          labelText: 'Gender',
+                          prefixIcon: Icon(Icons.wc_outlined),
+                        ),
+                        items: _genders.map((gender) {
+                          return DropdownMenuItem(
+                            value: gender,
+                            child: Text(gender),
+                          );
+                        }).toList(),
+                        onChanged: _isEditing
+                            ? (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedGender = value;
+                                  });
+                                }
+                              }
+                            : null,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Mobile Phone
+                      TextFormField(
+                        controller: _mobileController,
+                        enabled: _isEditing,
+                        style: const TextStyle(color: AppTheme.textPrimary),
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'Mobile Number',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter mobile number';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // Action Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (!_isEditing)
+                            ElevatedButton.icon(
+                              onPressed: _toggleEdit,
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: const Text('Edit Profile'),
+                            )
+                          else ...[
+                            OutlinedButton(
+                              onPressed: _cancelEdit,
+                              child: const Text('Cancel'),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton(
+                              onPressed: _saveProfile,
+                              child: const Text('Save Changes'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Unit Preferences Section
+              const Text(
+                'Unit Preferences',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      if (_isEditing) ...[
+                        DropdownButtonFormField<String>(
+                          value: _glucoseUnit,
+                          decoration: const InputDecoration(
+                              labelText: 'Glucose Unit',
+                              prefixIcon: Icon(Icons.water_drop)),
+                          items: ['mmol/L', 'mg/dL']
+                              .map((u) =>
+                                  DropdownMenuItem(value: u, child: Text(u)))
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => _glucoseUnit = val!),
+                        ),
+                        const SizedBox(height: 20),
+                        DropdownButtonFormField<String>(
+                          value: _cholesterolUnit,
+                          decoration: const InputDecoration(
+                              labelText: 'Cholesterol Unit',
+                              prefixIcon: Icon(Icons.bloodtype)),
+                          items: ['mmol/L', 'mg/dL']
+                              .map((u) =>
+                                  DropdownMenuItem(value: u, child: Text(u)))
+                              .toList(),
+                          onChanged: (val) =>
+                              setState(() => _cholesterolUnit = val!),
+                        ),
+                      ] else ...[
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.water_drop_outlined,
+                              color: AppTheme.primaryColor),
+                          title: const Text('Glucose'),
+                          trailing: Text(_glucoseUnit,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.bloodtype_outlined,
+                              color: AppTheme.primaryColor),
+                          title: const Text('Cholesterol'),
+                          trailing: Text(_cholesterolUnit,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
               
+              const SizedBox(height: 32),
+              
+              // System Information Section
+              const Text(
+                'System Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
               Card(
                 margin: EdgeInsets.zero,
                 child: Padding(
@@ -333,13 +439,13 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         initialValue: _email,
                         enabled: false,
                         decoration: const InputDecoration(
-                          labelText: 'Email',
+                          labelText: 'Email Address',
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // Organisation ID (Read-only)
                       TextFormField(
                         initialValue: _clinician?.organisationId.toString(),
