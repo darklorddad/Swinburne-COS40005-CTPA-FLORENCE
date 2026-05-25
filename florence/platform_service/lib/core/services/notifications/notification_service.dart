@@ -387,29 +387,41 @@ Tap to see detailed trends!
 
   /// Called immediately after a glucose reading is saved.
   /// Fires an alert if the value is outside the safe range.
-  Future<void> checkAfterGlucoseLog(double valueMgDl) async {
-    if (valueMgDl > Environment.glucoseHigh) {
+  Future<void> checkAfterGlucoseLog(double value) async {
+    final healthData = ref.read(monitorDataProvider).asData?.value;
+    double highBound = Environment.glucoseHigh;
+    double lowBound = Environment.glucoseLow;
+    
+    if (healthData != null) {
+      try {
+        final t = healthData.healthThresholds.firstWhere((t) => t.dataType == MonitorDataType.GLUCOSE);
+        highBound = t.maxValue;
+        lowBound = t.minValue;
+      } catch (_) {}
+    }
+
+    if (value > highBound) {
       await addNotification(HealthNotification(
         id: 'notif_glucose_high_${DateTime.now().millisecondsSinceEpoch}',
         type: NotificationType.alert,
-        priority: valueMgDl > 250
+        priority: value > (highBound * 1.4)
             ? NotificationPriority.critical
             : NotificationPriority.high,
         title: 'High Glucose Reading',
         message:
-            'Reading of ${valueMgDl.toStringAsFixed(0)} mg/dL logged. Consider a short walk or checking your recent meals.',
+            'Reading of ${value.toStringAsFixed(1)} logged. Consider a short walk or checking your recent meals.',
         createdAt: DateTime.now(),
         actionUrl: '/recommendations',
         iconName: 'trending_up',
       ));
-    } else if (valueMgDl < Environment.glucoseLow) {
+    } else if (value < lowBound) {
       await addNotification(HealthNotification(
         id: 'notif_glucose_low_${DateTime.now().millisecondsSinceEpoch}',
         type: NotificationType.alert,
         priority: NotificationPriority.critical,
         title: 'Low Glucose Alert',
         message:
-            'Reading of ${valueMgDl.toStringAsFixed(0)} mg/dL. If you feel symptoms, have a fast-acting carb.',
+            'Reading of ${value.toStringAsFixed(1)}. If you feel symptoms, have a fast-acting carb.',
         createdAt: DateTime.now(),
         actionUrl: '/log/glucose',
         iconName: 'trending_down',
@@ -489,20 +501,35 @@ Tap to see detailed trends!
 
   /// Fired after a cholesterol reading is saved.
   Future<void> checkAfterCholesterolLog(double? total, double? ldl, double? hdl) async {
-    if (ldl != null && ldl > 130) {
+    final healthData = ref.read(monitorDataProvider).asData?.value;
+    double ldlMax = 130.0;
+    double totalMax = 200.0;
+    
+    if (healthData != null) {
+      try {
+        final ldlT = healthData.healthThresholds.firstWhere((t) => t.dataType == MonitorDataType.CHOLESTEROL_LDL);
+        ldlMax = ldlT.maxValue;
+      } catch (_) {}
+      try {
+        final totalT = healthData.healthThresholds.firstWhere((t) => t.dataType == MonitorDataType.CHOLESTEROL_TOTAL);
+        totalMax = totalT.maxValue;
+      } catch (_) {}
+    }
+
+    if (ldl != null && ldl > ldlMax) {
       await addNotification(HealthNotification(
         id: 'notif_chol_ldl_${DateTime.now().millisecondsSinceEpoch}',
         type: NotificationType.alert,
         priority: NotificationPriority.high,
         title: 'High LDL Cholesterol',
-        message: 'LDL of ${ldl.toStringAsFixed(0)} mg/dL is above the 130 mg/dL target. Reducing saturated fats and increasing activity can help.',
+        message: 'LDL of ${ldl.toStringAsFixed(1)} is above your target limit. Reducing saturated fats and increasing activity can help.',
         createdAt: DateTime.now(),
         actionUrl: '/recommendations',
         iconName: 'bloodtype',
       ));
-    } else if (total != null && total > 200) {
+    } else if (total != null && total > totalMax) {
       await sendEducationalTip(
-        'Total cholesterol of ${total.toStringAsFixed(0)} mg/dL is borderline high. A heart-healthy diet can help bring it down.',
+        'Total cholesterol of ${total.toStringAsFixed(1)} is above your target. A heart-healthy diet can help bring it down.',
       );
     }
   }

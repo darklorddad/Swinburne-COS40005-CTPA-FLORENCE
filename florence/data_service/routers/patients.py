@@ -23,16 +23,18 @@ def convert_glucose_to_base(value: Optional[float], unit: str) -> Optional[float
         return round(value / 18.0, 2)
     return round(value, 2)
 
-def convert_cholesterol_from_base(value: Optional[float], unit: str) -> Optional[float]:
+def convert_cholesterol_from_base(value: Optional[float], unit: str, is_trig: bool = False) -> Optional[float]:
     if value is None: return None
     if unit == 'mg/dL':
-        return round(value * 38.67, 1)
+        factor = 88.57 if is_trig else 38.67
+        return round(value * factor, 1)
     return round(value, 1)
 
-def convert_cholesterol_to_base(value: Optional[float], unit: str) -> Optional[float]:
+def convert_cholesterol_to_base(value: Optional[float], unit: str, is_trig: bool = False) -> Optional[float]:
     if value is None: return None
     if unit == 'mg/dL':
-        return round(value / 38.67, 2)
+        factor = 88.57 if is_trig else 38.67
+        return round(value / factor, 2)
     return round(value, 2)
 
 # --- Constants ---
@@ -470,7 +472,8 @@ async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patie
             if item['data_type'] == 'GLUCOSE':
                 item['value'] = convert_glucose_from_base(item['value'], g_unit)
             elif 'CHOLESTEROL' in item['data_type']:
-                item['value'] = convert_cholesterol_from_base(item['value'], c_unit)
+                is_trig = (item['data_type'] == 'CHOLESTEROL_TRIGLYCERIDES')
+                item['value'] = convert_cholesterol_from_base(item['value'], c_unit, is_trig)
                 
         return data
     except Exception as e:
@@ -518,7 +521,8 @@ async def add_own_monitor_data(
     if data.data_type == MonitorDataType.GLUCOSE:
         insert_dict['value'] = convert_glucose_to_base(data.value, patient_profile['settings']['glucose_unit'])
     elif 'CHOLESTEROL' in data.data_type:
-        insert_dict['value'] = convert_cholesterol_to_base(data.value, patient_profile['settings']['cholesterol_unit'])
+        is_trig = (data.data_type == 'CHOLESTEROL_TRIGLYCERIDES')
+        insert_dict['value'] = convert_cholesterol_to_base(data.value, patient_profile['settings']['cholesterol_unit'], is_trig)
         
     try:
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
@@ -690,8 +694,9 @@ async def get_own_thresholds(patient_profile: dict = Depends(get_current_patient
                 t['min_value'] = convert_glucose_from_base(t['min_value'], g_unit)
                 t['max_value'] = convert_glucose_from_base(t['max_value'], g_unit)
             elif 'CHOLESTEROL' in t['data_type']:
-                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit)
-                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit)
+                is_trig = (t['data_type'] == 'CHOLESTEROL_TRIGLYCERIDES')
+                t['min_value'] = convert_cholesterol_from_base(t['min_value'], c_unit, is_trig)
+                t['max_value'] = convert_cholesterol_from_base(t['max_value'], c_unit, is_trig)
                 
         return data
     except Exception as e:
@@ -717,8 +722,9 @@ async def update_own_thresholds(
                 min_val = convert_glucose_to_base(min_val, g_unit)
                 max_val = convert_glucose_to_base(max_val, g_unit)
             elif 'CHOLESTEROL' in t.data_type:
-                min_val = convert_cholesterol_to_base(min_val, c_unit)
-                max_val = convert_cholesterol_to_base(max_val, c_unit)
+                is_trig = (t.data_type == 'CHOLESTEROL_TRIGLYCERIDES')
+                min_val = convert_cholesterol_to_base(min_val, c_unit, is_trig)
+                max_val = convert_cholesterol_to_base(max_val, c_unit, is_trig)
 
             supabase.table('patient_thresholds').update({
                 'min_value': min_val,
