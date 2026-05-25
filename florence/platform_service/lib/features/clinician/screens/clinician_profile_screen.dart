@@ -443,6 +443,54 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                 ),
               ),
               
+              const SizedBox(height: 24),
+
+              // Action Buttons
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (!_isEditing)
+                    ElevatedButton.icon(
+                      onPressed: _toggleEdit,
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Edit Profile'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                    )
+                  else ...[
+                    OutlinedButton(
+                      onPressed: _cancelEdit,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _saveProfile,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Save Changes'),
+                    ),
+                  ],
+                ],
+              ),
+
               const SizedBox(height: 40),
 
               if (!_isEditing)
@@ -451,15 +499,20 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _handleLogout,
                     icon: const Icon(Icons.logout, color: AppTheme.highRiskColor),
-                    label: const Text('Logout', style: TextStyle(color: AppTheme.highRiskColor, fontWeight: FontWeight.bold)),
+                    label: const Text('Logout',
+                        style: TextStyle(
+                            color: AppTheme.highRiskColor,
+                            fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppTheme.highRiskColor, width: 1.5),
+                      side: const BorderSide(
+                          color: AppTheme.highRiskColor, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
-                
+
               const SizedBox(height: 32),
             ],
           ),
