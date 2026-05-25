@@ -352,7 +352,16 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       padding: const EdgeInsets.all(16),
       children: [
         // --- SECTION 1: PERSONAL INFORMATION ---
-        _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
+            IconButton(
+              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
+              onPressed: _showEditPatientProfileDialog,
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         _buildPatientHeaderCard(),
         
