@@ -626,6 +626,9 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                   child: TextFormField(
                     controller: _caloriesController,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
                     decoration: InputDecoration(
                       hintText: 'e.g. 500',
                       filled: true,
