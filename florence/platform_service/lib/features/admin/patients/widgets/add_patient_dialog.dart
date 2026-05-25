@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/config/admin_theme.dart';
 import 'package:florence/core/utils/validators.dart';
-import '../../core/providers/admin_providers.dart';
+import 'package:florence/features/admin/core/providers/admin_providers.dart';
 
 class AddPatientDialog extends ConsumerStatefulWidget {
   const AddPatientDialog({super.key});
