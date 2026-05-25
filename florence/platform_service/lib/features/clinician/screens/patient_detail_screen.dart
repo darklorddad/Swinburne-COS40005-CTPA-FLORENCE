@@ -47,6 +47,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   List<Map<String, dynamic>>? _patientThresholds;
   bool _isLoading = true;
   String? _error;
+  String _diseaseFilter = 'ACTIVE';
   // Metric/Imperial toggle for BMI
   bool _isMetric = true;
   
@@ -351,36 +352,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       padding: const EdgeInsets.all(16),
       children: [
         // --- SECTION 1: PERSONAL INFORMATION ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
-            IconButton(
-              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
-              onPressed: _showEditPatientDialog,
-            ),
-          ],
-        ),
+        _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
         const SizedBox(height: 8),
         _buildPatientHeaderCard(),
         
         const SizedBox(height: 24),
 
-        // --- SECTION 2: CHRONIC CONDITIONS ---
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            _buildSectionHeader('Active Medical Conditions', Icons.medical_services_outlined),
-            IconButton(
-              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Condition editing coming soon')),
-                );
-              },
-            ),
-          ],
-        ),
+        // --- SECTION 2: MEDICAL CONDITION ---
+        _buildSectionHeader('Medical Condition', Icons.medical_services_outlined),
         const SizedBox(height: 8),
         Card(
           elevation: 0,
@@ -391,9 +370,47 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              _patient!.activeDiseasesText,
-              style: const TextStyle(fontSize: 15, height: 1.4, color: AppTheme.textPrimary),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: SegmentedButton<String>(
+                        segments: const [
+                          ButtonSegment(value: 'ACTIVE', label: Text('Active')),
+                          ButtonSegment(value: 'RESOLVED', label: Text('Resolved')),
+                          ButtonSegment(value: 'ALL', label: Text('All')),
+                        ],
+                        selected: {_diseaseFilter},
+                        onSelectionChanged: (newSelection) {
+                          setState(() {
+                            _diseaseFilter = newSelection.first;
+                          });
+                        },
+                        style: SegmentedButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      icon: const Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                      onPressed: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Condition editing coming soon')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _patient!.activeDiseasesText,
+                  style: const TextStyle(fontSize: 15, height: 1.4, color: AppTheme.textPrimary),
+                ),
+              ],
             ),
           ),
         ),
@@ -1503,6 +1520,8 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   
   Widget _buildPatientHeaderCard() {
     final riskColor = AppTheme.getRiskColor(_patient!.riskLevel.name);
+    final riskNameProper = _patient!.riskLevel.name[0].toUpperCase() + 
+                           _patient!.riskLevel.name.substring(1).toLowerCase();
     
     return Container(
       margin: EdgeInsets.zero,
@@ -1563,8 +1582,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Expanded(
+                          Flexible(
                             child: Text(
                               _patient!.name,
                               style: const TextStyle(
@@ -1574,6 +1594,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                               ),
                               overflow: TextOverflow.ellipsis,
                             ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: AppTheme.primaryColor, size: 20),
+                            tooltip: 'Edit Patient Profile',
+                            onPressed: _showEditPatientProfileDialog,
                           ),
                         ],
                       ),
@@ -1598,7 +1623,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                             Colors.white,
                           ),
                           _buildHeaderPill(
-                            _patient!.riskLevel.name.toUpperCase(), 
+                            riskNameProper, 
                             Icons.warning_amber_rounded,
                             riskColor,
                             Colors.white,
@@ -2147,53 +2172,123 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     );
   }
   
-  Future<void> _showEditPatientDialog() async {
-    final nameController = TextEditingController(text: _patient!.name);
-    final phoneController = TextEditingController(text: _patient!.contactInfo);
-    final ecNameController = TextEditingController(text: _patient!.emergencyContactName);
-    final ecPhoneController = TextEditingController(text: _patient!.emergencyContactPhone);
-    final ecRelController = TextEditingController(text: _patient!.emergencyContactRelationship);
+  Future<void> _showEditPatientProfileDialog() async {
+    final nameCtrl = TextEditingController(text: _patient!.name);
+    final phoneCtrl = TextEditingController(text: _patient!.contactInfo);
+    final ageCtrl = TextEditingController(text: _patient!.age.toString());
+    final ecNameCtrl = TextEditingController(text: _patient!.emergencyContactName);
+    final ecPhoneCtrl = TextEditingController(text: _patient!.emergencyContactPhone);
+    final ecRelCtrl = TextEditingController(text: _patient!.emergencyContactRelationship);
     RiskLevel selectedRisk = _patient!.riskLevel;
     String? selectedGender = _patient!.gender;
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Edit Patient Profile'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : null,
-                  items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
-                  onChanged: (v) => setDialogState(() => selectedGender = v),
-                  decoration: const InputDecoration(labelText: 'Gender'),
-                ),
-                const SizedBox(height: 12),
-                TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone Number')),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<RiskLevel>(
-                  value: selectedRisk,
-                  items: RiskLevel.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name.toUpperCase()))).toList(),
-                  onChanged: (v) => setDialogState(() => selectedRisk = v!),
-                  decoration: const InputDecoration(labelText: 'Risk Level'),
-                ),
-                const Divider(height: 32),
-                const Text('Emergency Contact', style: TextStyle(fontWeight: FontWeight.bold)),
-                TextField(controller: ecNameController, decoration: const InputDecoration(labelText: 'Contact Name')),
-                TextField(controller: ecRelController, decoration: const InputDecoration(labelText: 'Relationship')),
-                TextField(controller: ecPhoneController, decoration: const InputDecoration(labelText: 'Contact Phone')),
-              ],
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: MediaQuery.of(context).size.width * 0.55,
+          constraints: const BoxConstraints(maxWidth: 650),
+          padding: const EdgeInsets.all(24),
+          child: StatefulBuilder(
+            builder: (context, setDialogState) => SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Edit Patient Profile',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const Divider(height: 24),
+                  TextFormField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person)),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: ageCtrl,
+                          decoration: const InputDecoration(labelText: 'Age', prefixIcon: Icon(Icons.cake)),
+                          keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : null,
+                          items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                          onChanged: (v) => setDialogState(() => selectedGender = v),
+                          decoration: const InputDecoration(labelText: 'Gender', prefixIcon: Icon(Icons.wc_outlined)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: phoneCtrl,
+                          decoration: const InputDecoration(labelText: 'Phone Number', prefixIcon: Icon(Icons.phone)),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: DropdownButtonFormField<RiskLevel>(
+                          value: selectedRisk,
+                          items: RiskLevel.values.map((r) => DropdownMenuItem(value: r, child: Text(r.name[0] + r.name.substring(1).toLowerCase()))).toList(),
+                          onChanged: (v) => setDialogState(() => selectedRisk = v!),
+                          decoration: const InputDecoration(labelText: 'Risk Level', prefixIcon: Icon(Icons.gpp_maybe)),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text('Emergency Contact', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: ecNameCtrl,
+                    decoration: const InputDecoration(labelText: 'Contact Name', prefixIcon: Icon(Icons.contact_page_outlined)),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: ecRelCtrl,
+                          decoration: const InputDecoration(labelText: 'Relationship', prefixIcon: Icon(Icons.family_restroom_outlined)),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: TextFormField(
+                          controller: ecPhoneCtrl,
+                          decoration: const InputDecoration(labelText: 'Contact Phone', prefixIcon: Icon(Icons.phone_callback_outlined)),
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Save Changes'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-            ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Save')),
-          ],
         ),
       ),
     );
@@ -2201,17 +2296,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     if (confirmed == true && mounted) {
       setState(() => _isLoading = true);
       try {
-        // Note: This requires adding updatePatientProfile to DataService and ApiDataService
-        // For now, we'll use a generic map update via ApiService if available or update the service
         final api = ApiService();
         await api.put('/clinicians/me/patients/${widget.patientId}/profile', {
-          'name': nameController.text.trim(),
-          'phone_number': phoneController.text.trim(),
+          'name': nameCtrl.text.trim(),
+          'phone_number': phoneCtrl.text.trim(),
           'gender': selectedGender,
           'risk_level': selectedRisk.name.toUpperCase(),
-          'emergency_contact_name': ecNameController.text.trim(),
-          'emergency_contact_relationship': ecRelController.text.trim(),
-          'emergency_contact_phone': ecPhoneController.text.trim(),
+          'emergency_contact_name': ecNameCtrl.text.trim(),
+          'emergency_contact_relationship': ecRelCtrl.text.trim(),
+          'emergency_contact_phone': ecPhoneCtrl.text.trim(),
         });
         await _loadPatientData();
       } catch (e) {
