@@ -106,7 +106,7 @@ class PatientListItem extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.edit_note_rounded,
                         color: AppTheme.primaryColor, size: 26),
-                    tooltip: 'Edit Patient Details',
+                    tooltip: 'View & Edit Details',
                     onPressed: onTap,
                   ),
                   const SizedBox(height: 4),

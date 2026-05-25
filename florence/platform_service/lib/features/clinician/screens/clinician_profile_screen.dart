@@ -109,7 +109,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
         await _dataService.updateClinicianProfile(updatedClinician);
 
-        await ApiService().patch('/patients/me/settings', {
+        await ApiService().put('/patients/me/settings', {
           'glucose_unit': _glucoseUnit,
           'cholesterol_unit': _cholesterolUnit,
         });

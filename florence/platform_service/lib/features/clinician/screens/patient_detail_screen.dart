@@ -109,44 +109,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     super.dispose();
   }
 
-  Future<void> _showUnassignConfirmation() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unassign Patient'),
-        content: Text('Are you sure you want to remove ${_patient!.name} from your patient list? They will become available for other clinicians.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Unassign'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && mounted) {
-      setState(() => _isLoading = true);
-      try {
-        await _dataService.unassignPatient(widget.patientId);
-        
-        if (mounted) {
-          Navigator.pop(context); // Return to previous screen
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
-        }
-      }
-    }
-  }
 
   Future<void> _showThresholdsDialog() async {
     setState(() => _isLoading = true);
