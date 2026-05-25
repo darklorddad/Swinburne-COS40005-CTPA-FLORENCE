@@ -2823,30 +2823,19 @@ class _ClinicianMedicationFormDialogState
         .then((res) {
       final List<dynamic> frequencies = res is List ? res : [];
 
-      // --- FIX: AUTO-POPULATE THE FREQUENCY DROPDOWN ON EDIT ---
       if (widget.isEdit && widget.medication != null) {
         try {
           final m = widget.medication;
           setState(() {
             _selectedFrequency = frequencies.firstWhere(
               (f) =>
+                  f['id'] == m.frequencyId ||
                   f['patient_text'].toString().toLowerCase() ==
-                      m.frequency.toString().toLowerCase() ||
-                  f['id'] == m.frequencyId,
+                      m.frequency.toString().toLowerCase(),
             );
-
-            // Recalculate how many custom dose rows to render
-            if (_selectedFrequency != null) {
-              int requiredDoses = _getDosesFromFrequency(_selectedFrequency);
-              // Only reset timings if they aren't already loaded from the model
-              if (_selectedTimings.length != requiredDoses) {
-                _selectedTimings =
-                    List<String>.generate(requiredDoses, (_) => 'ANYTIME');
-              }
-            }
           });
         } catch (e) {
-          debugPrint('ℹ️ Could not pre-match frequency selection: $e');
+          debugPrint('ℹ️ Could not find matching dropdown frequency element: $e');
         }
       }
       return frequencies;
@@ -2858,13 +2847,16 @@ class _ClinicianMedicationFormDialogState
       _amountController.text = m.dosage ?? "";
       _selectedType = _medicationTypes.contains(m.route) ? m.route : 'Tablet';
 
-      try {
-        _selectedTimings = m.timingInstructions != null
-            ? List<String>.from(m.timingInstructions)
-            : ['ANYTIME'];
-      } catch (e) {
-        _selectedTimings = ['ANYTIME'];
-        debugPrint('ℹ️ Medication model does not contain timingInstructions field. Using defaults.');
+      if (m is Medication) {
+        _selectedTimings = List<String>.from(m.timingInstructions);
+      } else {
+        try {
+          _selectedTimings = m.timingInstructions != null
+              ? List<String>.from(m.timingInstructions)
+              : ['ANYTIME'];
+        } catch (_) {
+          _selectedTimings = ['ANYTIME'];
+        }
       }
     }
   }

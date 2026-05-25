@@ -128,7 +128,9 @@ class Medication {
   final String name;
   final String dosage; // e.g., "500 mg"
   final String frequency; // e.g., "Twice daily"
+  final int? frequencyId;
   final String route; // e.g., "Oral"
+  final List<String> timingInstructions;
   final String? notes;
   final DateTime? startDate;
 
@@ -137,18 +139,32 @@ class Medication {
     required this.name,
     required this.dosage,
     required this.frequency,
+    this.frequencyId,
     required this.route,
+    required this.timingInstructions,
     this.notes,
     this.startDate,
   });
 
   factory Medication.fromJson(Map<String, dynamic> json) {
+    List<String> timings = [];
+    if (json['timing_instructions'] != null) {
+      try {
+        timings = List<String>.from(json['timing_instructions']);
+      } catch (_) {}
+    }
+    if (timings.isEmpty) {
+      timings = ['ANYTIME'];
+    }
+
     return Medication(
       id: json['id'] as int?,
       name: json['name'] ?? json['custom_medication_name'] ?? '',
       dosage: json['dosage'] ?? json['amount'] ?? '',
       frequency: json['frequency'] ?? '',
+      frequencyId: json['frequency_id'] as int?,
       route: json['route'] ?? json['medication_type'] ?? 'Tablet',
+      timingInstructions: timings,
       notes: json['notes'],
       startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
     );
@@ -160,7 +176,9 @@ class Medication {
       'name': name,
       'dosage': dosage,
       'frequency': frequency,
+      'frequency_id': frequencyId,
       'route': route,
+      'timing_instructions': timingInstructions,
       'notes': notes,
       'start_date': startDate?.toIso8601String(),
     };
