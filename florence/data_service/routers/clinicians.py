@@ -105,7 +105,7 @@ async def update_own_clinician_profile(
 async def get_assigned_patients(clinician_profile: dict = Depends(get_current_clinician_profile)):
     """Retrieves a list of all patients assigned to the currently authenticated clinician."""
     try:
-        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level, disease_logs(*)').eq('clinician_id', clinician_profile['id']).execute()
+        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level, disease_logs(*), patient_monitor_data(measured_at)').eq('clinician_id', clinician_profile['id']).execute()
         return patients_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve assigned patients: {str(e)}")
@@ -187,7 +187,7 @@ async def get_available_patients(clinician_profile: dict = Depends(get_current_c
     """Retrieves a list of patients who are not currently assigned to any clinician."""
     try:
         # Fetch patients where clinician_id is NULL
-        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level, disease_logs(*)').is_('clinician_id', 'null').execute()
+        patients_response = supabase.table('patient_profiles').select('id, name, phone_number, risk_level, disease_logs(*), patient_monitor_data(measured_at)').is_('clinician_id', 'null').execute()
         return patients_response.data
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve available patients: {str(e)}")

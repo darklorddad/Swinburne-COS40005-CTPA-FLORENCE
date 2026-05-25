@@ -7,7 +7,7 @@ class Patient {
   final String gender;
   final List<String> activeDiseases;
   final RiskLevel riskLevel;
-  final DateTime lastSync;
+  final DateTime? lastUpdate;
   final String contactInfo;
   final String? photoUrl;
 
@@ -18,7 +18,7 @@ class Patient {
     required this.gender,
     required this.activeDiseases,
     required this.riskLevel,
-    required this.lastSync,
+    this.lastUpdate,
     required this.contactInfo,
     this.photoUrl,
   });

@@ -31,6 +31,14 @@ class ApiDataService implements DataService {
       // Assuming data is a list of patient objects
       return (data as List).map((json) {
         final diseaseLogs = json['disease_logs'] as List? ?? [];
+        final monitorData = json['patient_monitor_data'] as List? ?? [];
+        
+        DateTime? latest;
+        for (var log in monitorData) {
+          final ts = log['measured_at'] != null ? DateTime.tryParse(log['measured_at']) : null;
+          if (ts != null && (latest == null || ts.isAfter(latest))) latest = ts;
+        }
+
         final activeDiseases = diseaseLogs
             .where((log) => log['status']?.toString().toLowerCase() == 'active')
             .map((log) => log['condition_name']?.toString() ?? 'Unknown')
@@ -43,7 +51,7 @@ class ApiDataService implements DataService {
           gender: 'Unknown',
           activeDiseases: activeDiseases,
           riskLevel: _parseRiskLevel(json['risk_level']),
-          lastSync: DateTime.now(), // Real sync time not provided in list endpoint
+          lastUpdate: latest,
           contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
         );
       }).toList();
@@ -61,6 +69,14 @@ class ApiDataService implements DataService {
       
       return (data as List).map((json) {
         final diseaseLogs = json['disease_logs'] as List? ?? [];
+        final monitorData = json['patient_monitor_data'] as List? ?? [];
+        
+        DateTime? latest;
+        for (var log in monitorData) {
+          final ts = log['measured_at'] != null ? DateTime.tryParse(log['measured_at']) : null;
+          if (ts != null && (latest == null || ts.isAfter(latest))) latest = ts;
+        }
+
         final activeDiseases = diseaseLogs
             .where((log) => log['status']?.toString().toLowerCase() == 'active')
             .map((log) => log['condition_name']?.toString() ?? 'Unknown')
@@ -73,7 +89,7 @@ class ApiDataService implements DataService {
           gender: 'Unknown',
           activeDiseases: activeDiseases,
           riskLevel: _parseRiskLevel(json['risk_level']),
-          lastSync: DateTime.now(),
+          lastUpdate: latest,
           contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
         );
       }).toList();
@@ -144,6 +160,13 @@ class ApiDataService implements DataService {
           .map((log) => log['condition_name']?.toString() ?? 'Unknown')
           .toList();
 
+      final monitorData = data['monitor_data'] as List? ?? [];
+      DateTime? latest;
+      for (var log in monitorData) {
+        final ts = log['measured_at'] != null ? DateTime.tryParse(log['measured_at']) : null;
+        if (ts != null && (latest == null || ts.isAfter(latest))) latest = ts;
+      }
+
       return Patient(
         id: profile['id']?.toString() ?? '',
         name: profile['name'] ?? 'Unknown',
@@ -151,7 +174,7 @@ class ApiDataService implements DataService {
         gender: profile['gender'] ?? 'Unknown',
         activeDiseases: activeDiseases,
         riskLevel: _parseRiskLevel(profile['risk_level']),
-        lastSync: profile['last_sync'] != null ? DateTime.parse(profile['last_sync']) : DateTime.now(),
+        lastUpdate: latest,
         contactInfo: profile['phone_number'] ?? profile['contact_info'] ?? '',
       );
     } catch (e) {
