@@ -141,7 +141,7 @@ class AdminSidebar extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 20,
-            backgroundImage: NetworkImage('https://picsum.photos/id/93/200'),
+            backgroundImage: NetworkImage('https://picsum.photos/id/200/200'),
           ),
           const SizedBox(width: 12),
           Expanded(

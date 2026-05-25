@@ -94,7 +94,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/200/200/300')),
+            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/200/200/200')),
           ],
         ),
       ],
