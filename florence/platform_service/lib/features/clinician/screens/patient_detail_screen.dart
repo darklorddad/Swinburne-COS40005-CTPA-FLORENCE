@@ -2271,10 +2271,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Future<void> _showEditDiseaseDialog(Map<String, dynamic> disease) async {
+    final int diseaseId = disease['id'];
     final conditionCtrl =
         TextEditingController(text: disease['condition_name']);
     final dateCtrl =
-        TextEditingController(text: disease['diagnosed_date'] ?? '26 May 2026');
+        TextEditingController(text: disease['diagnosed_date'] ?? '2026-05-26');
     String selectedStatus = disease['status'] ?? 'active';
 
     await showDialog(
@@ -2329,7 +2330,28 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         child: const Text('Cancel')),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () async {
+                          try {
+                            await ApiService().put(
+                                '/clinicians/diseases/$diseaseId', {
+                              'condition_name': conditionCtrl.text.trim(),
+                              'status': selectedStatus,
+                              'diagnosed_date': dateCtrl.text,
+                            });
+                            if (mounted) {
+                              Navigator.pop(context);
+                              _loadPatientData();
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content:
+                                        Text('Failed to save changes: $e')),
+                              );
+                            }
+                          }
+                        },
                         child: const Text('Save Changes')),
                   ],
                 )
