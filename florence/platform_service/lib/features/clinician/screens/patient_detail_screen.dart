@@ -2820,7 +2820,37 @@ class _ClinicianMedicationFormDialogState
         .then((res) => res is List ? res : []);
     _freqFuture = ApiService()
         .get('/clinicians/medications/frequencies')
-        .then((res) => res is List ? res : []);
+        .then((res) {
+      final List<dynamic> frequencies = res is List ? res : [];
+
+      // --- FIX: AUTO-POPULATE THE FREQUENCY DROPDOWN ON EDIT ---
+      if (widget.isEdit && widget.medication != null) {
+        try {
+          final m = widget.medication;
+          setState(() {
+            _selectedFrequency = frequencies.firstWhere(
+              (f) =>
+                  f['patient_text'].toString().toLowerCase() ==
+                      m.frequency.toString().toLowerCase() ||
+                  f['id'] == m.frequencyId,
+            );
+
+            // Recalculate how many custom dose rows to render
+            if (_selectedFrequency != null) {
+              int requiredDoses = _getDosesFromFrequency(_selectedFrequency);
+              // Only reset timings if they aren't already loaded from the model
+              if (_selectedTimings.length != requiredDoses) {
+                _selectedTimings =
+                    List<String>.generate(requiredDoses, (_) => 'ANYTIME');
+              }
+            }
+          });
+        } catch (e) {
+          debugPrint('ℹ️ Could not pre-match frequency selection: $e');
+        }
+      }
+      return frequencies;
+    });
 
     if (widget.isEdit && widget.medication != null) {
       final m = widget.medication;
