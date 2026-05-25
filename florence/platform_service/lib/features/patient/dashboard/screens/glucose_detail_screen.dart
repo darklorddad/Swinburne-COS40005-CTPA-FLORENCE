@@ -1198,6 +1198,24 @@ class _ModalDaySectionState extends State<_ModalDaySection> {
           return FlSpot(x, r.value);
         }).toList();
 
+        // THE FIX: LineChart strictly requires X values to be sorted ascending!
+        scatterSpots.sort((a, b) => a.x.compareTo(b.x));
+
+        // THE FIX: Dynamic Y-bounds so low/high values are never pushed off screen
+        double calcMinY = widget.threshold?.minValue ?? 40.0;
+        double calcMaxY = widget.threshold?.maxValue ?? 250.0;
+
+        if (data.isNotEmpty) {
+          final dataMin = data.map((e) => e.value).reduce(math.min);
+          final dataMax = data.map((e) => e.value).reduce(math.max);
+          calcMinY = math.min(calcMinY, dataMin);
+          calcMaxY = math.max(calcMaxY, dataMax);
+        }
+
+        // Add 10 points of padding so dots don't touch the top/bottom borders
+        final double finalMinY = math.max(0.0, calcMinY - 10.0);
+        final double finalMaxY = calcMaxY + 10.0;
+
         // 2. Adjust Opacity based on data density
         double dotOpacity;
         switch (range) {
@@ -1252,7 +1270,10 @@ class _ModalDaySectionState extends State<_ModalDaySection> {
                     height: 250,
                     child: LineChart(
                       LineChartData(
-                        minX: 0, maxX: 24, minY: 40, maxY: 250,
+                        minX: 0,
+                        maxX: 24,
+                        minY: finalMinY,
+                        maxY: finalMaxY,
                         gridData: FlGridData(
                           show: true,
                           drawVerticalLine: true,
