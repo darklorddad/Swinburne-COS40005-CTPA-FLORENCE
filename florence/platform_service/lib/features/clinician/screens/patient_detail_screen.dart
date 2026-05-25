@@ -68,6 +68,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this, initialIndex: widget.initialTab);
+    _tabController.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
     _loadPatientData();
   }
 
@@ -303,12 +308,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       );
     }
 
+    final List<String> tabTitles = ['Overview', 'Medical Profile', 'Historical Data'];
+
     return DefaultTabController(
-      length: 2,
+      length: 3,
       initialIndex: widget.initialTab,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(_patient!.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: Text(tabTitles[_tabController.index],
+              style: const TextStyle(fontWeight: FontWeight.bold)),
           elevation: 0,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(62), // 60 for tabs + 2 for border
@@ -361,10 +369,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             _buildMedicalProfileTab(),
             _buildHistoricalDataTab(),
           ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _showEditPatientProfileDialog,
-          child: const Icon(Icons.edit),
         ),
       ),
     );
