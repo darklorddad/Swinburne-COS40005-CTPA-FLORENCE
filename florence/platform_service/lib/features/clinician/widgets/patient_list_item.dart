@@ -98,18 +98,11 @@ class PatientListItem extends StatelessWidget {
               
               const SizedBox(width: 12),
               
-              // Right side info (Edit action and Last Update)
+              // Right side info (Last Update only)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_note_rounded,
-                        color: AppTheme.primaryColor, size: 26),
-                    tooltip: 'View & Edit Details',
-                    onPressed: onTap,
-                  ),
-                  const SizedBox(height: 4),
                   const Text(
                     'Last Update',
                     style: TextStyle(
@@ -117,10 +110,11 @@ class PatientListItem extends StatelessWidget {
                       color: AppTheme.textTertiary,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
                     _formatLastUpdate(patient.lastUpdate),
                     style: const TextStyle(
-                      fontSize: 12,
+                      fontSize: 13,
                       fontWeight: FontWeight.bold,
                       color: AppTheme.textSecondary,
                     ),

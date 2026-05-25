@@ -44,6 +44,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   Patient? _patient;
   PatientHealthData? _healthData;
   List<ClinicianNote>? _notes;
+  List<Map<String, dynamic>>? _patientThresholds;
   bool _isLoading = true;
   String? _error;
   // Metric/Imperial toggle for BMI
@@ -72,12 +73,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       final patient = await _dataService.getPatient(widget.patientId);
       final healthData = await _dataService.getPatientHealthData(widget.patientId);
       final notes = await _dataService.getClinicianNotes(widget.patientId);
+      final thresholds = await _dataService.getPatientThresholds(widget.patientId);
       
       if (mounted) {
         setState(() {
           _patient = patient;
           _healthData = healthData;
           _notes = notes;
+          _patientThresholds = thresholds;
           _isLoading = false;
         });
 
@@ -347,23 +350,75 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        // Patient header card
+        // --- SECTION 1: PERSONAL INFORMATION ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader('Demographics & Baseline', Icons.badge_outlined),
+            IconButton(
+              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
+              onPressed: _showEditPatientDialog,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
         _buildPatientHeaderCard(),
         
         const SizedBox(height: 24),
-        
-        // Grid Section Header
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Text(
-            'Current Status',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+
+        // --- SECTION 2: CHRONIC CONDITIONS ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader('Active Medical Conditions', Icons.medical_services_outlined),
+            IconButton(
+              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Condition editing coming soon')),
+                );
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Card(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppTheme.dividerColor),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text(
+              _patient!.activeDiseasesText,
+              style: const TextStyle(fontSize: 15, height: 1.4, color: AppTheme.textPrimary),
             ),
           ),
         ),
+
+        const SizedBox(height: 24),
+
+        // --- SECTION 3: HEALTH THRESHOLDS ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader('Target Health Thresholds', Icons.tune_rounded),
+            IconButton(
+              icon: const Icon(Icons.edit_note, color: AppTheme.primaryColor),
+              onPressed: _showThresholdsDialog,
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        _buildEmbeddedThresholdsCard(),
+
+        const SizedBox(height: 24),
+        
+        // Grid Section Header
+        _buildSectionHeader('Current Status', Icons.analytics_outlined),
+        const SizedBox(height: 16),
         
         // Health Metrics Stack
         Column(
@@ -514,81 +569,19 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         
         const SizedBox(height: 24),
         
-        // Clinical Notes Card
-        Card(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          color: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppTheme.dividerColor, width: 1),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Row(
-                      children: [
-                        Icon(Icons.notes, color: AppTheme.textSecondary, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          'Clinical Notes',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    TextButton.icon(
-                      onPressed: _showAddNoteDialog,
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('Add Note'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                if (_notes == null || _notes!.isEmpty)
-                  const Text('No clinical notes recorded yet.', style: TextStyle(color: AppTheme.textSecondary)),
-                if (_notes != null && _notes!.isNotEmpty)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: _notes!.map((note) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppTheme.textPrimary.withValues(alpha: 0.05), // Alternative safe color
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppTheme.dividerColor.withValues(alpha: 0.5)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              DateFormat('MMM d, yyyy - h:mm a').format(note.timestamp),
-                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              note.content,
-                              style: const TextStyle(fontSize: 14, color: AppTheme.textPrimary, height: 1.4),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )).toList(),
-                  ),
-              ],
+        // --- SECTION 4: CLINICAL NOTES ---
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader('Clinical Notes', Icons.description_outlined),
+            IconButton(
+              icon: const Icon(Icons.add_comment, color: AppTheme.primaryColor),
+              onPressed: _showAddNoteDialog,
             ),
-          ),
+          ],
         ),
+        const SizedBox(height: 8),
+        _buildClinicalNotesCard(),
       ],
     );
   }
@@ -1610,15 +1603,6 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                             riskColor,
                             Colors.white,
                           ),
-                          GestureDetector(
-                            onTap: _showThresholdsDialog,
-                            child: _buildHeaderPill(
-                              'Thresholds', 
-                              Icons.tune,
-                              AppTheme.primaryColor,
-                              Colors.white,
-                            ),
-                          ),
                         ],
                       ),
                       
@@ -1727,6 +1711,164 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildEmbeddedThresholdsCard() {
+    if (_patientThresholds == null || _patientThresholds!.isEmpty) {
+      return Card(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppTheme.dividerColor),
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('No custom health targets configured yet.',
+              style: TextStyle(color: AppTheme.textSecondary)),
+        ),
+      );
+    }
+
+    final labels = {
+      'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
+      'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
+      'GLUCOSE': 'Glucose Target',
+      'BMI': 'Target BMI',
+      'HBA1C': 'Target HbA1c',
+      'CHOLESTEROL_TOTAL': 'Total Cholesterol',
+      'CHOLESTEROL_LDL': 'LDL Cholesterol',
+      'CHOLESTEROL_HDL': 'HDL Cholesterol',
+      'CHOLESTEROL_TRIGLYCERIDES': 'Triglycerides'
+    };
+
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.dividerColor),
+      ),
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: _patientThresholds!.map((threshold) {
+            final type = threshold['data_type'] ?? '';
+            final displayName = labels[type] ?? type.replaceAll('_', ' ');
+
+            String unit = '';
+            if (type == 'GLUCOSE') unit = ' mg/dL';
+            if (type.contains('CHOLESTEROL')) unit = ' mg/dL';
+            if (type.contains('BLOOD_PRESSURE')) unit = ' mmHg';
+            if (type == 'HBA1C') unit = ' %';
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textPrimary),
+                  ),
+                  Text(
+                    '${(threshold['min_value'] as num).toStringAsFixed(1)} - ${(threshold['max_value'] as num).toStringAsFixed(1)}$unit',
+                    style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.primaryColor),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClinicalNotesCard() {
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_notes == null || _notes!.isEmpty)
+              const Text('No clinical notes recorded yet.',
+                  style: TextStyle(color: AppTheme.textSecondary)),
+            if (_notes != null && _notes!.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _notes!
+                    .map((note) => Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.textPrimary.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: AppTheme.dividerColor
+                                      .withValues(alpha: 0.5)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  DateFormat('MMM d, yyyy - h:mm a')
+                                      .format(note.timestamp),
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  note.content,
+                                  style: const TextStyle(
+                                      fontSize: 14,
+                                      color: AppTheme.textPrimary,
+                                      height: 1.4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ))
+                    .toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: AppTheme.primaryColor),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary),
+        ),
+      ],
     );
   }
 
