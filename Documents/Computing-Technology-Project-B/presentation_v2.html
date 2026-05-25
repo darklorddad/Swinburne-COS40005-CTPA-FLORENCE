@@ -201,13 +201,13 @@ h1,h2,h3{font-family:'Fraunces',serif}
 
 /* ── PROGRESS ── */
 #progress-bar{position:fixed;bottom:0;left:0;height:2px;background:linear-gradient(to right,var(--blue),#22D3EE);transition:width .5s ease;z-index:100}
-#slide-counter{position:fixed;top:2rem;right:4vw;font-size:.75rem;font-weight:600;letter-spacing:2px;color:var(--text-dim);z-index:100}
+#slide-counter{position:fixed;bottom:2rem;right:4vw;font-size:.75rem;font-weight:600;letter-spacing:2px;color:var(--text-dim);z-index:100}
 #typewriter-target{min-height:1.4em}
 </style>
 </head>
 <body>
 
-<div id="slide-counter">01 / 17</div>
+<div id="slide-counter">01 / 21</div>
 <div id="progress-bar" style="width:5.9%"></div>
 <div id="deck">
 
@@ -406,7 +406,7 @@ h1,h2,h3{font-family:'Fraunces',serif}
   <h2 class="title-lg up d2" style="margin-top:.3rem">Meet <span class="text-blue">FLORENCE.</span></h2>
   <p class="body-lg up d3" style="max-width:680px;margin-top:.5rem">An AI-powered health companion that sits with patients between doctor visits — monitoring, guiding, and alerting. Every single day.</p>
   <div class="solution-grid up d4">
-    <div class="solution-card">
+    <div class="solution-card hl">
       <i class="fa-solid fa-chart-line"></i>
       <h3>Monitor</h3>
       <p>Patients log vitals, meals, and medications daily. FLORENCE watches for patterns others would miss.</p>
@@ -416,7 +416,7 @@ h1,h2,h3{font-family:'Fraunces',serif}
       <h3>Guide</h3>
       <p>AI generates a personalized daily insight and 2–3 priority actions — every morning, based on real data.</p>
     </div>
-    <div class="solution-card">
+    <div class="solution-card hl">
       <i class="fa-solid fa-bell"></i>
       <h3>Alert</h3>
       <p>When something is off, FLORENCE notifies the patient and their clinician immediately — before it escalates.</p>
@@ -494,13 +494,28 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 09 — CLINICIAN ═══ -->
-<div class="slide" id="slide-9">
+<!-- ═══ 09 — DEMO TRANSITION (ADMIN) ═══ -->
+<div class="slide" id="slide-9" style="background-color: var(--navy-2); color: white;">
+  <span class="ast ast-top" style="color:white">✳</span><span class="ast ast-bot" style="color:white">✳</span>
+  <div class="slide-badge" style="background:var(--blue)">LIVE</div>
+  <div class="demo-wrap">
+    <div class="demo-radar-box up d1">
+      <div class="demo-radar" id="demo-radar-admin"></div>
+      <i class="fa-solid fa-desktop demo-icon" style="color:#fff"></i>
+    </div>
+    <div class="slide-label up d2" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff">live demonstration</div>
+    <h2 class="title-lg up d3" style="color:#fff;margin-top:.5rem">Admin <span style="color:var(--blue)">Portal</span></h2>
+    <p class="body-lg up d4" style="color:rgba(255,255,255,0.7);max-width:500px;margin-top:1rem">Switching to screen to demonstrate user management, role assignments, and platform metrics.</p>
+  </div>
+</div>
+
+<!-- ═══ 10 — CLINICIAN ═══ -->
+<div class="slide" id="slide-10">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-60-40" style="align-items:center">
     <div class="col">
-      <div class="slide-label up d1">clinician role</div>
+      <div class="slide-label up d1" style="background:rgba(8,145,178,.09);border-color:rgba(8,145,178,.28);color:var(--cyan)">clinician role</div>
       <h2 class="title-lg up d2" style="margin-top:.5rem">Less noise.<br><span style="color:var(--cyan)">More signal.</span></h2>
       <div class="rule up d3"></div>
       <p class="body-lg up d3" style="max-width:480px;margin-bottom:1.2rem">Dr. Sarah opens FLORENCE before morning rounds. One patient is flagged. She reviews — then calls <em>before</em> the patient even knows there's a problem.</p>
@@ -531,8 +546,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 10 — CLINICIAN ARCHITECTURE & UX ═══ -->
-<div class="slide" id="slide-10">
+<!-- ═══ 11 — CLINICIAN ARCHITECTURE & UX ═══ -->
+<div class="slide" id="slide-11">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="slide-label up d1" style="background:rgba(8,145,178,.09);border-color:rgba(8,145,178,.28);color:var(--cyan)">clinician role · technical</div>
@@ -561,13 +576,13 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 11 — DEMO TRANSITION ═══ -->
-<div class="slide" id="slide-11" style="background-color: var(--navy-2); color: white;">
+<!-- ═══ 12 — DEMO TRANSITION ═══ -->
+<div class="slide" id="slide-12" style="background-color: var(--navy-2); color: white;">
   <span class="ast ast-top" style="color:white">✳</span><span class="ast ast-bot" style="color:white">✳</span>
   <div class="slide-badge" style="background:var(--blue)">LIVE</div>
   <div class="demo-wrap">
     <div class="demo-radar-box up d1">
-      <div class="demo-radar" id="demo-radar"></div>
+      <div class="demo-radar" id="demo-radar-clinician"></div>
       <i class="fa-solid fa-mobile-screen-button demo-icon" style="color:#fff"></i>
     </div>
     <div class="slide-label up d2" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff">live demonstration</div>
@@ -576,8 +591,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 12 — PATIENT: WHAT THEY LOG ═══ -->
-<div class="slide" id="slide-12">
+<!-- ═══ 13 — PATIENT: WHAT THEY LOG ═══ -->
+<div class="slide" id="slide-13">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="slide-label up d1">patient role · 1 of 3</div>
@@ -603,8 +618,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 13 — PATIENT: WHAT THEY SEE ═══ -->
-<div class="slide" id="slide-13">
+<!-- ═══ 14 — PATIENT: WHAT THEY SEE ═══ -->
+<div class="slide" id="slide-14">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -629,8 +644,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 14 — PATIENT: AI FEATURES ═══ -->
-<div class="slide" id="slide-14">
+<!-- ═══ 15 — PATIENT: AI FEATURES ═══ -->
+<div class="slide" id="slide-15">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="slide-label up d1">patient role · 3 of 3</div>
@@ -669,8 +684,23 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 15 — CONNECTOR ═══ -->
-<div class="slide" id="slide-15">
+<!-- ═══ 16 — DEMO TRANSITION (PATIENT) ═══ -->
+<div class="slide" id="slide-16" style="background-color: var(--navy-2); color: white;">
+  <span class="ast ast-top" style="color:white">✳</span><span class="ast ast-bot" style="color:white">✳</span>
+  <div class="slide-badge" style="background:var(--success)">LIVE</div>
+  <div class="demo-wrap">
+    <div class="demo-radar-box up d1">
+      <div class="demo-radar" id="demo-radar-patient" style="border-color:var(--success)"></div>
+      <i class="fa-solid fa-mobile-screen-button demo-icon" style="color:#fff"></i>
+    </div>
+    <div class="slide-label up d2" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff">live demonstration</div>
+    <h2 class="title-lg up d3" style="color:#fff;margin-top:.5rem">Patient <span style="color:var(--success)">App</span></h2>
+    <p class="body-lg up d4" style="color:rgba(255,255,255,0.7);max-width:500px;margin-top:1rem">Switching to device screen to demonstrate daily logging, AI insights, and smart notifications.</p>
+  </div>
+</div>
+
+<!-- ═══ 17 — CONNECTOR ═══ -->
+<div class="slide" id="slide-17">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="col center" style="height:100%">
@@ -694,8 +724,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 16 — PERSONA: SARAH ═══ -->
-<div class="slide" id="slide-16">
+<!-- ═══ 18 — PERSONA: SARAH ═══ -->
+<div class="slide" id="slide-18">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -724,8 +754,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 17 — PERSONA: AHMAD ═══ -->
-<div class="slide" id="slide-17">
+<!-- ═══ 19 — PERSONA: AHMAD ═══ -->
+<div class="slide" id="slide-19">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -754,8 +784,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 18 — PERSONA: FARID ═══ -->
-<div class="slide" id="slide-18">
+<!-- ═══ 20 — PERSONA: FARID ═══ -->
+<div class="slide" id="slide-20">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -788,8 +818,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 19 — CLOSE / Q&A ═══ -->
-<div class="slide" id="slide-19">
+<!-- ═══ 21 — CLOSE / Q&A ═══ -->
+<div class="slide" id="slide-21">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="col center" style="height:100%;max-width:800px;margin:0 auto">
@@ -828,12 +858,12 @@ function updateUI() {
 }
 
 function advance() {
-  if (current === 17 && slide16state === 0) { triggerFaridReveal(); return; }
+  if (current === 18 && slide16state === 0) { triggerFaridReveal(); return; }
   goTo(current + 1);
 }
 
 function back() {
-  if (current === 17) slide16state = 0;
+  if (current === 18) slide16state = 0;
   goTo(current - 1);
 }
 
@@ -841,15 +871,19 @@ function onSlideEnter(index) {
   if (index === 0)  triggerTitleEntrance();
   if (index === 1)  triggerHook();
   if (index === 4)  triggerStats();
-  if (index === 11) triggerDemoEntrance();
-  if (index === 14) triggerConnector();
-  if (index === 18) triggerTypewriter();
-  if (index !== 17) slide16state = 0;
+  if (index === 7)  triggerDemoEntrance('demo-radar-admin');
+  if (index === 10) triggerDemoEntrance('demo-radar-clinician');
+  if (index === 14) triggerDemoEntrance('demo-radar-patient');
+  if (index === 15) triggerConnector();
+  if (index === 19) triggerTypewriter();
+  if (index !== 18) slide16state = 0;
 }
 
-function triggerDemoEntrance() {
-  const radar = document.getElementById('demo-radar');
-  radar.classList.remove('scanning'); void radar.offsetWidth; radar.classList.add('scanning');
+function triggerDemoEntrance(id) {
+  const radar = document.getElementById(id);
+  if (radar) {
+    radar.classList.remove('scanning'); void radar.offsetWidth; radar.classList.add('scanning');
+  }
 }
 
 function triggerTitleEntrance() {
