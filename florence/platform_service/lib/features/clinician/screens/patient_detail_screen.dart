@@ -2090,12 +2090,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   const PopupMenuDivider(),
                   PopupMenuItem(
                     value: 'delete',
-                    textColor: Colors.red,
                     child: Row(
                       children: const [
                         Icon(Icons.delete_outline, size: 16, color: Colors.red),
                         SizedBox(width: 6),
-                        Text('Remove'),
+                        Text('Remove', style: TextStyle(color: Colors.red)),
                       ],
                     ),
                   ),
