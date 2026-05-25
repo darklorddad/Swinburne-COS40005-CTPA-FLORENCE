@@ -11,6 +11,7 @@ class AdminPatient {
   final String? clinicianName;
   final String riskLevel;
   final String? lastRiskAssessment;
+  final String? latestAlert;
 
   const AdminPatient({
     required this.id,
@@ -22,10 +23,18 @@ class AdminPatient {
     this.clinicianName,
     required this.riskLevel,
     this.lastRiskAssessment,
+    this.latestAlert,
   });
 
   bool get isHighRisk => riskLevel.toUpperCase() == 'HIGH';
   bool get isMediumRisk => riskLevel.toUpperCase() == 'MEDIUM';
+
+  // New getters for our alerts
+  bool get isHypo => latestAlert?.toLowerCase().contains('hypo') ?? false;
+  bool get isHyper => latestAlert?.toLowerCase().contains('hyper') ?? false;
+
+  // Determines if they show up in the Action Feed
+  bool get requiresAttention => isHighRisk || isHypo || isHyper;
 
   factory AdminPatient.fromJson(Map<String, dynamic> json) {
     return AdminPatient(
@@ -38,6 +47,7 @@ class AdminPatient {
       clinicianName: json['Clinician Name'] ?? 'Unassigned',
       riskLevel: json['Risk Level'] ?? 'LOW',
       lastRiskAssessment: json['Last Risk Assessment'],
+      latestAlert: json['Latest Alert'],
     );
   }
 }
@@ -46,14 +56,14 @@ class AdminPatient {
 class AdminMetrics {
   final int totalPatients;
   final int highRiskPatients;
-  final int activeClinicians;
-  final int connectedDevices;
+  final int hypoPatients;
+  final int hyperPatients;
 
   const AdminMetrics({
     required this.totalPatients,
     required this.highRiskPatients,
-    required this.activeClinicians,
-    required this.connectedDevices,
+    required this.hypoPatients,
+    required this.hyperPatients,
   });
 }
 
