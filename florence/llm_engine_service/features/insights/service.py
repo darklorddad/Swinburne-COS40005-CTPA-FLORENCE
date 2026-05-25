@@ -44,14 +44,18 @@ class InsightService:
         # Build human message from snapshot fields
         lines = ["Patient Health Snapshot:"]
 
-        if s.average_glucose_7d is not None:
-            lines.append(f"- 7-day average glucose: {s.average_glucose_7d:.1f} mg/dL")
-        if s.latest_glucose is not None:
-            lines.append(f"- Latest glucose reading: {s.latest_glucose:.1f} mg/dL")
+        g_val = s.average_glucose_7d or s.latest_glucose or 100.0
+        g_unit = "mmol/L" if g_val < 40.0 else "mg/dL"
+        g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
 
-        lines.append(f"- Hyperglycaemia events (>180 mg/dL) in last 7 days: {s.hyper_events_7d}")
-        lines.append(f"- Hypoglycaemia events (<70 mg/dL) in last 7 days: {s.hypo_events_7d}")
-        lines.append(f"- Time in range (70–180 mg/dL): {s.time_in_range_7d * 100:.0f}%")
+        if s.average_glucose_7d is not None:
+            lines.append(f"- 7-day average glucose: {s.average_glucose_7d:.1f} {g_unit}")
+        if s.latest_glucose is not None:
+            lines.append(f"- Latest glucose reading: {s.latest_glucose:.1f} {g_unit}")
+
+        lines.append(f"- Hyperglycaemia events in last 7 days: {s.hyper_events_7d}")
+        lines.append(f"- Hypoglycaemia events in last 7 days: {s.hypo_events_7d}")
+        lines.append(f"- Time in range ({g_target}): {s.time_in_range_7d * 100:.0f}%")
         lines.append(f"- Activity logged today: {s.activity_minutes_today} minutes")
         lines.append(f"- Meals logged today: {s.meals_today}")
         lines.append(f"- Medication adherence (7-day): {s.medication_adherence_7d * 100:.0f}%")
