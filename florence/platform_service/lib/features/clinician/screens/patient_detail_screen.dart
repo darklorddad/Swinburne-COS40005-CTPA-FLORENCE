@@ -1651,7 +1651,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                             const Icon(Icons.medical_services_outlined, size: 14, color: AppTheme.primaryColor),
                             const SizedBox(width: 6),
                             Text(
-                              _patient!.conditionName,
+                              _patient!.activeDiseasesText,
                               style: const TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,

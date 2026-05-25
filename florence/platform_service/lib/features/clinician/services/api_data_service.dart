@@ -29,16 +29,24 @@ class ApiDataService implements DataService {
       if (data == null) return [];
       
       // Assuming data is a list of patient objects
-      return (data as List).map((json) => Patient(
-        id: json['id']?.toString() ?? '',
-        name: json['name'] ?? 'Unknown',
-        age: 0, // Age requires date_of_birth which is not in this endpoint
-        gender: 'Unknown',
-        condition: ChronicCondition.type2Diabetes, // Default placeholder
-        riskLevel: _parseRiskLevel(json['risk_level']),
-        lastSync: DateTime.now(), // Real sync time not provided in list endpoint
-        contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
-      )).toList();
+      return (data as List).map((json) {
+        final diseaseLogs = json['disease_logs'] as List? ?? [];
+        final activeDiseases = diseaseLogs
+            .where((log) => log['status'] == 'ACTIVE')
+            .map((log) => log['condition_name']?.toString() ?? 'Unknown')
+            .toList();
+
+        return Patient(
+          id: json['id']?.toString() ?? '',
+          name: json['name'] ?? 'Unknown',
+          age: 0, // Age requires date_of_birth which is not in this endpoint
+          gender: 'Unknown',
+          activeDiseases: activeDiseases,
+          riskLevel: _parseRiskLevel(json['risk_level']),
+          lastSync: DateTime.now(), // Real sync time not provided in list endpoint
+          contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
+        );
+      }).toList();
     } catch (e) {
       debugPrint('Error fetching patients: $e');
       return [];
@@ -51,16 +59,24 @@ class ApiDataService implements DataService {
       final data = await _api.get('/clinicians/available-patients');
       if (data == null) return [];
       
-      return (data as List).map((json) => Patient(
-        id: json['id']?.toString() ?? '',
-        name: json['name'] ?? 'Unknown',
-        age: 0,
-        gender: 'Unknown',
-        condition: ChronicCondition.type2Diabetes,
-        riskLevel: _parseRiskLevel(json['risk_level']),
-        lastSync: DateTime.now(),
-        contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
-      )).toList();
+      return (data as List).map((json) {
+        final diseaseLogs = json['disease_logs'] as List? ?? [];
+        final activeDiseases = diseaseLogs
+            .where((log) => log['status'] == 'ACTIVE')
+            .map((log) => log['condition_name']?.toString() ?? 'Unknown')
+            .toList();
+
+        return Patient(
+          id: json['id']?.toString() ?? '',
+          name: json['name'] ?? 'Unknown',
+          age: 0,
+          gender: 'Unknown',
+          activeDiseases: activeDiseases,
+          riskLevel: _parseRiskLevel(json['risk_level']),
+          lastSync: DateTime.now(),
+          contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
+        );
+      }).toList();
     } catch (e) {
       debugPrint('Error fetching available patients: $e');
       return [];
@@ -122,12 +138,18 @@ class ApiDataService implements DataService {
         }
       }
 
+      final diseaseLogs = data['disease_logs'] as List? ?? [];
+      final activeDiseases = diseaseLogs
+          .where((log) => log['status'] == 'ACTIVE')
+          .map((log) => log['condition_name']?.toString() ?? 'Unknown')
+          .toList();
+
       return Patient(
         id: profile['id']?.toString() ?? '',
         name: profile['name'] ?? 'Unknown',
         age: calculatedAge,
         gender: profile['gender'] ?? 'Unknown',
-        condition: _parseCondition(profile['condition']),
+        activeDiseases: activeDiseases,
         riskLevel: _parseRiskLevel(profile['risk_level']),
         lastSync: profile['last_sync'] != null ? DateTime.parse(profile['last_sync']) : DateTime.now(),
         contactInfo: profile['phone_number'] ?? profile['contact_info'] ?? '',
@@ -335,11 +357,6 @@ class ApiDataService implements DataService {
   }
 
   // Parsing helpers
-  ChronicCondition _parseCondition(String? condition) {
-    // Map string to enum
-    return ChronicCondition.type2Diabetes; // Default/Placeholder
-  }
-
   RiskLevel _parseRiskLevel(String? level) {
     switch (level?.toLowerCase()) {
       case 'high': return RiskLevel.high;

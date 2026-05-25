@@ -85,7 +85,7 @@ class PatientListItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      patient.conditionName,
+                      patient.activeDiseasesText,
                       style: const TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
