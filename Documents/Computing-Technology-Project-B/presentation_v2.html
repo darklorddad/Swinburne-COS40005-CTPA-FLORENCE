@@ -178,6 +178,14 @@ h1,h2,h3{font-family:'Fraunces',serif}
 .story-list li{display:flex;align-items:flex-start;gap:.75rem;font-size:clamp(1.05rem,1.5vw,1.15rem);color:var(--navy);line-height:1.65}
 .story-list li::before{content:'→';color:var(--blue);flex-shrink:0;margin-top:2px;font-weight:600}
 
+/* ── DEMO SLIDE ── */
+.demo-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center}
+.demo-radar-box{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;margin-bottom:2rem}
+.demo-icon{font-size:3.5rem;color:var(--blue);z-index:2}
+.demo-radar{position:absolute;inset:-20px;border-radius:50%;border:2px solid var(--blue);opacity:0;z-index:1}
+.demo-radar.scanning{animation:radarPulse 2s cubic-bezier(0.215, 0.610, 0.355, 1.000) infinite}
+@keyframes radarPulse{0%{transform:scale(.5);opacity:0}50%{opacity:.4}100%{transform:scale(1.5);opacity:0}}
+
 /* ── SLIDE 1 ── */
 #title-word{opacity:0;clip-path:inset(0 100% 0 0)}
 #title-word.animate{animation:titleReveal 1.5s cubic-bezier(.22,1,.36,1) forwards}
@@ -224,11 +232,11 @@ h1,h2,h3{font-family:'Fraunces',serif}
         <p style="font-size:.9rem;color:var(--text-dim);margin:0">F.L.O.R.E.N.C.E. — Framework for Longitudinal Observation and Response via Embedded Neural Cognitive Engine</p>
       </div>
       <div class="team-row up d6">
-        <span class="team-member">Member 1</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
-        <span class="team-member">Member 2</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
-        <span class="team-member">Member 3</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
-        <span class="team-member">Member 4</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
-        <span class="team-member">Member 5</span>
+        <span class="team-member">Daniel Tiong</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
+        <span class="team-member">Alif Harriz</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
+        <span class="team-member">Ashley Jong</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
+        <span class="team-member">Basil Agas</span><span style="color:rgba(27,42,107,.2);font-size:.8rem">·</span>
+        <span class="team-member">Edison Ho</span>
       </div>
     </div>
   </div>
@@ -498,7 +506,7 @@ h1,h2,h3{font-family:'Fraunces',serif}
       <p class="body-lg up d3" style="max-width:480px;margin-bottom:1.2rem">Dr. Sarah opens FLORENCE before morning rounds. One patient is flagged. She reviews — then calls <em>before</em> the patient even knows there's a problem.</p>
       <div class="clin-stats up d4">
         <div class="clin-stat"><div class="clin-stat-num">8</div><div class="clin-stat-label">Analytics screens<br>per patient</div></div>
-        <div class="clin-stat"><div class="clin-stat-num">3</div><div class="clin-stat-label">User roles<br>fully managed</div></div>
+        <div class="clin-stat"><div class="clin-stat-num" style="color:var(--cyan)">Live</div><div class="clin-stat-label">Sync with<br>patient logs</div></div>
         <div class="clin-stat"><div class="clin-stat-num" style="color:var(--danger)">1st</div><div class="clin-stat-label">Highest-risk<br>always first</div></div>
       </div>
     </div>
@@ -523,8 +531,53 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 10 — PATIENT: WHAT THEY LOG ═══ -->
+<!-- ═══ 10 — CLINICIAN ARCHITECTURE & UX ═══ -->
 <div class="slide" id="slide-10">
+  <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
+  <div class="slide-badge">2026</div>
+  <div class="slide-label up d1" style="background:rgba(8,145,178,.09);border-color:rgba(8,145,178,.28);color:var(--cyan)">clinician role · technical</div>
+  <h2 class="title-md up d2" style="margin-top:.3rem;margin-bottom:1rem">Built for speed.<br><span style="color:var(--cyan)">Secured for healthcare.</span></h2>
+  <div class="ai-grid up d3" style="grid-template-columns:repeat(2,1fr); gap: 1.5rem">
+    <div class="ai-tile wow" style="border-top-color:var(--cyan)">
+      <div class="ai-tile-icon" style="color:var(--cyan)"><i class="fa-solid fa-shield-halved"></i></div>
+      <div class="ai-tile-name">Secure Architecture (Zero Direct DB)</div>
+      <div class="ai-tile-desc">The clinician frontend never touches the database directly. All traffic routes through a secure middleware REST API, ensuring enterprise-grade data protection.</div>
+    </div>
+    <div class="ai-tile" style="border-top-color:var(--blue)">
+      <div class="ai-tile-icon" style="color:var(--blue)"><i class="fa-solid fa-chart-area"></i></div>
+      <div class="ai-tile-name">Standardized, Dynamic Analytics</div>
+      <div class="ai-tile-desc">From BMI to Glucose trends, charts dynamically scale to prevent data overlap. Color-coded status pills flag "Above Target" readings instantly.</div>
+    </div>
+    <div class="ai-tile" style="border-top-color:var(--amber)">
+      <div class="ai-tile-icon" style="color:var(--amber)"><i class="fa-solid fa-layer-group"></i></div>
+      <div class="ai-tile-name">Unified Ecosystem UX</div>
+      <div class="ai-tile-desc">Clinician interfaces share the identical visual language, color-coding, and hierarchy as the patient app, creating one cohesive, branded platform.</div>
+    </div>
+    <div class="ai-tile" style="border-top-color:var(--danger)">
+      <div class="ai-tile-icon" style="color:var(--danger)"><i class="fa-solid fa-bolt"></i></div>
+      <div class="ai-tile-name">Dynamic Risk Engine</div>
+      <div class="ai-tile-desc">The patient list isn't alphabetical—it's priority-based. High-risk patients automatically float to the top based on real-time continuous data flow.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 11 — DEMO TRANSITION ═══ -->
+<div class="slide" id="slide-11" style="background-color: var(--navy-2); color: white;">
+  <span class="ast ast-top" style="color:white">✳</span><span class="ast ast-bot" style="color:white">✳</span>
+  <div class="slide-badge" style="background:var(--blue)">LIVE</div>
+  <div class="demo-wrap">
+    <div class="demo-radar-box up d1">
+      <div class="demo-radar" id="demo-radar"></div>
+      <i class="fa-solid fa-mobile-screen-button demo-icon" style="color:#fff"></i>
+    </div>
+    <div class="slide-label up d2" style="background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);color:#fff">live demonstration</div>
+    <h2 class="title-lg up d3" style="color:#fff;margin-top:.5rem">FLORENCE <span style="color:var(--blue)">in Action</span></h2>
+    <p class="body-lg up d4" style="color:rgba(255,255,255,0.7);max-width:500px;margin-top:1rem">Switching to device screen to demonstrate patient logging, clinician analytics, and the dynamic risk engine.</p>
+  </div>
+</div>
+
+<!-- ═══ 12 — PATIENT: WHAT THEY LOG ═══ -->
+<div class="slide" id="slide-12">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="slide-label up d1">patient role · 1 of 3</div>
@@ -550,8 +603,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 11 — PATIENT: WHAT THEY SEE ═══ -->
-<div class="slide" id="slide-11">
+<!-- ═══ 13 — PATIENT: WHAT THEY SEE ═══ -->
+<div class="slide" id="slide-13">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -576,8 +629,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 12 — PATIENT: AI FEATURES ═══ -->
-<div class="slide" id="slide-12">
+<!-- ═══ 14 — PATIENT: AI FEATURES ═══ -->
+<div class="slide" id="slide-14">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="slide-label up d1">patient role · 3 of 3</div>
@@ -616,8 +669,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 13 — CONNECTOR ═══ -->
-<div class="slide" id="slide-13">
+<!-- ═══ 15 — CONNECTOR ═══ -->
+<div class="slide" id="slide-15">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="col center" style="height:100%">
@@ -641,8 +694,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 14 — PERSONA: SARAH ═══ -->
-<div class="slide" id="slide-14">
+<!-- ═══ 16 — PERSONA: SARAH ═══ -->
+<div class="slide" id="slide-16">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -671,8 +724,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 15 — PERSONA: AHMAD ═══ -->
-<div class="slide" id="slide-15">
+<!-- ═══ 17 — PERSONA: AHMAD ═══ -->
+<div class="slide" id="slide-17">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -701,8 +754,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 16 — PERSONA: FARID ═══ -->
-<div class="slide" id="slide-16">
+<!-- ═══ 18 — PERSONA: FARID ═══ -->
+<div class="slide" id="slide-18">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="split split-55-45" style="align-items:center">
@@ -735,8 +788,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 17 — CLOSE / Q&A ═══ -->
-<div class="slide" id="slide-17">
+<!-- ═══ 19 — CLOSE / Q&A ═══ -->
+<div class="slide" id="slide-19">
   <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
   <div class="slide-badge">2026</div>
   <div class="col center" style="height:100%;max-width:800px;margin:0 auto">
@@ -775,12 +828,12 @@ function updateUI() {
 }
 
 function advance() {
-  if (current === 15 && slide16state === 0) { triggerFaridReveal(); return; }
+  if (current === 17 && slide16state === 0) { triggerFaridReveal(); return; }
   goTo(current + 1);
 }
 
 function back() {
-  if (current === 15) slide16state = 0;
+  if (current === 17) slide16state = 0;
   goTo(current - 1);
 }
 
@@ -788,9 +841,15 @@ function onSlideEnter(index) {
   if (index === 0)  triggerTitleEntrance();
   if (index === 1)  triggerHook();
   if (index === 4)  triggerStats();
-  if (index === 12) triggerConnector();
-  if (index === 16) triggerTypewriter();
-  if (index !== 15) slide16state = 0;
+  if (index === 11) triggerDemoEntrance();
+  if (index === 14) triggerConnector();
+  if (index === 18) triggerTypewriter();
+  if (index !== 17) slide16state = 0;
+}
+
+function triggerDemoEntrance() {
+  const radar = document.getElementById('demo-radar');
+  radar.classList.remove('scanning'); void radar.offsetWidth; radar.classList.add('scanning');
 }
 
 function triggerTitleEntrance() {
