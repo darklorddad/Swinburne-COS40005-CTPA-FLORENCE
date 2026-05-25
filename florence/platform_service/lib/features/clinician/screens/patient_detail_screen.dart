@@ -2712,9 +2712,14 @@ class _ClinicianMedicationFormDialogState
       _amountController.text = m.dosage ?? "";
       _selectedType = _medicationTypes.contains(m.route) ? m.route : 'Tablet';
 
-      _selectedTimings = m.timingInstructions != null
-          ? List<String>.from(m.timingInstructions)
-          : ['ANYTIME'];
+      try {
+        _selectedTimings = m.timingInstructions != null
+            ? List<String>.from(m.timingInstructions)
+            : ['ANYTIME'];
+      } catch (e) {
+        _selectedTimings = ['ANYTIME'];
+        debugPrint('ℹ️ Medication model does not contain timingInstructions field. Using defaults.');
+      }
     }
   }
 
