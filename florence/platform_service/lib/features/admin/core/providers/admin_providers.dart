@@ -109,8 +109,8 @@ final adminMetricsProvider = Provider.autoDispose<AsyncValue<AdminMetrics>>((ref
     return AdminMetrics(
       totalPatients: patients.length,
       highRiskPatients: highRiskCount,
-      activeClinicians: 12, 
-      connectedDevices: 89,
+      hypoPatients: patients.where((p) => p.isHypo).length,
+      hyperPatients: patients.where((p) => p.isHyper).length,
     );
   });
 });

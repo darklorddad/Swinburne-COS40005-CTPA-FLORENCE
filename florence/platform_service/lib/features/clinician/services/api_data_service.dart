@@ -53,6 +53,9 @@ class ApiDataService implements DataService {
           riskLevel: _parseRiskLevel(json['risk_level']),
           lastUpdate: latest,
           contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
+          emergencyContactName: json['emergency_contact_name'],
+          emergencyContactRelationship: json['emergency_contact_relationship'],
+          emergencyContactPhone: json['emergency_contact_phone'],
         );
       }).toList();
     } catch (e) {
@@ -91,6 +94,9 @@ class ApiDataService implements DataService {
           riskLevel: _parseRiskLevel(json['risk_level']),
           lastUpdate: latest,
           contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
+          emergencyContactName: json['emergency_contact_name'],
+          emergencyContactRelationship: json['emergency_contact_relationship'],
+          emergencyContactPhone: json['emergency_contact_phone'],
         );
       }).toList();
     } catch (e) {
@@ -176,6 +182,9 @@ class ApiDataService implements DataService {
         riskLevel: _parseRiskLevel(profile['risk_level']),
         lastUpdate: latest,
         contactInfo: profile['phone_number'] ?? profile['contact_info'] ?? '',
+        emergencyContactName: profile['emergency_contact_name'],
+        emergencyContactRelationship: profile['emergency_contact_relationship'],
+        emergencyContactPhone: profile['emergency_contact_phone'],
       );
     } catch (e) {
       debugPrint('Error fetching patient: $e');
