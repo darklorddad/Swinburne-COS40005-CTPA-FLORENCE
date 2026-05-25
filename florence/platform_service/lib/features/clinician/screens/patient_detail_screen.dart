@@ -1868,11 +1868,25 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       'CHOLESTEROL_TRIGLYCERIDES': 'Triglycerides'
     };
 
+    final icons = {
+      'BLOOD_PRESSURE_SYSTOLIC': Icons.monitor_heart_outlined,
+      'BLOOD_PRESSURE_DIASTOLIC': Icons.favorite_border_rounded,
+      'GLUCOSE': Icons.water_drop_outlined,
+      'BMI': Icons.monitor_weight_outlined,
+      'HBA1C': Icons.pie_chart_outline_rounded,
+      'CHOLESTEROL_TOTAL': Icons.bubble_chart_outlined,
+      'CHOLESTEROL_LDL': Icons.opacity_outlined,
+      'CHOLESTEROL_HDL': Icons.opacity,
+      'CHOLESTEROL_TRIGLYCERIDES': Icons.texture_rounded
+    };
+
     return Column(
-      children: _patientThresholds!.map((t) {
+      children: List.generate(_patientThresholds!.length, (index) {
+        final t = _patientThresholds!.elementAt(index);
         final type = t['data_type'] ?? '';
         final displayName = labels[type] ?? type.replaceAll('_', ' ');
-        
+        final iconData = icons[type] ?? Icons.analytics_outlined;
+
         String unit = '';
         if (type == 'GLUCOSE' || type.contains('CHOLESTEROL')) unit = ' mg/dL';
         if (type.contains('BLOOD_PRESSURE')) unit = ' mmHg';
@@ -1883,20 +1897,43 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(displayName, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary, fontWeight: FontWeight.w500)),
-                  Text(
-                    '${(t['min_value'] as num).toStringAsFixed(1)} - ${(t['max_value'] as num).toStringAsFixed(1)}$unit',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.primaryColor),
+                  Icon(iconData,
+                      size: 20,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.6)),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      displayName,
+                      style: const TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${(t['min_value'] as num).toStringAsFixed(1)} - ${(t['max_value'] as num).toStringAsFixed(1)}$unit',
+                      style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.primaryColor),
+                    ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1, color: AppTheme.dividerColor),
+            if (index < _patientThresholds!.length - 1)
+              const Divider(height: 1, color: AppTheme.dividerColor),
           ],
         );
-      }).toList(),
+      }),
     );
   }
 
