@@ -181,7 +181,7 @@ async def update_clinician_settings(
 # MEDICAL CONDITIONS (DISEASES) MANAGEMENT
 # =========================================================================
 
-@router.post("/patients/{patient_id}/diseases", status_code=status.HTTP_201_CREATED)
+@router.post("/patients/{patient_id}/diseases")
 async def add_patient_disease(
     patient_id: str, 
     payload: DiseaseCreate, 
@@ -235,7 +235,7 @@ async def remove_patient_disease(
 # CLINICAL MEDICATION MANAGEMENT
 # =========================================================================
 
-@router.post("/patients/{patient_id}/medications", status_code=status.HTTP_201_CREATED)
+@router.post("/patients/{patient_id}/medications")
 async def add_patient_medication(
     patient_id: str, 
     payload: ClinicianMedicationPayload, 
