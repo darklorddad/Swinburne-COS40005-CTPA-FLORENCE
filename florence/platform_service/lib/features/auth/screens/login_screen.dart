@@ -219,13 +219,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       _buildDivider(),
                       const SizedBox(height: 16),
 
-                      // Add this temporarily somewhere on your main login screen
-                      TextButton(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, AppRoutes.adminDashboard),
-                        child: const Text('Go to Admin Portal (Dev)'),
-                      ),
-
                       // Register link
                       _buildRegisterLink(),
                     ],
