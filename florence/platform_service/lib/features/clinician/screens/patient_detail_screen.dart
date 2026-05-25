@@ -2116,15 +2116,35 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
 
-  void _handleDiseaseAction(String action, Map<String, dynamic> disease) {
+  void _handleDiseaseAction(String action, Map<String, dynamic> disease) async {
+    final int diseaseId = disease['id'];
+
     if (action == 'edit') {
       _showEditDiseaseDialog(disease);
     } else if (action == 'delete') {
       _confirmDeleteDisease(disease);
     } else if (action == 'toggle_status') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Status toggle coming soon')),
-      );
+      final currentStatus =
+          (disease['status'] ?? 'active').toString().toLowerCase();
+      final nextStatus = currentStatus == 'active' ? 'resolved' : 'active';
+
+      try {
+        await ApiService().put('/clinicians/diseases/$diseaseId', {
+          'status': nextStatus,
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Condition marked as $nextStatus')),
+          );
+          _loadPatientData();
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to update status: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -2159,7 +2179,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   Future<void> _showAddDiseaseDialog() async {
     final conditionCtrl = TextEditingController();
-    final dateCtrl = TextEditingController(text: "26 May 2026");
+    final dateCtrl = TextEditingController(text: "2026-05-26");
     String selectedStatus = 'active';
 
     await showDialog(
@@ -2215,7 +2235,30 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         child: const Text('Cancel')),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () async {
+                          if (conditionCtrl.text.trim().isEmpty) return;
+                          try {
+                            await ApiService().post(
+                                '/clinicians/patients/${widget.patientId}/diseases',
+                                {
+                                  'condition_name': conditionCtrl.text.trim(),
+                                  'status': selectedStatus,
+                                  'diagnosed_date': dateCtrl.text,
+                                });
+                            if (mounted) {
+                              Navigator.pop(context);
+                              _loadPatientData();
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content:
+                                        Text('Failed to add condition: $e')),
+                              );
+                            }
+                          }
+                        },
                         child: const Text('Add Entry')),
                   ],
                 )
@@ -2299,6 +2342,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   void _confirmDeleteDisease(Map<String, dynamic> disease) {
+    final int diseaseId = disease['id'];
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -2310,7 +2354,21 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              try {
+                await ApiService().delete('/clinicians/diseases/$diseaseId');
+                if (mounted) {
+                  Navigator.pop(context);
+                  _loadPatientData();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to remove: $e')),
+                  );
+                }
+              }
+            },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Remove'),
           ),
@@ -2324,6 +2382,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   void _confirmDeleteMedication(dynamic m) {
+    final int medicationId = m.id;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -2335,7 +2394,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              try {
+                await ApiService()
+                    .delete('/clinicians/medications/$medicationId');
+                if (mounted) {
+                  Navigator.pop(context);
+                  _loadPatientData();
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text('Failed to remove medication entry: $e')),
+                  );
+                }
+              }
+            },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Remove'),
           ),
@@ -2959,16 +3034,59 @@ class _ClinicianMedicationFormDialogState
                     ),
                     const SizedBox(width: 12),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          Navigator.pop(context);
+                          final bool isCustom = _selectedDictionaryItem == null;
+                          final Map<String, dynamic> payload = {
+                            'medication_id': isCustom
+                                ? null
+                                : _selectedDictionaryItem!['id'],
+                            'custom_medication_name':
+                                isCustom ? _nameController.text.trim() : null,
+                            'amount': _amountController.text.trim(),
+                            'medication_type': _selectedType,
+                            'frequency_id': _selectedFrequency?['id'] ?? 1,
+                            'timing_instructions': _selectedTimings,
+                            'status': 'CURRENT',
+                          };
+
+                          try {
+                            if (widget.isEdit) {
+                              final int medicationId = widget.medication.id;
+                              await ApiService().put(
+                                  '/clinicians/medications/$medicationId',
+                                  payload);
+                            } else {
+                              await ApiService().post(
+                                  '/clinicians/patients/${widget.patientId}/medications',
+                                  payload);
+                            }
+
+                            if (mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(widget.isEdit
+                                        ? 'Medication details saved!'
+                                        : 'Medication added successfully!')),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content:
+                                        Text('Failed to save medication: $e')),
+                              );
+                            }
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
                           foregroundColor: Colors.white),
-                      child:
-                          Text(widget.isEdit ? "Save Changes" : "Add Medication"),
+                      child: Text(
+                          widget.isEdit ? "Save Changes" : "Add Medication"),
                     ),
                   ],
                 ),
