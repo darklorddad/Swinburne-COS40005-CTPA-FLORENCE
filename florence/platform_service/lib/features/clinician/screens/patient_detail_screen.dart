@@ -62,12 +62,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   int? _getMedicationId(dynamic m) {
     if (m == null) return null;
-    try {
-      return m.id;
-    } catch (_) {}
-    try {
-      return m.medicationId;
-    } catch (_) {}
+    try { return m.id; } catch (_) {}
+    try { return m.medicationId; } catch (_) {}
+    // If it's a model instance with serialization methods:
+    try { return m.toJson()['id']; } catch (_) {}
+    try { return m.toJson()['medication_id']; } catch (_) {}
     return null;
   }
   
@@ -1812,9 +1811,15 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Widget _buildFilteredDiseaseList() {
-    final List<dynamic> liveDiseases = _patientThresholds != null ? [] : []; // Placeholder for actual disease list from state
+    // Connect directly to your live dynamic state list fetched from the backend router
+    // Fallback to empty list if data hasn't loaded yet
+    final List<dynamic> liveDiseases = _patient?.activeDiseases ?? []; 
 
     final filtered = liveDiseases.where((item) {
+      // If the item is just a string (from the Patient model's activeDiseases list), 
+      // we treat it as active. If we need full DiseaseLog objects, we'd need to fetch them.
+      if (item is String) return _diseaseFilter == 'ACTIVE' || _diseaseFilter == 'ALL';
+      
       final statusStr = (item['status'] ?? 'active').toString().toUpperCase();
       if (_diseaseFilter == 'ALL') return true;
       return statusStr == _diseaseFilter;
@@ -1837,10 +1842,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = filtered[index];
-        final name = item['condition_name'] ?? 'Unknown';
-        final status = (item['status'] ?? 'active').toString().toLowerCase();
-        final date = item['diagnosed_date'] ?? 'Not Set';
-
+        final bool isString = item is String;
+        
+        final name = isString ? item : (item['condition_name'] ?? 'Unknown');
+        final status = isString ? 'active' : (item['status'] ?? 'active').toString().toLowerCase();
+        final date = isString ? 'Not Set' : (item['diagnosed_date'] ?? 'Not Set');
         final isActive = status == 'active';
 
         return Container(
@@ -1901,12 +1907,12 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   ),
                 ),
                 const SizedBox(width: 4),
-                PopupMenuButton<String>(
+                if (!isString) PopupMenuButton<String>(
                   icon: const Icon(Icons.more_vert_rounded,
                       color: AppTheme.textSecondary, size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onSelected: (action) => _handleDiseaseAction(action, item),
+                  onSelected: (action) => _handleDiseaseAction(action, Map<String, dynamic>.from(item)),
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'toggle_status',
@@ -2412,10 +2418,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   void _confirmDeleteMedication(dynamic m) {
     final int? medicationId = _getMedicationId(m);
+    
     if (medicationId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Error: Could not resolve Medication Database ID.')),
+        const SnackBar(content: Text('Error: Could not resolve Medication Database ID.')),
       );
       return;
     }
@@ -2424,27 +2430,20 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Medication?'),
-        content: Text(
-            'Are you sure you want to discard ${m.name} from this schedule profile?'),
+        content: Text('Are you sure you want to discard ${m.name} from this schedule profile?'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               try {
-                await ApiService()
-                    .delete('/clinicians/medications/$medicationId');
+                await ApiService().delete('/clinicians/medications/$medicationId');
                 if (mounted) {
                   Navigator.pop(context);
-                  _loadPatientData();
+                  _loadPatientData(); // Reload the UI layout state
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Failed to remove medication entry: $e')),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
                 }
               }
             },
