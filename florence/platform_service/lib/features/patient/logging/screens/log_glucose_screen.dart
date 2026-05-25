@@ -716,8 +716,16 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     final currentUnit = settings.glucoseUnit;
     final isMmol = currentUnit == 'mmol/L';
 
-    final double minValid = isMmol ? 1.0 : 20.0;
-    final double maxValid = isMmol ? 35.0 : 600.0;
+    // Widen absolute biological limits to prevent blocking valid readings 
+    // that lie inside or slightly outside custom target ranges.
+    double minValid = isMmol ? 0.1 : 10.0;
+    double maxValid = isMmol ? 60.0 : 1000.0;
+
+    // Dynamically expand if the user's custom threshold somehow exceeds even these extremes
+    if (threshold != null) {
+      if (threshold.minValue < minValid) minValid = threshold.minValue;
+      if (threshold.maxValue > maxValid) maxValid = threshold.maxValue;
+    }
 
     // Tint the whole card background based on status
     final containerColor = glucoseColor != null 
