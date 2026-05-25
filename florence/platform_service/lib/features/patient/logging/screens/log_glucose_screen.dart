@@ -337,7 +337,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
     setState(() => _isLoading = true);
     
     try {
-      final glucoseValue = double.parse(_glucoseController.text);
+      final glucoseValue = double.parse(_glucoseController.text.replaceAll(',', '.'));
       final repo = ref.read(monitorDataRepositoryProvider);
 
       // 1. Upload Image (If selected but not yet uploaded)
@@ -442,7 +442,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final glucoseValue = double.tryParse(_glucoseController.text);
+    final glucoseValue = double.tryParse(_glucoseController.text.replaceAll(',', '.'));
     final bool hasChanges = !_forcePop && 
         (_glucoseController.text != _initialGlucose || 
          _notesController.text != _initialNotes || 
@@ -460,7 +460,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       );
     } catch (_) {}
 
-    final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold);
+    final settings = ref.watch(patientSettingsProvider);
+    final currentUnit = settings.glucoseUnit;
+    final glucoseColor = _getGlucoseColor(glucoseValue, glucoseThreshold, currentUnit);
 
     return PopScope(
       canPop: !hasChanges,
@@ -804,7 +806,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
               builder: (context) {
                 final statusText = glucoseColor != null
                     ? _getGlucoseStatus(
-                            double.tryParse(_glucoseController.text), threshold)
+                            double.tryParse(_glucoseController.text.replaceAll(',', '.')), threshold, currentUnit)
                         .toUpperCase()
                     : 'ENTER READING';
 
@@ -1617,11 +1619,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   /// Get glucose color based on value and user thresholds
-  Color? _getGlucoseColor(double? value, HealthThreshold? threshold) {
+  Color? _getGlucoseColor(double? value, HealthThreshold? threshold, String unit) {
     if (value == null) return null;
     
-    final min = threshold?.minValue ?? 70;
-    final max = threshold?.maxValue ?? 180;
+    final isMmol = unit == 'mmol/L';
+    final min = threshold?.minValue ?? (isMmol ? 3.9 : 70.0);
+    final max = threshold?.maxValue ?? (isMmol ? 10.0 : 180.0);
 
     if (value < min) {
       return AppTheme.warningColor; // Low (Amber)
@@ -1633,11 +1636,12 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
   }
 
   /// Get glucose status text
-  String _getGlucoseStatus(double? value, HealthThreshold? threshold) {
+  String _getGlucoseStatus(double? value, HealthThreshold? threshold, String unit) {
     if (value == null) return '';
     
-    final min = threshold?.minValue ?? 70;
-    final max = threshold?.maxValue ?? 180;
+    final isMmol = unit == 'mmol/L';
+    final min = threshold?.minValue ?? (isMmol ? 3.9 : 70.0);
+    final max = threshold?.maxValue ?? (isMmol ? 10.0 : 180.0);
 
     if (value < min) {
       return 'Low';

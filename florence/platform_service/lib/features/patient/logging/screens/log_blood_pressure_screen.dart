@@ -55,8 +55,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
     }
 
     // Foolproof 2: Logic check prevents impossible medical data
-    final sys = double.tryParse(_systolicController.text);
-    final dia = double.tryParse(_diastolicController.text);
+    final sys = double.tryParse(_systolicController.text.replaceAll(',', '.'));
+    final dia = double.tryParse(_diastolicController.text.replaceAll(',', '.'));
 
     if (sys == null || dia == null) {
       Helpers.showError(context, 'Please enter valid numbers.');
@@ -128,8 +128,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
   @override
   Widget build(BuildContext context) {
-    final sysValue = double.tryParse(_systolicController.text);
-    final diaValue = double.tryParse(_diastolicController.text);
+    final sysValue = double.tryParse(_systolicController.text.replaceAll(',', '.'));
+    final diaValue = double.tryParse(_diastolicController.text.replaceAll(',', '.'));
 
     // Fetch thresholds from the NEW provider
     final thresholdsAsync = ref.watch(patientThresholdsProvider);
@@ -525,8 +525,8 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
             child: Center(
               child: Builder(
                 builder: (context) {
-                  final sysValue = double.tryParse(_systolicController.text);
-                  final diaValue = double.tryParse(_diastolicController.text);
+                  final sysValue = double.tryParse(_systolicController.text.replaceAll(',', '.'));
+                  final diaValue = double.tryParse(_diastolicController.text.replaceAll(',', '.'));
                   final statusText = bpColor != null
                       ? _getBPStatus(sysValue, diaValue, sysT, diaT).toUpperCase()
                       : 'ENTER READING';
