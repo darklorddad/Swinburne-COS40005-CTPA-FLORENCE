@@ -9,7 +9,8 @@ import 'package:florence/core/config/environment.dart';
 void main() async {
   // Ensure Flutter binding is initialized
   WidgetsFlutterBinding.ensureInitialized();
-  
+
+
   // Initialize Supabase
   await _initializeSupabase();
 

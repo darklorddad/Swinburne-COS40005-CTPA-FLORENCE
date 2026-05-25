@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/config/admin_theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
-import 'package:florence/features/admin/core/providers/admin_providers.dart';
-import 'package:florence/features/admin/core/models/admin_models.dart';
-import 'package:florence/features/admin/organizations/widgets/organization_form_dialog.dart';
+import '../../core/providers/admin_providers.dart';
+import '../../core/models/admin_models.dart';
+import '../widgets/organization_form_dialog.dart';
 
 class OrganizationDirectoryScreen extends ConsumerStatefulWidget {
   const OrganizationDirectoryScreen({super.key});
@@ -18,7 +18,6 @@ class _OrganizationDirectoryScreenState extends ConsumerState<OrganizationDirect
   String _searchQuery = '';
   String _sectorFilter = 'All';
   String _typeFilter = 'All';
-  String _stateFilter = 'All';
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +34,7 @@ class _OrganizationDirectoryScreenState extends ConsumerState<OrganizationDirect
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // --- HEADER ---
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -61,84 +61,116 @@ class _OrganizationDirectoryScreenState extends ConsumerState<OrganizationDirect
                   ),
                   const SizedBox(height: 32),
                   
-                  // Filters
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
+                  // --- SEARCH & FILTERS ROW ---
+                  Row(
                     children: [
                       SizedBox(
-                        width: 300,
+                        width: 400, // Matched Patient Directory search width
                         child: TextField(
                           onChanged: (value) => setState(() => _searchQuery = value),
                           decoration: InputDecoration(
                             hintText: 'Search by name, email, or state...',
-                            prefixIcon: const Icon(Icons.search),
+                            prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
                             filled: true,
                             fillColor: Colors.white,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AdminTheme.outlineVariant),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              borderSide: const BorderSide(color: AdminTheme.primary),
+                            ),
                           ),
                         ),
                       ),
-                      _buildDropdown('Sector', ['All', 'Public', 'Private', 'NGO', 'Other'], _sectorFilter, (val) => setState(() => _sectorFilter = val!)),
-                      _buildDropdown('Facility Type', ['All', 'Hospital', 'Clinic', 'Health Centre', 'Lab', 'Other'], _typeFilter, (val) => setState(() => _typeFilter = val!)),
+                      const SizedBox(width: 16),
+                      _buildDropdown(
+                        ['All', 'Public', 'Private', 'NGO', 'Other'], 
+                        _sectorFilter, 
+                        (val) => setState(() => _sectorFilter = val!)
+                      ),
+                      const SizedBox(width: 16),
+                      _buildDropdown(
+                        ['All', 'Hospital', 'Clinic', 'Health Centre', 'Lab', 'Other'], 
+                        _typeFilter, 
+                        (val) => setState(() => _typeFilter = val!)
+                      ),
                     ],
                   ),
                   const SizedBox(height: 24),
                   
+                  // --- DATA TABLE CARD ---
                   Card(
-                    child: orgsAsync.when(
-                      loading: () => const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator())),
-                      error: (err, _) => Padding(padding: const EdgeInsets.all(48), child: Center(child: Text('Error: $err'))),
-                      data: (orgs) {
-                        final filtered = orgs.where((o) {
-                          final matchesSearch = o.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
-                                                (o.email ?? '').toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                                                (o.state ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
-                          final matchesSector = _sectorFilter == 'All' || o.sector == _sectorFilter;
-                          final matchesType = _typeFilter == 'All' || o.facilityType == _typeFilter;
-                          return matchesSearch && matchesSector && matchesType;
-                        }).toList();
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        orgsAsync.when(
+                          loading: () => const Padding(padding: EdgeInsets.all(48), child: Center(child: CircularProgressIndicator())),
+                          error: (err, _) => Padding(padding: const EdgeInsets.all(48), child: Center(child: Text('Error: $err', style: const TextStyle(color: AdminTheme.error)))),
+                          data: (orgs) {
+                            final filtered = orgs.where((o) {
+                              final matchesSearch = o.name.toLowerCase().contains(_searchQuery.toLowerCase()) || 
+                                                    (o.email ?? '').toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                                                    (o.state ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+                              final matchesSector = _sectorFilter == 'All' || o.sector == _sectorFilter;
+                              final matchesType = _typeFilter == 'All' || o.facilityType == _typeFilter;
+                              return matchesSearch && matchesSector && matchesType;
+                            }).toList();
 
-                        if (filtered.isEmpty) return const Padding(padding: EdgeInsets.all(48), child: Center(child: Text('No organizations found.')));
+                            if (filtered.isEmpty) {
+                              return const Padding(
+                                padding: EdgeInsets.all(48), 
+                                child: Center(child: Text('No organizations found matching your criteria.', style: TextStyle(color: AdminTheme.outline)))
+                              );
+                            }
 
-                        return DataTable(
-                          headingTextStyle: Theme.of(context).textTheme.labelSmall,
-                          columns: const [
-                            DataColumn(label: Text('Organisation')),
-                            DataColumn(label: Text('Sector')),
-                            DataColumn(label: Text('Facility Type')),
-                            DataColumn(label: Text('State')),
-                            DataColumn(label: Text('Patients')),
-                            DataColumn(label: Text('Clinicians')),
-                            DataColumn(label: Text('Actions')),
-                          ],
-                          rows: filtered.map((org) => DataRow(
-                            cells: [
-                              DataCell(Text(org.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-                              DataCell(Text(org.sector ?? '-')),
-                              DataCell(Text(org.facilityType ?? '-')),
-                              DataCell(Text(org.state ?? '-')),
-                              DataCell(Text(org.patientCount.toString())),
-                              DataCell(Text(org.clinicianCount.toString())),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.visibility_outlined, color: AdminTheme.primary),
-                                      onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.organizationDetail, arguments: org),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit_outlined, color: AdminTheme.outline),
-                                      onPressed: () => _openFormDialog(context, org: org),
-                                    ),
-                                  ],
-                                )
-                              ),
-                            ]
-                          )).toList(),
-                        );
-                      },
+                            return DataTable(
+                              headingTextStyle: Theme.of(context).textTheme.labelSmall,
+                              dataTextStyle: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: AdminTheme.onSurface),
+                              headingRowColor: WidgetStateProperty.all(AdminTheme.surface),
+                              dividerThickness: 1,
+                              columns: const [
+                                DataColumn(label: Text('Organisation')),
+                                DataColumn(label: Text('Sector')),
+                                DataColumn(label: Text('Facility Type')),
+                                DataColumn(label: Text('State')),
+                                DataColumn(label: Text('Patients')),
+                                DataColumn(label: Text('Clinicians')),
+                                DataColumn(label: Text('Actions')),
+                              ],
+                              rows: filtered.map((org) => DataRow(
+                                cells: [
+                                  DataCell(Text(org.name, style: const TextStyle(fontWeight: FontWeight.w600))),
+                                  DataCell(Text(org.sector ?? '-', style: const TextStyle(color: AdminTheme.outline))),
+                                  DataCell(Text(org.facilityType ?? '-', style: const TextStyle(color: AdminTheme.outline))),
+                                  DataCell(Text(org.state ?? '-', style: const TextStyle(color: AdminTheme.outline))),
+                                  DataCell(Text(org.patientCount.toString(), style: const TextStyle(color: AdminTheme.outline))),
+                                  DataCell(Text(org.clinicianCount.toString(), style: const TextStyle(color: AdminTheme.outline))),
+                                  DataCell(
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        IconButton(
+                                          icon: const Icon(Icons.visibility_outlined, color: AdminTheme.outline),
+                                          tooltip: 'View Details',
+                                          onPressed: () => Navigator.pushNamed(context, AppRoutes.organizationDetail, arguments: org),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit_outlined, color: AdminTheme.outline),
+                                          tooltip: 'Edit',
+                                          onPressed: () => _openFormDialog(context, org: org),
+                                        ),
+                                      ],
+                                    )
+                                  ),
+                                ]
+                              )).toList(),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -150,15 +182,19 @@ class _OrganizationDirectoryScreenState extends ConsumerState<OrganizationDirect
     );
   }
 
-  Widget _buildDropdown(String label, List<String> items, String value, Function(String?) onChanged) {
+  // Styled exactly like the Patient Directory Dropdown
+  Widget _buildDropdown(List<String> items, String value, Function(String?) onChanged) {
     return Container(
-      width: 150,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(color: Colors.white, border: Border.all(color: AdminTheme.outlineVariant), borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: AdminTheme.outlineVariant),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: value,
-          isExpanded: true,
+          icon: const Icon(Icons.expand_more, color: AdminTheme.outline, size: 20),
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
           onChanged: onChanged,
         ),

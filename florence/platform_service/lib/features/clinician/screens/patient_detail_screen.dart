@@ -38,6 +38,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   PatientHealthData? _healthData;
   List<ClinicianNote>? _notes;
   List<Map<String, dynamic>>? _patientThresholds;
+  List<dynamic> _diseaseLogs = [];
   bool _isLoading = true;
   String? _error;
   String _diseaseFilter = 'ACTIVE';
@@ -58,6 +59,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       return value * 38.67;
     }
     return value;
+  }
+
+  int? _getMedicationId(dynamic m) {
+    if (m == null) return null;
+    if (m is Medication) return m.id;
+    try { return m.id; } catch (_) {}
+    try { return m.toJson()['id']; } catch (_) {}
+    return null;
   }
   
   /*
@@ -90,6 +99,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       final notes = await _dataService.getClinicianNotes(widget.patientId);
       final thresholds = await _dataService.getPatientThresholds(widget.patientId);
       
+      // FETCH FULL DISEASE LOGS FROM THE NEW ROUTE:
+      final diseaseRes = await ApiService().get('/clinicians/patients/${widget.patientId}/diseases');
+      final List<dynamic> loadedDiseases = diseaseRes is List ? diseaseRes : [];
+
       String gUnit = 'mmol/L';
       String cUnit = 'mmol/L';
       try {
@@ -108,6 +121,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           _healthData = healthData;
           _notes = notes;
           _patientThresholds = thresholds;
+          _diseaseLogs = loadedDiseases;
           _glucoseUnit = gUnit;
           _cholesterolUnit = cUnit;
           _isLoading = false;
@@ -1801,13 +1815,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Widget _buildFilteredDiseaseList() {
-    // Fallback Mock logs framework for safe runtime handling
-    final List<Map<String, dynamic>> testDiseases = [
-      {'id': 1, 'condition_name': 'Asthma', 'status': 'active', 'diagnosed_date': '2026-05-01'},
-      {'id': 2, 'condition_name': 'Hypertension', 'status': 'active', 'diagnosed_date': '2026-05-01'},
-    ];
+    if (_diseaseLogs.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 16.0),
+        child: Center(
+          child: Text('No medical conditions recorded.',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+        ),
+      );
+    }
 
-    final filtered = testDiseases.where((item) {
+    final filtered = _diseaseLogs.where((item) {
       final statusStr = (item['status'] ?? 'active').toString().toUpperCase();
       if (_diseaseFilter == 'ALL') return true;
       return statusStr == _diseaseFilter;
@@ -1830,10 +1848,10 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = filtered[index];
+        
         final name = item['condition_name'] ?? 'Unknown';
         final status = (item['status'] ?? 'active').toString().toLowerCase();
         final date = item['diagnosed_date'] ?? 'Not Set';
-
         final isActive = status == 'active';
 
         return Container(
@@ -1899,7 +1917,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                       color: AppTheme.textSecondary, size: 20),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  onSelected: (action) => _handleDiseaseAction(action, item),
+                  onSelected: (action) => _handleDiseaseAction(action, Map<String, dynamic>.from(item)),
                   itemBuilder: (context) => [
                     PopupMenuItem(
                       value: 'toggle_status',
@@ -2404,32 +2422,33 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   void _confirmDeleteMedication(dynamic m) {
-    final int medicationId = m.id;
+    final int? medicationId = _getMedicationId(m);
+    
+    if (medicationId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Could not resolve Medication Database ID.')),
+      );
+      return;
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Remove Medication?'),
-        content: Text(
-            'Are you sure you want to discard ${m.name} from this schedule profile?'),
+        content: Text('Are you sure you want to discard ${m.name} from this schedule profile?'),
         actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               try {
-                await ApiService()
-                    .delete('/clinicians/medications/$medicationId');
+                await ApiService().delete('/clinicians/medications/$medicationId');
                 if (mounted) {
                   Navigator.pop(context);
-                  _loadPatientData();
+                  _loadPatientData(); // Reload the UI layout state
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Failed to remove medication entry: $e')),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
                 }
               }
             },
@@ -3074,10 +3093,25 @@ class _ClinicianMedicationFormDialogState
 
                           try {
                             if (widget.isEdit) {
-                              final int medicationId = widget.medication.id;
-                              await ApiService().put(
-                                  '/clinicians/medications/$medicationId',
-                                  payload);
+                              int? medicationId;
+                              final m = widget.medication;
+
+                              if (m != null) {
+                                if (m is Medication) {
+                                  medicationId = m.id;
+                                } else {
+                                  try { medicationId = m.id; } catch (_) {}
+                                  try { if (medicationId == null) medicationId = m.toJson()['id']; } catch (_) {}
+                                }
+                              }
+
+                              if (medicationId != null) {
+                                await ApiService().put(
+                                    '/clinicians/medications/$medicationId',
+                                    payload);
+                              } else {
+                                throw Exception('Could not resolve medication object identifier.');
+                              }
                             } else {
                               await ApiService().post(
                                   '/clinicians/patients/${widget.patientId}/medications',

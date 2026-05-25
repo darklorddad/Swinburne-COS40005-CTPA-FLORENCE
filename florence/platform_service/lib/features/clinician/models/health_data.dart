@@ -124,6 +124,7 @@ class AutomatedAction {
 }
 
 class Medication {
+  final int? id;
   final String name;
   final String dosage; // e.g., "500 mg"
   final String frequency; // e.g., "Twice daily"
@@ -132,6 +133,7 @@ class Medication {
   final DateTime? startDate;
 
   Medication({
+    this.id,
     required this.name,
     required this.dosage,
     required this.frequency,
@@ -139,6 +141,30 @@ class Medication {
     this.notes,
     this.startDate,
   });
+
+  factory Medication.fromJson(Map<String, dynamic> json) {
+    return Medication(
+      id: json['id'] as int?,
+      name: json['name'] ?? json['custom_medication_name'] ?? '',
+      dosage: json['dosage'] ?? json['amount'] ?? '',
+      frequency: json['frequency'] ?? '',
+      route: json['route'] ?? json['medication_type'] ?? 'Tablet',
+      notes: json['notes'],
+      startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'dosage': dosage,
+      'frequency': frequency,
+      'route': route,
+      'notes': notes,
+      'start_date': startDate?.toIso8601String(),
+    };
+  }
 }
 
 class PatientHealthData {
