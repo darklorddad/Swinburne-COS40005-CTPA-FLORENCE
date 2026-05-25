@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLORENCE - Premium Pitch Deck</title>
+    
+    <!-- Premium Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-main: #030712;
+            --bg-card: rgba(17, 24, 39, 0.6);
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --accent: #8b5cf6;
+            --danger: #f43f5e;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-glow: rgba(59, 130, 246, 0.3);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* ----- KINETIC BACKGROUND ----- */
+        .ambient-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #0a0f24 0%, #030712 100%);
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.5;
+            animation: float 20s infinite ease-in-out alternate;
+        }
+        .orb-1 { width: 600px; height: 600px; background: rgba(59, 130, 246, 0.4); top: -200px; left: -200px; animation-delay: 0s; }
+        .orb-2 { width: 500px; height: 500px; background: rgba(139, 92, 246, 0.3); bottom: -100px; right: -100px; animation-delay: -5s; }
+        .orb-3 { width: 400px; height: 400px; background: rgba(16, 185, 129, 0.2); top: 40%; left: 60%; animation-delay: -10s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(100px, 50px) scale(1.2); }
+        }
+
+        /* ----- TYPOGRAPHY ----- */
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; }
+        
+        .gradient-text {
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .gradient-text-danger {
+            background: linear-gradient(to right, #fb7185, #f43f5e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .title-huge { font-size: 6rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 1rem; line-height: 1.1; }
+        .title-large { font-size: 4rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 2rem; }
+        .subtitle { font-size: 2rem; font-weight: 300; color: var(--text-muted); }
+        
+        p, li { font-size: 1.4rem; line-height: 1.7; margin-bottom: 1rem; font-weight: 300; color: #cbd5e1; }
+        strong { color: #ffffff; font-weight: 600; }
+
+        /* ----- LAYOUT & GLASSMORPHISM ----- */
+        #deck { position: relative; width: 100%; height: 100%; }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            padding: 6rem 8rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transform: scale(0.95) translateY(20px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), 
+                        transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+                        visibility 0.8s;
+            z-index: 1;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: scale(1) translateY(0);
+            z-index: 10;
+        }
+
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--border-glow);
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; width: 100%; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3rem; width: 100%; }
+
+        .icon-box {
+            width: 60px; height: 60px;
+            border-radius: 16px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.8rem; color: var(--primary);
+            margin-bottom: 1.5rem;
+        }
+
+        ul { list-style: none; }
+        ul li { position: relative; padding-left: 2.5rem; }
+        ul li i { position: absolute; left: 0; top: 6px; color: var(--primary); font-size: 1.2rem; }
+
+        /* ----- STAGGERED ANIMATIONS ----- */
+        .anim-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), 
+                        transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        .slide.active .anim-up { opacity: 1; transform: translateY(0); }
+        
+        .delay-1 { transition-delay: 0.1s; }
+        .delay-2 { transition-delay: 0.2s; }
+        .delay-3 { transition-delay: 0.3s; }
+        .delay-4 { transition-delay: 0.4s; }
+
+        /* Custom Accents */
+        .stat-huge { font-size: 6rem; font-weight: 900; line-height: 1; margin-bottom: 1rem; font-family: 'Outfit'; }
+        
+        /* Footer */
+        .footer {
+            position: absolute;
+            bottom: 3rem; left: 8rem; right: 8rem;
+            display: flex; justify-content: space-between;
+            align-items: center;
+            opacity: 0.4;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .footer img { height: 30px; filter: grayscale(100%) brightness(200%); opacity: 0.7;}
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div id="deck">
+
+        <!-- SLIDE 1: Title -->
+        <div class="slide active">
+            <div style="max-width: 1000px;">
+                <div class="anim-up delay-1" style="display: inline-block; padding: 0.5rem 1rem; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.3); border-radius: 50px; color: #60a5fa; font-weight: 600; margin-bottom: 2rem; letter-spacing: 2px; font-size: 0.9rem;">TEAM 7 PROJECT PITCH</div>
+                <h1 class="title-huge anim-up delay-2 gradient-text">FLORENCE</h1>
+                <p class="subtitle anim-up delay-3" style="font-size: 2.5rem; color: #f8fafc;">AI-Enabled Digital Health Platform<br><span style="color: var(--text-muted);">for Chronic Disease Monitoring</span></p>
+                <div class="anim-up delay-4" style="margin-top: 4rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+                    <p style="font-size: 1.2rem;">Prepared for <strong>BioTective Sdn Bhd</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: The Hook -->
+        <div class="slide">
+            <h2 class="title-large anim-up delay-1" style="text-align: center;">The Silent Epidemic</h2>
+            <div class="grid-2 anim-up delay-2" style="margin-top: 2rem;">
+                <div class="glass-card" style="text-align: center; border-color: rgba(244, 63, 94, 0.3);">
+                    <div class="stat-huge gradient-text-danger">71%</div>
+                    <h3 style="font-size: 1.8rem; color: white;">Of all deaths in Malaysia</h3>
+                    <p style="margin-top: 1rem;">are attributed directly to Non-Communicable Diseases (NCDs).</p>
+                </div>
+                <div class="glass-card" style="text-align: center;">
+                    <div class="stat-huge" style="background: linear-gradient(to right, #34d399, #10b981); -webkit-background-clip: text; color: transparent;">RM 9.65B</div>
+                    <h3 style="font-size: 1.8rem; color: white;">Annual Healthcare Cost</h3>
+                    <p style="margin-top: 1rem;">Direct costs to manage cardiovascular diseases, diabetes, and cancer.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: The Problem -->
+        <div class="slide">
+            <div class="anim-up delay-1"><h2 class="title-large">The Systemic Gap</h2></div>
+            <div class="grid-2">
+                <div class="glass-card anim-up delay-2">
+                    <div class="icon-box" style="background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.2); color: var(--danger);"><i class="fa-solid fa-user-injured"></i></div>
+                    <h3 style="font-size: 2rem; color: white; margin-bottom: 1.5rem;">The Patient's Struggle</h3>
+                    <ul>
+                        <li><i class="fa-solid fa-link-slash"></i><strong>Fragmented Data:</strong> Diet, glucose, and activity exist in disconnected silos.</li>
+                        <li><i class="fa-solid fa-circle-question"></i><strong>Confusion:</strong> Difficulties interpreting raw health metrics without guidance.</li>
+                        <li><i class="fa-solid fa-calendar-xmark"></i><strong>Isolation:</strong> Zero clinical support between 3-month clinic appointments.</li>
+                    </ul>
+                </div>
+                <div class="glass-card anim-up delay-3">
+                    <div class="icon-box"><i class="fa-solid fa-user-doctor"></i></div>
+                    <h3 style="font-size: 2rem; color: white; margin-bottom: 1.5rem;">The Clinician's Burden</h3>
+                    <ul>
+                        <li><i class="fa-solid fa-database"></i><strong>Information Overload:</strong> Drowning in raw, unfiltered patient data logs.</li>
+                        <li><i class="fa-solid fa-hourglass-empty"></i><strong>Resource Shortage:</strong> Severe lack of specialists limits time per patient.</li>
+                        <li><i class="fa-solid fa-truck-medical"></i><strong>Reactive Care:</strong> Intervening only <i>after</i> complications have occurred.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: The Solution -->
+        <div class="slide">
+            <h2 class="title-large anim-up delay-1" style="text-align: center;">Our Solution: FLORENCE</h2>
+            <p class="subtitle anim-up delay-1" style="text-align: center; margin-bottom: 3rem;">Shifting from <strong>Reactive</strong> to <strong>Proactive</strong> Care.</p>
+            
+            <div class="grid-3 anim-up delay-2">
+                <div class="glass-card">
+                    <div class="icon-box" style="color: #60a5fa;"><i class="fa-solid fa-rotate"></i></div>
+                    <h3 style="font-size: 1.5rem; color: white;">Continuous & Proactive</h3>
+                    <p style="font-size: 1.1rem;">Automated daily tracking and engagement loops prevent patients from falling off the radar between visits.</p>
+                </div>
+                <div class="glass-card">
+                    <div class="icon-box" style="color: #a78bfa;"><i class="fa-solid fa-brain"></i></div>
+                    <h3 style="font-size: 1.5rem; color: white;">AI-Powered & Scalable</h3>
+                    <p style="font-size: 1.1rem;">Delivering personalized, clinical-grade behavioral insights at scale without creating human bottlenecks.</p>
+                </div>
+                <div class="glass-card">
+                    <div class="icon-box" style="color: #34d399;"><i class="fa-solid fa-handshake"></i></div>
+                    <h3 style="font-size: 1.5rem; color: white;">Integrated Care</h3>
+                    <p style="font-size: 1.1rem;">A unified digital bridge connecting the patient's daily lifestyle habits directly to the clinician's dashboard.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: Patient Experience -->
+        <div class="slide">
+            <div class="grid-2" style="align-items: center;">
+                <div class="anim-up delay-1">
+                    <h2 class="title-large">The Patient Experience</h2>
+                    <ul>
+                        <li><i class="fa-solid fa-chart-line"></i><strong>Unified Dashboard:</strong> Glucose, Blood Pressure, Diet, and Activity consolidated cleanly in one view.</li>
+                        <li><i class="fa-solid fa-robot"></i><strong>AI Health Assistant:</strong> A 24/7 conversational chatbot capable of interpreting personal data trends contextually.</li>
+                        <li><i class="fa-solid fa-lightbulb"></i><strong>Smart Recommendations:</strong> The Large Action Model detects patterns (e.g., high-carb meals) and triggers actionable advice instantly.</li>
+                    </ul>
+                </div>
+                <div class="glass-card anim-up delay-2" style="background: linear-gradient(145deg, rgba(30,58,138,0.4), rgba(17,24,39,0.8));">
+                    <div style="display: flex; align-items: center; margin-bottom: 1.5rem;">
+                        <img src="https://ui-avatars.com/api/?name=Jordan&background=3b82f6&color=fff&rounded=true" style="width: 50px; height: 50px; margin-right: 15px;">
+                        <div>
+                            <h4 style="font-size: 1.2rem; color: white;">Jordan</h4>
+                            <p style="font-size: 0.9rem; margin: 0;">Type 2 Diabetes Patient</p>
+                        </div>
+                    </div>
+                    <p style="font-size: 1.3rem; font-style: italic; color: #e2e8f0; margin-bottom: 0;">
+                        "I used to wonder why my glucose spiked at night. Now, FLORENCE analyzes my dinner logs and reminds me to take a 15-minute walk. I finally feel in control."
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: Clinician Experience -->
+        <div class="slide">
+            <div class="grid-2" style="align-items: center;">
+                <div class="glass-card anim-up delay-2" style="border-left: 4px solid var(--danger);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="color: var(--danger); font-size: 1.4rem;"><i class="fa-solid fa-triangle-exclamation" style="margin-right: 10px;"></i>Priority Alert</h4>
+                        <span style="background: rgba(244,63,94,0.2); color: var(--danger); padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold;">HIGH RISK</span>
+                    </div>
+                    <p style="font-size: 1.1rem; color: white;"><strong>Patient:</strong> Jordan (ID: 109)</p>
+                    <p style="font-size: 1.1rem;"><strong>Trigger:</strong> 3 consecutive glucose readings > 210 mg/dL following high carbohydrate meals.</p>
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <p style="font-size: 1rem; color: var(--primary); margin: 0; font-weight: 600; cursor: pointer;">Review Patient File ➝</p>
+                    </div>
+                </div>
+                <div class="anim-up delay-1">
+                    <h2 class="title-large">The Clinician Experience</h2>
+                    <h3 style="font-size: 1.8rem; margin-bottom: 1.5rem;" class="gradient-text">The "Attention Funnel"</h3>
+                    <p>Doctors don't need more data points; they need <strong>filtered insights</strong>.</p>
+                    <ul style="margin-top: 1.5rem;">
+                        <li><i class="fa-solid fa-filter"></i><strong>Risk-Based Prioritization:</strong> Automatically scores and pushes high-risk patients to the top of the queue.</li>
+                        <li><i class="fa-solid fa-bolt"></i><strong>Actionable Alerts:</strong> Instantly surfaces anomalies like missed medications or sustained glucose spikes.</li>
+                        <li><i class="fa-solid fa-users-viewfinder"></i><strong>Population Health:</strong> Empowers clinicians to focus limited resources on patients requiring immediate intervention.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 7: Architecture -->
+        <div class="slide">
+            <h2 class="title-large anim-up delay-1" style="text-align: center;">Technical Architecture</h2>
+            <div class="grid-3 anim-up delay-2">
+                <div class="glass-card" style="text-align: center;">
+                    <i class="fa-brands fa-flutter" style="font-size: 4rem; color: #38bdf8; margin-bottom: 1.5rem;"></i>
+                    <h3 style="color: white;">Frontend</h3>
+                    <p style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">Flutter (Dart)</p>
+                    <p style="font-size: 1rem;">Cross-platform framework delivering a native, fluid experience on Web and Mobile from a single codebase.</p>
+                </div>
+                <div class="glass-card" style="text-align: center;">
+                    <i class="fa-brands fa-python" style="font-size: 4rem; color: #fcd34d; margin-bottom: 1.5rem;"></i>
+                    <h3 style="color: white;">Backend</h3>
+                    <p style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">FastAPI & Supabase</p>
+                    <p style="font-size: 1rem;">Python-based microservices for high performance, backed by a robust PostgreSQL BaaS infrastructure.</p>
+                </div>
+                <div class="glass-card" style="text-align: center;">
+                    <i class="fa-solid fa-network-wired" style="font-size: 4rem; color: #a78bfa; margin-bottom: 1.5rem;"></i>
+                    <h3 style="color: white;">AI Engine</h3>
+                    <p style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">LangChain (RAG)</p>
+                    <p style="font-size: 1rem;">Large Action Models powered by Retrieval-Augmented Generation to ensure clinical accuracy and prevent hallucinations.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 8: Security & Ethics -->
+        <div class="slide">
+            <h2 class="title-large anim-up delay-1">Do No Harm: Security & Ethics</h2>
+            <p class="subtitle anim-up delay-1" style="margin-bottom: 3rem;">Trust is the foundational currency of Digital Health.</p>
+            <div class="grid-2 anim-up delay-2">
+                <div>
+                    <ul>
+                        <li><i class="fa-solid fa-shield-halved"></i><strong>PDPA 2010 Compliant:</strong> Built from day one with strict data governance, privacy policies, and encryption.</li>
+                        <li><i class="fa-solid fa-lock"></i><strong>Row-Level Security (RLS):</strong> Absolute database segregation. Patients only see their data; Clinicians only see assigned patients.</li>
+                    </ul>
+                </div>
+                <div>
+                    <ul>
+                        <li><i class="fa-solid fa-cube"></i><strong>AI Explainability:</strong> The "Glass Box" approach. Recommendations transparently cite the specific data points that triggered them.</li>
+                        <li><i class="fa-solid fa-user-doctor"></i><strong>Human Oversight:</strong> AI acts strictly as a decision-support tool. The ultimate medical authority remains with the Clinician.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 9: Conclusion -->
+        <div class="slide" style="text-align: center;">
+            <div class="anim-up delay-1">
+                <i class="fa-solid fa-heart-pulse" style="font-size: 4rem; color: var(--danger); margin-bottom: 1.5rem;"></i>
+                <h1 class="title-huge gradient-text">FLORENCE</h1>
+                <p style="font-size: 2.2rem; font-weight: 300; color: white;">Empowering Patients. Unburdening Clinicians.</p>
+            </div>
+            <div class="anim-up delay-2" style="margin-top: 4rem; padding: 2rem; background: rgba(255,255,255,0.03); border-radius: 16px; display: inline-block;">
+                <h3 style="color: var(--secondary); font-size: 2rem; font-style: italic; margin-bottom: 0;">"Detecting for Health, Protecting for Life."</h3>
+            </div>
+            <div class="anim-up delay-3" style="margin-top: 5rem;">
+                <p style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">Thank you. We are now open for Q&A.</p>
+            </div>
+        </div>
+
+        <!-- Footer Overlay -->
+        <div class="footer">
+            <span>BioTective Sdn Bhd Pitch</span>
+            <span>Team 7</span>
+        </div>
+
+    </div>
+
+    <!-- Javascript for Interactions -->
+    <script>
+        const slides = document.querySelectorAll('.slide');
+        let currentSlide = 0;
+
+        function updateSlide(index) {
+            slides.forEach((slide, i) => {
+                if (i === index) {
+                    slide.classList.add('active');
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+        }
+
+        // Keyboard Navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === 'Space' || e.key === 'Enter' || e.key === 'PageDown') {
+                if (currentSlide < slides.length - 1) {
+                    currentSlide++;
+                    updateSlide(currentSlide);
+                }
+            } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateSlide(currentSlide);
+                }
+            }
+        });
+
+        // Click Navigation
+        document.addEventListener('click', (e) => {
+            // Left 20% of screen = Back
+            if (e.clientX < window.innerWidth * 0.2) {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateSlide(currentSlide);
+                }
+            } else {
+                // Right 80% = Forward
+                if (currentSlide < slides.length - 1) {
+                    currentSlide++;
+                    updateSlide(currentSlide);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
