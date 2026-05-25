@@ -1100,10 +1100,6 @@ class _TrafficLightCalendar extends StatelessWidget {
                   tooltip = 'Stable: +${maxSpike.toStringAsFixed(1)}';
                 }
               }
-                cellColor = AppTheme.primaryGreen;
-                textColor = Colors.white;
-                tooltip = 'Stable: +${maxSpike.toInt()}';
-              }
 
               // Highlight "Today"
               final isToday = date.year == now.year && date.month == now.month && date.day == now.day;
