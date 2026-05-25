@@ -464,15 +464,6 @@ class _FeedItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AdminTheme.onSurface,
-                  side: const BorderSide(color: AdminTheme.secondary),
-                  backgroundColor: AdminTheme.secondary.withValues(alpha: 0.1),
-                ),
-                child: const Text('Review'),
-              ),
             ],
           )
         ],
