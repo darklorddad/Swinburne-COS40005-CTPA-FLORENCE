@@ -1848,6 +1848,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Widget _buildEmbeddedThresholdsList() {
+    if (_patientThresholds == null || _patientThresholds!.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.0),
+        child: Text('No thresholds configured.',
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14)),
+      );
+    }
+
     final labels = {
       'BLOOD_PRESSURE_SYSTOLIC': 'BP (Systolic)',
       'BLOOD_PRESSURE_DIASTOLIC': 'BP (Diastolic)',
@@ -1861,7 +1869,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     };
 
     return Column(
-      children: _healthData!.thresholds.map((t) {
+      children: _patientThresholds!.map((t) {
         final type = t['data_type'] ?? '';
         final displayName = labels[type] ?? type.replaceAll('_', ' ');
         
