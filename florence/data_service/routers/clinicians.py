@@ -310,6 +310,13 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
         notes = supabase.table('clinician_notes').select('*').eq('patient_id', patient_id).execute().data
         disease_logs = supabase.table('disease_logs').select('*').eq('patient_id', patient_id).execute().data
         
+        # Fetch medications with related dictionary and frequency data
+        medications = supabase.table('patient_medications').select('''
+            *,
+            medication_dictionary(*),
+            dosage_frequencies(*)
+        ''').eq('patient_id', patient_id).eq('status', 'CURRENT').execute().data
+        
         # Fetch activity using correct DB columns aliased for the frontend
         # Rename 'start_time' to 'performed_at' and 'active_duration_minutes' to 'duration_minutes'
         activity_logs = supabase.table('patient_activity_logs') \
@@ -325,7 +332,8 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
             "thresholds": thresholds,
             "notes": notes,
             "activity_logs": activity_logs,
-            "disease_logs": disease_logs
+            "disease_logs": disease_logs,
+            "medications": medications
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):
