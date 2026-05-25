@@ -52,20 +52,6 @@ class AdminSidebar extends StatelessWidget {
                     }
                   },
                 ),
-                _SidebarItem(
-                  icon: Icons.medical_services_outlined,
-                  activeIcon: Icons.medical_services_rounded,
-                  label: 'Clinicians',
-                  isActive: currentRoute == '/admin/clinicians',
-                  onTap: () {}, // Add route when built
-                ),
-                _SidebarItem(
-                  icon: Icons.medication_outlined,
-                  activeIcon: Icons.medication_rounded,
-                  label: 'Medications',
-                  isActive: currentRoute == '/admin/medications',
-                  onTap: () {}, // Add route when built
-                ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Divider(color: AdminTheme.outlineVariant, height: 1),
@@ -163,7 +149,7 @@ class AdminSidebar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  'System Admin',
+                  'Admin',
                   style: TextStyle(
                     fontSize: 12,
                     color: AdminTheme.onSurfaceVariant,

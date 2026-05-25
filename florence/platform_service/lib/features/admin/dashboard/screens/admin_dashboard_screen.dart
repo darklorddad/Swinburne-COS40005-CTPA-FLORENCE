@@ -5,6 +5,7 @@ import 'package:florence/config/admin_theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/admin/core/providers/admin_providers.dart';
 import 'package:florence/features/admin/core/models/admin_models.dart';
+import 'package:florence/features/admin/patients/widgets/add_patient_dialog.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -56,7 +57,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                           children: [
                             _buildQuickActions(context),
                             const SizedBox(height: 24),
-                            _buildRecentActivity(context),
+                            _buildRecentActivity(context, ref),
                           ],
                         ),
                       ),
@@ -93,7 +94,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=11')),
+            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/479/200/300')),
           ],
         ),
       ],
@@ -155,7 +156,7 @@ class AdminDashboardScreen extends ConsumerWidget {
           children: [
             Text('Action Required Feed', style: Theme.of(context).textTheme.titleLarge),
             TextButton(
-              onPressed: () => Navigator.pushNamed(context, AppRoutes.adminPatientList),
+              onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.adminPatientList),
               style: TextButton.styleFrom(foregroundColor: AdminTheme.primary),
               child: const Text('View All'),
             ),
@@ -210,7 +211,16 @@ class AdminDashboardScreen extends ConsumerWidget {
         Row(
           children: [
             Expanded(
-              child: _QuickActionButton(icon: Icons.person_add_outlined, label: 'Add Patient'),
+              child: _QuickActionButton(
+                icon: Icons.person_add_outlined,
+                label: 'Add Patient',
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false, // Prevents closing by tapping outside
+                    builder: (context) => const AddPatientDialog(),
+                  );
+                },),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -222,51 +232,64 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentActivity(BuildContext context) {
+  Widget _buildRecentActivity(BuildContext context, WidgetRef ref) {
+     final activityAsync = ref.watch(adminActivityProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Recent Activity', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         Card(
-          shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
-            borderRadius: BorderRadius.circular(12),
-          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                _ActivityItem(
-                  icon: Icons.person_add,
-                  iconBg: AdminTheme.primaryContainer.withValues(alpha: 0.5),
-                  title: 'New Patient Registered: John Doe',
-                  time: '10 Mins Ago',
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.check_circle_outline,
-                  iconBg: AdminTheme.surfaceContainerHighest,
-                  title: 'Dr. Smith completed rounds',
-                  time: '1 Hour Ago',
-                  isLast: false,
-                ),
-                _ActivityItem(
-                  icon: Icons.warning_amber_rounded,
-                  iconBg: AdminTheme.errorContainer,
-                  iconColor: AdminTheme.error,
-                  title: 'Alert generated for Marcus Johnson',
-                  time: '2 Hours Ago',
-                  isLast: true,
-                ),
-              ],
+            child: activityAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Text('Error loading activity: $err', style: const TextStyle(color: AdminTheme.error)),
+              data: (activities) {
+                if (activities.isEmpty) {
+                  return const Center(child: Text('No recent activity.', style: TextStyle(color: AdminTheme.outline)));
+                }
+
+                return Column(
+                  children: activities.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final activity = entry.value;
+                    final isLast = index == activities.length - 1;
+
+                    // Dynamically set icons and colors based on the backend iconType
+                    final isWarning = activity.iconType == 'warning';
+                    final icon = isWarning ? Icons.warning_amber_rounded : Icons.update_rounded;
+                    final iconBg = isWarning ? AdminTheme.errorContainer : AdminTheme.primaryContainer.withValues(alpha: 0.5);
+                    final iconColor = isWarning ? AdminTheme.error : AdminTheme.primary;
+
+                    return _ActivityItem(
+                      icon: icon,
+                      iconBg: iconBg,
+                      iconColor: iconColor,
+                      title: activity.title,
+                      subtitle: activity.subtitle,
+                      time: _getTimeAgo(activity.timestamp),
+                      isLast: isLast,
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ),
         ),
       ],
     );
   }
+  String _getTimeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime.toLocal());
+    if (diff.inDays > 0) return '${diff.inDays} ${diff.inDays == 1 ? 'day' : 'days'} ago';
+    if (diff.inHours > 0) return '${diff.inHours} ${diff.inHours == 1 ? 'hour' : 'hours'} ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes} ${diff.inMinutes == 1 ? 'min' : 'mins'} ago';
+    return 'Just now';
+  }
 }
+
+
 
 // Helper Widgets
 class _MetricCard extends StatelessWidget {
@@ -434,8 +457,9 @@ class _FeedItem extends StatelessWidget {
 class _QuickActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
-  const _QuickActionButton({required this.icon, required this.label});
+  const _QuickActionButton({required this.icon, required this.label, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -445,7 +469,7 @@ class _QuickActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
       child: InkWell(
-        onTap: () {},
+        onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 32),
@@ -467,10 +491,11 @@ class _ActivityItem extends StatelessWidget {
   final Color iconBg;
   final Color? iconColor;
   final String title;
+  final String subtitle;
   final String time;
   final bool isLast;
 
-  const _ActivityItem({required this.icon, required this.iconBg, this.iconColor, required this.title, required this.time, required this.isLast});
+  const _ActivityItem({required this.icon, required this.iconBg, this.iconColor, required this.title, required this.subtitle, required this.time, required this.isLast});
 
   @override
   Widget build(BuildContext context) {
