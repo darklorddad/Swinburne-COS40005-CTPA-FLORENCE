@@ -97,18 +97,18 @@ h1,h2,h3{font-family:'Fraunces',serif}
 .solution-card p{font-size:1rem;color:var(--text-dim);line-height:1.65}
 
 /* ── BUBBLE DIAGRAM (Slide 7) ── */
-.bubble-stage{position:relative;width:100%;height:68vh;margin-top:.2rem}
+.bubble-stage{position:relative;width:100%;height:74vh;margin-top:.2rem}
 .bubble-lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .bbl{position:absolute;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:900;color:#fff;text-align:center;transform:translate(-50%,-50%);z-index:2;line-height:1.2;font-size:1.35rem}
-.bbl-florence{width:190px;height:190px;background:var(--navy-2);font-size:1.35rem;top:48%;left:50%}
+.bbl-florence{width:190px;height:190px;background:var(--navy-2);font-size:1.35rem;top:42%;left:50%}
 .bbl-admin{width:148px;height:148px;background:var(--admin);font-size:1.25rem;top:25%;left:24%}
 .bbl-clin{width:148px;height:148px;background:var(--cyan);font-size:1.25rem;top:25%;left:76%}
-.bbl-patient{width:162px;height:162px;background:var(--blue);top:80%;left:50%}
+.bbl-patient{width:162px;height:162px;background:var(--blue);top:78%;left:50%}
 .btags{position:absolute;display:flex;flex-direction:column;gap:.55rem;z-index:2}
 .btags-admin{top:4%;left:1%}
 .btags-clin{top:4%;right:1%;align-items:flex-end}
-.btags-pl{bottom:2%;left:18%;align-items:flex-end}
-.btags-pr{bottom:2%;right:18%;align-items:flex-start}
+.btags-pl{bottom:2%;left:26%;align-items:flex-end}
+.btags-pr{bottom:2%;right:26%;align-items:flex-start}
 .btag{font-size:1rem;font-weight:600;padding:.35rem 1rem;border-radius:7px;white-space:nowrap}
 .btag-b{background:rgba(79,70,229,.1);color:var(--admin);border:1px solid rgba(79,70,229,.22)}
 .btag-c{background:rgba(8,145,178,.1);color:var(--cyan);border:1px solid rgba(8,145,178,.22)}
@@ -430,9 +430,9 @@ h1,h2,h3{font-family:'Fraunces',serif}
   <h2 class="title-md up d2" style="margin-top:.3rem;margin-bottom:.5rem">One platform. <span class="text-blue">Every role. Every need.</span></h2>
   <div class="bubble-stage up d3">
     <svg class="bubble-lines" viewBox="0 0 100 100" preserveAspectRatio="none">
-      <line x1="50" y1="48" x2="26" y2="27" stroke="rgba(27,42,107,0.45)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
-      <line x1="50" y1="48" x2="74" y2="27" stroke="rgba(27,42,107,0.45)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
-      <line x1="50" y1="55" x2="50" y2="73" stroke="rgba(27,42,107,0.45)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+      <line x1="50" y1="42" x2="26" y2="27" stroke="rgba(27,42,107,0.45)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+      <line x1="50" y1="42" x2="74" y2="27" stroke="rgba(27,42,107,0.45)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
+      <line x1="50" y1="42" x2="50" y2="70" stroke="rgba(27,42,107,0.45)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>
     </svg>
     <!-- Bubbles -->
     <div class="bbl bbl-florence">FLORENCE</div>
@@ -457,11 +457,13 @@ h1,h2,h3{font-family:'Fraunces',serif}
     <div class="btags btags-pl">
       <div class="btag btag-g">Vitals Logging</div>
       <div class="btag btag-g">Meal Vision</div>
+      <div class="btag btag-g">AI Insight</div>
     </div>
     <!-- Patient tags right -->
     <div class="btags btags-pr">
       <div class="btag btag-g">AI Health Chatbot</div>
       <div class="btag btag-g">Lab Report Reader</div>
+      <div class="btag btag-g">AI Reco</div>
     </div>
   </div>
 </div>
