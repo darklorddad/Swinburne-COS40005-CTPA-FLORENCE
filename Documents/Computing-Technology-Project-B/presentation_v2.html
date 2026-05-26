@@ -191,7 +191,7 @@ h1,h2,h3{font-family:'Fraunces',serif}
 #title-word{opacity:0;clip-path:inset(0 100% 0 0)}
 #title-word.animate{animation:titleReveal 1.5s cubic-bezier(.22,1,.36,1) forwards}
 @keyframes titleReveal{0%{opacity:1;clip-path:inset(0 100% 0 0)}60%{opacity:1;clip-path:inset(0 0% 0 0)}100%{opacity:1;clip-path:inset(0 0% 0 0)}}
-#slide1-overlay{position:absolute;top:20vh;right:7vw;width:36vw;height:54vh;z-index:2;border-radius:14px;overflow:hidden;opacity:0;transition:opacity .9s ease 1.2s}
+#slide1-overlay{position:absolute;top:20vh;right:7vw;width:36vw;height:54vh;z-index:1;border-radius:14px;overflow:hidden;opacity:0;transition:opacity .9s ease 1.2s}
 #slide1-overlay.visible{opacity:.88}
 .team-row{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1.6rem;align-items:center}
 .team-member{font-size:.88rem;color:var(--text-dim);padding:.22rem .7rem;background:rgba(27,42,107,.06);border-radius:99px;border:1px solid rgba(27,42,107,.1)}
@@ -221,7 +221,7 @@ h1,h2,h3{font-family:'Fraunces',serif}
       <img src="assets/FLORENCE-light-background.png" style="width:100%;height:100%;object-fit:cover" alt="FLORENCE App Icon">
     </div>
   </div>
-  <div style="position:relative;z-index:1">
+  <div style="position:relative;z-index:2">
     <div class="slide-label up d1">Team 7 · Project Pitch</div>
     <h1 class="title-xl up d2" style="white-space:nowrap;margin:.2rem 0 .1rem"><span id="title-word">AI-Enabled</span></h1>
     <h2 class="title-lg up d3" style="color:var(--navy-2);margin-bottom:.7rem">Health Platform</h2>
