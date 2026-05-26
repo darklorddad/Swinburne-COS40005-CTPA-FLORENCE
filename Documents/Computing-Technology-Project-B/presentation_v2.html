@@ -208,7 +208,7 @@ h1,h2,h3{font-family:'Fraunces',serif}
 </head>
 <body>
 
-<div id="slide-counter">01 / 25</div>
+<div id="slide-counter">01 / 24</div>
 <div id="progress-bar" style="width:4%"></div>
 <div id="deck">
 
@@ -719,10 +719,8 @@ h1,h2,h3{font-family:'Fraunces',serif}
       </ul>
     </div>
     <div class="up d3" style="height:65vh">
-      <div class="photo-frame" style="height:100%;border-radius:14px">
-        <i class="fa-solid fa-image"></i>
-        <span>Patient dashboard / home screen<br>screenshot</span>
-        <span class="rn">Replace before presenting</span>
+      <div style="height:68vh;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(27,42,107,.1)">
+        <img src="assets/FLORENCE-light-background.png" style="width:100%;height:100%;object-fit:cover" alt="FLORENCE App Dashboard">
       </div>
     </div>
   </div>
@@ -824,37 +822,6 @@ h1,h2,h3{font-family:'Fraunces',serif}
   </div>
 </div>
 
-<!-- ═══ 20 — PERSONA: FARID ═══ -->
-<div class="slide" id="slide-20">
-  <span class="ast ast-top">✳</span><span class="ast ast-bot">✳</span>
-  <div class="slide-badge">2026</div>
-  <div class="split split-55-45" style="align-items:center">
-    <div class="col">
-      <div class="slide-label up d1" style="background:rgba(220,38,38,.08);border-color:rgba(220,38,38,.24);color:var(--danger)">scenario 3 · the unaware</div>
-      <h2 class="title-lg up d2" style="margin-top:.5rem">Farid, 44.<br><span style="color:var(--text-dim)">Felt completely fine.</span></h2>
-      <div class="rule up d3" style="background:linear-gradient(to right,var(--danger),transparent)"></div>
-      <ul class="story-list up d4">
-        <li>No diagnosis. No symptoms. Goes to the clinic once a year. Feels perfectly healthy.</li>
-        <li>But over 3 months of logging, FLORENCE noticed a pattern.</li>
-        <li>Fasting glucose: consistently <strong style="color:var(--danger)">6.0–6.4 mmol/L</strong>. Borderline.</li>
-        <li>HbA1c from uploaded lab report: <strong style="color:var(--danger)">6.1%</strong>. BMI slowly creeping up.</li>
-        <li>His clinician sees the trend and calls him in.</li>
-      </ul>
-      <div class="reveal-text up d5" id="farid-reveal" style="margin-top:1.4rem;padding:1.1rem 1.3rem;background:rgba(220,38,38,.06);border-left:3px solid var(--danger);border-radius:0 8px 8px 0">
-        <p id="farid-reveal-text" style="font-family:'Fraunces',serif;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:900;color:var(--danger);letter-spacing:-.5px;margin:0">Pre-diabetes. Caught early.</p>
-        <p class="body-md" style="margin:.4rem 0 0;color:var(--navy)">Before it became Type 2.</p>
-      </div>
-      <div class="up d6" style="margin-top:.9rem">
-        <p class="body-md">"The scariest patients are the ones who feel fine.<br>FLORENCE catches what they can't feel."</p>
-      </div>
-    </div>
-    <div class="up d3" style="height:65vh">
-      <div style="height:68vh;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(27,42,107,.1)">
-      <img src="assets/persona/farid.jpg" style="width:100%;height:100%;object-fit:cover" alt="Person alone at night in clinic">
-    </div>
-    </div>
-  </div>
-</div>
 
 <!-- ═══ LIMITATIONS + FUTURE ═══ -->
 <div class="slide" id="slide-limits">
@@ -910,8 +877,6 @@ const counter = document.getElementById('slide-counter');
 const progressBar = document.getElementById('progress-bar');
 const TOTAL = slides.length;
 let current = 0;
-let slide16state = 0;
-
 function goTo(index) {
   slides[current].classList.remove('active');
   current = Math.max(0, Math.min(index, TOTAL - 1));
@@ -926,12 +891,10 @@ function updateUI() {
 }
 
 function advance() {
-  if (current === 22 && slide16state === 0) { triggerFaridReveal(); return; }
   goTo(current + 1);
 }
 
 function back() {
-  if (current === 22) slide16state = 0;
   goTo(current - 1);
 }
 
@@ -943,8 +906,7 @@ function onSlideEnter(index) {
   if (index === 13) triggerDemoEntrance('demo-radar-clinician');
   if (index === 18) triggerDemoEntrance('demo-radar-patient');
   if (index === 19) triggerConnector();
-  if (index === 24) triggerTypewriter();
-  if (index !== 22) slide16state = 0;
+  if (index === 23) triggerTypewriter();
 }
 
 function triggerDemoEntrance(id) {
@@ -1010,13 +972,6 @@ function triggerConnector() {
   });
 }
 
-function triggerFaridReveal() {
-  slide16state = 1;
-  const reveal = document.getElementById('farid-reveal');
-  const text   = document.getElementById('farid-reveal-text');
-  reveal.classList.add('revealed'); text.classList.add('pulse-danger');
-}
-
 function triggerTypewriter() {
   const el = document.getElementById('typewriter-target');
   const text = 'Your health, guided every single day.';
@@ -1033,9 +988,6 @@ document.addEventListener('click', e => { if (e.clientX < window.innerWidth * 0.
 
 window.addEventListener('load', () => {
   updateUI(); setTimeout(triggerTitleEntrance, 300);
-  const reveal = document.getElementById('farid-reveal');
-  reveal.style.opacity = '0'; reveal.style.transform = 'translateY(12px)';
-  reveal.style.transition = 'opacity .6s ease, transform .6s ease';
 });
 </script>
 </body>
