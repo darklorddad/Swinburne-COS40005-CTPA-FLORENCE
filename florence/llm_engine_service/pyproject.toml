@@ -1,0 +1,13 @@
+[project]
+name = "llm_engine_service"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.136.3",
+    "httpx>=0.28.1",
+    "langchain-core>=0.3.21",
+    "langchain-openai>=0.2.10",
+    "pydantic-settings>=2.7.0",
+    "python-multipart>=0.0.29",
+    "uvicorn[standard]>=0.48.0",
+]
