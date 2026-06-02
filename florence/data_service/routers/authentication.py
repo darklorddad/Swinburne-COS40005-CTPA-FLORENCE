@@ -76,10 +76,7 @@ async def register_user(user_data: UserRegistration):
     try:
         user_session = local_client.auth.sign_up({
             "email": user_data.email,
-            "password": user_data.password,
-            "options": {
-                "email_redirect_to": "florence://login-callback",
-            }
+            "password": user_data.password
         })
         new_user = user_session.user
         if not new_user:
