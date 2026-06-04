@@ -8,6 +8,7 @@ import 'package:florence/features/patient/dashboard/screens/dashboard_screen.dar
 import 'package:florence/features/patient/profile/screens/profile_screen.dart';
 import 'package:florence/features/patient/profile/screens/settings_screen.dart';
 import 'package:florence/features/patient/chat/screens/chat_screen.dart';
+import 'package:florence/core/utils/helpers.dart';
 
 class PatientBottomNavBarShell extends ConsumerStatefulWidget {
   const PatientBottomNavBarShell({super.key});
@@ -33,6 +34,7 @@ class _PatientBottomNavBarShellState
 
   // ── Sheet state ────────────────────────────────────────────
   bool _sheetOpen = false;
+  bool _hasShownWelcomeMessage = false;
 
   // ── Log item stagger ───────────────────────────────────────
   final List<double> _itemOpacity = List.filled(8, 1.0);
@@ -68,6 +70,25 @@ class _PatientBottomNavBarShellState
       vsync: this,
       duration: const Duration(seconds: 3),
     )..repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Check for a welcome/confirmation message passed from app.dart
+    if (!_hasShownWelcomeMessage) {
+      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final routeMessage = args?['message'] as String?;
+      
+      if (routeMessage != null) {
+        // Use post-frame callback to show the snackbar safely after the build
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Helpers.showSuccess(context, routeMessage);
+        });
+        _hasShownWelcomeMessage = true;
+      }
+    }
   }
 
   @override

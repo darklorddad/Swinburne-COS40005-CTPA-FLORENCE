@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-pydantic-settings
-langchain-core
-langchain-openai
-httpx
-python-multipart

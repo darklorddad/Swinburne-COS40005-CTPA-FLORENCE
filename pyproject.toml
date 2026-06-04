@@ -1,0 +1,15 @@
+[project]
+name = "swinburne-cos40005-ctpa-florence"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.uv.workspace]
+members = [
+    "swinburne-cos40005-ctpa-florence",
+    "florence/data_service",
+    "florence/llm_chatbot_service",
+    "florence/llm_engine_service",
+]
