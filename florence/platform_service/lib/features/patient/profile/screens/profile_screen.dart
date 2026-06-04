@@ -735,7 +735,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: TextButton.icon(
               onPressed: _editProfile,
               icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text('Edit Profile'),
+              label: const Text('Edit User Profile'),
               style: TextButton.styleFrom(
                 foregroundColor: AppTheme.primaryBlue,
               ),
@@ -758,7 +758,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             children: [
               _buildSectionHeader('Medication Cabinet', Icons.medical_services_outlined),
               IconButton(
-                icon: const Icon(Icons.add_circle_outline, size: 20),
+                icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryBlue),
                 onPressed: () {
                   // Logic to show add medication form
                   showDialog(
@@ -801,7 +801,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               if (filteredMeds.isEmpty) {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 32),
-                  child: Center(child: Text('No medications found')),
+                  child: Center(
+                    child: Text(
+                      "No medications found",
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ),
                 );
               }
 
@@ -1221,40 +1226,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  void _showDiseaseFormModal(BuildContext context, WidgetRef ref,
-      {DiseaseLog? existingLog}) {
-    final isEditing = existingLog != null;
-    final nameController =
-        TextEditingController(text: existingLog?.conditionName ?? '');
-    String status = existingLog?.status ?? 'active';
-    DateTime? diagnosedDate = existingLog?.diagnosedDate;
-    DateTime? resolvedDate = existingLog?.resolvedDate;
+void _showDiseaseFormModal(BuildContext context, WidgetRef ref, {DiseaseLog? existingLog}) {
+  final isEditing = existingLog != null;
+  final nameController = TextEditingController(text: existingLog?.conditionName ?? '');
+  String status = existingLog?.status ?? 'active';
+  DateTime? diagnosedDate = existingLog?.diagnosedDate;
+  DateTime? resolvedDate = existingLog?.resolvedDate;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              left: 20,
-              right: 20,
-              top: 20),
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setModalState) => AlertDialog(
+        title: Text(isEditing ? "Edit Condition" : "Log Medical Condition"),
+        content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(isEditing ? "Edit Condition" : "Log Medical Condition",
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 16),
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                    labelText: 'Condition Name',
-                    hintText: 'e.g. Type 2 Diabetes'),
+                decoration: const InputDecoration(labelText: 'Condition Name', hintText: 'e.g. Type 2 Diabetes'),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -1272,67 +1263,62 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               const SizedBox(height: 16),
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(diagnosedDate == null
-                    ? "Select Diagnosed Date"
-                    : "Diagnosed: ${DateFormat('dd MMM yyyy').format(diagnosedDate!)}"),
+                title: Text(diagnosedDate == null ? "Select Diagnosed Date" : "Diagnosed: ${DateFormat('dd MMM yyyy').format(diagnosedDate!)}"),
                 trailing: const Icon(Icons.calendar_today),
                 onTap: () async {
                   final date = await showDatePicker(
-                      context: context,
-                      initialDate: diagnosedDate ?? DateTime.now(),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now());
+                    context: context,
+                    initialDate: diagnosedDate ?? DateTime.now(),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
                   if (date != null) setModalState(() => diagnosedDate = date);
                 },
               ),
               if (status == 'resolved')
                 ListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text(resolvedDate == null
-                      ? "Select Resolved Date"
-                      : "Resolved: ${DateFormat('dd MMM yyyy').format(resolvedDate!)}"),
+                  title: Text(resolvedDate == null ? "Select Resolved Date" : "Resolved: ${DateFormat('dd MMM yyyy').format(resolvedDate!)}"),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () async {
                     final date = await showDatePicker(
-                        context: context,
-                        initialDate: resolvedDate ?? DateTime.now(),
-                        firstDate: diagnosedDate ?? DateTime(1900),
-                        lastDate: DateTime.now());
+                      context: context,
+                      initialDate: resolvedDate ?? DateTime.now(),
+                      firstDate: diagnosedDate ?? DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
                     if (date != null) setModalState(() => resolvedDate = date);
                   },
                 ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    if (nameController.text.isNotEmpty) {
-                      final log = DiseaseLog(
-                        conditionName: nameController.text,
-                        status: status,
-                        diagnosedDate: diagnosedDate,
-                        resolvedDate: resolvedDate,
-                      );
-
-                      if (isEditing) {
-                        await ref
-                            .read(diseaseLogProvider.notifier)
-                            .updateLog(existingLog.id!, log);
-                      } else {
-                        await ref.read(diseaseLogProvider.notifier).addLog(log);
-                      }
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  },
-                  child: Text(isEditing ? "Save Changes" : "Save Condition"),
-                ),
-              ),
             ],
           ),
         ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              if (nameController.text.isNotEmpty) {
+                final log = DiseaseLog(
+                  conditionName: nameController.text,
+                  status: status,
+                  diagnosedDate: diagnosedDate,
+                  resolvedDate: resolvedDate,
+                );
+                if (isEditing) {
+                  await ref.read(diseaseLogProvider.notifier).updateLog(existingLog.id!, log);
+                } else {
+                  await ref.read(diseaseLogProvider.notifier).addLog(log);
+                }
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: Text(isEditing ? "Save Changes" : "Save Condition"),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _promptResolveDate(
       BuildContext context, WidgetRef ref, DiseaseLog log) async {
@@ -1386,20 +1372,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildSectionHeader('Health Profile', Icons.favorite_outline),
-              TextButton(
-                onPressed: thresholdsAsync.value == null
-                    ? null
-                    : () => _showEditThresholdsModal(
-                        context, ref, thresholdsAsync.value!, labels, getUnit),
-                child: const Text('Edit',
-                    style: TextStyle(color: AppTheme.primaryBlue)),
-              ),
-            ],
-          ),
+          _buildSectionHeader('Health Profile', Icons.favorite_outline),
           const SizedBox(height: 16),
           thresholdsAsync.when(
             data: (thresholds) {
@@ -1428,298 +1401,248 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Text("Error: $e"),
           ),
+          const SizedBox(height: 16),
+          Center(
+            child: TextButton.icon(
+              onPressed: thresholdsAsync.value == null
+                  ? null
+                  : () => _showEditThresholdsModal(
+                      context, ref, thresholdsAsync.value!, labels, getUnit),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Edit Health Profile'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryBlue,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  void _showEditThresholdsModal(
-      BuildContext context,
-      WidgetRef ref,
-      List<PatientThreshold> currentThresholds,
-      Map<String, String> labels,
-      Function(String) getUnit) {
-    final Map<String, TextEditingController> minControllers = {};
-    final Map<String, TextEditingController> maxControllers = {};
-    final formKey = GlobalKey<FormState>();
+void _showEditThresholdsModal(
+  BuildContext context,
+  WidgetRef ref,
+  List<PatientThreshold> currentThresholds,
+  Map<String, String> labels,
+  Function(String) getUnit,
+) {
+  final Map<String, TextEditingController> minControllers = {};
+  final Map<String, TextEditingController> maxControllers = {};
+  final formKey = GlobalKey<FormState>();
+  Map<String, String> backendErrors = {};
+  String? generalError;
 
-    // State to hold backend errors mapped to their specific data_type
-    Map<String, String> backendErrors = {};
-    String? generalError;
+  for (var t in currentThresholds) {
+    minControllers[t.dataType] = TextEditingController(text: t.minValue.toString());
+    maxControllers[t.dataType] = TextEditingController(text: t.maxValue.toString());
+  }
 
-    for (var t in currentThresholds) {
-      minControllers[t.dataType] =
-          TextEditingController(text: t.minValue.toString());
-      maxControllers[t.dataType] =
-          TextEditingController(text: t.maxValue.toString());
-    }
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Padding(
-          padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-              left: 20,
-              right: 20,
-              top: 20),
-          child: FractionallySizedBox(
-            heightFactor: 0.8,
-            child: Form(
-              key: formKey,
+  showDialog(
+    context: context,
+    builder: (context) => StatefulBuilder(
+      builder: (context, setModalState) => AlertDialog(
+        title: const Text('Edit Health Profile'),
+        content: SizedBox(
+          width: 600, // Restrict width for desktop view
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text("Edit Health Thresholds",
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 16),
-
-                  // Optional general error banner at the top
                   if (generalError != null)
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                          color: Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(8)),
-                      child: Text(generalError!,
-                          style:
-                              TextStyle(color: Colors.red.shade800, fontSize: 13)),
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        generalError!,
+                        style: TextStyle(color: Colors.red.shade800, fontSize: 13),
+                      ),
                     ),
-
-                  Expanded(
-                    child: ListView(
-                      children: currentThresholds.map((t) {
-                        final hasError = backendErrors.containsKey(t.dataType);
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 24.0),
-                          child: Column(
+                  ...currentThresholds.map((t) {
+                    final hasError = backendErrors.containsKey(t.dataType);
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: hasError ? Colors.red.shade800 : null,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                  "${labels[t.dataType] ?? t.dataType} (${getUnit(t.dataType)})",
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: hasError ? Colors.red.shade800 : null,
-                                  )),
-                              const SizedBox(height: 8),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: TextFormField(
-                                      controller: minControllers[t.dataType],
-                                      decoration: InputDecoration(
-                                        labelText: 'Min',
-                                        isDense: true,
-                                        enabledBorder: hasError
-                                            ? OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                borderSide: BorderSide(
-                                                    color: Colors.red.shade700),
-                                              )
-                                            : null,
-                                        focusedBorder: hasError
-                                            ? OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                borderSide: BorderSide(
-                                                    color: Colors.red.shade700,
-                                                    width: 2),
-                                              )
-                                            : null,
-                                      ),
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                              decimal: true, signed: true),
-                                      autovalidateMode:
-                                          AutovalidateMode.onUserInteraction,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Required';
-                                        }
-                                        final minVal = double.tryParse(value.replaceAll(',', '.'));
-                                        if (minVal == null) return 'Numbers only';
-                                        if (minVal < 0) return 'Cannot be negative';
-                                        return null;
-                                      },
-                                      onChanged: (_) {
-                                        if (hasError) {
-                                          setModalState(() =>
-                                              backendErrors.remove(t.dataType));
-                                        }
-                                        formKey.currentState?.validate();
-                                      },
-                                    ),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: minControllers[t.dataType],
+                                  decoration: InputDecoration(
+                                    labelText: 'Min',
+                                    isDense: true,
+                                    enabledBorder: hasError
+                                        ? OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.red.shade700),
+                                          )
+                                        : null,
+                                    focusedBorder: hasError
+                                        ? OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+                                          )
+                                        : null,
                                   ),
-                                  const SizedBox(width: 16),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) return 'Required';
+                                    final minVal = double.tryParse(value.replaceAll(',', '.'));
+                                    if (minVal == null) return 'Numbers only';
+                                    if (minVal < 0) return 'Cannot be negative';
+                                    return null;
+                                  },
+                                  onChanged: (_) {
+                                    if (hasError) {
+                                      setModalState(() => backendErrors.remove(t.dataType));
+                                    }
+                                    formKey.currentState?.validate();
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextFormField(
+                                  controller: maxControllers[t.dataType],
+                                  decoration: InputDecoration(
+                                    labelText: 'Max',
+                                    isDense: true,
+                                    enabledBorder: hasError
+                                        ? OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.red.shade700),
+                                          )
+                                        : null,
+                                    focusedBorder: hasError
+                                        ? OutlineInputBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            borderSide: BorderSide(color: Colors.red.shade700, width: 2),
+                                          )
+                                        : null,
+                                  ),
+                                  keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                                  autovalidateMode: AutovalidateMode.onUserInteraction,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) return 'Required';
+                                    final maxVal = double.tryParse(value.replaceAll(',', '.'));
+                                    if (maxVal == null) return 'Numbers only';
+                                    if (maxVal < 0) return 'Cannot be negative';
+                                    final minVal = double.tryParse(minControllers[t.dataType]!.text.replaceAll(',', '.'));
+                                    if (minVal != null && maxVal <= minVal) {
+                                      final minStr = minVal % 1 == 0 ? minVal.toInt().toString() : minVal.toString();
+                                      return 'Must be higher than $minStr';
+                                    }
+                                    return null;
+                                  },
+                                  onChanged: (_) {
+                                    if (hasError) {
+                                      setModalState(() => backendErrors.remove(t.dataType));
+                                    }
+                                    formKey.currentState?.validate();
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (hasError)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.error_outline, color: Colors.red.shade800, size: 14),
+                                  const SizedBox(width: 6),
                                   Expanded(
-                                    child: TextFormField(
-                                      controller: maxControllers[t.dataType],
-                                      decoration: InputDecoration(
-                                        labelText: 'Max',
-                                        isDense: true,
-                                        enabledBorder: hasError
-                                            ? OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                borderSide: BorderSide(
-                                                    color: Colors.red.shade700),
-                                              )
-                                            : null,
-                                        focusedBorder: hasError
-                                            ? OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                                borderSide: BorderSide(
-                                                    color: Colors.red.shade700,
-                                                    width: 2),
-                                              )
-                                            : null,
-                                      ),
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                              decimal: true, signed: true),
-                                      autovalidateMode:
-                                          AutovalidateMode.onUserInteraction,
-                                      validator: (value) {
-                                        if (value == null || value.isEmpty) {
-                                          return 'Required';
-                                        }
-                                        final maxVal = double.tryParse(value.replaceAll(',', '.'));
-                                        if (maxVal == null) return 'Numbers only';
-                                        if (maxVal < 0) return 'Cannot be negative';
-
-                                        final minVal = double.tryParse(
-                                            minControllers[t.dataType]!.text.replaceAll(',', '.'));
-                                        if (minVal != null && maxVal <= minVal) {
-                                          final minStr = minVal % 1 == 0
-                                              ? minVal.toInt().toString()
-                                              : minVal.toString();
-                                          return 'Must be higher than $minStr';
-                                        }
-                                        return null;
-                                      },
-                                      onChanged: (_) {
-                                        if (hasError) {
-                                          setModalState(() =>
-                                              backendErrors.remove(t.dataType));
-                                        }
-                                        formKey.currentState?.validate();
-                                      },
+                                    child: Text(
+                                      backendErrors[t.dataType]!,
+                                      style: TextStyle(color: Colors.red.shade800, fontSize: 12),
                                     ),
                                   ),
                                 ],
                               ),
-                              if (hasError)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.error_outline,
-                                          color: Colors.red.shade800, size: 14),
-                                      const SizedBox(width: 6),
-                                      Expanded(
-                                        child: Text(
-                                          backendErrors[t.dataType]!,
-                                          style: TextStyle(
-                                              color: Colors.red.shade800,
-                                              fontSize: 12),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        if (!formKey.currentState!.validate()) return;
-
-                        setModalState(() {
-                          backendErrors.clear();
-                          generalError = null;
-                        });
-
-                        final settings = ref.read(patientSettingsProvider);
-                        final List<PatientThreshold> updated = [];
-
-                        for (var t in currentThresholds) {
-                          double convertedMin =
-                              double.parse(minControllers[t.dataType]!.text.replaceAll(',', '.'));
-                          double convertedMax =
-                              double.parse(maxControllers[t.dataType]!.text.replaceAll(',', '.'));
-
-                          // Note: The backend handles conversion to base units automatically
-                          // based on the user's settings, so we send the raw values.
-
-                          updated.add(PatientThreshold(
-                            dataType: t.dataType,
-                            minValue: convertedMin,
-                            maxValue: convertedMax,
-                          ));
-                        }
-
-                        try {
-                          await ref
-                              .read(patientThresholdsProvider.notifier)
-                              .updateThresholds(updated);
-                          if (context.mounted) Navigator.pop(context);
-                        } catch (e) {
-                          if (context.mounted) {
-                            setModalState(() {
-                              String errorStr = e.toString();
-                              bool foundSpecificError = false;
-
-                              final matches = RegExp(
-                                      r'msg:\s*Value error,\s*(.*?)(?:,\s*input:|})')
-                                  .allMatches(errorStr);
-
-                              for (final match in matches) {
-                                final msg = match.group(1)!.trim();
-
-                                for (var t in currentThresholds) {
-                                  if (msg.contains(t.dataType)) {
-                                    // Clean the base message
-                                    String cleanMsg = msg.replaceAll(
-                                        ' for ${t.dataType}', '');
-
-                                    backendErrors[t.dataType] = cleanMsg;
-                                    foundSpecificError = true;
-                                  }
-                                }
-                              }
-
-                              if (!foundSpecificError) {
-                                generalError =
-                                    "Some values were rejected. Please review your inputs.";
-                              }
-                            });
-                          }
-                        }
-                      },
-                      child: const Text("Save Changes"),
-                    ),
-                  ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
                 ],
               ),
             ),
           ),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (!formKey.currentState!.validate()) return;
+              setModalState(() {
+                backendErrors.clear();
+                generalError = null;
+              });
+              final List<PatientThreshold> updated = [];
+              for (var t in currentThresholds) {
+                double convertedMin = double.parse(minControllers[t.dataType]!.text.replaceAll(',', '.'));
+                double convertedMax = double.parse(maxControllers[t.dataType]!.text.replaceAll(',', '.'));
+                updated.add(PatientThreshold(
+                  dataType: t.dataType,
+                  minValue: convertedMin,
+                  maxValue: convertedMax,
+                ));
+              }
+              try {
+                await ref.read(patientThresholdsProvider.notifier).updateThresholds(updated);
+                if (context.mounted) Navigator.pop(context);
+              } catch (e) {
+                if (context.mounted) {
+                  setModalState(() {
+                    String errorStr = e.toString();
+                    bool foundSpecificError = false;
+                    final matches = RegExp(r'msg:\s*Value error,\s*(.*?)(?:,\s*input:|})').allMatches(errorStr);
+                    for (final match in matches) {
+                      final msg = match.group(1)!.trim();
+                      for (var t in currentThresholds) {
+                        if (msg.contains(t.dataType)) {
+                          String cleanMsg = msg.replaceAll(' for ${t.dataType}', '');
+                          backendErrors[t.dataType] = cleanMsg;
+                          foundSpecificError = true;
+                        }
+                      }
+                    }
+                    if (!foundSpecificError) {
+                      generalError = "Some values were rejected. Please review your inputs.";
+                    }
+                  });
+                }
+              }
+            },
+            child: const Text("Save Changes"),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
   
   
   /// Build section header
