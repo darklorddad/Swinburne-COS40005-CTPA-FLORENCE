@@ -465,6 +465,26 @@ class _FeedItem extends StatelessWidget {
     final riskUpper = riskLevel.toUpperCase();
     final isHighRisk = riskUpper == 'HIGH';
     final isMediumRisk = riskUpper == 'MEDIUM';
+    final isHypo = alert.toLowerCase().contains('hypo');
+    final isHyper = alert.toLowerCase().contains('hyper');
+
+    // Determine Alert Styling
+    Color alertColor;
+    IconData alertIcon;
+
+    if (isHypo) {
+      alertColor = const Color(0xFFE65100); // Amber/Orange
+      alertIcon = Icons.trending_down_rounded;
+    } else if (isHyper) {
+      alertColor = const Color(0xFFD32F2F); // Red
+      alertIcon = Icons.trending_up_rounded;
+    } else if (isHighRisk) {
+      alertColor = AdminTheme.error;
+      alertIcon = Icons.priority_high_rounded;
+    } else {
+      alertColor = AdminTheme.onSurfaceVariant;
+      alertIcon = Icons.medical_information;
+    }
 
     final Color badgeColor = isHighRisk
         ? AdminTheme.errorContainer
@@ -503,13 +523,16 @@ class _FeedItem extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      isHighRisk ? Icons.priority_high_rounded : Icons.medical_information, 
-                      size: 16, 
-                      color: isHighRisk ? AdminTheme.error : AdminTheme.onSurfaceVariant
+                    Icon(alertIcon, size: 18, color: alertColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      (isHypo || isHyper) ? 'Critical: $alert' : alert, 
+                      style: TextStyle(
+                        color: alertColor, 
+                        fontSize: 14, 
+                        fontWeight: (isHypo || isHyper) ? FontWeight.bold : FontWeight.w500
+                      )
                     ),
-                    const SizedBox(width: 4),
-                    Text(alert, style: TextStyle(color: isHighRisk ? AdminTheme.error : AdminTheme.onSurfaceVariant, fontSize: 14)),
                   ],
                 ),
                 const SizedBox(height: 8),
