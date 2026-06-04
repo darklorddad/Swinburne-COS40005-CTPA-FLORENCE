@@ -341,6 +341,9 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
                           onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
+                          padding: Helpers.isDesktop(context)
+                              ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
+                              : null,
                         ),
                         const SizedBox(height: 24),
                       ],

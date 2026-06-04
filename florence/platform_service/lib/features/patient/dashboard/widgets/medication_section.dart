@@ -202,14 +202,22 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
         mainAxisSize: MainAxisSize.min,
         children: [
           // FILTER ROW
-          Row(
-            children: [
-              _buildFilterChip("All", ScheduleFilter.all),
-              const SizedBox(width: 8),
-              _buildFilterChip("Pending", ScheduleFilter.pending),
-              const SizedBox(width: 8),
-              _buildFilterChip("Taken", ScheduleFilter.taken),
-            ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildScheduleFilterButton("All", ScheduleFilter.all),
+                _buildScheduleFilterButton("Pending", ScheduleFilter.pending),
+                _buildScheduleFilterButton("Taken", ScheduleFilter.taken),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
 
@@ -261,23 +269,40 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
     );
   }
 
-  Widget _buildFilterChip(String label, ScheduleFilter filterValue) {
+  Widget _buildScheduleFilterButton(String label, ScheduleFilter filterValue) {
     final isSelected = _currentFilter == filterValue;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) setState(() => _currentFilter = filterValue);
-      },
-      selectedColor: AppTheme.primaryBlue.withValues(alpha: 0.2),
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (isSelected) return;
+          setState(() => _currentFilter = filterValue);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryBlue : Colors.grey[600],
+              ),
+            ),
+          ),
+        ),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      showCheckmark: false,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-      side: BorderSide.none,
     );
   }
 

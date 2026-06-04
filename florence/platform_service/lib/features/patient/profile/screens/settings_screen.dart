@@ -97,11 +97,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppTheme.errorColor,
                       side: BorderSide(color: AppTheme.errorColor),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: Helpers.isDesktop(context)
+                          ? const EdgeInsets.symmetric(vertical: 20)
+                          : const EdgeInsets.symmetric(vertical: 16),
                     ),
                     child: const Text('Sign Out'),
                   ),
-                  const SizedBox(height: 84),
+                  const SizedBox(height: 120), // Increased spacing for mobile bottom nav
                 ],
               ),
             ),

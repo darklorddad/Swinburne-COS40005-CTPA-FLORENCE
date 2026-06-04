@@ -389,15 +389,21 @@ class _RecommendationsScreenState
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        title: const Text('AI Health Insights'),
+        title: const Text('Insights'),
         elevation: 0,
         centerTitle: false,
         bottom: _isGenerating || recsAsync.isLoading
             ? const PreferredSize(
-                preferredSize: Size.fromHeight(2),
-                child: LinearProgressIndicator(minHeight: 2),
+                preferredSize: Size.fromHeight(2.0),
+                child: LinearProgressIndicator(minHeight: 2.0),
               )
-            : null,
+            : PreferredSize(
+                preferredSize: const Size.fromHeight(1.0),
+                child: Container(
+                  color: AppTheme.getBorderColor(context),
+                  height: 1.0,
+                ),
+              ),
       ),
       body: recsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

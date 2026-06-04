@@ -483,6 +483,9 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                           onPressed: _isLoading ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
+                          padding: Helpers.isDesktop(context)
+                              ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
+                              : null,
                         ),
                         const SizedBox(height: 24),
                       ],

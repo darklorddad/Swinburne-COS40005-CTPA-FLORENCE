@@ -562,6 +562,9 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
                           onPressed: _isLoading ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
+                          padding: Helpers.isDesktop(context)
+                              ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
+                              : null,
                         ),
                         const SizedBox(height: 24),
                       ],

@@ -771,15 +771,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ],
           ),
           const SizedBox(height: 16),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Row(
               children: [
-                _buildMedFilterChip('Active'),
-                const SizedBox(width: 8),
-                _buildMedFilterChip('Past'),
-                const SizedBox(width: 8),
-                _buildMedFilterChip('All'),
+                _buildMedFilterButton('Active'),
+                _buildMedFilterButton('Past'),
+                _buildMedFilterButton('All'),
               ],
             ),
           ),
@@ -901,27 +906,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildMedFilterChip(String label) {
+  Widget _buildMedFilterButton(String label) {
     final isSelected = _medFilter == label;
-    return ChoiceChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() => _medFilter = label);
-        }
-      },
-      selectedColor: AppTheme.primaryBlue.withValues(alpha: 0.2),
-      labelStyle: TextStyle(
-        color: isSelected ? AppTheme.primaryBlue : AppTheme.textSecondaryColor,
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _medFilter = label;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryBlue : Colors.grey[600],
+              ),
+            ),
+          ),
+        ),
       ),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      showCheckmark: false,
-      backgroundColor: Theme.of(context).brightness == Brightness.dark
-          ? Colors.white.withValues(alpha: 0.05)
-          : Colors.grey.shade100,
-      side: BorderSide.none,
     );
   }
 

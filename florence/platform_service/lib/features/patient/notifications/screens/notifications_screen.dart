@@ -63,6 +63,15 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifications'),
+        elevation: 0,
+        centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: AppTheme.getBorderColor(context),
+            height: 1.0,
+          ),
+        ),
         actions: [
           // Mark all as read
           IconButton(
@@ -110,14 +119,19 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
             Expanded(child: _buildEmptyState())
           else
             Expanded(
-              child: ListView(
-                children: [
-                  if (today.isNotEmpty) _buildGroup('Today', today, notifier),
-                  if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday, notifier),
-                  if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek, notifier),
-                  if (older.isNotEmpty) _buildGroup('Older', older, notifier),
-                  const SizedBox(height: 24),
-                ],
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 600),
+                  child: ListView(
+                    children: [
+                      if (today.isNotEmpty) _buildGroup('Today', today, notifier),
+                      if (yesterday.isNotEmpty) _buildGroup('Yesterday', yesterday, notifier),
+                      if (thisWeek.isNotEmpty) _buildGroup('This Week', thisWeek, notifier),
+                      if (older.isNotEmpty) _buildGroup('Older', older, notifier),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
               ),
             ),
         ],
