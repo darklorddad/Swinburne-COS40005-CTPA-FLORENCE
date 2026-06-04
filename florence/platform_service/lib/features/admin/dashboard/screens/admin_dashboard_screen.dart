@@ -73,34 +73,52 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      runSpacing: 16,
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildSearchField()),
+              const SizedBox(width: 16),
+              const CircleAvatar(radius: 18, child: Icon(Icons.person)),
+            ],
+          ),
+        ],
+      );
+    }
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium),
+        Expanded(child: Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium)),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 300,
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search patients, doctors.',
-                  prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.outlineVariant)),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.primary)),
-                ),
-              ),
-            ),
+            SizedBox(width: 300, child: _buildSearchField()),
             const SizedBox(width: 16),
             const CircleAvatar(radius: 18, child: Icon(Icons.person)),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: 'Search patients, doctors.',
+        prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.primary)),
+      ),
     );
   }
 

@@ -103,20 +103,27 @@ async def get_all_patients():
             .order('measured_at', desc=True)\
             .execute()
 
-        # 3. Determine the latest alert per patient
+        # 3. Fetch specific patient thresholds to accurately check Hypo/Hyper (All DB values are strictly mmol/L)
+        patient_ids = list(set([row['patient_id'] for row in glucose_res.data]))
+        thresholds_res = supabase.table('patient_thresholds')\
+            .select('patient_id, min_value, max_value')\
+            .eq('data_type', 'GLUCOSE')\
+            .in_('patient_id', patient_ids)\
+            .execute()
+            
+        thresholds_map = {t['patient_id']: t for t in thresholds_res.data}
+
+        # 4. Determine the latest alert per patient
         patient_alerts = {}
         for row in glucose_res.data:
             pid = row['patient_id']
             if pid not in patient_alerts:
                 val = row['value']
-                # Dynamic check for both mmol/L (usually < 25) and mg/dL (usually > 25)
-                is_mgdl = val > 25
-                hypo_thresh = 70.0 if is_mgdl else 3.9
-                hyper_thresh = 180.0 if is_mgdl else 10.0
+                thresh = thresholds_map.get(pid, {'min_value': 3.9, 'max_value': 10.0})
                 
-                if val < hypo_thresh:
+                if val < thresh['min_value']:
                     patient_alerts[pid] = "Hypoglycemic Event"
-                elif val > hyper_thresh:
+                elif val > thresh['max_value']:
                     patient_alerts[pid] = "Hyperglycemic Event"
                 else:
                     patient_alerts[pid] = "Normal"

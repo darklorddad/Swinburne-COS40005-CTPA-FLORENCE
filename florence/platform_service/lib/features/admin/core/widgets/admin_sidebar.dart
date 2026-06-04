@@ -81,8 +81,12 @@ class AdminSidebar extends StatelessWidget {
                   icon: Icons.settings_outlined,
                   activeIcon: Icons.settings_rounded,
                   label: 'Settings',
-                  isActive: currentRoute == '/admin/settings',
-                  onTap: () {}, // Add route when built
+                  isActive: currentRoute == AppRoutes.settings,
+                  onTap: () {
+                    if (currentRoute != AppRoutes.settings) {
+                      Navigator.pushNamed(context, AppRoutes.settings);
+                    }
+                  },
                 ),
               ],
             ),
