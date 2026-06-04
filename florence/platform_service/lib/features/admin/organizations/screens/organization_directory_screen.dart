@@ -142,27 +142,30 @@ class _OrganizationDirectoryScreenState extends ConsumerState<OrganizationDirect
                               ],
                               rows: filtered.map((org) => DataRow(
                                 cells: [
-                                  DataCell(Text(org.name, style: const TextStyle(fontWeight: FontWeight.w600))),
-                                  DataCell(Text(org.sector ?? '-', style: const TextStyle(color: AdminTheme.outline))),
-                                  DataCell(Text(org.facilityType ?? '-', style: const TextStyle(color: AdminTheme.outline))),
-                                  DataCell(Text(org.state ?? '-', style: const TextStyle(color: AdminTheme.outline))),
-                                  DataCell(Text(org.patientCount.toString(), style: const TextStyle(color: AdminTheme.outline))),
-                                  DataCell(Text(org.clinicianCount.toString(), style: const TextStyle(color: AdminTheme.outline))),
+                                  DataCell(Align(alignment: Alignment.centerLeft, child: Text(org.name, style: const TextStyle(fontWeight: FontWeight.w600)))),
+                                  DataCell(Align(alignment: Alignment.centerLeft, child: Text(org.sector ?? '-', style: const TextStyle(color: AdminTheme.outline)))),
+                                  DataCell(Align(alignment: Alignment.centerLeft, child: Text(org.facilityType ?? '-', style: const TextStyle(color: AdminTheme.outline)))),
+                                  DataCell(Align(alignment: Alignment.centerLeft, child: Text(org.state ?? '-', style: const TextStyle(color: AdminTheme.outline)))),
+                                  DataCell(Align(alignment: Alignment.centerLeft, child: Text(org.patientCount.toString(), style: const TextStyle(color: AdminTheme.outline)))),
+                                  DataCell(Align(alignment: Alignment.centerLeft, child: Text(org.clinicianCount.toString(), style: const TextStyle(color: AdminTheme.outline)))),
                                   DataCell(
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.visibility_outlined, color: AdminTheme.outline),
-                                          tooltip: 'View Details',
-                                          onPressed: () => Navigator.pushNamed(context, AppRoutes.organizationDetail, arguments: org),
-                                        ),
-                                        IconButton(
-                                          icon: const Icon(Icons.edit_outlined, color: AdminTheme.outline),
-                                          tooltip: 'Edit',
-                                          onPressed: () => _openFormDialog(context, org: org),
-                                        ),
-                                      ],
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          IconButton(
+                                            icon: const Icon(Icons.visibility_outlined, color: AdminTheme.outline),
+                                            tooltip: 'View Details',
+                                            onPressed: () => Navigator.pushNamed(context, AppRoutes.organizationDetail, arguments: org),
+                                          ),
+                                          IconButton(
+                                            icon: const Icon(Icons.edit_outlined, color: AdminTheme.outline),
+                                            tooltip: 'Edit',
+                                            onPressed: () => _openFormDialog(context, org: org),
+                                          ),
+                                        ],
+                                      ),
                                     )
                                   ),
                                 ]
