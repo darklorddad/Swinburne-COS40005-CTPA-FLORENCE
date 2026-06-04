@@ -37,6 +37,10 @@ class SimulatorRequest(BaseModel):
     scenario: str
     days: int = 30
 
+class GenerateDataRequest(BaseModel):
+    scenario: str
+    days: int = 30
+
 DEFAULT_THRESHOLDS = [
     {"data_type": "GLUCOSE", "min_value": 3.9, "max_value": 10.0},
     {"data_type": "BLOOD_PRESSURE_SYSTOLIC", "min_value": 90.0, "max_value": 140.0},
@@ -193,6 +197,110 @@ async def delete_patient_by_admin(patient_id: int):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete patient: {str(e)}")
+
+@router.delete("/patients/{patient_id}/data", summary="Wipe patient health data (Keep Account)")
+async def wipe_patient_data(patient_id: int):
+    """Deletes all health logs, activity, and monitor data for a patient but keeps their profile and Auth user."""
+    try:
+        supabase.table('patient_monitor_data').delete().eq('patient_id', patient_id).execute()
+        supabase.table('daily_patient_logs').delete().eq('patient_id', patient_id).execute()
+        supabase.table('patient_activity_logs').delete().eq('patient_id', patient_id).execute()
+        supabase.table('patient_recommendations').delete().eq('patient_id', patient_id).execute()
+        # Note: We leave disease logs, medications, and clinician notes intact as they are part of the medical profile.
+        return {"message": "Patient health data wiped successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/patients/{patient_id}/generate-data", summary="Generate synthetic data for existing patient")
+async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataRequest):
+    """Calls LLM Engine to generate 30 days of data and inserts it into an existing patient account."""
+    import httpx
+    import os
+
+    # 1. Call LLM Engine
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "http://127.0.0.1:8001")
+        try:
+            res = await client.post(f"{llm_url}/simulator/generate", json={"scenario": req.scenario, "days": req.days})
+            res.raise_for_status()
+            sim_data = res.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"LLM Engine failed: {str(e)}")
+    
+    try:
+        # 2. Parse LLM Data & Bulk Insert
+        monitor_data = []
+        daily_logs = []
+        activity_logs = []
+        now = datetime.now()
+
+        for day in sim_data['days']:
+            log_date = (now - timedelta(days=day['day_offset'])).date()
+            base_time = datetime.combine(log_date, datetime.min.time())
+
+            # BP
+            monitor_data.append({"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": day['systolic_bp'], "measured_at": (base_time + timedelta(hours=7)).isoformat()})
+            monitor_data.append({"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": day['diastolic_bp'], "measured_at": (base_time + timedelta(hours=7)).isoformat()})
+
+            # Meals
+            for meal in day['meals']:
+                hour = 8 if meal['meal_time'] == 'BREAKFAST' else 13 if meal['meal_time'] == 'LUNCH' else 19
+                before_time = base_time + timedelta(hours=hour)
+                after_time = before_time + timedelta(hours=2)
+
+                daily_logs.append({
+                    "patient_id": patient_id,
+                    "log_date": log_date.isoformat(),
+                    "meal_time": meal['meal_time'],
+                    "meal_desc": meal['description'],
+                    "calories": meal['calories'],
+                    "glucose_before_meal": meal['glucose_before'],
+                    "glucose_after_meal": meal['glucose_after'],
+                    "glucose_before_meal_time": before_time.isoformat(),
+                    "glucose_after_meal_time": after_time.isoformat()
+                })
+                monitor_data.append({"patient_id": patient_id, "data_type": "GLUCOSE", "value": meal['glucose_before'], "measured_at": before_time.isoformat()})
+                monitor_data.append({"patient_id": patient_id, "data_type": "GLUCOSE", "value": meal['glucose_after'], "measured_at": after_time.isoformat()})
+
+            # Activity
+            if day.get('activity'):
+                act = day['activity']
+                start = base_time + timedelta(hours=17)
+                end = start + timedelta(minutes=act['duration_minutes'])
+                activity_logs.append({
+                    "patient_id": patient_id,
+                    "activity_description": act['description'],
+                    "active_duration_minutes": act['duration_minutes'],
+                    "calories_burned": act['calories_burned'],
+                    "start_time": start.isoformat(),
+                    "end_time": end.isoformat()
+                })
+
+        # Monthly Vitals
+        v_time = now.isoformat()
+        monitor_data.extend([
+            {"patient_id": patient_id, "data_type": "HBA1C", "value": sim_data['hba1c'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "BMI", "value": sim_data['bmi'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_TOTAL", "value": sim_data['cholesterol_total'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_LDL", "value": sim_data['cholesterol_ldl'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_HDL", "value": sim_data['cholesterol_hdl'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_TRIGLYCERIDES", "value": sim_data['cholesterol_triglycerides'], "measured_at": v_time}
+        ])
+
+        if monitor_data: supabase.table('patient_monitor_data').insert(monitor_data).execute()
+        if daily_logs: supabase.table('daily_patient_logs').insert(daily_logs).execute()
+        if activity_logs: supabase.table('patient_activity_logs').insert(activity_logs).execute()
+
+        # Update Risk Level based on scenario
+        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower()
+        supabase.table('patient_profiles').update({
+            "risk_level": "HIGH" if is_high_risk else "LOW",
+            "last_risk_assessment": now.isoformat()
+        }).eq('id', patient_id).execute()
+
+        return {"message": "Data generated successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database insertion failed: {str(e)}")
 
 @router.post("/simulator/generate", summary="Generate a synthetic patient via LLM")
 async def generate_synthetic_patient(req: SimulatorRequest):

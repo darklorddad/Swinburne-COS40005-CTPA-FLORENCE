@@ -33,6 +33,111 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
     super.dispose();
   }
 
+  Future<void> _wipeDataOnly() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Wipe Health Data?'),
+        content: const Text('This will delete all glucose, blood pressure, meals, and activity records for this patient. The account profile will remain.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Wipe Data', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final api = ApiService();
+        await api.delete('/admin/patients/${widget.patient.id}/data');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Patient health data wiped.'), backgroundColor: AdminTheme.primary),
+          );
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: AdminTheme.error));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _showGenerateDataDialog() async {
+    final scenarios = [
+      'The Perfect Patient (High Time-in-Range, regular exercise)',
+      'The Rollercoaster (Frequent highs and lows, erratic eating)',
+      'Dawn Phenomenon (High morning fasting glucose, normal otherwise)',
+      'High-Carb Sedentary (Post-meal spikes, zero activity)'
+    ];
+    String selectedScenario = scenarios[0];
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) {
+          return AlertDialog(
+            title: const Text('Generate Health Data'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Select a clinical scenario to generate 30 days of data via LLM.'),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedScenario,
+                  isExpanded: true,
+                  decoration: const InputDecoration(border: OutlineInputBorder()),
+                  items: scenarios.map((s) => DropdownMenuItem(value: s, child: Text(s, overflow: TextOverflow.ellipsis))).toList(),
+                  onChanged: (val) => setModalState(() => selectedScenario = val!),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+              FilledButton.icon(
+                icon: const Icon(Icons.science),
+                label: const Text('Generate'),
+                style: FilledButton.styleFrom(backgroundColor: Colors.purple),
+                onPressed: () => Navigator.pop(context, true),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final api = ApiService();
+        await api.post('/admin/patients/${widget.patient.id}/generate-data', {
+          'scenario': selectedScenario,
+          'days': 30
+        });
+        ref.invalidate(adminPatientsProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Synthetic data generated successfully!'), backgroundColor: AdminTheme.primary),
+          );
+          // Update local risk level text to match backend changes
+          setState(() {
+            _currentRisk = (selectedScenario.contains('Rollercoaster') || selectedScenario.contains('Erratic')) ? 'HIGH' : 'LOW';
+          });
+        }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: AdminTheme.error));
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
+  }
+
   Future<void> _deletePatient() async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -328,20 +433,6 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                // DELETE PATIENT BUTTON
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton.icon(
-                                    onPressed: _isLoading ? null : _deletePatient,
-                                    icon: const Icon(Icons.delete_forever),
-                                    label: const Text('Wipe Patient Data & Account'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: AdminTheme.error,
-                                      side: const BorderSide(color: AdminTheme.error),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(
@@ -366,7 +457,52 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                           : const Text('Assign'),
                                     ),
                                   ],
-                                )
+                                ),
+                                const SizedBox(height: 32),
+                                const Divider(height: 1, color: AdminTheme.outlineVariant),
+                                const SizedBox(height: 32),
+
+                                // DATA MANAGEMENT
+                                const Text('Data Management', style: TextStyle(fontWeight: FontWeight.bold, color: AdminTheme.onSurfaceVariant)),
+                                const SizedBox(height: 16),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isLoading ? null : _showGenerateDataDialog,
+                                    icon: const Icon(Icons.science),
+                                    label: const Text('Generate Simulated Data (LLM)'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.purple,
+                                      side: const BorderSide(color: Colors.purple),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isLoading ? null : _wipeDataOnly,
+                                    icon: const Icon(Icons.cleaning_services),
+                                    label: const Text('Wipe Health Data (Keep Account)'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.orange,
+                                      side: const BorderSide(color: Colors.orange),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isLoading ? null : _deletePatient,
+                                    icon: const Icon(Icons.delete_forever),
+                                    label: const Text('Wipe Patient Data & Account'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AdminTheme.error,
+                                      side: const BorderSide(color: AdminTheme.error),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
