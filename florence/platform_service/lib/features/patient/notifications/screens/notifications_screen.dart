@@ -110,7 +110,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.textSecondaryColor,
                     side: BorderSide(color: AppTheme.borderColor),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Fixed padding
                   ),
                 ),
               ),
@@ -156,56 +156,46 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       (label: 'Motivational', type: NotificationType.motivational, unread: false),
     ];
 
-    return SizedBox(
-      height: 40,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: chips.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final c = chips[i];
-          final isSelected = c.unread
-              ? _showUnreadOnly && _selectedFilter == null
-              : !_showUnreadOnly && _selectedFilter == c.type;
-          final count = countFor(c.type, c.unread);
-          final color = _chipColor(c.type, c.unread);
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: chips.map((c) {
+        final isSelected = c.unread
+            ? _showUnreadOnly && _selectedFilter == null
+            : !_showUnreadOnly && _selectedFilter == c.type;
+        final count = countFor(c.type, c.unread);
+        final color = _chipColor(c.type, c.unread);
 
-          return FilterChip(
-            label: SizedBox(
-              width: 110,
-              child: Text(
-                count > 0 ? '${c.label} $count' : c.label,
-                textAlign: TextAlign.center,
-              ),
-            ),
-            selected: isSelected,
-            onSelected: (_) {
-              setState(() {
-                if (c.unread) {
-                  _showUnreadOnly = true;
-                  _selectedFilter = null;
-                } else {
-                  _showUnreadOnly = false;
-                  _selectedFilter = c.type;
-                }
-              });
-            },
-            showCheckmark: false,
-            selectedColor: color.withValues(alpha: 0.15),
-            side: BorderSide(
-              color: isSelected ? color : AppTheme.borderColor,
-            ),
-            labelStyle: TextStyle(
-              color: isSelected ? color : AppTheme.textSecondaryColor,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              fontSize: 13,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          );
-        },
-      ),
+        return FilterChip(
+          label: count > 0
+              ? Text('${c.label} $count')
+              : Text(c.label),
+          selected: isSelected,
+          onSelected: (_) {
+            setState(() {
+              if (c.unread) {
+                _showUnreadOnly = true;
+                _selectedFilter = null;
+              } else {
+                _showUnreadOnly = false;
+                _selectedFilter = c.type;
+              }
+            });
+          },
+          showCheckmark: false,
+          selectedColor: color.withValues(alpha: 0.15),
+          side: BorderSide(
+            color: isSelected ? color : AppTheme.borderColor,
+          ),
+          labelStyle: TextStyle(
+            color: isSelected ? color : AppTheme.textSecondaryColor,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        );
+      }).toList(),
     );
   }
 

@@ -176,7 +176,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             settings.showQuickActions,
             (value) => ref.read(patientSettingsProvider.notifier).toggleQuickActions(value),
           ),
-          const Divider(height: 24),
+          // Divider removed
         ],
       ),
     );
@@ -204,7 +204,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           
           _buildSettingItem(
             'Privacy Policy',
-            'View our privacy policy',
+            'View privacy policy',
             Icons.privacy_tip_outlined,
             onTap: () => Helpers.showInfo(context, 'Privacy policy coming soon'),
             showChevron: true,
@@ -215,7 +215,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             'Terms of Service',
             'View terms of service',
             Icons.description_outlined,
-            onTap: () => Helpers.showInfo(context, 'Terms coming soon'),
+            onTap: () => Helpers.showInfo(context, 'Terms of service coming soon'),
             showChevron: true,
           ),
         ],
@@ -362,38 +362,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     VoidCallback? onTap,
     bool showChevron = false,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                        ),
-                  ),
-                ],
+    return SizedBox(
+      height: 64, // Fixed height for consistency
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryColor,
+                          ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            if (showChevron)
-              Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
-          ],
+              if (showChevron)
+                Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+            ],
+          ),
         ),
       ),
     );
@@ -406,36 +410,40 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool value,
     ValueChanged<bool> onChanged,
   ) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-            ],
+    return SizedBox(
+      height: 64, // Fixed height for consistency
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                ),
+              ],
+            ),
           ),
-        ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: AppTheme.primaryBlue,
-        ),
-      ],
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeTrackColor: AppTheme.primaryBlue,
+          ),
+        ],
+      ),
     );
   }
 }
