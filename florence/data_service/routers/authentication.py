@@ -131,7 +131,17 @@ async def register_user(user_data: UserRegistration):
                 'show_quick_actions': False
             }).execute()
         
-        return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
+        # If user_session.session exists, Supabase did not require email confirmation
+        if user_session.session:
+            return {
+                "message": f"{user_data.role.capitalize()} registered successfully.",
+                "requires_email_confirmation": False
+            }
+        else:
+            return {
+                "message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification.",
+                "requires_email_confirmation": True
+            }
 
     except Exception as e:
         if new_user:

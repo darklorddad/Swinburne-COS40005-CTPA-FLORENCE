@@ -159,8 +159,8 @@ class _AppState extends ConsumerState<App> {
 
       final user = session.user;
 
-      // This logic handles deep link sign-ins (email confirmation)
-      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn &&
+      // Detect if this is a brand new account (less than 2 mins old)
+      final isNewUser = data.event == AuthChangeEvent.signedIn &&
           DateTime.now().difference(DateTime.parse(user.createdAt)).inMinutes <
               2;
 
@@ -173,7 +173,7 @@ class _AppState extends ConsumerState<App> {
       } catch (e) {
         // If the user is not found on the backend during the first login after email confirmation,
         // it means we need to create their profile on our backend.
-        if (isSignUpConfirmation && e.toString().contains('Not Found')) {
+        if (isNewUser && e.toString().contains('Not Found')) {
           debugPrint('[App Listener] User not found on backend. Attempting to sync profile.');
           try {
             // This endpoint should trigger the backend to create a user record
@@ -236,8 +236,8 @@ class _AppState extends ConsumerState<App> {
         return;
       }
 
-      final message = isSignUpConfirmation
-          ? 'Welcome! Your email has been successfully confirmed.'
+      final message = isNewUser
+          ? 'Welcome to Florence!'
           : 'Welcome back!';
 
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false,

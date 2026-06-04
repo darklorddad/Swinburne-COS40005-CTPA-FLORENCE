@@ -64,7 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       // Call the backend API using ApiService
-      await _apiService.post('/auth/register', {
+      final response = await _apiService.post('/auth/register', {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
         'role': 'PATIENT', // Hardcoded for patient registration
@@ -72,10 +72,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (mounted) {
-        Helpers.showSuccess(
-          context,
-          'Registered successfully! Please check your email for verification',
-        );
+        // Check if the backend told us an email confirmation is required
+        final requiresConfirmation = response is Map && (response['requires_email_confirmation'] ?? true);
+
+        if (requiresConfirmation) {
+          Helpers.showSuccess(
+            context,
+            'Registered successfully! Please check your email for verification.',
+          );
+        } else {
+          Helpers.showSuccess(
+            context,
+            'Account created successfully! You can now sign in.',
+          );
+        }
         AppRoutes.pop(context); // Go back to login screen
       }
     } catch (error) {
