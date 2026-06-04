@@ -3,7 +3,6 @@ import 'package:florence/features/admin/core/services/admin_auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:florence/config/admin_theme.dart';
 import 'package:florence/config/routes.dart';
-import 'package:florence/config/admin_routes.dart';
 
 class AdminSidebar extends StatelessWidget {
   final String currentRoute;
@@ -82,10 +81,10 @@ class AdminSidebar extends StatelessWidget {
                   icon: Icons.settings_outlined,
                   activeIcon: Icons.settings_rounded,
                   label: 'Settings',
-                  isActive: currentRoute == AdminRoutes.settings,
+                  isActive: currentRoute == AppRoutes.adminSettings,
                   onTap: () {
-                    if (currentRoute != AdminRoutes.settings) {
-                      Navigator.pushReplacementNamed(context, AdminRoutes.settings);
+                    if (currentRoute != AppRoutes.adminSettings) {
+                      Navigator.pushReplacementNamed(context, AppRoutes.adminSettings);
                     }
                   },
                 ),

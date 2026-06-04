@@ -90,6 +90,7 @@ class AppRoutes {
   static const String organizations = '/admin/organizations';
   static const String organizationDetail = '/admin/organization-detail';
   static const String dataSimulator = '/admin/data-simulator';
+  static const String adminSettings = '/admin/settings';
 
   /// Generate routes
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -217,6 +218,32 @@ class AppRoutes {
 
       case dataSimulator:
         return _buildRoute(const DataSimulatorScreen(), settings);
+
+      case adminSettings:
+        return _buildRoute(
+          const Scaffold(
+            body: Row(
+              children: [
+                AdminSidebar(currentRoute: adminSettings),
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.settings, size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Admin Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        Text('System configuration coming soon...'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          settings,
+        );
 
       default:
         return _buildRoute(
