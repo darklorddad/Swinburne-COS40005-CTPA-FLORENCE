@@ -159,10 +159,10 @@ class _AppState extends ConsumerState<App> {
 
       final user = session.user;
 
-      // Detect if this is a brand new account (less than 2 mins old)
-      final isNewUser = data.event == AuthChangeEvent.signedIn &&
-          DateTime.now().difference(DateTime.parse(user.createdAt)).inMinutes <
-              2;
+      // Detect if this is a brand new account (less than 5 mins old, handling clock skew)
+      final createdAt = DateTime.parse(user.createdAt).toUtc();
+      final diffMinutes = DateTime.now().toUtc().difference(createdAt).inMinutes.abs();
+      final isNewUser = data.event == AuthChangeEvent.signedIn && diffMinutes < 5;
 
       dynamic backendUser;
       try {
