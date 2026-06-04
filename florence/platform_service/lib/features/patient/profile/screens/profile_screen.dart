@@ -503,10 +503,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final userProfileAsync = ref.watch(userProfileProvider);
+    final borderColor = AppTheme.getBorderColor(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Profile'),
+        title: const Text('Profile'),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: borderColor,
+            height: 1.0,
+          ),
+        ),
       ),
       body: userProfileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

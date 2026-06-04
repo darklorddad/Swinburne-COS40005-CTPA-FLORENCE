@@ -66,9 +66,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final borderColor = AppTheme.getBorderColor(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: borderColor,
+            height: 1.0,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         child: Center(

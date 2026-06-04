@@ -129,7 +129,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('AI Health Assistant'),
+        title: const Text('Chatbot'),
         content: const SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,9 +185,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       }
     });
 
+    final borderColor = AppTheme.getBorderColor(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Health Assistant'),
+        title: const Text('Chatbot'),
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(
+            color: borderColor,
+            height: 1.0,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
@@ -199,7 +208,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: IconButton(
               icon: const Icon(Icons.info_outline),
               onPressed: _showInfoDialog,
-              tooltip: 'About AI Assistant',
+              tooltip: 'About Chatbot',
             ),
           ),
         ],
@@ -533,17 +542,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             textCapitalization: TextCapitalization.sentences,
                             onSubmitted: _sendMessage,
                           ),
-                        ),
-                        // Microphone button (placeholder)
-                        IconButton(
-                          icon: Icon(
-                            Icons.mic_outlined,
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                          onPressed: () {
-                            Helpers.showInfo(context, 'Voice input coming soon');
-                          },
-                          tooltip: 'Voice input',
                         ),
                       ],
                     ),
