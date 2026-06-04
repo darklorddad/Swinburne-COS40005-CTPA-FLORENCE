@@ -525,12 +525,16 @@ class _LdlTargetSection extends StatelessWidget {
     }
 
     final ldl = reading?.ldl ?? 0.0;
-    
     // Dynamically adjust the base scale depending on the unit size
-    final double defaultMaxScale = target! < 15.0 ? 5.0 : 200.0; 
-    
-    // Scale must accommodate the Target OR the User's Value (whichever is larger), plus buffer
-    final double maxScale = math.max(defaultMaxScale, math.max(target! * 1.5, ldl * 1.2));
+    final bool isMmol = target! < 15.0;
+    final double defaultMaxScale = isMmol ? 5.0 : 200.0;
+    final double yellowZoneSize = isMmol ? 1.0 : 30.0; // 30 mg/dL is ~0.8 mmol/L
+
+    // Scale must accommodate the Target, User's Value, AND the yellow zone buffer
+    final double maxScale = math.max(
+      defaultMaxScale, 
+      math.max(target! * 1.5, math.max(ldl * 1.2, target! + yellowZoneSize))
+    );
     
     return _CholesterolCard(
       title: 'LDL Performance',
@@ -571,9 +575,9 @@ class _LdlTargetSection extends StatelessWidget {
                                 width: targetPos,
                                 color: AppTheme.primaryGreen.withValues(alpha: 0.2),
                               ),
-                              // Yellow Zone (Next 30mg/dL)
+                              // Yellow Zone (Next 30mg/dL or 1.0 mmol/L)
                               Container(
-                                width: (30 / maxScale) * width,
+                                width: (yellowZoneSize / maxScale) * width,
                                 color: AppTheme.warningColor.withValues(alpha: 0.2),
                               ),
                               // Red Zone
