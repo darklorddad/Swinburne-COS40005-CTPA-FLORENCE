@@ -230,7 +230,7 @@ class AdminDashboardScreen extends ConsumerWidget {
             Expanded(
               child: _QuickActionButton(
                 icon: Icons.person_add_outlined,
-                label: 'Add Patient',
+                label: 'Register Patient',
                 onTap: () {
                   showDialog(
                     context: context,
@@ -257,6 +257,10 @@ class AdminDashboardScreen extends ConsumerWidget {
         Text('Recent Activity', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 16),
         Card(
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 1.0),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: activityAsync.when(
@@ -334,7 +338,7 @@ class _MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 1.0),
             borderRadius: BorderRadius.circular(12),
           ),
       child: Padding(
@@ -483,7 +487,7 @@ class _QuickActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       shape: RoundedRectangleBorder(
-            side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 1.0),
             borderRadius: BorderRadius.circular(12),
           ),
       child: InkWell(
