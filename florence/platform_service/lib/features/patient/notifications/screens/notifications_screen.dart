@@ -1,6 +1,5 @@
 /// Notifications Screen for FLORENCE Digital Health Platform
 /// Displays all notifications with filtering and actions
-library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
