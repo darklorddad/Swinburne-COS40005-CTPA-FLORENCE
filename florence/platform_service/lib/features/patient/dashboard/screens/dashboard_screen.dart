@@ -174,33 +174,41 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     children: [
                       // Desktop: Row (Side-by-Side), Mobile: Column (Stacked)
                       if (context.isDesktop)
-                        IntrinsicHeight(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Expanded(
-                                child: AIInsightCard(
-                                  onTap: () => AppRoutes.push(
-                                      context, AppRoutes.recommendations),
+                        showQuickActions
+                            ? IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: AIInsightCard(
+                                        onTap: () => AppRoutes.push(
+                                            context, AppRoutes.recommendations),
+                                      ),
+                                    ),
+                                    const SizedBox(width: spacing),
+                                    Expanded(
+                                      child: QuickActionsGrid(
+                                        actions: _getQuickActions().map((a) => (
+                                          label: a.label,
+                                          icon: a.icon,
+                                          color: a.color,
+                                          onTap: () => AppRoutes.push(context, a.route)
+                                        )).toList(),
+                                      ),
+                                    ),
+                                    const SizedBox(width: spacing),
+                                  ],
                                 ),
-                              ),
-                              if (showQuickActions) ...[
-                                const SizedBox(width: spacing),
-                                Expanded(
-                                  child: QuickActionsGrid(
-                                    actions: _getQuickActions().map((a) => (
-                                      label: a.label,
-                                      icon: a.icon,
-                                      color: a.color,
-                                      onTap: () => AppRoutes.push(context, a.route)
-                                    )).toList(),
+                              )
+                            : Center(
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 600),
+                                  child: AIInsightCard(
+                                    onTap: () => AppRoutes.push(
+                                        context, AppRoutes.recommendations),
                                   ),
                                 ),
-                              ],
-                              const SizedBox(width: spacing),
-                            ],
-                          ),
-                        )
+                              )
                       else ...[
                         AIInsightCard(
                           onTap: () => AppRoutes.push(
