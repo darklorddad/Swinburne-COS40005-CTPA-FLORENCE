@@ -144,7 +144,9 @@ class _AppState extends ConsumerState<App> {
 
     if (session != null) {
       // Force invalidate providers on fresh login to prevent seeing previous user's data
-      if (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.passwordRecovery) {
+      if (data.event == AuthChangeEvent.signedIn || 
+          data.event == AuthChangeEvent.tokenRefreshed || 
+          data.event == AuthChangeEvent.passwordRecovery) {
         debugPrint('[App Listener] Sign-in detected. Invalidating providers to clear stale data.');
         ref.invalidate(monitorDataProvider);
         ref.invalidate(userProfileProvider);
@@ -164,7 +166,10 @@ class _AppState extends ConsumerState<App> {
       final createdAt = DateTime.parse(user.createdAt);
       final lastSignIn = user.lastSignInAt != null ? DateTime.parse(user.lastSignInAt!) : createdAt;
       final diffMinutes = lastSignIn.difference(createdAt).inMinutes.abs();
-      final isNewUser = data.event == AuthChangeEvent.signedIn && diffMinutes < 5;
+      
+      final isLoginEvent = data.event == AuthChangeEvent.signedIn || 
+                           data.event == AuthChangeEvent.tokenRefreshed;
+      final isNewUser = isLoginEvent && diffMinutes < 5;
 
       dynamic backendUser;
       try {
