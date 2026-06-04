@@ -62,6 +62,17 @@ class AdminSidebar extends StatelessWidget {
                     }
                   },
                 ),
+                _SidebarItem(
+                  icon: Icons.science_outlined,
+                  activeIcon: Icons.science_rounded,
+                  label: 'Data Simulator',
+                  isActive: currentRoute == AppRoutes.dataSimulator,
+                  onTap: () {
+                    if (currentRoute != AppRoutes.dataSimulator) {
+                      Navigator.pushReplacementNamed(context, AppRoutes.dataSimulator);
+                    }
+                  },
+                ),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Divider(color: AdminTheme.outlineVariant, height: 1),
@@ -141,7 +152,7 @@ class AdminSidebar extends StatelessWidget {
         children: [
           const CircleAvatar(
             radius: 20,
-            backgroundImage: NetworkImage('https://picsum.photos/id/200/200'),
+            child: Icon(Icons.person),
           ),
           const SizedBox(width: 12),
           Expanded(

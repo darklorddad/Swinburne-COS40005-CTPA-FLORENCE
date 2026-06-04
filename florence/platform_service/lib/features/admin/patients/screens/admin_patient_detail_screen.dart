@@ -219,7 +219,10 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                     CircleAvatar(
                                       radius: 40,
                                       backgroundColor: AdminTheme.primaryContainer,
-                                      backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=${p.id}'),
+                                      child: Text(
+                                        p.name.isNotEmpty ? p.name[0].toUpperCase() : '?',
+                                        style: const TextStyle(fontSize: 32, color: AdminTheme.onPrimaryContainer),
+                                      ),
                                     ),
                                     const SizedBox(width: 24),
                                     Column(

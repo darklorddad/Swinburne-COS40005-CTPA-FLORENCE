@@ -73,11 +73,14 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      runSpacing: 16,
       children: [
         Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
               width: 300,
@@ -94,7 +97,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: 16),
-            const CircleAvatar(radius: 18, backgroundImage: NetworkImage('https://picsum.photos/id/200/200/200')),
+            const CircleAvatar(radius: 18, child: Icon(Icons.person)),
           ],
         ),
       ],
@@ -239,10 +242,16 @@ class AdminDashboardScreen extends ConsumerWidget {
                   );
                 },),
             ),
-            // const SizedBox(width: 16),
-            // Expanded(
-            //   child: _QuickActionButton(icon: Icons.medical_information_outlined, label: 'Add Clinician'),
-            // ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.science_outlined,
+                label: 'Data Simulator',
+                onTap: () {
+                  Navigator.pushNamed(context, AppRoutes.dataSimulator);
+                },
+              ),
+            ),
           ],
         )
       ],
