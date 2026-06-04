@@ -225,7 +225,7 @@ class AdminDashboardScreen extends ConsumerWidget {
                       name: patient.name,
                       alert: alertText,
                       doctor: patient.clinicianName ?? 'Unassigned',
-                      isHighRisk: patient.isHighRisk,
+                      riskLevel: patient.riskLevel,
                     ),
                     if (!isLast) const Divider(height: 1, color: AdminTheme.outlineVariant),
                   ],
@@ -425,12 +425,33 @@ class _FeedItem extends StatelessWidget {
   final String name;
   final String alert;
   final String doctor;
-  final bool isHighRisk;
+  final String riskLevel;
 
-  const _FeedItem({required this.name, required this.alert, required this.doctor, required this.isHighRisk});
+  const _FeedItem({
+    required this.name, 
+    required this.alert, 
+    required this.doctor, 
+    required this.riskLevel,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final riskUpper = riskLevel.toUpperCase();
+    final isHighRisk = riskUpper == 'HIGH';
+    final isMediumRisk = riskUpper == 'MEDIUM';
+
+    final Color badgeColor = isHighRisk
+        ? AdminTheme.errorContainer
+        : (isMediumRisk
+            ? AdminTheme.surfaceContainerHighest
+            : AdminTheme.primaryContainer);
+            
+    final Color textColor = isHighRisk
+        ? AdminTheme.onErrorContainer
+        : (isMediumRisk
+            ? AdminTheme.onSurfaceVariant
+            : AdminTheme.onPrimaryContainer);
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Row(
@@ -482,13 +503,13 @@ class _FeedItem extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isHighRisk ? AdminTheme.errorContainer : AdminTheme.surfaceContainer,
+                  color: badgeColor,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  isHighRisk ? 'High Risk' : 'Medium Risk',
+                  '${riskLevel[0].toUpperCase()}${riskLevel.substring(1).toLowerCase()} Risk',
                   style: TextStyle(
-                    color: isHighRisk ? AdminTheme.onErrorContainer : AdminTheme.onSurfaceVariant,
+                    color: textColor,
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
