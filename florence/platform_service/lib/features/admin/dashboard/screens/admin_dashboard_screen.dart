@@ -7,11 +7,18 @@ import 'package:florence/features/admin/core/providers/admin_providers.dart';
 import 'package:florence/features/admin/core/models/admin_models.dart';
 import 'package:florence/features/admin/patients/widgets/add_patient_dialog.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
     final metricsAsync = ref.watch(adminMetricsProvider);
     final patientsAsync = ref.watch(adminPatientsProvider);
 
@@ -110,8 +117,9 @@ class AdminDashboardScreen extends ConsumerWidget {
 
   Widget _buildSearchField() {
     return TextField(
+      onChanged: (val) => setState(() => _searchQuery = val),
       decoration: InputDecoration(
-        hintText: 'Search patients, doctors.',
+        hintText: 'Search patients, doctors...',
         prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
         filled: true,
         fillColor: Colors.white,
@@ -180,8 +188,19 @@ class AdminDashboardScreen extends ConsumerWidget {
   }
 
   Widget _buildActionFeed(BuildContext context, List<AdminPatient> patients) {
-    // Show ANY patient that requires attention (High Risk, Hypo, or Hyper)
-    final attentionPatients = patients.where((p) => p.requiresAttention).take(6).toList();
+    // 1. Filter by search query
+    var filteredPatients = patients;
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filteredPatients = patients.where((p) => 
+        p.name.toLowerCase().contains(query) ||
+        (p.clinicianName?.toLowerCase().contains(query) ?? false) ||
+        p.id.toString().contains(query)
+      ).toList();
+    }
+
+    // 2. Show ANY patient that requires attention (High Risk, Hypo, or Hyper)
+    final attentionPatients = filteredPatients.where((p) => p.requiresAttention).take(6).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,10 +218,17 @@ class AdminDashboardScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         if (attentionPatients.isEmpty)
-          const Card(
+          Card(
             child: Padding(
-              padding: EdgeInsets.all(32.0),
-              child: Center(child: Text('All patient vitals are stable. ✅', style: TextStyle(color: AdminTheme.outline))),
+              padding: const EdgeInsets.all(32.0),
+              child: Center(
+                child: Text(
+                  _searchQuery.isNotEmpty 
+                    ? 'No matching flagged patients found.' 
+                    : 'All patient vitals are stable. ✅', 
+                  style: const TextStyle(color: AdminTheme.outline)
+                )
+              ),
             ),
           )
         else
