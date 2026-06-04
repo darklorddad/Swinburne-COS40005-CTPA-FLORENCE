@@ -30,6 +30,19 @@ class PatientProfileAdminUpdate(BaseModel):
 class AssignClinician(BaseModel):
     clinician_id: Optional[int] = None # Use None to unassign
 
+class SimulatorRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    scenario: str
+    days: int = 30
+
+DEFAULT_THRESHOLDS = [
+    {"data_type": "GLUCOSE", "min_value": 3.9, "max_value": 10.0},
+    {"data_type": "BLOOD_PRESSURE_SYSTOLIC", "min_value": 90.0, "max_value": 140.0},
+    {"data_type": "BLOOD_PRESSURE_DIASTOLIC", "min_value": 60.0, "max_value": 90.0}
+]
+
 class OrganisationCreate(BaseModel):
     name: str
     phone_number: Optional[str] = None
@@ -159,19 +172,144 @@ async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAd
 @router.delete("/patients/{patient_id}", summary="Remove any patient")
 async def delete_patient_by_admin(patient_id: int):
     """
-    Deletes a patient's profile. Note: This does not automatically delete the user from
-    Supabase Auth. That must be done separately if required.
+    Deletes a patient's profile and completely removes their account from Supabase Auth.
     """
     try:
-        deleted_profile_response = supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
-        if not deleted_profile_response.data:
+        profile = supabase.table('patient_profiles').select('user_id').eq('id', patient_id).execute()
+        if not profile.data:
             raise HTTPException(status_code=404, detail=f"Patient with id {patient_id} not found.")
         
-        return {"message": f"Patient profile with id {patient_id} deleted successfully."}
+        user_id = profile.data[0]['user_id']
+        
+        # Delete from DB (Triggers CASCADE if setup, but we do Auth delete next to wipe them fully)
+        supabase.table('patient_profiles').delete().eq('id', patient_id).execute()
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception:
+            pass
+        
+        return {"message": "Patient account completely wiped successfully."}
     except HTTPException as e:
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete patient: {str(e)}")
+
+@router.post("/simulator/generate", summary="Generate a synthetic patient via LLM")
+async def generate_synthetic_patient(req: SimulatorRequest):
+    """Creates an auth user, generates 30 days of data via LLM Engine, and bulk inserts it."""
+    import httpx
+    import os
+
+    # 1. Call LLM Engine (This can take 30+ seconds)
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "http://127.0.0.1:8001")
+        try:
+            res = await client.post(f"{llm_url}/simulator/generate", json={"scenario": req.scenario, "days": req.days})
+            res.raise_for_status()
+            sim_data = res.json()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"LLM Engine failed to generate data: {str(e)}")
+
+    # 2. Create User in Auth
+    try:
+        auth_res = supabase.auth.admin.create_user({
+            "email": req.email,
+            "password": req.password,
+            "email_confirm": True,
+            "user_metadata": {"name": req.name},
+            "app_metadata": {"role": "PATIENT"}
+        })
+        user_id = auth_res.user.id
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Auth creation failed (Does email exist?): {str(e)}")
+
+    try:
+        # 3. Create Patient Profile
+        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower()
+        profile_res = supabase.table('patient_profiles').insert({
+            "user_id": user_id,
+            "name": req.name,
+            "risk_level": "HIGH" if is_high_risk else "LOW"
+        }).execute()
+        patient_id = profile_res.data[0]['id']
+
+        # Settings & Thresholds
+        supabase.table('user_settings').upsert({"user_id": user_id, "glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}).execute()
+        thresholds = [{**t, 'patient_id': patient_id} for t in DEFAULT_THRESHOLDS]
+        supabase.table('patient_thresholds').insert(thresholds).execute()
+
+        # 4. Parse LLM Data & Bulk Insert
+        monitor_data = []
+        daily_logs = []
+        activity_logs = []
+        now = datetime.now()
+
+        for day in sim_data['days']:
+            log_date = (now - timedelta(days=day['day_offset'])).date()
+            base_time = datetime.combine(log_date, datetime.min.time())
+
+            # BP (Measured at 7 AM)
+            monitor_data.append({"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_SYSTOLIC", "value": day['systolic_bp'], "measured_at": (base_time + timedelta(hours=7)).isoformat()})
+            monitor_data.append({"patient_id": patient_id, "data_type": "BLOOD_PRESSURE_DIASTOLIC", "value": day['diastolic_bp'], "measured_at": (base_time + timedelta(hours=7)).isoformat()})
+
+            # Meals
+            for meal in day['meals']:
+                hour = 8 if meal['meal_time'] == 'BREAKFAST' else 13 if meal['meal_time'] == 'LUNCH' else 19
+                before_time = base_time + timedelta(hours=hour)
+                after_time = before_time + timedelta(hours=2)
+
+                daily_logs.append({
+                    "patient_id": patient_id,
+                    "log_date": log_date.isoformat(),
+                    "meal_time": meal['meal_time'],
+                    "meal_desc": meal['description'],
+                    "calories": meal['calories'],
+                    "glucose_before_meal": meal['glucose_before'],
+                    "glucose_after_meal": meal['glucose_after'],
+                    "glucose_before_meal_time": before_time.isoformat(),
+                    "glucose_after_meal_time": after_time.isoformat()
+                })
+                monitor_data.append({"patient_id": patient_id, "data_type": "GLUCOSE", "value": meal['glucose_before'], "measured_at": before_time.isoformat()})
+                monitor_data.append({"patient_id": patient_id, "data_type": "GLUCOSE", "value": meal['glucose_after'], "measured_at": after_time.isoformat()})
+
+            # Activity (Measured at 5 PM)
+            if day.get('activity'):
+                act = day['activity']
+                start = base_time + timedelta(hours=17)
+                end = start + timedelta(minutes=act['duration_minutes'])
+                activity_logs.append({
+                    "patient_id": patient_id,
+                    "activity_description": act['description'],
+                    "active_duration_minutes": act['duration_minutes'],
+                    "calories_burned": act['calories_burned'],
+                    "start_time": start.isoformat(),
+                    "end_time": end.isoformat()
+                })
+
+        # Monthly Vitals
+        v_time = now.isoformat()
+        monitor_data.extend([
+            {"patient_id": patient_id, "data_type": "HBA1C", "value": sim_data['hba1c'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "BMI", "value": sim_data['bmi'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_TOTAL", "value": sim_data['cholesterol_total'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_LDL", "value": sim_data['cholesterol_ldl'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_HDL", "value": sim_data['cholesterol_hdl'], "measured_at": v_time},
+            {"patient_id": patient_id, "data_type": "CHOLESTEROL_TRIGLYCERIDES", "value": sim_data['cholesterol_triglycerides'], "measured_at": v_time}
+        ])
+
+        if monitor_data: supabase.table('patient_monitor_data').insert(monitor_data).execute()
+        if daily_logs: supabase.table('daily_patient_logs').insert(daily_logs).execute()
+        if activity_logs: supabase.table('patient_activity_logs').insert(activity_logs).execute()
+
+        return {"message": "Synthetic patient generated successfully", "patient_id": patient_id}
+        
+    except Exception as e:
+        # Cleanup if generation failed halfway
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception:
+            pass
+        raise HTTPException(status_code=500, detail=f"Database insertion failed: {str(e)}")
 
 @router.put("/patients/{patient_id}/assign-clinician", summary="Assign/unassign a clinician to a patient")
 async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinician):

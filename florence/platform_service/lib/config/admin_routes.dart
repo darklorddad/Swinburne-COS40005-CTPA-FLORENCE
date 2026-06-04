@@ -5,6 +5,7 @@ import 'package:florence/features/admin/core/services/permission_service.dart';
 import 'package:florence/features/admin/core/models/admin_enums.dart';
 import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart';
 import 'package:florence/features/admin/patients/screens/admin_patient_detail_screen.dart';
+import 'package:florence/features/admin/simulator/screens/data_simulator_screen.dart';
 
 /// Admin Routes Configuration
 /// Centralized routing for admin-side of the application
@@ -41,6 +42,7 @@ class AdminRoutes {
   static const String editPatient = '/admin/patients/:id/edit';
   static const String patientHealthData = '/admin/patients/:id/health-data';
   static const String mergePatients = '/admin/patients/merge';
+  static const String dataSimulator = '/admin/data-simulator';
 
   // Roles & Permissions
   static const String roles = '/admin/roles';
@@ -239,6 +241,12 @@ class AdminRoutes {
             title: 'Merge Patients',
             route: mergePatients,
           ),
+        );
+
+      case AdminRoutes.dataSimulator:
+        return MaterialPageRoute(
+          builder: (_) => const DataSimulatorScreen(),
+          settings: settings,
         );
 
       // ==================== ROLES & PERMISSIONS ====================

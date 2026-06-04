@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// TODO: Import your actual providers and routing files here
-// import '../../../core/providers/theme_provider.dart';
-// import '../../../config/admin_routes.dart';
+import 'package:florence/config/admin_routes.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -176,7 +174,7 @@ class AdminDashboardScreen extends ConsumerWidget {
               Icons.science, 
               Colors.purple, 
               () {
-                // Navigator.pushNamed(context, AdminRoutes.dataSimulator);
+                Navigator.pushNamed(context, AdminRoutes.dataSimulator);
               }
             ),
             const SizedBox(height: 12),

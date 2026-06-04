@@ -5,6 +5,7 @@ import 'package:florence/features/admin/core/models/admin_models.dart';
 import 'package:florence/features/admin/core/providers/admin_providers.dart';
 import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 import 'package:florence/config/routes.dart';
+import 'package:florence/core/services/api_service.dart';
 
 class AdminPatientDetailScreen extends ConsumerStatefulWidget {
   final AdminPatient patient;
@@ -30,6 +31,47 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
   void dispose() {
     _clinicianIdController.dispose();
     super.dispose();
+  }
+
+  Future<void> _deletePatient() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Wipe Patient Account?'),
+        content: const Text('This will completely delete the user from the database and Auth system. This cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        final api = ApiService();
+        await api.delete('/admin/patients/${widget.patient.id}');
+        ref.invalidate(adminPatientsProvider);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Patient wiped completely.'), backgroundColor: AdminTheme.primary),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.adminPatientList);
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete: $e'), backgroundColor: AdminTheme.error),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
+    }
   }
 
   Future<void> _updateRiskLevel(String newRisk) async {
@@ -280,6 +322,20 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                         ),
                                       ],
                                     ],
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                // DELETE PATIENT BUTTON
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: OutlinedButton.icon(
+                                    onPressed: _isLoading ? null : _deletePatient,
+                                    icon: const Icon(Icons.delete_forever),
+                                    label: const Text('Wipe Patient Data & Account'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: AdminTheme.error,
+                                      side: const BorderSide(color: AdminTheme.error),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
