@@ -202,6 +202,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
 
     # 1. Call LLM Engine (This can take 30+ seconds)
     async with httpx.AsyncClient(timeout=120.0) as client:
+        # Defaults to localhost for local dev. Cloud uses Vercel Environment Variables.
         llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "http://127.0.0.1:8001")
         try:
             res = await client.post(f"{llm_url}/simulator/generate", json={"scenario": req.scenario, "days": req.days})
