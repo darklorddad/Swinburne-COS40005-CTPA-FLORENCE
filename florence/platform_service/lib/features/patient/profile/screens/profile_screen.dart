@@ -253,9 +253,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Edit Profile'),
+          title: const Text('Edit User Profile'),
           content: SizedBox(
-            width: double.maxFinite,
+            width: 600,
             child: SingleChildScrollView(
               child: Form(
                 key: formKey,
@@ -1034,6 +1034,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onPressed: () => _showDiseaseFormModal(context, ref),
                 icon: const Icon(Icons.add_circle_outline,
                     color: AppTheme.primaryBlue),
+                tooltip: 'Add Medical Condition',
               ),
             ],
           ),
@@ -1070,7 +1071,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 return const Padding(
                   padding: EdgeInsets.symmetric(vertical: 32),
                   child: Center(
-                    child: Text("No disease history found.",
+                    child: Text("No disease history found",
                         style: TextStyle(color: Colors.grey)),
                   ),
                 );
@@ -1080,7 +1081,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: filteredLogs.length,
-                separatorBuilder: (context, index) => const Divider(height: 24),
+                separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final log = filteredLogs[index];
                   final isActive = log.status.toLowerCase() == 'active';
@@ -1233,88 +1234,93 @@ void _showDiseaseFormModal(BuildContext context, WidgetRef ref, {DiseaseLog? exi
   DateTime? diagnosedDate = existingLog?.diagnosedDate;
   DateTime? resolvedDate = existingLog?.resolvedDate;
 
-  showDialog(
+  showModalBottomSheet(
     context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
     builder: (context) => StatefulBuilder(
-      builder: (context, setModalState) => AlertDialog(
-        title: Text(isEditing ? "Edit Condition" : "Log Medical Condition"),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Condition Name', hintText: 'e.g. Type 2 Diabetes'),
+      builder: (context, setModalState) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: status,
-                decoration: const InputDecoration(labelText: 'Status'),
-                items: const [
-                  DropdownMenuItem(value: 'active', child: Text("Active")),
-                  DropdownMenuItem(value: 'resolved', child: Text("Resolved")),
-                ],
-                onChanged: (val) => setModalState(() {
-                  status = val!;
-                  if (status == 'active') resolvedDate = null;
-                }),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(diagnosedDate == null ? "Select Diagnosed Date" : "Diagnosed: ${DateFormat('dd MMM yyyy').format(diagnosedDate!)}"),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  final date = await showDatePicker(
-                    context: context,
-                    initialDate: diagnosedDate ?? DateTime.now(),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (date != null) setModalState(() => diagnosedDate = date);
-                },
-              ),
-              if (status == 'resolved')
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(resolvedDate == null ? "Select Resolved Date" : "Resolved: ${DateFormat('dd MMM yyyy').format(resolvedDate!)}"),
-                  trailing: const Icon(Icons.calendar_today),
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: resolvedDate ?? DateTime.now(),
-                      firstDate: diagnosedDate ?? DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) setModalState(() => resolvedDate = date);
-                  },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isEditing ? "Edit Condition" : "Log Medical Condition",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(labelText: 'Condition Name', hintText: 'e.g. Type 2 Diabetes'),
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      initialValue: status,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      items: const [
+                        DropdownMenuItem(value: 'active', child: Text("Active")),
+                        DropdownMenuItem(value: 'resolved', child: Text("Resolved")),
+                      ],
+                      onChanged: (val) => setModalState(() {
+                        status = val!;
+                        if (status == 'active') resolvedDate = null;
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(diagnosedDate == null ? "Select Diagnosed Date" : "Diagnosed: ${DateFormat('dd MMM yyyy').format(diagnosedDate!)}"),
+                      trailing: const Icon(Icons.calendar_today),
+                      onTap: () async {
+                        final date = await showDatePicker(context: context, initialDate: diagnosedDate ?? DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime.now());
+                        if (date != null) setModalState(() => diagnosedDate = date);
+                      },
+                    ),
+                    if (status == 'resolved')
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(resolvedDate == null ? "Select Resolved Date" : "Resolved: ${DateFormat('dd MMM yyyy').format(resolvedDate!)}"),
+                        trailing: const Icon(Icons.calendar_today),
+                        onTap: () async {
+                          final date = await showDatePicker(context: context, initialDate: resolvedDate ?? DateTime.now(), firstDate: diagnosedDate ?? DateTime(1900), lastDate: DateTime.now());
+                          if (date != null) setModalState(() => resolvedDate = date);
+                        },
+                      ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          if (nameController.text.isNotEmpty) {
+                            final log = DiseaseLog(conditionName: nameController.text, status: status, diagnosedDate: diagnosedDate, resolvedDate: resolvedDate);
+                            if (isEditing) {
+                              await ref.read(diseaseLogProvider.notifier).updateLog(existingLog.id!, log);
+                            } else {
+                              await ref.read(diseaseLogProvider.notifier).addLog(log);
+                            }
+                            if (context.mounted) Navigator.pop(context);
+                          }
+                        },
+                        child: Text(isEditing ? "Save Changes" : "Save Condition"),
+                      ),
+                    ),
+                  ],
                 ),
-            ],
+              ),
+            ),
           ),
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              if (nameController.text.isNotEmpty) {
-                final log = DiseaseLog(
-                  conditionName: nameController.text,
-                  status: status,
-                  diagnosedDate: diagnosedDate,
-                  resolvedDate: resolvedDate,
-                );
-                if (isEditing) {
-                  await ref.read(diseaseLogProvider.notifier).updateLog(existingLog.id!, log);
-                } else {
-                  await ref.read(diseaseLogProvider.notifier).addLog(log);
-                }
-                if (context.mounted) Navigator.pop(context);
-              }
-            },
-            child: Text(isEditing ? "Save Changes" : "Save Condition"),
-          ),
-        ],
       ),
     ),
   );

@@ -106,7 +106,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => notifier.checkNow(),
                   icon: const Icon(Icons.bug_report_outlined, size: 16),
-                  label: const Text('Trigger LAM Check Now'),
+                  label: const Text('Trigger Check'),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppTheme.textSecondaryColor,
                     side: BorderSide(color: AppTheme.borderColor),
@@ -115,10 +115,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _buildFilterChips(allNotifications),
-              ),
+              _buildFilterChips(allNotifications),
               const SizedBox(height: 8),
               if (filteredNotifications.isEmpty)
                 Expanded(child: _buildEmptyState())
@@ -149,76 +146,65 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       return list.length;
     }
 
-    final filters = <({String label, NotificationType? type, bool unread})>[
-      (label: 'All', type: null, unread: false),
-      (label: 'Unread', type: null, unread: true),
-      (label: 'Alerts', type: NotificationType.alert, unread: false),
-      (label: 'Tips', type: NotificationType.educational, unread: false),
-      (label: 'Achievements', type: NotificationType.achievement, unread: false),
-      (label: 'Summaries', type: NotificationType.summary, unread: false),
+    final chips = <({String label, NotificationType? type, bool unread})>[
+      (label: 'All',          type: null,                          unread: false),
+      (label: 'Unread',       type: null,                          unread: true),
+      (label: 'Alerts',       type: NotificationType.alert,        unread: false),
+      (label: 'Tips',         type: NotificationType.educational,  unread: false),
+      (label: 'Achievements', type: NotificationType.achievement,  unread: false),
+      (label: 'Summaries',    type: NotificationType.summary,      unread: false),
       (label: 'Motivational', type: NotificationType.motivational, unread: false),
     ];
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withValues(alpha: 0.05)
-            : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: filters.map((f) {
-          final isSelected = f.unread
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: chips.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (_, i) {
+          final c = chips[i];
+          final isSelected = c.unread
               ? _showUnreadOnly && _selectedFilter == null
-              : !_showUnreadOnly && _selectedFilter == f.type;
-          final count = countFor(f.type, f.unread);
-          final color = _chipColor(f.type, f.unread);
+              : !_showUnreadOnly && _selectedFilter == c.type;
+          final count = countFor(c.type, c.unread);
+          final color = _chipColor(c.type, c.unread);
 
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (f.unread) {
-                    _showUnreadOnly = true;
-                    _selectedFilter = null;
-                  } else {
-                    _showUnreadOnly = false;
-                    _selectedFilter = f.type;
-                  }
-                });
-              },
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.white : Colors.transparent,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: isSelected
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          )
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    count > 0 ? '${f.label} $count' : f.label,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                      color: isSelected ? color : Colors.grey[600],
-                      fontSize: 11,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+          return FilterChip(
+            label: SizedBox(
+              width: 110,
+              child: Text(
+                count > 0 ? '${c.label} $count' : c.label,
+                textAlign: TextAlign.center,
               ),
             ),
+            selected: isSelected,
+            onSelected: (_) {
+              setState(() {
+                if (c.unread) {
+                  _showUnreadOnly = true;
+                  _selectedFilter = null;
+                } else {
+                  _showUnreadOnly = false;
+                  _selectedFilter = c.type;
+                }
+              });
+            },
+            showCheckmark: false,
+            selectedColor: color.withValues(alpha: 0.15),
+            side: BorderSide(
+              color: isSelected ? color : AppTheme.borderColor,
+            ),
+            labelStyle: TextStyle(
+              color: isSelected ? color : AppTheme.textSecondaryColor,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 13,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
           );
-        }).toList(),
+        },
       ),
     );
   }
