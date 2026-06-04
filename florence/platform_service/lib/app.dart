@@ -159,9 +159,11 @@ class _AppState extends ConsumerState<App> {
 
       final user = session.user;
 
-      // Detect if this is a brand new account (less than 5 mins old, handling clock skew)
-      final createdAt = DateTime.parse(user.createdAt).toUtc();
-      final diffMinutes = DateTime.now().toUtc().difference(createdAt).inMinutes.abs();
+      // Detect if this is a brand new account by comparing Supabase's internal server timestamps.
+      // This completely ignores your local computer/phone clock, preventing timezone or clock-skew bugs!
+      final createdAt = DateTime.parse(user.createdAt);
+      final lastSignIn = user.lastSignInAt != null ? DateTime.parse(user.lastSignInAt!) : createdAt;
+      final diffMinutes = lastSignIn.difference(createdAt).inMinutes.abs();
       final isNewUser = data.event == AuthChangeEvent.signedIn && diffMinutes < 5;
 
       dynamic backendUser;
