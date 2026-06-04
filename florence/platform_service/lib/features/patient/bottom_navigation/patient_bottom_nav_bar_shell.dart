@@ -362,86 +362,91 @@ class _PatientBottomNavBarShellState
 
   // ── Sheet content ──────────────────────────────────────────
   Widget _buildSheetContent(double navHeight) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x17000000),
-            blurRadius: 60,
-            offset: Offset(0, -20),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x17000000),
+                blurRadius: 60,
+                offset: Offset(0, -20),
+              ),
+            ],
           ),
-        ],
-      ),
-      // Add navHeight to the bottom padding so content sits above the nav bar cleanly
-      padding: EdgeInsets.fromLTRB(22, 14, 22, 40 + navHeight),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Drag pill (Now interactable with a larger hit area)
-          GestureDetector(
-            onTap: _closeSheet,
-            onVerticalDragUpdate: (details) {
-              // If the user drags the handle downwards, close the sheet
-              if (details.delta.dy > 2) {
-                _closeSheet();
-              }
-            },
-            behavior: HitTestBehavior.opaque, // Ensures the padding area is clickable
-            child: Padding(
-              // The padding acts as an invisible, larger touch target
-              padding: const EdgeInsets.only(bottom: 22, top: 4, left: 40, right: 40),
-              child: Container(
-                width: 38,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppTheme.getBorderColor(context),
-                  borderRadius: BorderRadius.circular(2),
+          // Add navHeight to the bottom padding so content sits above the nav bar cleanly
+          padding: EdgeInsets.fromLTRB(22, 14, 22, 40 + navHeight),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag pill (Now interactable with a larger hit area)
+              GestureDetector(
+                onTap: _closeSheet,
+                onVerticalDragUpdate: (details) {
+                  // If the user drags the handle downwards, close the sheet
+                  if (details.delta.dy > 2) {
+                    _closeSheet();
+                  }
+                },
+                behavior: HitTestBehavior.opaque, // Ensures the padding area is clickable
+                child: Padding(
+                  // The padding acts as an invisible, larger touch target
+                  padding: const EdgeInsets.only(bottom: 22, top: 4, left: 40, right: 40),
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppTheme.getBorderColor(context),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Text(
-            'Log Health Data',
-            // Updated to match the app theme typography
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+              Text(
+                'Log Health Data',
+                // Updated to match the app theme typography
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Select a metric to record',
+                style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
+              ),
+              const SizedBox(height: 22),
+              GridView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 10,
+                  mainAxisExtent: 100,
                 ),
+                itemCount: 8,
+                itemBuilder: (context, index) {
+                  final items = [
+                    (0, Icons.water_drop_rounded, 'Glucose', const Color(0xFFEF5350), AppRoutes.logGlucose),
+                    (1, Icons.monitor_heart_outlined, 'B.Pressure', const Color(0xFFF50057), AppRoutes.logBloodPressure),
+                    (2, Icons.restaurant_outlined, 'Diet', const Color(0xFFFFA726), AppRoutes.logMeal),
+                    (3, Icons.directions_run_rounded, 'Activity', const Color(0xFF66BB6A), AppRoutes.logActivity),
+                    (4, Icons.history_edu_rounded, 'Meds', const Color(0xFF42A5F5), AppRoutes.logMedication),
+                    (5, Icons.monitor_weight_outlined, 'BMI', const Color(0xFF26A69A), AppRoutes.logBmi),
+                    (6, Icons.bloodtype_outlined, 'Cholesterol', const Color(0xFFAB47BC), AppRoutes.logCholesterol),
+                    (7, Icons.pie_chart_outline, 'HbA1c', const Color(0xFFFFCA28), AppRoutes.logHba1c),
+                  ];
+                  final (i, icon, label, color, route) = items[index];
+                  return _logItem(i, icon, label, color, route);
+                },
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Select a metric to record',
-            style: TextStyle(fontSize: 12.5, color: Color(0xFF9CA3AF)),
-          ),
-          const SizedBox(height: 22),
-          GridView.builder(
-            padding: EdgeInsets.zero,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 10,
-              mainAxisExtent: 100,
-            ),
-            itemCount: 8,
-            itemBuilder: (context, index) {
-              final items = [
-                (0, Icons.water_drop_rounded, 'Glucose', const Color(0xFFEF5350), AppRoutes.logGlucose),
-                (1, Icons.monitor_heart_outlined, 'B.Pressure', const Color(0xFFF50057), AppRoutes.logBloodPressure),
-                (2, Icons.restaurant_outlined, 'Diet', const Color(0xFFFFA726), AppRoutes.logMeal),
-                (3, Icons.directions_run_rounded, 'Activity', const Color(0xFF66BB6A), AppRoutes.logActivity),
-                (4, Icons.history_edu_rounded, 'Meds', const Color(0xFF42A5F5), AppRoutes.logMedication),
-                (5, Icons.monitor_weight_outlined, 'BMI', const Color(0xFF26A69A), AppRoutes.logBmi),
-                (6, Icons.bloodtype_outlined, 'Cholesterol', const Color(0xFFAB47BC), AppRoutes.logCholesterol),
-                (7, Icons.pie_chart_outline, 'HbA1c', const Color(0xFFFFCA28), AppRoutes.logHba1c),
-              ];
-              final (i, icon, label, color, route) = items[index];
-              return _logItem(i, icon, label, color, route);
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -21,14 +21,19 @@ class MedicationLoggingScreen extends ConsumerWidget {
       body: const SafeArea(
         child: SingleChildScrollView(
           physics: AlwaysScrollableScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Reusing the refactored section
-                MedicationLoggingSection(),
-              ],
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 600),
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Reusing the refactored section
+                    MedicationLoggingSection(),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
