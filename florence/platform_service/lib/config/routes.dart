@@ -193,34 +193,34 @@ class AppRoutes {
 
       // --- ADMIN ROUTES ---
       case adminDashboard:
-        return _buildRoute(const AdminDashboardScreen(), settings);
+        return _buildAdminRoute(const AdminDashboardScreen(), settings);
 
       case adminLogin:
-        return _buildRoute(const AdminLoginScreen(), settings);
+        return _buildAdminRoute(const AdminLoginScreen(), settings);
 
       case adminPatientList:
-        return _buildRoute(const PatientDirectoryScreen(), settings);
+        return _buildAdminRoute(const PatientDirectoryScreen(), settings);
 
       case adminPatientDetail:
         if (args is AdminPatient) {
-          return _buildRoute(AdminPatientDetailScreen(patient: args), settings);
+          return _buildAdminRoute(AdminPatientDetailScreen(patient: args), settings);
         }
-        return _buildRoute(const _PlaceholderScreen(title: 'Error: Missing Patient Data'), settings);
+        return _buildAdminRoute(const _PlaceholderScreen(title: 'Error: Missing Patient Data'), settings);
 
       case organizations:
-        return _buildRoute(const OrganizationDirectoryScreen(), settings);
+        return _buildAdminRoute(const OrganizationDirectoryScreen(), settings);
 
       case organizationDetail:
         if (args is AdminOrganization) {
-          return _buildRoute(OrganizationDetailScreen(organization: args), settings);
+          return _buildAdminRoute(OrganizationDetailScreen(organization: args), settings);
         }
-        return _buildRoute(const _PlaceholderScreen(title: 'Error: Missing Data'), settings);
+        return _buildAdminRoute(const _PlaceholderScreen(title: 'Error: Missing Data'), settings);
 
       case dataSimulator:
-        return _buildRoute(const DataSimulatorScreen(), settings);
+        return _buildAdminRoute(const DataSimulatorScreen(), settings);
 
       case adminSettings:
-        return _buildRoute(
+        return _buildAdminRoute(
           const Scaffold(
             body: Row(
               children: [
@@ -257,6 +257,16 @@ class AppRoutes {
   /// Helper method to build routes with premium iOS-style transitions
   static Route<dynamic> _buildRoute(Widget page, [RouteSettings? settings]) {
     return CupertinoPageRoute(builder: (_) => page, settings: settings);
+  }
+
+  /// Helper method for Admin routes (removes slide transition for a web-like feel)
+  static Route<dynamic> _buildAdminRoute(Widget page, [RouteSettings? settings]) {
+    return PageRouteBuilder(
+      settings: settings,
+      pageBuilder: (_, __, ___) => page,
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
+    );
   }
 
   /// Navigation helpers
