@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florence/config/routes.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
@@ -25,11 +26,11 @@ class MedicationLoggingScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
-              icon: const Icon(Icons.history),
+              icon: const Icon(Icons.medical_services_outlined),
               onPressed: () {
-                Helpers.showInfo(context, 'Medication history coming soon');
+                Navigator.pushNamed(context, AppRoutes.profile);
               },
-              tooltip: 'View History',
+              tooltip: 'Medication Cabinet',
             ),
           ),
         ],

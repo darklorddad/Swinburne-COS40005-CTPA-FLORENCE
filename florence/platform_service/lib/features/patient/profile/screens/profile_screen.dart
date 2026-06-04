@@ -1053,7 +1053,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 16),
-
+          const Divider(height: 1),
           diseaseLogsAsync.when(
             data: (logs) {
               final filteredLogs = logs.where((log) {
