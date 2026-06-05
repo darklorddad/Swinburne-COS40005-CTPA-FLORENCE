@@ -10,6 +10,8 @@ import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 
 /// Log Medication Screen
 /// Allows users to record medication intake
@@ -81,6 +83,13 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       );
       
       ref.invalidate(monitorDataProvider);
+
+      // NEW: Silently trigger AI to re-evaluate daily recommendations
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily', 
+        hideToast: true,
+      );
+      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');

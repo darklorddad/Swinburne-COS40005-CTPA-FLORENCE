@@ -10,6 +10,8 @@ import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -140,6 +142,13 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       ref.invalidate(userProfileProvider);
       ref.invalidate(core_providers.monitorDataProvider);
       ref.read(notificationProvider.notifier).checkAfterBmiLog(_calculatedBmi);
+
+      // NEW: Silently trigger AI to re-evaluate daily recommendations
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily', 
+        hideToast: true,
+      );
+      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged and profile updated!');

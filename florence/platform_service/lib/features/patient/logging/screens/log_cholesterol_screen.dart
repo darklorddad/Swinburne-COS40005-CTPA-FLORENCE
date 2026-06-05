@@ -13,6 +13,8 @@ import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -341,6 +343,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         double.tryParse(_ldlController.text.trim().replaceAll(',', '.')),
         double.tryParse(_hdlController.text.trim().replaceAll(',', '.')),
       );
+
+      // NEW: Silently trigger AI to re-evaluate daily recommendations
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily', 
+        hideToast: true,
+      );
+      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(
