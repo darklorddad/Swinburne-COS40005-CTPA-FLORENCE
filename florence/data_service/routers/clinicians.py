@@ -278,8 +278,15 @@ async def update_patient_medication(
 ):
     """Updates dose, type form layout definitions or frequency schedules for a medication."""
     try:
-        update_data = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
-        if "status" in update_data:
+        update_data = payload.model_dump(exclude_unset=True)
+        
+        # Enforce the constraint: if one is set, the other must be null
+        if 'custom_medication_name' in update_data and update_data['custom_medication_name'] is not None:
+            update_data['medication_id'] = None
+        elif 'medication_id' in update_data and update_data['medication_id'] is not None:
+            update_data['custom_medication_name'] = None
+
+        if "status" in update_data and update_data["status"] is not None:
             update_data["status"] = update_data["status"].upper()
 
         res = supabase.table("patient_medications").update(update_data).eq("id", medication_id).execute()
