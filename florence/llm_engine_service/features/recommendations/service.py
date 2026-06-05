@@ -12,7 +12,7 @@ from features.recommendations.models import (
 )
 
 _SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
-You will receive a patient's health summary. Generate 2–3 concise, evidence-based health recommendations.
+You will receive a patient's health summary. Generate 0 to 3 concise, evidence-based health recommendations.
 
 ## Clinical Targets
 - Glucose: 70–180 mg/dL (TIR ≥70%)
