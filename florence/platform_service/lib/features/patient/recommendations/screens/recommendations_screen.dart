@@ -488,10 +488,7 @@ class _RecommendationsScreenState
                               Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
                               
                               // 2. RECOMMENDATIONS
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                                child: _buildSectionHeader(active.length, recs, active),
-                              ),
+                              _buildSectionHeader(active.length, recs, active),
                               if (filtered.isEmpty && !_isGenerating)
                                 Padding(
                                   padding: const EdgeInsets.all(16),
@@ -655,37 +652,35 @@ class _RecommendationsScreenState
           const SizedBox(height: 12),
 
           // Description text (centred)
-          Text(
-            active.isEmpty
-                ? 'Your health data is being analysed.'
-                : 'You have $count active health signal${count == 1 ? '' : 's'}. Review each for personalised guidance.',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppTheme.getTextSecondaryColor(context),
-              height: 1.5,
-            ),
-          ),
-
-          // "N signals" pill
-          if (count > 0) ...[
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryBlue.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25)),
-              ),
-              child: Text(
-                '$count signal${count == 1 ? '' : 's'}',
-                style: const TextStyle(
-                  color: AppTheme.primaryBlue,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+          active.isEmpty
+              ? Text(
+                  'Your health data is being analysed.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.getTextSecondaryColor(context),
+                        height: 1.5,
+                      ),
+                )
+              : Text.rich(
+                  TextSpan(
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.getTextSecondaryColor(context),
+                          height: 1.5,
+                        ),
+                    children: [
+                      const TextSpan(text: 'You have '),
+                      TextSpan(
+                        text: '$count active health signal${count == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                          color: AppTheme.primaryBlue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const TextSpan(text: '. Review each for personalised guidance.'),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -693,14 +688,14 @@ class _RecommendationsScreenState
 
   // ── Section header (with inline refresh + filter actions) ─────
   Widget _buildSectionHeader(
-      int count, List<HealthRecommendation> recs, List<HealthRecommendation> all) {
+      int count, List<HealthRecommendation> recs, List<HealthRecommendation> active) {
     final generatedAt = recs.isNotEmpty ? recs.first.generatedAt : DateTime.now();
     final isStale = DateTime.now().difference(generatedAt).inHours >= 24;
     final freshnessText = _freshnessLabel(generatedAt);
     final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(0, 0, 8, 4),
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -708,12 +703,25 @@ class _RecommendationsScreenState
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.tips_and_updates_outlined,
+                  color: AppTheme.primaryBlue,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   'Your recommendations',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                        fontWeight: FontWeight.w700,
+                      ),
                 ),
               ),
               // Refresh icon button
@@ -747,7 +755,7 @@ class _RecommendationsScreenState
                 clipBehavior: Clip.none,
                 children: [
                   OutlinedButton.icon(
-                    onPressed: all.isNotEmpty ? () => _openFilterSheet(all) : null,
+                    onPressed: active.isNotEmpty ? () => _openFilterSheet(active) : null,
                     icon: Icon(Icons.tune_rounded,
                         size: 15,
                         color: hasFilter
@@ -810,43 +818,23 @@ class _RecommendationsScreenState
             ],
           ),
 
-          // ── Subtitle: freshness · signal count ──
+          // ── Subtitle: freshness ──
           Padding(
-            padding: const EdgeInsets.only(top: 2, right: 8),
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: isStale ? () async {
-                    await _generateRecommendations(timeframe: 'daily');
-                    await _generateRecommendations(timeframe: 'weekly');
-                  } : null,
-                  child: Text(
-                    freshnessText,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isStale
-                          ? AppTheme.warningColor
-                          : AppTheme.textSecondaryColor,
-                    ),
-                  ),
+            padding: const EdgeInsets.only(top: 2, left: 56),
+            child: GestureDetector(
+              onTap: isStale ? () async {
+                await _generateRecommendations(timeframe: 'daily');
+                await _generateRecommendations(timeframe: 'weekly');
+              } : null,
+              child: Text(
+                freshnessText,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isStale
+                      ? AppTheme.warningColor
+                      : AppTheme.textSecondaryColor,
                 ),
-                if (count > 0) ...[
-                  Text(
-                    '  ·  ',
-                    style: TextStyle(
-                        fontSize: 13,
-                        color: AppTheme.textSecondaryColor),
-                  ),
-                  Text(
-                    '$count signal${count == 1 ? '' : 's'}',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.primaryBlue,
-                    ),
-                  ),
-                ],
-              ],
+              ),
             ),
           ),
           const SizedBox(height: 12),
