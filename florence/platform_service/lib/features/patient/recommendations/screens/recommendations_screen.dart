@@ -435,8 +435,13 @@ class _RecommendationsScreenState
                   constraints: const BoxConstraints(maxWidth: 900),
                   child: RefreshIndicator(
                     onRefresh: () async {
-                      await _generateRecommendations(timeframe: 'daily');
-                      await _generateRecommendations(timeframe: 'weekly');
+                      // Pull-to-refresh: Sync existing recommendations and health data from DB
+                      // WITHOUT triggering a new LLM generation.
+                      ref.invalidate(recommendationProvider);
+                      ref.invalidate(core_data.monitorDataProvider);
+
+                      // Wait for the database fetch to complete before stopping the spinner
+                      await ref.read(recommendationProvider.future);
                     },
                     child: ScrollConfiguration(
                       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
