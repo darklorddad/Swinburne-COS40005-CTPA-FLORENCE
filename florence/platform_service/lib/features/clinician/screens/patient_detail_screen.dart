@@ -699,17 +699,31 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       children: [
         // BMI Card
         GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BmiAnalyticsScreen(
-                patient: _patient!,
-                readings: _healthData!.bmiReadings,
-                currentWeight: _healthData!.weight,
-                currentHeight: _healthData!.height,
+          onTap: () {
+            double lowThreshold = 18.5;
+            double highThreshold = 24.9;
+            if (_patientThresholds != null) {
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'BMI');
+                lowThreshold = (t['min_value'] as num).toDouble();
+                highThreshold = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BmiAnalyticsScreen(
+                  patient: _patient!,
+                  readings: _healthData!.bmiReadings,
+                  currentWeight: _healthData!.weight,
+                  currentHeight: _healthData!.height,
+                  lowThreshold: lowThreshold,
+                  highThreshold: highThreshold,
+                ),
               ),
-            ),
-          ),
+            );
+          },
           child: Card(
             elevation: 0,
             shape: RoundedRectangleBorder(

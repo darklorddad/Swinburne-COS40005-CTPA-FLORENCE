@@ -11,6 +11,8 @@ class BmiAnalyticsScreen extends ConsumerStatefulWidget {
   final List<BmiReading> readings;
   final double currentWeight;
   final double currentHeight;
+  final double lowThreshold;
+  final double highThreshold;
 
   const BmiAnalyticsScreen({
     super.key,
@@ -18,6 +20,8 @@ class BmiAnalyticsScreen extends ConsumerStatefulWidget {
     required this.readings,
     required this.currentWeight,
     required this.currentHeight,
+    required this.lowThreshold,
+    required this.highThreshold,
   });
 
   @override
@@ -220,6 +224,8 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
                 height: 250,
                 child: BmiChart(
                   readings: _filteredReadingsAsc,
+                  lowThreshold: widget.lowThreshold,
+                  highThreshold: widget.highThreshold,
                 ),
               ),
               const SizedBox(height: 16),
@@ -318,8 +324,8 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final r = pageItems[index];
-                    final isHigh = r.value >= 25.0;
-                    final isLow = r.value < 18.5;
+                    final isHigh = r.value > widget.highThreshold;
+                    final isLow = r.value < widget.lowThreshold;
                     final status = isHigh ? 'ABOVE TARGET' : (isLow ? 'BELOW TARGET' : 'NORMAL');
                     final color = isHigh ? AppTheme.mediumRiskColor : (isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
 
