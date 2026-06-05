@@ -122,36 +122,35 @@ String _dataSourceLabel(String type) {
 
 /// Computes a clinical 0-100 score based on actual health metrics
 int _computeVitalityIndex(core_repo.HealthDataState? data) {
-  if (data == null) return 85;
+  if (data == null) return 50; // Neutral default while loading
+
   final summary = data.getHealthSummary(
     startDate: DateTime.now().subtract(const Duration(days: 7)),
     endDate: DateTime.now(),
   );
 
-  // If they haven't logged ANYTHING in 7 days, plummet the score to show severe lack of tracking
-  if (summary.totalReadings == 0 && summary.totalActivityMinutes == 0 && summary.totalMeals == 0) {
-    return 25; // "Depleted" status due to unmonitored risk
-  }
+  // 1. True Zero: If completely inactive, score is 0
+  final totalLogs = summary.totalReadings + summary.totalMeals + (summary.totalActivityMinutes > 0 ? 1 : 0);
+  if (totalLogs == 0) return 0; 
 
-  // 1. Glucose Control (40 pts)
-  double glucoseScore = 0.0;
-  if (summary.totalReadings > 0) {
-    glucoseScore = (summary.timeInRange / 100.0) * 40.0;
-  }
+  // 2. Glucose Control (40 points)
+  final glucoseScore = (summary.timeInRange / 100.0) * 40.0;
 
-  // 2. Activity (30 pts)
-  double activityScore = (summary.totalActivityMinutes / 150.0) * 30.0;
-  if (activityScore > 30.0) activityScore = 30.0;
+  // 3. Physical Activity (15 points) - Target: 150 minutes per week
+  final activityScore = (summary.totalActivityMinutes / 150.0).clamp(0.0, 1.0) * 15.0;
 
-  // 3. Adherence (30 pts)
-  double adherenceScore = 0.0;
+  // 4. Medication Adherence (20 points)
+  double adherenceScore = 20.0; // Full points if no medications are prescribed
   if (summary.currentMedications.isNotEmpty) {
-    adherenceScore = summary.medicationAdherence * 30.0;
-  } else {
-    adherenceScore = 30.0; // Free points if no meds needed
+    adherenceScore = summary.medicationAdherence * 20.0;
   }
 
-  return (glucoseScore + activityScore + adherenceScore).clamp(20, 100).toInt();
+  // 5. Engagement & Consistency (25 points) - Rewards the habit of tracking (~14 logs/week)
+  final engagementScore = (totalLogs / 14.0).clamp(0.0, 1.0) * 25.0;
+
+  // Calculate final score (guaranteed 0 to 100)
+  final rawScore = glucoseScore + activityScore + adherenceScore + engagementScore;
+  return rawScore.clamp(0, 100).round();
 }
 
 /// Returns (ringStart, ringEnd, stateLabel).
@@ -327,10 +326,10 @@ class _RecommendationsScreenState
 
       final nowUtc = DateTime.now().toUtc();
 
-      // Needs Daily if: never checked, checked >24h ago, or new data was logged AFTER the last check (with 1 min buffer)
+      // Needs Daily if: never checked, checked >24h ago, or new data was logged AFTER the last check
       bool needsDaily = lastDailyCheck == null ||
           nowUtc.difference(lastDailyCheck).inHours >= 24 ||
-          (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck.add(const Duration(minutes: 1))));
+          (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck)); // Removed 1-minute grace period
 
       bool needsWeekly = lastWeeklyCheck == null ||
           nowUtc.difference(lastWeeklyCheck).inDays >= 7;
