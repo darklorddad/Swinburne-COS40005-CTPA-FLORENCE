@@ -292,28 +292,33 @@ class _RecommendationsScreenState
       final recs = await ref.read(recommendationProvider.future);
       if (!mounted) return;
 
-      // Get latest data timestamp (Wait for data to load to avoid nulls)
+      // Get latest data timestamp
       final healthData = await ref.read(core_data.monitorDataProvider.future);
       DateTime? latestDataTime;
-      
-      final times = [
-        if (healthData.allMonitorData.isNotEmpty) healthData.allMonitorData.first.measuredAt.toUtc(),
-        if (healthData.meals.isNotEmpty) healthData.meals.first.timestamp.toUtc(),
-        if (healthData.activities.isNotEmpty) healthData.activities.first.startTime.toUtc(),
-      ];
-      if (times.isNotEmpty) {
-        times.sort((a, b) => b.compareTo(a));
-        latestDataTime = times.first;
+      if (healthData != null) {
+        final times = <DateTime>[];
+        if (healthData.allMonitorData.isNotEmpty) times.add(healthData.allMonitorData.first.measuredAt);
+        if (healthData.meals.isNotEmpty) times.add(healthData.meals.first.timestamp);
+        if (healthData.activities.isNotEmpty) times.add(healthData.activities.first.startTime);
+        
+        if (times.isNotEmpty) {
+          // Force all to UTC to prevent local timezone parsing bugs
+          final utcTimes = times.map((t) => t.isUtc ? t : t.toUtc()).toList();
+          utcTimes.sort((a, b) => b.compareTo(a));
+          latestDataTime = utcTimes.first;
+        }
       }
 
-      // Check SharedPreferences for last generation timestamp
       final prefs = await SharedPreferences.getInstance();
       final lastDailyCheckStr = prefs.getString('last_daily_ai_check');
       final lastWeeklyCheckStr = prefs.getString('last_weekly_ai_check');
       
-      // Force UTC to prevent timezone/clock-skew bugs between device and server
-      DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr).toUtc() : null;
-      DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr).toUtc() : null;
+      // Parse and force UTC
+      DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr) : null;
+      if (lastDailyCheck != null && !lastDailyCheck.isUtc) lastDailyCheck = lastDailyCheck.toUtc();
+      
+      DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr) : null;
+      if (lastWeeklyCheck != null && !lastWeeklyCheck.isUtc) lastWeeklyCheck = lastWeeklyCheck.toUtc();
 
       final nowUtc = DateTime.now().toUtc();
 
@@ -322,22 +327,24 @@ class _RecommendationsScreenState
           nowUtc.difference(lastDailyCheck).inHours >= 24 ||
           (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck.add(const Duration(minutes: 1))));
 
-      // Needs Weekly if: never checked, or checked >7 days ago
       bool needsWeekly = lastWeeklyCheck == null ||
           nowUtc.difference(lastWeeklyCheck).inDays >= 7;
 
+      // 🔍 DEBUG PRINTS (Check your terminal to verify these are working)
+      debugPrint('🔍 [CheckAndLoad] latestDataTime (UTC): $latestDataTime');
+      debugPrint('🔍 [CheckAndLoad] lastDailyCheck (UTC): $lastDailyCheck');
+      debugPrint('🔍 [CheckAndLoad] needsDaily: $needsDaily | needsWeekly: $needsWeekly');
+
       bool generatedAny = false;
-      
       if (needsDaily) {
         await _generateRecommendations(timeframe: 'daily', hideToast: true);
         generatedAny = true;
       }
-      
       if (needsWeekly && mounted) {
         await _generateRecommendations(timeframe: 'weekly', hideToast: true);
         generatedAny = true;
       }
-      
+
       if (!generatedAny && mounted) {
         _scoreCtrl.forward();
       }
