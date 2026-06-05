@@ -297,10 +297,10 @@ class _RecommendationsScreenState
       DateTime? latestDataTime;
       if (healthData != null) {
         final times = <DateTime>[];
-        // Use .last to get the MOST RECENT item (assuming backend returns chronological order)
-        if (healthData.allMonitorData.isNotEmpty) times.add(healthData.allMonitorData.last.measuredAt);
-        if (healthData.meals.isNotEmpty) times.add(healthData.meals.last.timestamp);
-        if (healthData.activities.isNotEmpty) times.add(healthData.activities.last.startTime);
+        // The data repository sorts descending (newest first), so .first is the most recent item
+        if (healthData.allMonitorData.isNotEmpty) times.add(healthData.allMonitorData.first.measuredAt);
+        if (healthData.meals.isNotEmpty) times.add(healthData.meals.first.timestamp);
+        if (healthData.activities.isNotEmpty) times.add(healthData.activities.first.startTime);
         
         if (times.isNotEmpty) {
           // Force all to UTC to prevent local timezone parsing bugs
