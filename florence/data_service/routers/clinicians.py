@@ -583,7 +583,10 @@ async def set_patient_thresholds(patient_id: int, thresholds: List[PatientThresh
             } for t in thresholds
         ]
         
-        updated_thresholds = supabase.table('patient_thresholds').upsert(upsert_payload).execute()
+        updated_thresholds = supabase.table('patient_thresholds').upsert(
+            upsert_payload,
+            on_conflict="patient_id,data_type"
+        ).execute()
         
         return updated_thresholds.data
     except HTTPException as e:
