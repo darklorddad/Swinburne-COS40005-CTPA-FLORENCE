@@ -292,8 +292,8 @@ class _RecommendationsScreenState
       final recs = await ref.read(recommendationProvider.future);
       if (!mounted) return;
 
-      // Get latest data timestamp
-      final healthData = ref.read(core_data.monitorDataProvider).value;
+      // Get latest data timestamp (Wait for it to finish loading to avoid stale data triggers)
+      final healthData = await ref.read(core_data.monitorDataProvider.future);
       DateTime? latestDataTime;
       if (healthData != null) {
         final times = [

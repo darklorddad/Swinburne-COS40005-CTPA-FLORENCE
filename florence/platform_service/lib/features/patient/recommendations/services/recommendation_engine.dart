@@ -12,7 +12,6 @@ import 'package:florence/core/services/api_service.dart';
 final recommendationProvider =
     AsyncNotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(
   RecommendationNotifier.new,
-  isAutoDispose: true,
 );
 
 class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
