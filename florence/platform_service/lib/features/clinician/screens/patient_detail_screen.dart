@@ -2507,20 +2507,26 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     _showAddMedicationDialog();
   }
 
-  void _showAddMedicationDialog() {
-    showDialog(
+  Future<void> _showAddMedicationDialog() async {
+    final refresh = await showDialog<bool>(
       context: context,
       builder: (context) => ClinicianMedicationFormDialog(
           isEdit: false, patientId: widget.patientId),
     );
+    if (refresh == true && mounted) {
+      _loadPatientData();
+    }
   }
 
-  void _showEditMedicationDialog(dynamic medication) {
-    showDialog(
+  Future<void> _showEditMedicationDialog(dynamic medication) async {
+    final refresh = await showDialog<bool>(
       context: context,
       builder: (context) => ClinicianMedicationFormDialog(
           isEdit: true, medication: medication, patientId: widget.patientId),
     );
+    if (refresh == true && mounted) {
+      _loadPatientData();
+    }
   }
 
   Widget _buildHeaderPill(String text, IconData icon, Color color, Color bgColor) {
@@ -3200,7 +3206,7 @@ class _ClinicianMedicationFormDialogState
                             }
 
                             if (mounted) {
-                              Navigator.pop(context);
+                              Navigator.pop(context, true);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                     content: Text(widget.isEdit
