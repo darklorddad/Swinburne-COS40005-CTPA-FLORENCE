@@ -418,8 +418,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               _glucoseUnit,
               Icons.water_drop_outlined,
               _healthData!.glucoseReadings.isNotEmpty
-                  ? _getGlucoseRiskLevel(
-                      _healthData!.glucoseReadings.last.value, _glucoseUnit)
+                  ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value)
                   : 'no_data',
               _healthData!.glucoseReadings.isNotEmpty
                   ? _healthData!.glucoseReadings.last.timestamp
@@ -629,11 +628,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   // Helper Methods for Risk Levels
-  String _getGlucoseRiskLevel(double rawValue, String unit) {
-    // Normalize the incoming value to mmol/L for standardized logic
-    // If the incoming value is in mg/dL, convert it back to mmol/L
-    double mmolValue = (unit == 'mg/dL') ? (rawValue / 18.018) : rawValue;
-
+  String _getGlucoseRiskLevel(double mmolValue) {
     // Perform comparison using normalized mmol/L units
     if (mmolValue < 3.9 || mmolValue > 10.0) return 'high';
     if (mmolValue > 7.8) return 'medium';
@@ -655,7 +650,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   String _getCholesterolRiskLevel(double total, double ldl, double trig) {
     final totalMgDl = total * 38.67;
     final ldlMgDl = ldl * 38.67;
-    final trigMgDl = trig * 38.67;
+    final trigMgDl = trig * 88.57;
 
     if (totalMgDl >= 240 || ldlMgDl >= 160 || trigMgDl >= 200) return 'high';
     if (totalMgDl >= 200 || ldlMgDl >= 130 || trigMgDl >= 150) return 'medium';
@@ -704,17 +699,31 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
       children: [
         // BMI Card
         GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BmiAnalyticsScreen(
-                patient: _patient!,
-                readings: _healthData!.bmiReadings,
-                currentWeight: _healthData!.weight,
-                currentHeight: _healthData!.height,
+          onTap: () {
+            double lowThreshold = 18.5;
+            double highThreshold = 24.9;
+            if (_patientThresholds != null) {
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'BMI');
+                lowThreshold = (t['min_value'] as num).toDouble();
+                highThreshold = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BmiAnalyticsScreen(
+                  patient: _patient!,
+                  readings: _healthData!.bmiReadings,
+                  currentWeight: _healthData!.weight,
+                  currentHeight: _healthData!.height,
+                  lowThreshold: lowThreshold,
+                  highThreshold: highThreshold,
+                ),
               ),
-            ),
-          ),
+            );
+          },
           child: Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
@@ -765,15 +774,41 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   statusColor: hasGlucose ? (latestGlucose.isHigh ? AppTheme.highRiskColor : (latestGlucose.isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor)) : Colors.grey,
                   icon: Icons.water_drop,
                   hasData: hasGlucose,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => GlucoseAnalyticsScreen(
-                        patient: _patient!,
-                        readings: _healthData!.glucoseReadings,
+                  onTap: () {
+                    double lowThreshold = 3.9;
+                    double highThreshold = 10.0;
+                    if (_patientThresholds != null) {
+                      try {
+                        final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'GLUCOSE');
+                        lowThreshold = (t['min_value'] as num).toDouble();
+                        highThreshold = (t['max_value'] as num).toDouble();
+                      } catch (_) {}
+                    }
+
+                    final displayLow = _displayGlucose(lowThreshold);
+                    final displayHigh = _displayGlucose(highThreshold);
+
+                    final displayReadings = _healthData!.glucoseReadings.map((r) {
+                      return GlucoseReading(
+                        timestamp: r.timestamp,
+                        value: _displayGlucose(r.value),
+                        context: r.context,
+                      );
+                    }).toList();
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GlucoseAnalyticsScreen(
+                          patient: _patient!,
+                          readings: displayReadings,
+                          lowThreshold: displayLow,
+                          highThreshold: displayHigh,
+                          glucoseUnit: _glucoseUnit,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 16),
@@ -785,15 +820,29 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   statusColor: hasHbA1c ? (latestHbA1c.value < 5.7 ? AppTheme.lowRiskColor : AppTheme.highRiskColor) : Colors.grey,
                   icon: Icons.pie_chart,
                   hasData: hasHbA1c,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HbA1cAnalyticsScreen(
-                        patient: _patient!,
-                        readings: _healthData!.hbA1cReadings,
+                  onTap: () {
+                    double lowThreshold = 4.0;
+                    double highThreshold = 5.7;
+                    if (_patientThresholds != null) {
+                      try {
+                        final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'HBA1C');
+                        lowThreshold = (t['min_value'] as num).toDouble();
+                        highThreshold = (t['max_value'] as num).toDouble();
+                      } catch (_) {}
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HbA1cAnalyticsScreen(
+                          patient: _patient!,
+                          readings: _healthData!.hbA1cReadings,
+                          lowThreshold: lowThreshold,
+                          highThreshold: highThreshold,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -810,15 +859,39 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           statusColor: hasBP ? (latestBP.systolic > 120 || latestBP.diastolic > 80 ? AppTheme.highRiskColor : (latestBP.systolic < 90 || latestBP.diastolic < 60 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor)) : Colors.grey,
           icon: Icons.favorite,
           hasData: hasBP,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BloodPressureAnalyticsScreen(
-                patient: _patient!,
-                readings: _healthData!.bloodPressureReadings,
+          onTap: () {
+            double systolicLow = 90.0;
+            double systolicHigh = 120.0;
+            double diastolicLow = 60.0;
+            double diastolicHigh = 80.0;
+
+            if (_patientThresholds != null) {
+              try {
+                final s = _patientThresholds!.firstWhere((t) => t['data_type'] == 'BLOOD_PRESSURE_SYSTOLIC');
+                systolicLow = (s['min_value'] as num).toDouble();
+                systolicHigh = (s['max_value'] as num).toDouble();
+              } catch (_) {}
+              try {
+                final d = _patientThresholds!.firstWhere((t) => t['data_type'] == 'BLOOD_PRESSURE_DIASTOLIC');
+                diastolicLow = (d['min_value'] as num).toDouble();
+                diastolicHigh = (d['max_value'] as num).toDouble();
+              } catch (_) {}
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BloodPressureAnalyticsScreen(
+                  patient: _patient!,
+                  readings: _healthData!.bloodPressureReadings,
+                  systolicLow: systolicLow,
+                  systolicHigh: systolicHigh,
+                  diastolicLow: diastolicLow,
+                  diastolicHigh: diastolicHigh,
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         
         const SizedBox(height: 12),
@@ -826,20 +899,62 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         // Cholesterol Summary Card
         _buildHealthMetricSummaryCard(
           title: 'Cholesterol',
-          value: hasCholesterol ? '${latestCholesterol.total.toInt()} mg/dL' : '-- mg/dL',
-          status: hasCholesterol ? (latestCholesterol.total >= 240 ? 'High' : (latestCholesterol.total >= 200 ? 'Borderline' : 'Desirable')) : '',
-          statusColor: hasCholesterol ? (latestCholesterol.total >= 240 ? AppTheme.highRiskColor : (latestCholesterol.total >= 200 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor)) : Colors.grey,
+          value: hasCholesterol
+              ? '${_displayCholesterol(latestCholesterol.total).toStringAsFixed(_cholesterolUnit == 'mmol/L' ? 1 : 0)} $_cholesterolUnit'
+              : '-- $_cholesterolUnit',
+          status: hasCholesterol
+              ? (latestCholesterol.total * 38.67 >= 240
+                  ? 'High'
+                  : (latestCholesterol.total * 38.67 >= 200
+                      ? 'Borderline'
+                      : 'Desirable'))
+              : '',
+          statusColor: hasCholesterol
+              ? (latestCholesterol.total * 38.67 >= 240
+                  ? AppTheme.highRiskColor
+                  : (latestCholesterol.total * 38.67 >= 200
+                      ? AppTheme.mediumRiskColor
+                      : AppTheme.lowRiskColor))
+              : Colors.grey,
           icon: Icons.opacity,
           hasData: hasCholesterol,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CholesterolAnalyticsScreen(
-                patient: _patient!,
-                readings: _healthData!.cholesterolReadings,
+          onTap: () {
+            double lowThreshold = 2.6;
+            double highThreshold = 5.2;
+            if (_patientThresholds != null) {
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'CHOLESTEROL_TOTAL');
+                lowThreshold = (t['min_value'] as num).toDouble();
+                highThreshold = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+            }
+
+            final displayLow = _displayCholesterol(lowThreshold);
+            final displayHigh = _displayCholesterol(highThreshold);
+
+            final displayReadings = _healthData!.cholesterolReadings.map((r) {
+              return CholesterolReading(
+                timestamp: r.timestamp,
+                total: _displayCholesterol(r.total),
+                ldl: _displayCholesterol(r.ldl),
+                hdl: _displayCholesterol(r.hdl),
+                triglycerides: r.triglycerides * (_cholesterolUnit == 'mg/dL' ? 88.57 : 1.0),
+              );
+            }).toList();
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CholesterolAnalyticsScreen(
+                  patient: _patient!,
+                  readings: displayReadings,
+                  lowThreshold: displayLow,
+                  highThreshold: displayHigh,
+                  cholesterolUnit: _cholesterolUnit,
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         
         const SizedBox(height: 12),

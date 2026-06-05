@@ -11,6 +11,8 @@ class BmiAnalyticsScreen extends ConsumerStatefulWidget {
   final List<BmiReading> readings;
   final double currentWeight;
   final double currentHeight;
+  final double lowThreshold;
+  final double highThreshold;
 
   const BmiAnalyticsScreen({
     super.key,
@@ -18,6 +20,8 @@ class BmiAnalyticsScreen extends ConsumerStatefulWidget {
     required this.readings,
     required this.currentWeight,
     required this.currentHeight,
+    required this.lowThreshold,
+    required this.highThreshold,
   });
 
   @override
@@ -27,6 +31,133 @@ class BmiAnalyticsScreen extends ConsumerStatefulWidget {
 class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
   int _currentPage = 0;
   final int _itemsPerPage = 5;
+  String _selectedFilter = 'Daily';
+  DateTime _focusedDate = DateTime.now();
+
+  List<BmiReading> get _filteredReadings {
+    final filtered = widget.readings.where((r) {
+      if (_selectedFilter == 'Hourly') {
+        final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+        final end = start.add(const Duration(days: 1));
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      } else if (_selectedFilter == 'Daily') {
+        final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
+        final end = start.add(const Duration(days: 7));
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      } else {
+        final start = DateTime(_focusedDate.year, 1, 1);
+        final end = DateTime(_focusedDate.year + 1, 1, 1);
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      }
+    }).toList();
+    return filtered;
+  }
+
+  List<BmiReading> get _filteredReadingsAsc {
+    final list = List<BmiReading>.from(_filteredReadings);
+    list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return list;
+  }
+
+  List<BmiReading> get _filteredReadingsDesc {
+    final list = List<BmiReading>.from(_filteredReadings);
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return list;
+  }
+
+  Widget _buildFilterHeader({
+    required String selectedFilter,
+    required DateTime focusedDate,
+    required Function(String) onFilterChanged,
+    required Function(DateTime) onDateChanged,
+  }) {
+    String dateLabel = '';
+    if (selectedFilter == 'Hourly') {
+      dateLabel = DateFormat('EEEE, d MMMM yyyy').format(focusedDate);
+    } else if (selectedFilter == 'Daily') {
+      final startOfWeek = focusedDate.subtract(Duration(days: focusedDate.weekday - 1));
+      final endOfWeek = startOfWeek.add(const Duration(days: 6));
+      dateLabel = '${DateFormat('d MMM').format(startOfWeek)} - ${DateFormat('d MMM yyyy').format(endOfWeek)}';
+    } else {
+      dateLabel = DateFormat('yyyy').format(focusedDate);
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'Hourly', label: Text('24 Hours', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'Daily', label: Text('7 Days', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'Yearly', label: Text('12 Months', style: TextStyle(fontSize: 12))),
+                    ],
+                    selected: {selectedFilter},
+                    onSelectionChanged: (newSelection) {
+                      onFilterChanged(newSelection.first);
+                    },
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      selectedBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      selectedForegroundColor: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    if (selectedFilter == 'Hourly') {
+                      onDateChanged(focusedDate.subtract(const Duration(days: 1)));
+                    } else if (selectedFilter == 'Daily') {
+                      onDateChanged(focusedDate.subtract(const Duration(days: 7)));
+                    } else {
+                      onDateChanged(DateTime(focusedDate.year - 1, focusedDate.month, focusedDate.day));
+                    }
+                  },
+                ),
+                Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    if (selectedFilter == 'Hourly') {
+                      onDateChanged(focusedDate.add(const Duration(days: 1)));
+                    } else if (selectedFilter == 'Daily') {
+                      onDateChanged(focusedDate.add(const Duration(days: 7)));
+                    } else {
+                      onDateChanged(DateTime(focusedDate.year + 1, focusedDate.month, focusedDate.day));
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +178,12 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
             children: [
+              _buildFilterHeader(
+                selectedFilter: _selectedFilter,
+                focusedDate: _focusedDate,
+                onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
+                onDateChanged: (date) => setState(() => _focusedDate = date),
+              ),
               _buildTrendsSection(),
               const SizedBox(height: 16),
               _buildHistorySection(),
@@ -86,7 +223,9 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
               SizedBox(
                 height: 250,
                 child: BmiChart(
-                  readings: widget.readings,
+                  readings: _filteredReadingsAsc,
+                  lowThreshold: widget.lowThreshold,
+                  highThreshold: widget.highThreshold,
                 ),
               ),
               const SizedBox(height: 16),
@@ -106,8 +245,7 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
   }
 
   Widget _buildHistorySection() {
-    final sortedReadings = List<BmiReading>.from(widget.readings)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final sortedReadings = _filteredReadingsDesc;
     
     final totalPages = (sortedReadings.length / _itemsPerPage).ceil();
     if (_currentPage >= totalPages) _currentPage = totalPages > 0 ? totalPages - 1 : 0;
@@ -186,8 +324,8 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
                   separatorBuilder: (context, index) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
                     final r = pageItems[index];
-                    final isHigh = r.value >= 25.0;
-                    final isLow = r.value < 18.5;
+                    final isHigh = r.value > widget.highThreshold;
+                    final isLow = r.value < widget.lowThreshold;
                     final status = isHigh ? 'ABOVE TARGET' : (isLow ? 'BELOW TARGET' : 'NORMAL');
                     final color = isHigh ? AppTheme.mediumRiskColor : (isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
 

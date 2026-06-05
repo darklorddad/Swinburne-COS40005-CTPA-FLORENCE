@@ -208,12 +208,18 @@ class BmiChart extends StatelessWidget {
   double _getMinY(List<BmiReading> sortedReadings) {
     if (sortedReadings.isEmpty) return 0;
     double minVal = sortedReadings.map((r) => r.value).reduce((a, b) => a < b ? a : b);
+    if (lowThreshold < minVal) {
+      minVal = lowThreshold;
+    }
     return minVal > 10 ? (minVal - 2).floorToDouble() : 0;
   }
 
   double _getMaxY(List<BmiReading> sortedReadings) {
     if (sortedReadings.isEmpty) return 40;
     double maxVal = sortedReadings.map((r) => r.value).reduce((a, b) => a > b ? a : b);
+    if (highThreshold > maxVal) {
+      maxVal = highThreshold;
+    }
     return (maxVal + 2).ceilToDouble();
   }
 }
