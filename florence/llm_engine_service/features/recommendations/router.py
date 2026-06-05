@@ -1,12 +1,16 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from features.recommendations.models import RecommendationRequest, RecommendationResponse
 from features.recommendations.service import RecommendationService
+from core.ds_client import get_auth_token
 
 router = APIRouter()
 
 
 @router.post("/generate", response_model=RecommendationResponse)
-async def generate_recommendations(request: RecommendationRequest):
+async def generate_recommendations(
+    request: RecommendationRequest,
+    token: str = Depends(get_auth_token),
+):
     """
     Generate LLM-powered health recommendations based on a patient's health summary.
 
@@ -16,7 +20,7 @@ async def generate_recommendations(request: RecommendationRequest):
     """
     service = RecommendationService()
     try:
-        return await service.generate_recommendations(request)
+        return await service.generate_recommendations(request, token)
     except Exception as e:
         raise HTTPException(
             status_code=500,

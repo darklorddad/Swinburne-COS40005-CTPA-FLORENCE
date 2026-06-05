@@ -2,6 +2,7 @@ import re
 from datetime import datetime, timezone
 from langchain_core.messages import HumanMessage, SystemMessage
 from config import settings as global_settings
+from core.ds_client import fetch_user_settings, fetch_user_thresholds
 from core.llm_factory import LLMFactory
 from features.insights.models import InsightRequest, InsightResponse
 
@@ -30,16 +31,27 @@ class InsightService:
             max_tokens=256,
         )
 
-    async def generate_insight(self, request: InsightRequest) -> InsightResponse:
+    async def generate_insight(self, request: InsightRequest, token: str) -> InsightResponse:
         now = datetime.now(timezone.utc)
         s = request.health_snapshot
+
+        # Fetch real user preferences and thresholds from the Data Service
+        settings_data = await fetch_user_settings(token)
+        thresholds_data = await fetch_user_thresholds(token)
+
+        g_unit = settings_data.get("glucose_unit", "mmol/L")
+
+        # Map thresholds for easy lookup
+        thresh_map = {t['data_type'].upper(): t for t in thresholds_data if 'data_type' in t}
+        g_thresh = thresh_map.get('GLUCOSE', {})
+        g_min = g_thresh.get('min_value', 3.9 if g_unit == 'mmol/L' else 70.0)
+        g_max = g_thresh.get('max_value', 10.0 if g_unit == 'mmol/L' else 180.0)
+        g_target = f"{g_min}–{g_max} {g_unit}"
 
         # Build human message from snapshot fields
         lines = ["Patient Health Snapshot:"]
 
         g_val = s.average_glucose_7d or s.latest_glucose or 100.0
-        g_unit = s.glucose_unit
-        g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
 
         if s.average_glucose_7d is not None:
             lines.append(f"- 7-day average glucose: {s.average_glucose_7d:.1f} {g_unit}")

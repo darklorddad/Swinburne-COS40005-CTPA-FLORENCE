@@ -3,6 +3,7 @@ import re
 from datetime import datetime, timezone
 from langchain_core.messages import HumanMessage, SystemMessage
 from config import settings as global_settings
+from core.ds_client import fetch_user_settings, fetch_user_thresholds
 from core.llm_factory import LLMFactory
 from features.recommendations.rec_config import recommendation_settings
 from features.recommendations.models import (
@@ -12,7 +13,8 @@ from features.recommendations.models import (
 )
 
 _SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
-You will receive a patient's health summary. Generate 0 to 3 concise, evidence-based health recommendations.
+You will receive a patient's health summary and their personalised clinical targets.
+Generate 0 to 3 concise, evidence-based health recommendations.
 
 ## Output Rules
 1. Return ONLY raw JSON. No markdown, no backticks, no conversational text.
@@ -74,25 +76,39 @@ class RecommendationService:
         )
 
     async def generate_recommendations(
-        self, request: RecommendationRequest
+        self, request: RecommendationRequest, token: str
     ) -> RecommendationResponse:
         now = datetime.now(timezone.utc)
         now_iso = now.isoformat()
         s = request.health_summary
 
-        # Use explicit user preference instead of guessing
-        g_unit = s.glucose_unit
-        g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
-        
-        c_unit = s.cholesterol_unit
-        if c_unit == "mmol/L":
-            hdl_target = ">1.0 mmol/L"
-            ldl_target = "<2.6 mmol/L"
-            trig_target = "<1.7 mmol/L"
-        else:
-            hdl_target = ">40 mg/dL"
-            ldl_target = "<100 mg/dL"
-            trig_target = "<150 mg/dL"
+        # Fetch real user preferences and thresholds from the Data Service
+        settings_data = await fetch_user_settings(token)
+        thresholds_data = await fetch_user_thresholds(token)
+
+        g_unit = settings_data.get("glucose_unit", "mmol/L")
+        c_unit = settings_data.get("cholesterol_unit", "mmol/L")
+
+        # Map thresholds for easy lookup (DS already returns these in the user's preferred unit)
+        thresh_map = {t['data_type'].upper(): t for t in thresholds_data if 'data_type' in t}
+
+        # Build dynamic targets based on the user's actual database thresholds
+        g_thresh = thresh_map.get('GLUCOSE', {})
+        g_min = g_thresh.get('min_value', 3.9 if g_unit == 'mmol/L' else 70.0)
+        g_max = g_thresh.get('max_value', 10.0 if g_unit == 'mmol/L' else 180.0)
+        g_target = f"{g_min}–{g_max} {g_unit}"
+
+        hdl_thresh = thresh_map.get('CHOLESTEROL_HDL', {})
+        hdl_min = hdl_thresh.get('min_value', 1.0 if c_unit == 'mmol/L' else 40.0)
+        hdl_target = f">{hdl_min} {c_unit}"
+
+        ldl_thresh = thresh_map.get('CHOLESTEROL_LDL', {})
+        ldl_max = ldl_thresh.get('max_value', 2.6 if c_unit == 'mmol/L' else 100.0)
+        ldl_target = f"<{ldl_max} {c_unit}"
+
+        trig_thresh = thresh_map.get('CHOLESTEROL_TRIGLYCERIDES', {})
+        trig_max = trig_thresh.get('max_value', 1.7 if c_unit == 'mmol/L' else 150.0)
+        trig_target = f"<{trig_max} {c_unit}"
 
         # Build extended vitals section
         extended_lines = []
