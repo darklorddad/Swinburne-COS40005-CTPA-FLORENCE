@@ -230,12 +230,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required List<String> options,
     required Function(String) onSelect,
   }) {
-    return InkWell(
-      onTap: () => _showUnitSelectionModal(title, currentValue, options, onSelect),
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+    return SizedBox(
+      height: 56,
+      child: InkWell(
+        onTap: () => _showUnitSelectionModal(title, currentValue, options, onSelect),
+        borderRadius: BorderRadius.circular(8),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
             const SizedBox(width: 12),
@@ -327,31 +328,36 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textSecondaryColor,
-                    ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-            ],
+    return SizedBox(
+      height: 56,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppTheme.textSecondaryColor,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -363,41 +369,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool showChevron = false,
   }) {
     return SizedBox(
-      height: 64, // Fixed height for consistency
+      height: 56,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textSecondaryColor,
-                          ),
-                    ),
-                  ],
-                ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                        ),
+                  ),
+                ],
               ),
-              if (showChevron)
-                Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
-            ],
-          ),
+            ),
+            if (showChevron)
+              Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
+          ],
         ),
       ),
     );
@@ -411,7 +415,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ValueChanged<bool> onChanged,
   ) {
     return SizedBox(
-      height: 64, // Fixed height for consistency
+      height: 56,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
