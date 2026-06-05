@@ -154,7 +154,64 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
     );
   }
 
-  Widget _buildHbA1cChart(List<HbA1cReading> sortedReadings) {
+  List<HbA1cReading> _getAggregatedReadings(List<HbA1cReading> rawReadings) {
+    if (rawReadings.isEmpty) return [];
+
+    if (_selectedFilter == 'Hourly') {
+      final Map<int, List<double>> grouped = {};
+      for (var r in rawReadings) {
+        grouped.putIfAbsent(r.timestamp.hour, () => []).add(r.value);
+      }
+      final List<HbA1cReading> result = [];
+      final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+      for (int hour = 0; hour < 24; hour++) {
+        if (grouped.containsKey(hour)) {
+          final avg = grouped[hour]!.reduce((a, b) => a + b) / grouped[hour]!.length;
+          result.add(HbA1cReading(
+            timestamp: DateTime(start.year, start.month, start.day, hour),
+            value: avg,
+          ));
+        }
+      }
+      return result;
+    } else if (_selectedFilter == 'Daily') {
+      final Map<int, List<double>> grouped = {};
+      for (var r in rawReadings) {
+        grouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.value);
+      }
+      final List<HbA1cReading> result = [];
+      final startOfWeek = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
+      for (int day = 1; day <= 7; day++) {
+        if (grouped.containsKey(day)) {
+          final avg = grouped[day]!.reduce((a, b) => a + b) / grouped[day]!.length;
+          result.add(HbA1cReading(
+            timestamp: startOfWeek.add(Duration(days: day - 1)),
+            value: avg,
+          ));
+        }
+      }
+      return result;
+    } else {
+      final Map<int, List<double>> grouped = {};
+      for (var r in rawReadings) {
+        grouped.putIfAbsent(r.timestamp.month, () => []).add(r.value);
+      }
+      final List<HbA1cReading> result = [];
+      for (int month = 1; month <= 12; month++) {
+        if (grouped.containsKey(month)) {
+          final avg = grouped[month]!.reduce((a, b) => a + b) / grouped[month]!.length;
+          result.add(HbA1cReading(
+            timestamp: DateTime(_focusedDate.year, month, 1),
+            value: avg,
+          ));
+        }
+      }
+      return result;
+    }
+  }
+
+  Widget _buildHbA1cChart(List<HbA1cReading> rawReadings) {
+    final sortedReadings = _getAggregatedReadings(rawReadings);
     if (sortedReadings.isEmpty) {
       return const Center(child: Text('No HbA1c data available'));
     }
@@ -203,10 +260,20 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
                 final index = value.toInt();
                 if (index >= 0 && index < sortedReadings.length) {
                   final date = sortedReadings[index].timestamp;
+                  String label = '';
+                  if (_selectedFilter == 'Hourly') {
+                    if (index % 4 == 0) {
+                      label = DateFormat('HH:00').format(date);
+                    }
+                  } else if (_selectedFilter == 'Daily') {
+                    label = DateFormat('E').format(date);
+                  } else {
+                    label = DateFormat('MMM').format(date);
+                  }
                   return Padding(
                     padding: const EdgeInsets.only(top: 6.0),
                     child: Text(
-                      DateFormat('MM/dd').format(date),
+                      label,
                       style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                     ),
                   );
@@ -435,7 +502,7 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
               const SizedBox(height: 20),
               SizedBox(
                 height: 250,
-                child: _buildHbA1cChart(_filteredReadingsAsc),
+                child: _buildHbA1cChart(widget.readings),
               ),
             ],
           ),

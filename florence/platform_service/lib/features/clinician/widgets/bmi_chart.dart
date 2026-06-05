@@ -8,27 +8,91 @@ class BmiChart extends StatelessWidget {
   final List<BmiReading> readings;
   final double highThreshold;
   final double lowThreshold;
+  final String filter;
+  final DateTime focusedDate;
 
   const BmiChart({
     super.key,
     required this.readings,
+    required this.filter,
+    required this.focusedDate,
     this.highThreshold = 25.0, // Above target
     this.lowThreshold = 18.5, // Below target
   });
 
+  List<BmiReading> _getAggregatedReadings() {
+    if (readings.isEmpty) return [];
+
+    if (filter == 'Hourly') {
+      final Map<int, List<double>> grouped = {};
+      for (var r in readings) {
+        grouped.putIfAbsent(r.timestamp.hour, () => []).add(r.value);
+      }
+      final List<BmiReading> result = [];
+      final start = DateTime(focusedDate.year, focusedDate.month, focusedDate.day);
+      for (int hour = 0; hour < 24; hour++) {
+        if (grouped.containsKey(hour)) {
+          final avg = grouped[hour]!.reduce((a, b) => a + b) / grouped[hour]!.length;
+          result.add(BmiReading(
+            timestamp: DateTime(start.year, start.month, start.day, hour),
+            value: avg,
+            weight: 70.0,
+            height: 170.0,
+          ));
+        }
+      }
+      return result;
+    } else if (filter == 'Daily') {
+      final Map<int, List<double>> grouped = {};
+      for (var r in readings) {
+        grouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.value);
+      }
+      final List<BmiReading> result = [];
+      final startOfWeek = DateTime(focusedDate.year, focusedDate.month, focusedDate.day).subtract(Duration(days: focusedDate.weekday - 1));
+      for (int day = 1; day <= 7; day++) {
+        if (grouped.containsKey(day)) {
+          final avg = grouped[day]!.reduce((a, b) => a + b) / grouped[day]!.length;
+          result.add(BmiReading(
+            timestamp: startOfWeek.add(Duration(days: day - 1)),
+            value: avg,
+            weight: 70.0,
+            height: 170.0,
+          ));
+        }
+      }
+      return result;
+    } else {
+      final Map<int, List<double>> grouped = {};
+      for (var r in readings) {
+        grouped.putIfAbsent(r.timestamp.month, () => []).add(r.value);
+      }
+      final List<BmiReading> result = [];
+      for (int month = 1; month <= 12; month++) {
+        if (grouped.containsKey(month)) {
+          final avg = grouped[month]!.reduce((a, b) => a + b) / grouped[month]!.length;
+          result.add(BmiReading(
+            timestamp: DateTime(focusedDate.year, month, 1),
+            value: avg,
+            weight: 70.0,
+            height: 170.0,
+          ));
+        }
+      }
+      return result;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (readings.isEmpty) {
+    final aggregatedReadings = _getAggregatedReadings();
+    if (aggregatedReadings.isEmpty) {
       return const Center(child: Text('No BMI data available'));
     }
-
-    // Sort readings by date ascending for chart
-    final sortedReadings = [...readings]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: LineChart(
-        _bmiChartData(sortedReadings),
+        _bmiChartData(aggregatedReadings),
       ),
     );
   }
@@ -89,19 +153,23 @@ class BmiChart extends StatelessWidget {
                 return const Text('');
               }
               
-              if (sortedReadings.length > 10) {
-                if (value % (sortedReadings.length ~/ 5) != 0) {
-                  return const Text('');
-                }
-              }
-              
               final index = value.toInt();
               if (index >= 0 && index < sortedReadings.length) {
                 final date = sortedReadings[index].timestamp;
+                String label = '';
+                if (filter == 'Hourly') {
+                  if (index % 4 == 0) {
+                    label = DateFormat('HH:00').format(date);
+                  }
+                } else if (filter == 'Daily') {
+                  label = DateFormat('E').format(date);
+                } else {
+                  label = DateFormat('MMM').format(date);
+                }
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    DateFormat('dd/MM').format(date), // E.g., 08/03, 13/04 like in the image
+                    label,
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 10, height: 1.1, color: AppTheme.textSecondary),
                   ),

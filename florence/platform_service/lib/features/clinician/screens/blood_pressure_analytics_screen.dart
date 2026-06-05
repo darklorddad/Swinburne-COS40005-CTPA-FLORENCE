@@ -158,7 +158,76 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
     );
   }
 
-  Widget _buildBpChart(List<BloodPressureReading> sortedReadings) {
+  List<BloodPressureReading> _getAggregatedReadings(List<BloodPressureReading> rawReadings) {
+    if (rawReadings.isEmpty) return [];
+
+    if (_selectedFilter == 'Hourly') {
+      final Map<int, List<double>> sysGrouped = {};
+      final Map<int, List<double>> diaGrouped = {};
+      for (var r in rawReadings) {
+        sysGrouped.putIfAbsent(r.timestamp.hour, () => []).add(r.systolic);
+        diaGrouped.putIfAbsent(r.timestamp.hour, () => []).add(r.diastolic);
+      }
+      final List<BloodPressureReading> result = [];
+      final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+      for (int hour = 0; hour < 24; hour++) {
+        if (sysGrouped.containsKey(hour)) {
+          final avgSys = sysGrouped[hour]!.reduce((a, b) => a + b) / sysGrouped[hour]!.length;
+          final avgDia = diaGrouped[hour]!.reduce((a, b) => a + b) / diaGrouped[hour]!.length;
+          result.add(BloodPressureReading(
+            timestamp: DateTime(start.year, start.month, start.day, hour),
+            systolic: avgSys,
+            diastolic: avgDia,
+          ));
+        }
+      }
+      return result;
+    } else if (_selectedFilter == 'Daily') {
+      final Map<int, List<double>> sysGrouped = {};
+      final Map<int, List<double>> diaGrouped = {};
+      for (var r in rawReadings) {
+        sysGrouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.systolic);
+        diaGrouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.diastolic);
+      }
+      final List<BloodPressureReading> result = [];
+      final startOfWeek = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
+      for (int day = 1; day <= 7; day++) {
+        if (sysGrouped.containsKey(day)) {
+          final avgSys = sysGrouped[day]!.reduce((a, b) => a + b) / sysGrouped[day]!.length;
+          final avgDia = diaGrouped[day]!.reduce((a, b) => a + b) / diaGrouped[day]!.length;
+          result.add(BloodPressureReading(
+            timestamp: startOfWeek.add(Duration(days: day - 1)),
+            systolic: avgSys,
+            diastolic: avgDia,
+          ));
+        }
+      }
+      return result;
+    } else {
+      final Map<int, List<double>> sysGrouped = {};
+      final Map<int, List<double>> diaGrouped = {};
+      for (var r in rawReadings) {
+        sysGrouped.putIfAbsent(r.timestamp.month, () => []).add(r.systolic);
+        diaGrouped.putIfAbsent(r.timestamp.month, () => []).add(r.diastolic);
+      }
+      final List<BloodPressureReading> result = [];
+      for (int month = 1; month <= 12; month++) {
+        if (sysGrouped.containsKey(month)) {
+          final avgSys = sysGrouped[month]!.reduce((a, b) => a + b) / sysGrouped[month]!.length;
+          final avgDia = diaGrouped[month]!.reduce((a, b) => a + b) / diaGrouped[month]!.length;
+          result.add(BloodPressureReading(
+            timestamp: DateTime(_focusedDate.year, month, 1),
+            systolic: avgSys,
+            diastolic: avgDia,
+          ));
+        }
+      }
+      return result;
+    }
+  }
+
+  Widget _buildBpChart(List<BloodPressureReading> rawReadings) {
+    final sortedReadings = _getAggregatedReadings(rawReadings);
     if (sortedReadings.isEmpty) {
       return const Center(child: Text('No blood pressure data available'));
     }
@@ -207,10 +276,20 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
                 final index = value.toInt();
                 if (index >= 0 && index < sortedReadings.length) {
                   final date = sortedReadings[index].timestamp;
+                  String label = '';
+                  if (_selectedFilter == 'Hourly') {
+                    if (index % 4 == 0) {
+                      label = DateFormat('HH:00').format(date);
+                    }
+                  } else if (_selectedFilter == 'Daily') {
+                    label = DateFormat('E').format(date);
+                  } else {
+                    label = DateFormat('MMM').format(date);
+                  }
                   return Padding(
                     padding: const EdgeInsets.only(top: 6.0),
                     child: Text(
-                      DateFormat('MM/dd').format(date),
+                      label,
                       style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                     ),
                   );
@@ -527,7 +606,7 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
               const SizedBox(height: 20),
               SizedBox(
                 height: 250,
-                child: _buildBpChart(_filteredReadingsAsc),
+                child: _buildBpChart(widget.readings),
               ),
               const SizedBox(height: 16),
               Row(

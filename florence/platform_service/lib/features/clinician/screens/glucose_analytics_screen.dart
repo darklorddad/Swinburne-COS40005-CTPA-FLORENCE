@@ -319,6 +319,8 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                 child: GlucoseChart(
                   readings: _filteredReadingsAsc,
                   unit: widget.glucoseUnit,
+                  filter: _selectedFilter,
+                  focusedDate: _focusedDate,
                   highThreshold: widget.highThreshold,
                   lowThreshold: widget.lowThreshold,
                   hbA1cReadings: const [], // Only glucose

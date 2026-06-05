@@ -224,6 +224,8 @@ class _BmiAnalyticsScreenState extends ConsumerState<BmiAnalyticsScreen> {
                 height: 250,
                 child: BmiChart(
                   readings: _filteredReadingsAsc,
+                  filter: _selectedFilter,
+                  focusedDate: _focusedDate,
                   lowThreshold: widget.lowThreshold,
                   highThreshold: widget.highThreshold,
                 ),

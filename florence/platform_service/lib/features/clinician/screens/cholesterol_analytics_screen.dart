@@ -170,7 +170,100 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
     );
   }
 
-  Widget _buildCholesterolChart(List<CholesterolReading> sortedReadings) {
+  List<CholesterolReading> _getAggregatedReadings(List<CholesterolReading> rawReadings) {
+    if (rawReadings.isEmpty) return [];
+
+    if (_selectedFilter == 'Hourly') {
+      final Map<int, List<double>> totalGrouped = {};
+      final Map<int, List<double>> ldlGrouped = {};
+      final Map<int, List<double>> hdlGrouped = {};
+      final Map<int, List<double>> trigGrouped = {};
+      for (var r in rawReadings) {
+        totalGrouped.putIfAbsent(r.timestamp.hour, () => []).add(r.total);
+        ldlGrouped.putIfAbsent(r.timestamp.hour, () => []).add(r.ldl);
+        hdlGrouped.putIfAbsent(r.timestamp.hour, () => []).add(r.hdl);
+        trigGrouped.putIfAbsent(r.timestamp.hour, () => []).add(r.triglycerides);
+      }
+      final List<CholesterolReading> result = [];
+      final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+      for (int hour = 0; hour < 24; hour++) {
+        if (totalGrouped.containsKey(hour)) {
+          final avgTotal = totalGrouped[hour]!.reduce((a, b) => a + b) / totalGrouped[hour]!.length;
+          final avgLdl = ldlGrouped[hour]!.reduce((a, b) => a + b) / ldlGrouped[hour]!.length;
+          final avgHdl = hdlGrouped[hour]!.reduce((a, b) => a + b) / hdlGrouped[hour]!.length;
+          final avgTrig = trigGrouped[hour]!.reduce((a, b) => a + b) / trigGrouped[hour]!.length;
+          result.add(CholesterolReading(
+            timestamp: DateTime(start.year, start.month, start.day, hour),
+            total: avgTotal,
+            ldl: avgLdl,
+            hdl: avgHdl,
+            triglycerides: avgTrig,
+          ));
+        }
+      }
+      return result;
+    } else if (_selectedFilter == 'Daily') {
+      final Map<int, List<double>> totalGrouped = {};
+      final Map<int, List<double>> ldlGrouped = {};
+      final Map<int, List<double>> hdlGrouped = {};
+      final Map<int, List<double>> trigGrouped = {};
+      for (var r in rawReadings) {
+        totalGrouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.total);
+        ldlGrouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.ldl);
+        hdlGrouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.hdl);
+        trigGrouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.triglycerides);
+      }
+      final List<CholesterolReading> result = [];
+      final startOfWeek = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
+      for (int day = 1; day <= 7; day++) {
+        if (totalGrouped.containsKey(day)) {
+          final avgTotal = totalGrouped[day]!.reduce((a, b) => a + b) / totalGrouped[day]!.length;
+          final avgLdl = ldlGrouped[day]!.reduce((a, b) => a + b) / ldlGrouped[day]!.length;
+          final avgHdl = hdlGrouped[day]!.reduce((a, b) => a + b) / hdlGrouped[day]!.length;
+          final avgTrig = trigGrouped[day]!.reduce((a, b) => a + b) / trigGrouped[day]!.length;
+          result.add(CholesterolReading(
+            timestamp: startOfWeek.add(Duration(days: day - 1)),
+            total: avgTotal,
+            ldl: avgLdl,
+            hdl: avgHdl,
+            triglycerides: avgTrig,
+          ));
+        }
+      }
+      return result;
+    } else {
+      final Map<int, List<double>> totalGrouped = {};
+      final Map<int, List<double>> ldlGrouped = {};
+      final Map<int, List<double>> hdlGrouped = {};
+      final Map<int, List<double>> trigGrouped = {};
+      for (var r in rawReadings) {
+        totalGrouped.putIfAbsent(r.timestamp.month, () => []).add(r.total);
+        ldlGrouped.putIfAbsent(r.timestamp.month, () => []).add(r.ldl);
+        hdlGrouped.putIfAbsent(r.timestamp.month, () => []).add(r.hdl);
+        trigGrouped.putIfAbsent(r.timestamp.month, () => []).add(r.triglycerides);
+      }
+      final List<CholesterolReading> result = [];
+      for (int month = 1; month <= 12; month++) {
+        if (totalGrouped.containsKey(month)) {
+          final avgTotal = totalGrouped[month]!.reduce((a, b) => a + b) / totalGrouped[month]!.length;
+          final avgLdl = ldlGrouped[month]!.reduce((a, b) => a + b) / ldlGrouped[month]!.length;
+          final avgHdl = hdlGrouped[month]!.reduce((a, b) => a + b) / hdlGrouped[month]!.length;
+          final avgTrig = trigGrouped[month]!.reduce((a, b) => a + b) / trigGrouped[month]!.length;
+          result.add(CholesterolReading(
+            timestamp: DateTime(_focusedDate.year, month, 1),
+            total: avgTotal,
+            ldl: avgLdl,
+            hdl: avgHdl,
+            triglycerides: avgTrig,
+          ));
+        }
+      }
+      return result;
+    }
+  }
+
+  Widget _buildCholesterolChart(List<CholesterolReading> rawReadings) {
+    final sortedReadings = _getAggregatedReadings(rawReadings);
     if (sortedReadings.isEmpty) {
       return const Center(child: Text('No cholesterol data available'));
     }
@@ -247,10 +340,20 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                 final index = value.toInt();
                 if (index >= 0 && index < sortedReadings.length) {
                   final date = sortedReadings[index].timestamp;
+                  String label = '';
+                  if (_selectedFilter == 'Hourly') {
+                    if (index % 4 == 0) {
+                      label = DateFormat('HH:00').format(date);
+                    }
+                  } else if (_selectedFilter == 'Daily') {
+                    label = DateFormat('E').format(date);
+                  } else {
+                    label = DateFormat('MMM').format(date);
+                  }
                   return Padding(
                     padding: const EdgeInsets.only(top: 6.0),
                     child: Text(
-                      DateFormat('MM/dd').format(date),
+                      label,
                       style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
                     ),
                   );
@@ -560,7 +663,7 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
               const SizedBox(height: 20),
               SizedBox(
                 height: 250,
-                child: _buildCholesterolChart(_filteredReadingsAsc),
+                child: _buildCholesterolChart(widget.readings),
               ),
               const SizedBox(height: 16),
               Row(
