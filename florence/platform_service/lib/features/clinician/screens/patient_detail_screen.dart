@@ -820,15 +820,29 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   statusColor: hasHbA1c ? (latestHbA1c.value < 5.7 ? AppTheme.lowRiskColor : AppTheme.highRiskColor) : Colors.grey,
                   icon: Icons.pie_chart,
                   hasData: hasHbA1c,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => HbA1cAnalyticsScreen(
-                        patient: _patient!,
-                        readings: _healthData!.hbA1cReadings,
+                  onTap: () {
+                    double lowThreshold = 4.0;
+                    double highThreshold = 5.7;
+                    if (_patientThresholds != null) {
+                      try {
+                        final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'HBA1C');
+                        lowThreshold = (t['min_value'] as num).toDouble();
+                        highThreshold = (t['max_value'] as num).toDouble();
+                      } catch (_) {}
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HbA1cAnalyticsScreen(
+                          patient: _patient!,
+                          readings: _healthData!.hbA1cReadings,
+                          lowThreshold: lowThreshold,
+                          highThreshold: highThreshold,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -845,15 +859,39 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           statusColor: hasBP ? (latestBP.systolic > 120 || latestBP.diastolic > 80 ? AppTheme.highRiskColor : (latestBP.systolic < 90 || latestBP.diastolic < 60 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor)) : Colors.grey,
           icon: Icons.favorite,
           hasData: hasBP,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => BloodPressureAnalyticsScreen(
-                patient: _patient!,
-                readings: _healthData!.bloodPressureReadings,
+          onTap: () {
+            double systolicLow = 90.0;
+            double systolicHigh = 120.0;
+            double diastolicLow = 60.0;
+            double diastolicHigh = 80.0;
+
+            if (_patientThresholds != null) {
+              try {
+                final s = _patientThresholds!.firstWhere((t) => t['data_type'] == 'BLOOD_PRESSURE_SYSTOLIC');
+                systolicLow = (s['min_value'] as num).toDouble();
+                systolicHigh = (s['max_value'] as num).toDouble();
+              } catch (_) {}
+              try {
+                final d = _patientThresholds!.firstWhere((t) => t['data_type'] == 'BLOOD_PRESSURE_DIASTOLIC');
+                diastolicLow = (d['min_value'] as num).toDouble();
+                diastolicHigh = (d['max_value'] as num).toDouble();
+              } catch (_) {}
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BloodPressureAnalyticsScreen(
+                  patient: _patient!,
+                  readings: _healthData!.bloodPressureReadings,
+                  systolicLow: systolicLow,
+                  systolicHigh: systolicHigh,
+                  diastolicLow: diastolicLow,
+                  diastolicHigh: diastolicHigh,
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         
         const SizedBox(height: 12),

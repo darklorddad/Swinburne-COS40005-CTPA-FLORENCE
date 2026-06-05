@@ -8,11 +8,15 @@ import 'package:intl/intl.dart';
 class HbA1cAnalyticsScreen extends StatefulWidget {
   final Patient patient;
   final List<HbA1cReading> readings;
+  final double lowThreshold;
+  final double highThreshold;
 
   const HbA1cAnalyticsScreen({
     super.key,
     required this.patient,
     required this.readings,
+    required this.lowThreshold,
+    required this.highThreshold,
   });
 
   @override
@@ -157,16 +161,35 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
 
     double minY = 3.0;
     double maxY = 15.0;
+    if (sortedReadings.isNotEmpty) {
+      double minVal = sortedReadings.map((r) => r.value).reduce((a, b) => a < b ? a : b);
+      double maxVal = sortedReadings.map((r) => r.value).reduce((a, b) => a > b ? a : b);
+      if (widget.lowThreshold < minVal) minVal = widget.lowThreshold;
+      if (widget.highThreshold > maxVal) maxVal = widget.highThreshold;
+      minY = (minVal - 1.0).clamp(0.0, 20.0).floorToDouble();
+      maxY = (maxVal + 1.0).clamp(0.0, 30.0).ceilToDouble();
+    }
 
     return LineChart(
       LineChartData(
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey[200]!,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) {
+            if (value == widget.highThreshold || value == widget.lowThreshold) {
+              return FlLine(
+                color: value == widget.highThreshold
+                    ? AppTheme.highRiskColor.withValues(alpha: 0.4)
+                    : AppTheme.lowRiskColor.withValues(alpha: 0.4),
+                strokeWidth: 1,
+                dashArray: [4, 4],
+              );
+            }
+            return FlLine(
+              color: Colors.grey[200]!,
+              strokeWidth: 1,
+            );
+          },
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -216,6 +239,44 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
         maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
         minY: minY,
         maxY: maxY,
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            HorizontalLine(
+              y: widget.highThreshold,
+              color: AppTheme.highRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.only(right: 5, bottom: 2),
+                style: TextStyle(
+                  color: AppTheme.highRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => 'High',
+              ),
+            ),
+            HorizontalLine(
+              y: widget.lowThreshold,
+              color: AppTheme.lowRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.only(right: 5, top: 2),
+                style: TextStyle(
+                  color: AppTheme.lowRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => 'Low',
+              ),
+            ),
+          ],
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].value)),
@@ -256,7 +317,7 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
   Widget _buildOverviewSection() {
     final readings = _filteredReadingsDesc;
     final latest = readings.isNotEmpty ? readings.first.value : 0.0;
-    const target = 6.0;
+    final target = widget.highThreshold;
     
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -462,8 +523,10 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final r = pageItems[index];
-                final status = r.value < 5.7 ? 'NORMAL' : (r.value < 6.5 ? 'PRE-DIABETES' : 'DIABETES');
-                final color = r.value < 5.7 ? AppTheme.lowRiskColor : (r.value < 6.5 ? AppTheme.accentColor : AppTheme.highRiskColor);
+                final isHigh = r.value > widget.highThreshold;
+                final isLow = r.value < widget.lowThreshold;
+                final status = isHigh ? 'ABOVE TARGET' : (isLow ? 'BELOW TARGET' : 'NORMAL');
+                final color = isHigh ? AppTheme.highRiskColor : (isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
 
                 return Container(
                   padding: const EdgeInsets.all(16),

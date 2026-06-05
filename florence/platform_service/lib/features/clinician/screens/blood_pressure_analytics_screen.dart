@@ -8,11 +8,19 @@ import 'package:intl/intl.dart';
 class BloodPressureAnalyticsScreen extends StatefulWidget {
   final Patient patient;
   final List<BloodPressureReading> readings;
+  final double systolicLow;
+  final double systolicHigh;
+  final double diastolicLow;
+  final double diastolicHigh;
 
   const BloodPressureAnalyticsScreen({
     super.key,
     required this.patient,
     required this.readings,
+    required this.systolicLow,
+    required this.systolicHigh,
+    required this.diastolicLow,
+    required this.diastolicHigh,
   });
 
   @override
@@ -157,16 +165,35 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
 
     double minY = 40;
     double maxY = 200;
+    if (sortedReadings.isNotEmpty) {
+      double minVal = sortedReadings.map((r) => r.diastolic).reduce((a, b) => a < b ? a : b);
+      double maxVal = sortedReadings.map((r) => r.systolic).reduce((a, b) => a > b ? a : b);
+      if (widget.diastolicLow < minVal) minVal = widget.diastolicLow;
+      if (widget.systolicHigh > maxVal) maxVal = widget.systolicHigh;
+      minY = (minVal - 10).clamp(0, 200).floorToDouble();
+      maxY = (maxVal + 10).clamp(0, 300).ceilToDouble();
+    }
 
     return LineChart(
       LineChartData(
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey[200]!,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) {
+            if (value == widget.systolicHigh || value == widget.systolicLow || value == widget.diastolicHigh || value == widget.diastolicLow) {
+              return FlLine(
+                color: (value == widget.systolicHigh || value == widget.diastolicHigh)
+                    ? AppTheme.highRiskColor.withValues(alpha: 0.4)
+                    : AppTheme.lowRiskColor.withValues(alpha: 0.4),
+                strokeWidth: 1,
+                dashArray: [4, 4],
+              );
+            }
+            return FlLine(
+              color: Colors.grey[200]!,
+              strokeWidth: 1,
+            );
+          },
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -216,6 +243,78 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
         maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
         minY: minY,
         maxY: maxY,
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            HorizontalLine(
+              y: widget.systolicHigh,
+              color: AppTheme.highRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.only(right: 5, bottom: 2),
+                style: TextStyle(
+                  color: AppTheme.highRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => 'Sys High',
+              ),
+            ),
+            HorizontalLine(
+              y: widget.systolicLow,
+              color: AppTheme.lowRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.only(right: 5, top: 2),
+                style: TextStyle(
+                  color: AppTheme.lowRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => 'Sys Low',
+              ),
+            ),
+            HorizontalLine(
+              y: widget.diastolicHigh,
+              color: AppTheme.highRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.only(right: 5, bottom: 2),
+                style: TextStyle(
+                  color: AppTheme.highRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => 'Dia High',
+              ),
+            ),
+            HorizontalLine(
+              y: widget.diastolicLow,
+              color: AppTheme.lowRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.only(right: 5, top: 2),
+                style: TextStyle(
+                  color: AppTheme.lowRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => 'Dia Low',
+              ),
+            ),
+          ],
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].systolic)),
@@ -305,9 +404,9 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildTargetRow('Systolic', '90 - 120 mmHg'),
+                    _buildTargetRow('Systolic', '${widget.systolicLow.toInt()} - ${widget.systolicHigh.toInt()} mmHg'),
                     const SizedBox(height: 8),
-                    _buildTargetRow('Diastolic', '60 - 80 mmHg'),
+                    _buildTargetRow('Diastolic', '${widget.diastolicLow.toInt()} - ${widget.diastolicHigh.toInt()} mmHg'),
                   ],
                 ),
               ),
@@ -526,12 +625,12 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
                 String status = 'NORMAL';
                 Color color = AppTheme.lowRiskColor;
 
-                if (r.systolic > 120 || r.diastolic > 80) {
-                  status = 'ELEVATED';
+                if (r.systolic > widget.systolicHigh || r.diastolic > widget.diastolicHigh) {
+                  status = 'HIGH';
                   color = AppTheme.highRiskColor;
-                } else if (r.systolic < 90 || r.diastolic < 60) {
+                } else if (r.systolic < widget.systolicLow || r.diastolic < widget.diastolicLow) {
                   status = 'LOW';
-                  color = AppTheme.mediumRiskColor; // Yellow/Amber
+                  color = AppTheme.secondaryColor;
                 }
 
                 return Container(
