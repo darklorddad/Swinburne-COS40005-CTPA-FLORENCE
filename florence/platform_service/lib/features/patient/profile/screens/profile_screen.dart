@@ -1370,6 +1370,7 @@ void _showDiseaseFormModal(BuildContext context, WidgetRef ref, {DiseaseLog? exi
       if (type.contains('CHOLESTEROL')) return settings.cholesterolUnit;
       if (type.contains('BLOOD_PRESSURE')) return 'mmHg';
       if (type == 'HBA1C') return '%';
+      if (type == 'BMI') return 'kg/m²'; // Added to prevent empty "()"
       return '';
     }
 

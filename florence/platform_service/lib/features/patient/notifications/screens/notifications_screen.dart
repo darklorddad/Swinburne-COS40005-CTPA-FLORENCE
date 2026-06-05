@@ -156,46 +156,59 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       (label: 'Motivational', type: NotificationType.motivational, unread: false),
     ];
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: chips.map((c) {
-        final isSelected = c.unread
-            ? _showUnreadOnly && _selectedFilter == null
-            : !_showUnreadOnly && _selectedFilter == c.type;
-        final count = countFor(c.type, c.unread);
-        final color = _chipColor(c.type, c.unread);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppTheme.getBorderColor(context)),
+        ),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: chips.map((c) {
+            final isSelected = c.unread
+                ? _showUnreadOnly && _selectedFilter == null
+                : !_showUnreadOnly && _selectedFilter == c.type;
+            final count = countFor(c.type, c.unread);
+            final color = _chipColor(c.type, c.unread);
 
-        return FilterChip(
-          label: count > 0
-              ? Text('${c.label} $count')
-              : Text(c.label),
-          selected: isSelected,
-          onSelected: (_) {
-            setState(() {
-              if (c.unread) {
-                _showUnreadOnly = true;
-                _selectedFilter = null;
-              } else {
-                _showUnreadOnly = false;
-                _selectedFilter = c.type;
-              }
-            });
-          },
-          showCheckmark: false,
-          selectedColor: color.withValues(alpha: 0.15),
-          side: BorderSide(
-            color: isSelected ? color : AppTheme.borderColor,
-          ),
-          labelStyle: TextStyle(
-            color: isSelected ? color : AppTheme.textSecondaryColor,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 13,
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-        );
-      }).toList(),
+            return FilterChip(
+              label: count > 0
+                  ? Text('${c.label} $count')
+                  : Text(c.label),
+              selected: isSelected,
+              onSelected: (_) {
+                setState(() {
+                  if (c.unread) {
+                    _showUnreadOnly = true;
+                    _selectedFilter = null;
+                  } else {
+                    _showUnreadOnly = false;
+                    _selectedFilter = c.type;
+                  }
+                });
+              },
+              showCheckmark: false,
+              selectedColor: color.withValues(alpha: 0.15),
+              side: BorderSide(
+                color: isSelected ? color : AppTheme.borderColor,
+              ),
+              labelStyle: TextStyle(
+                color: isSelected ? color : AppTheme.textSecondaryColor,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontSize: 13,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 

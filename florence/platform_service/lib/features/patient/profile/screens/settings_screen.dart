@@ -368,7 +368,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
               Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
@@ -413,6 +413,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     return SizedBox(
       height: 64, // Fixed height for consistency
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Icon(icon, size: 20, color: AppTheme.textSecondaryColor),
           const SizedBox(width: 12),
