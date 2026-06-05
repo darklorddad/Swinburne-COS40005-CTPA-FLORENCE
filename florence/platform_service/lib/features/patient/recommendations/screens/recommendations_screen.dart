@@ -847,14 +847,15 @@ class _RecommendationsScreenState
               ),
               const SizedBox(height: 12),
               _buildInfoBullet(context, 'Glucose Control (40 pts)', 'Based on your Time in Range (70–180 mg/dL or 3.9–10.0 mmol/L).'),
-              _buildInfoBullet(context, 'Activity (30 pts)', 'Based on your total active minutes, capped at 150 mins/week.'),
-              _buildInfoBullet(context, 'Adherence (30 pts)', 'Based on your medication adherence today. If you have no medications, you get full points.'),
+              _buildInfoBullet(context, 'Medication Adherence (20 pts)', 'Based on your medication adherence. If you have no medications, you get full points.'),
+              _buildInfoBullet(context, 'Physical Activity (15 pts)', 'Based on your total active minutes, capped at 150 mins/week.'),
+              _buildInfoBullet(context, 'Engagement (25 pts)', 'Rewards the habit of tracking. Based on total logs (readings, meals, activity) over the week.'),
               const SizedBox(height: 12),
               Text(
-                'Note: If you haven\'t logged any data in the last 7 days, your score drops to 25 to reflect unmonitored risk. The final score is clamped between 20 and 100.',
+                'Note: If you haven\'t logged any data in the last 7 days, your score drops to 0 to reflect unmonitored risk. The final score is strictly clamped between 0 and 100.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontStyle: FontStyle.italic, 
-                  color: AppTheme.textSecondaryColor
+                  color: AppTheme.textSecondaryColor,
                 ),
               ),
             ],
