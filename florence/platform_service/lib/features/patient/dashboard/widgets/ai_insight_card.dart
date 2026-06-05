@@ -20,12 +20,10 @@ const String _kDummyInsight =
 /// A safety-net timer forces reveal after 8s regardless.
 class AIInsightCard extends ConsumerStatefulWidget {
   final VoidCallback? onTap;
-  final double aspectRatio;
 
   const AIInsightCard({
     super.key,
     this.onTap,
-    this.aspectRatio = 1.586,
   });
 
   @override
@@ -149,13 +147,11 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
     const double borderRadius = 24.0;
 
-    return AspectRatio(
-      aspectRatio: widget.aspectRatio,
-      child: InkWell(
-        onTap: widget.onTap ??
-            () => Navigator.pushNamed(context, AppRoutes.recommendations),
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Container(
+    return InkWell(
+      onTap: widget.onTap ??
+          () => Navigator.pushNamed(context, AppRoutes.recommendations),
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: Container(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
@@ -263,8 +259,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   // ── Scanning line + shimmer bars ───────────────────────────────
@@ -386,8 +381,6 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
               fontWeight: FontWeight.w600,
               fontSize: 18,
             ),
-        maxLines: 4,
-        overflow: TextOverflow.ellipsis,
       ),
     );
   }
