@@ -177,9 +177,33 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                     itemCount: thresholds.length,
                     itemBuilder: (context, index) {
                       final t = thresholds[index];
+                      final type = t['data_type'] ?? '';
+                      double displayMin = (t['min_value'] as num).toDouble();
+                      double displayMax = (t['max_value'] as num).toDouble();
+                      String unit = '';
+
+                      if (type == 'GLUCOSE') {
+                        unit = ' $_glucoseUnit';
+                        if (_glucoseUnit == 'mg/dL') {
+                          displayMin = displayMin * 18.018;
+                          displayMax = displayMax * 18.018;
+                        }
+                      } else if (type.contains('CHOLESTEROL')) {
+                        unit = ' $_cholesterolUnit';
+                        if (_cholesterolUnit == 'mg/dL') {
+                          final factor = (type == 'CHOLESTEROL_TRIGLYCERIDES') ? 88.57 : 38.67;
+                          displayMin = displayMin * factor;
+                          displayMax = displayMax * factor;
+                        }
+                      } else if (type.contains('BLOOD_PRESSURE')) {
+                        unit = ' mmHg';
+                      } else if (type == 'HBA1C') {
+                        unit = ' %';
+                      }
+
                       return ListTile(
-                        title: Text(t['data_type']?.toString().replaceAll('_', ' ') ?? 'Unknown'),
-                        subtitle: Text('Min: ${t['min_value']} - Max: ${t['max_value']}'),
+                        title: Text(type.toString().replaceAll('_', ' ')),
+                        subtitle: Text('Min: ${displayMin.toStringAsFixed(1)} - Max: ${displayMax.toStringAsFixed(1)}$unit'),
                         trailing: IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 20),
                           onPressed: () => _showEditSingleThresholdDialog(t),
@@ -200,13 +224,37 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   Future<void> _showEditSingleThresholdDialog(Map<String, dynamic> threshold) async {
-    final minController = TextEditingController(text: threshold['min_value'].toString());
-    final maxController = TextEditingController(text: threshold['max_value'].toString());
+    final type = threshold['data_type'] ?? '';
+    double displayMin = (threshold['min_value'] as num).toDouble();
+    double displayMax = (threshold['max_value'] as num).toDouble();
+    String unit = '';
+
+    if (type == 'GLUCOSE') {
+      unit = ' $_glucoseUnit';
+      if (_glucoseUnit == 'mg/dL') {
+        displayMin = displayMin * 18.018;
+        displayMax = displayMax * 18.018;
+      }
+    } else if (type.contains('CHOLESTEROL')) {
+      unit = ' $_cholesterolUnit';
+      if (_cholesterolUnit == 'mg/dL') {
+        final factor = (type == 'CHOLESTEROL_TRIGLYCERIDES') ? 88.57 : 38.67;
+        displayMin = displayMin * factor;
+        displayMax = displayMax * factor;
+      }
+    } else if (type.contains('BLOOD_PRESSURE')) {
+      unit = ' mmHg';
+    } else if (type == 'HBA1C') {
+      unit = ' %';
+    }
+
+    final minController = TextEditingController(text: displayMin.toStringAsFixed(1));
+    final maxController = TextEditingController(text: displayMax.toStringAsFixed(1));
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Edit ${threshold['data_type']}'),
+        title: Text('Edit $type ($unit)'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -232,11 +280,27 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     if (confirmed == true && mounted) {
       setState(() => _isLoading = true);
       try {
+        double saveMin = double.parse(minController.text);
+        double saveMax = double.parse(maxController.text);
+
+        if (type == 'GLUCOSE') {
+          if (_glucoseUnit == 'mg/dL') {
+            saveMin = saveMin / 18.018;
+            saveMax = saveMax / 18.018;
+          }
+        } else if (type.contains('CHOLESTEROL')) {
+          if (_cholesterolUnit == 'mg/dL') {
+            final factor = (type == 'CHOLESTEROL_TRIGLYCERIDES') ? 88.57 : 38.67;
+            saveMin = saveMin / factor;
+            saveMax = saveMax / factor;
+          }
+        }
+
         final List<Map<String, dynamic>> updatedThresholds = [
           {
-            'data_type': threshold['data_type'],
-            'min_value': double.parse(minController.text),
-            'max_value': double.parse(maxController.text),
+            'data_type': type,
+            'min_value': saveMin,
+            'max_value': saveMax,
           }
         ];
         await _dataService.setPatientThresholds(widget.patientId, updatedThresholds);
@@ -919,18 +983,46 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           icon: Icons.opacity,
           hasData: hasCholesterol,
           onTap: () {
-            double lowThreshold = 2.6;
-            double highThreshold = 5.2;
+            double totalLow = 2.6;
+            double totalHigh = 5.2;
+            double ldlLow = 0.0;
+            double ldlHigh = 2.6;
+            double hdlLow = 1.0;
+            double hdlHigh = 2.6;
+            double trigLow = 0.0;
+            double trigHigh = 1.7;
+
             if (_patientThresholds != null) {
               try {
                 final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'CHOLESTEROL_TOTAL');
-                lowThreshold = (t['min_value'] as num).toDouble();
-                highThreshold = (t['max_value'] as num).toDouble();
+                totalLow = (t['min_value'] as num).toDouble();
+                totalHigh = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'CHOLESTEROL_LDL');
+                ldlLow = (t['min_value'] as num).toDouble();
+                ldlHigh = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'CHOLESTEROL_HDL');
+                hdlLow = (t['min_value'] as num).toDouble();
+                hdlHigh = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'CHOLESTEROL_TRIGLYCERIDES');
+                trigLow = (t['min_value'] as num).toDouble();
+                trigHigh = (t['max_value'] as num).toDouble();
               } catch (_) {}
             }
 
-            final displayLow = _displayCholesterol(lowThreshold);
-            final displayHigh = _displayCholesterol(highThreshold);
+            final displayTotalLow = _displayCholesterol(totalLow);
+            final displayTotalHigh = _displayCholesterol(totalHigh);
+            final displayLdlLow = _displayCholesterol(ldlLow);
+            final displayLdlHigh = _displayCholesterol(ldlHigh);
+            final displayHdlLow = _displayCholesterol(hdlLow);
+            final displayHdlHigh = _displayCholesterol(hdlHigh);
+            final displayTrigLow = trigLow * (_cholesterolUnit == 'mg/dL' ? 88.57 : 1.0);
+            final displayTrigHigh = trigHigh * (_cholesterolUnit == 'mg/dL' ? 88.57 : 1.0);
 
             final displayReadings = _healthData!.cholesterolReadings.map((r) {
               return CholesterolReading(
@@ -948,8 +1040,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 builder: (context) => CholesterolAnalyticsScreen(
                   patient: _patient!,
                   readings: displayReadings,
-                  lowThreshold: displayLow,
-                  highThreshold: displayHigh,
+                  totalLow: displayTotalLow,
+                  totalHigh: displayTotalHigh,
+                  ldlLow: displayLdlLow,
+                  ldlHigh: displayLdlHigh,
+                  hdlLow: displayHdlLow,
+                  hdlHigh: displayHdlHigh,
+                  trigLow: displayTrigLow,
+                  trigHigh: displayTrigHigh,
                   cholesterolUnit: _cholesterolUnit,
                 ),
               ),
@@ -2044,8 +2142,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         } else if (type.contains('CHOLESTEROL')) {
           unit = ' $_cholesterolUnit';
           if (_cholesterolUnit == 'mg/dL') {
-            minValue = minValue * 38.67;
-            maxValue = maxValue * 38.67;
+            final factor = (type == 'CHOLESTEROL_TRIGLYCERIDES') ? 88.57 : 38.67;
+            minValue = minValue * factor;
+            maxValue = maxValue * factor;
           }
         } else if (type.contains('BLOOD_PRESSURE')) {
           unit = ' mmHg';

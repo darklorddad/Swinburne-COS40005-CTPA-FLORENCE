@@ -9,16 +9,28 @@ import 'dart:math';
 class CholesterolAnalyticsScreen extends StatefulWidget {
   final Patient patient;
   final List<CholesterolReading> readings;
-  final double lowThreshold;
-  final double highThreshold;
+  final double totalLow;
+  final double totalHigh;
+  final double ldlLow;
+  final double ldlHigh;
+  final double hdlLow;
+  final double hdlHigh;
+  final double trigLow;
+  final double trigHigh;
   final String cholesterolUnit;
 
   const CholesterolAnalyticsScreen({
     super.key,
     required this.patient,
     required this.readings,
-    required this.lowThreshold,
-    required this.highThreshold,
+    required this.totalLow,
+    required this.totalHigh,
+    required this.ldlLow,
+    required this.ldlHigh,
+    required this.hdlLow,
+    required this.hdlHigh,
+    required this.trigLow,
+    required this.trigHigh,
     required this.cholesterolUnit,
   });
 
@@ -296,6 +308,8 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
       ratio = latest.total / latest.hdl;
     }
 
+    final decimals = widget.cholesterolUnit == 'mmol/L' ? 1 : 0;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
@@ -343,10 +357,10 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildTargetRow('Total', widget.cholesterolUnit == 'mmol/L' ? '2.6 - 5.2 mmol/L' : '100 - 200 mg/dL'),
-                    _buildTargetRow('LDL', widget.cholesterolUnit == 'mmol/L' ? '0.0 - 2.6 mmol/L' : '0 - 100 mg/dL'),
-                    _buildTargetRow('HDL', widget.cholesterolUnit == 'mmol/L' ? '1.0 - 2.6 mmol/L' : '40 - 100 mg/dL'),
-                    _buildTargetRow('Triglycerides', widget.cholesterolUnit == 'mmol/L' ? '0.0 - 1.7 mmol/L' : '0 - 150 mg/dL'),
+                    _buildTargetRow('Total', '${widget.totalLow.toStringAsFixed(decimals)} - ${widget.totalHigh.toStringAsFixed(decimals)} ${widget.cholesterolUnit}'),
+                    _buildTargetRow('LDL', '${widget.ldlLow.toStringAsFixed(decimals)} - ${widget.ldlHigh.toStringAsFixed(decimals)} ${widget.cholesterolUnit}'),
+                    _buildTargetRow('HDL', '${widget.hdlLow.toStringAsFixed(decimals)} - ${widget.hdlHigh.toStringAsFixed(decimals)} ${widget.cholesterolUnit}'),
+                    _buildTargetRow('Triglycerides', '${widget.trigLow.toStringAsFixed(decimals)} - ${widget.trigHigh.toStringAsFixed(decimals)} ${widget.cholesterolUnit}'),
                   ],
                 ),
               ),
@@ -552,9 +566,9 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final r = pageItems[index];
-                final isHigh = r.total >= widget.highThreshold;
-                final status = isHigh ? 'HIGH' : (r.total >= widget.lowThreshold ? 'NORMAL' : 'LOW');
-                final color = isHigh ? AppTheme.highRiskColor : (r.total >= widget.lowThreshold ? AppTheme.lowRiskColor : AppTheme.mediumRiskColor);
+                final isHigh = r.total >= widget.totalHigh;
+                final status = isHigh ? 'HIGH' : (r.total >= widget.totalLow ? 'NORMAL' : 'LOW');
+                final color = isHigh ? AppTheme.highRiskColor : (r.total >= widget.totalLow ? AppTheme.lowRiskColor : AppTheme.mediumRiskColor);
 
                 return Container(
                   padding: const EdgeInsets.all(16),
