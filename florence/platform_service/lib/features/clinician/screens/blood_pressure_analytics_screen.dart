@@ -243,6 +243,20 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
         maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
         minY: minY,
         maxY: maxY,
+        rangeAnnotations: RangeAnnotations(
+          horizontalRangeAnnotations: [
+            HorizontalRangeAnnotation(
+              y1: widget.systolicLow,
+              y2: widget.systolicHigh,
+              color: AppTheme.primaryColor.withValues(alpha: 0.06),
+            ),
+            HorizontalRangeAnnotation(
+              y1: widget.diastolicLow,
+              y2: widget.diastolicHigh,
+              color: AppTheme.secondaryColor.withValues(alpha: 0.06),
+            ),
+          ],
+        ),
         extraLinesData: ExtraLinesData(
           horizontalLines: [
             HorizontalLine(
