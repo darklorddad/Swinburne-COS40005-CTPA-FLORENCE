@@ -23,6 +23,7 @@ class LlmRecommendationService {
     required String timeframe,
     int analysisPeriodDays = 7,
     List<String> previousTitles = const [],
+    String glucoseUnit = 'mmol/L',
   }) async {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) throw Exception('User not authenticated');
@@ -37,7 +38,7 @@ class LlmRecommendationService {
     };
 
     final body = jsonEncode({
-      'health_summary': _summaryToSnakeCase(summary),
+      'health_summary': _summaryToSnakeCase(summary, glucoseUnit),
       'analysis_period_days': analysisPeriodDays,
       if (previousTitles.isNotEmpty)
         'previous_recommendation_titles': previousTitles,
@@ -70,8 +71,9 @@ class LlmRecommendationService {
   }
 
   /// Maps [HealthSummary] camelCase fields → Python backend snake_case keys.
-  Map<String, dynamic> _summaryToSnakeCase(HealthSummary summary) {
+  Map<String, dynamic> _summaryToSnakeCase(HealthSummary summary, String glucoseUnit) {
     return {
+      'glucose_unit': glucoseUnit,
       // Core aggregates
       'average_glucose': summary.averageGlucose,
       'glucose_std_dev': summary.glucoseStdDev,

@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 
 class HealthSnapshot(BaseModel):
+    glucose_unit: str = "mmol/L"
     average_glucose_7d: Optional[float] = None
     latest_glucose: Optional[float] = None
     hyper_events_7d: int = 0

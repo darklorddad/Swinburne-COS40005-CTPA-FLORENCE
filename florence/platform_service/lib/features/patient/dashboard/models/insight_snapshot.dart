@@ -3,7 +3,8 @@ import 'package:florence/features/patient/core/repositories/monitor_data_reposit
 /// Lightweight health snapshot sent to the insight generation endpoint.
 /// Much smaller than HealthSummary — only the signals needed for one insight.
 class InsightSnapshot {
-  final double? averageGlucose7d;   // mmol/L average over last 7 days
+  final String glucoseUnit;         // User's preferred unit (mmol/L or mg/dL)
+  final double? averageGlucose7d;   // average over last 7 days in preferred unit
   final double? latestGlucose;      // most recent reading value
   final int hyperEvents7d;          // readings > 180 mg/dL (10 mmol/L)
   final int hypoEvents7d;           // readings < 70 mg/dL (3.9 mmol/L)
@@ -16,6 +17,7 @@ class InsightSnapshot {
   final List<String> activeInsights;
 
   const InsightSnapshot({
+    this.glucoseUnit = 'mmol/L',
     this.averageGlucose7d,
     this.latestGlucose,
     this.hyperEvents7d = 0,
@@ -31,6 +33,7 @@ class InsightSnapshot {
 
   Map<String, dynamic> toJson() {
     return {
+      'glucose_unit': glucoseUnit,
       if (averageGlucose7d != null) 'average_glucose_7d': averageGlucose7d,
       if (latestGlucose != null) 'latest_glucose': latestGlucose,
       'hyper_events_7d': hyperEvents7d,
@@ -47,7 +50,7 @@ class InsightSnapshot {
 
   /// Builds an InsightSnapshot from already-loaded health data and active recommendations.
   /// Call this after [HealthDataState] is available in the dashboard.
-  factory InsightSnapshot.fromData(HealthDataState data, List<String> activeInsights) {
+  factory InsightSnapshot.fromData(HealthDataState data, List<String> activeInsights, String glucoseUnit) {
     final now = DateTime.now();
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     final todayStart = DateTime(now.year, now.month, now.day);
@@ -69,8 +72,8 @@ class InsightSnapshot {
       latestGlucose = recentReadings
           .reduce((a, b) => a.timestamp.isAfter(b.timestamp) ? a : b)
           .value;
-      // Infer unit to pass correct bounds
-      final bool isMmol = avgGlucose! < 40.0;
+      // Use explicit user preference for bounds
+      final bool isMmol = glucoseUnit == 'mmol/L';
       final double highBound = isMmol ? 10.0 : 180.0;
       final double lowBound = isMmol ? 3.9 : 70.0;
 
@@ -105,6 +108,7 @@ class InsightSnapshot {
         .toList();
 
     return InsightSnapshot(
+      glucoseUnit: glucoseUnit,
       averageGlucose7d: avgGlucose,
       latestGlucose: latestGlucose,
       hyperEvents7d: hyperEvents,

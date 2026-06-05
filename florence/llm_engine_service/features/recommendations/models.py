@@ -4,8 +4,9 @@ from typing import Optional, List, Dict, Any
 
 class HealthSummaryRequest(BaseModel):
     # Core aggregates
-    average_glucose: float          # mg/dL, 7-day average
-    glucose_std_dev: float          # mg/dL, variability measure
+    glucose_unit: str = "mmol/L"    # User's preferred unit (mmol/L or mg/dL)
+    average_glucose: float          # 7-day average in user's preferred unit
+    glucose_std_dev: float          # variability measure in user's preferred unit
     hyper_events: int               # readings > 180 mg/dL in period
     hypo_events: int                # readings < 70 mg/dL in period
     time_in_range: float            # % of readings between 70–180 mg/dL

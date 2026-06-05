@@ -88,8 +88,8 @@ class RecommendationService:
         now_iso = now.isoformat()
         s = request.health_summary
 
-        # Dynamically infer units based on values
-        g_unit = "mmol/L" if s.average_glucose < 40.0 else "mg/dL"
+        # Use explicit user preference instead of guessing
+        g_unit = s.glucose_unit
         g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
         
         c_unit = "mmol/L" if (s.latest_cholesterol and s.latest_cholesterol < 15.0) else "mg/dL"

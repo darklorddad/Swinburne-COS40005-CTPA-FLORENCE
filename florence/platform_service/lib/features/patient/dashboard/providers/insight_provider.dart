@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/dashboard/services/insight_service.dart';
 import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
@@ -29,7 +30,8 @@ final insightProvider = FutureProvider.autoDispose<String>((ref) async {
         .map((r) => "${r.title}: ${r.description}")
         .toList();
 
-    final snapshot = InsightSnapshot.fromData(healthData, activeInsights);
+    final settings = ref.watch(patientSettingsProvider);
+    final snapshot = InsightSnapshot.fromData(healthData, activeInsights, settings.glucoseUnit);
     final service = InsightService();
     return await service.generate(snapshot);
   } catch (e) {

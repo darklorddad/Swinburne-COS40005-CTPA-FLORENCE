@@ -38,7 +38,7 @@ class InsightService:
         lines = ["Patient Health Snapshot:"]
 
         g_val = s.average_glucose_7d or s.latest_glucose or 100.0
-        g_unit = "mmol/L" if g_val < 40.0 else "mg/dL"
+        g_unit = s.glucose_unit
         g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
 
         if s.average_glucose_7d is not None:

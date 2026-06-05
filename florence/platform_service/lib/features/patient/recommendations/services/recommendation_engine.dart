@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 import 'package:florence/features/patient/recommendations/services/llm_recommendation_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
@@ -40,6 +41,9 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
     final healthData = ref.read(monitorDataProvider).asData?.value;
     if (healthData == null) return false;
 
+    final settings = ref.read(patientSettingsProvider);
+    final gUnit = settings.glucoseUnit;
+
     // Daily looks at 1 day, Weekly looks at 7 days
     final daysToAnalyze = timeframe == 'daily' ? 1 : 7;
 
@@ -65,7 +69,8 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
           timeframe: timeframe,
           analysisPeriodDays: daysToAnalyze,
           previousTitles: previousTitles,
-                );
+          glucoseUnit: gUnit,
+        );
         debugPrint(
           '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',
         );
@@ -105,6 +110,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
   List<HealthRecommendation> _generateRuleBasedRecommendations(
       HealthSummary summary, String timeframe, HealthDataState healthData) {
     final recommendations = <HealthRecommendation>[];
+    final gUnit = ref.read(patientSettingsProvider).glucoseUnit;
 
     HealthThreshold? t;
     try {
@@ -120,7 +126,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
         category: RecommendationCategory.meal,
         title: 'Reduce Average Glucose',
         description:
-            'Your average glucose is ${summary.averageGlucose.toStringAsFixed(0)} mg/dL. Let\'s work on bringing it down.',
+            'Your average glucose is ${summary.averageGlucose.toStringAsFixed(gUnit == 'mmol/L' ? 1 : 0)} $gUnit. Let\'s work on bringing it down.',
         priority: RecommendationPriority.high,
         status: RecommendationStatus.active,
         generatedAt: DateTime.now(),
