@@ -43,6 +43,7 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
   final int _itemsPerPage = 5;
   String _selectedFilter = 'Daily';
   DateTime _focusedDate = DateTime.now();
+  String _selectedMetric = 'Total';
 
   List<CholesterolReading> get _filteredReadings {
     final filtered = widget.readings.where((r) {
@@ -174,25 +175,65 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
       return const Center(child: Text('No cholesterol data available'));
     }
 
-    double minY = 0;
-    double maxY = 10;
-    for (var r in sortedReadings) {
-      final maxVal = [r.total, r.ldl, r.hdl, r.triglycerides].reduce(max);
-      if (maxVal > maxY) {
-        maxY = maxVal;
-      }
+    double lowThresh = widget.totalLow;
+    double highThresh = widget.totalHigh;
+    Color metricColor = AppTheme.primaryColor;
+    String label = 'Total';
+
+    if (_selectedMetric == 'LDL') {
+      lowThresh = widget.ldlLow;
+      highThresh = widget.ldlHigh;
+      metricColor = AppTheme.highRiskColor;
+      label = 'LDL';
+    } else if (_selectedMetric == 'HDL') {
+      lowThresh = widget.hdlLow;
+      highThresh = widget.hdlHigh;
+      metricColor = AppTheme.lowRiskColor;
+      label = 'HDL';
+    } else if (_selectedMetric == 'Triglycerides') {
+      lowThresh = widget.trigLow;
+      highThresh = widget.trigHigh;
+      metricColor = Colors.orange;
+      label = 'Triglycerides';
     }
-    maxY = (maxY + 1).ceilToDouble();
+
+    // Calculate min/max based on selected metric
+    List<double> values = sortedReadings.map((r) {
+      if (_selectedMetric == 'LDL') return r.ldl;
+      if (_selectedMetric == 'HDL') return r.hdl;
+      if (_selectedMetric == 'Triglycerides') return r.triglycerides;
+      return r.total;
+    }).toList();
+
+    double minVal = values.reduce(min);
+    double maxVal = values.reduce(max);
+
+    if (lowThresh < minVal) minVal = lowThresh;
+    if (highThresh > maxVal) maxVal = highThresh;
+
+    final double minY = (minVal - 1.0).clamp(0.0, double.infinity).floorToDouble();
+    final double maxY = (maxVal + 1.0).ceilToDouble();
 
     return LineChart(
       LineChartData(
         gridData: FlGridData(
           show: true,
           drawVerticalLine: false,
-          getDrawingHorizontalLine: (value) => FlLine(
-            color: Colors.grey[200]!,
-            strokeWidth: 1,
-          ),
+          getDrawingHorizontalLine: (value) {
+            if (value == highThresh || value == lowThresh) {
+              return FlLine(
+                color: value == highThresh
+                    ? AppTheme.highRiskColor.withValues(alpha: 0.4)
+                    : AppTheme.lowRiskColor.withValues(alpha: 0.4),
+                strokeWidth: 1,
+                dashArray: [4, 4],
+              );
+            }
+            return FlLine(
+              color: Colors.grey[200]!,
+              strokeWidth: 1,
+            );
+          },
         ),
         titlesData: FlTitlesData(
           show: true,
@@ -242,33 +283,59 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
         maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
         minY: minY,
         maxY: maxY,
+        rangeAnnotations: RangeAnnotations(
+          horizontalRangeAnnotations: [
+            HorizontalRangeAnnotation(
+              y1: lowThresh,
+              y2: highThresh,
+              color: AppTheme.lowRiskColor.withValues(alpha: 0.06),
+            ),
+          ],
+        ),
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            HorizontalLine(
+              y: highThresh,
+              color: AppTheme.highRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                padding: const EdgeInsets.only(right: 5, bottom: 2),
+                style: TextStyle(
+                  color: AppTheme.highRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => '$label High',
+              ),
+            ),
+            HorizontalLine(
+              y: lowThresh,
+              color: AppTheme.lowRiskColor.withValues(alpha: 0.6),
+              strokeWidth: 1,
+              dashArray: [5, 5],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.bottomRight,
+                padding: const EdgeInsets.only(right: 5, top: 2),
+                style: TextStyle(
+                  color: AppTheme.lowRiskColor.withValues(alpha: 0.8),
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelResolver: (_) => '$label Low',
+              ),
+            ),
+          ],
+        ),
         lineBarsData: [
           LineChartBarData(
-            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].total)),
+            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), values[index])),
             isCurved: true,
-            color: AppTheme.primaryColor,
-            barWidth: 2,
-            dotData: FlDotData(show: true),
-          ),
-          LineChartBarData(
-            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].ldl)),
-            isCurved: true,
-            color: AppTheme.highRiskColor,
-            barWidth: 2,
-            dotData: FlDotData(show: true),
-          ),
-          LineChartBarData(
-            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].hdl)),
-            isCurved: true,
-            color: AppTheme.lowRiskColor,
-            barWidth: 2,
-            dotData: FlDotData(show: true),
-          ),
-          LineChartBarData(
-            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].triglycerides)),
-            isCurved: true,
-            color: Colors.orange,
-            barWidth: 2,
+            color: metricColor,
+            barWidth: 3,
             dotData: FlDotData(show: true),
           ),
         ],
@@ -464,21 +531,45 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                   Text('Cholesterol Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
                 ],
               ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'Total', label: Text('Total', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 'LDL', label: Text('LDL', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 'HDL', label: Text('HDL', style: TextStyle(fontSize: 11))),
+                        ButtonSegment(value: 'Triglycerides', label: Text('Trig', style: TextStyle(fontSize: 11))),
+                      ],
+                      selected: {_selectedMetric},
+                      onSelectionChanged: (newSelection) {
+                        setState(() {
+                          _selectedMetric = newSelection.first;
+                        });
+                      },
+                      style: SegmentedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        selectedBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        selectedForegroundColor: AppTheme.primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
               SizedBox(
                 height: 250,
                 child: _buildCholesterolChart(_filteredReadingsAsc),
               ),
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildLegendItem('Total', AppTheme.primaryColor),
-                  _buildLegendItem('LDL', AppTheme.highRiskColor),
-                  _buildLegendItem('HDL', AppTheme.lowRiskColor),
-                  _buildLegendItem('Triglycerides', Colors.orange),
+                  if (_selectedMetric == 'Total') _buildLegendItem('Total', AppTheme.primaryColor),
+                  if (_selectedMetric == 'LDL') _buildLegendItem('LDL', AppTheme.highRiskColor),
+                  if (_selectedMetric == 'HDL') _buildLegendItem('HDL', AppTheme.lowRiskColor),
+                  if (_selectedMetric == 'Triglycerides') _buildLegendItem('Triglycerides', Colors.orange),
                 ],
               ),
             ],
