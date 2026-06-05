@@ -519,7 +519,7 @@ class _RecommendationsScreenState
 
                               // 3. HISTORY
                               if (history.isNotEmpty) ...[
-                                Divider(height: 32, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
+                                Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
                                 _RecommendationHistorySection(history: history),
                               ],
                               const SizedBox(height: 24),
@@ -695,13 +695,13 @@ class _RecommendationsScreenState
     final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 4),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12), // Symmetrical 20px left/right, 24px top
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Title row with action buttons ──
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start, // Align to top since left side is now taller
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
@@ -717,13 +717,36 @@ class _RecommendationsScreenState
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  'Your recommendations',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Your recommendations',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                    const SizedBox(height: 4), // Tight gap between title and time
+                    GestureDetector(
+                      onTap: isStale ? () async {
+                        await _generateRecommendations(timeframe: 'daily');
+                        await _generateRecommendations(timeframe: 'weekly');
+                      } : null,
+                      child: Text(
+                        freshnessText,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isStale
+                              ? AppTheme.warningColor
+                              : AppTheme.textSecondaryColor,
+                        ),
                       ),
+                    ),
+                  ],
                 ),
               ),
+              const SizedBox(width: 8),
               // Refresh icon button
               SizedBox(
                 width: 40,
@@ -817,27 +840,6 @@ class _RecommendationsScreenState
               const SizedBox(width: 8),
             ],
           ),
-
-          // ── Subtitle: freshness ──
-          Padding(
-            padding: const EdgeInsets.only(top: 2, left: 56),
-            child: GestureDetector(
-              onTap: isStale ? () async {
-                await _generateRecommendations(timeframe: 'daily');
-                await _generateRecommendations(timeframe: 'weekly');
-              } : null,
-              child: Text(
-                freshnessText,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isStale
-                      ? AppTheme.warningColor
-                      : AppTheme.textSecondaryColor,
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
         ],
       ),
     );
@@ -1509,7 +1511,7 @@ class _RecommendationHistorySectionState
     final currentItems = items.sublist(start, end);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16), // Matched 20px left/right, 24px top
       child: Column(
         children: [
           // ── Header row ──────────────────────────────────────
