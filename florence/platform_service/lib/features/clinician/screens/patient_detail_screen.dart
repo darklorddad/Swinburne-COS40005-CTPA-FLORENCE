@@ -765,15 +765,41 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                   statusColor: hasGlucose ? (latestGlucose.isHigh ? AppTheme.highRiskColor : (latestGlucose.isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor)) : Colors.grey,
                   icon: Icons.water_drop,
                   hasData: hasGlucose,
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => GlucoseAnalyticsScreen(
-                        patient: _patient!,
-                        readings: _healthData!.glucoseReadings,
+                  onTap: () {
+                    double lowThreshold = 3.9;
+                    double highThreshold = 10.0;
+                    if (_patientThresholds != null) {
+                      try {
+                        final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'GLUCOSE');
+                        lowThreshold = (t['min_value'] as num).toDouble();
+                        highThreshold = (t['max_value'] as num).toDouble();
+                      } catch (_) {}
+                    }
+
+                    final displayLow = _displayGlucose(lowThreshold);
+                    final displayHigh = _displayGlucose(highThreshold);
+
+                    final displayReadings = _healthData!.glucoseReadings.map((r) {
+                      return GlucoseReading(
+                        timestamp: r.timestamp,
+                        value: _displayGlucose(r.value),
+                        context: r.context,
+                      );
+                    }).toList();
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => GlucoseAnalyticsScreen(
+                          patient: _patient!,
+                          readings: displayReadings,
+                          lowThreshold: displayLow,
+                          highThreshold: displayHigh,
+                          glucoseUnit: _glucoseUnit,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 16),

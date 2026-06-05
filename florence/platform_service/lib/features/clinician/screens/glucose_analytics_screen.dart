@@ -10,11 +10,17 @@ import 'package:intl/intl.dart';
 class GlucoseAnalyticsScreen extends ConsumerStatefulWidget {
   final Patient patient;
   final List<GlucoseReading> readings;
+  final double lowThreshold;
+  final double highThreshold;
+  final String glucoseUnit;
 
   const GlucoseAnalyticsScreen({
     super.key,
     required this.patient,
     required this.readings,
+    required this.lowThreshold,
+    required this.highThreshold,
+    required this.glucoseUnit,
   });
 
   @override
@@ -49,9 +55,9 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
     int range = 0;
     int high = 0;
     for (var r in widget.readings) {
-      if (r.value < 70) {
+      if (r.value < widget.lowThreshold) {
         low++;
-      } else if (r.value > 180) {
+      } else if (r.value > widget.highThreshold) {
         high++;
       } else {
         range++;
@@ -123,10 +129,24 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
             mainAxisSpacing: 16,
             childAspectRatio: 1.5,
             children: [
-              _buildStatCard('Average', '${_calculateAverage().toInt()} mg/dL', isUp: false, color: AppTheme.primaryColor),
+              _buildStatCard(
+                'Average',
+                widget.glucoseUnit == 'mmol/L'
+                    ? '${_calculateAverage().toStringAsFixed(1)} mmol/L'
+                    : '${_calculateAverage().toInt()} mg/dL',
+                isUp: false,
+                color: AppTheme.primaryColor,
+              ),
               _buildStatCard('Variability', '12.5%', isUp: false, color: AppTheme.secondaryColor), // Mock calculation
               _buildStatCard('Readings', widget.readings.length.toString(), color: AppTheme.accentColor),
-              _buildStatCard('Lowest', '${_minGlucose().toInt()} mg/dL', isUp: false, color: AppTheme.lowRiskColor),
+              _buildStatCard(
+                'Lowest',
+                widget.glucoseUnit == 'mmol/L'
+                    ? '${_minGlucose().toStringAsFixed(1)} mmol/L'
+                    : '${_minGlucose().toInt()} mg/dL',
+                isUp: false,
+                color: AppTheme.lowRiskColor,
+              ),
             ],
           ),
         ],
@@ -164,7 +184,9 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                 height: 250,
                 child: GlucoseChart(
                   readings: widget.readings,
-                  unit: ref.watch(patientSettingsProvider).glucoseUnit,
+                  unit: widget.glucoseUnit,
+                  highThreshold: widget.highThreshold,
+                  lowThreshold: widget.lowThreshold,
                   hbA1cReadings: const [], // Only glucose
                 ),
               ),
@@ -255,8 +277,8 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final r = pageItems[index];
-                final color = r.value > 180 ? AppTheme.highRiskColor : (r.value < 70 ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
-                final status = r.value > 180 ? 'HIGH' : (r.value < 70 ? 'LOW' : 'NORMAL');
+                final color = r.value > widget.highThreshold ? AppTheme.highRiskColor : (r.value < widget.lowThreshold ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
+                final status = r.value > widget.highThreshold ? 'HIGH' : (r.value < widget.lowThreshold ? 'LOW' : 'NORMAL');
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -272,7 +294,9 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            r.value.toInt().toString(),
+                            widget.glucoseUnit == 'mmol/L'
+                                ? r.value.toStringAsFixed(1)
+                                : r.value.toInt().toString(),
                             style: const TextStyle(
                               fontSize: 24, 
                               fontWeight: FontWeight.w500,
@@ -280,11 +304,11 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Padding(
-                            padding: EdgeInsets.only(bottom: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
                             child: Text(
-                              'mg/dL',
-                              style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                              widget.glucoseUnit,
+                              style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary),
                             ),
                           ),
                         ],
