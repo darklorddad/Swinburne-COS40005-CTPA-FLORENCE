@@ -405,7 +405,7 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
               ),
               const SizedBox(height: 24),
               SizedBox(
-                height: 200,
+                height: 250,
                 child: ActivityChart(activityData: _filteredReadingsAsc),
               ),
             ],

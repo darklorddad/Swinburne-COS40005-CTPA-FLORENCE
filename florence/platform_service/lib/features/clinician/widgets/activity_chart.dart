@@ -24,12 +24,9 @@ class ActivityChart extends StatelessWidget {
     final sortedData = [...activityData]..sort((a, b) => a.date.compareTo(b.date));
 
     return Padding(
-      padding: const EdgeInsets.only(top: 16, right: 16, bottom: 16),
-      child: AspectRatio(
-        aspectRatio: 1.7,
-        child: BarChart(
-          _activityChartData(sortedData),
-        ),
+      padding: const EdgeInsets.only(top: 8, right: 8),
+      child: BarChart(
+        _activityChartData(sortedData),
       ),
     );
   }
