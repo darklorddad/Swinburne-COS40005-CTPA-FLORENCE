@@ -439,7 +439,18 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
         ),
         lineBarsData: [
           LineChartBarData(
-            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), values[index])),
+            spots: List.generate(sortedReadings.length, (index) {
+              final r = sortedReadings[index];
+              double x = 0;
+              if (_selectedFilter == 'Hourly') {
+                x = r.timestamp.hour.toDouble();
+              } else if (_selectedFilter == 'Daily') {
+                x = (r.timestamp.weekday - 1).toDouble();
+              } else {
+                x = (r.timestamp.month - 1).toDouble();
+              }
+              return FlSpot(x, values[index]);
+            }),
             isCurved: true,
             color: metricColor,
             barWidth: 3,
