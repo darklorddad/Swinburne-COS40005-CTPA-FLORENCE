@@ -569,7 +569,11 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
               const SizedBox(height: 24),
               SizedBox(
                 height: 250,
-                child: ActivityChart(activityData: _filteredReadingsAsc),
+                child: ActivityChart(
+                  activityData: _filteredReadingsAsc,
+                  filter: _selectedFilter,
+                  focusedDate: _focusedDate,
+                ),
               ),
             ],
           ),
