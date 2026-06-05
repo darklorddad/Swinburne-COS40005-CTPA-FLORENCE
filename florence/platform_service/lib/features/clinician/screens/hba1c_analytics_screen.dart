@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:florence/features/clinician/models/health_data.dart';
 import 'package:florence/features/clinician/models/patient.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
@@ -21,6 +22,212 @@ class HbA1cAnalyticsScreen extends StatefulWidget {
 class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
   int _currentPage = 0;
   final int _itemsPerPage = 5;
+  String _selectedFilter = 'Daily';
+  DateTime _focusedDate = DateTime.now();
+
+  List<HbA1cReading> get _filteredReadings {
+    final filtered = widget.readings.where((r) {
+      if (_selectedFilter == 'Hourly') {
+        final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+        final end = start.add(const Duration(days: 1));
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      } else if (_selectedFilter == 'Daily') {
+        final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
+        final end = start.add(const Duration(days: 7));
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      } else {
+        final start = DateTime(_focusedDate.year, 1, 1);
+        final end = DateTime(_focusedDate.year + 1, 1, 1);
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      }
+    }).toList();
+    return filtered;
+  }
+
+  List<HbA1cReading> get _filteredReadingsAsc {
+    final list = List<HbA1cReading>.from(_filteredReadings);
+    list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return list;
+  }
+
+  List<HbA1cReading> get _filteredReadingsDesc {
+    final list = List<HbA1cReading>.from(_filteredReadings);
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return list;
+  }
+
+  Widget _buildFilterHeader({
+    required String selectedFilter,
+    required DateTime focusedDate,
+    required Function(String) onFilterChanged,
+    required Function(DateTime) onDateChanged,
+  }) {
+    String dateLabel = '';
+    if (selectedFilter == 'Hourly') {
+      dateLabel = DateFormat('EEEE, d MMMM yyyy').format(focusedDate);
+    } else if (selectedFilter == 'Daily') {
+      final startOfWeek = focusedDate.subtract(Duration(days: focusedDate.weekday - 1));
+      final endOfWeek = startOfWeek.add(const Duration(days: 6));
+      dateLabel = '${DateFormat('d MMM').format(startOfWeek)} - ${DateFormat('d MMM yyyy').format(endOfWeek)}';
+    } else {
+      dateLabel = DateFormat('yyyy').format(focusedDate);
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'Hourly', label: Text('24 Hours', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'Daily', label: Text('7 Days', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'Yearly', label: Text('12 Months', style: TextStyle(fontSize: 12))),
+                    ],
+                    selected: {selectedFilter},
+                    onSelectionChanged: (newSelection) {
+                      onFilterChanged(newSelection.first);
+                    },
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      selectedBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      selectedForegroundColor: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    if (selectedFilter == 'Hourly') {
+                      onDateChanged(focusedDate.subtract(const Duration(days: 1)));
+                    } else if (selectedFilter == 'Daily') {
+                      onDateChanged(focusedDate.subtract(const Duration(days: 7)));
+                    } else {
+                      onDateChanged(DateTime(focusedDate.year - 1, focusedDate.month, focusedDate.day));
+                    }
+                  },
+                ),
+                Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    if (selectedFilter == 'Hourly') {
+                      onDateChanged(focusedDate.add(const Duration(days: 1)));
+                    } else if (selectedFilter == 'Daily') {
+                      onDateChanged(focusedDate.add(const Duration(days: 7)));
+                    } else {
+                      onDateChanged(DateTime(focusedDate.year + 1, focusedDate.month, focusedDate.day));
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHbA1cChart(List<HbA1cReading> sortedReadings) {
+    if (sortedReadings.isEmpty) {
+      return const Center(child: Text('No HbA1c data available'));
+    }
+
+    double minY = 3.0;
+    double maxY = 15.0;
+
+    return LineChart(
+      LineChartData(
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (value) => FlLine(
+            color: Colors.grey[200]!,
+            strokeWidth: 1,
+          ),
+        ),
+        titlesData: FlTitlesData(
+          show: true,
+          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 32,
+              getTitlesWidget: (value, meta) {
+                final index = value.toInt();
+                if (index >= 0 && index < sortedReadings.length) {
+                  final date = sortedReadings[index].timestamp;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 6.0),
+                    child: Text(
+                      DateFormat('MM/dd').format(date),
+                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                    ),
+                  );
+                }
+                return const Text('');
+              },
+            ),
+          ),
+          leftTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 35,
+              getTitlesWidget: (value, meta) {
+                return Text(
+                  '${value.toStringAsFixed(1)}%',
+                  style: const TextStyle(color: AppTheme.textSecondary, fontSize: 10),
+                );
+              },
+            ),
+          ),
+        ),
+        borderData: FlBorderData(
+          show: true,
+          border: Border(
+            bottom: BorderSide(color: Colors.grey[300]!),
+            left: BorderSide(color: Colors.grey[300]!),
+          ),
+        ),
+        minX: 0,
+        maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
+        minY: minY,
+        maxY: maxY,
+        lineBarsData: [
+          LineChartBarData(
+            spots: List.generate(sortedReadings.length, (index) => FlSpot(index.toDouble(), sortedReadings[index].value)),
+            isCurved: true,
+            color: AppTheme.primaryColor,
+            barWidth: 3,
+            dotData: FlDotData(show: true),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +238,12 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
+            _buildFilterHeader(
+              selectedFilter: _selectedFilter,
+              focusedDate: _focusedDate,
+              onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
+              onDateChanged: (date) => setState(() => _focusedDate = date),
+            ),
             _buildOverviewSection(),
             _buildTrendsSection(),
             _buildHistorySection(),
@@ -41,7 +254,8 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
   }
 
   Widget _buildOverviewSection() {
-    final latest = widget.readings.isNotEmpty ? widget.readings.last.value : 0.0;
+    final readings = _filteredReadingsDesc;
+    final latest = readings.isNotEmpty ? readings.first.value : 0.0;
     const target = 6.0;
     
     return Padding(
@@ -133,7 +347,6 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
   }
 
   Widget _buildTrendsSection() {
-    // Placeholder for trends chart
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Card(
@@ -144,30 +357,26 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
           side: const BorderSide(color: AppTheme.dividerColor, width: 1),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Center(
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.trending_up, color: AppTheme.textSecondary, size: 20),
+                  SizedBox(width: 8),
+                  Text(
+                    'HbA1c Trends',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
                   ),
-                  child: const Icon(Icons.bar_chart_rounded, size: 40, color: AppTheme.primaryColor),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'HbA1c Trends',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppTheme.textPrimary),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Chart visualization coming soon',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                ),
-              ],
-            ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                height: 250,
+                child: _buildHbA1cChart(_filteredReadingsAsc),
+              ),
+            ],
           ),
         ),
       ),
@@ -175,8 +384,7 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
   }
 
   Widget _buildHistorySection() {
-    final sortedReadings = List<HbA1cReading>.from(widget.readings)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final sortedReadings = _filteredReadingsDesc;
     
     final totalPages = (sortedReadings.length / _itemsPerPage).ceil();
     if (_currentPage >= totalPages) _currentPage = totalPages > 0 ? totalPages - 1 : 0;

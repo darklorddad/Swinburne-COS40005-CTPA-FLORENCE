@@ -30,6 +30,133 @@ class GlucoseAnalyticsScreen extends ConsumerStatefulWidget {
 class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen> {
   int _currentPage = 0;
   final int _itemsPerPage = 5;
+  String _selectedFilter = 'Daily';
+  DateTime _focusedDate = DateTime.now();
+
+  List<GlucoseReading> get _filteredReadings {
+    final filtered = widget.readings.where((r) {
+      if (_selectedFilter == 'Hourly') {
+        final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
+        final end = start.add(const Duration(days: 1));
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      } else if (_selectedFilter == 'Daily') {
+        final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
+        final end = start.add(const Duration(days: 7));
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      } else {
+        final start = DateTime(_focusedDate.year, 1, 1);
+        final end = DateTime(_focusedDate.year + 1, 1, 1);
+        return r.timestamp.isAfter(start) && r.timestamp.isBefore(end);
+      }
+    }).toList();
+    return filtered;
+  }
+
+  List<GlucoseReading> get _filteredReadingsAsc {
+    final list = List<GlucoseReading>.from(_filteredReadings);
+    list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return list;
+  }
+
+  List<GlucoseReading> get _filteredReadingsDesc {
+    final list = List<GlucoseReading>.from(_filteredReadings);
+    list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    return list;
+  }
+
+  Widget _buildFilterHeader({
+    required String selectedFilter,
+    required DateTime focusedDate,
+    required Function(String) onFilterChanged,
+    required Function(DateTime) onDateChanged,
+  }) {
+    String dateLabel = '';
+    if (selectedFilter == 'Hourly') {
+      dateLabel = DateFormat('EEEE, d MMMM yyyy').format(focusedDate);
+    } else if (selectedFilter == 'Daily') {
+      final startOfWeek = focusedDate.subtract(Duration(days: focusedDate.weekday - 1));
+      final endOfWeek = startOfWeek.add(const Duration(days: 6));
+      dateLabel = '${DateFormat('d MMM').format(startOfWeek)} - ${DateFormat('d MMM yyyy').format(endOfWeek)}';
+    } else {
+      dateLabel = DateFormat('yyyy').format(focusedDate);
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppTheme.dividerColor, width: 1),
+      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'Hourly', label: Text('24 Hours', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'Daily', label: Text('7 Days', style: TextStyle(fontSize: 12))),
+                      ButtonSegment(value: 'Yearly', label: Text('12 Months', style: TextStyle(fontSize: 12))),
+                    ],
+                    selected: {selectedFilter},
+                    onSelectionChanged: (newSelection) {
+                      onFilterChanged(newSelection.first);
+                    },
+                    style: SegmentedButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      selectedBackgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                      selectedForegroundColor: AppTheme.primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.chevron_left, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    if (selectedFilter == 'Hourly') {
+                      onDateChanged(focusedDate.subtract(const Duration(days: 1)));
+                    } else if (selectedFilter == 'Daily') {
+                      onDateChanged(focusedDate.subtract(const Duration(days: 7)));
+                    } else {
+                      onDateChanged(DateTime(focusedDate.year - 1, focusedDate.month, focusedDate.day));
+                    }
+                  },
+                ),
+                Text(
+                  dateLabel,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.chevron_right, color: AppTheme.primaryColor),
+                  onPressed: () {
+                    if (selectedFilter == 'Hourly') {
+                      onDateChanged(focusedDate.add(const Duration(days: 1)));
+                    } else if (selectedFilter == 'Daily') {
+                      onDateChanged(focusedDate.add(const Duration(days: 7)));
+                    } else {
+                      onDateChanged(DateTime(focusedDate.year + 1, focusedDate.month, focusedDate.day));
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +167,12 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
       body: SingleChildScrollView(
         child: Column(
           children: [
+            _buildFilterHeader(
+              selectedFilter: _selectedFilter,
+              focusedDate: _focusedDate,
+              onFilterChanged: (filter) => setState(() => _selectedFilter = filter),
+              onDateChanged: (date) => setState(() => _focusedDate = date),
+            ),
             _buildOverviewSection(),
             _buildDailyPatternsSection(),
             _buildHistorySection(),
@@ -50,11 +183,12 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
   }
 
   Widget _buildOverviewSection() {
+    final readings = _filteredReadingsDesc;
     // Calculate Time in Range
     int low = 0;
     int range = 0;
     int high = 0;
-    for (var r in widget.readings) {
+    for (var r in readings) {
       if (r.value < widget.lowThreshold) {
         low++;
       } else if (r.value > widget.highThreshold) {
@@ -63,7 +197,7 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
         range++;
       }
     }
-    final total = widget.readings.length;
+    final total = readings.length;
     final lowPct = total > 0 ? (low / total * 100).round() : 0;
     final rangePct = total > 0 ? (range / total * 100).round() : 0;
     final highPct = total > 0 ? (high / total * 100).round() : 0;
@@ -138,7 +272,7 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
                 color: AppTheme.primaryColor,
               ),
               _buildStatCard('Variability', '12.5%', isUp: false, color: AppTheme.secondaryColor), // Mock calculation
-              _buildStatCard('Readings', widget.readings.length.toString(), color: AppTheme.accentColor),
+              _buildStatCard('Readings', readings.length.toString(), color: AppTheme.accentColor),
               _buildStatCard(
                 'Lowest',
                 widget.glucoseUnit == 'mmol/L'
@@ -183,7 +317,7 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
               SizedBox(
                 height: 250,
                 child: GlucoseChart(
-                  readings: widget.readings,
+                  readings: _filteredReadingsAsc,
                   unit: widget.glucoseUnit,
                   highThreshold: widget.highThreshold,
                   lowThreshold: widget.lowThreshold,
@@ -198,8 +332,7 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
   }
 
   Widget _buildHistorySection() {
-    final sortedReadings = List<GlucoseReading>.from(widget.readings)
-      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    final sortedReadings = _filteredReadingsDesc;
     
     final totalPages = (sortedReadings.length / _itemsPerPage).ceil();
     if (_currentPage >= totalPages) _currentPage = totalPages > 0 ? totalPages - 1 : 0;
@@ -403,12 +536,14 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
   }
 
   double _calculateAverage() {
-    if (widget.readings.isEmpty) return 0;
-    return widget.readings.fold(0.0, (sum, r) => sum + r.value) / widget.readings.length;
+    final readings = _filteredReadingsDesc;
+    if (readings.isEmpty) return 0;
+    return readings.fold(0.0, (sum, r) => sum + r.value) / readings.length;
   }
 
   double _minGlucose() {
-    if (widget.readings.isEmpty) return 0;
-    return widget.readings.map((r) => r.value).reduce((a, b) => a < b ? a : b);
+    final readings = _filteredReadingsDesc;
+    if (readings.isEmpty) return 0;
+    return readings.map((r) => r.value).reduce((a, b) => a < b ? a : b);
   }
 }
