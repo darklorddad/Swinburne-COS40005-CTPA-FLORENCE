@@ -217,8 +217,6 @@ class _RecommendationsScreenState
   bool _isGenerating = false;
   String? _expandedId;
   int _streakDays = 0;
-  RecommendationCategory? _activeFilter;
-  RecommendationPriority? _priorityFilter;
   bool _celebTriggered = false;
 
   late final AnimationController _scoreCtrl;
@@ -432,6 +430,14 @@ class _RecommendationsScreenState
                 ),
               ),
             ),
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: const Icon(Icons.info_outline),
+              onPressed: _showInfoDialog,
+              tooltip: 'About Insights',
+            ),
+          ),
         ],
         bottom: _isGenerating || recsAsync.isLoading
             ? const PreferredSize(
@@ -460,11 +466,7 @@ class _RecommendationsScreenState
 
           WidgetsBinding.instance.addPostFrameCallback((_) => _maybeCelebrate(score));
 
-          final filtered = active.where((r) {
-            if (_activeFilter != null && r.category != _activeFilter) return false;
-            if (_priorityFilter != null && r.priority != _priorityFilter) return false;
-            return true;
-          }).toList();
+          final filtered = active;
 
           final dailyRecs = filtered.where((r) => r.timeframe == 'daily').toList();
           final weeklyRecs = filtered.where((r) => r.timeframe == 'weekly').toList();
@@ -695,13 +697,12 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Section header (with inline refresh + filter actions) ─────
+  // ── Section header (with inline refresh actions) ─────
   Widget _buildSectionHeader(
       int count, List<HealthRecommendation> recs, List<HealthRecommendation> active) {
     final generatedAt = recs.isNotEmpty ? recs.first.generatedAt : DateTime.now();
     final isStale = DateTime.now().difference(generatedAt).inHours >= 24;
     final freshnessText = _freshnessLabel(generatedAt);
-    final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 12), // Standardised left/right/top
@@ -781,71 +782,6 @@ class _RecommendationsScreenState
                   tooltip: 'Regenerate',
                 ),
               ),
-              const SizedBox(width: 2),
-              // Filter button with optional active dot
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: active.isNotEmpty ? () => _openFilterSheet(active) : null,
-                    icon: Icon(Icons.tune_rounded,
-                        size: 15,
-                        color: hasFilter
-                            ? AppTheme.primaryBlue
-                            : AppTheme.textSecondaryColor),
-                    label: Text(
-                      'Filter',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: hasFilter
-                            ? AppTheme.primaryBlue
-                            : AppTheme.textSecondaryColor,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: hasFilter
-                            ? AppTheme.primaryBlue
-                            : AppTheme.borderColor,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                  ),
-                  if (hasFilter)
-                    Positioned(
-                      top: -3,
-                      right: -3,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppTheme.primaryBlue,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              if (hasFilter) ...[
-                const SizedBox(width: 4),
-                TextButton(
-                  onPressed: () => setState(
-                      () { _activeFilter = null; _priorityFilter = null; }),
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppTheme.textSecondaryColor,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: const Text('Clear',
-                      style: TextStyle(fontSize: 12)),
-                ),
-              ],
               const SizedBox(width: 8),
             ],
           ),
@@ -854,208 +790,6 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Filter bottom sheet ───────────────────────────────────────
-  void _openFilterSheet(List<HealthRecommendation> all) {
-    final presentCategories = all.map((r) => r.category).toSet().toList()
-      ..sort((a, b) => a.name.compareTo(b.name));
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setSheetState) {
-            return Padding(
-              padding: EdgeInsets.fromLTRB(
-                  20, 12, 20, MediaQuery.of(ctx).viewInsets.bottom + 32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      width: 36,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppTheme.getBorderColor(context),
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text(
-                        'Filter Recommendations',
-                        style:
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                      ),
-                      const Spacer(),
-                      if (_activeFilter != null || _priorityFilter != null)
-                        TextButton(
-                          onPressed: () {
-                            setState(() {
-                              _activeFilter = null;
-                              _priorityFilter = null;
-                            });
-                            setSheetState(() {});
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppTheme.textSecondaryColor,
-                            padding: EdgeInsets.zero,
-                          ),
-                          child: const Text('Clear all'),
-                        ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-                  // Category section
-                  Text(
-                    'BY TYPE',
-                    style: TextStyle(
-                      color: AppTheme.textSecondaryColor,
-                      fontSize: 10,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: presentCategories.map((cat) {
-                      final catTheme = _themeFor(cat);
-                      final label =
-                          cat.name[0].toUpperCase() + cat.name.substring(1);
-                      final isSelected = _activeFilter == cat;
-                      return FilterChip(
-                        label: Text(label),
-                        selected: isSelected,
-                        onSelected: (val) {
-                          setState(() => _activeFilter = val ? cat : null);
-                          setSheetState(() {});
-                        },
-                        selectedColor:
-                            catTheme.primary.withValues(alpha: 0.13),
-                        checkmarkColor: catTheme.primary,
-                        avatar: Icon(catTheme.icon,
-                            size: 14,
-                            color: isSelected
-                                ? catTheme.primary
-                                : AppTheme.textSecondaryColor),
-                        showCheckmark: false,
-                        labelStyle: TextStyle(
-                          fontSize: 13,
-                          color: isSelected
-                              ? catTheme.primary
-                              : AppTheme.textSecondaryColor,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                        side: BorderSide(
-                          color: isSelected
-                              ? catTheme.primary
-                              : AppTheme.getBorderColor(ctx),
-                        ),
-                        backgroundColor: AppTheme.getSurfaceColor(ctx),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 4),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 20),
-                  // Priority section
-                  Text(
-                    'BY PRIORITY',
-                    style: TextStyle(
-                      color: AppTheme.textSecondaryColor,
-                      fontSize: 10,
-                      letterSpacing: 1.5,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: RecommendationPriority.values.map((p) {
-                      final urgColor = _urgencyColor(p);
-                      final label = _urgencyLabel(p);
-                      final isSelected = _priorityFilter == p;
-                      return FilterChip(
-                        label: Text(label),
-                        selected: isSelected,
-                        onSelected: (val) {
-                          setState(() => _priorityFilter = val ? p : null);
-                          setSheetState(() {});
-                        },
-                        selectedColor: urgColor.withValues(alpha: 0.10),
-                        checkmarkColor: urgColor,
-                        showCheckmark: false,
-                        avatar: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: BoxDecoration(
-                            color: urgColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        labelStyle: TextStyle(
-                          fontSize: 13,
-                          color: isSelected
-                              ? urgColor
-                              : AppTheme.textSecondaryColor,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.w400,
-                        ),
-                        side: BorderSide(
-                          color: isSelected ? urgColor : AppTheme.getBorderColor(ctx),
-                        ),
-                        backgroundColor: AppTheme.getSurfaceColor(ctx),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20)),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 4, vertical: 4),
-                      );
-                    }).toList(),
-                  ),
-
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.primaryBlue,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Apply',
-                          style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w600)),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
 
   // ── Empty hint ────────────────────────────────────────────────
   Widget _buildEmptyHint() {
@@ -1072,18 +806,6 @@ class _RecommendationsScreenState
     String message;
     if (!hasRecentData) {
       message = "We don't have enough recent health data to analyse. Start logging your glucose, meals, or activity to receive personalised AI recommendations!";
-    } else if (_activeFilter != null && _priorityFilter != null) {
-      final catLabel = _activeFilter!.name[0].toUpperCase() +
-          _activeFilter!.name.substring(1);
-      message =
-          'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} $catLabel recommendations right now.';
-    } else if (_activeFilter != null) {
-      final catLabel = _activeFilter!.name[0].toUpperCase() +
-          _activeFilter!.name.substring(1);
-      message = 'No $catLabel recommendations right now.';
-    } else if (_priorityFilter != null) {
-      message =
-          'No ${_urgencyLabel(_priorityFilter!).toLowerCase()} recommendations right now.';
     } else {
       message =
           'Tap the refresh icon above to analyse your recent health data.';
@@ -1096,6 +818,79 @@ class _RecommendationsScreenState
           color: AppTheme.textSecondaryColor,
           height: 1.5,
         ),
+      ),
+    );
+  }
+
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About Insights & Vitality Index'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'This page provides AI-generated health recommendations based on your recent logs.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'How the Vitality Index is Calculated',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Your score (0–100) is calculated locally by the app\'s clinical algorithm using your health data from the last 7 days:',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 12),
+              _buildInfoBullet(context, 'Glucose Control (40 pts)', 'Based on your Time in Range (70–180 mg/dL or 3.9–10.0 mmol/L).'),
+              _buildInfoBullet(context, 'Activity (30 pts)', 'Based on your total active minutes, capped at 150 mins/week.'),
+              _buildInfoBullet(context, 'Adherence (30 pts)', 'Based on your medication adherence today. If you have no medications, you get full points.'),
+              const SizedBox(height: 12),
+              Text(
+                'Note: If you haven\'t logged any data in the last 7 days, your score drops to 25 to reflect unmonitored risk. The final score is clamped between 20 and 100.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontStyle: FontStyle.italic, 
+                  color: AppTheme.textSecondaryColor
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Got it'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoBullet(BuildContext context, String title, String description) {
+    final textColor = AppTheme.getTextPrimaryColor(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('• ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(color: textColor, fontSize: 14, height: 1.4),
+                children: [
+                  TextSpan(text: '$title: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  TextSpan(text: description),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
