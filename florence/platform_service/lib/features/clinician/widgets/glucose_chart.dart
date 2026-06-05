@@ -154,33 +154,33 @@ class GlucoseChart extends StatelessWidget {
             reservedSize: 44,
             interval: 1,
             getTitlesWidget: (value, meta) {
-              if (value < 0 || value >= sortedReadings.length) {
-                return const Text('');
-              }
-              
               final index = value.toInt();
-              if (index >= 0 && index < sortedReadings.length) {
-                final date = sortedReadings[index].timestamp;
-                String label = '';
-                if (filter == 'Hourly') {
-                  if (index % 4 == 0) {
-                    label = DateFormat('HH:00').format(date);
-                  }
-                } else if (filter == 'Daily') {
-                  label = DateFormat('E').format(date);
-                } else {
-                  label = DateFormat('MMM').format(date);
+              if (index < 0) return const Text('');
+              
+              String label = '';
+              if (filter == 'Hourly') {
+                if (index % 4 == 0 && index < 24) {
+                  label = '${index.toString().padLeft(2, '0')}:00';
                 }
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    label,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10, height: 1.1, color: AppTheme.textSecondary),
-                  ),
-                );
+              } else if (filter == 'Daily') {
+                if (index >= 0 && index < 7) {
+                  final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                  label = weekdays[index];
+                }
+              } else {
+                if (index >= 0 && index < 12) {
+                  final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  label = months[index];
+                }
               }
-              return const Text('');
+              return Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 10, height: 1.1, color: AppTheme.textSecondary),
+                ),
+              );
             },
           ),
         ),
@@ -211,7 +211,7 @@ class GlucoseChart extends StatelessWidget {
         ),
       ),
       minX: 0,
-      maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
+      maxX: filter == 'Hourly' ? 23 : (filter == 'Daily' ? 6 : 11),
       minY: minY,
       maxY: maxY,
       rangeAnnotations: RangeAnnotations(
@@ -228,11 +228,25 @@ class GlucoseChart extends StatelessWidget {
           tooltipBorder: const BorderSide(color: AppTheme.primaryColor),
           getTooltipItems: (List<LineBarSpot> lineBarsSpot) {
             return lineBarsSpot.map((lineBarSpot) {
-              final index = lineBarSpot.x.toInt();
-              if (index >= 0 && index < sortedReadings.length) {
-                final reading = sortedReadings[index];
+              final xVal = lineBarSpot.x.toInt();
+              GlucoseReading? reading;
+              for (var r in sortedReadings) {
+                int rX = 0;
+                if (filter == 'Hourly') {
+                  rX = r.timestamp.hour;
+                } else if (filter == 'Daily') {
+                  rX = r.timestamp.weekday - 1;
+                } else {
+                  rX = r.timestamp.month - 1;
+                }
+                if (rX == xVal) {
+                  reading = r;
+                  break;
+                }
+              }
+              if (reading != null) {
                 return LineTooltipItem(
-                  '${reading.value} $unit\n',
+                  '${reading.value.toStringAsFixed(1)} $unit\n',
                   const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(
@@ -263,10 +277,16 @@ class GlucoseChart extends StatelessWidget {
         // Main glucose line
         LineChartBarData(
           spots: List.generate(sortedReadings.length, (index) {
-            return FlSpot(
-              index.toDouble(),
-              sortedReadings[index].value,
-            );
+            final r = sortedReadings[index];
+            double x = 0;
+            if (filter == 'Hourly') {
+              x = r.timestamp.hour.toDouble();
+            } else if (filter == 'Daily') {
+              x = (r.timestamp.weekday - 1).toDouble();
+            } else {
+              x = (r.timestamp.month - 1).toDouble();
+            }
+            return FlSpot(x, r.value);
           }),
           isCurved: true,
           gradient: LinearGradient(

@@ -338,27 +338,31 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
               reservedSize: 32,
               getTitlesWidget: (value, meta) {
                 final index = value.toInt();
-                if (index >= 0 && index < sortedReadings.length) {
-                  final date = sortedReadings[index].timestamp;
-                  String label = '';
-                  if (_selectedFilter == 'Hourly') {
-                    if (index % 4 == 0) {
-                      label = DateFormat('HH:00').format(date);
-                    }
-                  } else if (_selectedFilter == 'Daily') {
-                    label = DateFormat('E').format(date);
-                  } else {
-                    label = DateFormat('MMM').format(date);
+                if (index < 0) return const Text('');
+                
+                String label = '';
+                if (_selectedFilter == 'Hourly') {
+                  if (index % 4 == 0 && index < 24) {
+                    label = '${index.toString().padLeft(2, '0')}:00';
                   }
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6.0),
-                    child: Text(
-                      label,
-                      style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
-                    ),
-                  );
+                } else if (_selectedFilter == 'Daily') {
+                  if (index >= 0 && index < 7) {
+                    final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                    label = weekdays[index];
+                  }
+                } else {
+                  if (index >= 0 && index < 12) {
+                    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    label = months[index];
+                  }
                 }
-                return const Text('');
+                return Padding(
+                  padding: const EdgeInsets.only(top: 6.0),
+                  child: Text(
+                    label,
+                    style: const TextStyle(fontSize: 10, color: AppTheme.textSecondary),
+                  ),
+                );
               },
             ),
           ),
@@ -383,7 +387,7 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
           ),
         ),
         minX: 0,
-        maxX: sortedReadings.length - 1 > 0 ? (sortedReadings.length - 1).toDouble() : 1.0,
+        maxX: _selectedFilter == 'Hourly' ? 23 : (_selectedFilter == 'Daily' ? 6 : 11),
         minY: minY,
         maxY: maxY,
         rangeAnnotations: RangeAnnotations(
