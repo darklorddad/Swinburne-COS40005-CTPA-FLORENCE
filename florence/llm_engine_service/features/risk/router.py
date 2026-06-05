@@ -15,3 +15,17 @@ async def assess_risk(authorization: str = Header(...)):
         return {"status": "success", "risk_level": result["risk_level"]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Risk assessment failed: {str(e)}")
+from fastapi import APIRouter, HTTPException, Depends
+from features.risk.service import RiskAssessmentService
+from core.ds_client import get_auth_token
+
+router = APIRouter()
+
+@router.post("/assess")
+async def assess_risk(token: str = Depends(get_auth_token)):
+    service = RiskAssessmentService()
+    try:
+        result = await service.assess_patient_risk(token)
+        return {"status": "success", "risk_level": result["risk_level"]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Risk assessment failed: {str(e)}")
