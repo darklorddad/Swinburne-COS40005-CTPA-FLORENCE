@@ -10,20 +10,14 @@ The FLORENCE Clinician Dashboard is built for speed and secured for healthcare. 
 ### 2.1 Overview of the Home Screen
 Upon logging in, you are presented with the main command centre. This screen is designed to highlight patients requiring immediate attention.
 
-![Clinician Home Screen](Screenshot 2026-06-05 165416.png)
-
-#### **Image Highlight Instructions:**
-Please overlay **three red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Search Bar & Filter Icon** at the top.
-*   **[Box 2]** Around the **Patients List** on the left-hand side.
-*   **[Box 3]** Around the **Priority Alerts Panel** on the right-hand side.
+![alt text](2.1-1.png)
 
 ---
 
 ### 2.2 Key Features of the Home Screen
-1.  **Search & Filter [Box 1]**: Quickly find patients by typing their name or ID. Tap the filter icon to expand advanced filters (e.g., filtering by specific risk levels or update recency).
-2.  **Dynamic Sorting [Box 2]**: The patient list is NOT alphabetical. It is driven by a live Dynamic Risk Engine. Patients flagged as "High" or "Medium" risk automatically float to the top of your queue based on real-time continuous data flows from their patient app.
-3.  **Priority Alerts [Box 3]**: If a patient breaches critical thresholds (e.g., consecutive fasting glucose readings > 10.0 mmol/L or hypertensive crisis readings), a **Priority Alert** card appears here. It displays the patient's name, the specific trigger, and the time elapsed. Tap **View Details** to investigate immediately.
+1.  **Search & Filter:** Quickly find patients by typing their name or ID. Tap the filter icon to expand advanced filters (e.g., filtering by specific risk levels or update recency).
+2.  **Dynamic Sorting:** The patient list is NOT alphabetical. It is driven by a live Dynamic Risk Engine. Patients flagged as "High" or "Medium" risk automatically float to the top of your queue based on real-time continuous data flows from their patient app.
+3.  **Priority Alerts:** If a patient breaches critical thresholds (e.g., consecutive fasting glucose readings > 10.0 mmol/L or hypertensive crisis readings), a **Priority Alert** card appears here. It displays the patient's name, the specific trigger, and the time elapsed. Tap **View Details** to investigate immediately.
 
 ---
 
@@ -32,24 +26,18 @@ Please overlay **three red highlight boxes** on the image above, numbered as fol
 ### 3.1 Holistic Patient View
 Clicking on any patient from your list opens their comprehensive profile, defaulting to the **Overview** tab.
 
-![Patient Overview Tab](image.png)
-
-#### **Image Highlight Instructions:**
-Please overlay **three red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Demographics & Baseline Card** at the top (containing the patient's name, ID, age, gender, risk level, and emergency contact details).
-*   **[Box 2]** Around the **Current Status Grid** (the stack of vital metrics cards: Glucose, Blood Pressure, HbA1c, Cholesterol, Activity, BMI, and Diet).
-*   **[Box 3]** Around the **Clinical Notes Section** at the bottom.
+![alt text](3.1-1.png)
 
 ---
 
 ### 3.2 Understanding the Overview Tab
-1.  **Demographics & Baseline [Box 1]**: Displays essential patient identifiers, age, gender, and emergency contact details. It also features an **Edit** button (pencil icon) to update profile details.
-2.  **Current Status Grid [Box 2]**: A stack of vital metrics cards showing the latest logged values. Each card is color-coded by its current risk status:
-    *   **Green (Normal)**: On track and within target thresholds.
-    *   **Amber (Elevated/Low)**: Out of range; requires monitoring.
-    *   **Red (High/Critical)**: Significantly out of range; requires immediate clinical review.
-    *   **Grey (No Data)**: No readings logged yet.
-3.  **Clinical Notes [Box 3]**: Displays persistent, chronological notes from you and your clinical team. Tap the **Add Note** icon to append a new entry.
+1.  **Demographics & Baseline:** Displays essential patient identifiers, age, gender, and emergency contact details. It also features an **Edit** button (pencil icon) to update profile details.
+2.  **Current Status Grid:** A stack of vital metrics cards showing the latest logged values. Each card is color-coded by its current risk status:
+    *   **Green (Normal):** On track and within target thresholds.
+    *   **Amber (Elevated/Low):** Out of range; requires monitoring.
+    *   **Red (High/Critical):** Significantly out of range; requires immediate clinical review.
+    *   **Grey (No Data):** No readings logged yet.
+3.  **Clinical Notes:** Displays persistent, chronological notes from you and your clinical team. Tap the **Add Note** icon to append a new entry.
 
 ---
 
