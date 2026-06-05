@@ -28,15 +28,15 @@ class _ActivityAnalyticsScreenState extends State<ActivityAnalyticsScreen> {
       if (_selectedFilter == 'Hourly') {
         final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day);
         final end = start.add(const Duration(days: 1));
-        return r.date.isAfter(start) && r.date.isBefore(end);
+        return !r.date.isBefore(start) && r.date.isBefore(end);
       } else if (_selectedFilter == 'Daily') {
         final start = DateTime(_focusedDate.year, _focusedDate.month, _focusedDate.day).subtract(Duration(days: _focusedDate.weekday - 1));
         final end = start.add(const Duration(days: 7));
-        return r.date.isAfter(start) && r.date.isBefore(end);
+        return !r.date.isBefore(start) && r.date.isBefore(end);
       } else {
         final start = DateTime(_focusedDate.year, 1, 1);
         final end = DateTime(_focusedDate.year + 1, 1, 1);
-        return r.date.isAfter(start) && r.date.isBefore(end);
+        return !r.date.isBefore(start) && r.date.isBefore(end);
       }
     }).toList();
     return filtered;

@@ -6,12 +6,12 @@ import 'package:intl/intl.dart';
 
 class ActivityChart extends StatelessWidget {
   final List<ActivityData> activityData;
-  final int targetSteps;
+  final int targetMinutes;
 
   const ActivityChart({
     super.key,
     required this.activityData,
-    this.targetSteps = 10000,
+    this.targetMinutes = 30,
   });
 
   @override
@@ -46,20 +46,21 @@ class ActivityChart extends StatelessWidget {
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             final activity = sortedData[groupIndex];
             return BarTooltipItem(
-              '${activity.steps} steps\n',
+              '${activity.activeMinutes} active min\n',
               const TextStyle(
                 color: Colors.black,
                 fontWeight: FontWeight.bold,
               ),
               children: <TextSpan>[
-                TextSpan(
-                  text: '${activity.activeMinutes} active min\n',
-                  style: const TextStyle(
-                    color: AppTheme.secondaryColor,
-                    fontWeight: FontWeight.normal,
-                    fontSize: 12,
+                if (activity.steps > 0)
+                  TextSpan(
+                    text: '${activity.steps} steps\n',
+                    style: const TextStyle(
+                      color: Colors.grey,
+                      fontWeight: FontWeight.normal,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
                 TextSpan(
                   text: '${activity.caloriesBurned} calories',
                   style: const TextStyle(
@@ -108,7 +109,7 @@ class ActivityChart extends StatelessWidget {
             interval: _getYInterval(),
             getTitlesWidget: (value, meta) {
               return Text(
-                _formatSteps(value.toInt()),
+                '${value.toInt()}m',
                 style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 10,
@@ -131,7 +132,7 @@ class ActivityChart extends StatelessWidget {
         drawVerticalLine: false,
         horizontalInterval: _getYInterval(),
         getDrawingHorizontalLine: (value) {
-          if (value == targetSteps.toDouble()) {
+          if (value == targetMinutes.toDouble()) {
             return FlLine(
               color: AppTheme.accentColor.withValues(alpha: 0.5),
               strokeWidth: 1,
@@ -150,7 +151,7 @@ class ActivityChart extends StatelessWidget {
           final activity = sortedData[index];
           
           // Calculate progress percentage
-          final progressPercent = activity.steps / targetSteps;
+          final progressPercent = activity.activeMinutes / targetMinutes;
           
           // Choose color based on progress
           Color barColor;
@@ -166,7 +167,7 @@ class ActivityChart extends StatelessWidget {
             x: index,
             barRods: [
               BarChartRodData(
-                toY: activity.steps.toDouble(),
+                toY: activity.activeMinutes.toDouble(),
                 color: barColor,
                 width: 16,
                 borderRadius: const BorderRadius.only(
@@ -182,7 +183,7 @@ class ActivityChart extends StatelessWidget {
       extraLinesData: ExtraLinesData(
         horizontalLines: [
           HorizontalLine(
-            y: targetSteps.toDouble(),
+            y: targetMinutes.toDouble(),
             color: AppTheme.accentColor,
             strokeWidth: 1,
             dashArray: [5, 5],
@@ -204,24 +205,18 @@ class ActivityChart extends StatelessWidget {
   }
 
   double _getMaxY() {
-    if (activityData.isEmpty) return targetSteps * 1.2;
+    if (activityData.isEmpty) return targetMinutes * 1.2;
     
-    final maxSteps = activityData.map((e) => e.steps).reduce((a, b) => a > b ? a : b);
-    return maxSteps > targetSteps ? (maxSteps * 1.2) : (targetSteps * 1.2);
+    final maxMins = activityData.map((e) => e.activeMinutes).reduce((a, b) => a > b ? a : b);
+    return maxMins > targetMinutes ? (maxMins * 1.2) : (targetMinutes * 1.2);
   }
   
   double _getYInterval() {
     final maxY = _getMaxY();
-    if (maxY <= 5000) return 1000;
-    if (maxY <= 10000) return 2000;
-    if (maxY <= 20000) return 4000;
-    return 5000;
-  }
-  
-  String _formatSteps(int steps) {
-    if (steps >= 1000) {
-      return '${(steps / 1000).toStringAsFixed(1)}k';
-    }
-    return steps.toString();
+    if (maxY <= 15) return 5;
+    if (maxY <= 30) return 10;
+    if (maxY <= 60) return 15;
+    if (maxY <= 120) return 30;
+    return 45;
   }
 }
