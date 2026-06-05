@@ -223,6 +223,115 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     }
   }
 
+  void _showAllDietLogsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('All Diet Logs'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: _healthData!.mealEntries.isEmpty
+              ? const Text('No diet logs recorded.')
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _healthData!.mealEntries.length,
+                  itemBuilder: (context, index) {
+                    final meal = _healthData!.mealEntries[index];
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppTheme.dividerColor),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppTheme.accentColor.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _getMealIcon(meal.mealType),
+                              color: AppTheme.accentColor,
+                              size: 24,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      meal.mealType,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                    Text(
+                                      DateFormat('MMM d, h:mm a').format(meal.timestamp),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.textSecondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  meal.foodItems.map((f) => '${f.name} (${f.quantity} ${f.unit})').join(', '),
+                                  style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    _buildNutrientChip(
+                                      'Carbs',
+                                      '${meal.nutritionSummary['carbs']?.toInt() ?? 0}g',
+                                      AppTheme.accentColor,
+                                    ),
+                                    _buildNutrientChip(
+                                      'Protein',
+                                      '${meal.nutritionSummary['protein']?.toInt() ?? 0}g',
+                                      AppTheme.primaryColor,
+                                    ),
+                                    _buildNutrientChip(
+                                      'Fat',
+                                      '${meal.nutritionSummary['fat']?.toInt() ?? 0}g',
+                                      AppTheme.secondaryColor,
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _showEditSingleThresholdDialog(Map<String, dynamic> threshold) async {
     final type = threshold['data_type'] ?? '';
     double displayMin = (threshold['min_value'] as num).toDouble();
@@ -1263,9 +1372,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       ),
-                      onPressed: () {
-                        // Show all meal entries
-                      },
+                      onPressed: _showAllDietLogsDialog,
                       child: const Text('View all entries', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ),
