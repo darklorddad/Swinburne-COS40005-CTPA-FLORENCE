@@ -14,6 +14,8 @@ import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -391,6 +393,13 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
 
       // LAM: fire notification if reading is out of range
       ref.read(notificationProvider.notifier).checkAfterGlucoseLog(glucoseValue);
+
+      // Silently trigger AI to re-evaluate daily recommendations based on this new data
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily',
+        hideToast: true, // Prevents annoying popups on every single log
+      );
+      ref.invalidate(insightProvider); // Forces the dashboard AI insight card to refresh
 
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');

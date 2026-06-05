@@ -16,6 +16,8 @@ import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
 import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 
 /// Log Meal Screen
 /// Allows users to record meals, photos, and calories
@@ -308,6 +310,13 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
       // LAM: fire educational tip if meal is high-calorie
       ref.read(notificationProvider.notifier).checkAfterMealLog(calories);
+
+      // Silently trigger AI to re-evaluate daily recommendations
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily',
+        hideToast: true,
+      );
+      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');

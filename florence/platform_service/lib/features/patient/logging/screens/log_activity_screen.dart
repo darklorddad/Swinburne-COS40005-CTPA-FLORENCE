@@ -12,6 +12,8 @@ import 'package:florence/features/patient/core/providers/monitor_data_providers.
 import 'package:florence/core/services/notifications/notification_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 
 /// Log Activity Screen
 /// Allows users to record physical activities and exercise
@@ -192,6 +194,13 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       ref.read(notificationProvider.notifier).checkAfterActivityLog(
         int.tryParse(_activeDurationController.text.trim()),
       );
+
+      // Silently trigger AI to re-evaluate daily recommendations
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily',
+        hideToast: true,
+      );
+      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Activity logged successfully!');
