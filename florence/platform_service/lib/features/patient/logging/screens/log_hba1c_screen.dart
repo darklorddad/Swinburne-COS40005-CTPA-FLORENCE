@@ -344,8 +344,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
 
       // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
-        timeframe: 'daily', 
-        hideToast: true,
+        timeframe: 'daily',
       );
       ref.invalidate(insightProvider);
 

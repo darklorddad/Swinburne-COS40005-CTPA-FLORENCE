@@ -314,7 +314,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       // Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
-        hideToast: true,
       );
       ref.invalidate(insightProvider);
 

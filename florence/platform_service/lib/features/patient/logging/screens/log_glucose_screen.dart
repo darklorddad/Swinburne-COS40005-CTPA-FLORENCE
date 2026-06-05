@@ -397,7 +397,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       // Silently trigger AI to re-evaluate daily recommendations based on this new data
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
-        hideToast: true, // Prevents annoying popups on every single log
       );
       ref.invalidate(insightProvider); // Forces the dashboard AI insight card to refresh
 

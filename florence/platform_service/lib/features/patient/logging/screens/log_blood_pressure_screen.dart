@@ -85,8 +85,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
       // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
-        timeframe: 'daily', 
-        hideToast: true,
+        timeframe: 'daily',
       );
       ref.invalidate(insightProvider);
 
