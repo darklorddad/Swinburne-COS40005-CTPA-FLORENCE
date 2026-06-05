@@ -60,7 +60,7 @@ class BmiChart extends StatelessWidget {
             return FlLine(
             color: value == highThreshold
                 ? AppTheme.mediumRiskColor.withValues(alpha: 0.5)
-                : AppTheme.secondaryColor.withValues(alpha: 0.5),
+                : AppTheme.primaryColor.withValues(alpha: 0.5),
               strokeWidth: 1,
               dashArray: [4, 4],
             );

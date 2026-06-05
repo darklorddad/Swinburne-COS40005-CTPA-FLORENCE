@@ -644,7 +644,7 @@ class _BloodPressureAnalyticsScreenState extends State<BloodPressureAnalyticsScr
                   color = AppTheme.highRiskColor;
                 } else if (r.systolic < widget.systolicLow || r.diastolic < widget.diastolicLow) {
                   status = 'LOW';
-                  color = AppTheme.secondaryColor;
+                  color = AppTheme.primaryColor;
                 }
 
                 return Container(

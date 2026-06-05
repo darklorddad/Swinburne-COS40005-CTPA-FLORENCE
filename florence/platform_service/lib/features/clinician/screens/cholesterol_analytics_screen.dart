@@ -659,7 +659,7 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                 final r = pageItems[index];
                 final isHigh = r.total >= widget.totalHigh;
                 final status = isHigh ? 'HIGH' : (r.total >= widget.totalLow ? 'NORMAL' : 'LOW');
-                final color = isHigh ? AppTheme.highRiskColor : (r.total >= widget.totalLow ? AppTheme.lowRiskColor : AppTheme.mediumRiskColor);
+                final color = isHigh ? AppTheme.highRiskColor : (r.total >= widget.totalLow ? AppTheme.lowRiskColor : AppTheme.primaryColor);
 
                 return Container(
                   padding: const EdgeInsets.all(16),

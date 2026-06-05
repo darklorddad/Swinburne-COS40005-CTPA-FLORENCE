@@ -68,7 +68,7 @@ class GlucoseChart extends StatelessWidget {
             return FlLine(
             color: value == highThreshold
                 ? AppTheme.highRiskColor.withValues(alpha: 0.5)
-                : AppTheme.secondaryColor.withValues(alpha: 0.5),
+                : AppTheme.primaryColor.withValues(alpha: 0.5),
               strokeWidth: 1,
               dashArray: [4, 4], // Tighter dash
             );
@@ -220,7 +220,7 @@ class GlucoseChart extends StatelessWidget {
               if (reading.value >= highThreshold) {
                 dotColor = AppTheme.highRiskColor;
               } else if (reading.value <= lowThreshold) {
-                dotColor = AppTheme.secondaryColor;
+                dotColor = AppTheme.primaryColor;
               }
               
               return FlDotCirclePainter(
@@ -285,7 +285,7 @@ class GlucoseChart extends StatelessWidget {
           ),
           HorizontalLine(
             y: lowThreshold,
-            color: AppTheme.secondaryColor,
+            color: AppTheme.primaryColor,
             strokeWidth: 1,
             dashArray: [5, 5],
             label: HorizontalLineLabel(
@@ -293,7 +293,7 @@ class GlucoseChart extends StatelessWidget {
               alignment: Alignment.bottomRight,
               padding: const EdgeInsets.only(right: 5, top: 5),
               style: const TextStyle(
-                color: AppTheme.secondaryColor,
+                color: AppTheme.primaryColor,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),

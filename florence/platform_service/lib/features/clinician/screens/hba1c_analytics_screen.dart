@@ -526,7 +526,7 @@ class _HbA1cAnalyticsScreenState extends State<HbA1cAnalyticsScreen> {
                 final isHigh = r.value > widget.highThreshold;
                 final isLow = r.value < widget.lowThreshold;
                 final status = isHigh ? 'ABOVE TARGET' : (isLow ? 'BELOW TARGET' : 'NORMAL');
-                final color = isHigh ? AppTheme.highRiskColor : (isLow ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
+                final color = isHigh ? AppTheme.highRiskColor : (isLow ? AppTheme.primaryColor : AppTheme.lowRiskColor);
 
                 return Container(
                   padding: const EdgeInsets.all(16),

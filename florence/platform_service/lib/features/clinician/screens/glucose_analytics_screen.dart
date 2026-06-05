@@ -410,7 +410,7 @@ class _GlucoseAnalyticsScreenState extends ConsumerState<GlucoseAnalyticsScreen>
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final r = pageItems[index];
-                final color = r.value > widget.highThreshold ? AppTheme.highRiskColor : (r.value < widget.lowThreshold ? AppTheme.secondaryColor : AppTheme.lowRiskColor);
+                final color = r.value > widget.highThreshold ? AppTheme.highRiskColor : (r.value < widget.lowThreshold ? AppTheme.primaryColor : AppTheme.lowRiskColor);
                 final status = r.value > widget.highThreshold ? 'HIGH' : (r.value < widget.lowThreshold ? 'LOW' : 'NORMAL');
 
                 return Container(

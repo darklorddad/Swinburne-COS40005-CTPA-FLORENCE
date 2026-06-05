@@ -584,11 +584,14 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         bgColor = AppTheme.highRiskColor;
         statusText = 'High';
         break;
+      case 'medium':
+        bgColor = AppTheme.mediumRiskColor;
+        statusText = 'Medium';
+        break;
       case 'no_data':
         bgColor = Colors.blueGrey.shade600;
         statusText = 'No Data';
         break;
-      case 'medium':
       case 'low':
       default:
         bgColor = AppTheme.secondaryColor;
