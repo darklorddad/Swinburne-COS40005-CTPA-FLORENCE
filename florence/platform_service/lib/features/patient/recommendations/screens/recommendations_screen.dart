@@ -292,37 +292,39 @@ class _RecommendationsScreenState
       final recs = await ref.read(recommendationProvider.future);
       if (!mounted) return;
 
-      // Get latest data timestamp (Wait for it to finish loading to avoid stale data triggers)
+      // Get latest data timestamp (Wait for data to load to avoid nulls)
       final healthData = await ref.read(core_data.monitorDataProvider.future);
       DateTime? latestDataTime;
-      if (healthData != null) {
-        final times = [
-          if (healthData.allMonitorData.isNotEmpty) healthData.allMonitorData.first.measuredAt,
-          if (healthData.meals.isNotEmpty) healthData.meals.first.timestamp,
-          if (healthData.activities.isNotEmpty) healthData.activities.first.startTime,
-        ];
-        if (times.isNotEmpty) {
-          times.sort((a, b) => b.compareTo(a));
-          latestDataTime = times.first;
-        }
+      
+      final times = [
+        if (healthData.allMonitorData.isNotEmpty) healthData.allMonitorData.first.measuredAt.toUtc(),
+        if (healthData.meals.isNotEmpty) healthData.meals.first.timestamp.toUtc(),
+        if (healthData.activities.isNotEmpty) healthData.activities.first.startTime.toUtc(),
+      ];
+      if (times.isNotEmpty) {
+        times.sort((a, b) => b.compareTo(a));
+        latestDataTime = times.first;
       }
 
-      // Check SharedPreferences for last generation timestamp (avoids infinite loops if AI returns 0)
+      // Check SharedPreferences for last generation timestamp
       final prefs = await SharedPreferences.getInstance();
       final lastDailyCheckStr = prefs.getString('last_daily_ai_check');
       final lastWeeklyCheckStr = prefs.getString('last_weekly_ai_check');
       
-      DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr) : null;
-      DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr) : null;
-      
-      // Needs Daily if: never checked, checked >24h ago, or new data was logged AFTER the last check
-      bool needsDaily = lastDailyCheck == null || 
-                        DateTime.now().difference(lastDailyCheck).inHours >= 24 || 
-                        (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck));
-                        
+      // Force UTC to prevent timezone/clock-skew bugs between device and server
+      DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr).toUtc() : null;
+      DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr).toUtc() : null;
+
+      final nowUtc = DateTime.now().toUtc();
+
+      // Needs Daily if: never checked, checked >24h ago, or new data was logged AFTER the last check (with 1 min buffer)
+      bool needsDaily = lastDailyCheck == null ||
+          nowUtc.difference(lastDailyCheck).inHours >= 24 ||
+          (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck.add(const Duration(minutes: 1))));
+
       // Needs Weekly if: never checked, or checked >7 days ago
-      bool needsWeekly = lastWeeklyCheck == null || 
-                         DateTime.now().difference(lastWeeklyCheck).inDays >= 7;
+      bool needsWeekly = lastWeeklyCheck == null ||
+          nowUtc.difference(lastWeeklyCheck).inDays >= 7;
 
       bool generatedAny = false;
       
@@ -353,9 +355,9 @@ class _RecommendationsScreenState
           .read(recommendationProvider.notifier)
           .generateRecommendations(timeframe: timeframe);
       
-      // Save generation timestamp to SharedPreferences
+      // Save generation timestamp to SharedPreferences (in UTC)
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_${timeframe}_ai_check', DateTime.now().toIso8601String());
+      await prefs.setString('last_${timeframe}_ai_check', DateTime.now().toUtc().toIso8601String());
       
       if (!mounted) return; // Prevent setState after dispose
       
