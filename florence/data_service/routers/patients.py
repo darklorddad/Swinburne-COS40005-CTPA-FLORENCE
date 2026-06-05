@@ -334,6 +334,7 @@ class RecommendationCreate(BaseModel):
     data_sources: Optional[dict] = None
 
 class RecommendationBatchCreate(BaseModel):
+    timeframe: Optional[str] = None
     recommendations: List[RecommendationCreate]
 
 class RecommendationUpdate(BaseModel):
@@ -1096,14 +1097,30 @@ async def save_recommendations(
 ):
     """Saves a batch of LLM-generated recommendations to the database."""
     try:
+        # 1. Determine which timeframe we are replacing
+        if data.timeframe:
+            timeframes = [data.timeframe]
+        else:
+            timeframes = list(set([rec.timeframe for rec in data.recommendations]))
+            
+        # 2. Automatically dismiss old active recommendations for this timeframe
+        for tf in timeframes:
+            supabase.table('patient_recommendations') \
+                .update({'status': 'dismissed'}) \
+                .eq('patient_id', patient_profile['id']) \
+                .eq('timeframe', tf) \
+                .eq('status', 'active') \
+                .execute()
+
+        # 3. Insert the newly generated recommendations
         insert_data = []
         for rec in data.recommendations:
-            rec_dict = rec.model_dump(mode='json')
+            rec_dict = rec.model_dump(mode='json', exclude={'timeframe'})
+            rec_dict['timeframe'] = rec.timeframe # ensure it's in the dict
             rec_dict['patient_id'] = patient_profile['id']
             insert_data.append(rec_dict)
         
         if insert_data:
-            # Upsert ensures that if we retry a request, we just overwrite the ID
             response = supabase.table('patient_recommendations').upsert(insert_data).execute()
             return response.data
         return []

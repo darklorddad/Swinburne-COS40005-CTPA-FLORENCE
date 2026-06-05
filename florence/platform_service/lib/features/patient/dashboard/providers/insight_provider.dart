@@ -1,40 +1,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
-import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/services/insight_service.dart';
+import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
 
-/// The Insight Provider is now a fast, synchronous observer.
-/// It reads the active Daily Recommendations and displays the most urgent one.
-/// If the LLM determined the patient is perfectly healthy and returned 0 daily
-/// recommendations, it praises them!
-final insightProvider = Provider.autoDispose<AsyncValue<String>>((ref) {
-  final recsAsync = ref.watch(recommendationProvider);
-  final healthData = ref.watch(core_data.monitorDataProvider).value;
+/// The Insight Provider hits the LLM Engine to generate a fresh, 1-sentence
+/// insight on the fly based on the current health snapshot. It is not stored in the DB.
+final insightProvider = FutureProvider.autoDispose<String>((ref) async {
+  final healthData = await ref.watch(core_data.monitorDataProvider.future);
   
-  return recsAsync.whenData((recs) {
-    // Find active daily recommendations
-    final activeDailies = recs.where((r) => r.isActive && r.timeframe == 'daily').toList();
-    
-    // If the LLM returned 0 tasks for today, check if they actually logged anything!
-    if (activeDailies.isEmpty) {
-      bool hasDataToday = false;
-      if (healthData != null) {
-        final todayStart = DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0);
-        hasDataToday = healthData.allMonitorData.any((d) => d.measuredAt.toLocal().isAfter(todayStart)) ||
-                       healthData.meals.any((m) => m.timestamp.toLocal().isAfter(todayStart)) ||
-                       healthData.activities.any((a) => a.startTime.toLocal().isAfter(todayStart));
-      }
-      
-      if (!hasDataToday) {
-        return "You haven't logged any health data today. Tap a quick action below to start!";
-      }
-      
-      return "All health metrics are looking stable today! Great job.";
-    }
-    
-    // Sort by priority (urgent -> low)
-    activeDailies.sort((a, b) => a.priority.index.compareTo(b.priority.index));
-    final topRec = activeDailies.first;
-    
-    return "${topRec.title}: ${topRec.description}";
-  });
+  bool hasDataToday = false;
+  final todayStart = DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0);
+  
+  hasDataToday = healthData.allMonitorData.any((d) => d.measuredAt.toLocal().isAfter(todayStart)) ||
+                 healthData.meals.any((m) => m.timestamp.toLocal().isAfter(todayStart)) ||
+                 healthData.activities.any((a) => a.startTime.toLocal().isAfter(todayStart));
+                 
+  if (!hasDataToday) {
+    return "You haven't logged any health data today. Tap a quick action below to start!";
+  }
+
+  try {
+    final snapshot = InsightSnapshot.fromHealthData(healthData);
+    final service = InsightService();
+    return await service.generate(snapshot);
+  } catch (e) {
+    return "Your health data is being monitored. Keep logging to get personalized insights!";
+  }
 });

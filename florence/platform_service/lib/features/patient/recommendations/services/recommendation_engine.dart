@@ -85,6 +85,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
     try {
       // Save new recommendations to database
       await _apiService.post('/patients/me/recommendations', {
+        'timeframe': timeframe,
         'recommendations': newRecommendations.map((r) => r.toJson()).toList()
       });
       
