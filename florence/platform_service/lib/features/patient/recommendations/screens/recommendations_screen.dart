@@ -410,6 +410,29 @@ class _RecommendationsScreenState
         title: const Text('Insights'),
         elevation: 0,
         centerTitle: false,
+        actions: [
+          if (_streakDays > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🔥', style: TextStyle(fontSize: 16)),
+                    const SizedBox(width: 6),
+                    Text(
+                      '$_streakDays-day streak',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
         bottom: _isGenerating || recsAsync.isLoading
             ? const PreferredSize(
                 preferredSize: Size.fromHeight(2.0),
@@ -491,38 +514,41 @@ class _RecommendationsScreenState
                               _buildSectionHeader(active.length, recs, active),
                               if (filtered.isEmpty && !_isGenerating)
                                 Padding(
-                                  padding: const EdgeInsets.all(16),
+                                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 4),
                                   child: _buildEmptyHint(),
                                 ),
                               
                               if (dailyRecs.isNotEmpty) ...[
                                 const Padding(
-                                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                                  padding: EdgeInsets.fromLTRB(24, 12, 24, 8),
                                   child: Text("Daily Recommendations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 ),
                                 ...dailyRecs.asMap().entries.map((e) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                                   child: _buildRecCard(e.value, e.key),
                                 )),
                               ],
 
                               if (weeklyRecs.isNotEmpty) ...[
                                 const Padding(
-                                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                                  padding: EdgeInsets.fromLTRB(24, 12, 24, 8),
                                   child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 ),
                                 ...weeklyRecs.asMap().entries.map((e) => Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                                   child: _buildRecCard(e.value, dailyRecs.length + e.key),
                                 )),
                               ],
+
+                              // Adds exactly 20px + 4px (card bottom padding) = 24px to the divider
+                              if (dailyRecs.isNotEmpty || weeklyRecs.isNotEmpty || (filtered.isEmpty && !_isGenerating))
+                                const SizedBox(height: 20),
 
                               // 3. HISTORY
                               if (history.isNotEmpty) ...[
                                 Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
                                 _RecommendationHistorySection(history: history),
                               ],
-                              const SizedBox(height: 24),
                             ],
                           ),
                         ),
@@ -567,7 +593,7 @@ class _RecommendationsScreenState
     final stateIcon = score >= 50 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      padding: const EdgeInsets.all(24), // Standardised to 24px
       child: Column(
         children: [
           // "VITALITY INDEX" label
@@ -630,23 +656,6 @@ class _RecommendationsScreenState
                   ],
                 ),
               ),
-              // Streak
-              if (_streakDays > 0)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🔥', style: TextStyle(fontSize: 14)),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$_streakDays-day streak',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primaryBlue,
-                      ),
-                    ),
-                  ],
-                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -695,7 +704,7 @@ class _RecommendationsScreenState
     final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 12), // Symmetrical 20px left/right, 24px top
+      padding: const EdgeInsets.fromLTRB(24, 24, 24, 12), // Standardised left/right/top
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1511,7 +1520,7 @@ class _RecommendationHistorySectionState
     final currentItems = items.sublist(start, end);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 16), // Matched 20px left/right, 24px top
+      padding: const EdgeInsets.all(24), // Standardised to 24px all around
       child: Column(
         children: [
           // ── Header row ──────────────────────────────────────
@@ -1568,7 +1577,7 @@ class _RecommendationHistorySectionState
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24), // Standardised gap between title and first item
 
           if (currentItems.isEmpty)
             Padding(
@@ -1579,113 +1588,116 @@ class _RecommendationHistorySectionState
                   style: TextStyle(color: AppTheme.textSecondaryColor),
                 ),
               ),
-            ),
+            )
+          else
+            ...currentItems.asMap().entries.map((entry) {
+              final i = entry.key;
+              final rec = entry.value;
+              final theme = _themeFor(rec.category);
 
-          ...currentItems.map((rec) {
-            final theme = _themeFor(rec.category);
+              // Status badge
+              final String statusLabel;
+              final Color statusColor;
+              if (rec.isExpired && rec.status == RecommendationStatus.active) {
+                statusLabel = 'EXPIRED';
+                statusColor = AppTheme.warningColor;
+              } else if (rec.status == RecommendationStatus.completed) {
+                statusLabel = 'COMPLETED';
+                statusColor = AppTheme.primaryGreen;
+              } else {
+                statusLabel = 'DISMISSED';
+                statusColor = AppTheme.textSecondaryColor;
+              }
 
-            // Status badge
-            final String statusLabel;
-            final Color statusColor;
-            if (rec.isExpired && rec.status == RecommendationStatus.active) {
-              statusLabel = 'EXPIRED';
-              statusColor = AppTheme.warningColor;
-            } else if (rec.status == RecommendationStatus.completed) {
-              statusLabel = 'COMPLETED';
-              statusColor = AppTheme.primaryGreen;
-            } else {
-              statusLabel = 'DISMISSED';
-              statusColor = AppTheme.textSecondaryColor;
-            }
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding:
-                  const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              decoration: BoxDecoration(
-                color: isDark ? AppTheme.midnightSurface : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+              final isLast = i == currentItems.length - 1;
+              return Container(
+                margin: EdgeInsets.only(bottom: isLast ? 0 : 12), // No bottom margin on the last item
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: isDark ? AppTheme.midnightSurface : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: statusColor.withValues(alpha: 0.3),
+                    width: 1,
                   ),
-                ],
-                border: Border.all(
-                  color: statusColor.withValues(alpha: 0.3),
-                  width: 1,
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Left: category icon + title
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Left: category icon + title
+                    Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: theme.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Icon(theme.icon,
+                                size: 16, color: theme.primary),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              rec.title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textPrimaryColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Right: status badge + date
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: theme.primary.withValues(alpha: 0.12),
+                            color: statusColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Icon(theme.icon,
-                              size: 16, color: theme.primary),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
                           child: Text(
-                            rec.title,
+                            statusLabel,
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: AppTheme.textPrimaryColor,
+                              color: statusColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
                           ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          DateFormat('dd/MM/yy HH:mm')
+                              .format(rec.generatedAt.toLocal()),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                color: AppTheme.textSecondaryColor,
+                              ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Right: status badge + date
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          statusLabel,
-                          style: TextStyle(
-                            color: statusColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        DateFormat('dd/MM/yy HH:mm')
-                            .format(rec.generatedAt.toLocal()),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontSize: 11,
-                              color: AppTheme.textSecondaryColor,
-                            ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
+                  ],
+                ),
+              );
+            }),
         ],
       ),
     );
