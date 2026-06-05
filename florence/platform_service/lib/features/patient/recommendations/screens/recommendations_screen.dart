@@ -739,7 +739,7 @@ class _RecommendationsScreenState
                     const SizedBox(height: 4), // Tight gap between title and time
                     GestureDetector(
                       onTap: isStale ? () async {
-                        await _generateRecommendations(timeframe: 'daily');
+                        await _generateRecommendations(timeframe: 'daily', hideToast: true);
                         await _generateRecommendations(timeframe: 'weekly');
                       } : null,
                       child: Text(
@@ -763,7 +763,7 @@ class _RecommendationsScreenState
                 child: IconButton(
                   padding: EdgeInsets.zero,
                   onPressed: _isGenerating ? null : () async {
-                    await _generateRecommendations(timeframe: 'daily');
+                    await _generateRecommendations(timeframe: 'daily', hideToast: true);
                     await _generateRecommendations(timeframe: 'weekly');
                   },
                   icon: _isGenerating
@@ -968,16 +968,19 @@ class _RecommendationsScreenState
                         child: Icon(catTheme.icon, color: catTheme.primary, size: 18),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        rec.categoryLabel.toUpperCase(),
-                        style: TextStyle(
-                          color: catTheme.primary,
-                          fontSize: 11,
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.w600,
+                      Expanded(
+                        child: Text(
+                          rec.categoryLabel.toUpperCase(),
+                          style: TextStyle(
+                            color: catTheme.primary,
+                            fontSize: 11,
+                            letterSpacing: 1.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Spacer(),
+                      const SizedBox(width: 10),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
@@ -1033,14 +1036,17 @@ class _RecommendationsScreenState
                             ),
                             child: Row(
                               children: [
-                                Text(
-                                  rec.explanation!.triggeringData.first.description,
-                                  style: TextStyle(
-                                    color: AppTheme.getTextSecondaryColor(context),
-                                    fontSize: 14,
+                                Expanded(
+                                  child: Text(
+                                    rec.explanation!.triggeringData.first.description,
+                                    style: TextStyle(
+                                      color: AppTheme.getTextSecondaryColor(context),
+                                      fontSize: 14,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const Spacer(),
+                                const SizedBox(width: 10),
                                 Text(
                                   rec.explanation!.triggeringData.first.value,
                                   style: TextStyle(
@@ -1322,30 +1328,36 @@ class _RecommendationHistorySectionState
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.history,
+                        color: AppTheme.primaryBlue,
+                        size: 24,
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.history,
-                      color: AppTheme.primaryBlue,
-                      size: 24,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'History',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'History',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 12),
               // Pagination controls
               Row(
                 children: [
