@@ -158,7 +158,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Helpers.showSuccess(context, 'Check interval set to $value');
             },
           ),
-          const Divider(height: 24),
+          const Divider(height: 1),
 
           _buildSettingToggle(
             'Dark Mode',
@@ -167,7 +167,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ref.watch(themeProvider) == ThemeMode.dark,
             _toggleDarkMode,
           ),
-          const Divider(height: 24),
+          const Divider(height: 1),
 
           _buildSettingToggle(
             'Show Quick Actions',
@@ -191,7 +191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           const SizedBox(height: 16),
           
           _buildInfoRow('App Version', _appVersion, Icons.phone_android),
-          const Divider(height: 24),
+          const Divider(height: 1),
           
           _buildSettingItem(
             'Check for Updates',
@@ -200,7 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: _checkForUpdates,
             showChevron: true,
           ),
-          const Divider(height: 24),
+          const Divider(height: 1),
           
           _buildSettingItem(
             'Privacy Policy',
@@ -209,7 +209,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onTap: () => Helpers.showInfo(context, 'Privacy policy coming soon'),
             showChevron: true,
           ),
-          const Divider(height: 24),
+          const Divider(height: 1),
           
           _buildSettingItem(
             'Terms of Service',
@@ -231,7 +231,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required Function(String) onSelect,
   }) {
     return SizedBox(
-      height: 56,
+      height: 72,
       child: InkWell(
         onTap: () => _showUnitSelectionModal(title, currentValue, options, onSelect),
         borderRadius: BorderRadius.circular(8),
@@ -329,7 +329,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildInfoRow(String label, String value, IconData icon) {
     return SizedBox(
-      height: 56,
+      height: 72,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -369,7 +369,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     bool showChevron = false,
   }) {
     return SizedBox(
-      height: 56,
+      height: 72,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(8),
@@ -415,7 +415,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ValueChanged<bool> onChanged,
   ) {
     return SizedBox(
-      height: 56,
+      height: 72,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
