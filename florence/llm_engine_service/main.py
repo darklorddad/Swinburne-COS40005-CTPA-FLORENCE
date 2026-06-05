@@ -9,6 +9,7 @@ from features.activity.router import router as activity_router
 from features.biometrics.router import router as biometrics_router
 from features.insights.router import router as insights_router
 from features.simulator.router import router as simulator_router
+from features.risk.router import router as risk_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -32,6 +33,7 @@ app.include_router(activity_router, prefix="/activity", tags=["Activity"])
 app.include_router(biometrics_router, prefix="/biometrics", tags=["Biometrics"])
 app.include_router(insights_router, prefix="/insights", tags=["Insights"])
 app.include_router(simulator_router, prefix="/simulator", tags=["Simulator"])
+app.include_router(risk_router, prefix="/risk", tags=["Risk Assessment"])
 
 @app.get("/")
 def root():

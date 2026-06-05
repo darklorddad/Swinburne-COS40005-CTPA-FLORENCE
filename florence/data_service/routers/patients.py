@@ -1,5 +1,7 @@
 import asyncio
-from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form
+import os
+import httpx
+from fastapi import APIRouter, Depends, HTTPException, Header, UploadFile, File, Form, BackgroundTasks
 from pydantic import BaseModel, model_validator, Field, EmailStr
 from typing import Optional, Literal, List
 from supabase_auth.errors import AuthApiError
@@ -140,6 +142,10 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # --- Pydantic Models ---
+
+class RiskLevelUpdate(BaseModel):
+    risk_level: str
+    risk_rationale: Optional[str] = None
 
 class UserSettingsUpdate(BaseModel):
     glucose_unit: Optional[str] = None
@@ -455,6 +461,20 @@ async def update_own_patient_profile(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
+@router.patch("/me/risk", summary="Update my own risk level and rationale")
+async def update_own_risk(
+    update_data: RiskLevelUpdate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Updates the risk level and rationale for the authenticated patient."""
+    try:
+        update_dict = update_data.model_dump(exclude_unset=True)
+        update_dict['last_risk_assessment'] = datetime.now().isoformat()
+        response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update risk: {str(e)}")
+
 @router.get("/me/monitor-data", summary="Get all my monitor data")
 async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patient_profile)):
     """
@@ -509,6 +529,8 @@ async def create_clinical_document(
 @router.post("/me/monitor-data", summary="Add a new monitor data point for myself")
 async def add_own_monitor_data(
     data: MonitorDataCreate,
+    background_tasks: BackgroundTasks,
+    authorization: str = Header(...),
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
@@ -527,6 +549,21 @@ async def add_own_monitor_data(
         
     try:
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
+        
+        async def trigger_risk_assessment():
+            try:
+                llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "https://dev-llmes-florence-dhp.vercel.app")
+                async with httpx.AsyncClient() as client:
+                    await client.post(
+                        f"{llm_url}/risk/assess",
+                        headers={"Authorization": authorization},
+                        timeout=10.0
+                    )
+            except Exception as e:
+                print(f"Background risk assessment trigger failed: {e}")
+        
+        background_tasks.add_task(trigger_risk_assessment)
+        
         return new_data_response.data[0]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to add monitor data: {str(e)}")
@@ -636,6 +673,8 @@ async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient
 @router.post("/me/daily-logs", summary="Add or Update a daily log for myself")
 async def add_own_daily_log(
     log_data: DailyLogCreate,
+    background_tasks: BackgroundTasks,
+    authorization: str = Header(...),
     patient_profile: dict = Depends(get_current_patient_profile)
 ):
     """
@@ -665,11 +704,27 @@ async def add_own_daily_log(
             # Update existing row
             log_id = existing.data[0]['id']
             response = supabase.table('daily_patient_logs').update(data_dict).eq('id', log_id).execute()
-            return response.data[0]
+            result_data = response.data[0]
         else:
             # Insert new row
             response = supabase.table('daily_patient_logs').insert(data_dict).execute()
-            return response.data[0]
+            result_data = response.data[0]
+
+        async def trigger_risk_assessment():
+            try:
+                llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "https://dev-llmes-florence-dhp.vercel.app")
+                async with httpx.AsyncClient() as client:
+                    await client.post(
+                        f"{llm_url}/risk/assess",
+                        headers={"Authorization": authorization},
+                        timeout=10.0
+                    )
+            except Exception as e:
+                print(f"Background risk assessment trigger failed: {e}")
+        
+        background_tasks.add_task(trigger_risk_assessment)
+
+        return result_data
 
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

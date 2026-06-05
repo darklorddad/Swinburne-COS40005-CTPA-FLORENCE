@@ -69,7 +69,7 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
   }
 
   List<Patient> get _filteredPatients {
-    return _patients.where((patient) {
+    final filtered = _patients.where((patient) {
       // Apply search filter
       final nameMatches = patient.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final idMatches = patient.id.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -101,6 +101,22 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
       
       return (nameMatches || idMatches) && riskMatches && updateMatches;
     }).toList();
+
+    // Sort by Risk Level (HIGH > MEDIUM > LOW)
+    filtered.sort((a, b) {
+      int getRiskWeight(RiskLevel? level) {
+        if (level == null) return 0;
+        switch (level) {
+          case RiskLevel.high: return 3;
+          case RiskLevel.medium: return 2;
+          case RiskLevel.low: return 1;
+          default: return 0;
+        }
+      }
+      return getRiskWeight(b.riskLevel).compareTo(getRiskWeight(a.riskLevel));
+    });
+
+    return filtered;
   }
 
   @override
