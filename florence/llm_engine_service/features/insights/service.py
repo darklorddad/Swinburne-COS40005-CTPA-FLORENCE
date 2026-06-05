@@ -6,22 +6,15 @@ from core.llm_factory import LLMFactory
 from features.insights.models import InsightRequest, InsightResponse
 
 _SYSTEM_PROMPT = """You are a clinical health assistant for the FLORENCE Digital Health Platform.
-Given a patient's health snapshot, generate exactly ONE health insight.
+Given a patient's health snapshot and their current active health insights/recommendations, generate exactly ONE summary insight.
 
 ## Rules
 1. Output ONLY the insight text — no preamble, no JSON, no bullet points, no labels.
 2. Maximum 2 sentences.
-3. Always reference specific numbers from the data provided (not generic advice).
-4. Always end with one concrete action the patient can take today.
+3. Synthesise the provided 'Active Insights' into a single, cohesive, encouraging summary of what the patient should focus on today.
+4. If there are no active insights, use the health metrics to give a brief positive reinforcement.
 5. Never recommend medication changes.
 6. Tone: clear, encouraging, never alarming.
-
-## Priority Order (use the highest applicable signal)
-1. Hypo or hyper events — most urgent, mention the count and suggest immediate action
-2. Glucose out of range — time-in-range below 70%, mention the percentage
-3. No activity today — mention zero minutes and suggest a specific duration
-4. Low medication adherence — mention the adherence rate
-5. Positive reinforcement — if all signals are good, celebrate with specific numbers
 
 ## Clinical Targets (for context)
 - Glucose in range: 70–180 mg/dL, target TIR ≥70%
@@ -64,6 +57,10 @@ class InsightService:
             lines.append(f"- Latest BMI: {s.latest_bmi:.1f}")
         if s.active_diseases:
             lines.append(f"- Active diagnoses: {', '.join(s.active_diseases)}")
+        if s.active_insights:
+            lines.append(f"- Active Insights (Summarise these):")
+            for insight in s.active_insights:
+                lines.append(f"  * {insight}")
 
         human_content = "\n".join(lines)
 

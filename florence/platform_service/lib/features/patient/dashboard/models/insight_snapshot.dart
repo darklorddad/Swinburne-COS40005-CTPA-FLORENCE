@@ -13,6 +13,7 @@ class InsightSnapshot {
   final double medicationAdherence7d; // fraction 0.0–1.0
   final double? latestBmi;
   final List<String> activeDiseases;
+  final List<String> activeInsights;
 
   const InsightSnapshot({
     this.averageGlucose7d,
@@ -25,6 +26,7 @@ class InsightSnapshot {
     this.medicationAdherence7d = 0.0,
     this.latestBmi,
     this.activeDiseases = const [],
+    this.activeInsights = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -39,12 +41,13 @@ class InsightSnapshot {
       'medication_adherence_7d': medicationAdherence7d,
       if (latestBmi != null) 'latest_bmi': latestBmi,
       if (activeDiseases.isNotEmpty) 'active_diseases': activeDiseases,
+      if (activeInsights.isNotEmpty) 'active_insights': activeInsights,
     };
   }
 
-  /// Builds an InsightSnapshot from already-loaded health data.
+  /// Builds an InsightSnapshot from already-loaded health data and active recommendations.
   /// Call this after [HealthDataState] is available in the dashboard.
-  factory InsightSnapshot.fromHealthData(HealthDataState data) {
+  factory InsightSnapshot.fromData(HealthDataState data, List<String> activeInsights) {
     final now = DateTime.now();
     final sevenDaysAgo = now.subtract(const Duration(days: 7));
     final todayStart = DateTime(now.year, now.month, now.day);
@@ -112,6 +115,7 @@ class InsightSnapshot {
       medicationAdherence7d: data.medicationAdherence,
       latestBmi: latestBmi,
       activeDiseases: activeDiseases,
+      activeInsights: activeInsights,
     );
   }
 }

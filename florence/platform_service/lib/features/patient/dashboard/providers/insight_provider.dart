@@ -1,12 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/features/patient/dashboard/services/insight_service.dart';
 import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
 
 /// The Insight Provider hits the LLM Engine to generate a fresh, 1-sentence
-/// insight on the fly based on the current health snapshot. It is not stored in the DB.
+/// summary on the fly based on the current health snapshot AND active insights
+/// (daily and weekly recommendations). It is not stored in the DB.
 final insightProvider = FutureProvider.autoDispose<String>((ref) async {
   final healthData = await ref.watch(core_data.monitorDataProvider.future);
+  final recommendations = await ref.watch(recommendationProvider.future);
   
   bool hasDataToday = false;
   final todayStart = DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0);
@@ -15,12 +18,18 @@ final insightProvider = FutureProvider.autoDispose<String>((ref) async {
                  healthData.meals.any((m) => m.timestamp.toLocal().isAfter(todayStart)) ||
                  healthData.activities.any((a) => a.startTime.toLocal().isAfter(todayStart));
                  
-  if (!hasDataToday) {
+  if (!hasDataToday && recommendations.isEmpty) {
     return "You haven't logged any health data today. Tap a quick action below to start!";
   }
 
   try {
-    final snapshot = InsightSnapshot.fromHealthData(healthData);
+    // Collect active recommendations/insights to summarise
+    final activeInsights = recommendations
+        .where((r) => r.isActive)
+        .map((r) => "${r.title}: ${r.description}")
+        .toList();
+
+    final snapshot = InsightSnapshot.fromData(healthData, activeInsights);
     final service = InsightService();
     return await service.generate(snapshot);
   } catch (e) {

@@ -13,6 +13,7 @@ class HealthSnapshot(BaseModel):
     medication_adherence_7d: float = 0.0
     latest_bmi: Optional[float] = None
     active_diseases: List[str] = []
+    active_insights: List[str] = []
 
 
 class InsightRequest(BaseModel):
