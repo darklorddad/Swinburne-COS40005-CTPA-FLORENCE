@@ -297,9 +297,10 @@ class _RecommendationsScreenState
       DateTime? latestDataTime;
       if (healthData != null) {
         final times = <DateTime>[];
-        if (healthData.allMonitorData.isNotEmpty) times.add(healthData.allMonitorData.first.measuredAt);
-        if (healthData.meals.isNotEmpty) times.add(healthData.meals.first.timestamp);
-        if (healthData.activities.isNotEmpty) times.add(healthData.activities.first.startTime);
+        // Use .last to get the MOST RECENT item (assuming backend returns chronological order)
+        if (healthData.allMonitorData.isNotEmpty) times.add(healthData.allMonitorData.last.measuredAt);
+        if (healthData.meals.isNotEmpty) times.add(healthData.meals.last.timestamp);
+        if (healthData.activities.isNotEmpty) times.add(healthData.activities.last.startTime);
         
         if (times.isNotEmpty) {
           // Force all to UTC to prevent local timezone parsing bugs
@@ -313,12 +314,18 @@ class _RecommendationsScreenState
       final lastDailyCheckStr = prefs.getString('last_daily_ai_check');
       final lastWeeklyCheckStr = prefs.getString('last_weekly_ai_check');
       
+      debugPrint('📖 [Check] Read last_daily_ai_check raw = "$lastDailyCheckStr"');
+      debugPrint('📖 [Check] Read last_weekly_ai_check raw = "$lastWeeklyCheckStr"');
+      
       // Parse and force UTC
       DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr) : null;
       if (lastDailyCheck != null && !lastDailyCheck.isUtc) lastDailyCheck = lastDailyCheck.toUtc();
       
       DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr) : null;
       if (lastWeeklyCheck != null && !lastWeeklyCheck.isUtc) lastWeeklyCheck = lastWeeklyCheck.toUtc();
+
+      debugPrint('📖 [Check] Parsed lastDailyCheck = $lastDailyCheck');
+      debugPrint('📖 [Check] Parsed lastWeeklyCheck = $lastWeeklyCheck');
 
       final nowUtc = DateTime.now().toUtc();
 
@@ -364,7 +371,9 @@ class _RecommendationsScreenState
       
       // Save generation timestamp to SharedPreferences (in UTC)
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_${timeframe}_ai_check', DateTime.now().toUtc().toIso8601String());
+      final nowStr = DateTime.now().toUtc().toIso8601String();
+      await prefs.setString('last_${timeframe}_ai_check', nowStr);
+      debugPrint('✅ [Generate] Saved last_${timeframe}_ai_check = $nowStr');
       
       if (!mounted) return; // Prevent setState after dispose
       
