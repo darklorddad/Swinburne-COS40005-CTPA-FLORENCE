@@ -43,6 +43,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
 
     final settings = ref.read(patientSettingsProvider);
     final gUnit = settings.glucoseUnit;
+    final cUnit = settings.cholesterolUnit;
 
     // Daily looks at 1 day, Weekly looks at 7 days
     final daysToAnalyze = timeframe == 'daily' ? 1 : 7;
@@ -70,6 +71,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
           analysisPeriodDays: daysToAnalyze,
           previousTitles: previousTitles,
           glucoseUnit: gUnit,
+          cholesterolUnit: cUnit,
         );
         debugPrint(
           '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',

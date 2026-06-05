@@ -14,24 +14,16 @@ from features.recommendations.models import (
 _SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
 You will receive a patient's health summary. Generate 0 to 3 concise, evidence-based health recommendations.
 
-## Clinical Targets
-- Glucose: 70–180 mg/dL (TIR ≥70%)
-- HbA1c: <7.0%
-- Activity: ≥150 min/week
-- Adherence: ≥80%
-- HDL Cholesterol: >40 mg/dL
-- LDL Cholesterol: <100 mg/dL
-- Triglycerides: <150 mg/dL
-
 ## Output Rules
 1. Return ONLY raw JSON. No markdown, no backticks, no conversational text.
 2. Follow the requested quantity rules strictly. Sort by urgency.
 3. Never recommend dose changes.
-4. Each recommendation needs 2 specific action_items.
-5. Keep descriptions and rationales under 200 characters each.
-6. In triggering_data, cite specific readings from the patient's individual data when available (e.g. "Glucose 210 mg/dL after dinner" not just "high glucose"). Use the type field as a machine key and description as human-readable label.
-6. Set expires_at to 7 days after generated_at.
-7. ID format: rec_<category>_<timestamp_ms>.
+4. NEVER hallucinate or change the units provided. If the input is in mmol/L, your output MUST be in mmol/L. Do not mentally convert to mg/dL.
+5. Each recommendation needs 2 specific action_items.
+6. Keep descriptions and rationales under 200 characters each.
+7. In triggering_data, cite specific readings from the patient's individual data when available. Use the type field as a machine key and description as human-readable label.
+8. Set expires_at to 7 days after generated_at.
+9. ID format: rec_<category>_<timestamp_ms>.
 
 ## Required JSON Schema
 {
@@ -92,7 +84,15 @@ class RecommendationService:
         g_unit = s.glucose_unit
         g_target = "3.9–10.0 mmol/L" if g_unit == "mmol/L" else "70–180 mg/dL"
         
-        c_unit = "mmol/L" if (s.latest_cholesterol and s.latest_cholesterol < 15.0) else "mg/dL"
+        c_unit = s.cholesterol_unit
+        if c_unit == "mmol/L":
+            hdl_target = ">1.0 mmol/L"
+            ldl_target = "<2.6 mmol/L"
+            trig_target = "<1.7 mmol/L"
+        else:
+            hdl_target = ">40 mg/dL"
+            ldl_target = "<100 mg/dL"
+            trig_target = "<150 mg/dL"
 
         # Build extended vitals section
         extended_lines = []
@@ -101,13 +101,13 @@ class RecommendationService:
         if s.latest_systolic is not None and s.latest_diastolic is not None:
             extended_lines.append(f"- Latest Blood Pressure: {s.latest_systolic:.0f}/{s.latest_diastolic:.0f} mmHg")
         if s.latest_cholesterol is not None:
-            extended_lines.append(f"- Latest Total Cholesterol: {s.latest_cholesterol:.1f} mg/dL")
+            extended_lines.append(f"- Latest Total Cholesterol: {s.latest_cholesterol:.1f} {c_unit}")
         if s.latest_hdl is not None:
-            extended_lines.append(f"- Latest HDL Cholesterol: {s.latest_hdl:.1f} mg/dL")
+            extended_lines.append(f"- Latest HDL Cholesterol: {s.latest_hdl:.1f} {c_unit}")
         if s.latest_ldl is not None:
-            extended_lines.append(f"- Latest LDL Cholesterol: {s.latest_ldl:.1f} mg/dL")
+            extended_lines.append(f"- Latest LDL Cholesterol: {s.latest_ldl:.1f} {c_unit}")
         if s.latest_triglycerides is not None:
-            extended_lines.append(f"- Latest Triglycerides: {s.latest_triglycerides:.1f} mg/dL")
+            extended_lines.append(f"- Latest Triglycerides: {s.latest_triglycerides:.1f} {c_unit}")
         if s.latest_hba1c is not None:
             extended_lines.append(f"- Latest Lab HbA1c: {s.latest_hba1c:.1f}%")
         extended_section = ("\n" + "\n".join(extended_lines)) if extended_lines else ""
@@ -129,7 +129,7 @@ class RecommendationService:
         glucose_section = ""
         if s.recent_glucose_readings:
             rows = "\n".join(
-                f"  {r['timestamp']}: {r['value']} mg/dL"
+                f"  {r['timestamp']}: {r['value']} {g_unit}"
                 for r in s.recent_glucose_readings
             )
             glucose_section = f"\nRecent Glucose Readings (newest first):\n{rows}"
@@ -140,7 +140,7 @@ class RecommendationService:
                 f"  {m.get('type','Meal')} at {m['timestamp']}"
                 + (f": {m['description']}" if m.get('description') else "")
                 + (f", {m.get('calories',0)} kcal" if m.get('calories') else "")
-                + (f", glucose {m['glucose_before']}→{m['glucose_after']} mg/dL"
+                + (f", glucose {m['glucose_before']}→{m['glucose_after']} {g_unit}"
                    if m.get('glucose_before') and m.get('glucose_after') else "")
                 for m in s.recent_meals
             )
@@ -167,6 +167,15 @@ class RecommendationService:
             quantity_rule = "\nCRITICAL RULE FOR WEEKLY: Generate exactly 0 or 1 strategic recommendation focusing on macro-trends over the last 7 days. Only output 0 if there is absolutely no data for the week."
 
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.{quantity_rule}
+
+## Clinical Targets (in patient's preferred units)
+- Glucose Target Range: {g_target}
+- HbA1c Target: <7.0%
+- Activity Target: ≥150 min/week
+- Adherence Target: ≥80%
+- HDL Cholesterol Target: {hdl_target}
+- LDL Cholesterol Target: {ldl_target}
+- Triglycerides Target: {trig_target}
 
 Patient Health Summary ({request.analysis_period_days}-day period):
 - Average Blood Glucose: {s.average_glucose:.1f} {g_unit}
