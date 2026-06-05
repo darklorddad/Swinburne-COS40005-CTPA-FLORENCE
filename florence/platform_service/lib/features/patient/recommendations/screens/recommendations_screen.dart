@@ -977,7 +977,6 @@ class _RecommendationsScreenState
                             letterSpacing: 1.5,
                             fontWeight: FontWeight.w600,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -1043,7 +1042,6 @@ class _RecommendationsScreenState
                                       color: AppTheme.getTextSecondaryColor(context),
                                       fontSize: 14,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
@@ -1351,7 +1349,6 @@ class _RecommendationHistorySectionState
                             .textTheme
                             .titleLarge
                             ?.copyWith(fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -1462,7 +1459,7 @@ class _RecommendationHistorySectionState
                                 fontWeight: FontWeight.w500,
                                 color: AppTheme.textPrimaryColor,
                               ),
-                              maxLines: 1,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
