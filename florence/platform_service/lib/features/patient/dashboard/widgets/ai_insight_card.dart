@@ -247,11 +247,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
                       const SizedBox(height: 20),
 
                       // ── Content area ─────────────────────────────────
-                      Expanded(
-                        child: !_revealed
-                            ? _buildScanner()
-                            : _buildUnfoldText(insightText),
-                      ),
+                      if (!_revealed) _buildScanner() else _buildUnfoldText(insightText),
                     ],
                   ),
                 ),
