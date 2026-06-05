@@ -418,8 +418,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
               _glucoseUnit,
               Icons.water_drop_outlined,
               _healthData!.glucoseReadings.isNotEmpty
-                  ? _getGlucoseRiskLevel(
-                      _healthData!.glucoseReadings.last.value, _glucoseUnit)
+                  ? _getGlucoseRiskLevel(_healthData!.glucoseReadings.last.value)
                   : 'no_data',
               _healthData!.glucoseReadings.isNotEmpty
                   ? _healthData!.glucoseReadings.last.timestamp
@@ -629,11 +628,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   }
 
   // Helper Methods for Risk Levels
-  String _getGlucoseRiskLevel(double rawValue, String unit) {
-    // Normalize the incoming value to mmol/L for standardized logic
-    // If the incoming value is in mg/dL, convert it back to mmol/L
-    double mmolValue = (unit == 'mg/dL') ? (rawValue / 18.018) : rawValue;
-
+  String _getGlucoseRiskLevel(double mmolValue) {
     // Perform comparison using normalized mmol/L units
     if (mmolValue < 3.9 || mmolValue > 10.0) return 'high';
     if (mmolValue > 7.8) return 'medium';
@@ -655,7 +650,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   String _getCholesterolRiskLevel(double total, double ldl, double trig) {
     final totalMgDl = total * 38.67;
     final ldlMgDl = ldl * 38.67;
-    final trigMgDl = trig * 38.67;
+    final trigMgDl = trig * 88.57;
 
     if (totalMgDl >= 240 || ldlMgDl >= 160 || trigMgDl >= 200) return 'high';
     if (totalMgDl >= 200 || ldlMgDl >= 130 || trigMgDl >= 150) return 'medium';
@@ -852,20 +847,62 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         // Cholesterol Summary Card
         _buildHealthMetricSummaryCard(
           title: 'Cholesterol',
-          value: hasCholesterol ? '${latestCholesterol.total.toInt()} mg/dL' : '-- mg/dL',
-          status: hasCholesterol ? (latestCholesterol.total >= 240 ? 'High' : (latestCholesterol.total >= 200 ? 'Borderline' : 'Desirable')) : '',
-          statusColor: hasCholesterol ? (latestCholesterol.total >= 240 ? AppTheme.highRiskColor : (latestCholesterol.total >= 200 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor)) : Colors.grey,
+          value: hasCholesterol
+              ? '${_displayCholesterol(latestCholesterol.total).toStringAsFixed(_cholesterolUnit == 'mmol/L' ? 1 : 0)} $_cholesterolUnit'
+              : '-- $_cholesterolUnit',
+          status: hasCholesterol
+              ? (latestCholesterol.total * 38.67 >= 240
+                  ? 'High'
+                  : (latestCholesterol.total * 38.67 >= 200
+                      ? 'Borderline'
+                      : 'Desirable'))
+              : '',
+          statusColor: hasCholesterol
+              ? (latestCholesterol.total * 38.67 >= 240
+                  ? AppTheme.highRiskColor
+                  : (latestCholesterol.total * 38.67 >= 200
+                      ? AppTheme.mediumRiskColor
+                      : AppTheme.lowRiskColor))
+              : Colors.grey,
           icon: Icons.opacity,
           hasData: hasCholesterol,
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CholesterolAnalyticsScreen(
-                patient: _patient!,
-                readings: _healthData!.cholesterolReadings,
+          onTap: () {
+            double lowThreshold = 2.6;
+            double highThreshold = 5.2;
+            if (_patientThresholds != null) {
+              try {
+                final t = _patientThresholds!.firstWhere((t) => t['data_type'] == 'CHOLESTEROL_TOTAL');
+                lowThreshold = (t['min_value'] as num).toDouble();
+                highThreshold = (t['max_value'] as num).toDouble();
+              } catch (_) {}
+            }
+
+            final displayLow = _displayCholesterol(lowThreshold);
+            final displayHigh = _displayCholesterol(highThreshold);
+
+            final displayReadings = _healthData!.cholesterolReadings.map((r) {
+              return CholesterolReading(
+                timestamp: r.timestamp,
+                total: _displayCholesterol(r.total),
+                ldl: _displayCholesterol(r.ldl),
+                hdl: _displayCholesterol(r.hdl),
+                triglycerides: r.triglycerides * (_cholesterolUnit == 'mg/dL' ? 88.57 : 1.0),
+              );
+            }).toList();
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CholesterolAnalyticsScreen(
+                  patient: _patient!,
+                  readings: displayReadings,
+                  lowThreshold: displayLow,
+                  highThreshold: displayHigh,
+                  cholesterolUnit: _cholesterolUnit,
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
         
         const SizedBox(height: 12),

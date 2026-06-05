@@ -170,8 +170,7 @@ async def update_clinician_settings(
         res = supabase.table('user_settings').upsert({
             'user_id': clinician_profile['user_id'],
             'glucose_unit': settings_data.get('glucose_unit', 'mmol/L'),
-            'cholesterol_unit': settings_data.get('cholesterol_unit', 'mmol/L'),
-            'updated_at': 'now()'
+            'cholesterol_unit': settings_data.get('cholesterol_unit', 'mmol/L')
         }).execute()
         return res.data[0]
     except Exception as e:

@@ -8,11 +8,17 @@ import 'dart:math';
 class CholesterolAnalyticsScreen extends StatefulWidget {
   final Patient patient;
   final List<CholesterolReading> readings;
+  final double lowThreshold;
+  final double highThreshold;
+  final String cholesterolUnit;
 
   const CholesterolAnalyticsScreen({
     super.key,
     required this.patient,
     required this.readings,
+    required this.lowThreshold,
+    required this.highThreshold,
+    required this.cholesterolUnit,
   });
 
   @override
@@ -95,10 +101,10 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                       ],
                     ),
                     const SizedBox(height: 12),
-                    _buildTargetRow('Total', '100 - 200 mg/dL'),
-                    _buildTargetRow('LDL', '0 - 100 mg/dL'),
-                    _buildTargetRow('HDL', '40 - 100 mg/dL'),
-                    _buildTargetRow('Triglycerides', '0 - 150 mg/dL'),
+                    _buildTargetRow('Total', widget.cholesterolUnit == 'mmol/L' ? '2.6 - 5.2 mmol/L' : '100 - 200 mg/dL'),
+                    _buildTargetRow('LDL', widget.cholesterolUnit == 'mmol/L' ? '0.0 - 2.6 mmol/L' : '0 - 100 mg/dL'),
+                    _buildTargetRow('HDL', widget.cholesterolUnit == 'mmol/L' ? '1.0 - 2.6 mmol/L' : '40 - 100 mg/dL'),
+                    _buildTargetRow('Triglycerides', widget.cholesterolUnit == 'mmol/L' ? '0.0 - 1.7 mmol/L' : '0 - 150 mg/dL'),
                   ],
                 ),
               ),
@@ -293,9 +299,9 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final r = pageItems[index];
-                final isHigh = r.total >= 240;
-                final status = isHigh ? 'HIGH' : (r.total >= 200 ? 'BORDERLINE' : 'DESIRABLE');
-                final color = isHigh ? AppTheme.highRiskColor : (r.total >= 200 ? AppTheme.mediumRiskColor : AppTheme.lowRiskColor);
+                final isHigh = r.total >= widget.highThreshold;
+                final status = isHigh ? 'HIGH' : (r.total >= widget.lowThreshold ? 'NORMAL' : 'LOW');
+                final color = isHigh ? AppTheme.highRiskColor : (r.total >= widget.lowThreshold ? AppTheme.lowRiskColor : AppTheme.mediumRiskColor);
 
                 return Container(
                   padding: const EdgeInsets.all(16),
@@ -314,11 +320,13 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
                               Text(
-                                r.total.toInt().toString(),
+                                widget.cholesterolUnit == 'mmol/L'
+                                    ? r.total.toStringAsFixed(1)
+                                    : r.total.toInt().toString(),
                                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(width: 4),
-                              const Text('Total mg/dL', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                              Text('Total ${widget.cholesterolUnit}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
                             ],
                           ),
                           Column(
@@ -350,9 +358,30 @@ class _CholesterolAnalyticsScreenState extends State<CholesterolAnalyticsScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildDetailColumn('LDL', r.ldl.toInt().toString(), 'mg/dL', AppTheme.highRiskColor),
-                          _buildDetailColumn('HDL', r.hdl.toInt().toString(), 'mg/dL', AppTheme.lowRiskColor),
-                          _buildDetailColumn('Triglycerides', r.triglycerides.toInt().toString(), 'mg/dL', Colors.orange),
+                          _buildDetailColumn(
+                            'LDL',
+                            widget.cholesterolUnit == 'mmol/L'
+                                ? r.ldl.toStringAsFixed(1)
+                                : r.ldl.toInt().toString(),
+                            widget.cholesterolUnit,
+                            AppTheme.highRiskColor,
+                          ),
+                          _buildDetailColumn(
+                            'HDL',
+                            widget.cholesterolUnit == 'mmol/L'
+                                ? r.hdl.toStringAsFixed(1)
+                                : r.hdl.toInt().toString(),
+                            widget.cholesterolUnit,
+                            AppTheme.lowRiskColor,
+                          ),
+                          _buildDetailColumn(
+                            'Triglycerides',
+                            widget.cholesterolUnit == 'mmol/L'
+                                ? r.triglycerides.toStringAsFixed(1)
+                                : r.triglycerides.toInt().toString(),
+                            widget.cholesterolUnit,
+                            Colors.orange,
+                          ),
                         ],
                       ),
                     ],
