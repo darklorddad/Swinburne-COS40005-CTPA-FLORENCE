@@ -463,55 +463,72 @@ class _RecommendationsScreenState
                     },
                     child: ScrollConfiguration(
                       behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-                      child: CustomScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        slivers: [
-                          SliverToBoxAdapter(
-                            child: _buildVitalityCard(score, active, ringStart, ringEnd, stateLabel),
+                      child: SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.all(16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.getSurfaceColor(context),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(color: AppTheme.getBorderColor(context)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
                           ),
-                          SliverToBoxAdapter(child: _buildSectionHeader(active.length, recs, active)),
-                          if (filtered.isEmpty && !_isGenerating)
-                            SliverToBoxAdapter(child: _buildEmptyHint()),
-                          
-                          if (dailyRecs.isNotEmpty) ...[
-                            const SliverToBoxAdapter(
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(20, 10, 20, 10),
-                                child: Text("Daily Recommendations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // 1. INDEX
+                              _buildVitalityIndex(score, active, ringStart, ringEnd, stateLabel),
+                              
+                              Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
+                              
+                              // 2. RECOMMENDATIONS
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                                child: _buildSectionHeader(active.length, recs, active),
                               ),
-                            ),
-                            SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (_, i) => _buildRecCard(dailyRecs[i], i),
-                                childCount: dailyRecs.length,
-                              ),
-                            ),
-                          ],
+                              if (filtered.isEmpty && !_isGenerating)
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: _buildEmptyHint(),
+                                ),
+                              
+                              if (dailyRecs.isNotEmpty) ...[
+                                const Padding(
+                                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                                  child: Text("Daily Recommendations", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                ),
+                                ...dailyRecs.asMap().entries.map((e) => Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  child: _buildRecCard(e.value, e.key),
+                                )),
+                              ],
 
-                          if (weeklyRecs.isNotEmpty) ...[
-                            const SliverToBoxAdapter(
-                              child: Padding(
-                                padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                                child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              ),
-                            ),
-                            SliverList(
-                              delegate: SliverChildBuilderDelegate(
-                                (_, i) => _buildRecCard(weeklyRecs[i], dailyRecs.length + i),
-                                childCount: weeklyRecs.length,
-                              ),
-                            ),
-                          ],
+                              if (weeklyRecs.isNotEmpty) ...[
+                                const Padding(
+                                  padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
+                                  child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                ),
+                                ...weeklyRecs.asMap().entries.map((e) => Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                  child: _buildRecCard(e.value, dailyRecs.length + e.key),
+                                )),
+                              ],
 
-                          if (history.isNotEmpty)
-                            SliverToBoxAdapter(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-                                child: _RecommendationHistorySection(history: history),
-                              ),
-                            ),
-                          const SliverToBoxAdapter(child: SizedBox(height: 40)),
-                        ],
+                              // 3. HISTORY
+                              if (history.isNotEmpty) ...[
+                                Divider(height: 32, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
+                                _RecommendationHistorySection(history: history),
+                              ],
+                              const SizedBox(height: 24),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -541,8 +558,8 @@ class _RecommendationsScreenState
     );
   }
 
-  // ── Vitality card ─────────────────────────────────────────────
-  Widget _buildVitalityCard(
+  // ── Vitality Index ────────────────────────────────────────────
+  Widget _buildVitalityIndex(
     int score,
     List<HealthRecommendation> active,
     Color ringStart,
@@ -553,131 +570,123 @@ class _RecommendationsScreenState
     final stateIcon = score >= 50 ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: AppTheme.getBorderColor(context)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-          child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+      child: Column(
+        children: [
+          // "VITALITY INDEX" label
+          Text(
+            'VITALITY INDEX',
+            style: TextStyle(
+              color: AppTheme.getTextSecondaryColor(context),
+              fontSize: 11,
+              letterSpacing: 1.8,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Score ring (centred, larger)
+          Center(
+            child: SizedBox(
+              width: 120,
+              height: 120,
+              child: AnimatedBuilder(
+                animation: _scoreAnim,
+                builder: (_, __) => CustomPaint(
+                  painter: _ScoreRingPainter(
+                    progress: _scoreAnim.value * score / 100,
+                    displayScore: (score * _scoreAnim.value).round(),
+                    ringStart: ringStart,
+                    ringEnd: ringEnd,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          const SizedBox(height: 14),
+
+          // State pill + streak row
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 10,
             children: [
-              // "VITALITY INDEX" label
-              Text(
-                'VITALITY INDEX',
-                style: TextStyle(
-                  color: AppTheme.getTextSecondaryColor(context),
-                  fontSize: 11,
-                  letterSpacing: 1.8,
+              // State pill
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: ringStart.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(stateIcon, size: 14, color: ringStart),
+                    const SizedBox(width: 4),
+                    Text(
+                      stateLabel,
+                      style: TextStyle(
+                        color: ringStart,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Streak
+              if (_streakDays > 0)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('🔥', style: TextStyle(fontSize: 14)),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_streakDays-day streak',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.primaryBlue,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Description text (centred)
+          Text(
+            active.isEmpty
+                ? 'Your health data is being analysed.'
+                : 'You have $count active health signal${count == 1 ? '' : 's'}. Review each for personalised guidance.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.getTextSecondaryColor(context),
+              height: 1.5,
+            ),
+          ),
+
+          // "N signals" pill
+          if (count > 0) ...[
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryBlue.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25)),
+              ),
+              child: Text(
+                '$count signal${count == 1 ? '' : 's'}',
+                style: const TextStyle(
+                  color: AppTheme.primaryBlue,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Score ring (centred, larger)
-              SizedBox(
-                width: 120,
-                height: 120,
-                child: AnimatedBuilder(
-                  animation: _scoreAnim,
-                  builder: (_, __) => CustomPaint(
-                    painter: _ScoreRingPainter(
-                      progress: _scoreAnim.value * score / 100,
-                      displayScore: (score * _scoreAnim.value).round(),
-                      ringStart: ringStart,
-                      ringEnd: ringEnd,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-
-              // State pill + streak row
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 10,
-                children: [
-                  // State pill
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: ringStart.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(stateIcon, size: 14, color: ringStart),
-                        const SizedBox(width: 4),
-                        Text(
-                          stateLabel,
-                          style: TextStyle(
-                            color: ringStart,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // Streak
-                  if (_streakDays > 0)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('🔥', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 4),
-                        Text(
-                          '$_streakDays-day streak',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: AppTheme.primaryBlue,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Description text (centred)
-              Text(
-                active.isEmpty
-                    ? 'Your health data is being analysed.'
-                    : 'You have $count active health signal${count == 1 ? '' : 's'}. Review each for personalised guidance.',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.getTextSecondaryColor(context),
-                  height: 1.5,
-                ),
-              ),
-
-              // "N signals" pill
-              if (count > 0) ...[
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryBlue.withValues(alpha: 0.10),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.25)),
-                  ),
-                  child: Text(
-                    '$count signal${count == 1 ? '' : 's'}',
-                    style: const TextStyle(
-                      color: AppTheme.primaryBlue,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -691,7 +700,7 @@ class _RecommendationsScreenState
     final hasFilter = _activeFilter != null || _priorityFilter != null;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 8, 4),
+      padding: const EdgeInsets.fromLTRB(0, 0, 8, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1081,7 +1090,7 @@ class _RecommendationsScreenState
           'Tap the refresh icon above to analyse your recent health data.';
     }
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Text(
         message,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -1101,10 +1110,7 @@ class _RecommendationsScreenState
 
     return FadeTransition(
       opacity: fadeAnim,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-        child: _buildCardBody(rec, index),
-      ),
+      child: _buildCardBody(rec, index),
     );
   }
 
@@ -1514,23 +1520,8 @@ class _RecommendationHistorySectionState
     final end = math.min(start + _itemsPerPage, totalItems);
     final currentItems = items.sublist(start, end);
 
-    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
-    final borderColor = AppTheme.getBorderColor(context);
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: containerColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         children: [
           // ── Header row ──────────────────────────────────────
