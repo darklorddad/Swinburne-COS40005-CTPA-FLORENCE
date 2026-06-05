@@ -26,6 +26,7 @@ Generate 0 to 3 concise, evidence-based health recommendations.
 7. In triggering_data, cite specific readings from the patient's individual data when available. Use the type field as a machine key and description as human-readable label.
 8. Set expires_at to 7 days after generated_at.
 9. ID format: rec_<category>_<timestamp_ms>.
+10. TEMPORAL CONTEXT: NEVER use the words "latest", "current", or "most recent" in your text OR in the triggering_data descriptions. The patient will likely log new data during the week. Instead, use temporal anchors like "BP from [Day of week]", "recent reading", or "earlier this week".
 
 ## Required JSON Schema
 {
