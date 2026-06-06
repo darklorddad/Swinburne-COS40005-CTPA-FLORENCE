@@ -21,15 +21,21 @@ final dailyInsightStateProvider = NotifierProvider<DailyInsightNotifier, String?
 /// summary on the fly based on the current health snapshot AND active insights
 /// (daily and weekly recommendations). It is not stored in the DB.
 final insightProvider = FutureProvider<String>((ref) async {
-  // 1. Check cache FIRST. If we have a cached insight, return it instantly.
-  // By doing this before ref.watch(healthData), this provider won't needlessly
-  // reload and flash the UI when health data is fetched in the background.
   final cached = ref.watch(dailyInsightStateProvider);
+  
+  // 1. Prevent Race Condition: If the Unified AI pipeline is running,
+  // do NOT fire a redundant standalone call. Wait for the unified result.
+  final isGeneratingRecs = ref.watch(recommendationProvider).isLoading;
+  if (isGeneratingRecs) {
+    return cached ?? "Analyzing your recent health data...";
+  }
+
+  // 2. If we have a cached insight, return it instantly.
   if (cached != null) {
     return cached;
   }
 
-  // 2. Otherwise, fetch data to generate on the fly
+  // 3. Otherwise, fetch data to generate on the fly
   final healthData = await ref.watch(core_data.monitorDataProvider.future);
   final recommendations = await ref.watch(recommendationProvider.future);
   

@@ -524,8 +524,10 @@ class _RecommendationsScreenState
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                                   child: _buildRecCard(e.value, dailyRecs.length + e.key),
                                 )),
-                                const SizedBox(height: 20),
                               ],
+
+                              if (dailyRecs.isNotEmpty || weeklyRecs.isNotEmpty || (filtered.isEmpty && !_isGenerating))
+                                const SizedBox(height: 20),
 
                               // 3. HISTORY
                               if (history.isNotEmpty) ...[
@@ -646,7 +648,9 @@ class _RecommendationsScreenState
           // Description text (centred)
           active.isEmpty
               ? Text(
-                  'Your health data is being analysed.',
+                  score == 0 
+                      ? 'Start logging your health data to generate your index and insights.' 
+                      : 'You\'re all caught up! No active recommendations.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.getTextSecondaryColor(context),

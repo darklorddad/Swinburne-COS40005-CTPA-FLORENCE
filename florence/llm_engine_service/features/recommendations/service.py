@@ -320,13 +320,16 @@ Generate a unified daily assessment.
   "model_used": "string"
 }}"""
 
+        adherence_line = ""
+        if s.current_medications:
+            adherence_line = f"\n- Medication Adherence: {s.medication_adherence * 100:.0f}%"
+
         human_content = f"""Patient Health Summary (1-day period):
 - Average Blood Glucose: {s.average_glucose:.1f} {g_unit}
 - Glucose Target Range: {g_target}
 - Hyperglycaemia Events: {s.hyper_events}
 - Hypoglycaemia Events: {s.hypo_events}
-- Activity Minutes: {s.total_activity_minutes}
-- Medication Adherence: {s.medication_adherence * 100:.0f}%
+- Activity Minutes: {s.total_activity_minutes}{adherence_line}
 Recent Readings: {s.recent_glucose_readings}
 Recent Meals: {s.recent_meals}
 Recent Activities: {s.recent_activities}

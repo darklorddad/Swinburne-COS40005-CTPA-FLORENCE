@@ -219,7 +219,7 @@ class BiometricsSection extends ConsumerWidget {
     cards.add(CompactHealthCard(
       label: 'Activity',
       value: latestActivity != null ? '$activityMins' : '--',
-      unit: activityMins == 1 ? 'minute' : 'minutes',
+      unit: latestActivity == null ? 'minutes' : (activityMins == 1 ? 'minute' : 'minutes'),
       status: latestActivity != null ? 'Latest Log' : 'No Data',
       timestamp: latestActivity?.timestamp.toLocal(),
       icon: Icons.directions_run_outlined,
