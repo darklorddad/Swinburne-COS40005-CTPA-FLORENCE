@@ -87,7 +87,6 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Blood pressure logged successfully!');

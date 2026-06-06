@@ -638,7 +638,7 @@ class MonitorDataRepository {
   Future<double> _fetchMedicationAdherence() async {
     try {
       final schedule = await _apiService.get('/patients/me/medication-schedule');
-      if (schedule is! List || schedule.isEmpty) return 0.0;
+      if (schedule is! List || schedule.isEmpty) return 1.0;
       int totalExpected = 0, totalLogged = 0;
       for (var item in schedule) {
         final med = PatientMedication.fromJson(item['medication'] as Map<String, dynamic>);

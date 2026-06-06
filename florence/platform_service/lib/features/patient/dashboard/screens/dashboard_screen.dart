@@ -70,6 +70,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     setState(() => _isPullRefreshing = true);
     try {
       ref.invalidate(chatProvider);
+      ref.read(dailyInsightStateProvider.notifier).updateInsight(null);
 
       // 1. Fetch Profile First ("Prime" the backend)
       // This ensures the profile record exists and prevents race conditions on the heavy queries
@@ -93,7 +94,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
       const _QuickActionItem('B.Pressure', Icons.monitor_heart_outlined, Color(0xFFF50057), AppRoutes.logBloodPressure), // Magenta
       const _QuickActionItem('Diet', Icons.restaurant_outlined, Color(0xFFFFA726), AppRoutes.logMeal), // Orange
       const _QuickActionItem('Activity', Icons.directions_run_rounded, Color(0xFF66BB6A), AppRoutes.logActivity), // Green
-      const _QuickActionItem('Log Meds', Icons.history_edu_rounded, Color(0xFF42A5F5), AppRoutes.logMedication), // Blue
+      const _QuickActionItem('Meds', Icons.history_edu_rounded, Color(0xFF42A5F5), AppRoutes.logMedication), // Blue
       const _QuickActionItem('BMI', Icons.monitor_weight_outlined, Color(0xFF26A69A), AppRoutes.logBmi), // Teal
       const _QuickActionItem('Cholesterol', Icons.bloodtype_outlined, Color(0xFFAB47BC), AppRoutes.logCholesterol), // Purple
       const _QuickActionItem('HbA1c', Icons.pie_chart_outline, Color(0xFFFFCA28), AppRoutes.logHba1c), // Amber

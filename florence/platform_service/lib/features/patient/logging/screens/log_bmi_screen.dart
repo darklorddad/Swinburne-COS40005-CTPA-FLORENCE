@@ -147,7 +147,6 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged and profile updated!');

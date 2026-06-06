@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:florence/core/config/environment.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
@@ -82,6 +83,12 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
         if (response.dailyInsight != null) {
           ref.read(dailyInsightStateProvider.notifier).updateInsight(response.dailyInsight);
         }
+        
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final nowStr = DateTime.now().toUtc().toIso8601String();
+          await prefs.setString('last_${timeframe}_ai_check', nowStr);
+        } catch (_) {}
         
         newRecommendations = response.recommendations;
         usedAI = true;

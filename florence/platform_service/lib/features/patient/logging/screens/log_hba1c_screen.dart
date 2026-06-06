@@ -346,7 +346,6 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(

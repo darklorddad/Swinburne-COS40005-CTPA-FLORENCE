@@ -88,7 +88,6 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');

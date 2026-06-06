@@ -199,7 +199,6 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Activity logged successfully!');

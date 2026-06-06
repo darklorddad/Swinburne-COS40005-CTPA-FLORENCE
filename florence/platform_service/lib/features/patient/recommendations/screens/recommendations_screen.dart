@@ -366,12 +366,6 @@ class _RecommendationsScreenState
           .read(recommendationProvider.notifier)
           .generateRecommendations(timeframe: timeframe);
       
-      // Save generation timestamp to SharedPreferences (in UTC)
-      final prefs = await SharedPreferences.getInstance();
-      final nowStr = DateTime.now().toUtc().toIso8601String();
-      await prefs.setString('last_${timeframe}_ai_check', nowStr);
-      debugPrint('✅ [Generate] Saved last_${timeframe}_ai_check = $nowStr');
-      
       if (!mounted) return; // Prevent setState after dispose
       
       _staggerCtrl.forward(from: 0);

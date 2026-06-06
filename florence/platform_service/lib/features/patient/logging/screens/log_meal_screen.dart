@@ -315,7 +315,6 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider);
 
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');

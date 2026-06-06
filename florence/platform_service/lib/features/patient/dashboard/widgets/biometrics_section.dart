@@ -218,7 +218,7 @@ class BiometricsSection extends ConsumerWidget {
     cards.add(CompactHealthCard(
       label: 'Activity',
       value: latestActivity != null ? '${latestActivity!.duration}' : '--',
-      unit: 'min',
+      unit: 'minutes',
       status: latestActivity != null ? 'Latest Log' : 'No Data',
       timestamp: latestActivity?.timestamp.toLocal(),
       icon: Icons.directions_run_outlined,

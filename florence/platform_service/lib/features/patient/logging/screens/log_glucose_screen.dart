@@ -398,7 +398,6 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );
-      ref.invalidate(insightProvider); // Forces the dashboard AI insight card to refresh
 
       if (mounted) {
         Helpers.showSuccess(context, 'Glucose reading saved successfully!');

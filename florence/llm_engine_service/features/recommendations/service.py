@@ -183,7 +183,7 @@ class RecommendationService:
         if request.analysis_period_days == 1:
             quantity_rule = "\nCRITICAL RULE FOR DAILY: Generate between 0 and 3 tactical recommendations based on today's data. If all metrics are perfectly in range and goals are met, output an empty list `[]` for 'recommendations'. Do not force a recommendation if the patient is doing perfectly."
         else:
-            quantity_rule = "\nCRITICAL RULE FOR WEEKLY: Generate exactly 0 or 1 strategic recommendation focusing on macro-trends over the last 7 days. Only output 0 if there is absolutely no data for the week."
+            quantity_rule = "\nCRITICAL RULE FOR WEEKLY: Generate exactly 1 strategic recommendation focusing on macro-trends over the last 7 days. Only output 0 if there is absolutely no data for the week."
 
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.{quantity_rule}
 
