@@ -41,12 +41,12 @@ final insightProvider = Provider<String?>((ref) {
   if (cached != null) return cached;
 
   // 3. Fallback to Database Profile (Survives device switches!)
-  final profile = ref.watch(userProfileProvider).valueOrNull;
+  final profile = ref.watch(userProfileProvider).value;
   final dbInsight = profile?['daily_insight'] as String?;
   if (dbInsight != null && dbInsight.isNotEmpty) return dbInsight;
 
   // 4. Ultimate Fallback
-  final healthData = ref.watch(core_data.monitorDataProvider).valueOrNull;
+  final healthData = ref.watch(core_data.monitorDataProvider).value;
   if (healthData == null) return null;
   
   final todayStart = DateTime.now().copyWith(hour: 0, minute: 0, second: 0, millisecond: 0);
