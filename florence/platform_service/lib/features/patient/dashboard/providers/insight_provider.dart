@@ -6,7 +6,16 @@ import 'package:florence/features/patient/dashboard/services/insight_service.dar
 import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
 
 /// Caches the insight generated from the unified daily LLM call
-final dailyInsightStateProvider = StateProvider<String?>((ref) => null);
+class DailyInsightNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void updateInsight(String? insight) {
+    state = insight;
+  }
+}
+
+final dailyInsightStateProvider = NotifierProvider<DailyInsightNotifier, String?>(DailyInsightNotifier.new);
 
 /// The Insight Provider hits the LLM Engine to generate a fresh, 1-sentence
 /// summary on the fly based on the current health snapshot AND active insights

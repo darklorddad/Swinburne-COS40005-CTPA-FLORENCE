@@ -80,7 +80,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
         
         // Cache the insight so the Dashboard updates instantly!
         if (response.dailyInsight != null) {
-          ref.read(dailyInsightStateProvider.notifier).state = response.dailyInsight;
+          ref.read(dailyInsightStateProvider.notifier).updateInsight(response.dailyInsight);
         }
         
         newRecommendations = response.recommendations;
