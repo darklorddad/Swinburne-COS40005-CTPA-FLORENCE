@@ -111,17 +111,19 @@ class RiskAssessmentService:
             thresholds = thresh_res.json() if thresh_res.status_code == 200 else []
 
         # 3. Build Context for LLM
-        glucose_readings = [d for d in monitor_data if d.get('data_type') == 'GLUCOSE'][-5:]
-        
+        # Grab the last 10 readings regardless of type (BP, BMI, Glucose, etc.)
+        recent_readings = []
+        for d in monitor_data[:10]:
+            recent_readings.append(f"{d.get('data_type')}: {d.get('value')}")
+            
         # Format thresholds for the prompt
         thresh_text = "No specific thresholds set."
         if thresholds:
             thresh_text = "\n".join([f"- {t['data_type']}: Target {t['min_value']} to {t['max_value']}" for t in thresholds])
 
         summary = f"""
-Recent monitor readings count: {len(monitor_data)}. 
-Recent meal logs count: {len(daily_data)}. 
-Recent glucose values: {[g.get('value') for g in glucose_readings]}
+Recent monitor readings (latest first): {', '.join(recent_readings) if recent_readings else 'None'}
+Recent meal logs count: {len(daily_data)}
 
 Patient's Personalized Thresholds (in their preferred units):
 {thresh_text}

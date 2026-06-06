@@ -8,7 +8,7 @@ import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart
 /// The Insight Provider hits the LLM Engine to generate a fresh, 1-sentence
 /// summary on the fly based on the current health snapshot AND active insights
 /// (daily and weekly recommendations). It is not stored in the DB.
-final insightProvider = FutureProvider.autoDispose<String>((ref) async {
+final insightProvider = FutureProvider<String>((ref) async {
   final healthData = await ref.watch(core_data.monitorDataProvider.future);
   final recommendations = await ref.watch(recommendationProvider.future);
   

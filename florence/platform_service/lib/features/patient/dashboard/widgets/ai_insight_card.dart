@@ -143,7 +143,8 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
       }
     });
 
-    final insightText = ref.watch(insightProvider).asData?.value ?? _kDummyInsight;
+    // Use valueOrNull so it holds onto the old text while loading the new one
+    final insightText = ref.watch(insightProvider).valueOrNull ?? _kDummyInsight;
 
     const double borderRadius = 24.0;
 
