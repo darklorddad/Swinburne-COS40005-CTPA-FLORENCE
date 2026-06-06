@@ -79,8 +79,9 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
     // Minimum scan time — 1.8s floor so animation always plays meaningfully
     _minTimer = Timer(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
-      _minElapsed = true;
-      _tryReveal();
+      setState(() {
+        _minElapsed = true;
+      });
     });
 
     // Safety net — force reveal after 8s no matter what (slow API / no data)
