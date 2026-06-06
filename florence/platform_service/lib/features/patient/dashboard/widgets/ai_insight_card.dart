@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/config/routes.dart';
 import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 
 // Fallback shown while the insight provider has no data yet
 const String _kDummyInsight =
