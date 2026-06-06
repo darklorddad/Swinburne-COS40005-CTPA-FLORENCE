@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:florence/core/utils/helpers.dart';
@@ -129,19 +130,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(icon: const Icon(Icons.delete_outline), onPressed: showLoading ? null : _confirmClearHistory),
         ],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: showLoading
-                ? const Center(child: CircularProgressIndicator())
-                : messages.isEmpty
-                    ? _buildEmptyState()
-                    : _buildMessagesList(messages),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: Column(
+            children: [
+              Expanded(
+                child: showLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : messages.isEmpty
+                        ? _buildEmptyState()
+                        : _buildMessagesList(messages),
+              ),
+              if (isTyping && !showLoading) _buildTypingIndicator(),
+              if (!showLoading && messages.isEmpty) _buildSuggestedQuestions(),
+              _buildInputArea(isEnabled: !showLoading),
+            ],
           ),
-          if (isTyping && !showLoading) _buildTypingIndicator(),
-          if (!showLoading && messages.isEmpty) _buildSuggestedQuestions(),
-          _buildInputArea(isEnabled: !showLoading),
-        ],
+        ),
       ),
     );
   }
@@ -159,7 +165,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           const SizedBox(height: 24),
           Text('How can I help you today?', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
-          Text('Ask about your health data, meals, or insights.', style: TextStyle(color: AppTheme.textSecondaryColor)),
+          Text('Ask about your health data, meals or insights.', style: TextStyle(color: AppTheme.textSecondaryColor)),
         ],
       ),
     );
@@ -317,21 +323,43 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: isDark ? AppTheme.midnightBackground : Colors.grey.shade100,
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppTheme.getBorderColor(context)),
+                  border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
                 ),
-                child: TextField(
-                  controller: _messageController,
-                  enabled: isEnabled,
-                  decoration: const InputDecoration(
-                    hintText: 'Message Florence...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    // Check for Enter key on Desktop/Web
+                    if (Helpers.isDesktop(context) && 
+                        event is KeyDownEvent && 
+                        event.logicalKey == LogicalKeyboardKey.enter) {
+                      
+                      // If holding Shift, let it create a new line naturally
+                      if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
+                          HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
+                        return KeyEventResult.ignored; 
+                      } else {
+                        // Send message and prevent newline
+                        if (_messageController.text.trim().isNotEmpty) {
+                          _sendMessage(_messageController.text);
+                        }
+                        return KeyEventResult.handled;
+                      }
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    controller: _messageController,
+                    enabled: isEnabled,
+                    decoration: const InputDecoration(
+                      hintText: 'Message Florence...',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    ),
+                    maxLines: 4,
+                    minLines: 1,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
-                  maxLines: 3,
-                  minLines: 1,
-                  textCapitalization: TextCapitalization.sentences,
                 ),
               ),
             ),

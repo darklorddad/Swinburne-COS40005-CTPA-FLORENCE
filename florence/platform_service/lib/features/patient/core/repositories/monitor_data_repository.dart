@@ -315,12 +315,25 @@ class MonitorDataRepository {
 
       switch (dataType) {
         case 'GLUCOSE':
+          String ctx = '';
+          for (var m in meals) {
+            if (m.glucoseBeforeTime != null && m.glucoseBeforeTime!.isAtSameMomentAs(timestamp)) {
+              final mealType = m.type.length > 1 ? m.type[0].toUpperCase() + m.type.substring(1).toLowerCase() : m.type;
+              ctx = 'Before $mealType';
+              break;
+            }
+            if (m.glucoseAfterTime != null && m.glucoseAfterTime!.isAtSameMomentAs(timestamp)) {
+              final mealType = m.type.length > 1 ? m.type[0].toUpperCase() + m.type.substring(1).toLowerCase() : m.type;
+              ctx = 'After $mealType';
+              break;
+            }
+          }
+
           glucoseReadings.add(GlucoseReading(
             id: id,
             timestamp: timestamp,
             value: value,
-            // Convert to local to ensure '8 AM' is treated as morning, not UTC night
-            context: _getGlucoseContext(timestamp.toLocal().hour),
+            context: ctx,
             isFlagged: value > 180 || value < 70,
           ));
           break;
@@ -735,13 +748,6 @@ class MonitorDataRepository {
   }
 
   // ==================== UTILS & MOCKS ====================
-
-  String _getGlucoseContext(int hour) {
-    if (hour >= 5 && hour < 12) return 'Morning';
-    if (hour >= 12 && hour < 17) return 'Afternoon';
-    if (hour >= 17 && hour < 21) return 'Evening';
-    return 'Night';
-  }
 
   /// Silently triggers the LLM Engine to re-evaluate clinical risk.
   /// Fire-and-forget: does not block the UI or throw errors to the caller.
