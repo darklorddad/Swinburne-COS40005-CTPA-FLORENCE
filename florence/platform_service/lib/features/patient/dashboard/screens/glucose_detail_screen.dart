@@ -119,7 +119,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 20),
                                       _HistorySection(
-                                        readings: glucoseReadingsWithContext.value ?? [],
+                                        readings: glucoseReadingsWithContext,
                                         threshold: effectiveThreshold,
                                       ),
                                       const SizedBox(height: 24),
@@ -156,7 +156,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 20),
                                 _HistorySection(
-                                  readings: glucoseReadingsWithContext.value ?? [],
+                                  readings: glucoseReadingsWithContext,
                                   threshold: effectiveThreshold,
                                 ),
                                 const SizedBox(height: 24),
