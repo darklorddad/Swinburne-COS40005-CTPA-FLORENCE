@@ -125,7 +125,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
   @override
   Widget build(BuildContext context) {
-    final isGeneratingRecs = ref.watch(recommendationProvider).isLoading;
+    final isGeneratingRecs = ref.watch(isGeneratingRecommendationsProvider);
     final insightTextRaw = ref.watch(insightProvider);
     
     // Declarative animation logic

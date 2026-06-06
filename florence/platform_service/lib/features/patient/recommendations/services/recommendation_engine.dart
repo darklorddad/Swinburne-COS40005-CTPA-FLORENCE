@@ -12,6 +12,14 @@ import 'package:florence/features/patient/dashboard/providers/insight_provider.d
 
 import 'package:florence/core/services/api_service.dart';
 
+class IsGeneratingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+  void setGenerating(bool value) => state = value;
+}
+
+final isGeneratingRecommendationsProvider = NotifierProvider<IsGeneratingNotifier, bool>(IsGeneratingNotifier.new);
+
 final recommendationProvider =
     AsyncNotifierProvider<RecommendationNotifier, List<HealthRecommendation>>(
   RecommendationNotifier.new,
@@ -40,8 +48,10 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
   /// 3. Append to state.
   /// Returns true if AI recommendations were used, false if rule-based fallback was used.
   Future<bool> generateRecommendations({required String timeframe}) async {
-    final healthData = ref.read(monitorDataProvider).asData?.value;
-    if (healthData == null) return false;
+    ref.read(isGeneratingRecommendationsProvider.notifier).setGenerating(true);
+    try {
+      final healthData = ref.read(monitorDataProvider).asData?.value;
+      if (healthData == null) return false;
 
     final settings = ref.read(patientSettingsProvider);
     final gUnit = settings.glucoseUnit;
@@ -121,6 +131,9 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
     }
 
     return usedAI;
+    } finally {
+      ref.read(isGeneratingRecommendationsProvider.notifier).setGenerating(false);
+    }
   }
 
   /// Rule-based fallback — used when AI is disabled or the LLM call fails.

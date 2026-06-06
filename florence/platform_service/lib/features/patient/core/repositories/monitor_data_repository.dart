@@ -424,7 +424,16 @@ class MonitorDataRepository {
     }
 
     // Combine and Sort
-    final combinedMonitorData = [...allMonitorData, ...mealMonitorData];
+    final combinedRawData = [...allMonitorData, ...mealMonitorData];
+    
+    // Deduplicate by timestamp and value (removes Simulator double-inserts)
+    final uniqueMap = <String, MonitorData>{};
+    for (final d in combinedRawData) {
+      final key = '${d.dataType}_${d.measuredAt.toIso8601String()}_${d.value}';
+      uniqueMap[key] = d;
+    }
+    
+    final combinedMonitorData = uniqueMap.values.toList();
     combinedMonitorData.sort((a, b) => b.measuredAt.compareTo(a.measuredAt));
 
     // Sort

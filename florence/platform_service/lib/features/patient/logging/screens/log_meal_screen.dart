@@ -316,7 +316,11 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Meal logged successfully!');
-        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
+        if (widget.onSwitchToHistory != null) {
+          widget.onSwitchToHistory!();
+        } else {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) Helpers.showError(context, 'Failed to log meal: $e');

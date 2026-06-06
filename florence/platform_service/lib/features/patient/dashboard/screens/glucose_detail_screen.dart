@@ -1481,7 +1481,7 @@ class _HistorySectionState extends State<_HistorySection> {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        item.value.toStringAsFixed(0),
+                        item.value.toStringAsFixed(ref.watch(patientSettingsProvider).glucoseUnit == 'mmol/L' ? 1 : 0),
                         style: TextStyle(
                           fontWeight: FontWeight.normal, 
                           fontSize: 20,
@@ -1490,7 +1490,7 @@ class _HistorySectionState extends State<_HistorySection> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'mg/dL', 
+                        ref.watch(patientSettingsProvider).glucoseUnit, 
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppTheme.textSecondaryColor,
                           fontSize: 12
