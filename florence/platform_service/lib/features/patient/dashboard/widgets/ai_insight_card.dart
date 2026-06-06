@@ -90,20 +90,6 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
     });
   }
 
-  /// Called when the min timer fires OR when the insight provider emits data.
-  /// Only reveals when both the min time has elapsed AND real data is ready.
-  void _tryReveal() {
-    if (_revealed || !_minElapsed) return;
-    
-    // Prevent revealing if the AI is actively generating a new response in the background
-    final isGenerating = ref.read(recommendationProvider).isLoading;
-    if (isGenerating) return; // keep scanning!
-    
-    final insight = ref.read(insightProvider).asData?.value;
-    if (insight == null) return; // still loading — keep scanning
-    _doReveal();
-  }
-
   /// Resets the card back to scan mode (e.g. on pull-to-refresh).
   void _resetToScan() {
     if (!mounted) return;
@@ -138,24 +124,23 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
   @override
   Widget build(BuildContext context) {
-    // Listen for AI generation state changes:
-    // When recommendations start loading, force the scanner back on.
-    ref.listen(recommendationProvider, (_, next) {
-      if (next.isLoading) {
-        _resetToScan();
-      } else {
-        _tryReveal();
+    final isGeneratingRecs = ref.watch(recommendationProvider).isLoading;
+    final insightAsync = ref.watch(insightProvider);
+    final isGeneratingInsight = insightAsync.isLoading;
+    
+    // Declarative animation logic
+    // If ANY provider is loading, we force the scanner to run.
+    if (isGeneratingRecs || isGeneratingInsight) {
+      if (_revealed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _resetToScan());
       }
-    });
-
-    ref.listen(insightProvider, (_, next) {
-      if (!next.isLoading) {
-        _tryReveal();
+    } else {
+      if (!_revealed && _minElapsed) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _doReveal());
       }
-    });
+    }
 
-    // Use .value so it holds onto the old text while loading the new one
-    final insightText = ref.watch(insightProvider).value ?? _kDummyInsight;
+    final insightText = insightAsync.value ?? _kDummyInsight;
 
     const double borderRadius = 24.0;
 

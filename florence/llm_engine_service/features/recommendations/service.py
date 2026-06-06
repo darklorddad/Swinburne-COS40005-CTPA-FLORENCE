@@ -137,12 +137,14 @@ class RecommendationService:
             disease_section = f"\nActive Diagnoses: {', '.join(s.active_diseases)}"
 
         medication_section = ""
+        adherence_section = ""
         if s.current_medications:
             rows = "\n".join(
                 f"  - {m.get('name','Unknown')} {m.get('amount','')} ({m.get('type','')}) — take {m.get('timing','')}"
                 for m in s.current_medications
             )
             medication_section = f"\nCurrent Medications:\n{rows}"
+            adherence_section = f"\n- Medication Adherence (today): {s.medication_adherence * 100:.0f}%"
 
         # Build recent readings sections
         glucose_section = ""
@@ -205,8 +207,7 @@ Patient Health Summary ({request.analysis_period_days}-day period):
 - Estimated HbA1c: {s.estimated_a1c:.1f}%
 - Total Meals Logged: {s.total_meals}
 - Average Calories per Meal: {s.average_calories:.0f} kcal
-- Total Activity Minutes: {s.total_activity_minutes} minutes
-- Medication Adherence (today): {s.medication_adherence * 100:.0f}%{extended_section}{disease_section}{medication_section}{glucose_section}{meal_section}{activity_section}{prev_section}
+- Total Activity Minutes: {s.total_activity_minutes} minutes{adherence_section}{extended_section}{disease_section}{medication_section}{glucose_section}{meal_section}{activity_section}{prev_section}
 
 Current timestamp for generated_at: {now_iso}"""
 

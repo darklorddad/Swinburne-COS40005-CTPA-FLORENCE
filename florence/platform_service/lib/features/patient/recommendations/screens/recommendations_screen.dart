@@ -515,34 +515,17 @@ class _RecommendationsScreenState
                                 )),
                               ],
 
-                              const Padding(
-                                padding: EdgeInsets.fromLTRB(24, 12, 24, 8),
-                                child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                              ),
                               if (weeklyRecs.isNotEmpty) ...[
+                                const Padding(
+                                  padding: EdgeInsets.fromLTRB(24, 12, 24, 8),
+                                  child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                ),
                                 ...weeklyRecs.asMap().entries.map((e) => Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                                   child: _buildRecCard(e.value, dailyRecs.length + e.key),
                                 )),
-                              ] else ...[
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.getSurfaceColor(context),
-                                      borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: AppTheme.getBorderColor(context)),
-                                    ),
-                                    child: Text(
-                                      "Your weekly action plan will appear here once enough data has been gathered to detect long-term trends.",
-                                      style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
-                                    ),
-                                  ),
-                                ),
+                                const SizedBox(height: 20),
                               ],
-
-                              const SizedBox(height: 20),
 
                               // 3. HISTORY
                               if (history.isNotEmpty) ...[

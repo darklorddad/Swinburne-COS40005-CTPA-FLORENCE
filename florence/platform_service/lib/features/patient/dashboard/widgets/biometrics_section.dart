@@ -214,11 +214,12 @@ class BiometricsSection extends ConsumerWidget {
       onTap: () => AppRoutes.push(context, AppRoutes.cholesterolDetail),
     ));
 
+    final int activityMins = latestActivity?.duration ?? 0;
     // Activity (Always show)
     cards.add(CompactHealthCard(
       label: 'Activity',
-      value: latestActivity != null ? '${latestActivity!.duration}' : '--',
-      unit: 'minutes',
+      value: latestActivity != null ? '$activityMins' : '--',
+      unit: activityMins == 1 ? 'minute' : 'minutes',
       status: latestActivity != null ? 'Latest Log' : 'No Data',
       timestamp: latestActivity?.timestamp.toLocal(),
       icon: Icons.directions_run_outlined,

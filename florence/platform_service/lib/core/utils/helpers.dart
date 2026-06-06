@@ -13,6 +13,7 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
@@ -36,6 +37,7 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
@@ -59,6 +61,7 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
@@ -82,6 +85,7 @@ class Helpers {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
