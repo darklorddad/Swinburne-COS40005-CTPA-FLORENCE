@@ -737,13 +737,10 @@ class MonitorDataRepository {
   // ==================== UTILS & MOCKS ====================
 
   String _getGlucoseContext(int hour) {
-    if (hour >= 5 && hour < 9) return 'Before breakfast';
-    if (hour >= 9 && hour < 11) return 'After breakfast';
-    if (hour >= 11 && hour < 13) return 'Before lunch';
-    if (hour >= 13 && hour < 17) return 'After lunch';
-    if (hour >= 17 && hour < 19) return 'Before dinner';
-    if (hour >= 19 && hour < 22) return 'After dinner';
-    return 'Bedtime';
+    if (hour >= 5 && hour < 12) return 'Morning';
+    if (hour >= 12 && hour < 17) return 'Afternoon';
+    if (hour >= 17 && hour < 21) return 'Evening';
+    return 'Night';
   }
 
   /// Silently triggers the LLM Engine to re-evaluate clinical risk.

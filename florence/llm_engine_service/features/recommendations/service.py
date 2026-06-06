@@ -361,7 +361,8 @@ Current timestamp: {now_iso}"""
                 headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
                 json={
                     "risk_level": data['risk_level'].upper(), 
-                    "risk_rationale": data['risk_rationale']
+                    "risk_rationale": data['risk_rationale'],
+                    "daily_insight": data['daily_insight']
                 },
                 timeout=10.0
             )

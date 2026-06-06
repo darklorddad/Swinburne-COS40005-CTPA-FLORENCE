@@ -19,7 +19,7 @@ class LLMService:
             api_key=settings.llm_api_key,
             model=settings.llm_model,
             temperature=settings.llm_temperature or 0.7,
-            max_tokens=settings.llm_max_tokens,
+            max_tokens=settings.llm_max_tokens or 1000,
         )
 
     async def chat_completion(

@@ -157,6 +157,7 @@ async def get_current_patient_profile(authorization: str = Header(...)):
 class RiskLevelUpdate(BaseModel):
     risk_level: str
     risk_rationale: Optional[str] = None
+    daily_insight: Optional[str] = None
 
 class UserSettingsUpdate(BaseModel):
     glucose_unit: Optional[str] = None
@@ -481,8 +482,17 @@ async def update_own_risk(
     try:
         update_dict = update_data.model_dump(exclude_unset=True)
         update_dict['last_risk_assessment'] = datetime.now().isoformat()
-        response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
-        return response.data[0]
+        
+        # Safe update: auto-recovers if the SQL column hasn't been added yet
+        try:
+            response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+            return response.data[0]
+        except Exception as inner_e:
+            if "daily_insight" in str(inner_e):
+                update_dict.pop("daily_insight", None)
+                response = supabase.table('patient_profiles').update(update_dict).eq('id', patient_profile['id']).execute()
+                return response.data[0]
+            raise inner_e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update risk: {str(e)}")
 

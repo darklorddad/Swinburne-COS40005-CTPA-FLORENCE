@@ -566,10 +566,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         _buildPersonalInfoSection(),
                         const SizedBox(height: 16),
 
-                        if (_clinicianData != null) ...[
-                          _buildCareTeamSection(),
-                          const SizedBox(height: 16),
-                        ],
+                        _buildCareTeamSection(),
+                        const SizedBox(height: 16),
 
                         // Health Profile section
                       _buildHealthProfileSection(),
@@ -753,14 +751,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
   Widget _buildCareTeamSection() {
+    final hasClinician = _clinicianData != null;
     return BaseCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeader('My Care Team', Icons.medical_services_outlined),
           const SizedBox(height: 16),
-          _buildInfoRow('Assigned Clinician', _clinicianData!['name'] ?? 'Unknown', Icons.person),
-          if (_clinicianData!['organisation'] != null) ...[
+          _buildInfoRow('Assigned Clinician', hasClinician ? _clinicianData!['name'] ?? 'Unknown' : 'Not assigned', Icons.person),
+          if (hasClinician && _clinicianData!['organisation'] != null) ...[
             const Divider(height: 24),
             _buildInfoRow('Facility', _clinicianData!['organisation'], Icons.local_hospital),
           ],
