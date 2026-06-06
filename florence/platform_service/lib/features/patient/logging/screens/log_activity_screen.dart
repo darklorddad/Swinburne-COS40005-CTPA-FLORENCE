@@ -189,13 +189,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         )
       );
       
-      // Invalidate to refresh dashboard
-      ref.invalidate(monitorDataProvider);
+      await ref.refresh(monitorDataProvider.future);
       ref.read(notificationProvider.notifier).checkAfterActivityLog(
         int.tryParse(_activeDurationController.text.trim()),
       );
 
-      // Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

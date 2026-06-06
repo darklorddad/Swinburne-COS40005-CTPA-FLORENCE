@@ -138,12 +138,11 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         'weight': double.tryParse(_weightController.text.replaceAll(',', '.')),
       });
       
-      // Refresh providers
       ref.invalidate(userProfileProvider);
-      ref.invalidate(core_providers.monitorDataProvider);
+      await ref.refresh(core_providers.monitorDataProvider.future);
+      
       ref.read(notificationProvider.notifier).checkAfterBmiLog(_calculatedBmi);
 
-      // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

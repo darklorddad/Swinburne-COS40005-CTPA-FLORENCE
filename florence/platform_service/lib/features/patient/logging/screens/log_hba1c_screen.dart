@@ -336,13 +336,13 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         throw Exception("Please enter a value.");
       }
 
-      ref.invalidate(monitorDataProvider);
+      await ref.refresh(monitorDataProvider.future);
+      
       final hba1cVal = double.tryParse(text);
       if (hba1cVal != null) {
         ref.read(notificationProvider.notifier).checkAfterHba1cLog(hba1cVal);
       }
 
-      // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

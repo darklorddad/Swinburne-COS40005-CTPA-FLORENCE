@@ -306,12 +306,10 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         finalImageUrl,
       );
       
-      ref.invalidate(monitorDataProvider);
+      await ref.refresh(monitorDataProvider.future);
 
-      // LAM: fire educational tip if meal is high-calorie
       ref.read(notificationProvider.notifier).checkAfterMealLog(calories);
 
-      // Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

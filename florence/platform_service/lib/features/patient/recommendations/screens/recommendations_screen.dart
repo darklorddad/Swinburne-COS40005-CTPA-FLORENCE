@@ -311,9 +311,6 @@ class _RecommendationsScreenState
       final lastDailyCheckStr = prefs.getString('last_daily_ai_check');
       final lastWeeklyCheckStr = prefs.getString('last_weekly_ai_check');
       
-      debugPrint('📖 [Check] Read last_daily_ai_check raw = "$lastDailyCheckStr"');
-      debugPrint('📖 [Check] Read last_weekly_ai_check raw = "$lastWeeklyCheckStr"');
-      
       // Parse and force UTC
       DateTime? lastDailyCheck = lastDailyCheckStr != null ? DateTime.parse(lastDailyCheckStr) : null;
       if (lastDailyCheck != null && !lastDailyCheck.isUtc) lastDailyCheck = lastDailyCheck.toUtc();
@@ -321,23 +318,17 @@ class _RecommendationsScreenState
       DateTime? lastWeeklyCheck = lastWeeklyCheckStr != null ? DateTime.parse(lastWeeklyCheckStr) : null;
       if (lastWeeklyCheck != null && !lastWeeklyCheck.isUtc) lastWeeklyCheck = lastWeeklyCheck.toUtc();
 
-      debugPrint('📖 [Check] Parsed lastDailyCheck = $lastDailyCheck');
-      debugPrint('📖 [Check] Parsed lastWeeklyCheck = $lastWeeklyCheck');
-
       final nowUtc = DateTime.now().toUtc();
 
       // Needs Daily if: never checked, checked >24h ago, or new data was logged AFTER the last check
       bool needsDaily = lastDailyCheck == null ||
           nowUtc.difference(lastDailyCheck).inHours >= 24 ||
-          (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck)); // Removed 1-minute grace period
+          (latestDataTime != null && latestDataTime.isAfter(lastDailyCheck));
 
       bool needsWeekly = lastWeeklyCheck == null ||
           nowUtc.difference(lastWeeklyCheck).inDays >= 7;
 
-      // 🔍 DEBUG PRINTS (Check your terminal to verify these are working)
-      debugPrint('🔍 [CheckAndLoad] latestDataTime (UTC): $latestDataTime');
-      debugPrint('🔍 [CheckAndLoad] lastDailyCheck (UTC): $lastDailyCheck');
-      debugPrint('🔍 [CheckAndLoad] needsDaily: $needsDaily | needsWeekly: $needsWeekly');
+      debugPrint('[Recommendations] CheckAndLoad: needsDaily=$needsDaily, needsWeekly=$needsWeekly');
 
       bool generatedAny = false;
       if (needsDaily) {
@@ -524,20 +515,34 @@ class _RecommendationsScreenState
                                 )),
                               ],
 
+                              const Padding(
+                                padding: EdgeInsets.fromLTRB(24, 12, 24, 8),
+                                child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ),
                               if (weeklyRecs.isNotEmpty) ...[
-                                const Padding(
-                                  padding: EdgeInsets.fromLTRB(24, 12, 24, 8),
-                                  child: Text("Weekly Action Plan", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                ),
                                 ...weeklyRecs.asMap().entries.map((e) => Padding(
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                                   child: _buildRecCard(e.value, dailyRecs.length + e.key),
                                 )),
+                              ] else ...[
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+                                  child: Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.getSurfaceColor(context),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: AppTheme.getBorderColor(context)),
+                                    ),
+                                    child: Text(
+                                      "Your weekly action plan will appear here once enough data has been gathered to detect long-term trends.",
+                                      style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 14),
+                                    ),
+                                  ),
+                                ),
                               ],
 
-                              // Adds exactly 20px + 4px (card bottom padding) = 24px to the divider
-                              if (dailyRecs.isNotEmpty || weeklyRecs.isNotEmpty || (filtered.isEmpty && !_isGenerating))
-                                const SizedBox(height: 20),
+                              const SizedBox(height: 20),
 
                               // 3. HISTORY
                               if (history.isNotEmpty) ...[

@@ -35,7 +35,7 @@ class MonitorDataNotifier extends AsyncNotifier<HealthDataState> {
   Future<void> fetchNextPage() async {
     if (state.isLoading || _hasReachedMax) return;
 
-    debugPrint('🔥 SWIPE DETECTED: Fetching older data! Current offset: $_offset');
+    debugPrint('[MonitorData] Fetching older data at offset: $_offset');
 
     final repository = ref.read(monitorDataRepositoryProvider);
     final currentState = state.value;
@@ -50,11 +50,9 @@ class MonitorDataNotifier extends AsyncNotifier<HealthDataState> {
         offset: _offset,
       );
 
-      debugPrint('✅ SUCCESS: Fetched ${newMonitorData.length} older logs!');
-
       if (newMonitorData.length < _limit) {
         _hasReachedMax = true;
-        debugPrint('🏁 REACHED END: No more data to fetch.');
+        debugPrint('[MonitorData] Reached end of data stream.');
       }
 
       // We need to re-process the HealthDataState with the appended monitor data

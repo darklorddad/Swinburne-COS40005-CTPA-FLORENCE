@@ -80,10 +80,9 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         dia,
       );
       
-      ref.invalidate(monitorDataProvider);
+      await ref.refresh(monitorDataProvider.future);
       ref.read(notificationProvider.notifier).checkAfterBloodPressureLog(sys, dia);
 
-      // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

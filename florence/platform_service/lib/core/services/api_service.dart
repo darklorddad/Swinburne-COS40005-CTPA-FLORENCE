@@ -26,7 +26,7 @@ class ApiService {
   Future<dynamic> get(String endpoint) async {
     final headers = await _getHeaders();
     if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
-      debugPrint('ℹ️ Short-circuiting Patient GET to $endpoint: No token found (User logging out).');
+      debugPrint('[ApiService] Short-circuiting GET to $endpoint: No token found.');
       if (endpoint.contains('logs') || 
           endpoint.contains('schedule') || 
           endpoint.contains('thresholds') || 

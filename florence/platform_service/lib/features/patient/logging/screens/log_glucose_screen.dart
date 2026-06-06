@@ -388,8 +388,8 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         );
       }
       
-      // Invalidate provider to refresh dashboard
-      ref.invalidate(monitorDataProvider);
+      // AWAIT the fresh data fetch so the AI doesn't read a blank database (Race Condition Fix)
+      await ref.refresh(monitorDataProvider.future);
 
       // LAM: fire notification if reading is out of range
       ref.read(notificationProvider.notifier).checkAfterGlucoseLog(glucoseValue);

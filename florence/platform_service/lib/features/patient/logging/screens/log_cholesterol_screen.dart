@@ -337,14 +337,13 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
 
       await Future.wait(tasks);
 
-      ref.invalidate(monitorDataProvider);
+      await ref.refresh(monitorDataProvider.future);
       ref.read(notificationProvider.notifier).checkAfterCholesterolLog(
         double.tryParse(_totalController.text.trim().replaceAll(',', '.')),
         double.tryParse(_ldlController.text.trim().replaceAll(',', '.')),
         double.tryParse(_hdlController.text.trim().replaceAll(',', '.')),
       );
 
-      // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

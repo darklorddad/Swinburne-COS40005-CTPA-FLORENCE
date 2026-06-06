@@ -82,9 +82,8 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
         _notesController.text.trim().isNotEmpty ? _notesController.text.trim() : null,
       );
       
-      ref.invalidate(monitorDataProvider);
+      await ref.refresh(monitorDataProvider.future);
 
-      // NEW: Silently trigger AI to re-evaluate daily recommendations
       ref.read(recommendationProvider.notifier).generateRecommendations(
         timeframe: 'daily',
       );

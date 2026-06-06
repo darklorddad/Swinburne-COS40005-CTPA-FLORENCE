@@ -93,6 +93,11 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
   /// Only reveals when both the min time has elapsed AND real data is ready.
   void _tryReveal() {
     if (_revealed || !_minElapsed) return;
+    
+    // Prevent revealing if the AI is actively generating a new response in the background
+    final isGenerating = ref.read(recommendationProvider).isLoading;
+    if (isGenerating) return; // keep scanning!
+    
     final insight = ref.read(insightProvider).asData?.value;
     if (insight == null) return; // still loading — keep scanning
     _doReveal();
@@ -132,13 +137,18 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
 
   @override
   Widget build(BuildContext context) {
-    // Listen for provider state changes:
-    // - AsyncLoading → new fetch started (refresh) → reset to scan
-    // - AsyncData    → data arrived → try to reveal
-    ref.listen(insightProvider, (_, next) {
+    // Listen for AI generation state changes:
+    // When recommendations start loading, force the scanner back on.
+    ref.listen(recommendationProvider, (_, next) {
       if (next.isLoading) {
         _resetToScan();
       } else {
+        _tryReveal();
+      }
+    });
+
+    ref.listen(insightProvider, (_, next) {
+      if (!next.isLoading) {
         _tryReveal();
       }
     });
