@@ -790,7 +790,7 @@ class _RecommendationsScreenState
 
     String message;
     if (!hasRecentData) {
-      message = "We don't have enough recent health data to analyse. Start logging your glucose, meals, or activity to receive personalised AI recommendations!";
+      message = "We don't have enough recent health data to analyse. Start logging your glucose, meals or activity to receive personalised AI recommendations!";
     } else {
       message =
           'Tap the refresh icon above to analyse your recent health data.';

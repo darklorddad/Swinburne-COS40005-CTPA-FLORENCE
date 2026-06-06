@@ -9,7 +9,7 @@ import 'package:florence/features/patient/recommendations/services/recommendatio
 
 // Fallback shown while the insight provider has no data yet
 const String _kDummyInsight =
-    'Your glucose levels are most stable after morning walks. Consider a 15-minute walk after breakfast!';
+    "Welcome to Florence! Start tracking your vitals to receive personalised insights.";
 
 /// AI Insight Card
 /// Displays AI-generated health insights with a scanning-line loading animation
@@ -126,12 +126,11 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
   @override
   Widget build(BuildContext context) {
     final isGeneratingRecs = ref.watch(recommendationProvider).isLoading;
-    final insightAsync = ref.watch(insightProvider);
-    final isGeneratingInsight = insightAsync.isLoading;
+    final insightTextRaw = ref.watch(insightProvider);
     
     // Declarative animation logic
-    // If ANY provider is loading, we force the scanner to run.
-    if (isGeneratingRecs || isGeneratingInsight) {
+    // Only force the scanner if the AI is actively generating
+    if (isGeneratingRecs) {
       if (_revealed) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _resetToScan());
       }
@@ -141,7 +140,7 @@ class _AIInsightCardState extends ConsumerState<AIInsightCard>
       }
     }
 
-    final insightText = insightAsync.value ?? _kDummyInsight;
+    final insightText = insightTextRaw ?? _kDummyInsight;
 
     const double borderRadius = 24.0;
 

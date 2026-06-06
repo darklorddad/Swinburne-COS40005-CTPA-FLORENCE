@@ -476,13 +476,29 @@ async def update_own_risk(
         raise HTTPException(status_code=500, detail=f"Failed to update risk: {str(e)}")
 
 @router.get("/me/monitor-data", summary="Get all my monitor data")
-async def get_own_monitor_data(patient_profile: dict = Depends(get_current_patient_profile)):
+async def get_own_monitor_data(
+    limit: Optional[int] = None,
+    offset: int = 0,
+    order: str = 'measured_at.desc',
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
     """
-    Retrieves all health monitor data (e.g., blood pressure, glucose)
-    recorded by the currently authenticated patient.
+    Retrieves health monitor data (e.g., blood pressure, glucose)
+    recorded by the currently authenticated patient with pagination support.
     """
     try:
-        monitor_data_response = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_profile['id']).execute()
+        query = supabase.table('patient_monitor_data').select('*').eq('patient_id', patient_profile['id'])
+        
+        if order:
+            parts = order.split('.')
+            col = parts[0]
+            desc = True if len(parts) > 1 and parts[1] == 'desc' else False
+            query = query.order(col, desc=desc)
+            
+        if limit is not None:
+            query = query.range(offset, offset + limit - 1)
+            
+        monitor_data_response = query.execute()
         data = monitor_data_response.data
         
         # Convert units based on user preference
