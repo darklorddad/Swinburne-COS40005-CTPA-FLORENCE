@@ -1350,17 +1350,17 @@ class _ModalDaySectionState extends State<_ModalDaySection> {
 // SECTION 5: HISTORY
 // ============================================================================
 
-class _HistorySection extends StatefulWidget {
+class _HistorySection extends ConsumerStatefulWidget {
   final List<MonitorData> readings;
   final PatientThreshold? threshold;
 
   const _HistorySection({required this.readings, this.threshold});
 
   @override
-  State<_HistorySection> createState() => _HistorySectionState();
+  ConsumerState<_HistorySection> createState() => _HistorySectionState();
 }
 
-class _HistorySectionState extends State<_HistorySection> {
+class _HistorySectionState extends ConsumerState<_HistorySection> {
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
