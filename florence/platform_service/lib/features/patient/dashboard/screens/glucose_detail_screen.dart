@@ -55,6 +55,8 @@ class GlucoseDetailScreen extends ConsumerWidget {
           // Sort ascending for charts logic
           allReadings.sort((a, b) => a.measuredAt.compareTo(b.measuredAt));
 
+          final glucoseReadingsWithContext = ref.watch(core_data.glucoseReadingsProvider);
+
           final thresholds = thresholdsAsync.value ?? [];
           
           PatientThreshold? userThreshold;
@@ -117,7 +119,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                       ),
                                       const SizedBox(height: 20),
                                       _HistorySection(
-                                        readings: allReadings,
+                                        readings: glucoseReadingsWithContext.value ?? [],
                                         threshold: effectiveThreshold,
                                       ),
                                       const SizedBox(height: 24),
@@ -154,7 +156,7 @@ class GlucoseDetailScreen extends ConsumerWidget {
                                 ),
                                 const SizedBox(height: 20),
                                 _HistorySection(
-                                  readings: allReadings,
+                                  readings: glucoseReadingsWithContext.value ?? [],
                                   threshold: effectiveThreshold,
                                 ),
                                 const SizedBox(height: 24),
@@ -1037,13 +1039,15 @@ class _GlucoseTrendsSectionState extends ConsumerState<_GlucoseTrendsSection> {
             ),
             if (widget.threshold != null) ...[
               const SizedBox(height: 16),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                alignment: WrapAlignment.center,
-                children: [
-                  const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
-                ],
+              Center(
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
+                  ],
+                ),
               ),
             ],
           ],
@@ -1351,7 +1355,7 @@ class _ModalDaySectionState extends State<_ModalDaySection> {
 // ============================================================================
 
 class _HistorySection extends ConsumerStatefulWidget {
-  final List<MonitorData> readings;
+  final List<GlucoseReading> readings;
   final PatientThreshold? threshold;
 
   const _HistorySection({required this.readings, this.threshold});
@@ -1476,25 +1480,39 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        item.value.toStringAsFixed(ref.watch(patientSettingsProvider).glucoseUnit == 'mmol/L' ? 1 : 0),
-                        style: TextStyle(
-                          fontWeight: FontWeight.normal, 
-                          fontSize: 20,
-                          color: AppTheme.textPrimaryColor
-                        ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            item.value.toStringAsFixed(ref.watch(patientSettingsProvider).glucoseUnit == 'mmol/L' ? 1 : 0),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold, 
+                              fontSize: 22,
+                              color: AppTheme.textPrimaryColor
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            ref.watch(patientSettingsProvider).glucoseUnit, 
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppTheme.textSecondaryColor,
+                              fontSize: 12
+                            )
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        ref.watch(patientSettingsProvider).glucoseUnit, 
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppTheme.textSecondaryColor,
-                          fontSize: 12
-                        )
+                        item.context,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryBlue,
+                        ),
                       ),
                     ],
                   ),
@@ -1518,7 +1536,7 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        DateFormat('dd/MM/yy HH:mm').format(item.measuredAt.toLocal()), 
+                        DateFormat('dd/MM/yy HH:mm').format(item.timestamp.toLocal()), 
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontSize: 11,
                           color: AppTheme.textSecondaryColor

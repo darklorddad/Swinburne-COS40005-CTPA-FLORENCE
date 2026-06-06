@@ -22,12 +22,19 @@ import 'package:florence/features/clinician/screens/patient_detail_screen.dart';
 import 'package:florence/features/patient/bottom_navigation/patient_bottom_nav_bar_shell.dart';
 import 'package:florence/features/patient/chat/screens/chat_screen.dart';
 import 'package:florence/features/patient/activity/screens/activity_unified_container.dart';
+import 'package:florence/features/patient/activity/screens/log_activity_screen.dart';
 import 'package:florence/features/patient/blood_pressure/screens/blood_pressure_unified_container.dart';
+import 'package:florence/features/patient/blood_pressure/screens/log_blood_pressure_screen.dart';
 import 'package:florence/features/patient/bmi/screens/bmi_unified_container.dart';
+import 'package:florence/features/patient/bmi/screens/log_bmi_screen.dart';
 import 'package:florence/features/patient/cholesterol/screens/cholesterol_unified_container.dart';
+import 'package:florence/features/patient/cholesterol/screens/log_cholesterol_screen.dart';
 import 'package:florence/features/patient/diet/screens/diet_unified_container.dart';
+import 'package:florence/features/patient/diet/screens/log_meal_screen.dart';
 import 'package:florence/features/patient/glucose/screens/glucose_unified_container.dart';
+import 'package:florence/features/patient/glucose/screens/log_glucose_screen.dart';
 import 'package:florence/features/patient/hba1c/screens/hba1c_unified_container.dart';
+import 'package:florence/features/patient/hba1c/screens/log_hba1c_screen.dart';
 import 'package:florence/features/patient/medication/screens/medication_logging_screen.dart';
 import 'package:florence/features/patient/notifications/screens/notifications_screen.dart';
 import 'package:florence/features/patient/profile/screens/profile_screen.dart';
@@ -159,28 +166,28 @@ class AppRoutes {
         return _buildRoute(const SettingsScreen(), settings);
 
       case logGlucose:
-        return _buildRoute(const GlucoseUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogGlucoseScreen(), settings);
 
       case logMeal:
-        return _buildRoute(const DietUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogMealScreen(), settings);
 
       case logActivity:
-        return _buildRoute(const ActivityUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogActivityScreen(), settings);
 
       case logMedication:
         return _buildRoute(const MedicationLoggingScreen(), settings);
 
       case logBloodPressure:
-        return _buildRoute(const BloodPressureUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogBloodPressureScreen(), settings);
 
       case logCholesterol:
-        return _buildRoute(const CholesterolUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogCholesterolScreen(), settings);
 
       case logBmi:
-        return _buildRoute(const BmiUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogBmiScreen(), settings);
 
       case logHba1c:
-        return _buildRoute(const HbA1cUnifiedContainer(initialTab: 1), settings);
+        return _buildRoute(const LogHba1cScreen(), settings);
 
       case clinicianDashboard:
         return _buildRoute(const ClinicianHomeScreen(), settings);

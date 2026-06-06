@@ -41,6 +41,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   String _emergencyContactRelationship = 'Not set';
   double? _height;
   double? _weight;
+  Map<String, dynamic>? _clinicianData;
 
   final List<Map<String, String>> _countryCodes = [
     {'code': '+1', 'name': 'USA/CAN'},
@@ -546,6 +547,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _emergencyContactName = profileData['emergency_contact_name'] ?? 'Not set';
           _emergencyContactPhone = profileData['emergency_contact_phone'] ?? 'Not set';
           _emergencyContactRelationship = profileData['emergency_contact_relationship'] ?? 'Not set';
+          _clinicianData = profileData['clinician'];
 
           return RefreshIndicator(
             onRefresh: () => ref.refresh(userProfileProvider.future),
@@ -562,9 +564,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       children: [
                         // Personal info section
                         _buildPersonalInfoSection(),
-                      const SizedBox(height: 16),
+                        const SizedBox(height: 16),
 
-                      // Health Profile section
+                        if (_clinicianData != null) ...[
+                          _buildCareTeamSection(),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Health Profile section
                       _buildHealthProfileSection(),
                       const SizedBox(height: 16),
 
@@ -745,6 +752,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ),
     );
   }
+  Widget _buildCareTeamSection() {
+    return BaseCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('My Care Team', Icons.medical_services_outlined),
+          const SizedBox(height: 16),
+          _buildInfoRow('Assigned Clinician', _clinicianData!['name'] ?? 'Unknown', Icons.person),
+          if (_clinicianData!['organisation'] != null) ...[
+            const Divider(height: 24),
+            _buildInfoRow('Facility', _clinicianData!['organisation'], Icons.local_hospital),
+          ],
+        ],
+      ),
+    );
+  }
+
   /// Build medication cabinet section
   Widget _buildMedicationCabinetSection() {
     final medsAsync = ref.watch(patientMedicationsProvider);

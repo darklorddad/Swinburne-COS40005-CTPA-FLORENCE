@@ -133,6 +133,17 @@ async def get_current_patient_profile(authorization: str = Header(...)):
         else:
             profile['settings'] = {"glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L", "show_quick_actions": False}
             
+        # Fetch assigned clinician details if any
+        if profile.get('clinician_id'):
+            clinician_res = supabase.table('clinician_profiles').select('name, organisations(name)').eq('id', profile['clinician_id']).execute()
+            if clinician_res.data:
+                clinician_data = clinician_res.data[0]
+                org_name = clinician_data.get('organisations', {}).get('name') if clinician_data.get('organisations') else None
+                profile['clinician'] = {
+                    'name': clinician_data.get('name'),
+                    'organisation': org_name
+                }
+            
         return profile
     except AuthApiError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e.message}")

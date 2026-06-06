@@ -9,7 +9,7 @@ import 'package:florence/features/patient/recommendations/services/recommendatio
 
 // Fallback shown while the insight provider has no data yet
 const String _kDummyInsight =
-    "Welcome to Florence! Start tracking your vitals to receive personalised insights.";
+    "Analysing your recent health data...";
 
 /// AI Insight Card
 /// Displays AI-generated health insights with a scanning-line loading animation
