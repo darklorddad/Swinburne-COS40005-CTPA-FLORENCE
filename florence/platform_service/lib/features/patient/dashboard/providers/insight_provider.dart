@@ -5,10 +5,19 @@ import 'package:florence/features/patient/recommendations/services/recommendatio
 import 'package:florence/features/patient/dashboard/services/insight_service.dart';
 import 'package:florence/features/patient/dashboard/models/insight_snapshot.dart';
 
+/// Caches the insight generated from the unified daily LLM call
+final dailyInsightStateProvider = StateProvider<String?>((ref) => null);
+
 /// The Insight Provider hits the LLM Engine to generate a fresh, 1-sentence
 /// summary on the fly based on the current health snapshot AND active insights
 /// (daily and weekly recommendations). It is not stored in the DB.
 final insightProvider = FutureProvider<String>((ref) async {
+  // 1. Check if we have a fresh cached insight from the unified call!
+  final cached = ref.watch(dailyInsightStateProvider);
+  if (cached != null) {
+    return cached;
+  }
+
   final healthData = await ref.watch(core_data.monitorDataProvider.future);
   final recommendations = await ref.watch(recommendationProvider.future);
   

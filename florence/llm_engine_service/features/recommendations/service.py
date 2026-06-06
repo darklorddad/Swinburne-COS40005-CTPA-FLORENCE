@@ -1,6 +1,7 @@
 import json
 import re
 from datetime import datetime, timezone
+import httpx
 from langchain_core.messages import HumanMessage, SystemMessage
 from config import settings as global_settings
 from core.ds_client import fetch_user_settings, fetch_user_thresholds
@@ -10,6 +11,7 @@ from features.recommendations.models import (
     RecommendationRequest,
     RecommendationResponse,
     HealthRecommendationItem,
+    UnifiedAnalysisResponse,
 )
 
 _SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
@@ -253,3 +255,127 @@ Current timestamp for generated_at: {now_iso}"""
         except Exception as e:
             print(f"[RecommendationService] Generation error: {e}")
             raise
+
+    async def generate_unified_daily(
+        self, request: RecommendationRequest, token: str
+    ) -> UnifiedAnalysisResponse:
+        now = datetime.now(timezone.utc)
+        now_iso = now.isoformat()
+        s = request.health_summary
+
+        settings_data = await fetch_user_settings(token)
+        thresholds_data = await fetch_user_thresholds(token)
+
+        g_unit = settings_data.get("glucose_unit", "mmol/L")
+        thresh_map = {t['data_type'].upper(): t for t in thresholds_data if 'data_type' in t}
+        g_thresh = thresh_map.get('GLUCOSE', {})
+        g_target = f"{g_thresh.get('min_value', 3.9)}–{g_thresh.get('max_value', 10.0)} {g_unit}"
+
+        unified_prompt = f"""You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
+You will receive a patient's health summary and their personalised clinical targets.
+Generate a unified daily assessment.
+
+## Output Rules
+1. Return ONLY raw JSON. No markdown.
+2. risk_level MUST be exactly "LOW", "MEDIUM", or "HIGH".
+3. risk_rationale: 1-2 sentence clinical summary of the risk level.
+4. daily_insight: 1-2 sentence encouraging summary for the patient's dashboard. Never alarm the patient.
+5. recommendations: 0 to 3 tactical daily recommendations.
+6. Never recommend medication dose changes. NEVER hallucinate or change units.
+7. ID format: rec_<category>_<timestamp_ms>. Set expires_at 7 days from generated_at.
+
+## Required JSON Schema
+{{
+  "risk_level": "LOW" | "MEDIUM" | "HIGH",
+  "risk_rationale": "string",
+  "daily_insight": "string",
+  "recommendations": [
+    {{
+      "id": "string",
+      "category": "meal" | "activity" | "sleep" | "medication" | "lifestyle" | "timing",
+      "title": "string",
+      "description": "string",
+      "priority": "urgent" | "high" | "medium" | "low",
+      "status": "active",
+      "generated_at": "string",
+      "expires_at": "string",
+      "action_items": ["string"],
+      "explanation": {{
+        "rationale": "string",
+        "triggering_data": [
+          {{
+            "type": "string",
+            "description": "string",
+            "value": "string",
+            "timestamp": "string"
+          }}
+          ],
+        "evidence_links": [],
+        "expected_impact": "string"
+      }}
+    }}
+  ],
+  "generated_at": "string",
+  "model_used": "string"
+}}"""
+
+        human_content = f"""Patient Health Summary (1-day period):
+- Average Blood Glucose: {s.average_glucose:.1f} {g_unit}
+- Glucose Target Range: {g_target}
+- Hyperglycaemia Events: {s.hyper_events}
+- Hypoglycaemia Events: {s.hypo_events}
+- Activity Minutes: {s.total_activity_minutes}
+- Medication Adherence: {s.medication_adherence * 100:.0f}%
+Recent Readings: {s.recent_glucose_readings}
+Recent Meals: {s.recent_meals}
+Recent Activities: {s.recent_activities}
+
+Current timestamp: {now_iso}"""
+
+        response = await self.llm.ainvoke([
+            SystemMessage(content=unified_prompt),
+            HumanMessage(content=human_content),
+        ])
+
+        content = response.content
+        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+        start_idx = content.find('{')
+        end_idx = content.rfind('}')
+        if start_idx != -1 and end_idx != -1:
+            content = content[start_idx:end_idx + 1]
+
+        data = json.loads(content)
+
+        # Immediately save the Risk Assessment to Data Service so the Clinician Dashboard updates
+        async with httpx.AsyncClient() as client:
+            await client.patch(
+                f"{global_settings.DATA_SERVICE_URL}/patients/me/risk",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={
+                    "risk_level": data['risk_level'].upper(), 
+                    "risk_rationale": data['risk_rationale']
+                },
+                timeout=10.0
+            )
+
+        # Ensure all triggering_data points have a timestamp to prevent Pydantic/Dart crashes
+        for rec in data.get("recommendations", []):
+            explanation = rec.get("explanation")
+            if explanation and isinstance(explanation, dict):
+                for dp in explanation.get("triggering_data", []):
+                    if not dp.get("timestamp"):
+                        dp["timestamp"] = now_iso
+
+        recommendations = [
+            HealthRecommendationItem(**item)
+            for item in data.get("recommendations", [])
+        ]
+
+        return UnifiedAnalysisResponse(
+            risk_level=data['risk_level'],
+            risk_rationale=data['risk_rationale'],
+            daily_insight=data['daily_insight'],
+            recommendations=recommendations,
+            generated_at=data.get("generated_at", now_iso),
+            model_used=data.get("model_used", getattr(self.llm, "model_name", "unknown")),
+        )

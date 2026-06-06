@@ -7,6 +7,7 @@ import 'package:florence/features/patient/core/providers/settings_providers.dart
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 import 'package:florence/features/patient/recommendations/services/llm_recommendation_service.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
 
 import 'package:florence/core/services/api_service.dart';
 
@@ -65,7 +66,7 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
     if (Environment.enableAI) {
       try {
         debugPrint('[RecommendationEngine] Requesting $timeframe LLM recommendations…');
-        newRecommendations = await _llmService.generate(
+        final response = await _llmService.generate(
           summary,
           timeframe: timeframe,
           analysisPeriodDays: daysToAnalyze,
@@ -74,8 +75,15 @@ class RecommendationNotifier extends AsyncNotifier<List<HealthRecommendation>> {
           cholesterolUnit: cUnit,
         );
         debugPrint(
-          '[RecommendationEngine] LLM returned ${newRecommendations.length} recommendations.',
+          '[RecommendationEngine] LLM returned ${response.recommendations.length} recommendations.',
         );
+        
+        // Cache the insight so the Dashboard updates instantly!
+        if (response.dailyInsight != null) {
+          ref.read(dailyInsightStateProvider.notifier).state = response.dailyInsight;
+        }
+        
+        newRecommendations = response.recommendations;
         usedAI = true;
       } catch (e) {
         debugPrint(

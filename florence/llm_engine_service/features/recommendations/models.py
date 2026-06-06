@@ -75,3 +75,12 @@ class RecommendationResponse(BaseModel):
     generated_at: str
     model_used: str
     analysis_period_days: int
+
+
+class UnifiedAnalysisResponse(BaseModel):
+    risk_level: str
+    risk_rationale: str
+    daily_insight: str
+    recommendations: List[HealthRecommendationItem]
+    generated_at: str
+    model_used: str

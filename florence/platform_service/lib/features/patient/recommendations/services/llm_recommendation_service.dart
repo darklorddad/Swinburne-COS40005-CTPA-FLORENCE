@@ -6,6 +6,12 @@ import 'package:florence/core/config/environment.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
 import 'package:florence/features/patient/recommendations/models/recommendation_models.dart';
 
+class LlmUnifiedResponse {
+  final List<HealthRecommendation> recommendations;
+  final String? dailyInsight;
+  LlmUnifiedResponse(this.recommendations, this.dailyInsight);
+}
+
 /// Calls the LLM Engine Service to generate AI-powered health recommendations.
 ///
 /// Uses the same auth pattern as the AI meal analysis — sends the Supabase
@@ -14,11 +20,11 @@ class LlmRecommendationService {
   static const _timeout = Duration(seconds: 120);
 
   /// Sends the patient's [HealthSummary] to the LLM Engine and returns
-  /// a list of AI-generated [HealthRecommendation]s.
+  /// a list of AI-generated [HealthRecommendation]s and optional daily insight.
   ///
   /// Throws on any error (network failure, timeout, non-2xx status, parse error)
   /// so the caller can transparently fall back to rule-based logic.
-  Future<List<HealthRecommendation>> generate(
+  Future<LlmUnifiedResponse> generate(
     HealthSummary summary, {
     required String timeframe,
     int analysisPeriodDays = 7,
@@ -29,8 +35,9 @@ class LlmRecommendationService {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null) throw Exception('User not authenticated');
 
+    final endpoint = timeframe == 'daily' ? 'unified-daily' : 'generate';
     final url = Uri.parse(
-      '${Environment.llmEngineServiceUrl}/recommendations/generate',
+      '${Environment.llmEngineServiceUrl}/recommendations/$endpoint',
     );
 
     final headers = {
@@ -62,13 +69,15 @@ class LlmRecommendationService {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final rawList = data['recommendations'] as List<dynamic>;
 
-    return rawList
+    final recs = rawList
         .map((item) {
           final map = item as Map<String, dynamic>;
           map['timeframe'] = timeframe;
           return HealthRecommendation.fromJson(map);
         })
         .toList();
+
+    return LlmUnifiedResponse(recs, data['daily_insight'] as String?);
   }
 
   /// Maps [HealthSummary] camelCase fields → Python backend snake_case keys.

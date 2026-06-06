@@ -551,16 +551,7 @@ async def add_own_monitor_data(
         new_data_response = supabase.table('patient_monitor_data').insert(insert_dict).execute()
         
         async def trigger_risk_assessment():
-            try:
-                llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "https://dev-llmes-florence-dhp.vercel.app")
-                async with httpx.AsyncClient() as client:
-                    await client.post(
-                        f"{llm_url}/risk/assess",
-                        headers={"Authorization": authorization},
-                        timeout=10.0
-                    )
-            except Exception as e:
-                print(f"Background risk assessment trigger failed: {e}")
+            pass # Disabled: Handled securely by the Unified Daily Pipeline now.
         
         background_tasks.add_task(trigger_risk_assessment)
         
@@ -711,16 +702,7 @@ async def add_own_daily_log(
             result_data = response.data[0]
 
         async def trigger_risk_assessment():
-            try:
-                llm_url = os.getenv("LLM_ENGINE_SERVICE_URL", "https://dev-llmes-florence-dhp.vercel.app")
-                async with httpx.AsyncClient() as client:
-                    await client.post(
-                        f"{llm_url}/risk/assess",
-                        headers={"Authorization": authorization},
-                        timeout=10.0
-                    )
-            except Exception as e:
-                print(f"Background risk assessment trigger failed: {e}")
+            pass # Disabled: Handled securely by the Unified Daily Pipeline now.
         
         background_tasks.add_task(trigger_risk_assessment)
 

@@ -1,5 +1,9 @@
 from fastapi import APIRouter, HTTPException, Depends
-from features.recommendations.models import RecommendationRequest, RecommendationResponse
+from features.recommendations.models import (
+    RecommendationRequest,
+    RecommendationResponse,
+    UnifiedAnalysisResponse,
+)
 from features.recommendations.service import RecommendationService
 from core.ds_client import get_auth_token
 
@@ -25,4 +29,22 @@ async def generate_recommendations(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate recommendations: {str(e)}",
+        )
+
+
+@router.post("/unified-daily", response_model=UnifiedAnalysisResponse)
+async def generate_unified_daily(
+    request: RecommendationRequest,
+    token: str = Depends(get_auth_token),
+):
+    """
+    Generates Risk Level, Daily Insight, and Tactical Recommendations in ONE prompt.
+    """
+    service = RecommendationService()
+    try:
+        return await service.generate_unified_daily(request, token)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate unified analysis: {str(e)}",
         )
