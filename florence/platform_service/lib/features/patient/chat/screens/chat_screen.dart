@@ -301,70 +301,76 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.midnightSurface : Colors.white,
         border: Border(top: BorderSide(color: AppTheme.getBorderColor(context))),
       ),
       child: SafeArea(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
-                ),
-                child: Focus(
-                  onKeyEvent: (node, event) {
-                    // Check for Enter key on Desktop/Web
-                    if (Helpers.isDesktop(context) && 
-                        event is KeyDownEvent && 
-                        event.logicalKey == LogicalKeyboardKey.enter) {
-                      
-                      // If holding Shift, let it create a new line naturally
-                      if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-                          HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
-                        return KeyEventResult.ignored; 
-                      } else {
-                        // Send message and prevent newline
-                        if (_messageController.text.trim().isNotEmpty) {
-                          _sendMessage(_messageController.text);
-                        }
-                        return KeyEventResult.handled;
-                      }
-                    }
-                    return KeyEventResult.ignored;
-                  },
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: isEnabled,
-                    decoration: const InputDecoration(
-                      hintText: 'Message Florence...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
                     ),
-                    maxLines: 4,
-                    minLines: 1,
-                    textCapitalization: TextCapitalization.sentences,
+                    child: Focus(
+                      onKeyEvent: (node, event) {
+                        // Check for Enter key on Desktop/Web
+                        if (Helpers.isDesktop(context) && 
+                            event is KeyDownEvent && 
+                            event.logicalKey == LogicalKeyboardKey.enter) {
+                          
+                          // If holding Shift, let it create a new line naturally
+                          if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
+                              HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
+                            return KeyEventResult.ignored; 
+                          } else {
+                            // Send message and prevent newline
+                            if (_messageController.text.trim().isNotEmpty) {
+                              _sendMessage(_messageController.text);
+                            }
+                            return KeyEventResult.handled;
+                          }
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: TextField(
+                        controller: _messageController,
+                        enabled: isEnabled,
+                        decoration: const InputDecoration(
+                          hintText: 'Message Florence...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        ),
+                        maxLines: 4,
+                        minLines: 1,
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Container(
+                  height: 48,
+                  width: 48,
+                  margin: const EdgeInsets.only(bottom: 2),
+                  decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 22),
+                    onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Container(
-              height: 48,
-              width: 48,
-              margin: const EdgeInsets.only(bottom: 2),
-              decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 22),
-                onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
