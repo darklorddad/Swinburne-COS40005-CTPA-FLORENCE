@@ -189,7 +189,6 @@ class RecommendationService:
 
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.{quantity_rule}
 11. If medication adherence is below 100%, strongly consider generating a medication-focused recommendation to encourage consistency.
-"""
 
 ## Clinical Targets (in patient's preferred units)
 - Glucose Target Range: {g_target}
