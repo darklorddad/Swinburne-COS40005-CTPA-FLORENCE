@@ -33,7 +33,11 @@ class MedicationLoggingScreen extends ConsumerWidget {
             child: IconButton(
               icon: const Icon(Icons.medical_services_outlined),
               onPressed: () {
-                AppRoutes.pushReplacement(context, AppRoutes.profile);
+                AppRoutes.pushAndRemoveUntil(
+                  context, 
+                  AppRoutes.dashboard,
+                  arguments: {'tabIndex': 2}, // 2 is Profile
+                );
               },
               tooltip: 'Medication Cabinet',
             ),

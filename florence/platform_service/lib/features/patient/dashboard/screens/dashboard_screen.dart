@@ -170,7 +170,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
                 child: Padding(
-                  padding: const EdgeInsets.all(spacing),
+                  padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 0),
                   child: Column(
                     children: [
                       // Desktop: Row (Side-by-Side), Mobile: Column (Stacked)
@@ -236,7 +236,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         latestMeal: latestMeal,
                         thresholds: thresholds,
                       ),
-                      SizedBox(height: 78 + MediaQuery.of(context).padding.bottom), // 74(Nav) + 24(Gap) - 20(Padding)
+                      // Standardised 98px gap above Nav Bar
+                      SizedBox(height: 98 + MediaQuery.of(context).padding.bottom),
                     ],
                   ),
                 ),

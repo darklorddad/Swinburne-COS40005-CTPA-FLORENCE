@@ -262,9 +262,14 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
               }
 
               if (itemsToBuild.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor))),
+                return SizedBox(
+                  height: 52, // Matches the approximate height of 1 medication row
+                  child: Center(
+                    child: Text(
+                      "No medications match this filter", 
+                      style: TextStyle(color: AppTheme.textSecondaryColor),
+                    ),
+                  ),
                 );
               }
 

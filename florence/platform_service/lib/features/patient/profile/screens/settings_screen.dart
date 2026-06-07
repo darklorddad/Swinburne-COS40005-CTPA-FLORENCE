@@ -84,7 +84,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 800),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(left: 16, right: 16, top: 16, bottom: 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -103,7 +103,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     child: const Text('Sign Out'),
                   ),
-                  SizedBox(height: 24 + MediaQuery.of(context).padding.bottom),
+                  // Standardised 98px gap above Nav Bar
+                  SizedBox(height: 98 + MediaQuery.of(context).padding.bottom),
                 ],
               ),
             ),

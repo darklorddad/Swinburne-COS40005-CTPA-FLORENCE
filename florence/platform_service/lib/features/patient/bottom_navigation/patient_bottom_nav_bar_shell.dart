@@ -35,6 +35,7 @@ class _PatientBottomNavBarShellState
   // ── Sheet state ────────────────────────────────────────────
   bool _sheetOpen = false;
   bool _hasShownWelcomeMessage = false;
+  bool _hasSetInitialTab = false;
 
   // ── Log item stagger ───────────────────────────────────────
   final List<double> _itemOpacity = List.filled(8, 1.0);
@@ -76,9 +77,16 @@ class _PatientBottomNavBarShellState
   void didChangeDependencies() {
     super.didChangeDependencies();
     
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    // Check for requested tab index
+    if (!_hasSetInitialTab && args != null && args.containsKey('tabIndex')) {
+      _tabIndex = args['tabIndex'] as int;
+      _hasSetInitialTab = true;
+    }
+
     // Check for a welcome/confirmation message passed from app.dart
     if (!_hasShownWelcomeMessage) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       final routeMessage = args?['message'] as String?;
       
       if (routeMessage != null) {
