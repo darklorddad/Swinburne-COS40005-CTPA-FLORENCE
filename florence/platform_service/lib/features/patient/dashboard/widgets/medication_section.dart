@@ -197,14 +197,12 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
     super.build(context);
     final scheduleAsync = ref.watch(todaysScheduleProvider);
 
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // FILTER ROW
-          Container(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // FILTER ROW
+        Container(
             width: double.infinity,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -267,8 +265,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
             error: (err, stack) => const Center(child: Text("Error loading schedule")),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildScheduleFilterButton(String label, ScheduleFilter filterValue) {

@@ -35,7 +35,7 @@ import 'package:florence/features/patient/glucose/screens/glucose_unified_contai
 import 'package:florence/features/patient/logging/screens/log_glucose_screen.dart';
 import 'package:florence/features/patient/hba1c/screens/hba1c_unified_container.dart';
 import 'package:florence/features/patient/logging/screens/log_hba1c_screen.dart';
-import 'package:florence/features/patient/logging/screens/log_medication_screen.dart';
+import 'package:florence/features/patient/medication/screens/medication_logging_screen.dart';
 import 'package:florence/features/patient/notifications/screens/notifications_screen.dart';
 import 'package:florence/features/patient/profile/screens/profile_screen.dart';
 import 'package:florence/features/patient/profile/screens/settings_screen.dart';
@@ -175,7 +175,7 @@ class AppRoutes {
         return _buildRoute(const LogActivityScreen(), settings);
 
       case logMedication:
-        return _buildRoute(const LogMedicationScreen(), settings);
+        return _buildRoute(const MedicationLoggingScreen(), settings);
 
       case logBloodPressure:
         return _buildRoute(const LogBloodPressureScreen(), settings);
