@@ -578,7 +578,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       // Disease Log Section
                       _buildDiseaseLogSection(context, ref),
-                      const SizedBox(height: 100),
+                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
