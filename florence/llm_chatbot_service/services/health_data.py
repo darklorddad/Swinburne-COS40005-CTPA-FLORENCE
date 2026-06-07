@@ -134,6 +134,10 @@ class HealthDataService:
                 profile_lines.append(f"Date of Birth: {profile.get('date_of_birth')}")
             if profile.get("risk_level"):
                 profile_lines.append(f"Risk Level: {profile.get('risk_level')}")
+            if profile.get("settings") and isinstance(profile.get("settings"), dict):
+                s = profile.get("settings")
+                profile_lines.append(f"Preferred Glucose Unit: {s.get('glucose_unit', 'mmol/L')}")
+                profile_lines.append(f"Preferred Cholesterol Unit: {s.get('cholesterol_unit', 'mmol/L')}")
 
         # Format Monitor Data
         monitor_lines = []
