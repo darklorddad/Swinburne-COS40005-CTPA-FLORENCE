@@ -16,7 +16,7 @@ from features.recommendations.models import (
 
 _SYSTEM_PROMPT = """You are a clinical decision-support AI for the FLORENCE Digital Health Platform.
 You will receive a patient's health summary and their personalised clinical targets.
-Generate 0 to 3 concise, evidence-based health recommendations.
+Generate as many concise, evidence-based health recommendations as needed (0 is the minimum if everything is perfectly on track).
 
 ## MEDICAL GUARDRAILS
 You are a guidance tool, not a doctor. You may provide lifestyle, dietary, timing, physical activity, and sleep advice. You MUST NOT diagnose conditions, prescribe new medications, or recommend changes to medication dosages (e.g., never say "take an extra unit of insulin").
@@ -153,9 +153,9 @@ class RecommendationService:
             prev_section = f"\nIMPORTANT: The patient has already received these recommendations — do NOT repeat them, generate fresh ones:\n{titles}"
 
         if request.analysis_period_days == 1:
-            quantity_rule = "\nCRITICAL RULE FOR DAILY: Generate between 0 and 3 tactical recommendations based on today's data. If all metrics are perfectly in range and goals are met, output an empty list `[]` for 'recommendations'. Do not force a recommendation if the patient is doing perfectly."
+            quantity_rule = "\nCRITICAL RULE FOR DAILY: Generate as many tactical recommendations as needed based on today's data. If all metrics are perfectly in range and goals are met, output an empty list `[]` for 'recommendations'. Do not force a recommendation if the patient is doing perfectly."
         else:
-            quantity_rule = "\nCRITICAL RULE FOR WEEKLY: Generate EXACTLY 1 strategic recommendation focusing on macro-trends over the last 7 days. You MUST output 1 recommendation unless the user has absolutely zero logs for the week."
+            quantity_rule = "\nCRITICAL RULE FOR WEEKLY: Generate as many strategic recommendations as needed focusing on macro-trends over the last 7 days. If everything is perfectly on track, output an empty list `[]` for 'recommendations'."
 
         tz_info = ""
         if request.timezone_offset is not None:
@@ -241,7 +241,7 @@ You are a guidance tool, not a doctor. You may provide lifestyle, dietary, timin
 1. risk_level MUST be exactly "LOW", "MEDIUM", or "HIGH".
 2. risk_rationale: 1-2 sentence clinical summary of the risk level.
 3. daily_insight: Write a 1-2 sentence encouraging summary for the dashboard. It MUST highlight their current readings and briefly summarize the tactical recommendations you just generated. Never alarm the patient.
-4. recommendations: 0 to 3 tactical daily recommendations.
+4. recommendations: Generate as many tactical daily recommendations as needed. If everything is perfectly on track, return an empty list [].
 5. Never recommend medication dose changes. NEVER hallucinate or change units.
 6. In triggering_data, cite specific readings. The `description` MUST be a natural sentence (e.g., "Post-lunch reading missing on Jan 15"). NEVER output raw code variables like "glucose_after" or "None". If missing, write "Not recorded" as the `value`.
 7. ID format: rec_<category>_<timestamp_ms>. Set expires_at 7 days from generated_at.
