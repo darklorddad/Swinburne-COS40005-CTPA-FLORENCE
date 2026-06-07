@@ -67,12 +67,15 @@ class ChatNotifier extends Notifier<ChatState> {
     state = state.copyWith(messages: [...previousMessages, userMsg]);
 
     try {
+      final now = DateTime.now();
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/message'),
         headers: _getHeaders(),
         body: jsonEncode({
           'message': message,
           'include_history': true,
+          'local_time': now.toIso8601String(),
+          'timezone_offset': now.timeZoneOffset.inHours,
         }),
       );
 

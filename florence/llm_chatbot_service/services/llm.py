@@ -26,21 +26,26 @@ class LLMService:
         self,
         health_context: str,
         history: List[BaseMessage],
-        current_message: str
+        current_message: str,
+        local_time: Optional[str] = None,
+        timezone_offset: Optional[int] = None
     ) -> str:
         """
         Generate a response using LangChain.
         """
         try:
+            # Format timezone instructions dynamically if provided by client
+            tz_info = ""
+            if local_time and timezone_offset is not None:
+                sign = "+" if timezone_offset >= 0 else ""
+                tz_info = f"\nNote: All data timestamps in the context are in UTC. The patient's local time zone is UTC{sign}{timezone_offset}.\nThe patient's current local device time is {local_time}. Please adjust any data timestamps to match the patient's local time when discussing them."
+
             # Define the Prompt Template
             prompt = ChatPromptTemplate.from_messages([
                 ("system", """You are FLORENCE, a friendly AI health assistant for chronic disease management.
 
 Patient's recent health context:
-{health_context}
-
-Note: The patient is located in Malaysia (UTC+8). Please automatically adjust any UTC timestamps found in their data to Malaysia time (+8 Hours) when discussing dates and times with them!
-The current time in Malaysia is {current_time}.
+{health_context}{tz_info}
 
 Your role:
 - Answer questions about their health data
@@ -64,13 +69,10 @@ Important:
             # Create the chain
             chain = prompt | self.llm
 
-            malaysia_time = datetime.now(timezone.utc) + timedelta(hours=8)
-            current_time_str = malaysia_time.strftime("%A, %B %d, %Y %I:%M %p")
-
             # Invoke the chain
             response = await chain.ainvoke({
                 "health_context": health_context,
-                "current_time": current_time_str,
+                "tz_info": tz_info,
                 "history": history,
                 "input": current_message
             })
