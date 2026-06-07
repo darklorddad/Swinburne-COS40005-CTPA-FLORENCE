@@ -89,7 +89,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
 
       if (mounted) {
         Helpers.showSuccess(context, 'Blood pressure logged successfully!');
-        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {

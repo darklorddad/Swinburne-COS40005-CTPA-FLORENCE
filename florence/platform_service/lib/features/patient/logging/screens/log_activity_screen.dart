@@ -200,7 +200,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Activity logged successfully!');
-        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {

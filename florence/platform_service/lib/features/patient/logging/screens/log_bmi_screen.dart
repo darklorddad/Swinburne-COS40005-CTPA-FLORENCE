@@ -149,7 +149,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'BMI logged and profile updated!');
-        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
       }
     } catch (e) {
       if (mounted) {
