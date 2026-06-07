@@ -89,8 +89,11 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       );
 
       if (mounted) {
-        Helpers.showSuccess(context, 'Medication logged successfully!');
-        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard);
+        AppRoutes.pushAndRemoveUntil(
+          context, 
+          AppRoutes.dashboard,
+          arguments: {'message': 'Medication logged successfully!'},
+        );
       }
     } catch (e) {
       if (mounted) {
