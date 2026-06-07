@@ -25,7 +25,7 @@ Generate 0 to 3 concise, evidence-based health recommendations.
 4. NEVER hallucinate or change the units provided. If the input is in mmol/L, your output MUST be in mmol/L. Do not mentally convert to mg/dL.
 5. Each recommendation needs 2 specific action_items.
 6. Keep descriptions and rationales under 200 characters each.
-7. In triggering_data, cite specific readings from the patient's individual data when available. Use the type field as a machine key and description as human-readable label.
+7. In triggering_data, cite specific readings. The `type` MUST be a clean, capitalized label (e.g., "Meal Log"). The `description` MUST be a natural, human-friendly sentence specifying the exact context (e.g., "Missing post-lunch reading on Jan 15"). NEVER output raw code variable names like "glucose_after" or "None". If a value doesn't exist, write "Not recorded" in the `value` field.
 8. Set expires_at to 7 days after generated_at.
 9. ID format: rec_<category>_<timestamp_ms>.
 10. TEMPORAL CONTEXT: NEVER use the words "latest", "current", or "most recent" in your text OR in the triggering_data descriptions. The patient will likely log new data during the week. Instead, use temporal anchors like "BP from [Day of week]", "recent reading", or "earlier this week".
@@ -284,7 +284,8 @@ Generate a unified daily assessment.
 4. daily_insight: 1-2 sentence encouraging summary for the patient's dashboard. Never alarm the patient.
 5. recommendations: 0 to 3 tactical daily recommendations.
 6. Never recommend medication dose changes. NEVER hallucinate or change units.
-7. ID format: rec_<category>_<timestamp_ms>. Set expires_at 7 days from generated_at.
+7. In triggering_data, cite specific readings. The `description` MUST be a natural sentence (e.g., "Post-lunch reading missing on Jan 15"). NEVER output raw code variables like "glucose_after" or "None". If missing, write "Not recorded" as the `value`.
+8. ID format: rec_<category>_<timestamp_ms>. Set expires_at 7 days from generated_at.
 
 ## Required JSON Schema
 {{

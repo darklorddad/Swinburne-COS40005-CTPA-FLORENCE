@@ -6,6 +6,8 @@ import 'package:florence/features/patient/core/repositories/medication_repositor
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 
 // ==========================================
 // 1. PROVIDERS
@@ -421,7 +423,13 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
                 } else {
                   await repo.logMedicationIntake(med.id, 'TAKEN');
                 }
+                // Refresh local schedule list
                 ref.invalidate(todaysScheduleProvider);
+                
+                // Refresh global adherence aggregation & Trigger Engine
+                ref.invalidate(monitorDataProvider);
+                ref.read(recommendationProvider.notifier).generateRecommendations(timeframe: 'daily');
+
                 if (context.mounted) {
                   Helpers.showSuccess(context, currentlyTaken ? "Medication unlogged" : "Medication logged");
                 }

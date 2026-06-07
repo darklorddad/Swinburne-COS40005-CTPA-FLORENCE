@@ -254,23 +254,27 @@ class _RecommendationsScreenState
   Future<void> _updateStreak() async {
     final prefs = await SharedPreferences.getInstance();
     final lastStr = prefs.getString('recs_last_visit');
-    final today = DateTime.now();
+    final now = DateTime.now();
+    // Strip time from "now" so the difference calculation is purely day-to-day
+    final today = DateTime(now.year, now.month, now.day);
 
     if (lastStr == null) {
       _streakDays = 1;
     } else {
-      final last = DateTime.parse(lastStr);
-      final diff = today.difference(DateTime(last.year, last.month, last.day)).inDays;
+      final lastTime = DateTime.parse(lastStr);
+      final lastDay = DateTime(lastTime.year, lastTime.month, lastTime.day);
+      final diff = today.difference(lastDay).inDays;
+      
       if (diff == 0) {
         _streakDays = prefs.getInt('recs_streak') ?? 1;
-        return;
+        return; // Already visited today, no need to save again
       } else if (diff == 1) {
         _streakDays = (prefs.getInt('recs_streak') ?? 0) + 1;
       } else {
         _streakDays = 1;
       }
     }
-    await prefs.setString('recs_last_visit', today.toIso8601String());
+    await prefs.setString('recs_last_visit', now.toIso8601String());
     await prefs.setInt('recs_streak', _streakDays);
     if (mounted) setState(() {});
   }
