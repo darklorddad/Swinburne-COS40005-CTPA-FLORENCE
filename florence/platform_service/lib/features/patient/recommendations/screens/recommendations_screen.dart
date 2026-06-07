@@ -267,6 +267,7 @@ class _RecommendationsScreenState
       
       if (diff == 0) {
         _streakDays = prefs.getInt('recs_streak') ?? 1;
+        if (mounted) setState(() {});
         return; // Already visited today, no need to save again
       } else if (diff == 1) {
         _streakDays = (prefs.getInt('recs_streak') ?? 0) + 1;
@@ -539,6 +540,9 @@ class _RecommendationsScreenState
                                 Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
                                 _RecommendationHistorySection(history: history),
                               ],
+                              
+                              // Bottom spacing for system navigation bar
+                              SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
                             ],
                           ),
                         ),

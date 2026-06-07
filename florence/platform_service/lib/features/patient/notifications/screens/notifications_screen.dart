@@ -76,7 +76,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
           IconButton(
             icon: const Icon(Icons.done_all),
             onPressed: () => notifier.markAllAsRead(),
-            tooltip: 'Mark all as read',
+            tooltip: 'Mark All As Read',
           ),
           // Clear all
           Padding(
@@ -90,7 +90,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                 );
                 if (confirmed) notifier.clearAll();
               },
-              tooltip: 'Clear all',
+              tooltip: 'Clear All',
             ),
           ),
         ],

@@ -246,7 +246,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                               ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
                               : null,
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
                       ],
                     ),
                   ),

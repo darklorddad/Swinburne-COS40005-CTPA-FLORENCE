@@ -258,17 +258,12 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final borderColor = AppTheme.getBorderColor(context);
 
     return AppBar(
-      title: InkWell(
-        onTap: _handleRefresh,
-        borderRadius: BorderRadius.circular(8),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          child: Text('Florence'),
-        ),
-      ),
+      title: const Text('Florence', style: TextStyle(fontWeight: FontWeight.bold)),
       actions: const [
-        NotificationBell(),
-        SizedBox(width: 8),
+        Padding(
+          padding: EdgeInsets.only(right: 4),
+          child: NotificationBell(),
+        ),
       ],
       elevation: 0,
       bottom: PreferredSize(

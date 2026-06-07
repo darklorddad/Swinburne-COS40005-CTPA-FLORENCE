@@ -142,8 +142,19 @@ class _PatientBottomNavBarShellState
     final safeBottom = MediaQuery.of(context).padding.bottom;
     final navHeight = 65.0 + safeBottom; // BottomAppBar height + notch
 
-    return Scaffold(
-      extendBody: true,
+    return PopScope(
+      canPop: _tabIndex == 0 && !_sheetOpen,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        
+        if (_sheetOpen) {
+          _closeSheet();
+        } else if (_tabIndex != 0) {
+          _switchTab(0);
+        }
+      },
+      child: Scaffold(
+        extendBody: true,
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
@@ -213,8 +224,9 @@ class _PatientBottomNavBarShellState
         ],
       ),
       
-      // 4. Standard Nav Bar
-      bottomNavigationBar: _buildNavBar(),
+        // 4. Standard Nav Bar
+        bottomNavigationBar: _buildNavBar(),
+      ),
     );
   }
 

@@ -130,6 +130,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(
         children: [
+          if (!showLoading && messages.isEmpty) 
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildSuggestedQuestions())),
+            ),
           Expanded(
             child: Center(
               child: ConstrainedBox(
@@ -143,7 +148,6 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
           ),
           if (isTyping && !showLoading) Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildTypingIndicator())),
-          if (!showLoading && messages.isEmpty) Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildSuggestedQuestions())),
           _buildInputArea(isEnabled: !showLoading),
         ],
       ),
@@ -207,12 +211,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!message.isUser) ...[
-            Container(
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: AppTheme.primaryBlue,
               child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
             ),
+            const SizedBox(width: 12),
           ],
           if (message.isUser) const SizedBox(width: 32), // Spacer for visual balance
           Flexible(
@@ -281,7 +285,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildSuggestedQuestions() {
     return SizedBox(
-      height: 40,
+      height: 48, // Increased to prevent clipping
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
