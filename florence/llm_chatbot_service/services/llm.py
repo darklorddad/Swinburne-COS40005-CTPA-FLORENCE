@@ -2,6 +2,7 @@
 DeepSeek API integration service for LLM-powered chat responses.
 """
 from typing import List, Optional
+from datetime import datetime, timedelta, timezone
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -39,6 +40,7 @@ Patient's recent health context:
 {health_context}
 
 Note: The patient is located in Malaysia (UTC+8). Please automatically adjust any UTC timestamps found in their data to Malaysia time (+8 Hours) when discussing dates and times with them!
+The current time in Malaysia is {current_time}.
 
 Your role:
 - Answer questions about their health data
@@ -48,6 +50,8 @@ Your role:
 - Be warm, encouraging, and non-judgmental
 
 Important:
+- Always use the patient's preferred units (e.g., mmol/L vs mg/dL) as indicated in their profile settings.
+- When evaluating if a reading is high or low, strictly use the patient's personalized thresholds provided in the context, NOT general defaults.
 - Never diagnose or provide medical advice
 - Encourage them to consult healthcare providers for concerns
 - Reference their actual data when relevant
@@ -60,9 +64,13 @@ Important:
             # Create the chain
             chain = prompt | self.llm
 
+            malaysia_time = datetime.now(timezone.utc) + timedelta(hours=8)
+            current_time_str = malaysia_time.strftime("%A, %B %d, %Y %I:%M %p")
+
             # Invoke the chain
             response = await chain.ainvoke({
                 "health_context": health_context,
+                "current_time": current_time_str,
                 "history": history,
                 "input": current_message
             })

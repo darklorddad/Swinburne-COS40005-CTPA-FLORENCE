@@ -95,6 +95,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     final chatState = ref.watch(chatProvider);
+    final profile = ref.watch(userProfileProvider).value;
     final messages = chatState.messages;
     final showLoading = chatState.isLoadingHistory || chatState.isClearingHistory;
     final isTyping = messages.isNotEmpty && messages.last.isUser;
@@ -110,27 +111,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.midnightBackground : const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: Row(
-          children: [
-            Consumer(
-              builder: (context, ref, child) {
-                final profile = ref.watch(userProfileProvider).value;
-                final avatarUrl = profile?['profile_picture_url'] as String?;
-                final name = profile?['name'] as String? ?? 'U';
-                if (avatarUrl != null && avatarUrl.isNotEmpty) {
-                  return CircleAvatar(radius: 16, backgroundImage: NetworkImage(avatarUrl));
-                }
-                return CircleAvatar(
-                  radius: 16, 
-                  backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.15),
-                  child: Text(name[0].toUpperCase(), style: const TextStyle(color: AppTheme.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold)),
-                );
-              },
-            ),
-            const SizedBox(width: 10),
-            const Text('Chatbot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
+        title: const Text('Chatbot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: isDark ? AppTheme.midnightSurface : Colors.white,
         bottom: PreferredSize(
@@ -151,7 +132,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : messages.isEmpty
                         ? _buildEmptyState()
-                        : _buildMessagesList(messages),
+                        : _buildMessagesList(messages, profile),
               ),
             ),
           ),
@@ -182,7 +163,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildMessagesList(List<ChatMessage> messages) {
+  Widget _buildMessagesList(List<ChatMessage> messages, Map<String, dynamic>? profile) {
     return ListView.builder(
       controller: _scrollController,
       reverse: true,
@@ -190,14 +171,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final message = messages[messages.length - 1 - index];
-        return _buildMessageBubble(message);
+        return _buildMessageBubble(message, profile);
       },
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message) {
+  Widget _buildMessageBubble(ChatMessage message, Map<String, dynamic>? profile) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
+    Widget? avatar;
+    if (message.isUser) {
+      final avatarUrl = profile?['profile_picture_url'] as String?;
+      final name = profile?['name'] as String? ?? 'U';
+      if (avatarUrl != null && avatarUrl.isNotEmpty) {
+        avatar = CircleAvatar(radius: 16, backgroundImage: NetworkImage(avatarUrl));
+      } else {
+        avatar = CircleAvatar(
+          radius: 16, 
+          backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.15),
+          child: Text(name[0].toUpperCase(), style: const TextStyle(color: AppTheme.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold)),
+        );
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(
@@ -212,6 +208,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
             ),
           ],
+          if (message.isUser) const SizedBox(width: 32), // Spacer for visual balance
           Flexible(
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
@@ -242,7 +239,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               ),
             ),
           ),
-          if (message.isUser) const SizedBox(width: 32), // Spacer for visual balance
+          if (message.isUser) ...[
+            const SizedBox(width: 12),
+            avatar!,
+          ],
         ],
       ),
     );
@@ -301,13 +301,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: EdgeInsets.fromLTRB(Helpers.isDesktop(context) ? 32 : 16, 12, Helpers.isDesktop(context) ? 32 : 16, 24),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.midnightSurface : Colors.white,
         border: Border(top: BorderSide(color: AppTheme.getBorderColor(context))),
       ),
       child: SafeArea(
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
               child: Container(
@@ -354,9 +355,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             ),
             const SizedBox(width: 12),
             Container(
+              height: 48,
+              width: 48,
+              margin: const EdgeInsets.only(bottom: 2),
               decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
               child: IconButton(
-                icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+                icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white, size: 22),
                 onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
               ),
             ),
