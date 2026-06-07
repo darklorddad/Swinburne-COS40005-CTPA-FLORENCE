@@ -148,16 +148,11 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
       );
 
       if (mounted) {
-        if (widget.onSwitchToHistory != null) {
-          Helpers.showSuccess(context, 'BMI logged and profile updated!');
-          widget.onSwitchToHistory!();
-        } else {
-          AppRoutes.pushAndRemoveUntil(
-            context, 
-            AppRoutes.dashboard,
-            arguments: {'message': 'BMI logged and profile updated!'},
-          );
-        }
+        AppRoutes.pushAndRemoveUntil(
+          context, 
+          AppRoutes.dashboard,
+          arguments: {'message': 'BMI logged and profile updated!'},
+        );
       }
     } catch (e) {
       if (mounted) {

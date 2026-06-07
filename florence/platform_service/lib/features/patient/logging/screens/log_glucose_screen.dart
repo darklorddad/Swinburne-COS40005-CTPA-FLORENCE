@@ -400,16 +400,11 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
       );
 
       if (mounted) {
-        if (widget.onSwitchToHistory != null) {
-          Helpers.showSuccess(context, 'Glucose reading saved successfully!');
-          widget.onSwitchToHistory!();
-        } else {
-          AppRoutes.pushAndRemoveUntil(
-            context, 
-            AppRoutes.dashboard,
-            arguments: {'message': 'Glucose reading saved successfully!'},
-          );
-        }
+        AppRoutes.pushAndRemoveUntil(
+          context, 
+          AppRoutes.dashboard,
+          arguments: {'message': 'Glucose reading saved successfully!'},
+        );
       }
     } catch (e) {
       if (mounted) {

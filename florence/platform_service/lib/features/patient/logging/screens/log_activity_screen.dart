@@ -199,16 +199,11 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
       );
 
       if (mounted) {
-        if (widget.onSwitchToHistory != null) {
-          Helpers.showSuccess(context, 'Activity logged successfully!');
-          widget.onSwitchToHistory!();
-        } else {
-          AppRoutes.pushAndRemoveUntil(
-            context, 
-            AppRoutes.dashboard,
-            arguments: {'message': 'Activity logged successfully!'},
-          );
-        }
+        AppRoutes.pushAndRemoveUntil(
+          context, 
+          AppRoutes.dashboard,
+          arguments: {'message': 'Activity logged successfully!'},
+        );
       }
     } catch (e) {
       if (mounted) {
