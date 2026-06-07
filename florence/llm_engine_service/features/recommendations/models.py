@@ -41,6 +41,7 @@ class RecommendationRequest(BaseModel):
     health_summary: HealthSummaryRequest
     analysis_period_days: int = 7
     previous_recommendation_titles: Optional[List[str]] = None
+    timezone_offset: Optional[int] = None
 
 
 class TriggeringDataPoint(BaseModel):

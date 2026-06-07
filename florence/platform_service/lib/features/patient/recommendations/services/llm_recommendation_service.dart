@@ -48,6 +48,7 @@ class LlmRecommendationService {
     final body = jsonEncode({
       'health_summary': _summaryToSnakeCase(summary, glucoseUnit, cholesterolUnit),
       'analysis_period_days': analysisPeriodDays,
+      'timezone_offset': DateTime.now().timeZoneOffset.inHours,
       if (previousTitles.isNotEmpty)
         'previous_recommendation_titles': previousTitles,
     });

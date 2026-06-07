@@ -32,7 +32,10 @@ class InsightService {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer ${session.accessToken}',
     };
-    final body = jsonEncode({'health_snapshot': snapshot.toJson()});
+    final body = jsonEncode({
+      'health_snapshot': snapshot.toJson(),
+      'timezone_offset': DateTime.now().timeZoneOffset.inHours,
+    });
 
     debugPrint('[InsightService] POST $url');
 

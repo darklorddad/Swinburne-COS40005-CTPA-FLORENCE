@@ -19,6 +19,7 @@ class HealthSnapshot(BaseModel):
 
 class InsightRequest(BaseModel):
     health_snapshot: HealthSnapshot
+    timezone_offset: Optional[int] = None
 
 
 class InsightResponse(BaseModel):

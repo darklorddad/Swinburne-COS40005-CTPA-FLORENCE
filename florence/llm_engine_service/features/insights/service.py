@@ -9,6 +9,9 @@ from features.insights.models import InsightRequest, InsightResponse
 _SYSTEM_PROMPT = """You are a clinical health assistant for the FLORENCE Digital Health Platform.
 Given a patient's health snapshot and their current active health insights/recommendations, generate exactly ONE summary insight.
 
+## MEDICAL GUARDRAILS
+You are a guidance tool, not a doctor. You may provide lifestyle, dietary, timing, physical activity, and sleep advice. You MUST NOT diagnose conditions, prescribe new medications, or recommend changes to medication dosages.
+
 ## Rules
 1. Output ONLY the insight text — no preamble, no JSON, no bullet points, no labels.
 2. Maximum 2 sentences.
@@ -74,22 +77,23 @@ class InsightService:
             for insight in s.active_insights:
                 lines.append(f"  * {insight}")
 
+        tz_info = ""
+        if request.timezone_offset is not None:
+            sign = "+" if request.timezone_offset >= 0 else ""
+            tz_info = f"\nNote: All data timestamps are in UTC. The patient's local time zone is UTC{sign}{request.timezone_offset}. Adjust all timestamps to their local time before evaluating morning/night patterns."
+
+        if tz_info:
+            lines.append(tz_info)
+
         human_content = "\n".join(lines)
 
-        response = await self.llm.ainvoke([
+        llm_structured = self.llm.with_structured_output(InsightResponse)
+        response_data = await llm_structured.ainvoke([
             SystemMessage(content=_SYSTEM_PROMPT),
             HumanMessage(content=human_content),
         ])
 
-        insight = response.content
+        if not response_data.generated_at:
+            response_data.generated_at = now.isoformat()
 
-        # Strip <think>...</think> blocks (reasoning models like DeepSeek-R1)
-        insight = re.sub(r'<think>.*?</think>', '', insight, flags=re.DOTALL)
-
-        # Clean up whitespace
-        insight = insight.strip()
-
-        return InsightResponse(
-            insight=insight,
-            generated_at=now.isoformat(),
-        )
+        return response_data

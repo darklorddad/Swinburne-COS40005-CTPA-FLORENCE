@@ -504,7 +504,6 @@ class MonitorDataRepository {
       'value': reading.value,
       'measured_at': reading.timestamp.toIso8601String(),
     });
-    _triggerRiskAssessment();
   }
 
   Future<void> addMonitorData(String type, double value, DateTime timestamp, {int? documentId}) async {
@@ -514,7 +513,6 @@ class MonitorDataRepository {
       'measured_at': timestamp.toIso8601String(),
       if (documentId != null) 'document_id': documentId,
     });
-    _triggerRiskAssessment();
   }
 
   Future<int> createClinicalDocument({
@@ -576,7 +574,6 @@ class MonitorDataRepository {
     }
 
     await _apiService.post('/patients/me/daily-logs', payload);
-    _triggerRiskAssessment();
   }
 
   Future<void> addActivity(ActivityLog log) async {
@@ -587,7 +584,6 @@ class MonitorDataRepository {
       'end_time': log.endTime.toIso8601String(),
       'calories_burned': log.caloriesBurned,
     });
-    _triggerRiskAssessment();
   }
 
   Future<int> estimateActivityCalories({
@@ -637,7 +633,6 @@ class MonitorDataRepository {
       'timestamp': timestamp.toIso8601String(),
       'notes': notes,
     });
-    _triggerRiskAssessment();
   }
 
   // ==================== FETCH HELPERS ====================
@@ -764,28 +759,6 @@ class MonitorDataRepository {
   }
 
   // ==================== UTILS & MOCKS ====================
-
-  /// Silently triggers the LLM Engine to re-evaluate clinical risk.
-  /// Fire-and-forget: does not block the UI or throw errors to the caller.
-  void _triggerRiskAssessment() {
-    try {
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session == null) return;
-      
-      final url = Uri.parse('${Environment.llmEngineServiceUrl}/risk/assess');
-      final headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${session.accessToken}',
-      };
-      
-      // Fire and forget
-      http.post(url, headers: headers).catchError((e) {
-        print('[RiskEngine] Background trigger failed: $e');
-      });
-    } catch (e) {
-      print('[RiskEngine] Error initiating trigger: $e');
-    }
-  }
 
 }
 
