@@ -280,7 +280,8 @@ class _RecommendationsScreenState
   }
 
   String _freshnessLabel(DateTime generatedAt) {
-    final diff = DateTime.now().difference(generatedAt);
+    final diff = DateTime.now().difference(generatedAt.toLocal());
+    if (diff.isNegative || diff.inMinutes < 1) return 'Updated just now';
     if (diff.inMinutes < 60) return 'Updated ${diff.inMinutes}m ago';
     if (diff.inHours < 24)   return 'Updated ${diff.inHours}h ago';
     if (diff.inHours < 48)   return 'Updated yesterday';

@@ -111,15 +111,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.midnightBackground : const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Text('Chatbot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Chatbot'),
         elevation: 0,
-        backgroundColor: isDark ? AppTheme.midnightSurface : Colors.white,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.delete_outline), onPressed: showLoading ? null : _confirmClearHistory),
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: IconButton(
+              icon: const Icon(Icons.delete_outline), 
+              tooltip: 'Clear Chat History',
+              onPressed: showLoading ? null : _confirmClearHistory,
+            ),
+          ),
         ],
       ),
       body: Column(
@@ -348,6 +354,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                         decoration: const InputDecoration(
                           hintText: 'Message Florence...',
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          filled: false, // Prevents global AppTheme from adding a grey box
                           contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                         ),
                         maxLines: 4,

@@ -314,8 +314,8 @@ class _DietStatsSection extends StatelessWidget {
       icon: Icons.analytics_outlined,
       infoText: 'Key statistics from your meal logs.\n\n'
                 '• Stable Meals: % of meals with healthy glucose rise (<30mg/dL).\n'
-                '• Avg Spike: Average rise in glucose after meals.\n'
-                '• Avg Calories: Average estimated calories per logged meal.',
+                '• Average Spike: Average rise in glucose after meals.\n'
+                '• Average Calories: Average estimated calories per logged meal.',
       child: Row(
         children: [
           Expanded(
@@ -331,7 +331,7 @@ class _DietStatsSection extends StatelessWidget {
           Expanded(
             child: _buildStatBox(
               context, 
-              'Avg Spike', 
+              'Average Spike', 
               spikeCount > 0 ? (avgSpike > 0 ? '+' : '') + avgSpike.toStringAsFixed(0) : '--', 
               'mg/dL', 
               avgSpike > warningLimit ? AppTheme.errorColor : (avgSpike > stableLimit ? AppTheme.warningColor : AppTheme.primaryGreen)
@@ -341,7 +341,7 @@ class _DietStatsSection extends StatelessWidget {
           Expanded(
             child: _buildStatBox(
               context, 
-              'Avg Calories', 
+              'Average Calories', 
               avgCalories > 0 ? '$avgCalories' : '--', 
               'kcal', 
               avgCalories > 0 ? AppTheme.primaryGreen : AppTheme.textSecondaryColor

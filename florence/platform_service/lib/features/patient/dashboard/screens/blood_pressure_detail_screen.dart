@@ -448,9 +448,9 @@ class _StatisticsSection extends StatelessWidget {
             // Stats Grid
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys > 0 ? avgSys.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryRed)),
+                Expanded(child: _buildStatBox(context, 'Average Systolic', avgSys > 0 ? avgSys.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryRed)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia > 0 ? avgDia.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryBlue)),
+                Expanded(child: _buildStatBox(context, 'Average Diastolic', avgDia > 0 ? avgDia.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryBlue)),
                 const SizedBox(width: 12),
                 Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse > 0 ? avgPulse.toStringAsFixed(0) : '--', 'mmHg', AppTheme.textSecondaryColor)),
               ],
@@ -655,8 +655,8 @@ class _DualTrendSection extends StatelessWidget {
               children: [
                const _LegendItem('Systolic', AppTheme.primaryRed, isCircle: true),
                const _LegendItem('Diastolic', AppTheme.primaryBlue, isCircle: true),
-               const _LegendItem('Sys Limit', AppTheme.primaryRed, isBox: true),
-               const _LegendItem('Dia Limit', AppTheme.primaryBlue, isBox: true),
+               const _LegendItem('Systolic Limit', AppTheme.primaryRed, isBox: true),
+               const _LegendItem('Diastolic Limit', AppTheme.primaryBlue, isBox: true),
             ]),
           ],
         );
