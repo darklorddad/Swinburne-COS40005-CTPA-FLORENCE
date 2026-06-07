@@ -203,7 +203,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.activityDetail);
         }
       }
     } catch (e) {

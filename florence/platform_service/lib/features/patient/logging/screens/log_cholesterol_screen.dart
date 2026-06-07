@@ -354,7 +354,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
         }
       }
     } catch (e) {

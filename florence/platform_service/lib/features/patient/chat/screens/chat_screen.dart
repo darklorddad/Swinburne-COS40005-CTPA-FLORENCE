@@ -109,17 +109,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.midnightBackground : const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.15), shape: BoxShape.circle),
-              child: const Icon(Icons.auto_awesome, color: AppTheme.primaryBlue, size: 18),
-            ),
-            const SizedBox(width: 10),
-            const Text('Florence AI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ],
-        ),
+        title: const Text('Chatbot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         elevation: 0,
         backgroundColor: isDark ? AppTheme.midnightSurface : Colors.white,
         bottom: PreferredSize(
@@ -130,24 +120,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           IconButton(icon: const Icon(Icons.delete_outline), onPressed: showLoading ? null : _confirmClearHistory),
         ],
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Column(
-            children: [
-              Expanded(
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 800),
                 child: showLoading
                     ? const Center(child: CircularProgressIndicator())
                     : messages.isEmpty
                         ? _buildEmptyState()
                         : _buildMessagesList(messages),
               ),
-              if (isTyping && !showLoading) _buildTypingIndicator(),
-              if (!showLoading && messages.isEmpty) _buildSuggestedQuestions(),
-              _buildInputArea(isEnabled: !showLoading),
-            ],
+            ),
           ),
-        ),
+          if (isTyping && !showLoading) Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildTypingIndicator())),
+          if (!showLoading && messages.isEmpty) Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildSuggestedQuestions())),
+          _buildInputArea(isEnabled: !showLoading),
+        ],
       ),
     );
   }
@@ -249,7 +239,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark ? AppTheme.midnightSurface : Colors.white,
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20), bottomRight: Radius.circular(20), bottomLeft: Radius.circular(4)),
@@ -258,29 +248,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildTypingDot(0), const SizedBox(width: 4),
-                _buildTypingDot(1), const SizedBox(width: 4),
-                _buildTypingDot(2),
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue),
+                ),
+                const SizedBox(width: 10),
+                Text("Analysing health data...", style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13, fontWeight: FontWeight.w500)),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildTypingDot(int index) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeInOut,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: 0.3 + (0.7 * value),
-          child: Container(width: 6, height: 6, decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle)),
-        );
-      },
-      onEnd: () => setState(() {}),
     );
   }
 
@@ -312,66 +291,71 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      padding: EdgeInsets.fromLTRB(Helpers.isDesktop(context) ? 32 : 16, 12, Helpers.isDesktop(context) ? 32 : 16, 24),
       decoration: BoxDecoration(
         color: isDark ? AppTheme.midnightSurface : Colors.white,
         border: Border(top: BorderSide(color: AppTheme.getBorderColor(context))),
       ),
       child: SafeArea(
-        child: Row(
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
-                ),
-                child: Focus(
-                  onKeyEvent: (node, event) {
-                    // Check for Enter key on Desktop/Web
-                    if (Helpers.isDesktop(context) && 
-                        event is KeyDownEvent && 
-                        event.logicalKey == LogicalKeyboardKey.enter) {
-                      
-                      // If holding Shift, let it create a new line naturally
-                      if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-                          HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
-                        return KeyEventResult.ignored; 
-                      } else {
-                        // Send message and prevent newline
-                        if (_messageController.text.trim().isNotEmpty) {
-                          _sendMessage(_messageController.text);
-                        }
-                        return KeyEventResult.handled;
-                      }
-                    }
-                    return KeyEventResult.ignored;
-                  },
-                  child: TextField(
-                    controller: _messageController,
-                    enabled: isEnabled,
-                    decoration: const InputDecoration(
-                      hintText: 'Message Florence...',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
                     ),
-                    maxLines: 4,
-                    minLines: 1,
-                    textCapitalization: TextCapitalization.sentences,
+                    child: Focus(
+                      onKeyEvent: (node, event) {
+                        // Check for Enter key on Desktop/Web
+                        if (Helpers.isDesktop(context) && 
+                            event is KeyDownEvent && 
+                            event.logicalKey == LogicalKeyboardKey.enter) {
+                          
+                          // If holding Shift, let it create a new line naturally
+                          if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
+                              HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
+                            return KeyEventResult.ignored; 
+                          } else {
+                            // Send message and prevent newline
+                            if (_messageController.text.trim().isNotEmpty) {
+                              _sendMessage(_messageController.text);
+                            }
+                            return KeyEventResult.handled;
+                          }
+                        }
+                        return KeyEventResult.ignored;
+                      },
+                      child: TextField(
+                        controller: _messageController,
+                        enabled: isEnabled,
+                        decoration: const InputDecoration(
+                          hintText: 'Message Florence...',
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        ),
+                        maxLines: 4,
+                        minLines: 1,
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 12),
+                Container(
+                  decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+                    onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Container(
-              decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-                onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

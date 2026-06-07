@@ -404,7 +404,7 @@ class _LogGlucoseScreenState extends ConsumerState<LogGlucoseScreen> {
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.trendsDetail);
         }
       }
     } catch (e) {

@@ -353,7 +353,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
         }
       }
     } catch (e) {

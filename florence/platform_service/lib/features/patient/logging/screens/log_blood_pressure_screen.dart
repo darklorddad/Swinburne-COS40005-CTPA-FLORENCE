@@ -92,7 +92,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.bloodPressureDetail);
         }
       }
     } catch (e) {

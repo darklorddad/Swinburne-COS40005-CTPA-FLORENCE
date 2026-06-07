@@ -152,7 +152,7 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
         }
       }
     } catch (e) {

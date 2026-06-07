@@ -157,15 +157,17 @@ class HealthRecommendation {
       id: json['id'] as String,
       timeframe: json['timeframe'] as String? ?? 'weekly',
       category: RecommendationCategory.values.firstWhere(
-        (e) => e.name == json['category'],
+        (e) => e.name.toLowerCase() == json['category'].toString().toLowerCase(),
+        orElse: () => RecommendationCategory.lifestyle,
       ),
       title: json['title'] as String,
       description: json['description'] as String,
       priority: RecommendationPriority.values.firstWhere(
-        (e) => e.name == json['priority'],
+        (e) => e.name.toLowerCase() == json['priority'].toString().toLowerCase(),
+        orElse: () => RecommendationPriority.medium,
       ),
       status: RecommendationStatus.values.firstWhere(
-        (e) => e.name == json['status'],
+        (e) => e.name.toLowerCase() == json['status'].toString().toLowerCase(),
         orElse: () => RecommendationStatus.active,
       ),
       generatedAt: DateTime.parse((json['generated_at'] ?? json['generatedAt']) as String),

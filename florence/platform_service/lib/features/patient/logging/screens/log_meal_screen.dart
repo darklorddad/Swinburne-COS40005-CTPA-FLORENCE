@@ -319,7 +319,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
         if (widget.onSwitchToHistory != null) {
           widget.onSwitchToHistory!();
         } else {
-          Navigator.pop(context);
+          AppRoutes.pushReplacement(context, AppRoutes.mealDetail);
         }
       }
     } catch (e) {

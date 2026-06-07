@@ -328,6 +328,7 @@ class MonitorDataRepository {
               break;
             }
           }
+          if (ctx.isEmpty) ctx = 'No Meal';
 
           glucoseReadings.add(GlucoseReading(
             id: id,
@@ -412,6 +413,7 @@ class MonitorDataRepository {
     final mealMonitorData = <MonitorData>[];
     for (var m in meals) {
       final mealId = int.tryParse(m.id) ?? 0;
+      final mealType = m.type.length > 1 ? m.type[0].toUpperCase() + m.type.substring(1).toLowerCase() : m.type;
       
       // Glucose Before Meal
       if (m.glucoseBefore != null && m.glucoseBeforeTime != null) {
@@ -421,6 +423,13 @@ class MonitorDataRepository {
           dataType: MonitorDataType.GLUCOSE,
           value: m.glucoseBefore!,
           measuredAt: m.glucoseBeforeTime!,
+        ));
+        glucoseReadings.add(GlucoseReading(
+          id: 'meal_before_$mealId',
+          timestamp: m.glucoseBeforeTime!,
+          value: m.glucoseBefore!,
+          context: 'Before $mealType',
+          isFlagged: m.glucoseBefore! > 180 || m.glucoseBefore! < 70,
         ));
       }
       
@@ -432,6 +441,13 @@ class MonitorDataRepository {
           dataType: MonitorDataType.GLUCOSE,
           value: m.glucoseAfter!,
           measuredAt: m.glucoseAfterTime!,
+        ));
+        glucoseReadings.add(GlucoseReading(
+          id: 'meal_after_$mealId',
+          timestamp: m.glucoseAfterTime!,
+          value: m.glucoseAfter!,
+          context: 'After $mealType',
+          isFlagged: m.glucoseAfter! > 180 || m.glucoseAfter! < 70,
         ));
       }
     }
