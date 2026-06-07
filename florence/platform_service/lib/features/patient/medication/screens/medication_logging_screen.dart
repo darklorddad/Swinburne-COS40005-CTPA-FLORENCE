@@ -129,7 +129,7 @@ class MedicationLoggingScreen extends ConsumerWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 20),
                           
                           // The actual interactive checklist widget
                           const MedicationLoggingSection(),

@@ -129,7 +129,10 @@ class MedicationSection extends StatelessWidget {
               child: TabBarView(
                 physics: BouncingScrollPhysics(),
                 children: [
-                  MedicationLoggingSection(),
+                  Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: MedicationLoggingSection(),
+                  ),
                 ],
               ),
             ),
@@ -219,7 +222,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // SCHEDULE LIST
           scheduleAsync.when(
