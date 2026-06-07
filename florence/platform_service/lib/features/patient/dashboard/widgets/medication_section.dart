@@ -228,7 +228,17 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
           scheduleAsync.when(
             skipLoadingOnReload: true,
             data: (scheduleItems) {
-              if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
+              if (scheduleItems.isEmpty) {
+                return SizedBox(
+                  height: 54,
+                  child: Center(
+                    child: Text(
+                      "No schedule",
+                      style: TextStyle(color: AppTheme.textSecondaryColor),
+                    ),
+                  ),
+                );
+              }
 
               List<Map<String, dynamic>> itemsToBuild = [];
               
@@ -263,7 +273,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
 
               if (itemsToBuild.isEmpty) {
                 return SizedBox(
-                  height: 52, // Matches the approximate height of 1 medication row
+                  height: 54, // Matches the exact height of 1 medication row
                   child: Center(
                     child: Text(
                       "No medications match this filter", 

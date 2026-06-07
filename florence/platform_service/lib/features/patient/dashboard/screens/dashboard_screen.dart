@@ -164,6 +164,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         onRefresh: _handleRefresh,
         edgeOffset: 0,
         child: ListView(
+          padding: EdgeInsets.zero,
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             Center(
