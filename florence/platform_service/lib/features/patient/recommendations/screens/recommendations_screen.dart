@@ -421,7 +421,7 @@ class _RecommendationsScreenState
               ),
             ),
           Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.info_outline),
               onPressed: _showInfoDialog,
@@ -481,24 +481,26 @@ class _RecommendationsScreenState
                       child: SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: const EdgeInsets.all(16),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: AppTheme.getSurfaceColor(context),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: AppTheme.getBorderColor(context)),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 20,
-                                offset: const Offset(0, 8),
+                        child: Column(
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color: AppTheme.getSurfaceColor(context),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(color: AppTheme.getBorderColor(context)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 1. INDEX
-                              _buildVitalityIndex(score, active, ringStart, ringEnd, stateLabel),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // 1. INDEX
+                                  _buildVitalityIndex(score, active, ringStart, ringEnd, stateLabel),
                               
                               Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
                               
@@ -540,18 +542,19 @@ class _RecommendationsScreenState
                                 Divider(height: 1, color: AppTheme.getBorderColor(context).withValues(alpha: 0.5)),
                                 _RecommendationHistorySection(history: history),
                               ],
-                              
-                              // Bottom spacing for system navigation bar
-                              SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
                             ],
                           ),
                         ),
-                      ),
+                        // Bottom spacing for system navigation bar
+                        SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
+                      ],
                     ),
                   ),
                 ),
               ),
-              // Celebration particles overlay
+            ),
+          ),
+          // Celebration particles overlay
               if (!_celebTriggered || _celebCtrl.isAnimating)
                 Positioned.fill(
                   child: AnimatedBuilder(

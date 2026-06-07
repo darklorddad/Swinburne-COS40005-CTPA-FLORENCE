@@ -131,10 +131,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           if (!showLoading && messages.isEmpty) 
-            Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildSuggestedQuestions())),
-            ),
+            Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildSuggestedQuestions())),
           Expanded(
             child: Center(
               child: ConstrainedBox(
@@ -298,7 +295,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
               onPressed: () => _sendMessage(_suggestedQuestions[index]),
               backgroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
               side: BorderSide(color: AppTheme.getBorderColor(context)),
-              labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              labelStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppTheme.getTextPrimaryColor(context)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             ),
           );

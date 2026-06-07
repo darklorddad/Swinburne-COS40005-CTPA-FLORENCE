@@ -176,6 +176,11 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Log Medication'),
+          elevation: 0,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(color: AppTheme.getBorderColor(context), height: 1.0),
+          ),
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 4),
@@ -189,61 +194,64 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
             ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Info card
-                      _buildInfoCard(),
-                      const SizedBox(height: 24),
-                      
-                      // Medication name
-                      _buildMedicationNameSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Medication type
-                      _buildMedicationTypeSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Dosage
-                      _buildDosageSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Timing
-                      _buildTimingSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Date and time
-                      _buildDateTimeSection(),
-                      const SizedBox(height: 24),
-                      
-                      // Notes
-                      _buildNotesSection(),
-                      const SizedBox(height: 32),
-                      
-                      // Save button
-                      PrimaryButton(
-                        text: 'Save Medication',
-                        onPressed: _isLoading ? null : _handleSave,
-                        isLoading: _isLoading,
-                        width: double.infinity,
-                        padding: Helpers.isDesktop(context)
-                            ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      
-                      // Warning card
-                      _buildWarningCard(),
-                      SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
-                    ],
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info card
+                        _buildInfoCard(),
+                        const SizedBox(height: 20),
+                        
+                        // Medication name
+                        _buildMedicationNameSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Medication type
+                        _buildMedicationTypeSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Dosage
+                        _buildDosageSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Timing
+                        _buildTimingSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 20),
+                        
+                        // Notes
+                        _buildNotesSection(),
+                        const SizedBox(height: 32),
+                        
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Medication',
+                          onPressed: (_isLoading || _medicationNameController.text.trim().isEmpty || _dosageController.text.trim().isEmpty) ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                          padding: Helpers.isDesktop(context)
+                              ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
+                              : null,
+                        ),
+                        const SizedBox(height: 20),
+                        
+                        // Warning card
+                        _buildWarningCard(),
+                        SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -327,7 +335,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  Icons.medication_outlined,
+                  Icons.medical_services_outlined,
                   color: titleIconColor,
                   size: 24,
                 ),
@@ -354,6 +362,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
             controller: _medicationNameController,
             textCapitalization: TextCapitalization.words,
             textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
             validator: (value) => Validators.name(value, fieldName: 'Medication name'),
             decoration: InputDecoration(
               hintText: 'e.g., Metformin, Insulin',
@@ -496,6 +505,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
           TextFormField(
             controller: _dosageController,
             textInputAction: TextInputAction.next,
+            onChanged: (_) => setState(() {}),
             validator: (value) => Validators.minLength(value, 1, fieldName: 'Dosage'),
             decoration: InputDecoration(
               hintText: 'e.g., 500mg, 10 units',

@@ -258,7 +258,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final borderColor = AppTheme.getBorderColor(context);
 
     return AppBar(
-      title: const Text('Florence', style: TextStyle(fontWeight: FontWeight.bold)),
+      title: const Text('Florence'),
       actions: const [
         Padding(
           padding: EdgeInsets.only(right: 4),

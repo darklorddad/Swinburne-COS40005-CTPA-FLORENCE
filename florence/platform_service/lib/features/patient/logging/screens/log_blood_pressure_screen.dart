@@ -239,7 +239,7 @@ class _LogBloodPressureScreenState extends ConsumerState<LogBloodPressureScreen>
                         // Save button
                         PrimaryButton(
                           text: 'Save Reading',
-                          onPressed: _isLoading ? null : _handleSave,
+                          onPressed: (_isLoading || _systolicController.text.trim().isEmpty || _diastolicController.text.trim().isEmpty) ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
                           padding: Helpers.isDesktop(context)

@@ -538,7 +538,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
                         // Save button
                         PrimaryButton(
                           text: 'Save Reading',
-                          onPressed: _isLoading ? null : _handleSave,
+                          onPressed: (_isLoading || (_totalController.text.trim().isEmpty && _ldlController.text.trim().isEmpty && _hdlController.text.trim().isEmpty && _triglyceridesController.text.trim().isEmpty && _fileBytes == null)) ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
                           padding: Helpers.isDesktop(context)

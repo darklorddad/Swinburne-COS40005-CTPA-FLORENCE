@@ -482,7 +482,7 @@ class _LogMealScreenState extends ConsumerState<LogMealScreen> {
                         // Save
                         PrimaryButton(
                           text: 'Save Meal',
-                          onPressed: _isLoading ? null : _handleSave,
+                          onPressed: (_isLoading || (_mealNameController.text.trim().isEmpty && _caloriesController.text.trim().isEmpty && _selectedImage == null)) ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
                           padding: Helpers.isDesktop(context)

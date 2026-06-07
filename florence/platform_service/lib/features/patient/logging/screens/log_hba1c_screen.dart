@@ -489,7 +489,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
                         // Save button
                         PrimaryButton(
                           text: 'Save Reading',
-                          onPressed: _isLoading ? null : _handleSave,
+                          onPressed: (_isLoading || (_hba1cController.text.trim().isEmpty && _fileBytes == null)) ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
                           padding: Helpers.isDesktop(context)

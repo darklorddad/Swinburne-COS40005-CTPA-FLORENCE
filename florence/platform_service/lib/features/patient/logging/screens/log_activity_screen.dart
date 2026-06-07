@@ -367,7 +367,7 @@ class _LogActivityScreenState extends ConsumerState<LogActivityScreen> {
                         // Save button
                         PrimaryButton(
                           text: 'Save Activity',
-                          onPressed: _isLoading ? null : _handleSave,
+                          onPressed: (_isLoading || _descriptionController.text.trim().isEmpty || _activeDurationController.text.trim().isEmpty) ? null : _handleSave,
                           isLoading: _isLoading,
                           width: double.infinity,
                           padding: Helpers.isDesktop(context)
