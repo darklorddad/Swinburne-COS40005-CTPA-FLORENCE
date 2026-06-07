@@ -236,7 +236,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         latestMeal: latestMeal,
                         thresholds: thresholds,
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 78 + MediaQuery.of(context).padding.bottom), // 74(Nav) + 24(Gap) - 20(Padding)
                     ],
                   ),
                 ),

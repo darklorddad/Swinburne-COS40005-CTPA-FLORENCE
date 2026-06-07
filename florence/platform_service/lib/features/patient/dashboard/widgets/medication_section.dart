@@ -227,7 +227,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
             data: (scheduleItems) {
               if (scheduleItems.isEmpty) return const Center(child: Text("No schedule"));
 
-              List<Widget> loggableItems = [];
+              List<Map<String, dynamic>> itemsToBuild = [];
               
               for (var item in scheduleItems) {
                 final med = PatientMedication.fromJson(item['medication']);
@@ -246,19 +246,37 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
                   if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
 
                   if (shouldShow) {
-                    loggableItems.add(_buildMedicationRow(context, ref, med, i, totalDoses, isTaken, isLate, isWeekly));
+                    itemsToBuild.add({
+                      'med': med,
+                      'index': i,
+                      'total': totalDoses,
+                      'isTaken': isTaken,
+                      'isLate': isLate,
+                      'isWeekly': isWeekly,
+                    });
                   }
                 }
               }
 
-              if (loggableItems.isEmpty) {
-                return Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor)));
+              if (itemsToBuild.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: Text("No medications match this filter", style: TextStyle(color: AppTheme.textSecondaryColor))),
+                );
               }
 
-              return ListView(
+              return ListView.builder(
                 shrinkWrap: true,
+                padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
-                children: loggableItems,
+                itemCount: itemsToBuild.length,
+                itemBuilder: (context, i) {
+                  final item = itemsToBuild[i];
+                  return _buildMedicationRow(
+                    context, ref, item['med'], item['index'], item['total'], item['isTaken'], item['isLate'], item['isWeekly'],
+                    isLast: i == itemsToBuild.length - 1,
+                  );
+                },
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -313,8 +331,9 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
     int total,
     bool isTaken,
     bool isLate,
-    bool isWeekly,
-  ) {
+    bool isWeekly, {
+    bool isLast = false,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final String brandName = med.medicationDictionary['brand_name'] ?? 
                              med.customMedicationName ?? 
@@ -340,7 +359,7 @@ class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSect
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12.0),
       child: InkWell(
         onTap: () => _handleToggle(context, ref, med, isTaken),
         borderRadius: BorderRadius.circular(16),
