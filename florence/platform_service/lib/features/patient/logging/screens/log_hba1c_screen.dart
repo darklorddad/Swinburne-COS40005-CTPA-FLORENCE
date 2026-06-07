@@ -350,11 +350,7 @@ class _LogHba1cScreenState extends ConsumerState<LogHba1cScreen> {
       if (mounted) {
         Helpers.showSuccess(
             context, 'HbA1c data and lab report saved successfully!');
-        if (widget.onSwitchToHistory != null) {
-          widget.onSwitchToHistory!();
-        } else {
-          AppRoutes.pushReplacement(context, AppRoutes.hba1cDetail);
-        }
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
       }
     } catch (e) {
       if (mounted) {

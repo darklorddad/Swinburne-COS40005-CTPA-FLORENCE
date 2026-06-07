@@ -351,11 +351,7 @@ class _LogCholesterolScreenState extends ConsumerState<LogCholesterolScreen> {
       if (mounted) {
         Helpers.showSuccess(
             context, 'Cholesterol data and lab report saved successfully!');
-        if (widget.onSwitchToHistory != null) {
-          widget.onSwitchToHistory!();
-        } else {
-          AppRoutes.pushReplacement(context, AppRoutes.cholesterolDetail);
-        }
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
       }
     } catch (e) {
       if (mounted) {

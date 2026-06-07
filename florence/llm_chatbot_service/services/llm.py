@@ -38,6 +38,8 @@ class LLMService:
 Patient's recent health context:
 {health_context}
 
+Note: The patient is located in Malaysia (UTC+8). Please automatically adjust any UTC timestamps found in their data to Malaysia time (+8 Hours) when discussing dates and times with them!
+
 Your role:
 - Answer questions about their health data
 - Provide guidance and support

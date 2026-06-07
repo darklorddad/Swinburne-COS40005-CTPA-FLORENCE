@@ -90,7 +90,7 @@ class _LogMedicationScreenState extends ConsumerState<LogMedicationScreen> {
 
       if (mounted) {
         Helpers.showSuccess(context, 'Medication logged successfully!');
-        Navigator.pop(context);
+        AppRoutes.pushAndRemoveUntil(context, AppRoutes.dashboard, (route) => false);
       }
     } catch (e) {
       if (mounted) {

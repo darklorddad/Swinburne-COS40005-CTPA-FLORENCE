@@ -7,6 +7,7 @@ import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/config/theme.dart';
 import 'package:florence/features/patient/chat/services/chatbot_service.dart';
 import 'package:florence/features/patient/chat/models/chat_message.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
@@ -109,7 +110,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     return Scaffold(
       backgroundColor: isDark ? AppTheme.midnightBackground : const Color(0xFFF3F4F6),
       appBar: AppBar(
-        title: const Text('Chatbot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: Row(
+          children: [
+            Consumer(
+              builder: (context, ref, child) {
+                final profile = ref.watch(userProfileProvider).value;
+                final avatarUrl = profile?['profile_picture_url'] as String?;
+                final name = profile?['name'] as String? ?? 'U';
+                if (avatarUrl != null && avatarUrl.isNotEmpty) {
+                  return CircleAvatar(radius: 16, backgroundImage: NetworkImage(avatarUrl));
+                }
+                return CircleAvatar(
+                  radius: 16, 
+                  backgroundColor: AppTheme.primaryBlue.withValues(alpha: 0.15),
+                  child: Text(name[0].toUpperCase(), style: const TextStyle(color: AppTheme.primaryBlue, fontSize: 14, fontWeight: FontWeight.bold)),
+                );
+              },
+            ),
+            const SizedBox(width: 10),
+            const Text('Chatbot', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          ],
+        ),
         elevation: 0,
         backgroundColor: isDark ? AppTheme.midnightSurface : Colors.white,
         bottom: PreferredSize(
@@ -239,24 +260,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           ),
           const SizedBox(width: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark ? AppTheme.midnightSurface : Colors.white,
               borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20), bottomRight: Radius.circular(20), bottomLeft: Radius.circular(4)),
               border: Border.all(color: AppTheme.getBorderColor(context)),
             ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue),
-                ),
-                const SizedBox(width: 10),
-                Text("Analysing health data...", style: TextStyle(color: AppTheme.textSecondaryColor, fontSize: 13, fontWeight: FontWeight.w500)),
-              ],
-            ),
+            child: _BouncingDots(),
           ),
         ],
       ),
@@ -297,67 +307,107 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         border: Border(top: BorderSide(color: AppTheme.getBorderColor(context))),
       ),
       child: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
-                    ),
-                    child: Focus(
-                      onKeyEvent: (node, event) {
-                        // Check for Enter key on Desktop/Web
-                        if (Helpers.isDesktop(context) && 
-                            event is KeyDownEvent && 
-                            event.logicalKey == LogicalKeyboardKey.enter) {
-                          
-                          // If holding Shift, let it create a new line naturally
-                          if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-                              HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
-                            return KeyEventResult.ignored; 
-                          } else {
-                            // Send message and prevent newline
-                            if (_messageController.text.trim().isNotEmpty) {
-                              _sendMessage(_messageController.text);
-                            }
-                            return KeyEventResult.handled;
-                          }
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: AppTheme.getBorderColor(context), width: 1.0),
+                ),
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    // Check for Enter key on Desktop/Web
+                    if (Helpers.isDesktop(context) && 
+                        event is KeyDownEvent && 
+                        event.logicalKey == LogicalKeyboardKey.enter) {
+                      
+                      // If holding Shift, let it create a new line naturally
+                      if (HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
+                          HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight)) {
+                        return KeyEventResult.ignored; 
+                      } else {
+                        // Send message and prevent newline
+                        if (_messageController.text.trim().isNotEmpty) {
+                          _sendMessage(_messageController.text);
                         }
-                        return KeyEventResult.ignored;
-                      },
-                      child: TextField(
-                        controller: _messageController,
-                        enabled: isEnabled,
-                        decoration: const InputDecoration(
-                          hintText: 'Message Florence...',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                        ),
-                        maxLines: 4,
-                        minLines: 1,
-                        textCapitalization: TextCapitalization.sentences,
-                      ),
+                        return KeyEventResult.handled;
+                      }
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: TextField(
+                    controller: _messageController,
+                    enabled: isEnabled,
+                    decoration: const InputDecoration(
+                      hintText: 'Message Florence...',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
                     ),
+                    maxLines: 4,
+                    minLines: 1,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Container(
-                  decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
-                    onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Container(
+              decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+              child: IconButton(
+                icon: const Icon(Icons.arrow_upward_rounded, color: Colors.white),
+                onPressed: isEnabled ? () => _sendMessage(_messageController.text) : null,
+              ),
+            ),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _BouncingDots extends StatefulWidget {
+  @override
+  __BouncingDotsState createState() => __BouncingDotsState();
+}
+
+class __BouncingDotsState extends State<_BouncingDots> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(3, (index) {
+        return AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            final double offset = math.sin((_controller.value * 2 * math.pi) + (index * math.pi / 2));
+            return Transform.translate(
+              offset: Offset(0, offset * -3),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                width: 6,
+                height: 6,
+                decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }

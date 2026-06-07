@@ -1374,7 +1374,8 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final borderColor = AppTheme.getBorderColor(context);
 
-    final sortedReadings = widget.readings.reversed.toList();
+    // Readings arrive sorted newest-first, do not reverse them
+    final sortedReadings = widget.readings.toList();
 
     final totalItems = sortedReadings.length;
     final totalPages = (totalItems / _itemsPerPage).ceil();
@@ -1490,8 +1491,8 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
                           Text(
                             item.value.toStringAsFixed(ref.watch(patientSettingsProvider).glucoseUnit == 'mmol/L' ? 1 : 0),
                             style: TextStyle(
-                              fontWeight: FontWeight.bold, 
-                              fontSize: 22,
+                              fontWeight: FontWeight.normal, 
+                              fontSize: 20,
                               color: AppTheme.textPrimaryColor
                             ),
                           ),
@@ -1508,10 +1509,10 @@ class _HistorySectionState extends ConsumerState<_HistorySection> {
                       const SizedBox(height: 2),
                       Text(
                         item.context,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: AppTheme.primaryBlue,
+                          color: AppTheme.textSecondaryColor,
                         ),
                       ),
                     ],
