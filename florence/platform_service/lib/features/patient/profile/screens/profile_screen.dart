@@ -557,8 +557,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 800),
                   child: Padding(
-                    padding: const EdgeInsets.only(
-                        left: 16, right: 16, top: 16, bottom: 100),
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -579,7 +578,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
                       // Disease Log Section
                       _buildDiseaseLogSection(context, ref),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 100),
                     ],
                   ),
                 ),

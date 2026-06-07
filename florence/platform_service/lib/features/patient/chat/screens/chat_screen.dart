@@ -140,11 +140,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     ? const Center(child: CircularProgressIndicator())
                     : messages.isEmpty
                         ? _buildEmptyState()
-                        : _buildMessagesList(messages, profile),
+                        : _buildMessagesList(messages, profile, isTyping),
               ),
             ),
           ),
-          if (isTyping && !showLoading) Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 800), child: _buildTypingIndicator())),
           _buildInputArea(isEnabled: !showLoading),
         ],
       ),
@@ -170,14 +169,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     );
   }
 
-  Widget _buildMessagesList(List<ChatMessage> messages, Map<String, dynamic>? profile) {
+  Widget _buildMessagesList(List<ChatMessage> messages, Map<String, dynamic>? profile, bool isTyping) {
+    final itemCount = messages.length + (isTyping ? 1 : 0);
     return ListView.builder(
       controller: _scrollController,
       reverse: true,
-      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 20, top: 16),
-      itemCount: messages.length,
+      // Reduced bottom padding to bring chat bubbles closer to the input bar
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 4, top: 16),
+      itemCount: itemCount,
       itemBuilder: (context, index) {
-        final message = messages[messages.length - 1 - index];
+        if (isTyping && index == 0) {
+          return _buildTypingIndicator();
+        }
+        final msgIndex = isTyping ? index - 1 : index;
+        final message = messages[messages.length - 1 - msgIndex];
         return _buildMessageBubble(message, profile);
       },
     );
@@ -202,7 +207,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -257,12 +262,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   Widget _buildTypingIndicator() {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 20),
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(color: AppTheme.primaryBlue, shape: BoxShape.circle),
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: AppTheme.primaryBlue,
             child: const Icon(Icons.auto_awesome, color: Colors.white, size: 16),
           ),
           const SizedBox(width: 12),
