@@ -55,6 +55,16 @@ class AdminRepository {
     }
   }
 
+  /// Update Patient Profile
+  Future<void> updatePatientProfile(int patientId, Map<String, dynamic> data) async {
+    try {
+      await _apiService.put('/admin/patients/$patientId', data);
+    } catch (e) {
+      print("AdminRepository Error updating patient profile: $e");
+      throw Exception('Failed to update patient profile: $e');
+    }
+  }
+
   /// Assign Clinician to Patient
   Future<void> assignClinicianToPatient(int patientId, int? clinicianId) async {
     try {

@@ -12,6 +12,9 @@ class AdminPatient {
   final String riskLevel;
   final String? lastRiskAssessment;
   final String? latestAlert;
+  final String? emergencyContactName;
+  final String? emergencyContactRelationship;
+  final String? emergencyContactPhone;
 
   const AdminPatient({
     required this.id,
@@ -24,6 +27,9 @@ class AdminPatient {
     required this.riskLevel,
     this.lastRiskAssessment,
     this.latestAlert,
+    this.emergencyContactName,
+    this.emergencyContactRelationship,
+    this.emergencyContactPhone,
   });
 
   bool get isHighRisk => riskLevel.toUpperCase() == 'HIGH';
@@ -48,6 +54,9 @@ class AdminPatient {
       riskLevel: json['Risk Level'] ?? 'LOW',
       lastRiskAssessment: json['Last Risk Assessment'],
       latestAlert: json['Latest Alert'],
+      emergencyContactName: json['Emergency Contact Name'],
+      emergencyContactRelationship: json['Emergency Contact Relationship'],
+      emergencyContactPhone: json['Emergency Contact Phone Number'],
     );
   }
 }

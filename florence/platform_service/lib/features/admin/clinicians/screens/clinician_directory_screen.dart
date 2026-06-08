@@ -205,38 +205,78 @@ class _ClinicianDirectoryScreenState extends ConsumerState<ClinicianDirectoryScr
   void _showEditDialog(AdminClinician c) {
     final nameCtrl = TextEditingController(text: c.name);
     final phoneCtrl = TextEditingController(text: c.phoneNumber ?? '');
+    String selectedGender = c.gender ?? 'Male';
+    int? selectedOrgId = c.organisationId;
     
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Clinician'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
-            TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number')),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              try {
-                await ref.read(adminRepositoryProvider).updateClinician(c.id, {
-                  'name': nameCtrl.text,
-                  'phone_number': phoneCtrl.text,
-                });
-                ref.invalidate(adminCliniciansProvider);
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clinician updated'), backgroundColor: AdminTheme.primary));
-              } catch (e) {
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
-      ),
+      builder: (ctx) {
+        return Consumer(
+          builder: (context, ref, child) {
+            final orgsAsync = ref.watch(adminOrganizationsProvider);
+            return StatefulBuilder(
+              builder: (ctx, setModalState) => AlertDialog(
+                title: const Text('Edit Clinician'),
+                content: SizedBox(
+                  width: 400,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
+                        const SizedBox(height: 12),
+                        TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number')),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : 'Male',
+                          decoration: const InputDecoration(labelText: 'Gender'),
+                          items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                          onChanged: (val) => setModalState(() => selectedGender = val!),
+                        ),
+                        const SizedBox(height: 12),
+                        orgsAsync.when(
+                          data: (orgs) => DropdownButtonFormField<int?>(
+                            value: selectedOrgId,
+                            decoration: const InputDecoration(labelText: 'Organisation'),
+                            items: [
+                              const DropdownMenuItem<int?>(value: null, child: Text('Unassigned')),
+                              ...orgs.map((o) => DropdownMenuItem<int?>(value: o.id, child: Text(o.name))),
+                            ],
+                            onChanged: (val) => setModalState(() => selectedOrgId = val),
+                          ),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (e, _) => const Text('Error loading organisations'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                  FilledButton(
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      try {
+                        await ref.read(adminRepositoryProvider).updateClinician(c.id, {
+                          'name': nameCtrl.text.trim(),
+                          'phone_number': phoneCtrl.text.trim(),
+                          'gender': selectedGender,
+                          'organisation_id': selectedOrgId,
+                        });
+                        ref.invalidate(adminCliniciansProvider);
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clinician updated'), backgroundColor: AdminTheme.primary));
+                      } catch (e) {
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
+                      }
+                    },
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

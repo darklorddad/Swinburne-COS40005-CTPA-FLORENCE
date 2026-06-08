@@ -19,12 +19,14 @@ class AdminPatientDetailScreen extends ConsumerStatefulWidget {
 class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScreen> {
   bool _isLoading = false;
   late String _currentRisk;
+  late AdminPatient _patient;
   final TextEditingController _clinicianIdController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _currentRisk = widget.patient.riskLevel.toUpperCase();
+    _patient = widget.patient;
+    _currentRisk = _patient.riskLevel.toUpperCase();
   }
 
   @override
@@ -276,7 +278,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.patient;
+    final p = _patient;
 
     return Scaffold(
       body: Row(
@@ -343,12 +345,28 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                 const SizedBox(height: 32),
                                 const Divider(height: 1, color: AdminTheme.outlineVariant),
                                 const SizedBox(height: 32),
-                                Text('General Information', style: Theme.of(context).textTheme.titleLarge),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('General Information', style: Theme.of(context).textTheme.titleLarge),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit_outlined, color: AdminTheme.primary),
+                                      tooltip: 'Edit Profile',
+                                      onPressed: () => _showEditPatientDialog(),
+                                    ),
+                                  ],
+                                ),
                                 const SizedBox(height: 16),
                                 _buildInfoRow(Icons.phone_outlined, 'Phone', p.phoneNumber ?? 'Not provided'),
                                 _buildInfoRow(Icons.cake_outlined, 'Date of Birth', p.dateOfBirth ?? 'Not provided'),
                                 _buildInfoRow(Icons.person_outline, 'Gender', p.gender ?? 'Not provided'),
-                                _buildInfoRow(Icons.business_outlined, 'Organization', p.organisationName ?? 'Florence Platform'),
+                                _buildInfoRow(Icons.business_outlined, 'Organisation', p.organisationName ?? 'Florence Platform'),
+                                const SizedBox(height: 24),
+                                Text('Emergency Contact', style: Theme.of(context).textTheme.titleMedium),
+                                const SizedBox(height: 16),
+                                _buildInfoRow(Icons.contact_phone_outlined, 'Name', p.emergencyContactName ?? 'Not provided'),
+                                _buildInfoRow(Icons.family_restroom_outlined, 'Relationship', p.emergencyContactRelationship ?? 'Not provided'),
+                                _buildInfoRow(Icons.phone_outlined, 'Phone', p.emergencyContactPhone ?? 'Not provided'),
                               ],
                             ),
                           ),
@@ -515,6 +533,103 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _showEditPatientDialog() async {
+    final nameCtrl = TextEditingController(text: _patient.name);
+    final phoneCtrl = TextEditingController(text: _patient.phoneNumber ?? '');
+    final dobCtrl = TextEditingController(text: _patient.dateOfBirth ?? '');
+    final ecNameCtrl = TextEditingController(text: _patient.emergencyContactName ?? '');
+    final ecRelCtrl = TextEditingController(text: _patient.emergencyContactRelationship ?? '');
+    final ecPhoneCtrl = TextEditingController(text: _patient.emergencyContactPhone ?? '');
+    String selectedGender = _patient.gender ?? 'Male';
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) => AlertDialog(
+          title: const Text('Edit Patient Profile'),
+          content: SizedBox(
+            width: 500,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Full Name')),
+                  const SizedBox(height: 12),
+                  TextField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone Number')),
+                  const SizedBox(height: 12),
+                  TextField(controller: dobCtrl, decoration: const InputDecoration(labelText: 'Date of Birth (YYYY-MM-DD)', hintText: '1990-01-01')),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: ['Male', 'Female', 'Other'].contains(selectedGender) ? selectedGender : 'Male',
+                    decoration: const InputDecoration(labelText: 'Gender'),
+                    items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                    onChanged: (val) => setModalState(() => selectedGender = val!),
+                  ),
+                  const Divider(height: 32),
+                  Text('Emergency Contact', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  TextField(controller: ecNameCtrl, decoration: const InputDecoration(labelText: 'Contact Name')),
+                  const SizedBox(height: 12),
+                  TextField(controller: ecRelCtrl, decoration: const InputDecoration(labelText: 'Relationship')),
+                  const SizedBox(height: 12),
+                  TextField(controller: ecPhoneCtrl, decoration: const InputDecoration(labelText: 'Contact Phone')),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                setState(() => _isLoading = true);
+                try {
+                  final payload = {
+                    'name': nameCtrl.text.trim(),
+                    'phone_number': phoneCtrl.text.trim(),
+                    'date_of_birth': dobCtrl.text.trim().isEmpty ? null : dobCtrl.text.trim(),
+                    'gender': selectedGender,
+                    'emergency_contact_name': ecNameCtrl.text.trim(),
+                    'emergency_contact_relationship': ecRelCtrl.text.trim(),
+                    'emergency_contact_phone': ecPhoneCtrl.text.trim(),
+                  };
+                  await ref.read(adminRepositoryProvider).updatePatientProfile(_patient.id, payload);
+                  ref.invalidate(adminPatientsProvider);
+                  
+                  setState(() {
+                    _patient = AdminPatient(
+                      id: _patient.id,
+                      name: payload['name'] as String,
+                      phoneNumber: payload['phone_number'] as String?,
+                      gender: payload['gender'] as String?,
+                      dateOfBirth: payload['date_of_birth'] as String?,
+                      organisationName: _patient.organisationName,
+                      clinicianName: _patient.clinicianName,
+                      riskLevel: _patient.riskLevel,
+                      lastRiskAssessment: _patient.lastRiskAssessment,
+                      latestAlert: _patient.latestAlert,
+                      emergencyContactName: payload['emergency_contact_name'] as String?,
+                      emergencyContactRelationship: payload['emergency_contact_relationship'] as String?,
+                      emergencyContactPhone: payload['emergency_contact_phone'] as String?,
+                    );
+                  });
+
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Patient profile updated'), backgroundColor: AdminTheme.primary));
+                } catch (e) {
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
+                } finally {
+                  if (mounted) setState(() => _isLoading = false);
+                }
+              },
+              child: const Text('Save Changes'),
+            ),
+          ],
+        ),
       ),
     );
   }
