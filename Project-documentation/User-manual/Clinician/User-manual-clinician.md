@@ -108,10 +108,7 @@ Clicking on the **Cholesterol** summary card in the **Historical Data** tab open
 ### 4.6 Physical Activity Analytics Screen
 Clicking on the **Physical Activity** summary card in the **Historical Data** tab opens the dedicated Physical Activity Analytics Screen.
 
-#### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Today's Movement Active Minutes Display** (showing active minutes and sessions).
-*   **[Box 2]** Around the **Activity Streak Heatmap Grid** (showing a 28-day view of activity).
-*   **[Box 3]** Around the **Weekly Consistency Bar Chart** (showing steps vs target).
+![alt text](image-15.png)
 
 #### **Key Features:**
 1.  **Today's Movement [Box 1]**: Displays the patient's active minutes and sessions for today.
