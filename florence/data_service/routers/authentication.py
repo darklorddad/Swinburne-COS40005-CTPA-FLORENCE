@@ -88,8 +88,13 @@ async def register_user(user_data: UserRegistration):
             new_user.id, {"app_metadata": {"role": user_data.role}}
         )
 
-    except AuthApiError as e:
-        raise HTTPException(status_code=400, detail=f"User registration failed: {e.message}")
+    except Exception as e:
+        # Catching generic Exception because supabase-py sometimes raises gotrue.errors.AuthApiError 
+        # which doesn't always match the imported supabase_auth.errors.AuthApiError.
+        error_msg = str(e).lower()
+        if "already registered" in error_msg or "already been registered" in error_msg or "already exists" in error_msg:
+            raise HTTPException(status_code=400, detail="An account with this email already exists.")
+        raise HTTPException(status_code=400, detail=f"User registration failed: {str(e)}")
     
     try:
         if user_data.role == 'PATIENT':
