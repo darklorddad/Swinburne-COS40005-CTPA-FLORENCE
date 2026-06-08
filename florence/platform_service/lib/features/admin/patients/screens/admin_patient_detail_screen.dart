@@ -130,7 +130,9 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
           );
           // Update local risk level text to match backend changes
           setState(() {
-            _currentRisk = (selectedScenario.contains('Rollercoaster') || selectedScenario.contains('Erratic')) ? 'HIGH' : 'LOW';
+            _currentRisk = (selectedScenario.toLowerCase().contains('rollercoaster') || 
+                            selectedScenario.toLowerCase().contains('erratic') || 
+                            selectedScenario.toLowerCase().contains('high-carb')) ? 'HIGH' : 'LOW';
           });
         }
       } catch (e) {
