@@ -207,7 +207,7 @@ To view your account details, update your personal information, or modify your u
 Please capture a screenshot of the **Clinician Profile** screen and overlay **four red highlight boxes**, numbered as follows:
 *   **[Box 1]** Around the **Account Information Card** (containing your name, gender, and mobile number) with the **Edit Profile** button.
 *   **[Box 2]** Around the **Unit Preferences Card** (containing Glucose Unit and Cholesterol Unit selectors).
-*   **[Box 3]** Around the **System Information Card** (containing your email and Organisation ID).
+*   **[Box 3]** Around the **System Information Card** (containing your email) and the **Organisation Information Card** (containing uneditable organisation details: name, email, and phone number).
 *   **[Box 4]** Around the **Logout Button** at the bottom.
 
 ---
@@ -235,11 +235,11 @@ This card controls how clinical metrics are displayed to you throughout the enti
     2.  Tap the **Cholesterol Unit** row to open a bottom sheet selector. Choose between **mmol/L** and **mg/dL**.
     3.  The platform instantly recalculates and updates all charts, tables, and status cards across the app. The preferences are saved to your profile via the REST API and persist across logins.
 
-##### **3. System Information Card [Box 3]**
-This card displays your immutable system credentials and organisational context.
-*   **What it is**: A read-only card displaying your registered **Email Address** and **Organisation ID**.
-*   **What it does**: Provides essential system context. The **Email Address** is your unique login identifier, and the **Organisation ID** links your account to your specific healthcare facility, determining which patients and priority alerts you have permission to access.
-*   **How to use it**: This card is strictly read-only for security and audit purposes. If your email or organisation assignment needs to be changed, please contact your system administrator.
+##### **3. System Information & Organisation Information Cards [Box 3]**
+These cards display your immutable system credentials and detailed organisational context.
+*   **What they are**: Two read-only cards. The **System Information Card** displays your registered **Email Address**. The **Organisation Information Card** displays your assigned facility's **Organisation Name**, **Organisation Email**, and **Organisation Phone Number**.
+*   **What they do**: Provide essential system and facility context. Your email is your unique login identifier, while the organisation details link your account to your specific healthcare facility, determining which patients, priority alerts, and facility contact channels you have permission to access.
+*   **How to use them**: These sections are strictly read-only for security, compliance, and audit purposes. If your email or organisation assignment needs to be changed, please contact your system administrator.
 
 ##### **4. Logout Button [Box 4]**
 This button allows you to securely terminate your active session.
