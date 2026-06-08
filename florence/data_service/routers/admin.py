@@ -218,19 +218,25 @@ async def delete_patient_by_admin(patient_id: int):
 async def wipe_patient_data(patient_id: int):
     """Deletes all health logs, activity, and monitor data for a patient but keeps their profile and Auth user."""
     try:
-        # Daily Living & AI Data
+        # 1. Wipe all relational health tables
         supabase.table('patient_monitor_data').delete().eq('patient_id', patient_id).execute()
         supabase.table('daily_patient_logs').delete().eq('patient_id', patient_id).execute()
         supabase.table('patient_activity_logs').delete().eq('patient_id', patient_id).execute()
         supabase.table('patient_recommendations').delete().eq('patient_id', patient_id).execute()
         supabase.table('patient_chat_history').delete().eq('patient_id', patient_id).execute()
         supabase.table('clinical_documents').delete().eq('patient_id', patient_id).execute()
-        
-        # CRITICAL: Wipe medication adherence logs before wiping the cabinet (if you ever decide to wipe the cabinet)
         supabase.table('medication_intake_logs').delete().eq('patient_id', patient_id).execute()
         
-        # Note: We leave disease logs, patient_medications (the cabinet), and clinician notes intact as they are part of the medical profile.
-        return {"message": "Patient health data wiped successfully"}
+        # 2. Wipe dynamic AI/Risk state & Weight on the profile (Reset to defaults)
+        supabase.table('patient_profiles').update({
+            "risk_level": "LOW",
+            "last_risk_assessment": None,
+            "risk_rationale": None,
+            "daily_insight": None,
+            "weight": None 
+        }).eq('id', patient_id).execute()
+        
+        return {"message": "Patient health data and AI state wiped successfully. Account and demographics kept."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -349,12 +355,31 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             if intake_logs:
                 supabase.table('medication_intake_logs').insert(intake_logs).execute()
 
-        # Update Risk Level based on scenario
-        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower()
-        supabase.table('patient_profiles').update({
+        # Update Profile / Risk Level based on scenario
+        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower() or "high-carb" in req.scenario.lower()
+        
+        # If generating a brand new patient, map the LLM profile data
+        profile_update = {
             "risk_level": "HIGH" if is_high_risk else "LOW",
             "last_risk_assessment": now_utc.isoformat()
-        }).eq('id', patient_id).execute()
+        }
+        if 'profile' in sim_data:
+            p = sim_data['profile']
+            profile_update.update({
+                "name": p.get('name', req.name if hasattr(req, 'name') else 'Patient'),
+                "phone_number": p.get('phone_number'),
+                "gender": p.get('gender'),
+                "date_of_birth": p.get('date_of_birth'),
+                "height": p.get('height'),
+                "weight": p.get('weight'),
+                "emergency_contact_name": p.get('emergency_contact_name'),
+                "emergency_contact_relationship": p.get('emergency_contact_relationship'),
+                "emergency_contact_phone": p.get('emergency_contact_phone'),
+                "risk_rationale": p.get('risk_rationale'),
+                "daily_insight": p.get('daily_insight')
+            })
+
+        supabase.table('patient_profiles').update(profile_update).eq('id', patient_id).execute()
 
         return {"message": "Data generated successfully"}
     except Exception as e:
@@ -383,7 +408,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
             "email": req.email,
             "password": req.password,
             "email_confirm": True,
-            "user_metadata": {"name": req.name},
+            "user_metadata": {"name": sim_data['profile']['name']},
             "app_metadata": {"role": "PATIENT"}
         })
         user_id = auth_res.user.id
@@ -391,12 +416,29 @@ async def generate_synthetic_patient(req: SimulatorRequest):
         raise HTTPException(status_code=400, detail=f"Auth creation failed (Does email exist?): {str(e)}")
 
     try:
+        # 1. Timezone Anchoring (Prevents Future-Dating)
+        now_utc = datetime.now(timezone.utc)
+        tz_offset = req.timezone_offset
+        local_now = now_utc + timedelta(hours=tz_offset)
+
         # 3. Create Patient Profile
-        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower()
+        profile_data = sim_data['profile']
+        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower() or "high-carb" in req.scenario.lower()
         profile_res = supabase.table('patient_profiles').insert({
             "user_id": user_id,
-            "name": req.name,
-            "risk_level": "HIGH" if is_high_risk else "LOW"
+            "name": profile_data['name'],
+            "phone_number": profile_data['phone_number'],
+            "gender": profile_data['gender'],
+            "date_of_birth": profile_data['date_of_birth'],
+            "height": profile_data['height'],
+            "weight": profile_data['weight'],
+            "emergency_contact_name": profile_data['emergency_contact_name'],
+            "emergency_contact_relationship": profile_data['emergency_contact_relationship'],
+            "emergency_contact_phone": profile_data['emergency_contact_phone'],
+            "risk_level": "HIGH" if is_high_risk else "LOW",
+            "last_risk_assessment": now_utc.isoformat(),
+            "risk_rationale": profile_data['risk_rationale'],
+            "daily_insight": profile_data['daily_insight']
         }).execute()
         patient_id = profile_res.data[0]['id']
 
@@ -404,11 +446,6 @@ async def generate_synthetic_patient(req: SimulatorRequest):
         supabase.table('user_settings').upsert({"user_id": user_id, "glucose_unit": "mmol/L", "cholesterol_unit": "mmol/L"}).execute()
         thresholds = [{**t, 'patient_id': patient_id} for t in DEFAULT_THRESHOLDS]
         supabase.table('patient_thresholds').insert(thresholds).execute()
-
-        # 1. Timezone Anchoring (Prevents Future-Dating)
-        now_utc = datetime.now(timezone.utc)
-        tz_offset = req.timezone_offset
-        local_now = now_utc + timedelta(hours=tz_offset)
 
         monitor_data = []
         daily_logs = []
@@ -502,13 +539,6 @@ async def generate_synthetic_patient(req: SimulatorRequest):
                 })
             if intake_logs:
                 supabase.table('medication_intake_logs').insert(intake_logs).execute()
-
-        # Update Risk Level based on scenario
-        is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower()
-        supabase.table('patient_profiles').update({
-            "risk_level": "HIGH" if is_high_risk else "LOW",
-            "last_risk_assessment": now_utc.isoformat()
-        }).eq('id', patient_id).execute()
 
         return {"message": "Synthetic patient generated successfully", "patient_id": patient_id}
         
