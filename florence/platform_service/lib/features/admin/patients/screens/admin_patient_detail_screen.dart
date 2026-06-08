@@ -610,6 +610,8 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             FilledButton(
               onPressed: () async {
+                // Capture the organisations list before popping the dialog to prevent auto-dispose issues
+                final orgs = ref.read(adminOrganizationsProvider).value ?? [];
                 Navigator.pop(ctx);
                 setState(() => _isLoading = true);
                 try {
@@ -635,8 +637,8 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                       dateOfBirth: payload['date_of_birth'] as String?,
                       organisationId: selectedOrgId,
                       organisationName: selectedOrgId != null 
-                          ? (ref.read(adminOrganizationsProvider).value?.any((o) => o.id == selectedOrgId) == true 
-                              ? ref.read(adminOrganizationsProvider).value!.firstWhere((o) => o.id == selectedOrgId).name 
+                          ? (orgs.any((o) => o.id == selectedOrgId) 
+                              ? orgs.firstWhere((o) => o.id == selectedOrgId).name 
                               : 'Unknown') 
                           : 'Unassigned',
                       clinicianName: _patient.clinicianName,
