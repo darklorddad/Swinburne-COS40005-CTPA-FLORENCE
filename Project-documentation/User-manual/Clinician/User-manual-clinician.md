@@ -138,17 +138,50 @@ Clicking on the **Diet Log** summary card in the **Historical Data** tab opens t
 ## 5. Taking Clinical Action
 
 ### 5.1 Managing Medical Conditions & Medications
-Navigate to the **Medical Profile** tab to manage the patient's clinical background and active prescriptions.
+Navigate to the **Medical Profile** tab to manage the patient's clinical background, target thresholds, and active prescriptions. This tab serves as the clinical core for personalising patient care.
 
-#### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Medical Conditions Card** (highlighting the "Add New Condition" button and the Active/Resolved/All filters).
-*   **[Box 2]** Around the **Health Thresholds Card** (highlighting the "Edit" button).
-*   **[Box 3]** Around the **Current Medications Card** (highlighting the "Add New Medication" button).
+#### **Image Highlight Instructions:**
+Please capture a screenshot of the **Medical Profile** tab and overlay **three red highlight boxes**, numbered as follows:
+*   **[Box 1]** Around the **Medical Conditions Card** (specifically highlighting the **Add New Condition** plus icon button and the **Active/Resolved/All** segmented filter bar).
+*   **[Box 2]** Around the **Health Thresholds Card** (specifically highlighting the **Edit** pencil icon button in the top-right corner of the card).
+*   **[Box 3]** Around the **Current Medications Card** (specifically highlighting the **Add New Medication** plus icon button).
 
-#### **Clinical Actions:**
-*   **Add/Edit Conditions [Box 1]**: Tap the add icon to record a new diagnosis. Use the popup menu on existing conditions to mark them as resolved or edit details.
-*   **Customise Thresholds [Box 2]**: Tap the edit icon to adjust the patient's personalised target ranges. These values are used by the Dynamic Risk Engine to calculate risk levels.
-*   **Prescribe Medications [Box 3]**: Tap the add icon to open the medication form. Search the global dictionary, set the dosage, frequency, and specific timing instructions (e.g., "BEFORE_BREAKFAST").
+---
+
+#### **Detailed Button Functions & Clinical Workflows:**
+
+##### **1. Medical Conditions Card [Box 1]**
+This card displays the patient's active and resolved diagnoses.
+*   **Add New Condition Button (Plus Icon)**: Tap this button to open the **Add Medical Condition** dialog.
+    *   *Condition Name*: Enter the diagnosis (e.g., "Type 2 Diabetes", "Hypertension").
+    *   *Status Context Dropdown*: Select **Active** (for ongoing management) or **Resolved** (for historical context).
+    *   *Diagnosed Date*: Tap to open a calendar date picker to log the exact onset date.
+    *   *Add Entry Button*: Submits the record to the backend, immediately updating the patient's clinical profile.
+*   **Active / Resolved / All Segmented Filter**: Tap these segments to instantly filter the list. This helps you quickly isolate active issues during a consultation without being distracted by resolved history.
+*   **More Options Button (Three-Dot Icon)**: Located next to each condition. Tap this to open a context menu:
+    *   *Mark as Resolved / Active*: Instantly toggles the condition's status and moves it to the appropriate filtered list.
+    *   *Edit Details*: Re-opens the dialog to correct names or onset dates.
+    *   *Remove*: Permanently deletes the condition from the patient's record after a confirmation prompt.
+
+##### **2. Health Thresholds Card [Box 2]**
+This card displays the patient's personalised target ranges for vitals (Glucose, Blood Pressure, HbA1c, Cholesterol, and BMI). These thresholds are critical because the **Dynamic Risk Engine** uses them to calculate the patient's risk level and float them to the top of the home screen queue.
+*   **Edit Button (Pencil Icon)**: Tap this to open the **Health Thresholds** management dialog.
+    *   *Threshold List*: Displays all vitals with their current min/max values.
+    *   *Edit Single Threshold (Pencil Icon)*: Tap the edit icon next to any vital (e.g., Glucose) to open the **Edit Threshold** dialog.
+    *   *Minimum / Maximum Value Fields*: Enter the new clinical targets. The units automatically match your preferred clinician settings (e.g., mmol/L or mg/dL).
+    *   *Save Button*: Securely updates the targets via the REST API. The patient's app and the risk engine sync instantly.
+
+##### **3. Current Medications Card [Box 3]**
+This card displays the patient's active prescriptions and schedule.
+*   **Add New Medication Button (Plus Icon)**: Tap this to open the comprehensive **Add Medication** form.
+    *   *Medication Name (Smart Autocomplete)*: Start typing a brand or generic name. The field queries the global medication dictionary in real-time to prevent spelling errors and ensure clinical accuracy. You can also type a custom name if it is not in the dictionary.
+    *   *Amount & Type*: Enter the dosage quantity (e.g., "1", "500") and select the form (e.g., "Tablet", "Capsule", "Injection", "ml").
+    *   *Frequency Dropdown*: Select how often the medication should be taken (e.g., "Twice daily", "Three times daily").
+    *   *Specific Timings (Dynamic Fields)*: The form dynamically generates dropdown fields based on your selected frequency (e.g., showing "1st Dose" and "2nd Dose" for twice-daily frequency). Select precise clinical instructions for each dose (e.g., "BEFORE_BREAKFAST", "AFTER_DINNER", "BEFORE_BED").
+    *   *Add Medication Button*: Saves the prescription. This automatically generates a daily logging schedule in the patient's mobile app.
+*   **More Options Button (Three-Dot Icon)**: Located next to each medication. Tap this to:
+    *   *Edit Details*: Modify dosage, frequency, or timing instructions.
+    *   *Remove*: Discontinue and delete the medication from the patient's active schedule.
 
 ---
 
