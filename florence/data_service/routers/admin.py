@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from enum import Enum
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from client import supabase
 from routers.authentication import get_current_admin_user
@@ -42,10 +42,12 @@ class SimulatorRequest(BaseModel):
     name: str
     scenario: str
     days: int = 180
+    timezone_offset: int = 0
 
 class GenerateDataRequest(BaseModel):
     scenario: str
     days: int = 180
+    timezone_offset: int = 0
 
 DEFAULT_THRESHOLDS = [
     {"data_type": "GLUCOSE", "min_value": 3.9, "max_value": 10.0},
@@ -249,11 +251,9 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             raise HTTPException(status_code=500, detail=f"LLM Engine failed: {str(e)}")
     
     try:
-        from datetime import timezone
-        
         # 1. Timezone Anchoring (Prevents Future-Dating)
         now_utc = datetime.now(timezone.utc)
-        tz_offset = 8  # Default to Malaysia (UTC+8)
+        tz_offset = req.timezone_offset
         local_now = now_utc + timedelta(hours=tz_offset)
 
         monitor_data = []
@@ -405,11 +405,9 @@ async def generate_synthetic_patient(req: SimulatorRequest):
         thresholds = [{**t, 'patient_id': patient_id} for t in DEFAULT_THRESHOLDS]
         supabase.table('patient_thresholds').insert(thresholds).execute()
 
-        from datetime import timezone
-        
         # 1. Timezone Anchoring (Prevents Future-Dating)
         now_utc = datetime.now(timezone.utc)
-        tz_offset = 8  # Default to Malaysia (UTC+8)
+        tz_offset = req.timezone_offset
         local_now = now_utc + timedelta(hours=tz_offset)
 
         monitor_data = []
