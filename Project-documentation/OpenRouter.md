@@ -1,4 +1,4 @@
-# 05_OPENROUTER.md
+# 05 OPENROUTER
 
 ## 1. Overview and Purpose
 OpenRouter serves as the unified API gateway and routing layer for all Large Language Model interactions within the Florence platform. Instead of hardcoding specific AI provider APIs the backend microservices utilise OpenRouter to dynamically route requests to various foundation models. This ensures high availability, automatic failover and simplified billing.

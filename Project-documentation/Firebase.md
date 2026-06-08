@@ -1,4 +1,4 @@
-# 07_FIREBASE_APP_DISTRIBUTION.md
+# 07 FIREBASE APP DISTRIBUTION
 
 ## 1. Overview and Purpose
 Firebase App Distribution serves as the primary platform for distributing pre-release Android application builds to beta testers and the client. It allows the development team to gather feedback and conduct User Acceptance Testing before any potential public release on the Google Play Store.
