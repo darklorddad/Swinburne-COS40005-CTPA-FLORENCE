@@ -1,4 +1,4 @@
-# 03_SUPABASE.md
+# 03 SUPABASE
 
 ## 1. Overview and Purpose
 Supabase serves as the foundational Backend-as-a-Service (BaaS) for the Florence platform. It provides the core PostgreSQL database, user authentication via GoTrue and file storage. A critical feature utilised in this project is PostgreSQL Row Level Security (RLS) which ensures strict data segregation between patients, clinicians and administrators at the database level.

@@ -1,4 +1,4 @@
-# FLORENCE Clinician Dashboard — User Manual
+# FLORENCE: Clinician Dashboard — User Manual
 
 ## 1. Introduction
 The FLORENCE Clinician Dashboard is built for speed and secured for healthcare. It provides medical professionals with a streamlined, high-priority command centre that turns scattered patient logs into actionable clinical insights. The goal: Less noise. More signal.

@@ -1,4 +1,4 @@
-# 04_VERCEL.md
+# 04 VERCEL
 
 ## 1. Overview and Purpose
 Vercel serves as the primary hosting and continuous deployment platform for the Florence backend microservices and the Flutter web dashboard. It provides serverless function hosting for the Python FastAPI applications and static hosting for the compiled Flutter web output. The monorepo structure is managed via Vercel's Root Directory configuration which allows independent and automated deployments for each isolated service.

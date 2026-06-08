@@ -1,4 +1,4 @@
-# 01_GITHUB_AND_SOURCE_CONTROL.md
+# 01 GITHUB AND SOURCE CONTROL
 
 ## 1. Overview & Purpose
 *   **Repository Name:** `Swinburne-COS40005-CTPA-FLORENCE`

@@ -2,7 +2,7 @@ Here is the professional Markdown draft for **Document 6**, focusing on your Sho
 
 ***
 
-# 06_SHOREBIRD.md
+# 06 SHOREBIRD
 
 ## 1. Overview and Purpose
 Shorebird provides Over-The-Air (OTA) update capabilities for the Florence Flutter application. It allows the development team to push critical bug fixes, UI tweaks and performance improvements directly to user devices without requiring a full release through the Google Play Store or Apple App Store review processes.
