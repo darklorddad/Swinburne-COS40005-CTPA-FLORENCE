@@ -171,7 +171,7 @@ async def get_all_patients():
 @router.put("/patients/{patient_id}", summary="Edit any patient (including risk level)")
 async def update_patient_by_admin(patient_id: int, update_data: PatientProfileAdminUpdate):
     """Updates any patient's profile. Can be used to change risk level or other details."""
-    update_dict = update_data.model_dump(exclude_unset=True)
+    update_dict = update_data.model_dump(mode='json', exclude_unset=True)
     if not update_dict:
         raise HTTPException(status_code=400, detail="No update data provided.")
 
