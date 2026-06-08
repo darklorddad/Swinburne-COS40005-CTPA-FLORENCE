@@ -12,7 +12,8 @@ class LLMFactory:
     def create(
         temperature: float = None, 
         model: str = None,
-        max_tokens: int = None
+        max_tokens: int = None,
+        timeout: int = 30
     ) -> ChatOpenAI:
         
         # Priority: Argument -> Env Var -> None (Provider Default)
@@ -26,6 +27,6 @@ class LLMFactory:
             model=final_model,
             temperature=final_temp,
             max_tokens=final_tokens,
-            timeout=30, 
+            timeout=timeout, 
             max_retries=1,
         )

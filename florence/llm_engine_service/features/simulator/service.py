@@ -4,8 +4,8 @@ from .models import SimulatedMonth, SimulatorRequest
 
 class SimulatorService:
     def __init__(self):
-        # Increased token limit as we are generating a massive 30-day JSON block
-        self.llm = LLMFactory.create(temperature=0.7, max_tokens=16000).with_structured_output(SimulatedMonth)
+        # Increased token limit and timeout as we are generating a massive JSON block
+        self.llm = LLMFactory.create(temperature=0.7, max_tokens=16000, timeout=120).with_structured_output(SimulatedMonth)
 
     async def generate_patient_data(self, request: SimulatorRequest) -> SimulatedMonth:
         prompt = f"""
