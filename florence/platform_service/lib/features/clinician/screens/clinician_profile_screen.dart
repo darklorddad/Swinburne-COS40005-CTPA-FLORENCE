@@ -106,6 +106,9 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
           phoneNumber: _mobileController.text,
           gender: _selectedGender ?? '',
           organisationId: _clinician!.organisationId,
+          organisationName: _clinician!.organisationName,
+          organisationEmail: _clinician!.organisationEmail,
+          organisationPhone: _clinician!.organisationPhone,
         );
 
         await _dataService.updateClinicianProfile(updatedClinician);
@@ -281,7 +284,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
+                        _clinician?.organisationName ?? 'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -531,16 +534,61 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Organisation Information Section
+              const Text(
+                'Organisation Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Organisation Name (Read-only)
+                      TextFormField(
+                        initialValue: _clinician?.organisationName ?? 'Not Set',
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Organisation Name',
+                          prefixIcon: Icon(Icons.business_outlined),
+                        ),
+                      ),
 
                       const SizedBox(height: 20),
 
-                      // Organisation ID (Read-only)
+                      // Organisation Email (Read-only)
                       TextFormField(
-                        initialValue: _clinician?.organisationId.toString(),
+                        initialValue: _clinician?.organisationEmail ?? 'Not Set',
                         enabled: false,
                         decoration: const InputDecoration(
-                          labelText: 'Organisation ID',
-                          prefixIcon: Icon(Icons.business_outlined),
+                          labelText: 'Organisation Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Organisation Phone (Read-only)
+                      TextFormField(
+                        initialValue: _clinician?.organisationPhone ?? 'Not Set',
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Organisation Phone Number',
+                          prefixIcon: Icon(Icons.phone_outlined),
                         ),
                       ),
                     ],
