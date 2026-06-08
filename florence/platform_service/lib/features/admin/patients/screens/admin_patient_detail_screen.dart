@@ -360,7 +360,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                 _buildInfoRow(Icons.phone_outlined, 'Phone', p.phoneNumber ?? 'Not provided'),
                                 _buildInfoRow(Icons.cake_outlined, 'Date of Birth', p.dateOfBirth ?? 'Not provided'),
                                 _buildInfoRow(Icons.person_outline, 'Gender', p.gender ?? 'Not provided'),
-                                _buildInfoRow(Icons.business_outlined, 'Organisation', p.organisationName ?? 'Florence Platform'),
+                                _buildInfoRow(Icons.business_outlined, 'Organisation', p.organisationName ?? 'Unassigned'),
                                 const SizedBox(height: 32),
                                 Text('Emergency Contact', style: Theme.of(context).textTheme.titleLarge),
                                 const SizedBox(height: 16),
@@ -547,9 +547,6 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
     final ecPhoneCtrl = TextEditingController(text: _patient.emergencyContactPhone ?? '');
     String selectedGender = _patient.gender ?? 'Male';
     int? selectedOrgId = _patient.organisationId;
-    
-    final orgsAsync = ref.read(adminOrganizationsProvider);
-    final orgs = orgsAsync.value ?? [];
 
     await showDialog(
       context: context,
@@ -576,14 +573,26 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                     onChanged: (val) => setModalState(() => selectedGender = val!),
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<int?>(
-                    value: selectedOrgId,
-                    decoration: const InputDecoration(labelText: 'Organisation'),
-                    items: [
-                      const DropdownMenuItem<int?>(value: null, child: Text('Unassigned')),
-                      ...orgs.map((o) => DropdownMenuItem<int?>(value: o.id, child: Text(o.name))),
-                    ],
-                    onChanged: (val) => setModalState(() => selectedOrgId = val),
+                  Consumer(
+                    builder: (context, ref, child) {
+                      final orgsAsync = ref.watch(adminOrganizationsProvider);
+                      return orgsAsync.when(
+                        data: (orgs) => DropdownButtonFormField<int?>(
+                          value: selectedOrgId,
+                          decoration: const InputDecoration(labelText: 'Organisation'),
+                          items: [
+                            const DropdownMenuItem<int?>(value: null, child: Text('Unassigned')),
+                            ...orgs.map((o) => DropdownMenuItem<int?>(value: o.id, child: Text(o.name))),
+                          ],
+                          onChanged: (val) => setModalState(() => selectedOrgId = val),
+                        ),
+                        loading: () => const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        error: (e, _) => const Text('Error loading organisations', style: TextStyle(color: Colors.red)),
+                      );
+                    },
                   ),
                   const Divider(height: 32),
                   Text('Emergency Contact', style: Theme.of(context).textTheme.titleLarge),
@@ -626,7 +635,9 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                       dateOfBirth: payload['date_of_birth'] as String?,
                       organisationId: selectedOrgId,
                       organisationName: selectedOrgId != null 
-                          ? (orgs.where((o) => o.id == selectedOrgId).firstOrNull?.name ?? 'Unknown') 
+                          ? (ref.read(adminOrganizationsProvider).value?.any((o) => o.id == selectedOrgId) == true 
+                              ? ref.read(adminOrganizationsProvider).value!.firstWhere((o) => o.id == selectedOrgId).name 
+                              : 'Unknown') 
                           : 'Unassigned',
                       clinicianName: _patient.clinicianName,
                       riskLevel: _patient.riskLevel,

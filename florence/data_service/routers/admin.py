@@ -95,7 +95,7 @@ async def get_all_patients():
         patients_response = supabase.table('patient_profiles').select(
             "id, name, phone_number, gender, date_of_birth, "
             "emergency_contact_name, emergency_contact_relationship, emergency_contact_phone, "
-            "risk_level, last_risk_assessment, "
+            "risk_level, last_risk_assessment, organisation_id, "
             "organisations(name), "
             "clinician_profiles(name)"
         ).execute()
