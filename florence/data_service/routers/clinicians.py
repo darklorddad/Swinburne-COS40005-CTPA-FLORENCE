@@ -27,12 +27,13 @@ async def get_current_clinician_profile(authorization: str = Header(...)):
         
         # Fetch the clinician profile using the user's ID. This serves as the role check.
         # We avoid .single() to handle "0 rows" or "multiple rows" manually and safely.
-        profile_response = supabase.table('clinician_profiles').select('*').eq('user_id', user.id).execute()
+        # We also fetch the related organisation details (name, email, phone_number).
+        profile_response = supabase.table('clinician_profiles').select('*, organisation:organisations(name, email, phone_number)').eq('user_id', user.id).execute()
         
         if not profile_response.data:
             # Retry once to handle potential race conditions
             await asyncio.sleep(0.1)
-            profile_response = supabase.table('clinician_profiles').select('*').eq('user_id', user.id).execute()
+            profile_response = supabase.table('clinician_profiles').select('*, organisation:organisations(name, email, phone_number)').eq('user_id', user.id).execute()
 
             if not profile_response.data:
                 raise HTTPException(status_code=403, detail="Access denied: User is not a clinician.")
