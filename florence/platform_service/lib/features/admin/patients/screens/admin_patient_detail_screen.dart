@@ -549,7 +549,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
     int? selectedOrgId = _patient.organisationId;
     
     final orgsAsync = ref.read(adminOrganizationsProvider);
-    final orgs = orgsAsync.valueOrNull ?? [];
+    final orgs = orgsAsync.value ?? [];
 
     await showDialog(
       context: context,
