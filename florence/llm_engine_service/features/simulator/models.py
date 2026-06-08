@@ -20,14 +20,18 @@ class SimulatedDay(BaseModel):
     systolic_bp: int
     diastolic_bp: int
 
+class HistoricalReading(BaseModel):
+    day_offset: int = Field(description="Days ago (e.g., 0 for today, 90 for 90 days ago)")
+    value: float
+
 class SimulatedMonth(BaseModel):
     days: List[SimulatedDay]
-    hba1c: float = Field(description="HbA1c percentage (e.g. 6.5)")
-    cholesterol_total: float = Field(description="Total cholesterol in mmol/L")
-    cholesterol_ldl: float = Field(description="LDL in mmol/L")
-    cholesterol_hdl: float = Field(description="HDL in mmol/L")
-    cholesterol_triglycerides: float = Field(description="Triglycerides in mmol/L")
-    bmi: float
+    hba1c_readings: List[HistoricalReading] = Field(description="HbA1c % over time. Generate exactly 2 readings spaced 90 days apart (e.g. day 0 and day 90).")
+    cholesterol_total_readings: List[HistoricalReading] = Field(description="Total cholesterol over time. Generate exactly 1 reading at day 0.")
+    cholesterol_ldl_readings: List[HistoricalReading] = Field(description="LDL over time. Generate exactly 1 reading at day 0.")
+    cholesterol_hdl_readings: List[HistoricalReading] = Field(description="HDL over time. Generate exactly 1 reading at day 0.")
+    cholesterol_triglycerides_readings: List[HistoricalReading] = Field(description="Triglycerides over time. Generate exactly 1 reading at day 0.")
+    bmi_readings: List[HistoricalReading] = Field(description="BMI over time. Generate 1 reading every 30 days (e.g. day 0, 30, 60...).")
 
 class SimulatorRequest(BaseModel):
     scenario: str
