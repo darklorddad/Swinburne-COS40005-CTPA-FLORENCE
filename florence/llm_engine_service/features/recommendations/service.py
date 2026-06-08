@@ -162,6 +162,10 @@ class RecommendationService:
             sign = "+" if request.timezone_offset >= 0 else ""
             tz_info = f"\nNote: All data timestamps are in UTC. The patient's local time zone is UTC{sign}{request.timezone_offset}. Adjust all timestamps to their local time before evaluating morning/night patterns."
 
+        latest_glucose_text = "Not recorded"
+        if s.recent_glucose_readings and len(s.recent_glucose_readings) > 0:
+            latest_glucose_text = f"{s.recent_glucose_readings[0].get('value')} {g_unit}"
+
         human_content = f"""Please generate health recommendations for a patient with the following {request.analysis_period_days}-day health summary.{quantity_rule}
 11. If medication adherence is below 100%, strongly consider generating a medication-focused recommendation to encourage consistency.
 
@@ -175,6 +179,7 @@ class RecommendationService:
 - Triglycerides Target: {trig_target}
 
 Patient Health Summary ({request.analysis_period_days}-day period):
+- Latest Blood Glucose: {latest_glucose_text}
 - Average Blood Glucose: {s.average_glucose:.1f} {g_unit}
 - Glucose Variability (Std Dev): {s.glucose_std_dev:.1f} {g_unit}
 - Hyperglycaemia Events: {s.hyper_events}
@@ -240,7 +245,7 @@ You are a guidance tool, not a doctor. You may provide lifestyle, dietary, timin
 ## Output Rules
 1. risk_level MUST be exactly "LOW", "MEDIUM", or "HIGH".
 2. risk_rationale: 1-2 sentence clinical summary of the risk level written FOR THE CLINICIAN. Use third-person objective language (e.g., "The patient's glucose..."). NEVER use "you" or "your".
-3. daily_insight: Write a 1-2 sentence encouraging summary for the PATIENT'S dashboard. Speak directly to the patient ("Your..."). It MUST highlight their current readings and briefly summarize the tactical recommendations you just generated. Never alarm the patient.
+3. daily_insight: Write a 1-2 sentence encouraging summary for the PATIENT'S dashboard. Speak directly to the patient ("Your..."). It MUST highlight their LATEST readings (do not quote the average as their current reading) and briefly summarize the tactical recommendations you just generated. Never alarm the patient.
 4. recommendations: Generate as many tactical daily recommendations as needed. If everything is perfectly on track, return an empty list [].
 5. Never recommend medication dose changes. NEVER hallucinate or change units.
 6. In triggering_data, cite specific readings. The `description` MUST be a natural sentence (e.g., "Post-lunch reading missing on Jan 15"). NEVER output raw code variables like "glucose_after" or "None". If missing, write "Not recorded" as the `value`.
@@ -271,7 +276,12 @@ You are a guidance tool, not a doctor. You may provide lifestyle, dietary, timin
             sign = "+" if request.timezone_offset >= 0 else ""
             tz_info = f"\nNote: All data timestamps are in UTC. The patient's local time zone is UTC{sign}{request.timezone_offset}. Adjust all timestamps to their local time before evaluating morning/night patterns."
 
+        latest_glucose_text = "Not recorded"
+        if s.recent_glucose_readings and len(s.recent_glucose_readings) > 0:
+            latest_glucose_text = f"{s.recent_glucose_readings[0].get('value')} {g_unit}"
+
         human_content = f"""Patient Health Summary (1-day period):
+- Latest Blood Glucose: {latest_glucose_text}
 - Average Blood Glucose: {s.average_glucose:.1f} {g_unit}
 - Glucose Target Range: {g_target}
 - Hyperglycaemia Events: {s.hyper_events}
