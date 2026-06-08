@@ -267,8 +267,9 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
         activity_logs = []
 
         # 2. Process Daily Data
+        # Shift everything back by 1 day so "day_offset=0" is yesterday, avoiding future-dating issues
         for day in sim_data['days']:
-            target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
+            target_local_date = (local_now - timedelta(days=day['day_offset'] + 1)).date()
             target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
             base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
 
@@ -313,7 +314,7 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
         # 3. Process Long-Term Vitals (HbA1c, Cholesterol, BMI)
         def add_historical_vital(data_type, readings_list):
             for r in readings_list:
-                v_time = (local_now - timedelta(days=r['day_offset'])).isoformat()
+                v_time = (local_now - timedelta(days=r['day_offset'] + 1)).isoformat()
                 monitor_data.append({"patient_id": patient_id, "data_type": data_type, "value": r['value'], "measured_at": v_time})
 
         add_historical_vital("HBA1C", sim_data.get('hba1c_readings', []))
@@ -341,7 +342,7 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             med_id = med_res.data[0]['id']
             intake_logs = []
             for day in sim_data['days']:
-                target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
+                target_local_date = (local_now - timedelta(days=day['day_offset'] + 1)).date()
                 target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
                 base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
                 
@@ -452,8 +453,9 @@ async def generate_synthetic_patient(req: SimulatorRequest):
         activity_logs = []
 
         # 2. Process Daily Data
+        # Shift everything back by 1 day so "day_offset=0" is yesterday, avoiding future-dating issues
         for day in sim_data['days']:
-            target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
+            target_local_date = (local_now - timedelta(days=day['day_offset'] + 1)).date()
             target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
             base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
 
@@ -498,7 +500,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
         # 3. Process Long-Term Vitals (HbA1c, Cholesterol, BMI)
         def add_historical_vital(data_type, readings_list):
             for r in readings_list:
-                v_time = (local_now - timedelta(days=r['day_offset'])).isoformat()
+                v_time = (local_now - timedelta(days=r['day_offset'] + 1)).isoformat()
                 monitor_data.append({"patient_id": patient_id, "data_type": data_type, "value": r['value'], "measured_at": v_time})
 
         add_historical_vital("HBA1C", sim_data.get('hba1c_readings', []))
@@ -526,7 +528,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
             med_id = med_res.data[0]['id']
             intake_logs = []
             for day in sim_data['days']:
-                target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
+                target_local_date = (local_now - timedelta(days=day['day_offset'] + 1)).date()
                 target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
                 base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
                 
