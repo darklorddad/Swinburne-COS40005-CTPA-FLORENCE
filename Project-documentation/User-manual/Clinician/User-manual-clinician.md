@@ -199,7 +199,7 @@ To record observations, treatment adjustments, or consultation summaries, tap th
 
 ## 6. Clinician Profile & Preferences
 
-### 6.1 Accessing the Profile
+### Accessing the Profile
 To view your account details, update your personal information, or modify your unit preferences, tap the **Profile** icon in the top-right corner of the Home Screen.
 
 ![alt text](image-28.png)
@@ -236,26 +236,19 @@ This card controls how clinical metrics are displayed to you throughout the enti
     3.  The platform instantly recalculates and updates all charts, tables, and status cards across the app. The preferences are saved to your profile via the REST API and persist across logins.
 
 ##### **3. System Information & Organisation Information Cards [Box 3]**
+
+![alt text](image-11.png)
 These cards display your immutable system credentials and detailed organisational context.
 *   **What they are**: Two read-only cards. The **System Information Card** displays your registered **Email Address**. The **Organisation Information Card** displays your assigned facility's **Organisation Name**, **Organisation Email**, and **Organisation Phone Number**.
 *   **What they do**: Provide essential system and facility context. Your email is your unique login identifier, while the organisation details link your account to your specific healthcare facility, determining which patients, priority alerts, and facility contact channels you have permission to access.
 *   **How to use them**: These sections are strictly read-only for security, compliance, and audit purposes. If your email or organisation assignment needs to be changed, please contact your system administrator.
 
-##### **4. Logout Button [Box 4]**
+##### **4. Logout Button**
 This button allows you to securely terminate your active session.
-*   **What it is**: A prominent, red-outlined button at the bottom of the profile screen.
+*   **What it is**: A red-outlined button at the bottom of the profile screen.
 *   **What it does**: Instantly invalidates your active Supabase authentication session, clears cached patient data from the device memory to prevent unauthorised access, and returns you to the secure login screen.
 *   **How to use it**:
     1.  Tap the **Logout** button.
     2.  A confirmation dialog will appear asking: *"Are you sure you want to sign out?"*
     3.  Tap **Sign Out** to confirm. You will be immediately redirected to the login screen.
 
----
-
-### 6.2 Modifying Unit Preferences (Glucose & Cholesterol)
-The FLORENCE platform supports both metric and imperial units for clinical data. You can customise these preferences to match your clinical practice.
-
-#### **Clinical Actions:**
-1.  **Glucose Unit [Box 2]**: Tap the **Glucose Unit** row. A bottom sheet will appear allowing you to select between **mmol/L** and **mg/dL**. Once selected, all glucose readings across the dashboard will automatically convert and display in your preferred unit.
-2.  **Cholesterol Unit [Box 2]**: Tap the **Cholesterol Unit** row. A bottom sheet will appear allowing you to select between **mmol/L** and **mg/dL**. Once selected, all cholesterol readings across the dashboard will automatically convert and display in your preferred unit.
-3.  **Automatic Sync**: Any changes made to your unit preferences are immediately saved to your profile via the FLORENCE middleware REST API and will persist across sessions.
