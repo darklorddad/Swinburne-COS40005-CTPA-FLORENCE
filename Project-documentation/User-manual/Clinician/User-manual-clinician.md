@@ -204,10 +204,49 @@ Please overlay **two red highlight boxes** on the image above, numbered as follo
 To view your account details, update your personal information, or modify your unit preferences, tap the **Profile** icon in the top-right corner of the Home Screen.
 
 #### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Account Information Card** (containing your name, gender, and mobile number) with the "Edit Profile" button.
+Please capture a screenshot of the **Clinician Profile** screen and overlay **four red highlight boxes**, numbered as follows:
+*   **[Box 1]** Around the **Account Information Card** (containing your name, gender, and mobile number) with the **Edit Profile** button.
 *   **[Box 2]** Around the **Unit Preferences Card** (containing Glucose Unit and Cholesterol Unit selectors).
 *   **[Box 3]** Around the **System Information Card** (containing your email and Organisation ID).
 *   **[Box 4]** Around the **Logout Button** at the bottom.
+
+---
+
+#### **Detailed Card Descriptions & Clinical Actions:**
+
+##### **1. Account Information Card [Box 1]**
+This card displays your personal clinical identity details used across the platform.
+*   **What it is**: A secure card containing your editable profile details: **Full Name**, **Gender**, and **Mobile Number**.
+*   **What it does**: Allows you to keep your contact details and identity up to date so that patients and other clinical staff can identify and contact you correctly.
+*   **How to use it**:
+    1.  Tap the **Edit Profile** button in the bottom-right corner of the card. The fields will switch from read-only to editable text fields.
+    2.  Modify your **Full Name** or **Mobile Number** as needed.
+    3.  Select your **Gender** from the dropdown menu.
+    4.  Tap **Save Changes** to commit the updates to the backend database via the REST API, or tap **Cancel** to discard your edits and restore the previous values.
+
+##### **2. Unit Preferences Card [Box 2]**
+This card controls how clinical metrics are displayed to you throughout the entire dashboard.
+*   **What it is**: A preference card containing selectors for **Glucose Unit** and **Cholesterol Unit**.
+*   **What it does**: Customises the display units for all patient vitals across the dashboard. Changing these units automatically converts and displays all historical readings, charts, and thresholds in your preferred format (e.g., converting glucose from mmol/L to mg/dL) without altering the underlying base data in the database.
+*   **How to use it**:
+    1.  Tap the **Glucose Unit** row to open a bottom sheet selector. Choose between **mmol/L** and **mg/dL**.
+    2.  Tap the **Cholesterol Unit** row to open a bottom sheet selector. Choose between **mmol/L** and **mg/dL**.
+    3.  The platform instantly recalculates and updates all charts, tables, and status cards across the app. The preferences are saved to your profile via the REST API and persist across logins.
+
+##### **3. System Information Card [Box 3]**
+This card displays your immutable system credentials and organisational context.
+*   **What it is**: A read-only card displaying your registered **Email Address** and **Organisation ID**.
+*   **What it does**: Provides essential system context. The **Email Address** is your unique login identifier, and the **Organisation ID** links your account to your specific healthcare facility, determining which patients and priority alerts you have permission to access.
+*   **How to use it**: This card is strictly read-only for security and audit purposes. If your email or organisation assignment needs to be changed, please contact your system administrator.
+
+##### **4. Logout Button [Box 4]**
+This button allows you to securely terminate your active session.
+*   **What it is**: A prominent, red-outlined button at the bottom of the profile screen.
+*   **What it does**: Instantly invalidates your active Supabase authentication session, clears cached patient data from the device memory to prevent unauthorised access, and returns you to the secure login screen.
+*   **How to use it**:
+    1.  Tap the **Logout** button.
+    2.  A confirmation dialog will appear asking: *"Are you sure you want to sign out?"*
+    3.  Tap **Sign Out** to confirm. You will be immediately redirected to the login screen.
 
 ---
 
