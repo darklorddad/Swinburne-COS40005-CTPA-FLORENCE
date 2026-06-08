@@ -494,6 +494,13 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
             .order('start_time', desc=True) \
             .execute().data
 
+        # Fetch automated actions
+        automated_actions = supabase.table('automated_actions') \
+            .select('*') \
+            .eq('patient_id', patient_id) \
+            .order('created_at', desc=True) \
+            .execute().data
+
         return {
             "profile": patient_profile,
             "monitor_data": monitor_data,
@@ -502,7 +509,8 @@ async def get_assigned_patient_details(patient_id: int, clinician_profile: dict 
             "notes": notes,
             "activity_logs": activity_logs,
             "disease_logs": disease_logs,
-            "medications": medications
+            "medications": medications,
+            "automated_actions": automated_actions
         }
     except Exception as e:
         if "Expected 1 row, got 0" in str(e):

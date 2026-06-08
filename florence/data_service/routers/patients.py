@@ -337,6 +337,11 @@ class ClinicalDocumentCreate(BaseModel):
     document_path: str
     document_type: str
 
+class AutomatedActionCreate(BaseModel):
+    type: str
+    description: str
+    response: Optional[str] = None
+
 class RecommendationCreate(BaseModel):
     id: str
     timeframe: Literal['daily', 'weekly']
@@ -562,6 +567,21 @@ async def create_clinical_document(
     except Exception as e:
         print(f"ERROR: create_clinical_document: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/me/automated-actions", summary="Log an automated action for myself")
+async def log_own_automated_action(
+    action: AutomatedActionCreate,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Logs an automated action triggered by the patient's device."""
+    try:
+        payload = action.model_dump(exclude_unset=True)
+        payload['patient_id'] = patient_profile['id']
+        
+        response = supabase.table('automated_actions').insert(payload).execute()
+        return response.data[0]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to log automated action: {str(e)}")
 
 @router.post("/me/monitor-data", summary="Add a new monitor data point for myself")
 async def add_own_monitor_data(

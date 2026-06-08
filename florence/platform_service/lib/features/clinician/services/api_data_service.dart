@@ -315,6 +315,15 @@ class ApiDataService implements DataService {
           .map((m) => Medication.fromJson(m as Map<String, dynamic>))
           .toList();
 
+      // Parse automated actions
+      final actionsData = data['automated_actions'] as List? ?? [];
+      final automatedActions = actionsData.map((action) => AutomatedAction(
+        timestamp: DateTime.parse(action['created_at']),
+        type: action['type'] ?? 'Unknown',
+        description: action['description'] ?? '',
+        response: action['response'],
+      )).toList();
+
       return PatientHealthData(
         patientId: patientId,
         weight: weight,
@@ -326,7 +335,7 @@ class ApiDataService implements DataService {
         bmiReadings: bmiReadings,
         activityData: _parseActivityData(activityLogs),
         mealEntries: mealEntries, 
-        automatedActions: [], 
+        automatedActions: automatedActions, 
         medications: medications, 
         aiGeneratedSummary: 'Patient data loaded successfully.',
         detectedPatterns: [], 
@@ -426,4 +435,3 @@ class ApiDataService implements DataService {
     )).toList();
   }
 }
-
