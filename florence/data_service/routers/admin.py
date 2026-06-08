@@ -41,12 +41,12 @@ class SimulatorRequest(BaseModel):
     password: str
     name: str
     scenario: str
-    days: int = 180
+    days: int = 30
     timezone_offset: int = 0
 
 class GenerateDataRequest(BaseModel):
     scenario: str
-    days: int = 180
+    days: int = 30
     timezone_offset: int = 0
 
 DEFAULT_THRESHOLDS = [
@@ -254,7 +254,7 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             res.raise_for_status()
             sim_data = res.json()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"LLM Engine failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"LLM Engine failed: {repr(e)}")
     
     try:
         # 1. Timezone Anchoring (Prevents Future-Dating)
@@ -400,7 +400,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
             res.raise_for_status()
             sim_data = res.json()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"LLM Engine failed to generate data: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"LLM Engine failed to generate data: {repr(e)}")
 
     # 2. Create User in Auth
     try:

@@ -49,7 +49,7 @@ class _DataSimulatorScreenState extends ConsumerState<DataSimulatorScreen> {
         'name': _nameController.text.trim(),
         'password': _passwordController.text,
         'scenario': _selectedScenario,
-        'days': 180,
+        'days': 30,
         'timezone_offset': DateTime.now().timeZoneOffset.inHours,
       });
 
@@ -96,7 +96,7 @@ class _DataSimulatorScreenState extends ConsumerState<DataSimulatorScreen> {
                   Text('LLM Data Simulator', style: Theme.of(context).textTheme.displaySmall),
                   const SizedBox(height: 8),
                   Text(
-                    'Instantly orchestrate 180 days of highly-realistic clinical data using LangChain.',
+                    'Instantly orchestrate 30 days of highly-realistic clinical data using LangChain.',
                     style: Theme.of(context).textTheme.bodyLarge,
                   ),
                   const SizedBox(height: 32),
@@ -158,7 +158,7 @@ class _DataSimulatorScreenState extends ConsumerState<DataSimulatorScreen> {
                                 icon: _isLoading 
                                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                                     : const Icon(Icons.science),
-                                label: Text(_isLoading ? 'Orchestrating via LLM... This may take up to 45 seconds' : 'Generate Patient (180 Days)'),
+                                label: Text(_isLoading ? 'Orchestrating via LLM... This may take up to 45 seconds' : 'Generate Patient (30 Days)'),
                                 style: FilledButton.styleFrom(
                                   backgroundColor: Colors.purple.shade600,
                                   padding: const EdgeInsets.symmetric(vertical: 20),

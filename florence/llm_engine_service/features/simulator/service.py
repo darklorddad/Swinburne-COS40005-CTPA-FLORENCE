@@ -24,9 +24,9 @@ class SimulatorService:
         
         8. LONG-TERM VITALS (CRITICAL FOR CHARTS):
            - DO NOT generate HbA1c, Cholesterol, or BMI daily. It is clinically impossible.
-           - `hba1c_readings`: Generate exactly 2 readings. One at day_offset 0 (today), and one at day_offset 90.
+           - `hba1c_readings`: Generate exactly 2 readings. One at day_offset 0 (today), and one at day_offset 30.
            - `cholesterol_*_readings`: Generate exactly 1 reading at day_offset 0 for all 4 lipid panels.
-           - `bmi_readings`: Generate 1 reading every 30 days (e.g. day 0, 30, 60, 90...).
+           - `bmi_readings`: Generate 1 reading every 15 days (e.g. day 0, 15, 30).
         """
         
         response = await self.llm.ainvoke([
