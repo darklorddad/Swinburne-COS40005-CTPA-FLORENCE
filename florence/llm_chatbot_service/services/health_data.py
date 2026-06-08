@@ -109,6 +109,12 @@ class HealthDataService:
         """
         return await self._fetch_data("/patients/me", token)
 
+    async def get_medications(self, token: str) -> List[dict]:
+        return await self._fetch_data("/patients/me/medications", token)
+
+    async def get_diagnoses(self, token: str) -> List[dict]:
+        return await self._fetch_data("/patients/me/disease-logs", token)
+
     async def get_health_context(self, token: str) -> HealthContext:
         """
         Get formatted health context for LLM prompt.
@@ -120,6 +126,8 @@ class HealthDataService:
         activity_logs = await self.get_activity_logs(token, dummy_date, dummy_date)
         daily_logs = await self.get_daily_logs(token, dummy_date, dummy_date)
         thresholds = await self.get_patient_thresholds(token)
+        meds = await self.get_medications(token)
+        diagnoses = await self.get_diagnoses(token)
 
         # Format Profile
         profile_lines = []
@@ -182,12 +190,34 @@ class HealthDataService:
             for dtype, limits in thresholds.items():
                 threshold_lines.append(f"- {dtype}: Min {limits['min']}, Max {limits['max']}")
 
+        # Format Medications
+        med_lines = []
+        active_meds = [m for m in meds if m.get("status") == "CURRENT"]
+        if not active_meds:
+            med_lines.append("No active medications.")
+        else:
+            for m in active_meds:
+                name = m.get("custom_medication_name") or m.get("medication_dictionary", {}).get("brand_name", "Unknown")
+                timing = ", ".join(m.get("timing_instructions", []))
+                med_lines.append(f"- {name} {m.get('amount')} ({m.get('medication_type')}): Take {timing}")
+
+        # Format Diagnoses
+        diag_lines = []
+        active_diags = [d for d in diagnoses if d.get("status") == "active"]
+        if not active_diags:
+            diag_lines.append("No active diagnoses.")
+        else:
+            for d in active_diags:
+                diag_lines.append(f"- {d.get('condition_name')} (Since {d.get('diagnosed_date')})")
+
         return HealthContext(
             patient_profile="\n".join(profile_lines),
             raw_monitor_data="\n".join(monitor_lines),
             raw_activity_logs="\n".join(activity_lines),
             raw_daily_logs="\n".join(daily_lines),
             patient_thresholds="\n".join(threshold_lines),
+            medications="\n".join(med_lines),
+            diagnoses="\n".join(diag_lines),
             data_timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         )
 

@@ -47,21 +47,28 @@ class HealthContext(BaseModel):
     raw_activity_logs: str
     raw_daily_logs: str
     patient_thresholds: str
+    medications: str
+    diagnoses: str
     data_timestamp: str
 
     def format_for_prompt(self) -> str:
         """Format health context for inclusion in LLM prompt."""
         lines = []
         
-        lines.append("=== PATIENT PROFILE ===")
+        lines.append("=== PATIENT PROFILE & DIAGNOSES ===")
         lines.append(self.patient_profile)
+        lines.append(self.diagnoses)
+        lines.append("")
+
+        lines.append("=== CURRENT MEDICATIONS ===")
+        lines.append(self.medications)
         lines.append("")
 
         lines.append("=== PATIENT THRESHOLDS ===")
         lines.append(self.patient_thresholds)
         lines.append("")
         
-        lines.append("=== MONITOR DATA (Glucose, BP, etc) ===")
+        lines.append("=== MONITOR DATA (Glucose, BP, BMI, Lipids) ===")
         lines.append(self.raw_monitor_data)
         lines.append("")
         

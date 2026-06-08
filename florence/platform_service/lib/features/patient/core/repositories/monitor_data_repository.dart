@@ -192,19 +192,17 @@ class HealthDataState {
             })
         .toList();
 
-    // Recent individual readings (newest first)
-    final recentGlucose = ([...glucoseReadings]
-          ..sort((a, b) => b.timestamp.compareTo(a.timestamp)))
-        .take(10)
+    // Recent individual readings strictly bounded to the requested timeframe
+    final recentGlucose = glucoseReadings
+        .where((r) => r.timestamp.isAfter(startDate) && r.timestamp.isBefore(endDate))
         .map((r) => {
               'value': r.value,
               'timestamp': r.timestamp.toIso8601String(),
             })
         .toList();
 
-    final recentMealsList = ([...meals]
-          ..sort((a, b) => b.timestamp.compareTo(a.timestamp)))
-        .take(5)
+    final recentMealsList = meals
+        .where((m) => m.timestamp.isAfter(startDate) && m.timestamp.isBefore(endDate))
         .map((m) => {
               'type': m.type,
               'description': m.description,
@@ -215,9 +213,8 @@ class HealthDataState {
             })
         .toList();
 
-    final recentActivitiesList = ([...activities]
-          ..sort((a, b) => b.startTime.compareTo(a.startTime)))
-        .take(5)
+    final recentActivitiesList = activities
+        .where((a) => a.startTime.isAfter(startDate) && a.startTime.isBefore(endDate))
         .map((a) => {
               'type': a.type,
               'duration_minutes': a.activeDurationMinutes,
