@@ -41,12 +41,12 @@ class SimulatorRequest(BaseModel):
     password: str
     name: str
     scenario: str
-    days: int = 180
+    days: int = 30
     timezone_offset: int = 0
 
 class GenerateDataRequest(BaseModel):
     scenario: str
-    days: int = 180
+    days: int = 30
     timezone_offset: int = 0
 
 DEFAULT_THRESHOLDS = [
@@ -254,7 +254,7 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             res.raise_for_status()
             sim_data = res.json()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"LLM Engine failed: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"LLM Engine failed: {repr(e)}")
     
     try:
         # 1. Timezone Anchoring (Prevents Future-Dating)
@@ -269,7 +269,7 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
         # 2. Process Daily Data
         for day in sim_data['days']:
             target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
-            target_local_midnight = datetime.combine(target_local_date, datetime.min.time())
+            target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
             base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
 
             # BP (Measured at 7 AM Local)
@@ -342,7 +342,7 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             intake_logs = []
             for day in sim_data['days']:
                 target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
-                target_local_midnight = datetime.combine(target_local_date, datetime.min.time())
+                target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
                 base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
                 
                 taken_time = base_time_utc + timedelta(hours=8, minutes=15) # 8:15 AM Local
@@ -400,7 +400,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
             res.raise_for_status()
             sim_data = res.json()
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"LLM Engine failed to generate data: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"LLM Engine failed to generate data: {repr(e)}")
 
     # 2. Create User in Auth
     try:
@@ -454,7 +454,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
         # 2. Process Daily Data
         for day in sim_data['days']:
             target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
-            target_local_midnight = datetime.combine(target_local_date, datetime.min.time())
+            target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
             base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
 
             # BP (Measured at 7 AM Local)
@@ -527,7 +527,7 @@ async def generate_synthetic_patient(req: SimulatorRequest):
             intake_logs = []
             for day in sim_data['days']:
                 target_local_date = (local_now - timedelta(days=day['day_offset'])).date()
-                target_local_midnight = datetime.combine(target_local_date, datetime.min.time())
+                target_local_midnight = datetime.combine(target_local_date, datetime.min.time(), tzinfo=timezone.utc)
                 base_time_utc = target_local_midnight - timedelta(hours=tz_offset)
                 
                 taken_time = base_time_utc + timedelta(hours=8, minutes=15) # 8:15 AM Local

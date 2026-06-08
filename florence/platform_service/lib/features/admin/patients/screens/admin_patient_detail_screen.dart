@@ -89,7 +89,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Select a clinical scenario to generate 180 days of data via LLM.'),
+                const Text('Select a clinical scenario to generate 30 days of data via LLM.'),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: selectedScenario,
@@ -120,7 +120,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
         final api = ApiService();
         await api.post('/admin/patients/${widget.patient.id}/generate-data', {
           'scenario': selectedScenario,
-          'days': 180,
+          'days': 30,
           'timezone_offset': DateTime.now().timeZoneOffset.inHours,
         });
         ref.invalidate(adminPatientsProvider);
