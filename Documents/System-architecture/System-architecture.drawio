@@ -1,6 +1,6 @@
 <mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.1 Chrome/142.0.7444.265 Electron/39.8.0 Safari/537.36">
   <diagram name="Page-1" id="P9xMZjMc7CPsWWMi0Zpa">
-    <mxGraphModel dx="2571" dy="2693" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+    <mxGraphModel dx="3142" dy="3047" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -886,7 +886,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="TX3lqKVVQCWdzYSKlM4A-52" edge="1" parent="1" source="TX3lqKVVQCWdzYSKlM4A-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=oval;endFill=1;startArrow=oval;startFill=1;fillColor=#f8cecc;strokeColor=#b85450;" target="TX3lqKVVQCWdzYSKlM4A-28">
+        <mxCell id="TX3lqKVVQCWdzYSKlM4A-52" edge="1" parent="1" source="TX3lqKVVQCWdzYSKlM4A-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=oval;endFill=1;startArrow=oval;startFill=1;fillColor=#d5e8d4;strokeColor=#82b366;" target="TX3lqKVVQCWdzYSKlM4A-28">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="440" y="2880" />
@@ -905,7 +905,7 @@
         <mxCell id="TX3lqKVVQCWdzYSKlM4A-29" parent="1" style="rounded=1;whiteSpace=wrap;html=1;glass=0;shadow=0;strokeColor=default;fontFamily=Funnel Display;align=center;fontSize=12;verticalAlign=middle;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="LLM Engine Service" vertex="1">
           <mxGeometry height="80" width="160" x="360" y="2760" as="geometry" />
         </mxCell>
-        <mxCell id="TX3lqKVVQCWdzYSKlM4A-40" edge="1" parent="1" source="TX3lqKVVQCWdzYSKlM4A-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=oval;endFill=1;startArrow=oval;startFill=1;fillColor=#f8cecc;strokeColor=#b85450;" target="TX3lqKVVQCWdzYSKlM4A-28">
+        <mxCell id="TX3lqKVVQCWdzYSKlM4A-40" edge="1" parent="1" source="TX3lqKVVQCWdzYSKlM4A-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.25;entryY=1;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;endArrow=oval;endFill=1;startArrow=oval;startFill=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" target="TX3lqKVVQCWdzYSKlM4A-28">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
               <mxPoint x="640" y="2920" />
@@ -933,7 +933,7 @@
         <mxCell id="TX3lqKVVQCWdzYSKlM4A-42" parent="1" style="rounded=1;whiteSpace=wrap;html=1;glass=0;shadow=0;strokeColor=default;fontFamily=Funnel Display;align=center;fontSize=12;verticalAlign=middle;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Gemini 3.1 Pro Preview" vertex="1">
           <mxGeometry height="80" width="160" x="120" y="3240" as="geometry" />
         </mxCell>
-        <mxCell id="TX3lqKVVQCWdzYSKlM4A-43" parent="1" style="rounded=1;whiteSpace=wrap;html=1;glass=0;shadow=0;strokeColor=default;fontFamily=Funnel Display;align=center;fontSize=12;verticalAlign=middle;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Gemini 3 Flash Preview" vertex="1">
+        <mxCell id="TX3lqKVVQCWdzYSKlM4A-43" parent="1" style="rounded=1;whiteSpace=wrap;html=1;glass=0;shadow=0;strokeColor=default;fontFamily=Funnel Display;align=center;fontSize=12;verticalAlign=middle;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="Gemini 3.5 Flash Preview" vertex="1">
           <mxGeometry height="80" width="160" x="320" y="3240" as="geometry" />
         </mxCell>
         <mxCell id="TX3lqKVVQCWdzYSKlM4A-46" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontStyle=1;fillColor=#d80073;fontColor=#ffffff;strokeColor=#A50040;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="OpenRouter" vertex="1">
@@ -957,7 +957,7 @@
         <mxCell id="KVrWHXzG_k3As60YW7bw-3" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Chat Payload&lt;/span&gt;" vertex="1">
           <mxGeometry height="40" width="120" x="587.5" y="2600" as="geometry" />
         </mxCell>
-        <mxCell id="KVrWHXzG_k3As60YW7bw-4" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Image and Rec Requests&lt;/span&gt;" vertex="1">
+        <mxCell id="KVrWHXzG_k3As60YW7bw-4" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Image and Recommendation Requests&lt;/span&gt;" vertex="1">
           <mxGeometry height="40" width="120" x="390" y="2560" as="geometry" />
         </mxCell>
         <mxCell id="KVrWHXzG_k3As60YW7bw-5" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;REST API&lt;/span&gt;" vertex="1">
@@ -981,10 +981,10 @@
         <mxCell id="KVrWHXzG_k3As60YW7bw-12" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Prompt and Response Stream&lt;/span&gt;" vertex="1">
           <mxGeometry height="40" width="120" x="80" y="3080" as="geometry" />
         </mxCell>
-        <mxCell id="KVrWHXzG_k3As60YW7bw-13" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Fetch Data and Save Processed Docs&lt;/span&gt;" vertex="1">
+        <mxCell id="KVrWHXzG_k3As60YW7bw-13" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Fetch Data and Save Processed Documents&lt;/span&gt;" vertex="1">
           <mxGeometry height="40" width="120" x="320" y="2840" as="geometry" />
         </mxCell>
-        <mxCell id="KVrWHXzG_k3As60YW7bw-14" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Vison Payloads and&lt;/span&gt;&lt;div&gt;&lt;span&gt;Rec Generation&lt;/span&gt;&lt;/div&gt;" vertex="1">
+        <mxCell id="KVrWHXzG_k3As60YW7bw-14" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="&lt;span&gt;Vision Payloads and&lt;/span&gt;&lt;div&gt;&lt;span&gt;Recommendation Generation&lt;/span&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="40" width="120" x="280" y="3120" as="geometry" />
         </mxCell>
         <mxCell id="KVrWHXzG_k3As60YW7bw-15" parent="1" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=Funnel Display;shadow=0;fontSize=12;textShadow=0;labelBorderColor=none;labelBackgroundColor=none;movable=1;resizable=1;rotatable=1;deletable=1;editable=1;locked=0;connectable=1;" value="SQL/RLS Enforced" vertex="1">
