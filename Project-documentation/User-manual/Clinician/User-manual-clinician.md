@@ -109,6 +109,7 @@ Clicking on the **Cholesterol** summary card in the **Historical Data** tab open
 Clicking on the **Physical Activity** summary card in the **Historical Data** tab opens the dedicated Physical Activity Analytics Screen.
 
 ![alt text](image-15.png)
+![alt text](image-16.png)
 
 #### **Key Features:**
 1.  **Today's Movement [Box 1]**: Displays the patient's active minutes and sessions for today.
@@ -120,10 +121,9 @@ Clicking on the **Physical Activity** summary card in the **Historical Data** ta
 ### 4.7 Diet Log & Nutrition Summary
 Clicking on the **Diet Log** summary card in the **Historical Data** tab opens the dedicated Diet Log & Nutrition Summary Screen.
 
-#### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Diet Log List** showing meal types (Breakfast, Lunch, Dinner, Snack).
-*   **[Box 2]** Around the **Nutrient Chips** (Carbs, Protein, Fat).
-*   **[Box 3]** Around the **Automated Actions Log** (Reminders, Tips, Prompts).
+
+![alt text](image-17.png)
+![alt text](image-18.png)
 
 #### **Key Features:**
 1.  **Diet Log List [Box 1]**: Displays the patient's logged meals chronologically. Each entry shows the meal type, timestamp, and food items.
@@ -137,17 +137,15 @@ Clicking on the **Diet Log** summary card in the **Historical Data** tab opens t
 ### 5.1 Managing Medical Conditions & Medications
 Navigate to the **Medical Profile** tab to manage the patient's clinical background, target thresholds, and active prescriptions. This tab serves as the clinical core for personalising patient care.
 
-#### **Image Highlight Instructions:**
-Please capture a screenshot of the **Medical Profile** tab and overlay **three red highlight boxes**, numbered as follows:
-*   **[Box 1]** Around the **Medical Conditions Card** (specifically highlighting the **Add New Condition** plus icon button and the **Active/Resolved/All** segmented filter bar).
-*   **[Box 2]** Around the **Health Thresholds Card** (specifically highlighting the **Edit** pencil icon button in the top-right corner of the card).
-*   **[Box 3]** Around the **Current Medications Card** (specifically highlighting the **Add New Medication** plus icon button).
+![alt text](image-23.png)
 
 ---
 
 #### **Detailed Button Functions & Clinical Workflows:**
 
 ##### **1. Medical Conditions Card [Box 1]**
+
+![alt text](image-19.png)
 This card displays the patient's active and resolved diagnoses.
 *   **Add New Condition Button (Plus Icon)**: Tap this button to open the **Add Medical Condition** dialog.
     *   *Condition Name*: Enter the diagnosis (e.g., "Type 2 Diabetes", "Hypertension").
@@ -159,16 +157,20 @@ This card displays the patient's active and resolved diagnoses.
     *   *Mark as Resolved / Active*: Instantly toggles the condition's status and moves it to the appropriate filtered list.
     *   *Edit Details*: Re-opens the dialog to correct names or onset dates.
     *   *Remove*: Permanently deletes the condition from the patient's record after a confirmation prompt.
-
+---
 ##### **2. Health Thresholds Card [Box 2]**
+
+![alt text](image-21.png)
 This card displays the patient's personalised target ranges for vitals (Glucose, Blood Pressure, HbA1c, Cholesterol, and BMI). These thresholds are critical because the **Dynamic Risk Engine** uses them to calculate the patient's risk level and float them to the top of the home screen queue.
 *   **Edit Button (Pencil Icon)**: Tap this to open the **Health Thresholds** management dialog.
     *   *Threshold List*: Displays all vitals with their current min/max values.
     *   *Edit Single Threshold (Pencil Icon)*: Tap the edit icon next to any vital (e.g., Glucose) to open the **Edit Threshold** dialog.
     *   *Minimum / Maximum Value Fields*: Enter the new clinical targets. The units automatically match your preferred clinician settings (e.g., mmol/L or mg/dL).
     *   *Save Button*: Securely updates the targets via the REST API. The patient's app and the risk engine sync instantly.
-
+---
 ##### **3. Current Medications Card [Box 3]**
+
+![alt text](image-22.png)
 This card displays the patient's active prescriptions and schedule.
 *   **Add New Medication Button (Plus Icon)**: Tap this to open the comprehensive **Add Medication** form.
     *   *Medication Name (Smart Autocomplete)*: Start typing a brand or generic name. The field queries the global medication dictionary in real-time to prevent spelling errors and ensure clinical accuracy. You can also type a custom name if it is not in the dictionary.
@@ -185,12 +187,9 @@ This card displays the patient's active prescriptions and schedule.
 ### 5.2 Adding Clinical Notes
 To record observations, treatment adjustments, or consultation summaries, tap the **Add Note** button on the patient's Overview tab.
 
-![Add Clinical Note Dialog](Screenshot 2026-06-05 165716.png)
-
-#### **Image Highlight Instructions:**
-Please overlay **two red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Text Input Field** where the note content is entered.
-*   **[Box 2]** Around the **Save Note** button.
+![alt text](image-24.png)
+![alt text](image-26.png)
+![alt text](image-27.png)
 
 #### **Clinical Actions:**
 1.  **Enter Note [Box 1]**: Type your clinical observations or treatment adjustments.
@@ -203,6 +202,7 @@ Please overlay **two red highlight boxes** on the image above, numbered as follo
 ### 6.1 Accessing the Profile
 To view your account details, update your personal information, or modify your unit preferences, tap the **Profile** icon in the top-right corner of the Home Screen.
 
+![alt text](image-28.png)
 #### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
 Please capture a screenshot of the **Clinician Profile** screen and overlay **four red highlight boxes**, numbered as follows:
 *   **[Box 1]** Around the **Account Information Card** (containing your name, gender, and mobile number) with the **Edit Profile** button.
@@ -215,6 +215,7 @@ Please capture a screenshot of the **Clinician Profile** screen and overlay **fo
 #### **Detailed Card Descriptions & Clinical Actions:**
 
 ##### **1. Account Information Card [Box 1]**
+![alt text](image.png)
 This card displays your personal clinical identity details used across the platform.
 *   **What it is**: A secure card containing your editable profile details: **Full Name**, **Gender**, and **Mobile Number**.
 *   **What it does**: Allows you to keep your contact details and identity up to date so that patients and other clinical staff can identify and contact you correctly.
@@ -225,6 +226,7 @@ This card displays your personal clinical identity details used across the platf
     4.  Tap **Save Changes** to commit the updates to the backend database via the REST API, or tap **Cancel** to discard your edits and restore the previous values.
 
 ##### **2. Unit Preferences Card [Box 2]**
+![alt text](image-1.png)
 This card controls how clinical metrics are displayed to you throughout the entire dashboard.
 *   **What it is**: A preference card containing selectors for **Glucose Unit** and **Cholesterol Unit**.
 *   **What it does**: Customises the display units for all patient vitals across the dashboard. Changing these units automatically converts and displays all historical readings, charts, and thresholds in your preferred format (e.g., converting glucose from mmol/L to mg/dL) without altering the underlying base data in the database.
