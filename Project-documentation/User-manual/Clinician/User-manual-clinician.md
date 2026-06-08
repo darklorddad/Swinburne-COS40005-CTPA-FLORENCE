@@ -8,15 +8,9 @@ The FLORENCE Clinician Dashboard is built for speed and secured for healthcare. 
 ## 2. Dashboard & Dynamic Risk Engine (Home Screen)
 
 ### 2.1 Overview of the Home Screen
-Upon logging in, you are presented with the main command centre. This screen is designed to highlight patients requiring immediate attention.
+Upon logging in, you are presented with the main command centre. This screen is desigvned to highlight patients requiring immediate attention.
 
 ![Clinician Home Screen](2.1-1.png)
-
-#### **Image Highlight Instructions:**
-Please overlay **three red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Search Bar & Filter Icon** at the top.
-*   **[Box 2]** Around the **Patients List** on the left-hand side.
-*   **[Box 3]** Around the **Priority Alerts Panel** on the right-hand side.
 
 ---
 
@@ -33,12 +27,6 @@ Please overlay **three red highlight boxes** on the image above, numbered as fol
 Clicking on any patient from your list opens their comprehensive profile, defaulting to the **Overview** tab.
 
 ![Patient Overview Tab](3.1-1.png)
-
-#### **Image Highlight Instructions:**
-Please overlay **three red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Demographics & Baseline Card** at the top (containing the patient's name, ID, age, gender, risk level, and emergency contact details).
-*   **[Box 2]** Around the **Current Status Grid** (the stack of vital metrics cards: Glucose, Blood Pressure, HbA1c, Cholesterol, Activity, BMI, and Diet).
-*   **[Box 3]** Around the **Clinical Notes Section** at the bottom.
 
 ---
 
@@ -58,25 +46,17 @@ Please overlay **three red highlight boxes** on the image above, numbered as fol
 ### 4.1 Navigating to Historical Data
 To view detailed trends and long-term patient data, navigate to the **Historical Data** tab.
 
-![Historical Data Tab](Screenshot 2026-06-05 165545.png)
-
-#### **Image Highlight Instructions:**
-Please overlay **two red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Tab Bar** at the top, highlighting the selected **Historical Data** tab.
-*   **[Box 2]** Around the list of **Metric Summary Cards** (Glucose, HbA1c, Blood Pressure, Cholesterol, Physical Activity, Diet Log, and Automated Actions Log).
+![alt text](4.1-1.png)
+![alt text](image-2.png)
 
 ---
 
 ### 4.2 Glucose Analytics Screen
 Clicking on the **Glucose** summary card in the **Historical Data** tab opens the dedicated Glucose Analytics Screen.
 
-![Glucose Analytics Screen](image-1.png)
+![alt text](image-3.png)
+![alt text](image-4.png)
 
-#### **Image Highlight Instructions:**
-Please overlay **three red highlight boxes** on the image above, numbered as follows:
-*   **[Box 1]** Around the **Timeframe Segmented Control** (24 Hours, 7 Days, 12 Months) and date navigation arrows.
-*   **[Box 2]** Around the **Interactive Line Chart** (including the shaded target range band and threshold lines).
-*   **[Box 3]** Around the **History List** at the bottom, highlighting the status pills (e.g., "ABOVE TARGET", "NORMAL", "BELOW TARGET").
 
 #### **Key Features:**
 1.  **Timeframe Filters [Box 1]**: Toggle between daily, weekly, and monthly views. Use the chevron arrows to navigate back and forth in time.
@@ -88,10 +68,8 @@ Please overlay **three red highlight boxes** on the image above, numbered as fol
 ### 4.3 HbA1c Analytics Screen
 Clicking on the **HbA1c** summary card in the **Historical Data** tab opens the dedicated HbA1c Analytics Screen.
 
-#### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Actual vs. Goal Bar Chart** (comparing the patient's latest reading against their target).
-*   **[Box 2]** Around the **HbA1c Trends Line Chart** (showing long-term control over months).
-*   **[Box 3]** Around the **History List** at the bottom, highlighting the status pills (e.g., "ABOVE TARGET", "NORMAL", "BELOW TARGET").
+![alt text](image-5.png)
+![alt text](image-6.png)
 
 #### **Key Features:**
 1.  **Actual vs. Goal [Box 1]**: A clean, side-by-side bar chart comparing the patient's latest HbA1c reading against their target. A status card below immediately flags whether they are within target.
@@ -103,11 +81,8 @@ Clicking on the **HbA1c** summary card in the **Historical Data** tab opens the 
 ### 4.4 Blood Pressure Analytics Screen
 Clicking on the **Blood Pressure** summary card in the **Historical Data** tab opens the dedicated Blood Pressure Analytics Screen.
 
-#### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Target Ranges Box** (showing Systolic and Diastolic targets).
-*   **[Box 2]** Around the **Average Systolic and Diastolic Cards** (showing mean values for the selected period).
-*   **[Box 3]** Around the **Blood Pressure Trends Line Chart** (showing Systolic and Diastolic lines).
-*   **[Box 4]** Around the **History List** at the bottom, highlighting the status pills (e.g., "HIGH", "NORMAL", "LOW").
+![alt text](image-7.png)
+![alt text](image-8.png)
 
 #### **Key Features:**
 1.  **Target Ranges [Box 1]**: Displays the patient's personalised target ranges for both Systolic and Diastolic pressure.
@@ -119,12 +94,8 @@ Clicking on the **Blood Pressure** summary card in the **Historical Data** tab o
 
 ### 4.5 Cholesterol Analytics Screen
 Clicking on the **Cholesterol** summary card in the **Historical Data** tab opens the dedicated Cholesterol Analytics Screen.
-
-#### **Image Highlight Instructions (No image file, text-only directions for UI layout):**
-*   **[Box 1]** Around the **Cholesterol Ratio Circular Gauge** (showing HDL vs Non-HDL).
-*   **[Box 2]** Around the **Metric Selector Segmented Control** (Total, LDL, HDL, Trig).
-*   **[Box 3]** Around the **Cholesterol Breakdown Line Chart** (showing long-term control over months).
-*   **[Box 4]** Around the **History List** at the bottom, highlighting the status pills (e.g., "HIGH", "NORMAL", "LOW").
+![alt text](image-9.png)
+![alt text](image-10.png)
 
 #### **Key Features:**
 1.  **Cholesterol Ratio [Box 1]**: A clean, circular gauge comparing the patient's HDL against their Non-HDL cholesterol. A status card below immediately flags whether they are within target.
