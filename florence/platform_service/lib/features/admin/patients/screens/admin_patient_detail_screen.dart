@@ -361,8 +361,8 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                                 _buildInfoRow(Icons.cake_outlined, 'Date of Birth', p.dateOfBirth ?? 'Not provided'),
                                 _buildInfoRow(Icons.person_outline, 'Gender', p.gender ?? 'Not provided'),
                                 _buildInfoRow(Icons.business_outlined, 'Organisation', p.organisationName ?? 'Florence Platform'),
-                                const SizedBox(height: 24),
-                                Text('Emergency Contact', style: Theme.of(context).textTheme.titleMedium),
+                                const SizedBox(height: 32),
+                                Text('Emergency Contact', style: Theme.of(context).textTheme.titleLarge),
                                 const SizedBox(height: 16),
                                 _buildInfoRow(Icons.contact_phone_outlined, 'Name', p.emergencyContactName ?? 'Not provided'),
                                 _buildInfoRow(Icons.family_restroom_outlined, 'Relationship', p.emergencyContactRelationship ?? 'Not provided'),
@@ -538,6 +538,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
   }
 
   Future<void> _showEditPatientDialog() async {
+    final messenger = ScaffoldMessenger.of(context);
     final nameCtrl = TextEditingController(text: _patient.name);
     final phoneCtrl = TextEditingController(text: _patient.phoneNumber ?? '');
     final dobCtrl = TextEditingController(text: _patient.dateOfBirth ?? '');
@@ -545,6 +546,10 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
     final ecRelCtrl = TextEditingController(text: _patient.emergencyContactRelationship ?? '');
     final ecPhoneCtrl = TextEditingController(text: _patient.emergencyContactPhone ?? '');
     String selectedGender = _patient.gender ?? 'Male';
+    int? selectedOrgId = _patient.organisationId;
+    
+    final orgsAsync = ref.read(adminOrganizationsProvider);
+    final orgs = orgsAsync.valueOrNull ?? [];
 
     await showDialog(
       context: context,
@@ -570,8 +575,18 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                     items: ['Male', 'Female', 'Other'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
                     onChanged: (val) => setModalState(() => selectedGender = val!),
                   ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<int?>(
+                    value: selectedOrgId,
+                    decoration: const InputDecoration(labelText: 'Organisation'),
+                    items: [
+                      const DropdownMenuItem<int?>(value: null, child: Text('Unassigned')),
+                      ...orgs.map((o) => DropdownMenuItem<int?>(value: o.id, child: Text(o.name))),
+                    ],
+                    onChanged: (val) => setModalState(() => selectedOrgId = val),
+                  ),
                   const Divider(height: 32),
-                  Text('Emergency Contact', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Emergency Contact', style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 12),
                   TextField(controller: ecNameCtrl, decoration: const InputDecoration(labelText: 'Contact Name')),
                   const SizedBox(height: 12),
@@ -594,6 +609,7 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                     'phone_number': phoneCtrl.text.trim(),
                     'date_of_birth': dobCtrl.text.trim().isEmpty ? null : dobCtrl.text.trim(),
                     'gender': selectedGender,
+                    'organisation_id': selectedOrgId,
                     'emergency_contact_name': ecNameCtrl.text.trim(),
                     'emergency_contact_relationship': ecRelCtrl.text.trim(),
                     'emergency_contact_phone': ecPhoneCtrl.text.trim(),
@@ -608,7 +624,10 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                       phoneNumber: payload['phone_number'] as String?,
                       gender: payload['gender'] as String?,
                       dateOfBirth: payload['date_of_birth'] as String?,
-                      organisationName: _patient.organisationName,
+                      organisationId: selectedOrgId,
+                      organisationName: selectedOrgId != null 
+                          ? (orgs.where((o) => o.id == selectedOrgId).firstOrNull?.name ?? 'Unknown') 
+                          : 'Unassigned',
                       clinicianName: _patient.clinicianName,
                       riskLevel: _patient.riskLevel,
                       lastRiskAssessment: _patient.lastRiskAssessment,
@@ -619,9 +638,9 @@ class _AdminPatientDetailScreenState extends ConsumerState<AdminPatientDetailScr
                     );
                   });
 
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Patient profile updated'), backgroundColor: AdminTheme.primary));
+                  messenger.showSnackBar(const SnackBar(content: Text('Patient profile updated'), backgroundColor: AdminTheme.primary));
                 } catch (e) {
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
+                  messenger.showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
                 } finally {
                   if (mounted) setState(() => _isLoading = false);
                 }

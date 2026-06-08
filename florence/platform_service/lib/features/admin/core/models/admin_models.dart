@@ -8,6 +8,7 @@ class AdminPatient {
   final String? gender;
   final String? dateOfBirth;
   final String? organisationName;
+  final int? organisationId;
   final String? clinicianName;
   final String riskLevel;
   final String? lastRiskAssessment;
@@ -23,6 +24,7 @@ class AdminPatient {
     this.gender,
     this.dateOfBirth,
     this.organisationName,
+    this.organisationId,
     this.clinicianName,
     required this.riskLevel,
     this.lastRiskAssessment,
@@ -50,6 +52,7 @@ class AdminPatient {
       gender: json['Gender'],
       dateOfBirth: json['Date of Birth'],
       organisationName: json['Organisation Name'],
+      organisationId: json['Organisation ID'] as int?,
       clinicianName: json['Clinician Name'] ?? 'Unassigned',
       riskLevel: json['Risk Level'] ?? 'LOW',
       lastRiskAssessment: json['Last Risk Assessment'],

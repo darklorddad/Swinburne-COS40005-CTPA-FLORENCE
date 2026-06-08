@@ -203,6 +203,7 @@ class _ClinicianDirectoryScreenState extends ConsumerState<ClinicianDirectoryScr
   }
 
   void _showEditDialog(AdminClinician c) {
+    final messenger = ScaffoldMessenger.of(context);
     final nameCtrl = TextEditingController(text: c.name);
     final phoneCtrl = TextEditingController(text: c.phoneNumber ?? '');
     String selectedGender = c.gender ?? 'Male';
@@ -264,9 +265,9 @@ class _ClinicianDirectoryScreenState extends ConsumerState<ClinicianDirectoryScr
                           'organisation_id': selectedOrgId,
                         });
                         ref.invalidate(adminCliniciansProvider);
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clinician updated'), backgroundColor: AdminTheme.primary));
+                        messenger.showSnackBar(const SnackBar(content: Text('Clinician updated'), backgroundColor: AdminTheme.primary));
                       } catch (e) {
-                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
+                        messenger.showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
                       }
                     },
                     child: const Text('Save'),
@@ -281,6 +282,7 @@ class _ClinicianDirectoryScreenState extends ConsumerState<ClinicianDirectoryScr
   }
 
   void _confirmDelete(AdminClinician c) {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -295,9 +297,9 @@ class _ClinicianDirectoryScreenState extends ConsumerState<ClinicianDirectoryScr
               try {
                 await ref.read(adminRepositoryProvider).deleteClinician(c.id);
                 ref.invalidate(adminCliniciansProvider);
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clinician deleted'), backgroundColor: AdminTheme.primary));
+                messenger.showSnackBar(const SnackBar(content: Text('Clinician deleted'), backgroundColor: AdminTheme.primary));
               } catch (e) {
-                if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
+                messenger.showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AdminTheme.error));
               }
             },
             child: const Text('Delete'),

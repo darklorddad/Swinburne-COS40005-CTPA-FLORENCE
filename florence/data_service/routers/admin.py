@@ -153,6 +153,7 @@ async def get_all_patients():
                 "Gender": patient.get("gender"),
                 "Date of Birth": patient.get("date_of_birth"),
                 "Organisation Name": org_data.get("name") if org_data else None,
+                "Organisation ID": patient.get("organisation_id"),
                 "Emergency Contact Name": patient.get("emergency_contact_name"),
                 "Emergency Contact Relationship": patient.get("emergency_contact_relationship"),
                 "Emergency Contact Phone Number": patient.get("emergency_contact_phone"),
