@@ -1,4 +1,4 @@
-# 📄 04_VERCEL.md
+# 04_VERCEL.md
 
 ## 1. Overview and Purpose
 Vercel serves as the primary hosting and continuous deployment platform for the Florence backend microservices and the Flutter web dashboard. It provides serverless function hosting for the Python FastAPI applications and static hosting for the compiled Flutter web output. The monorepo structure is managed via Vercel's Root Directory configuration which allows independent and automated deployments for each isolated service.
@@ -7,10 +7,10 @@ Vercel serves as the primary hosting and continuous deployment platform for the 
 *   **Current Owner:** Daniel Tiong / Group 7
 *   **Team Name:** Swinburne-COS40005-CTPA-FLORENCE
 *   **Team URL:** `florence-dhp`
-*   **Transfer Steps for Client or IT Staff:**
-    1. Navigate to the Vercel Team Settings.
-    2. Invite Dr Vong via email to the team and assign the Owner role.
-    3. Alternatively use the "Transfer" option in the Team Settings to move the entire team and all associated projects to a new Vercel account or BioTective organisation.
+*   **Transfer Process for Client or IT Staff:**
+    1. The Vercel Team Settings are accessed.
+    2. Dr Vong is invited via email to the team and assigned the Owner role.
+    3. Alternatively, the "Transfer" option in the Team Settings is utilised to move the entire team and all associated projects to a new Vercel account or BioTective organisation.
 
 ## 3. Configuration and Secrets Management
 Environment variables are managed at the project level within the Vercel dashboard. They are injected into the Python serverless functions at runtime and into the Flutter web application at build time. 

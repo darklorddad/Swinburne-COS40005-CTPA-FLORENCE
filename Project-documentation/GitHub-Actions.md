@@ -1,4 +1,4 @@
-# 📄 02_GITHUB_ACTIONS_AND_CI_CD.md
+# 02_GITHUB_ACTIONS_AND_CI_CD.md
 
 ## 1. Overview and Purpose
 This document outlines the Continuous Integration and Continuous Deployment (CI/CD) pipeline configured via GitHub Actions. The workflow automates the build and distribution process for the Florence mobile application to ensure that updates are delivered to testers and production environments efficiently. The configuration is located in `.github/workflows/main.yml`.

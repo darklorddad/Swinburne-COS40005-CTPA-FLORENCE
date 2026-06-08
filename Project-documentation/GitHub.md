@@ -1,4 +1,4 @@
-# 📄 01_GITHUB_AND_SOURCE_CONTROL.md
+# 01_GITHUB_AND_SOURCE_CONTROL.md
 
 ## 1. Overview & Purpose
 *   **Repository Name:** `Swinburne-COS40005-CTPA-FLORENCE`
@@ -8,20 +8,20 @@
 
 ## 2. Access & Ownership Transfer
 *   **Current Access Level:** Admin (Owner)
-*   **Transfer Steps for Client or IT Staff:** 
-    1. Navigate to **Settings** and then **Collaborators and teams** (under the "Access" tab).
-    2. Click **Add people** and search for the required GitHub username or email address.
-    3. Assign the **Admin** role to allow full management of repository settings, secrets and branch protection rules.
-*   *Note:* If full ownership transfer of the repository to a BioTective organisation is required in the future, this can be done via **Settings** and then **General** and then **Transfer ownership** (scroll to the Danger Zone).
+*   **Transfer Process for Client or IT Staff:** 
+    1. The **Settings** tab is accessed, followed by **Collaborators and teams** under the "Access" section.
+    2. The **Add people** button is selected to search for the required GitHub username or email address.
+    3. The **Admin** role is assigned to allow full management of repository settings, secrets and branch protection rules.
+*   *Note:* If full ownership transfer of the repository to a BioTective organisation is required in the future, this is accomplished via **Settings**, then **General**, and finally **Transfer ownership** located in the Danger Zone.
 
 ## 3. Repository Structure (The Monorepo)
 The codebase is organised into distinct service folders to separate concerns whilst keeping all project artefacts centralised:
-*   📂 **`florence/platform_service/`**: The Flutter frontend application. Contains the Patient, Clinician and Admin dashboards. Includes `shorebird.yaml` for mobile OTA updates and `vercel.json` for web hosting.
-*   📂 **`florence/data_service/`**: Python FastAPI microservice. Handles all CRUD operations, Supabase database proxying, role-based access control (RBAC) and file uploads.
-*   📂 **`florence/llm_chatbot_service/`**: Python FastAPI microservice. Powers the patient-facing conversational AI chatbot using LangChain.
-*   📂 **`florence/llm_engine_service/`**: Python FastAPI microservice. Handles background AI tasks including nutrition analysis (meal photos), risk assessment, biometric parsing and daily insight generation.
-*   📂 **`System-Documentation/`**: Contains the compiled User Manuals, Architecture diagrams and Handover documents.
-*   📂 **`.github/`**: Contains GitHub Actions workflows (`.yml` files) that automate CI/CD pipelines.
+*   **`florence/platform_service/`**: The Flutter frontend application. Contains the Patient, Clinician and Admin dashboards. Includes `shorebird.yaml` for mobile OTA updates and `vercel.json` for web hosting.
+*   **`florence/data_service/`**: Python FastAPI microservice. Handles all CRUD operations, Supabase database proxying, role-based access control (RBAC) and file uploads.
+*   **`florence/llm_chatbot_service/`**: Python FastAPI microservice. Powers the patient-facing conversational AI chatbot using LangChain.
+*   **`florence/llm_engine_service/`**: Python FastAPI microservice. Handles background AI tasks including nutrition analysis (meal photos), risk assessment, biometric parsing and daily insight generation.
+*   **`System-Documentation/`**: Contains the compiled User Manuals, Architecture diagrams and Handover documents.
+*   **`.github/`**: Contains GitHub Actions workflows (`.yml` files) that automate CI/CD pipelines.
 
 ## 4. Branching Strategy & Version Control
 The team utilises a streamlined branching model optimised for continuous integration, rapid deployment and repository hygiene:
@@ -60,19 +60,19 @@ GitHub Secrets are used to securely pass credentials to GitHub Actions without e
 *Note: Environment-specific secrets (like Vercel tokens, Supabase URLs or OpenRouter API keys) are injected directly via the Vercel dashboard or specific GitHub Environment secrets to keep the main repository secrets clean and focused on CI/CD authentication.*
 
 ## 7. Local Development Setup (Quick Start)
-For a new developer or IT staff member to clone and work with the repository:
+The following steps outline the process for a new developer or IT staff member to clone and work with the repository:
 
-1.  **Clone the repo:** 
+1.  **Repository Cloning:** 
     ```bash
     git clone https://github.com/darklorddad/Swinburne-COS40005-CTPA-FLORENCE.git
     cd Swinburne-COS40005-CTPA-FLORENCE
     ```
-2.  **Checkout the development branch:**
+2.  **Branch Checkout:**
     ```bash
     git checkout main
     ```
-3.  **Pull latest changes:**
+3.  **Fetching Latest Changes:**
     ```bash
     git pull origin main
     ```
-*(Refer to the respective backend and frontend documentation for environment setup, dependency installation and local execution commands).*
+*The respective backend and frontend documentation should be referenced for environment setup, dependency installation and local execution commands.*

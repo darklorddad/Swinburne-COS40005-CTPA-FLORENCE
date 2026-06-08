@@ -2,7 +2,7 @@ Here is the professional Markdown draft for **Document 6**, focusing on your Sho
 
 ***
 
-# 📄 06_SHOREBIRD.md
+# 06_SHOREBIRD.md
 
 ## 1. Overview and Purpose
 Shorebird provides Over-The-Air (OTA) update capabilities for the Florence Flutter application. It allows the development team to push critical bug fixes, UI tweaks and performance improvements directly to user devices without requiring a full release through the Google Play Store or Apple App Store review processes.
@@ -10,10 +10,10 @@ Shorebird provides Over-The-Air (OTA) update capabilities for the Florence Flutt
 ## 2. Access and Ownership Transfer
 *   **Current Owner:** Daniel Tiong (`danieltiong000@gmail.com`)
 *   **App Name:** florence
-*   **Transfer Steps for Client or IT Staff:**
-    1. Log into the Shorebird Console.
-    2. Navigate to the App Settings and scroll to the Danger Zone.
-    3. Select "Transfer Ownership" to move the application to a BioTective organisation or another designated account.
+*   **Transfer Process for Client or IT Staff:**
+    1. The Shorebird Console is accessed.
+    2. The App Settings are opened and the Danger Zone is located.
+    3. The "Transfer Ownership" option is selected to move the application to a BioTective organisation or another designated account.
 
 ## 3. Configuration and Secrets Management
 | Environment Variable / Secret | Description | Where it is stored | Required By |

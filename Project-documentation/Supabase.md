@@ -1,14 +1,14 @@
-# 📄 03_SUPABASE.md
+# 03_SUPABASE.md
 
 ## 1. Overview and Purpose
 Supabase serves as the foundational Backend-as-a-Service (BaaS) for the Florence platform. It provides the core PostgreSQL database, user authentication via GoTrue and file storage. A critical feature utilised in this project is PostgreSQL Row Level Security (RLS) which ensures strict data segregation between patients, clinicians and administrators at the database level.
 
 ## 2. Access and Ownership Transfer
 *   **Current Owner:** Daniel Tiong / Group 7
-*   **Transfer Steps for Client or IT Staff:**
-    1. Navigate to the Supabase Dashboard and access the Organisation settings.
-    2. Invite Dr Vong via email: `wantze.vong@gmail.com`.
-    3. Assign the **Owner** role to grant full administrative and billing privileges.
+*   **Transfer Process for Client or IT Staff:**
+    1. The Supabase Dashboard is accessed and the Organisation settings are opened.
+    2. An invitation is sent to Dr Vong via email: `wantze.vong@gmail.com`.
+    3. The **Owner** role is assigned to grant full administrative and billing privileges.
 *   **Dashboard URL:** [Insert Supabase Project URL]
 
 ## 3. Configuration and Secrets Management
