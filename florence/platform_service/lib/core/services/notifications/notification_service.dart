@@ -9,6 +9,7 @@ import 'package:florence/features/patient/core/providers/monitor_data_providers.
 import 'package:florence/features/patient/core/providers/settings_providers.dart';
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
 import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/core/services/api_service.dart';
 
 /// Notification Provider
 final notificationProvider = NotifierProvider<NotificationNotifier, List<HealthNotification>>(NotificationNotifier.new, isAutoDispose: true);
@@ -260,8 +261,24 @@ class NotificationNotifier extends Notifier<List<HealthNotification>> {
     state = [notification, ...state];
     _notificationsToday++;
 
+    // Persist the action to the database for clinician visibility
+    _persistAutomatedAction(notification);
+
     // TODO: In production, show system notification
     print('🔔 Notification: ${notification.title} - ${notification.message}');
+  }
+
+  /// Helper to send the action to the backend
+  Future<void> _persistAutomatedAction(HealthNotification notification) async {
+    try {
+      final apiService = ApiService();
+      await apiService.post('/patients/me/automated-actions', {
+        'type': notification.typeLabel,
+        'description': '${notification.title}: ${notification.message}',
+      });
+    } catch (e) {
+      debugPrint('Failed to persist automated action to DB: $e');
+    }
   }
 
   /// Mark notification as read
