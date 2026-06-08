@@ -44,6 +44,6 @@ The following repository secrets are strictly required for the automation pipeli
 * `CREDENTIAL_FILE_CONTENT`: A base64 encoded Firebase service account JSON key that grants GitHub Actions permission to upload builds securely.
 
 ## 8. Day 2 Operations and Maintenance
-* **Deploying a Major or Minor Update:** Developers must increment the version number in `florence/platform_service/pubspec.yaml` before merging code into the `production` branch. The pipeline will automatically recognise the change and distribute a fresh APK via Firebase.
-* **Deploying a Hotfix or UI Tweak:** Developers simply merge the code into `production` without altering the version number. The pipeline will automatically route to the patch scenario and update live devices instantly.
+* **Deploying a Major or Minor Update:** The version number in `florence/platform_service/pubspec.yaml` must be incremented before merging code into the `production` branch. The pipeline will automatically recognise the change and distribute a fresh APK via Firebase.
+* **Deploying a Hotfix or UI Tweak:** Code is merged into `production` without altering the version number. The pipeline will automatically route to the patch scenario and update live devices instantly.
 * **Manual Triggers:** If a rebuild is required without any code changes the pipeline can be manually dispatched from the Actions tab on GitHub.
