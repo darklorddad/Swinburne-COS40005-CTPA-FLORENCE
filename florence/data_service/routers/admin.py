@@ -355,16 +355,31 @@ async def generate_data_for_existing_patient(patient_id: int, req: GenerateDataR
             if intake_logs:
                 supabase.table('medication_intake_logs').insert(intake_logs).execute()
 
-        # Update Risk Level and dynamic AI/Risk states based on scenario
+        # Update Profile / Risk Level based on scenario
         is_high_risk = "erratic" in req.scenario.lower() or "rollercoaster" in req.scenario.lower() or "high-carb" in req.scenario.lower()
-        profile_data = sim_data['profile']
-        supabase.table('patient_profiles').update({
+        
+        # If generating a brand new patient, map the LLM profile data
+        profile_update = {
             "risk_level": "HIGH" if is_high_risk else "LOW",
-            "last_risk_assessment": now_utc.isoformat(),
-            "risk_rationale": profile_data['risk_rationale'],
-            "daily_insight": profile_data['daily_insight'],
-            "weight": profile_data['weight']
-        }).eq('id', patient_id).execute()
+            "last_risk_assessment": now_utc.isoformat()
+        }
+        if 'profile' in sim_data:
+            p = sim_data['profile']
+            profile_update.update({
+                "name": p.get('name', req.name if hasattr(req, 'name') else 'Patient'),
+                "phone_number": p.get('phone_number'),
+                "gender": p.get('gender'),
+                "date_of_birth": p.get('date_of_birth'),
+                "height": p.get('height'),
+                "weight": p.get('weight'),
+                "emergency_contact_name": p.get('emergency_contact_name'),
+                "emergency_contact_relationship": p.get('emergency_contact_relationship'),
+                "emergency_contact_phone": p.get('emergency_contact_phone'),
+                "risk_rationale": p.get('risk_rationale'),
+                "daily_insight": p.get('daily_insight')
+            })
+
+        supabase.table('patient_profiles').update(profile_update).eq('id', patient_id).execute()
 
         return {"message": "Data generated successfully"}
     except Exception as e:

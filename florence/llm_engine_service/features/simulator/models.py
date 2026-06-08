@@ -40,12 +40,14 @@ class HistoricalReading(BaseModel):
 class SimulatedMonth(BaseModel):
     profile: SimulatedProfile
     days: List[SimulatedDay]
+    
+    # Long-term vitals as historical lists
     hba1c_readings: List[HistoricalReading] = Field(description="HbA1c % over time. Generate exactly 2 readings spaced 90 days apart (e.g. day 0 and day 90).")
     cholesterol_total_readings: List[HistoricalReading] = Field(description="Total cholesterol over time. Generate exactly 1 reading at day 0.")
     cholesterol_ldl_readings: List[HistoricalReading] = Field(description="LDL over time. Generate exactly 1 reading at day 0.")
     cholesterol_hdl_readings: List[HistoricalReading] = Field(description="HDL over time. Generate exactly 1 reading at day 0.")
     cholesterol_triglycerides_readings: List[HistoricalReading] = Field(description="Triglycerides over time. Generate exactly 1 reading at day 0.")
-    bmi_readings: List[HistoricalReading] = Field(description="BMI over time. Generate 1 reading every 30 days (e.g. day 0, 30, 60...).")
+    bmi_readings: List[HistoricalReading] = Field(description="BMI over time. Generate 1 reading every 30 days (e.g. day 0, 30, 60, 90...).")
 
 class SimulatorRequest(BaseModel):
     scenario: str
