@@ -119,6 +119,18 @@ class AdminRepository {
     }
   }
 
+  Future<void> registerNewClinician(Map<String, dynamic> clinicianData) async {
+    try {
+      clinicianData['role'] = 'CLINICIAN';
+      if (clinicianData['password'] == null || clinicianData['password'].isEmpty) {
+        clinicianData['password'] = 'FlorenceTemp123!';
+      }
+      await _apiService.post('/auth/register', clinicianData);
+    } catch (e) {
+      throw Exception('Registration failed: $e');
+    }
+  }
+
   Future<void> updateClinician(int clinicianId, Map<String, dynamic> data) async {
     try {
       await _apiService.put('/admin/clinicians/$clinicianId', data);
