@@ -104,6 +104,36 @@ class AdminRepository {
       throw Exception('Failed to save organization: $e');
     }
   }
+
+  Future<List<AdminClinician>> fetchClinicians() async {
+    try {
+      final response = await _apiService.get('/admin/clinicians');
+      if (response is List) {
+        return response
+            .map((json) => AdminClinician.fromJson(json as Map<String, dynamic>))
+            .toList();
+      }
+      return [];
+    } catch (e) {
+      throw Exception('Failed to load clinicians: $e');
+    }
+  }
+
+  Future<void> updateClinician(int clinicianId, Map<String, dynamic> data) async {
+    try {
+      await _apiService.put('/admin/clinicians/$clinicianId', data);
+    } catch (e) {
+      throw Exception('Failed to update clinician: $e');
+    }
+  }
+
+  Future<void> deleteClinician(int clinicianId) async {
+    try {
+      await _apiService.delete('/admin/clinicians/$clinicianId');
+    } catch (e) {
+      throw Exception('Failed to delete clinician: $e');
+    }
+  }
 }
 
 // ==========================================
@@ -148,4 +178,9 @@ final adminActivityProvider = FutureProvider.autoDispose<List<AdminActivity>>((r
 final adminOrganizationsProvider = FutureProvider.autoDispose<List<AdminOrganization>>((ref) async {
   final repository = ref.watch(adminRepositoryProvider);
   return repository.fetchOrganizations();
+});
+
+final adminCliniciansProvider = FutureProvider.autoDispose<List<AdminClinician>>((ref) async {
+  final repository = ref.watch(adminRepositoryProvider);
+  return repository.fetchClinicians();
 });

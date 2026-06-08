@@ -12,6 +12,7 @@ import 'package:florence/features/admin/organizations/screens/organization_detai
 // Note: We are using the new PatientDirectoryScreen instead of the old PatientsListScreen
 import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart'; 
 import 'package:florence/features/admin/simulator/screens/data_simulator_screen.dart';
+import 'package:florence/features/admin/clinicians/screens/clinician_directory_screen.dart';
 
 import 'package:florence/features/auth/screens/login_screen.dart';
 import 'package:florence/features/auth/screens/register_screen.dart';
@@ -93,6 +94,7 @@ class AppRoutes {
   static const String adminDashboard = '/admin-dashboard';
   static const String adminLogin = '/admin/login';
   static const String adminPatientList = '/admin/patients';
+  static const String adminClinicianList = '/admin/clinicians';
   static const String adminPatientDetail = '/admin/patient-detail';
   static const String organizations = '/admin/organizations';
   static const String organizationDetail = '/admin/organization-detail';
@@ -207,6 +209,9 @@ class AppRoutes {
 
       case adminPatientList:
         return _buildAdminRoute(const PatientDirectoryScreen(), settings);
+
+      case adminClinicianList:
+        return _buildAdminRoute(const ClinicianDirectoryScreen(), settings);
 
       case adminPatientDetail:
         if (args is AdminPatient) {

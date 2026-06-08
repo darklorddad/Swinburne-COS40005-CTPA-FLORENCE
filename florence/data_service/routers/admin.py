@@ -27,6 +27,12 @@ class PatientProfileAdminUpdate(BaseModel):
     organisation_id: Optional[int] = None
     clinician_id: Optional[int] = None
 
+class ClinicianProfileAdminUpdate(BaseModel):
+    name: Optional[str] = None
+    phone_number: Optional[str] = None
+    gender: Optional[str] = None
+    organisation_id: Optional[int] = None
+
 class AssignClinician(BaseModel):
     clinician_id: Optional[int] = None # Use None to unassign
 
@@ -440,6 +446,80 @@ async def assign_clinician_to_patient(patient_id: int, assignment: AssignClinici
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to assign clinician: {str(e)}")
+
+@router.get("/clinicians", summary="Get a list of all clinicians")
+async def get_all_clinicians():
+    try:
+        clinicians_response = supabase.table('clinician_profiles').select(
+            "id, name, phone_number, gender, user_id, organisation_id, "
+            "organisations(name)"
+        ).execute()
+        
+        # Calculate patient counts per clinician
+        patients_res = supabase.table('patient_profiles').select('clinician_id').execute()
+        patient_counts = {}
+        for p in patients_res.data:
+            cid = p.get('clinician_id')
+            if cid:
+                patient_counts[cid] = patient_counts.get(cid, 0) + 1
+                
+        processed = []
+        for c in clinicians_response.data:
+            org_data = c.get('organisations')
+            processed.append({
+                "id": c['id'],
+                "user_id": c['user_id'],
+                "name": c['name'],
+                "phone_number": c['phone_number'],
+                "gender": c['gender'],
+                "organisation_id": c['organisation_id'],
+                "organisation_name": org_data.get('name') if org_data else None,
+                "patient_count": patient_counts.get(c['id'], 0)
+            })
+        return processed
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve clinicians: {str(e)}")
+
+@router.put("/clinicians/{clinician_id}", summary="Update a clinician")
+async def update_clinician_by_admin(clinician_id: int, update_data: ClinicianProfileAdminUpdate):
+    update_dict = update_data.model_dump(exclude_unset=True)
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No update data provided.")
+    try:
+        updated = supabase.table('clinician_profiles').update(update_dict).eq('id', clinician_id).execute()
+        if not updated.data:
+            raise HTTPException(status_code=404, detail="Clinician not found.")
+        return updated.data[0]
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update clinician: {str(e)}")
+
+@router.delete("/clinicians/{clinician_id}", summary="Delete a clinician")
+async def delete_clinician_by_admin(clinician_id: int):
+    try:
+        profile = supabase.table('clinician_profiles').select('user_id').eq('id', clinician_id).execute()
+        if not profile.data:
+            raise HTTPException(status_code=404, detail="Clinician not found.")
+        user_id = profile.data[0]['user_id']
+        
+        # Unassign patients first to prevent foreign key constraint errors
+        supabase.table('patient_profiles').update({'clinician_id': None}).eq('clinician_id', clinician_id).execute()
+        
+        # Delete profile
+        supabase.table('clinician_profiles').delete().eq('id', clinician_id).execute()
+        
+        # Delete auth user
+        try:
+            supabase.auth.admin.delete_user(user_id)
+        except Exception:
+            pass
+            
+        return {"message": "Clinician deleted successfully."}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete clinician: {str(e)}")
 
 @router.get("/recent-activity", summary="Get recent system activities")
 async def get_recent_activity():

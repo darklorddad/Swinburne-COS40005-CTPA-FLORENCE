@@ -53,6 +53,17 @@ class AdminSidebar extends StatelessWidget {
                   },
                 ),
                 _SidebarItem(
+                  icon: Icons.medical_services_outlined,
+                  activeIcon: Icons.medical_services_rounded,
+                  label: 'Clinicians',
+                  isActive: currentRoute == AppRoutes.adminClinicianList,
+                  onTap: () {
+                    if (currentRoute != AppRoutes.adminClinicianList) {
+                      Navigator.pushReplacementNamed(context, AppRoutes.adminClinicianList);
+                    }
+                  },
+                ),
+                _SidebarItem(
                   icon: Icons.business_rounded,
                   label: 'Organizations',
                   isActive: currentRoute == AppRoutes.organizations,

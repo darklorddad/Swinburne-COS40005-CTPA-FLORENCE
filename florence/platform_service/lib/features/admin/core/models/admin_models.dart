@@ -144,3 +144,39 @@ class AdminOrganization {
     );
   }
 }
+
+@immutable
+class AdminClinician {
+  final int id;
+  final String userId;
+  final String name;
+  final String? phoneNumber;
+  final String? gender;
+  final int? organisationId;
+  final String? organisationName;
+  final int patientCount;
+
+  const AdminClinician({
+    required this.id,
+    required this.userId,
+    required this.name,
+    this.phoneNumber,
+    this.gender,
+    this.organisationId,
+    this.organisationName,
+    this.patientCount = 0,
+  });
+
+  factory AdminClinician.fromJson(Map<String, dynamic> json) {
+    return AdminClinician(
+      id: json['id'] as int,
+      userId: json['user_id'] as String? ?? '',
+      name: json['name'] ?? 'Unknown',
+      phoneNumber: json['phone_number'],
+      gender: json['gender'],
+      organisationId: json['organisation_id'],
+      organisationName: json['organisation_name'],
+      patientCount: json['patient_count'] ?? 0,
+    );
+  }
+}
