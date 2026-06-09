@@ -10,6 +10,8 @@ import 'package:florence/features/patient/core/providers/monitor_data_providers.
 import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart' as core_repo;
 import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/config/theme.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
 
 // ══════════════════════════════════════════════════════════════
 // CATEGORY THEME DEFINITIONS
@@ -424,7 +426,10 @@ class _RecommendationsScreenState
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.info_outline),
-              onPressed: _showInfoDialog,
+              onPressed: () {
+                final thresholds = ref.read(patientThresholdsProvider).value;
+                _showInfoDialog(thresholds);
+              },
               tooltip: 'About Insights',
             ),
           ),
@@ -819,12 +824,30 @@ class _RecommendationsScreenState
     );
   }
 
-  void _showInfoDialog() {
+  void _showInfoDialog(List<PatientThreshold>? thresholds) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final dialogBg = AppTheme.getSurfaceColor(context);
     final textColor = AppTheme.getTextPrimaryColor(context);
     final subTextColor = AppTheme.getTextSecondaryColor(context);
     final borderColor = AppTheme.getBorderColor(context);
+
+    final settings = ref.read(patientSettingsProvider);
+    final isMmol = settings.glucoseUnit == 'mmol/L';
+    
+    final glucoseThreshold = thresholds?.firstWhere(
+      (t) => t.dataType == 'GLUCOSE',
+      orElse: () => PatientThreshold(dataType: 'GLUCOSE', minValue: 3.9, maxValue: 10.0),
+    ) ?? PatientThreshold(dataType: 'GLUCOSE', minValue: 3.9, maxValue: 10.0);
+
+    double minVal = glucoseThreshold.minValue;
+    double maxVal = glucoseThreshold.maxValue;
+    if (!isMmol) {
+      minVal = minVal * 18.018;
+      maxVal = maxVal * 18.018;
+    }
+    final minStr = minVal.toStringAsFixed(isMmol ? 1 : 0);
+    final maxStr = maxVal.toStringAsFixed(isMmol ? 1 : 0);
+    final unitStr = settings.glucoseUnit;
 
     showDialog(
       context: context,
