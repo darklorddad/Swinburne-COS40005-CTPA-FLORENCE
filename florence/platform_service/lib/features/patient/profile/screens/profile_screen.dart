@@ -1181,6 +1181,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                     existingLog: log);
                               } else if (value == 'resolve') {
                                 _promptResolveDate(context, ref, log);
+                              } else if (value == 'delete') {
+                                _confirmDeleteDisease(context, ref, log);
                               }
                             },
                             itemBuilder: (context) => [
@@ -1190,6 +1192,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 const PopupMenuItem(
                                     value: 'resolve',
                                     child: Text('Mark as Resolved')),
+                              const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Text('Delete', style: TextStyle(color: Colors.red))),
                             ],
                           ),
                         ],
@@ -1347,6 +1352,36 @@ void _showDiseaseFormModal(BuildContext context, WidgetRef ref, {DiseaseLog? exi
     ),
   );
 }
+
+  void _confirmDeleteDisease(BuildContext context, WidgetRef ref, DiseaseLog log) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Delete Condition"),
+        content: Text(
+            "Are you sure you want to permanently delete ${log.conditionName}?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              if (log.id != null) {
+                await ref.read(diseaseLogProvider.notifier).deleteLog(log.id!);
+              }
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                elevation: 0),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<void> _promptResolveDate(
       BuildContext context, WidgetRef ref, DiseaseLog log) async {

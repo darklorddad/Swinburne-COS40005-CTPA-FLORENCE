@@ -15,6 +15,11 @@ import 'package:florence/features/patient/profile/providers/user_profile_provide
 import 'package:florence/features/patient/chat/services/chatbot_service.dart';
 import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
 import 'package:florence/core/services/notifications/notification_service.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
+import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
@@ -153,6 +158,11 @@ class _AppState extends ConsumerState<App> {
         ref.invalidate(chatProvider);
         ref.invalidate(recommendationProvider);
         ref.invalidate(notificationProvider);
+        ref.invalidate(patientMedicationsProvider);
+        ref.invalidate(diseaseLogProvider);
+        ref.invalidate(todaysScheduleProvider);
+        ref.invalidate(patientThresholdsProvider);
+        ref.invalidate(patientSettingsProvider);
       }
 
       // The ApiService now gets the token directly from the Supabase client.
@@ -259,6 +269,11 @@ class _AppState extends ConsumerState<App> {
       ref.invalidate(chatProvider);
       ref.invalidate(recommendationProvider);
       ref.invalidate(notificationProvider);
+      ref.invalidate(patientMedicationsProvider);
+      ref.invalidate(diseaseLogProvider);
+      ref.invalidate(todaysScheduleProvider);
+      ref.invalidate(patientThresholdsProvider);
+      ref.invalidate(patientSettingsProvider);
 
       // Clear admin session state as well
       AdminAuthService().logout();

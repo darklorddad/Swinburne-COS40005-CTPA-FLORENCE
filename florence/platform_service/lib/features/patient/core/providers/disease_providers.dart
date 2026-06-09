@@ -74,6 +74,17 @@ class DiseaseLogNotifier extends AsyncNotifier<List<DiseaseLog>> {
       return _fetchLogsFromApi();
     });
   }
+
+  Future<void> deleteLog(int logId) async {
+    final api = ApiService();
+
+    state = const AsyncValue.loading();
+
+    state = await AsyncValue.guard(() async {
+      await api.delete('/patients/me/disease-logs/$logId');
+      return _fetchLogsFromApi();
+    });
+  }
 }
 
 final diseaseLogProvider =

@@ -699,6 +699,27 @@ async def update_own_disease_log(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update disease log: {str(e)}")
 
+@router.delete("/me/disease-logs/{log_id}", summary="Delete a disease log")
+async def delete_own_disease_log(
+    log_id: int,
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    try:
+        response = supabase.table('disease_logs') \
+            .delete() \
+            .eq('id', log_id) \
+            .eq('patient_id', patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Disease log not found")
+            
+        return {"status": "success", "message": "Log deleted"}
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete disease log: {str(e)}")
+
 @router.get("/me/daily-logs", summary="Get all my daily logs")
 async def get_own_daily_logs(patient_profile: dict = Depends(get_current_patient_profile)):
     """
