@@ -136,7 +136,7 @@ int _computeVitalityIndex(core_repo.HealthDataState? data) {
   // 2. Glucose Control (40 points)
   final glucoseScore = (summary.timeInRange / 100.0) * 40.0;
 
-  // 3. Physical Activity (15 points) - Target: 150 minutes per week
+  // 3. Physical Activity (15 points): Target of 150 minutes per week
   final activityScore = (summary.totalActivityMinutes / 150.0).clamp(0.0, 1.0) * 15.0;
 
   // 4. Medication Adherence (20 points)
@@ -145,7 +145,7 @@ int _computeVitalityIndex(core_repo.HealthDataState? data) {
     adherenceScore = summary.medicationAdherence * 20.0;
   }
 
-  // 5. Engagement & Consistency (25 points) - Rewards the habit of tracking (~14 logs/week)
+  // 5. Engagement and Consistency (25 points): Rewards the habit of tracking (~14 logs/week)
   final engagementScore = (totalLogs / 14.0).clamp(0.0, 1.0) * 25.0;
 
   // Calculate final score (guaranteed 0 to 100)
@@ -286,7 +286,7 @@ class _RecommendationsScreenState
     if (diff.inMinutes < 60) return 'Updated ${diff.inMinutes}m ago';
     if (diff.inHours < 24)   return 'Updated ${diff.inHours}h ago';
     if (diff.inHours < 48)   return 'Updated yesterday';
-    return 'Stale · tap to refresh';
+    return 'Stale, tap to refresh';
   }
 
   Future<void> _checkAndLoad() async {
@@ -371,7 +371,7 @@ class _RecommendationsScreenState
         if (usedAI) {
           Helpers.showSuccess(context, '${timeframe[0].toUpperCase()}${timeframe.substring(1)} AI analysis complete');
         } else {
-          Helpers.showWarning(context, 'AI unavailable — showing general recommendations');
+          Helpers.showWarning(context, 'AI unavailable, showing general recommendations');
         }
       }
     } catch (_) {
