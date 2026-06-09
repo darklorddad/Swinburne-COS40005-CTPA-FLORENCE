@@ -2,9 +2,8 @@
 /// Calculates patient risk scores for clinician prioritization
 library;
 
-import '../../../patient/core/models/health_data_models.dart';
-import '../../../patient/core/services/data_ingestion_service.dart';
-import '../../../../core/config/environment.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/core/config/environment.dart';
 
 /// Patient risk level
 enum RiskLevel {

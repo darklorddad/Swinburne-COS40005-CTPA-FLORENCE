@@ -49,15 +49,15 @@ class AdminRegistration(BaseModel):
 
 
 DEFAULT_THRESHOLDS = [
-    {'data_type': 'GLUCOSE', 'min_value': 70.0, 'max_value': 180.0},
-    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 7.0},
+    {'data_type': 'GLUCOSE', 'min_value': 3.9, 'max_value': 10.0}, 
+    {'data_type': 'HBA1C', 'min_value': 4.0, 'max_value': 5.7},
     {'data_type': 'BMI', 'min_value': 18.5, 'max_value': 24.9},
-    # Detailed Cholesterol
-    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 100.0, 'max_value': 200.0},
-    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 40.0, 'max_value': 100.0},
-    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 150.0},
-    # BP
+    # Detailed Cholesterol (in mmol/L)
+    {'data_type': 'CHOLESTEROL_TOTAL', 'min_value': 0.0, 'max_value': 5.1},
+    {'data_type': 'CHOLESTEROL_LDL', 'min_value': 0.0, 'max_value': 2.5},
+    {'data_type': 'CHOLESTEROL_HDL', 'min_value': 1.0, 'max_value': 2.5}, 
+    {'data_type': 'CHOLESTEROL_TRIGLYCERIDES', 'min_value': 0.0, 'max_value': 1.7},
+    # BP (in mmHg)
     {'data_type': 'BLOOD_PRESSURE_SYSTOLIC', 'min_value': 90.0, 'max_value': 120.0},
     {'data_type': 'BLOOD_PRESSURE_DIASTOLIC', 'min_value': 60.0, 'max_value': 80.0}
 ]
@@ -76,10 +76,7 @@ async def register_user(user_data: UserRegistration):
     try:
         user_session = local_client.auth.sign_up({
             "email": user_data.email,
-            "password": user_data.password,
-            "options": {
-                "email_redirect_to": "florence://login-callback",
-            }
+            "password": user_data.password
         })
         new_user = user_session.user
         if not new_user:
@@ -91,8 +88,13 @@ async def register_user(user_data: UserRegistration):
             new_user.id, {"app_metadata": {"role": user_data.role}}
         )
 
-    except AuthApiError as e:
-        raise HTTPException(status_code=400, detail=f"User registration failed: {e.message}")
+    except Exception as e:
+        # Catching generic Exception because supabase-py sometimes raises gotrue.errors.AuthApiError 
+        # which doesn't always match the imported supabase_auth.errors.AuthApiError.
+        error_msg = str(e).lower()
+        if "already registered" in error_msg or "already been registered" in error_msg or "already exists" in error_msg:
+            raise HTTPException(status_code=400, detail="An account with this email already exists.")
+        raise HTTPException(status_code=400, detail=f"User registration failed: {str(e)}")
     
     try:
         if user_data.role == 'PATIENT':
@@ -106,6 +108,14 @@ async def register_user(user_data: UserRegistration):
             }
             patient_profile = supabase.table('patient_profiles').insert(profile_data).execute().data[0]
             
+            # Default settings to mmol/L
+            supabase.table('user_settings').upsert({
+                'user_id': new_user.id,
+                'glucose_unit': 'mmol/L',
+                'cholesterol_unit': 'mmol/L',
+                'show_quick_actions': False
+            }).execute()
+
             thresholds_to_insert = [
                 {**threshold, 'patient_id': patient_profile['id']} for threshold in DEFAULT_THRESHOLDS
             ]
@@ -117,8 +127,26 @@ async def register_user(user_data: UserRegistration):
                 "organisation_id": user_data.organisation_id,
             }
             supabase.table('clinician_profiles').insert(profile_data).execute()
+
+            # Default settings to mmol/L for clinicians
+            supabase.table('user_settings').upsert({
+                'user_id': new_user.id,
+                'glucose_unit': 'mmol/L',
+                'cholesterol_unit': 'mmol/L',
+                'show_quick_actions': False
+            }).execute()
         
-        return {"message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification."}
+        # If user_session.session exists, Supabase did not require email confirmation
+        if user_session.session:
+            return {
+                "message": f"{user_data.role.capitalize()} registered successfully.",
+                "requires_email_confirmation": False
+            }
+        else:
+            return {
+                "message": f"{user_data.role.capitalize()} registered successfully. Please check your email for verification.",
+                "requires_email_confirmation": True
+            }
 
     except Exception as e:
         if new_user:

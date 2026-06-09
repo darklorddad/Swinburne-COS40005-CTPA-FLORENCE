@@ -18,34 +18,39 @@ class PatientListItem extends StatelessWidget {
     final riskColor = AppTheme.getRiskColor(patient.riskLevel.name);
     
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
-      color: riskColor,
-      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      color: riskColor.withValues(alpha: 0.15), // Filled in background
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: riskColor.withValues(alpha: 0.5), // Stronger outline
+          width: 1.5,
+        ),
       ),
+      elevation: 0,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              // Patient Avatar placeholder
+              // Patient Avatar
               Container(
-                width: 48,
-                height: 48,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
+                  color: Colors.white,
                   shape: BoxShape.circle,
+                  border: Border.all(color: riskColor, width: 2),
                 ),
                 child: Center(
                   child: Text(
                     patient.name.isNotEmpty ? patient.name[0].toUpperCase() : '?',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: riskColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 20,
+                      fontSize: 22,
                     ),
                   ),
                 ),
@@ -58,51 +63,33 @@ class PatientListItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            patient.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        // Risk Status Pill
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            patient.riskLevel.name.toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
                     Text(
-                      'ID: ${patient.id} • ${patient.age} yrs • ${patient.gender}',
-                      style: TextStyle(
+                      patient.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      patient.age > 0 
+                          ? 'ID: ${patient.id} • ${patient.age} yrs • ${patient.gender}'
+                          : 'ID: ${patient.id}',
+                      style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      patient.conditionName,
-                      style: TextStyle(
+                      patient.activeDiseasesText,
+                      style: const TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: AppTheme.textSecondary,
                       ),
                     ),
                   ],
@@ -111,23 +98,25 @@ class PatientListItem extends StatelessWidget {
               
               const SizedBox(width: 12),
               
-              // Last update info
+              // Right side info (Last Update only)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
+                  const Text(
                     'Last Update',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: AppTheme.textTertiary,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    _formatLastUpdate(patient.lastSync),
+                    _formatLastUpdate(patient.lastUpdate),
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textSecondary,
                     ),
                   ),
                 ],
@@ -139,9 +128,11 @@ class PatientListItem extends StatelessWidget {
     );
   }
 
-  String _formatLastUpdate(DateTime lastSync) {
+  String _formatLastUpdate(DateTime? lastUpdate) {
+    if (lastUpdate == null) return 'No data';
+    
     final now = DateTime.now();
-    final difference = now.difference(lastSync);
+    final difference = now.difference(lastUpdate);
     
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -150,7 +141,7 @@ class PatientListItem extends StatelessWidget {
     } else if (difference.inDays < 1) {
       return '${difference.inHours}h ago';
     } else {
-      return DateFormat('MMM d, h:mm a').format(lastSync);
+      return DateFormat('MMM d').format(lastUpdate);
     }
   }
 }

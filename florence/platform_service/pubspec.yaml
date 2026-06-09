@@ -1,7 +1,7 @@
 name: florence
 description: AI-Enabled Digital Health Platform for Chronic Disease Monitoring
 publish_to: 'none'
-version: 1.0.0+2
+version: 1.0.0+3
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -53,6 +53,10 @@ dependencies:
 
   package_info_plus: ^8.0.0
 
+  crypto: any
+
+  file_picker: ^11.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -74,6 +78,8 @@ flutter:
   uses-material-design: true
   assets:
     - shorebird.yaml
+    - assets/icon.png
+    - assets/FLORENCE-light-background-cropped.png
 
 flutter_launcher_icons:
   android: "launcher_icon"

@@ -20,8 +20,10 @@ class ActivityLog(BaseModel):
     id: int
     patient_id: int
     activity_description: str
-    duration_minutes: int
-    performed_at: datetime
+    active_duration_minutes: int
+    start_time: datetime
+    end_time: Optional[datetime] = None
+    calories_burned: Optional[int] = None
 
 
 class DailyLog(BaseModel):
@@ -35,6 +37,7 @@ class DailyLog(BaseModel):
     glucose_after_meal: Optional[float] = None
     glucose_before_meal_time: Optional[datetime] = None
     glucose_after_meal_time: Optional[datetime] = None
+    calories: Optional[int] = None
 
 
 class HealthContext(BaseModel):
@@ -44,21 +47,28 @@ class HealthContext(BaseModel):
     raw_activity_logs: str
     raw_daily_logs: str
     patient_thresholds: str
+    medications: str
+    diagnoses: str
     data_timestamp: str
 
     def format_for_prompt(self) -> str:
         """Format health context for inclusion in LLM prompt."""
         lines = []
         
-        lines.append("=== PATIENT PROFILE ===")
+        lines.append("=== PATIENT PROFILE & DIAGNOSES ===")
         lines.append(self.patient_profile)
+        lines.append(self.diagnoses)
+        lines.append("")
+
+        lines.append("=== CURRENT MEDICATIONS ===")
+        lines.append(self.medications)
         lines.append("")
 
         lines.append("=== PATIENT THRESHOLDS ===")
         lines.append(self.patient_thresholds)
         lines.append("")
         
-        lines.append("=== MONITOR DATA (Glucose, BP, etc) ===")
+        lines.append("=== MONITOR DATA (Glucose, BP, BMI, Lipids) ===")
         lines.append(self.raw_monitor_data)
         lines.append("")
         

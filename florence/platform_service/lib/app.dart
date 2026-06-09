@@ -4,17 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'config/theme.dart';
-import 'config/routes.dart';
-import 'core/services/api_service.dart';
-import 'core/providers/theme_provider.dart';
-import 'features/admin/core/services/admin_auth_service.dart';
-import 'main.dart';
-import 'features/patient/core/providers/monitor_data_providers.dart';
-import 'features/patient/profile/providers/user_profile_provider.dart';
-import 'features/patient/chat/services/chatbot_service.dart';
-import 'features/patient/recommendations/services/recommendation_engine.dart';
-import 'core/services/notifications/notification_service.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/providers/theme_provider.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
+import 'package:florence/main.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/features/patient/chat/services/chatbot_service.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/core/services/notifications/notification_service.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
+import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/dashboard/widgets/medication_section.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
 
 /// Main application widget
 /// This sets up the MaterialApp with theme, routing, and providers
@@ -144,13 +149,20 @@ class _AppState extends ConsumerState<App> {
 
     if (session != null) {
       // Force invalidate providers on fresh login to prevent seeing previous user's data
-      if (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.passwordRecovery) {
+      if (data.event == AuthChangeEvent.signedIn || 
+          data.event == AuthChangeEvent.tokenRefreshed || 
+          data.event == AuthChangeEvent.passwordRecovery) {
         debugPrint('[App Listener] Sign-in detected. Invalidating providers to clear stale data.');
         ref.invalidate(monitorDataProvider);
         ref.invalidate(userProfileProvider);
         ref.invalidate(chatProvider);
         ref.invalidate(recommendationProvider);
         ref.invalidate(notificationProvider);
+        ref.invalidate(patientMedicationsProvider);
+        ref.invalidate(diseaseLogProvider);
+        ref.invalidate(todaysScheduleProvider);
+        ref.invalidate(patientThresholdsProvider);
+        ref.invalidate(patientSettingsProvider);
       }
 
       // The ApiService now gets the token directly from the Supabase client.
@@ -159,11 +171,15 @@ class _AppState extends ConsumerState<App> {
 
       final user = session.user;
 
-      // This logic handles deep link sign-ins (email confirmation)
-      final isSignUpConfirmation = data.event == AuthChangeEvent.signedIn &&
-          user.createdAt != null &&
-          DateTime.now().difference(DateTime.parse(user.createdAt!)).inMinutes <
-              2;
+      // Detect if this is a brand new account by comparing Supabase's internal server timestamps.
+      // This completely ignores your local computer/phone clock, preventing timezone or clock-skew bugs!
+      final createdAt = DateTime.parse(user.createdAt);
+      final lastSignIn = user.lastSignInAt != null ? DateTime.parse(user.lastSignInAt!) : createdAt;
+      final diffMinutes = lastSignIn.difference(createdAt).inMinutes.abs();
+      
+      final isLoginEvent = data.event == AuthChangeEvent.signedIn || 
+                           data.event == AuthChangeEvent.tokenRefreshed;
+      final isNewUser = isLoginEvent && diffMinutes < 5;
 
       dynamic backendUser;
       try {
@@ -174,7 +190,7 @@ class _AppState extends ConsumerState<App> {
       } catch (e) {
         // If the user is not found on the backend during the first login after email confirmation,
         // it means we need to create their profile on our backend.
-        if (isSignUpConfirmation && e.toString().contains('Not Found')) {
+        if (isNewUser && e.toString().contains('Not Found')) {
           debugPrint('[App Listener] User not found on backend. Attempting to sync profile.');
           try {
             // This endpoint should trigger the backend to create a user record
@@ -219,7 +235,7 @@ class _AppState extends ConsumerState<App> {
       }
 
       // Determine user role from Supabase auth metadata
-      final userRole = session?.user?.appMetadata['role'] as String? ?? 'PATIENT';
+      final userRole = session.user.appMetadata['role'] as String? ?? 'PATIENT';
       debugPrint('[App Listener] Session found. Role: $userRole. Navigating...');
 
       String destinationRoute;
@@ -237,8 +253,8 @@ class _AppState extends ConsumerState<App> {
         return;
       }
 
-      final message = isSignUpConfirmation
-          ? 'Welcome! Your email has been successfully confirmed.'
+      final message = isNewUser
+          ? 'Welcome to Florence!'
           : 'Welcome back!';
 
       navigator.pushNamedAndRemoveUntil(destinationRoute, (route) => false,
@@ -253,10 +269,20 @@ class _AppState extends ConsumerState<App> {
       ref.invalidate(chatProvider);
       ref.invalidate(recommendationProvider);
       ref.invalidate(notificationProvider);
+      ref.invalidate(patientMedicationsProvider);
+      ref.invalidate(diseaseLogProvider);
+      ref.invalidate(todaysScheduleProvider);
+      ref.invalidate(patientThresholdsProvider);
+      ref.invalidate(patientSettingsProvider);
 
       // Clear admin session state as well
       AdminAuthService().logout();
-      navigator.pushNamedAndRemoveUntil(AppRoutes.login, (route) => false);
+
+      // Ensure we clear the stack and go to login
+      navigator.pushNamedAndRemoveUntil(
+        AppRoutes.login,
+        (route) => false,
+      );
     }
   }
 

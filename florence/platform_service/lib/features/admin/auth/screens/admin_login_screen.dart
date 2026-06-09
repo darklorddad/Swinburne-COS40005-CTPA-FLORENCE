@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../../admin/core/services/admin_auth_service.dart';
-import '../../../admin/core/models/admin_user.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
 
 /// Admin Login Screen
 /// Separate login for admin/staff users
@@ -54,17 +53,15 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       if (user != null) {
         // Login successful - navigate to appropriate dashboard
         if (mounted) {
-          // TODO: Navigate based on role
-          // For now, just show success message
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Welcome back, ${user.firstName}!'),
-              backgroundColor: AdminTheme.successColor,
+              backgroundColor: AdminTheme.primary, // Updated to new theme primary
             ),
           );
 
-          // Navigate to dashboard (will be implemented in next steps)
-          // Navigator.pushReplacementNamed(context, '/admin/dashboard');
+          // Navigate to dashboard
+          Navigator.pushReplacementNamed(context, '/admin-dashboard');
         }
       } else {
         // Login failed
@@ -104,7 +101,22 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   children: [
                     Row(
                       children: [
-                        AdminTheme.getRoleBadge(entry.key),
+                        // Replaced getRoleBadge with a new inline badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AdminTheme.primaryContainer.withAlpha(77), // 0.3 * 255 = 77
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            entry.key,
+                            style: const TextStyle(
+                              color: AdminTheme.primary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                         const SizedBox(width: 8),
                       ],
                     ),
@@ -118,17 +130,17 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                     ),
                     Text(
                       entry.value['description']!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 12,
-                        color: AdminTheme.textSecondaryColor,
+                        color: AdminTheme.onSurfaceVariant, // Updated
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Password: ${entry.value['password']}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 11,
-                        color: AdminTheme.textLightColor,
+                        color: AdminTheme.outline, // Updated
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -160,7 +172,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     return Theme(
       data: AdminTheme.lightTheme,
       child: Scaffold(
-        backgroundColor: AdminTheme.backgroundColor,
+        backgroundColor: AdminTheme.surface, // Updated
         body: Center(
           child: SingleChildScrollView(
             child: Padding(
@@ -172,7 +184,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                     side: const BorderSide(
-                      color: AdminTheme.borderColor,
+                      color: AdminTheme.outlineVariant, // Updated
                       width: 1,
                     ),
                   ),
@@ -192,13 +204,13 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                 width: 64,
                                 height: 64,
                                 decoration: BoxDecoration(
-                                  color: AdminTheme.primaryIndigo.withOpacity(0.1),
+                                  color: AdminTheme.primary.withValues(alpha: 0.1), // Updated
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: const Icon(
                                   Icons.admin_panel_settings,
                                   size: 32,
-                                  color: AdminTheme.primaryIndigo,
+                                  color: AdminTheme.primary, // Updated
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -212,7 +224,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               Text(
                                 'Healthcare Management Portal',
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: AdminTheme.textSecondaryColor,
+                                      color: AdminTheme.onSurfaceVariant, // Updated
                                     ),
                               ),
                             ],
@@ -226,17 +238,17 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                               padding: const EdgeInsets.all(12),
                               margin: const EdgeInsets.only(bottom: 16),
                               decoration: BoxDecoration(
-                                color: AdminTheme.errorColor.withOpacity(0.1),
+                                color: AdminTheme.error.withValues(alpha: 0.1), // Updated
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: AdminTheme.errorColor.withOpacity(0.3),
+                                  color: AdminTheme.error.withValues(alpha: 0.3), // Updated
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   const Icon(
                                     Icons.error_outline,
-                                    color: AdminTheme.errorColor,
+                                    color: AdminTheme.error, // Updated
                                     size: 20,
                                   ),
                                   const SizedBox(width: 8),
@@ -244,7 +256,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                     child: Text(
                                       _errorMessage!,
                                       style: const TextStyle(
-                                        color: AdminTheme.errorColor,
+                                        color: AdminTheme.error, // Updated
                                         fontSize: 13,
                                       ),
                                     ),
@@ -307,9 +319,9 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                           const SizedBox(height: 24),
 
                           // Login button
-                          ElevatedButton(
+                          FilledButton( // Switched to FilledButton to match new theme
                             onPressed: _isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
+                            style: FilledButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 16),
                             ),
                             child: _isLoading
@@ -338,7 +350,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                                   'Demo Mode',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: AdminTheme.textLightColor,
+                                    color: AdminTheme.outline, // Updated
                                   ),
                                 ),
                               ),
@@ -353,7 +365,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             label: 'Admin',
                             email: 'admin@biotective.com',
                             icon: Icons.shield,
-                            color: AdminTheme.adminColor,
+                            color: AdminTheme.primary, // Updated
                             onTap: () => _fillDemoCredentials('admin@biotective.com'),
                           ),
                           const SizedBox(height: 8),
@@ -361,7 +373,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                             label: 'Hospital Admin',
                             email: 'admin@citygeneral.com',
                             icon: Icons.business,
-                            color: AdminTheme.hospitalAdminColor,
+                            color: AdminTheme.secondary, // Updated
                             onTap: () => _fillDemoCredentials('admin@citygeneral.com'),
                           ),
 
@@ -408,14 +420,14 @@ class _QuickLoginButton extends StatelessWidget {
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.all(16),
-        side: BorderSide(color: color.withOpacity(0.3)),
+        side: BorderSide(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
@@ -435,9 +447,9 @@ class _QuickLoginButton extends StatelessWidget {
                 ),
                 Text(
                   email,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 11,
-                    color: AdminTheme.textSecondaryColor,
+                    color: AdminTheme.onSurfaceVariant, // Updated
                   ),
                 ),
               ],

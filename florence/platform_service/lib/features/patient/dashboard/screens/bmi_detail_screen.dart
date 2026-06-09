@@ -5,15 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_data;
-import '../../dashboard/providers/dashboard_providers.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart';
 
 class BmiDetailScreen extends ConsumerWidget {
-  const BmiDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const BmiDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +32,7 @@ class BmiDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logBmi),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logBmi),
               tooltip: 'Add Log',
             ),
           ),
@@ -47,9 +49,9 @@ class BmiDetailScreen extends ConsumerWidget {
         data: (dataList) {
           // Get Thresholds
           final thresholds = thresholdsAsync.value ?? [];
-          HealthThreshold? bmiThreshold;
+          PatientThreshold? bmiThreshold;
           try {
-            bmiThreshold = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BMI);
+            bmiThreshold = thresholds.firstWhere((t) => t.dataType == 'BMI');
           } catch (_) {}
 
           // Filter BMI Data
@@ -109,7 +111,7 @@ class BmiDetailScreen extends ConsumerWidget {
                                         hba1cReadings: hba1cReadings,
                                       ),
                                       const SizedBox(height: 20),
-                                      _BmiHistorySection(
+                                      _HistorySection(
                                         readings: bmiReadings,
                                         threshold: bmiThreshold,
                                       ),
@@ -136,7 +138,7 @@ class BmiDetailScreen extends ConsumerWidget {
                                   hba1cReadings: hba1cReadings,
                                 ),
                                 const SizedBox(height: 20),
-                                _BmiHistorySection(
+                                _HistorySection(
                                   readings: bmiReadings,
                                   threshold: bmiThreshold,
                                 ),
@@ -200,11 +202,12 @@ class _ChartSectionState extends State<_ChartSection> {
     Duration duration;
     switch (_selectedRange) {
       case '1D': duration = const Duration(days: 1); break;
-      case '1M': duration = const Duration(days: 30); break;
+      case '7D': duration = const Duration(days: 7); break;
+      case '30D': duration = const Duration(days: 30); break;
       case '3M': duration = const Duration(days: 90); break;
       case '6M': duration = const Duration(days: 180); break;
       case '1Y': duration = const Duration(days: 365); break;
-      default: duration = const Duration(days: 365); break;
+      default: duration = const Duration(days: 90); break;
     }
     final cutoff = now.subtract(duration);
     return widget.allData.where((d) => d.measuredAt.isAfter(cutoff)).toList();
@@ -242,7 +245,7 @@ class _ChartSectionState extends State<_ChartSection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,7 +254,7 @@ class _ChartSectionState extends State<_ChartSection> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
@@ -267,7 +270,7 @@ class _ChartSectionState extends State<_ChartSection> {
           // Tabs
           Container(
             height: 36,
-            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
             padding: const EdgeInsets.all(4),
             child: Row(
               children: widget.ranges.map((range) {
@@ -311,7 +314,7 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _BmiGaugeSection extends StatelessWidget {
   final MonitorData? latestReading;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _BmiGaugeSection({this.latestReading, this.threshold});
 
@@ -372,9 +375,9 @@ class _BmiGaugeSection extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               decoration: BoxDecoration(
-                color: AppTheme.primaryGreen.withOpacity(0.1),
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+                border: Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
               ),
               child: Column(
                 children: [
@@ -388,22 +391,22 @@ class _BmiGaugeSection extends StatelessWidget {
                           Text(
                             'Target Range',
                             style: TextStyle(
-                              color: AppTheme.primaryGreen.withOpacity(0.8),
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
                       ),
-                      Icon(Icons.chevron_right, size: 20, color: AppTheme.primaryGreen.withOpacity(0.5)),
+                      Icon(Icons.chevron_right, size: 20, color: AppTheme.primaryGreen.withValues(alpha: 0.5)),
                     ],
                   ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withOpacity(0.8))),
+                      Text('BMI', style: TextStyle(fontSize: 12, color: AppTheme.primaryGreen.withValues(alpha: 0.8))),
                       Text(
-                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)}',
+                        '${minNormal.toStringAsFixed(1)} - ${maxNormal.toStringAsFixed(1)} kg/m²',
                         style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.primaryGreen),
                       ),
                     ],
@@ -413,14 +416,29 @@ class _BmiGaugeSection extends StatelessWidget {
             ),
           ),
 
-          Text(
-            latestReading != null ? bmi.toStringAsFixed(1) : '--',
-            style: TextStyle(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimaryColor,
-              height: 1.0,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                latestReading != null ? bmi.toStringAsFixed(1) : '--',
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimaryColor,
+                  height: 1.0,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'kg/m²',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
 
@@ -480,10 +498,10 @@ class _BmiGaugeSection extends StatelessWidget {
                           height: 40, // RESTORED HEIGHT
                           child: Row(
                             children: [
-                              Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withOpacity(0.3)),
-                              Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withOpacity(0.3)),
-                              Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withOpacity(0.3)),
-                              Expanded(child: Container(color: AppTheme.errorColor.withOpacity(0.3))),
+                              Container(width: (uwWidth / totalRange) * width, color: AppTheme.primaryBlue.withValues(alpha: 0.3)),
+                              Container(width: (normalWidth / totalRange) * width, color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
+                              Container(width: (owWidth / totalRange) * width, color: AppTheme.warningColor.withValues(alpha: 0.3)),
+                              Expanded(child: Container(color: AppTheme.errorColor.withValues(alpha: 0.3))),
                             ],
                           ),
                         ),
@@ -502,7 +520,7 @@ class _BmiGaugeSection extends StatelessWidget {
                     if (latestReading != null)
                       Positioned(
                         left: getPos(bmi) - 14,
-                        top: -4, // Overlaps the bar
+                        top: 1, // Overlaps the bar
                         child: Icon(Icons.arrow_drop_down, size: 28, color: AppTheme.textPrimaryColor),
                       ),
                   ],
@@ -515,9 +533,9 @@ class _BmiGaugeSection extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: color.withOpacity(0.2)),
+                border: Border.all(color: color.withValues(alpha: 0.2)),
               ),
               child: Text(
                 category.toUpperCase(),
@@ -540,7 +558,7 @@ class _BmiGaugeSection extends StatelessWidget {
 
 class _BmiTrendSection extends StatelessWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
   const _BmiTrendSection({required this.readings, this.threshold});
 
@@ -551,7 +569,7 @@ class _BmiTrendSection extends StatelessWidget {
     final maxNormal = threshold?.maxValue ?? 24.9;
 
     return _ChartSection(
-      title: 'Progress',
+      title: 'BMI Trends',
       icon: Icons.show_chart,
       ranges: const ['3M', '6M', '1Y', 'ALL'],
       infoText: 'Visualizes your BMI trends over time.\n\n'
@@ -560,33 +578,36 @@ class _BmiTrendSection extends StatelessWidget {
           '• Green Band: Normal BMI Range ($minNormal - $maxNormal).',
       allData: readings,
       builder: (range, data) {
-        // Calculate X-Axis bounds based on selected range
+        // Calculate X-Axis bounds with "Snap to Day/Hour" logic
         double minX, maxX;
         final now = DateTime.now();
+        
+        // Snap end time to next hour for clean grid lines
+        final endOfWindow = DateTime(now.year, now.month, now.day, now.hour + 1);
 
         if (range == 'ALL') {
           if (data.isNotEmpty) {
             minX = data.first.measuredAt.millisecondsSinceEpoch.toDouble();
-            maxX = data.last.measuredAt.millisecondsSinceEpoch.toDouble();
-            if (minX == maxX) {
-              minX -= 2629743000; // -1 Month
-              maxX += 2629743000; // +1 Month
+            maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
+            
+            // Ensure meaningful span if only 1 data point
+            if (maxX - minX < 86400000) { // < 1 day
+               minX -= 2629743000; // -1 Month buffer
             }
           } else {
-            // Default 3M view if ALL is empty
-            maxX = now.millisecondsSinceEpoch.toDouble();
-            minX = now.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
+            maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
+            minX = endOfWindow.subtract(const Duration(days: 90)).millisecondsSinceEpoch.toDouble();
           }
         } else {
-          maxX = now.millisecondsSinceEpoch.toDouble();
+          maxX = endOfWindow.millisecondsSinceEpoch.toDouble();
           Duration duration;
           switch (range) {
             case '3M': duration = const Duration(days: 90); break;
             case '6M': duration = const Duration(days: 180); break;
             case '1Y': duration = const Duration(days: 365); break;
-            default: duration = const Duration(days: 90); break; // Default 3M
+            default: duration = const Duration(days: 90); break;
           }
-          minX = now.subtract(duration).millisecondsSinceEpoch.toDouble();
+          minX = endOfWindow.subtract(duration).millisecondsSinceEpoch.toDouble();
         }
 
         double minY, maxY;
@@ -604,6 +625,18 @@ class _BmiTrendSection extends StatelessWidget {
           maxY = maxNormal + 5.0;
         }
 
+        // Snap to nearest 5
+        minY = (minY / 5).floor() * 5.0;
+        maxY = (maxY / 5).ceil() * 5.0;
+
+        // Prevent zero-height chart if values are identical
+        if (maxY == minY) maxY += 5.0;
+
+        // Calculate interval (Fixed 4h for Daily, Dynamic for others)
+        final interval = range == '1D' 
+            ? 14400000.0 // 4 hours in ms
+            : (maxX - minX) / (context.isMobile ? 2.5 : 4);
+
         return Column(
           children: [
             SizedBox(
@@ -614,8 +647,11 @@ class _BmiTrendSection extends StatelessWidget {
                   minX: minX, maxX: maxX, minY: minY, maxY: maxY,
                   gridData: FlGridData(
                     show: true,
-                    drawVerticalLine: false,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    drawVerticalLine: true,
+                    horizontalInterval: 5,
+                    verticalInterval: interval,
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
@@ -624,32 +660,53 @@ class _BmiTrendSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: (maxX - minX) / (context.isMobile ? 2.5 : 4),
+                        interval: interval,
                         getTitlesWidget: (val, meta) {
-                          if (val <= meta.min || val >= meta.max) return const SizedBox.shrink();
+                          // Prevent edge labels from clipping strictly at the bounds
+                          final tolerance = (meta.max - meta.min) * 0.05; // 5% margin
+                          if (val <= meta.min + tolerance || val >= meta.max - tolerance) {
+                            return const SizedBox.shrink();
+                          }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(val.toInt());
                           final durationDays = Duration(milliseconds: (maxX - minX).toInt()).inDays;
-                          final fmt = (durationDays > 90 ? DateFormat('MMM y') : DateFormat('d/M'));
+                          
+                          DateFormat fmt;
+                          if (durationDays > 365) {
+                            fmt = DateFormat('MMM yy');
+                          } else if (durationDays >= 90) { 
+                            // 3M view (90 days) should show Month (e.g. "Jan", "Feb")
+                            fmt = DateFormat('MMM');
+                          } else if (durationDays < 2) {
+                            fmt = DateFormat('h a'); // Show time if span is very short
+                          } else {
+                            fmt = DateFormat('d/M');
+                          }
 
                           return Padding(
                             padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(fmt.format(date), style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            child: Text(
+                              fmt.format(date),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                            ),
                           );
                         },
                       ),
                     ),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
-                      HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.1)),
+                      HorizontalRangeAnnotation(y1: minNormal, y2: maxNormal, color: AppTheme.primaryGreen.withValues(alpha: 0.1)),
                     ],
                   ),
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
-                      HorizontalLine(y: minNormal, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
-                      HorizontalLine(y: maxNormal, color: AppTheme.primaryGreen.withOpacity(0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: minNormal, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
+                      HorizontalLine(y: maxNormal, color: AppTheme.primaryGreen.withValues(alpha: 0.8), strokeWidth: 1, dashArray: [4, 4]),
                     ],
                   ),
                   lineBarsData: [
@@ -657,26 +714,50 @@ class _BmiTrendSection extends StatelessWidget {
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
                       isCurved: true,
                       color: AppTheme.primaryBlue,
-                      barWidth: 3,
+                      barWidth: 2,
                       dotData: FlDotData(
                         show: true,
                         getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 3, color: AppTheme.primaryBlue, strokeColor: Colors.white, strokeWidth: 1.5),
                       ),
-                      belowBarData: BarAreaData(show: false),
+                      belowBarData: BarAreaData(
+                        show: true,
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            AppTheme.primaryBlue.withValues(alpha: 0.1),
+                            AppTheme.primaryBlue.withValues(alpha: 0.0),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                   lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: AppTheme.primaryBlue, strokeColor: Colors.white)),
+                        );
+                      }).toList();
+                    },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
+                      fitInsideHorizontally: true,
+                      fitInsideVertically: true,
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
                           return LineTooltipItem(
-                            '${DateFormat('MMM d').format(date)}\n',
+                            '${DateFormat('MMM d, y').format(date)}\n',
                             const TextStyle(color: Colors.white70, fontSize: 10),
                             children: [
                               TextSpan(
-                                text: spot.y.toStringAsFixed(1),
+                                text: '${DateFormat('h:mm a').format(date)}\n',
+                                style: const TextStyle(color: Colors.white70, fontSize: 10),
+                              ),
+                              TextSpan(
+                                text: '${spot.y.toStringAsFixed(1)} kg/m²',
                                 style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                               ),
                             ],
@@ -689,12 +770,10 @@ class _BmiTrendSection extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            Wrap(
+              spacing: 12, runSpacing: 8, alignment: WrapAlignment.center,
               children: [
-                _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
-                const SizedBox(width: 16),
-                _LegendItem('Target Range', AppTheme.primaryGreen.withOpacity(0.5), isBox: true),
+                const _LegendItem('Target Range', AppTheme.primaryGreen, isBox: true),
               ],
             ),
           ],
@@ -766,9 +845,29 @@ class _BmiCorrelationSection extends StatelessWidget {
           r.measuredAt.isBefore(endDt.add(const Duration(days: 7)))
         ).toList();
 
-        // Normalize Y-Axis: Map HbA1c (4-12) to fit visually within BMI range (15-40)
-        // y_chart = ((hba1c - 4) / 8) * 25 + 15
+        // Dynamic Y-Axis Calculation to prevent clipping
+        double minY = 15;
+        double maxY = 40;
         
+        if (data.isNotEmpty) {
+          final bmis = data.map((e) => e.value);
+          final minBmi = bmis.reduce(math.min);
+          final maxBmi = bmis.reduce(math.max);
+          
+          if (minBmi < 15) minY = minBmi - 2;
+          if (maxBmi > 40) maxY = maxBmi + 2;
+        }
+
+        // Snap to nearest 5
+        minY = (minY / 5).floor() * 5.0;
+        maxY = (maxY / 5).ceil() * 5.0;
+        if (maxY == minY) maxY += 5.0;
+
+        // Constants for HbA1c Scaling (map 4.0-12.0% to minY-maxY)
+        final double hba1cMin = 4.0;
+        final double hba1cRange = 8.0; // 12 - 4
+        final double chartRange = maxY - minY;
+
         return Column(
           children: [
             SizedBox(
@@ -777,7 +876,7 @@ class _BmiCorrelationSection extends StatelessWidget {
                 LineChartData(
                   clipData: const FlClipData.all(),
                   minX: minX, maxX: maxX,
-                  minY: 15, maxY: 40, // BMI Scale
+                  minY: minY, maxY: maxY,
                   
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false, reservedSize: 0)),
@@ -803,39 +902,70 @@ class _BmiCorrelationSection extends StatelessWidget {
                       ),
                     ),
                   ),
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   lineBarsData: [
                     // BMI Line (Blue)
                     LineChartBarData(
                       spots: data.map((r) => FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), r.value)).toList(),
                       color: AppTheme.primaryBlue,
-                      barWidth: 3,
+                      barWidth: 2,
                       isCurved: true,
-                      dotData: FlDotData(show: true), // Enabled dots
+                      isStrokeCapRound: true,
+                      dotData: FlDotData(
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                          radius: 3,
+                          color: AppTheme.primaryBlue,
+                          strokeColor: Colors.white,
+                          strokeWidth: 1.5,
+                        ),
+                      ),
                     ),
                     // HbA1c Line (Purple - Scaled)
                     LineChartBarData(
                       spots: displayHba1c.map((r) {
-                        final scaledY = ((r.value - 4) / 8) * 25 + 15;
+                        // Dynamic scaling based on the calculated chart bounds
+                        final scaledY = ((r.value - hba1cMin) / hba1cRange) * chartRange + minY;
                         return FlSpot(r.measuredAt.millisecondsSinceEpoch.toDouble(), scaledY);
                       }).toList(),
                       color: Colors.purple,
-                      barWidth: 3, // Enable line width (was 0)
-                      isCurved: true, // Enable trend line
+                      barWidth: 2,
+                      isCurved: true,
+                      isStrokeCapRound: true,
                       dotData: FlDotData(
-                        show: true, 
-                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(radius: 4, color: Colors.purple, strokeWidth: 1, strokeColor: Colors.white)
+                        show: true,
+                        getDotPainter: (spot, percent, bar, index) => FlDotCirclePainter(
+                          radius: 3,
+                          color: Colors.purple,
+                          strokeColor: Colors.white,
+                          strokeWidth: 1.5,
+                        ),
                       ),
                     ),
                   ],
                   lineTouchData: LineTouchData(
+                    getTouchedSpotIndicator: (barData, spotIndexes) {
+                      return spotIndexes.map((index) {
+                        return TouchedSpotIndicatorData(
+                          const FlLine(color: AppTheme.textSecondaryColor, strokeWidth: 1),
+                          FlDotData(show: true, getDotPainter: (spot, percent, bar, index) {
+                            // Match color of the line being touched
+                            return FlDotCirclePainter(
+                              radius: 4, 
+                              color: barData.color ?? AppTheme.primaryBlue, 
+                              strokeColor: Colors.white
+                            );
+                          }),
+                        );
+                      }).toList();
+                    },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItems: (spots) {
                         return spots.map((spot) {
                           final date = DateTime.fromMillisecondsSinceEpoch(spot.x.toInt());
-                          final dateStr = DateFormat('MMM d').format(date);
+                          final dateStr = DateFormat('MMM d, y').format(date);
                           
                           if (spot.barIndex == 0) {
                             return LineTooltipItem(
@@ -843,13 +973,14 @@ class _BmiCorrelationSection extends StatelessWidget {
                               const TextStyle(color: Colors.white70, fontSize: 10),
                               children: [
                                 TextSpan(
-                                  text: "BMI: ${spot.y.toStringAsFixed(1)}",
+                                  text: "BMI: ${spot.y.toStringAsFixed(1)} kg/m²",
                                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                                 ),
                               ],
                             );
                           } else {
-                            final realVal = ((spot.y - 15)/25)*8 + 4;
+                            // Reverse the scaling logic to show actual HbA1c value
+                            final realVal = ((spot.y - minY) / chartRange) * hba1cRange + hba1cMin;
                             return LineTooltipItem(
                               '$dateStr\n',
                               const TextStyle(color: Colors.white70, fontSize: 10),
@@ -872,9 +1003,9 @@ class _BmiCorrelationSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
+                const _LegendItem('BMI', AppTheme.primaryBlue, isCircle: true),
                 const SizedBox(width: 16),
-                _LegendItem('HbA1c %', Colors.purple, isCircle: true),
+                const _LegendItem('HbA1c', Colors.purple, isCircle: true),
               ],
             ),
           ],
@@ -888,17 +1019,17 @@ class _BmiCorrelationSection extends StatelessWidget {
 // 4. HISTORY LIST
 // ============================================================================
 
-class _BmiHistorySection extends StatefulWidget {
+class _HistorySection extends StatefulWidget {
   final List<MonitorData> readings;
-  final HealthThreshold? threshold;
+  final PatientThreshold? threshold;
 
-  const _BmiHistorySection({required this.readings, this.threshold});
+  const _HistorySection({required this.readings, this.threshold});
 
   @override
-  State<_BmiHistorySection> createState() => _BmiHistorySectionState();
+  State<_HistorySection> createState() => _HistorySectionState();
 }
 
-class _BmiHistorySectionState extends State<_BmiHistorySection> {
+class _HistorySectionState extends State<_HistorySection> {
   int _currentPage = 0;
   static const int _itemsPerPage = 5;
 
@@ -930,7 +1061,7 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -943,7 +1074,7 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryBlue.withOpacity(0.1),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24),
@@ -960,26 +1091,22 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
               Row(
                 children: [
                   IconButton(
-                      onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
-                      icon: const Icon(Icons.chevron_left),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
+                    onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        '${_currentPage + 1}/${totalPages > 0 ? totalPages : 1}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
-                      icon: const Icon(Icons.chevron_right),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 20),
@@ -1018,8 +1145,8 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                 decoration: BoxDecoration(
                   color: containerColor,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: color.withOpacity(0.3)),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2))],
+                  border: Border.all(color: color.withValues(alpha: 0.3)),
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))],
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1051,11 +1178,17 @@ class _BmiHistorySectionState extends State<_BmiHistorySection> {
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                           child: Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
                         ),
                         const SizedBox(height: 6),
-                        Text(DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()), style: TextStyle(fontSize: 11, color: AppTheme.textSecondaryColor)),
+                        Text(
+                          DateFormat('dd/MM/yy HH:mm').format(r.measuredAt.toLocal()),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 11,
+                                color: AppTheme.textSecondaryColor,
+                              ),
+                        ),
                       ],
                     )
                   ],
@@ -1092,7 +1225,7 @@ class _BmiCard extends StatelessWidget {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1101,7 +1234,7 @@ class _BmiCard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
@@ -1142,8 +1275,9 @@ class _LegendItem extends StatelessWidget {
   final Color color;
   final bool isBox;
   final bool isCircle;
+  final bool isDashed;
 
-  const _LegendItem(this.label, this.color, {super.key, this.isBox = false, this.isCircle = false});
+  const _LegendItem(this.label, this.color, {this.isBox = false, this.isCircle = false, this.isDashed = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1154,6 +1288,8 @@ class _LegendItem extends StatelessWidget {
           Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
         else if (isCircle)
           Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+        else if (isDashed)
+          SizedBox(width: 16, height: 2, child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color)]))
         else
           Container(width: 12, height: 2, color: color),
         const SizedBox(width: 4),

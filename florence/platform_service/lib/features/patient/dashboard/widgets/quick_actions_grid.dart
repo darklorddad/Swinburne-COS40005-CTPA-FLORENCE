@@ -1,7 +1,7 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/config/theme.dart';
 
 /// Quick Actions Grid
 /// Grid of buttons for quick data logging
@@ -31,7 +31,7 @@ class QuickActionsGrid extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -46,7 +46,7 @@ class QuickActionsGrid extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -125,8 +125,8 @@ class QuickActionsGrid extends StatelessWidget {
             LayoutBuilder(
               builder: (context, constraints) {
                 // Calculate item width to fit exactly 4 items
-                // Available width minus 3 gaps of 12px each
-                final itemWidth = (constraints.maxWidth - (3 * 12)) / 4;
+                // Use math.max to ensure width never drops below 0 during layout/animations
+                final itemWidth = math.max(0.0, (constraints.maxWidth - (3 * 12)) / 4);
                 
                 return SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -165,8 +165,8 @@ class QuickActionsGrid extends StatelessWidget {
     double? fixedWidth,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttonColor = isDark ? Colors.white.withOpacity(0.05) : Colors.white;
-    final borderColor = isDark ? Colors.white.withOpacity(0.1) : AppTheme.borderColor.withOpacity(0.5);
+    final buttonColor = isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white;
+    final borderColor = isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor.withValues(alpha: 0.5);
 
     Widget content = InkWell(
       onTap: onTap,
@@ -179,7 +179,7 @@ class QuickActionsGrid extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.03),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -195,7 +195,7 @@ class QuickActionsGrid extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

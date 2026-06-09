@@ -1,252 +1,517 @@
+import 'package:florence/features/admin/core/widgets/admin_sidebar.dart';
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../core/widgets/admin_scaffold.dart';
-import '../../core/services/admin_auth_service.dart';
-import '../../core/services/permission_service.dart';
-import '../../../../config/admin_routes.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/features/admin/core/providers/admin_providers.dart';
+import 'package:florence/features/admin/core/models/admin_models.dart';
+import 'package:florence/features/admin/patients/widgets/add_patient_dialog.dart';
 
-/// Admin Dashboard (Global)
-/// System-wide overview with metrics, recent activity, and quick actions
-class AdminDashboardScreen extends StatefulWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() =>
-      _AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final _authService = AdminAuthService();
-  bool _isLoading = false;
-
-  // Mock data - will be replaced with real data from backend
-  final Map<String, dynamic> _systemMetrics = {
-    'totalOrganizations': 3,
-    'activeOrganizations': 3,
-    'totalUsers': 6,
-    'activeUsers': 6,
-    'totalPatients': 1098, // Sum of all org patients
-    'activePatients': 1042,
-    'totalAppointments': 156,
-    'todayAppointments': 23,
-  };
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = PermissionService().currentUser;
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    final padding = isMobile ? 16.0 : 24.0;
+    final metricsAsync = ref.watch(adminMetricsProvider);
+    final patientsAsync = ref.watch(adminPatientsProvider);
 
-    return AdminScaffold(
-      title: 'Admin Dashboard',
-      currentRoute: AdminRoutes.adminDashboard,
-      body: LoadingOverlay(
-        isLoading: _isLoading,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(padding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Welcome Header
-              _buildWelcomeHeader(currentUser, isMobile),
-
-              SizedBox(height: isMobile ? 24 : 32),
-
-              // System Metrics
-              _buildSystemMetrics(isMobile),
-
-              SizedBox(height: isMobile ? 24 : 32),
-
-              // Organizations Overview & Recent Activity
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  // Mobile/Tablet: Stack vertically
-                  if (constraints.maxWidth < 900) {
-                    return Column(
-                      children: [
-                        _buildOrganizationsOverview(isMobile),
-                        SizedBox(height: isMobile ? 16 : 24),
-                        _buildRecentActivity(isMobile),
-                      ],
-                    );
-                  }
-
-                  // Desktop: Side-by-side
-                  return Row(
+    return Scaffold(
+      body: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const AdminSidebar(currentRoute: AppRoutes.adminDashboard),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context),
+                  const SizedBox(height: 32),
+                  
+                  // LIVE METRICS
+                  metricsAsync.when(
+                    data: (metrics) => _buildMetricCards(context, metrics),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (err, stack) => Text('Error loading metrics: $err', style: const TextStyle(color: AdminTheme.error)),
+                  ),
+                  
+                  const SizedBox(height: 32),
+                  Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Organizations Overview
+                      // LIVE FEED
                       Expanded(
-                        flex: 2,
-                        child: _buildOrganizationsOverview(isMobile),
+                        flex: 7,
+                        child: patientsAsync.when(
+                          data: (patients) => _buildActionFeed(context, patients),
+                          loading: () => const Center(child: CircularProgressIndicator()),
+                          error: (err, stack) => Text('Failed to load feed: $err'),
+                        ),
                       ),
-
                       const SizedBox(width: 24),
-
-                      // Recent Activity
                       Expanded(
-                        flex: 1,
-                        child: _buildRecentActivity(isMobile),
+                        flex: 4,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            _buildQuickActions(context),
+                            const SizedBox(height: 24),
+                            _buildRecentActivity(context, ref),
+                          ],
+                        ),
                       ),
                     ],
-                  );
-                },
+                  ),
+                ],
               ),
-
-              SizedBox(height: isMobile ? 24 : 32),
-
-              // Quick Actions
-              _buildQuickActions(isMobile),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildWelcomeHeader(dynamic currentUser, bool isMobile) {
-    final now = DateTime.now();
-    final hour = now.hour;
-    String greeting;
-
-    if (hour < 12) {
-      greeting = 'Good Morning';
-    } else if (hour < 18) {
-      greeting = 'Good Afternoon';
-    } else {
-      greeting = 'Good Evening';
+  Widget _buildHeader(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
+    
+    if (isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(child: _buildSearchField()),
+              const SizedBox(width: 16),
+              const CircleAvatar(radius: 18, child: Icon(Icons.person)),
+            ],
+          ),
+        ],
+      );
     }
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(child: Text('Good Morning, Admin', style: Theme.of(context).textTheme.headlineMedium)),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(width: 300, child: _buildSearchField()),
+            const SizedBox(width: 16),
+            const CircleAvatar(radius: 18, child: Icon(Icons.person)),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSearchField() {
+    return TextField(
+      onChanged: (val) => setState(() => _searchQuery = val),
+      decoration: InputDecoration(
+        hintText: 'Search patients, doctors...',
+        prefixIcon: const Icon(Icons.search, color: AdminTheme.outline),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(vertical: 12),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.outlineVariant)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: AdminTheme.primary)),
+      ),
+    );
+  }
+
+  Widget _buildMetricCards(BuildContext context, AdminMetrics metrics) {
+    return Row(
+      children: [
+        Expanded(
+          child: _MetricCard(
+            title: 'Total Patients',
+            value: metrics.totalPatients.toString(),
+            subtitle: 'Active accounts',
+            subtitleColor: AdminTheme.primary,
+            subtitleBg: AdminTheme.primaryContainer.withValues(alpha: 0.3),
+            icon: Icons.people_outline,
+            iconColor: AdminTheme.primary,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _MetricCard(
+            title: 'High-Risk Patients',
+            value: metrics.highRiskPatients.toString(),
+            subtitle: 'Needs attention',
+            subtitleColor: AdminTheme.error,
+            subtitleBg: AdminTheme.errorContainer.withValues(alpha: 0.5),
+            icon: Icons.warning_amber_rounded,
+            iconColor: AdminTheme.error,
+            isAlert: true,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _MetricCard(
+            title: 'Hypoglycemia',
+            value: metrics.hypoPatients.toString(),
+            subtitle: 'Recent Alerts',
+            subtitleColor: const Color(0xFFE65100), // Amber/Orange
+            subtitleBg: const Color(0xFFFFE0B2).withValues(alpha: 0.5),
+            icon: Icons.trending_down_rounded,
+            iconColor: const Color(0xFFE65100),
+            isAlert: metrics.hypoPatients > 0,
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          child: _MetricCard(
+            title: 'Hyperglycemia',
+            value: metrics.hyperPatients.toString(),
+            subtitle: 'Recent Alerts',
+            subtitleColor: const Color(0xFFD32F2F), // Red
+            subtitleBg: const Color(0xFFFFCDD2).withValues(alpha: 0.5),
+            icon: Icons.trending_up_rounded,
+            iconColor: const Color(0xFFD32F2F),
+            isAlert: metrics.hyperPatients > 0,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionFeed(BuildContext context, List<AdminPatient> patients) {
+    // 1. Filter by search query
+    var filteredPatients = patients;
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filteredPatients = patients.where((p) => 
+        p.name.toLowerCase().contains(query) ||
+        (p.clinicianName?.toLowerCase().contains(query) ?? false) ||
+        p.id.toString().contains(query)
+      ).toList();
+    }
+
+    // 2. Show ANY patient that requires attention (High Risk, Hypo, or Hyper)
+    final attentionPatients = filteredPatients.where((p) => p.requiresAttention).take(6).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$greeting, ${currentUser?.firstName ?? 'Admin'}!',
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                fontSize: isMobile ? 24 : 32,
-              ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Action Required Feed', style: Theme.of(context).textTheme.titleLarge),
+            TextButton(
+              onPressed: () => Navigator.pushReplacementNamed(context, AppRoutes.adminPatientList),
+              style: TextButton.styleFrom(foregroundColor: AdminTheme.primary),
+              child: const Text('View All'),
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          'Here\'s an overview of your system',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AdminTheme.textSecondaryColor,
-                fontSize: isMobile ? 14 : 16,
+        const SizedBox(height: 16),
+        if (attentionPatients.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Center(
+                child: Text(
+                  _searchQuery.isNotEmpty 
+                    ? 'No matching flagged patients found.' 
+                    : 'All patient vitals are stable. ✅', 
+                  style: const TextStyle(color: AdminTheme.outline)
+                )
               ),
-        ),
+            ),
+          )
+        else
+          Card(
+            shape: RoundedRectangleBorder(
+              side: const BorderSide(color: AdminTheme.outlineVariant, width: 0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: attentionPatients.asMap().entries.map((entry) {
+                final patient = entry.value;
+                final isLast = entry.key == attentionPatients.length - 1;
+                
+                // Determine what text to show in the feed based on their status
+                String alertText = patient.latestAlert ?? 'Flagged as High Risk';
+                
+                return Column(
+                  children: [
+                    _FeedItem(
+                      name: patient.name,
+                      alert: alertText,
+                      doctor: patient.clinicianName ?? 'Unassigned',
+                      riskLevel: patient.riskLevel,
+                    ),
+                    if (!isLast) const Divider(height: 1, color: AdminTheme.outlineVariant),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
       ],
     );
   }
 
-  Widget _buildSystemMetrics(bool isMobile) {
-    return ResponsiveGrid(
-      minChildWidth: isMobile ? 150 : 250,
-      spacing: isMobile ? 12 : 20,
-      runSpacing: isMobile ? 12 : 20,
+  // --- Keep your existing _buildQuickActions, _buildRecentActivity, _MetricCard, _FeedItem, _QuickActionButton, _ActivityItem below this line exactly as they are ---
+  // ...
+
+  Widget _buildQuickActions(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StatCard(
-          title: 'Organizations',
-          value: _systemMetrics['totalOrganizations'].toString(),
-          icon: Icons.business,
-          color: AdminTheme.primaryIndigo,
-          subtitle: '${_systemMetrics['activeOrganizations']} active',
-          onTap: () {
-            AdminRoutes.push(context, AdminRoutes.organizations);
-          },
-        ),
-        StatCard(
-          title: 'Total Users',
-          value: _systemMetrics['totalUsers'].toString(),
-          icon: Icons.people,
-          color: AdminTheme.accentTeal,
-          subtitle: '${_systemMetrics['activeUsers']} active',
-          onTap: () {
-            AdminRoutes.push(context, AdminRoutes.users);
-          },
-        ),
-        StatCard(
-          title: 'Total Patients',
-          value: _systemMetrics['totalPatients'].toString(),
-          icon: Icons.personal_injury,
-          color: AdminTheme.successColor,
-          subtitle: '${_systemMetrics['activePatients']} active',
-          onTap: () {
-            AdminRoutes.push(context, AdminRoutes.patients);
-          },
-        ),
-        StatCard(
-          title: 'Appointments',
-          value: _systemMetrics['totalAppointments'].toString(),
-          icon: Icons.calendar_today,
-          color: AdminTheme.warningColor,
-          subtitle: '${_systemMetrics['todayAppointments']} today',
-          onTap: () {
-            AdminRoutes.push(context, AdminRoutes.appointments);
-          },
-        ),
+        Text('Quick Actions', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.person_add_outlined,
+                label: 'Register Patient',
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false, // Prevents closing by tapping outside
+                    builder: (context) => const AddPatientDialog(),
+                  );
+                },),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: _QuickActionButton(
+                icon: Icons.science_outlined,
+                label: 'Data Simulator',
+                onTap: () {
+                  Navigator.pushNamed(context, AppRoutes.dataSimulator);
+                },
+              ),
+            ),
+          ],
+        )
       ],
     );
   }
 
-  Widget _buildOrganizationsOverview(bool isMobile) {
-    final orgs = _authService.getAllOrganizations();
+  Widget _buildRecentActivity(BuildContext context, WidgetRef ref) {
+     final activityAsync = ref.watch(adminActivityProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Recent Activity', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 16),
+        Card(
+          shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 1.0),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: activityAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Text('Error loading activity: $err', style: const TextStyle(color: AdminTheme.error)),
+              data: (activities) {
+                if (activities.isEmpty) {
+                  return const Center(child: Text('No recent activity.', style: TextStyle(color: AdminTheme.outline)));
+                }
 
+                return Column(
+                  children: activities.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final activity = entry.value;
+                    final isLast = index == activities.length - 1;
+
+                    // Dynamically set icons and colors based on the backend iconType
+                    final isWarning = activity.iconType == 'warning';
+                    final icon = isWarning ? Icons.warning_amber_rounded : Icons.update_rounded;
+                    final iconBg = isWarning ? AdminTheme.errorContainer : AdminTheme.primaryContainer.withValues(alpha: 0.5);
+                    final iconColor = isWarning ? AdminTheme.error : AdminTheme.primary;
+
+                    return _ActivityItem(
+                      icon: icon,
+                      iconBg: iconBg,
+                      iconColor: iconColor,
+                      title: activity.title,
+                      subtitle: activity.subtitle,
+                      time: _getTimeAgo(activity.timestamp),
+                      isLast: isLast,
+                    );
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+  String _getTimeAgo(DateTime dateTime) {
+    final diff = DateTime.now().difference(dateTime.toLocal());
+    if (diff.inDays > 0) return '${diff.inDays} ${diff.inDays == 1 ? 'day' : 'days'} ago';
+    if (diff.inHours > 0) return '${diff.inHours} ${diff.inHours == 1 ? 'hour' : 'hours'} ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes} ${diff.inMinutes == 1 ? 'min' : 'mins'} ago';
+    return 'Just now';
+  }
+}
+
+
+
+// Helper Widgets
+class _MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final String subtitle;
+  final Color subtitleColor;
+  final Color subtitleBg;
+  final IconData icon;
+  final Color iconColor;
+  final bool isAlert;
+
+  const _MetricCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.subtitleColor,
+    required this.subtitleBg,
+    required this.icon,
+    required this.iconColor,
+    this.isAlert = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
+      shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 1.0),
+            borderRadius: BorderRadius.circular(12),
+          ),
       child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    'Organizations',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          fontSize: isMobile ? 18 : 20,
-                        ),
+                Text(
+                  title, 
+                  style: const TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w600,
+                    color: AdminTheme.onSurfaceVariant,
+                    letterSpacing: 0.3,
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.organizations);
-                  },
-                  icon: const Icon(Icons.arrow_forward, size: 16),
-                  label: const Text('View All'),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isAlert ? AdminTheme.errorContainer.withValues(alpha: 0.5) : AdminTheme.primaryContainer.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: iconColor, size: 20),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            ...orgs.map((org) => _buildOrganizationItem(org)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(value, style: Theme.of(context).textTheme.displaySmall),
+                const SizedBox(width: 12),
+                Container(
+                  padding: subtitleBg != Colors.transparent ? const EdgeInsets.symmetric(horizontal: 8, vertical: 4) : EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    color: subtitleBg,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    subtitle,
+                    style: TextStyle(color: subtitleColor, fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildOrganizationItem(dynamic org) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AdminTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AdminTheme.borderColor),
-      ),
+class _FeedItem extends StatelessWidget {
+  final String name;
+  final String alert;
+  final String doctor;
+  final String riskLevel;
+
+  const _FeedItem({
+    required this.name, 
+    required this.alert, 
+    required this.doctor, 
+    required this.riskLevel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final riskUpper = riskLevel.toUpperCase();
+    final isHighRisk = riskUpper == 'HIGH';
+    final isMediumRisk = riskUpper == 'MEDIUM';
+    final isHypo = alert.toLowerCase().contains('hypo');
+    final isHyper = alert.toLowerCase().contains('hyper');
+
+    // Determine Alert Styling
+    Color alertColor;
+    IconData alertIcon;
+
+    if (isHypo) {
+      alertColor = const Color(0xFFE65100); // Amber/Orange
+      alertIcon = Icons.trending_down_rounded;
+    } else if (isHyper) {
+      alertColor = const Color(0xFFD32F2F); // Red
+      alertIcon = Icons.trending_up_rounded;
+    } else if (isHighRisk) {
+      alertColor = AdminTheme.error;
+      alertIcon = Icons.priority_high_rounded;
+    } else {
+      alertColor = AdminTheme.onSurfaceVariant;
+      alertIcon = Icons.medical_information;
+    }
+
+    final Color badgeColor = isHighRisk
+        ? AdminTheme.errorContainer
+        : (isMediumRisk
+            ? AdminTheme.surfaceContainerHighest
+            : AdminTheme.primaryContainer);
+            
+    final Color textColor = isHighRisk
+        ? AdminTheme.onErrorContainer
+        : (isMediumRisk
+            ? AdminTheme.onSurfaceVariant
+            : AdminTheme.onPrimaryContainer);
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: AdminTheme.primaryIndigo.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(
-              Icons.business,
-              color: AdminTheme.primaryIndigo,
+          CircleAvatar(
+            radius: 24, 
+            backgroundColor: AdminTheme.surfaceContainerHighest,
+            child: Text(
+              name.isNotEmpty ? name[0].toUpperCase() : '?',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold, 
+                fontSize: 20, 
+                color: AdminTheme.onSurfaceVariant
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -254,18 +519,29 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  org.name,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
                 const SizedBox(height: 4),
-                Text(
-                  '${org.city}, ${org.state}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AdminTheme.textSecondaryColor,
-                      ),
+                Row(
+                  children: [
+                    Icon(alertIcon, size: 18, color: alertColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      (isHypo || isHyper) ? 'Critical: $alert' : alert, 
+                      style: TextStyle(
+                        color: alertColor, 
+                        fontSize: 14, 
+                        fontWeight: (isHypo || isHyper) ? FontWeight.bold : FontWeight.w500
+                      )
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 16, color: AdminTheme.outline),
+                    const SizedBox(width: 4),
+                    Text(doctor, style: const TextStyle(color: AdminTheme.outline, fontSize: 14)),
+                  ],
                 ),
               ],
             ),
@@ -273,218 +549,113 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                '${org.patientCount} patients',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: badgeColor,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '${riskLevel[0].toUpperCase()}${riskLevel.substring(1).toLowerCase()} Risk',
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              const SizedBox(height: 4),
-              AdminTheme.getStatusBadge(org.status.displayName),
+              const SizedBox(height: 16),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _QuickActionButton({required this.icon, required this.label, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      shape: RoundedRectangleBorder(
+            side: const BorderSide(color: AdminTheme.outlineVariant, width: 1.0),
+            borderRadius: BorderRadius.circular(12),
+          ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 32),
+          child: Column(
+            children: [
+              Icon(icon, color: AdminTheme.primary, size: 32),
+              const SizedBox(height: 16),
+              Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildRecentActivity(bool isMobile) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Recent Activity',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: isMobile ? 18 : 20,
+class _ActivityItem extends StatelessWidget {
+  final IconData icon;
+  final Color iconBg;
+  final Color? iconColor;
+  final String title;
+  final String subtitle;
+  final String time;
+  final bool isLast;
+
+  const _ActivityItem({required this.icon, required this.iconBg, this.iconColor, required this.title, required this.subtitle, required this.time, required this.isLast});
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: iconBg, shape: BoxShape.circle),
+                child: Icon(icon, size: 16, color: iconColor ?? AdminTheme.primary),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    width: 2,
+                    color: AdminTheme.surfaceContainerHighest,
+                    margin: const EdgeInsets.symmetric(vertical: 4),
                   ),
-            ),
-            const SizedBox(height: 16),
-            _buildActivityItem(
-              icon: Icons.business,
-              title: 'New Organization',
-              subtitle: 'Memorial Medical Center created',
-              time: '2 hours ago',
-              color: AdminTheme.successColor,
-            ),
-            _buildActivityItem(
-              icon: Icons.person_add,
-              title: 'User Added',
-              subtitle: 'Dr. James Johnson joined',
-              time: '5 hours ago',
-              color: AdminTheme.infoColor,
-            ),
-            _buildActivityItem(
-              icon: Icons.edit,
-              title: 'Organization Updated',
-              subtitle: 'City General Hospital details modified',
-              time: '1 day ago',
-              color: AdminTheme.warningColor,
-            ),
-            _buildActivityItem(
-              icon: Icons.admin_panel_settings,
-              title: 'Role Modified',
-              subtitle: 'Hospital Admin permissions updated',
-              time: '2 days ago',
-              color: AdminTheme.primaryIndigo,
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  AdminRoutes.push(context, AdminRoutes.auditLogs);
-                },
-                child: const Text('View All Activity'),
+                ),
+            ],
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(fontSize: 14, color: AdminTheme.onSurface)),
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 13, color: AdminTheme.onSurfaceVariant)),
+                  const SizedBox(height: 4),
+                  Text(time, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AdminTheme.onSurfaceVariant)),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required String time,
-    required Color color,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AdminTheme.textSecondaryColor,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  time,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AdminTheme.textLightColor,
-                        fontSize: 11,
-                      ),
-                ),
-              ],
-            ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(bool isMobile) {
-    return Card(
-      child: Padding(
-        padding: EdgeInsets.all(isMobile ? 16 : 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Quick Actions',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: isMobile ? 18 : 20,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                _buildActionButton(
-                  icon: Icons.add_business,
-                  label: 'Create Organization',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.createOrganization);
-                  },
-                ),
-                _buildActionButton(
-                  icon: Icons.person_add,
-                  label: 'Add User',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.createUser);
-                  },
-                ),
-                _buildActionButton(
-                  icon: Icons.admin_panel_settings,
-                  label: 'Manage Roles',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.roles);
-                  },
-                ),
-                _buildActionButton(
-                  icon: Icons.history,
-                  label: 'View Audit Logs',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.auditLogs);
-                  },
-                ),
-                _buildActionButton(
-                  icon: Icons.medication,
-                  label: 'Manage Medications',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.medications);
-                  },
-                ),
-                _buildActionButton(
-                  icon: Icons.settings,
-                  label: 'System Settings',
-                  onPressed: () {
-                    AdminRoutes.push(context, AdminRoutes.settings);
-                  },
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, size: 18),
-      label: Text(label),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       ),
     );
   }

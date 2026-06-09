@@ -1,12 +1,12 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import '../../../core/services/api_service.dart';
-import '../../../core/utils/validators.dart';
-import '../../../core/utils/helpers.dart';
-import '../../../shared/widgets/button_widgets.dart';
-import '../../../shared/widgets/input_widgets.dart';
-import '../../../config/theme.dart';
-import '../../../config/routes.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
+import 'package:florence/shared/widgets/input_widgets.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/config/routes.dart';
 
 /// Registration Screen
 /// Allows new users to create an account
@@ -64,7 +64,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       // Call the backend API using ApiService
-      await _apiService.post('/auth/register', {
+      final response = await _apiService.post('/auth/register', {
         'email': _emailController.text.trim(),
         'password': _passwordController.text,
         'role': 'PATIENT', // Hardcoded for patient registration
@@ -72,10 +72,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       if (mounted) {
-        Helpers.showSuccess(
-          context,
-          'Registered successfully! Please check your email for verification',
-        );
+        // Check if the backend told us an email confirmation is required
+        final requiresConfirmation = response is Map && (response['requires_email_confirmation'] ?? true);
+
+        if (requiresConfirmation) {
+          Helpers.showSuccess(
+            context,
+            'Registered successfully! Please check your email for verification.',
+          );
+        } else {
+          Helpers.showSuccess(
+            context,
+            'Account created successfully! You can now sign in.',
+          );
+        }
         AppRoutes.pop(context); // Go back to login screen
       }
     } catch (error) {

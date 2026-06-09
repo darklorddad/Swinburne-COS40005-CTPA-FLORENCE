@@ -1,0 +1,1010 @@
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/models/medication_models.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/features/patient/core/providers/medication_providers.dart';
+import 'package:florence/features/patient/core/repositories/medication_repository.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+
+// ==========================================
+// 1. PROVIDERS
+// ==========================================
+
+/// Fetch the medication dictionary for the Autocomplete
+/// Removed .autoDispose to cache dictionary data
+final medicationDictionaryProvider = FutureProvider<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getMedicationDictionary(); 
+});
+
+/// Fetch the dosage frequencies
+/// Removed .autoDispose to cache frequency data
+final dosageFrequenciesProvider = FutureProvider<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getDosageFrequencies(); 
+});
+
+/// Provider for the daily medication schedule and intake logs.
+/// Removed .autoDispose to ensure the schedule persists when switching tabs.
+final todaysScheduleProvider = FutureProvider<List<dynamic>>((ref) async {
+  final repository = ref.watch(medicationRepositoryProvider);
+  return repository.getMedicationSchedule();
+});
+
+// ==========================================
+// 2. MAIN EXPORTED WIDGET (The Header)
+// ==========================================
+
+/// A unified, seamless section for medication management.
+/// Handles the border and background for both the tabs and the content.
+class MedicationSection extends StatelessWidget {
+  const MedicationSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return DefaultTabController(
+      length: 2,
+      child: Container(
+        height: 550,
+        // clipBehavior ensures the square header doesn't bleed out of the rounded corners
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: containerColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 50/50 Split Seamless Header
+            Container(
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.02) : AppTheme.backgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
+              ),
+              // ClipRRect prevents the transparent hover box from bleeding out of the corners
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(23)),
+                child: TabBar(
+                  dividerColor: borderColor, // Creates a clean separator line under the tabs
+                  indicatorSize: TabBarIndicatorSize.tab, // Forces exact 50/50 width
+                  indicator: BoxDecoration(
+                    color: containerColor, // Matches the card background for a seamless look
+                    border: const Border(
+                      top: BorderSide(color: AppTheme.primaryBlue, width: 3), // Blue highlight on top
+                    ),
+                  ),
+                  labelColor: AppTheme.primaryBlue,
+                  unselectedLabelColor: AppTheme.textSecondaryColor,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  
+                  // COMPLETELY REMOVES HOVER AND RIPPLE EFFECTS
+                  overlayColor: WidgetStateProperty.all(Colors.transparent),
+                  splashFactory: NoSplash.splashFactory,
+                  
+                  tabs: const [
+                    Tab(
+                      height: 56,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.calendar_today_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text("Today's Schedule"),
+                        ],
+                      ),
+                    ),
+                    Tab(
+                      height: 56,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.medical_information_outlined, size: 18),
+                          SizedBox(width: 8),
+                          Text("Cabinet"),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            
+            // Body Area
+            const Expanded(
+              child: TabBarView(
+                physics: BouncingScrollPhysics(),
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(20.0),
+                    child: MedicationLoggingSection(),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 3. TODAY'S SCHEDULE VIEW (Filtered)
+// ==========================================
+
+enum ScheduleFilter { all, pending, taken }
+
+class MedicationLoggingSection extends ConsumerStatefulWidget {
+  const MedicationLoggingSection({super.key});
+
+  @override
+  ConsumerState<MedicationLoggingSection> createState() => _MedicationLoggingSectionState();
+}
+
+class _MedicationLoggingSectionState extends ConsumerState<MedicationLoggingSection> with AutomaticKeepAliveClientMixin {
+  ScheduleFilter _currentFilter = ScheduleFilter.all;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  // Helper to convert index to Ordinal string
+  String _getOrdinal(int index) {
+    const ordinals = ["First", "Second", "Third", "Fourth", "Fifth"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "$index.";
+  }
+
+  // Helper to format Timing Instructions
+  String _formatTiming(String? raw) {
+    if (raw == null) return "Anytime";
+    return raw.replaceAll('_', ' ').toLowerCase().split(' ').map((word) {
+      if (word.isEmpty) return '';
+      return word[0].toUpperCase() + word.substring(1);
+    }).join(' ');
+  }
+
+  LinearGradient _getGradient(bool isTaken, bool isLate, bool isDark) {
+    if (isTaken) {
+      return LinearGradient(
+        colors: [
+          Colors.green.withValues(alpha: isDark ? 0.1 : 0.05),
+          Colors.green.withValues(alpha: isDark ? 0.1 : 0.05),
+        ],
+      );
+    }
+    return LinearGradient(
+      colors: [
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+        isDark ? Colors.white.withValues(alpha: 0.05) : Colors.white,
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context);
+    final scheduleAsync = ref.watch(todaysScheduleProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // FILTER ROW
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.05)
+                  : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildScheduleFilterButton("All", ScheduleFilter.all),
+                _buildScheduleFilterButton("Pending", ScheduleFilter.pending),
+                _buildScheduleFilterButton("Taken", ScheduleFilter.taken),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // SCHEDULE LIST
+          scheduleAsync.when(
+            skipLoadingOnReload: true,
+            data: (scheduleItems) {
+              if (scheduleItems.isEmpty) {
+                return SizedBox(
+                  height: 54,
+                  child: Center(
+                    child: Text(
+                      "No schedule",
+                      style: TextStyle(color: AppTheme.textSecondaryColor),
+                    ),
+                  ),
+                );
+              }
+
+              List<Map<String, dynamic>> itemsToBuild = [];
+              
+              for (var item in scheduleItems) {
+                final med = PatientMedication.fromJson(item['medication']);
+                final int timesLogged = item['times_logged'] ?? 0;
+                final bool isWeekly = item['is_weekly'] ?? false;
+                
+                int totalDoses = med.timingInstructions.isNotEmpty ? med.timingInstructions.length : 1;
+                bool isLate = false; 
+
+                for (int i = 1; i <= totalDoses; i++) {
+                  bool isTaken = i <= timesLogged;
+                  
+                  // APPLY FILTER LOGIC
+                  bool shouldShow = true;
+                  if (_currentFilter == ScheduleFilter.pending && isTaken) shouldShow = false;
+                  if (_currentFilter == ScheduleFilter.taken && !isTaken) shouldShow = false;
+
+                  if (shouldShow) {
+                    itemsToBuild.add({
+                      'med': med,
+                      'index': i,
+                      'total': totalDoses,
+                      'isTaken': isTaken,
+                      'isLate': isLate,
+                      'isWeekly': isWeekly,
+                    });
+                  }
+                }
+              }
+
+              if (itemsToBuild.isEmpty) {
+                return SizedBox(
+                  height: 54, // Matches the exact height of 1 medication row
+                  child: Center(
+                    child: Text(
+                      "No medications match this filter", 
+                      style: TextStyle(color: AppTheme.textSecondaryColor),
+                    ),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: itemsToBuild.length,
+                itemBuilder: (context, i) {
+                  final item = itemsToBuild[i];
+                  return _buildMedicationRow(
+                    context, ref, item['med'], item['index'], item['total'], item['isTaken'], item['isLate'], item['isWeekly'],
+                    isLast: i == itemsToBuild.length - 1,
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => const Center(child: Text("Error loading schedule")),
+          ),
+        ],
+      );
+  }
+
+  Widget _buildScheduleFilterButton(String label, ScheduleFilter filterValue) {
+    final isSelected = _currentFilter == filterValue;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (isSelected) return;
+          setState(() => _currentFilter = filterValue);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? AppTheme.primaryBlue : Colors.grey[600],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMedicationRow(
+    BuildContext context,
+    WidgetRef ref,
+    PatientMedication med,
+    int index,
+    int total,
+    bool isTaken,
+    bool isLate,
+    bool isWeekly, {
+    bool isLast = false,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final String brandName = med.medicationDictionary['brand_name'] ?? 
+                             med.customMedicationName ?? 
+                             'Unknown';
+    final String type = (med.medicationType ?? 'Pill').toLowerCase();
+    
+    // Pull specific timing from the array safely
+    String rawTiming = 'ANYTIME';
+    if (med.timingInstructions.isNotEmpty) {
+      int tIndex = (index - 1) < med.timingInstructions.length ? (index - 1) : (med.timingInstructions.length - 1);
+      rawTiming = med.timingInstructions[tIndex];
+    }
+    final String timing = _formatTiming(rawTiming);
+    final String amount = med.amount;
+
+    // Dynamic Display String
+    String contentText = total > 1 
+      ? "${_getOrdinal(index)} $brandName - $amount $type - $timing"
+      : "$brandName - $amount $type - $timing";
+
+    if (isWeekly && isTaken) {
+      contentText = "$brandName (Taken for this week)";
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12.0),
+      child: InkWell(
+        onTap: () => _handleToggle(context, ref, med, isTaken),
+        borderRadius: BorderRadius.circular(16),
+        mouseCursor: SystemMouseCursors.click,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            gradient: _getGradient(isTaken, isLate, isDark),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isTaken
+                  ? Colors.green.withValues(alpha: 0.3)
+                  : AppTheme.getBorderColor(context),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  contentText,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: isTaken ? Colors.grey : (isDark ? Colors.white : Colors.black87),
+                    decoration: isTaken ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+              ),
+              if (isLate && !isTaken)
+                const _StatusLabel(text: "Late", color: Colors.orange),
+              if (isTaken)
+                const _StatusLabel(text: "Taken", color: Colors.green),
+              
+              // Radial Tick Button
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: 24,
+                height: 24,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isTaken ? Colors.green : Colors.transparent,
+                  border: Border.all(
+                    color: isTaken ? Colors.green : Colors.grey.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                ),
+                child: isTaken 
+                  ? const Icon(Icons.check, color: Colors.white, size: 16)
+                  : null,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleToggle(BuildContext context, WidgetRef ref, PatientMedication med, bool currentlyTaken) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(currentlyTaken ? "Unlog Medication?" : "Log Medication?"),
+        content: Text(currentlyTaken 
+          ? "This will mark the dose as not taken. Continue?" 
+          : "Confirm that you have taken your dose."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final repo = ref.read(medicationRepositoryProvider);
+              try {
+                if (currentlyTaken) {
+                  await repo.unlogMedicationIntake(med.id);
+                } else {
+                  await repo.logMedicationIntake(med.id, 'TAKEN');
+                }
+                // Refresh local schedule list
+                ref.invalidate(todaysScheduleProvider);
+                
+                // Refresh global adherence aggregation & Trigger Engine
+                ref.invalidate(monitorDataProvider);
+                ref.read(recommendationProvider.notifier).generateRecommendations(timeframe: 'daily');
+
+                if (context.mounted) {
+                  Helpers.showSuccess(context, currentlyTaken ? "Medication unlogged" : "Medication logged");
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  Helpers.showError(context, "Failed to update schedule");
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: currentlyTaken ? Colors.grey : Colors.green,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text("Confirm"),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Small helper for status text labels
+class _StatusLabel extends StatelessWidget {
+  final String text;
+  final Color color;
+
+  const _StatusLabel({required this.text, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+}
+
+// ==========================================
+// 4. MEDICATION FORM MODAL (Public)
+// ==========================================
+
+class MedicationFormDialog extends ConsumerStatefulWidget {
+  final bool isEdit;
+  final PatientMedication? medication;
+
+  const MedicationFormDialog({super.key, required this.isEdit, this.medication});
+
+  @override
+  ConsumerState<MedicationFormDialog> createState() => _MedicationFormDialogState();
+}
+
+class _MedicationFormDialogState extends ConsumerState<MedicationFormDialog> {
+  final _formKey = GlobalKey<FormState>();
+  
+  // State Variables
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _amountController = TextEditingController();
+  
+  Map<String, dynamic>? _selectedDictionaryItem; // Holds the dictionary object if they pick a verified one
+  dynamic _selectedFrequency;      // Holds the frequency object
+  
+  String _selectedType = 'Tablet';
+  List<String> _selectedTimings = ['ANYTIME'];
+
+  // Fixed lists based on database schema constraints
+  final List<String> _medicationTypes = ['Tablet', 'Capsule', 'Injection', 'ml', 'Inhaler', 'Other'];
+  final List<String> _timingInstructions = [
+    'BEFORE_BREAKFAST', 'WITH_BREAKFAST', 'AFTER_BREAKFAST',
+    'BEFORE_LUNCH', 'WITH_LUNCH', 'AFTER_LUNCH',
+    'BEFORE_DINNER', 'WITH_DINNER', 'AFTER_DINNER',
+    'BEFORE_SUPPER', 'WITH_SUPPER', 'AFTER_SUPPER',
+    'WITH_SNACK', 'BEFORE_BED', 'EMPTY_STOMACH', 'AS_NEEDED', 'ANYTIME'
+  ];
+
+  // Helper to calculate doses based on selected frequency
+  int _getDosesFromFrequency(dynamic freq) {
+    if (freq == null) return 1;
+    final text = (freq['patient_text'] ?? freq['latin_code']).toString().toLowerCase();
+    if (text.contains('twice') || text == 'bid' || text.contains('2 times')) return 2;
+    if (text.contains('three') || text == 'tid' || text.contains('3 times')) return 3;
+    if (text.contains('four') || text == 'qid' || text.contains('4 times')) return 4;
+    return 1;
+  }
+
+  void _onFrequencyChanged(dynamic val) {
+    setState(() {
+      _selectedFrequency = val;
+      int requiredDoses = _getDosesFromFrequency(val);
+      
+      // Grow or shrink the timings list based on frequency
+      while (_selectedTimings.length < requiredDoses) {
+        _selectedTimings.add('ANYTIME');
+      }
+      if (_selectedTimings.length > requiredDoses) {
+        _selectedTimings = _selectedTimings.sublist(0, requiredDoses);
+      }
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEdit && widget.medication != null) {
+      final med = widget.medication!;
+      
+      _nameController.text = med.medicationDictionary['brand_name'] ?? med.customMedicationName ?? "";
+      _amountController.text = med.amount;
+      _selectedType = _medicationTypes.contains(med.medicationType) ? med.medicationType! : 'Tablet';
+      
+      // --- THE FIX: RESTORE DICTIONARY ITEM ---
+      // If the medication has an ID, re-assign it to the selected item
+      // so the app knows it is a Verified Medication, not a Custom one!
+      if (med.medicationDictionary['id'] != null) {
+        _selectedDictionaryItem = med.medicationDictionary;
+      }
+      // ----------------------------------------
+
+      // Restore the array of timings
+      if (med.timingInstructions.isNotEmpty) {
+        _selectedTimings = List<String>.from(med.timingInstructions);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitForm() async {
+    if (_formKey.currentState!.validate()) {
+      // 1. Determine if it's a Dictionary Med or a Custom Med
+      final bool isCustom = _selectedDictionaryItem == null;
+
+      // 2. Build the payload matching the Database Schema
+      final Map<String, dynamic> payload = {
+        'medication_id': isCustom ? (widget.isEdit ? widget.medication!.medicationId : null) : _selectedDictionaryItem!['id'],
+        'custom_medication_name': isCustom ? _nameController.text.trim() : null,
+        'frequency_id': _selectedFrequency?['id'],
+        'amount': _amountController.text.trim().replaceAll(',', '.'),
+        'medication_type': _selectedType,
+        'timing_instructions': _selectedTimings,
+        'status': 'CURRENT',
+      };
+
+      try {
+        final repo = ref.read(medicationRepositoryProvider);
+        if (widget.isEdit) {
+          await repo.updatePatientMedication(widget.medication!.id, payload);
+        } else {
+          await repo.addPatientMedication(payload);
+        }
+        
+        ref.invalidate(patientMedicationsProvider);
+        ref.invalidate(todaysScheduleProvider);
+        
+        if (mounted) {
+          Navigator.pop(context);
+          Helpers.showSuccess(context, widget.isEdit ? 'Medication updated' : 'Medication added');
+        }
+      } catch (e) {
+        if (mounted) {
+          Helpers.showError(context, 'Failed to save medication');
+        }
+      }
+    }
+  }
+
+  // ==========================================
+  // STYLING HELPER FOR ALL INPUTS
+  // ==========================================
+  InputDecoration _getCustomInputDecoration(BuildContext context, {required String hint, Widget? suffixIcon}) {
+    final borderColor = AppTheme.getBorderColor(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: AppTheme.textSecondaryColor.withValues(alpha: 0.6), fontSize: 14),
+      filled: true,
+      fillColor: isDark ? Colors.white.withValues(alpha: 0.02) : AppTheme.backgroundColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      suffixIcon: suffixIcon,
+      // Default Border
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: borderColor),
+      ),
+      // Active/Typing Border
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primaryBlue, width: 2),
+      ),
+      // Error Border
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.redAccent, width: 2),
+      ),
+    );
+  }
+
+  // Helper to format ordinals (1st, 2nd)
+  String _getOrdinalLabel(int index) {
+    const ordinals = ["1st", "2nd", "3rd", "4th", "5th"];
+    if (index <= ordinals.length) return ordinals[index - 1];
+    return "${index}th";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final menuBackgroundColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    
+    // Fetch data for dropdowns
+    final dictAsync = ref.watch(medicationDictionaryProvider);
+    final freqAsync = ref.watch(dosageFrequenciesProvider);
+
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: menuBackgroundColor,
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      widget.isEdit ? "Edit Medication" : "Add Medication", 
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)
+                    ),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 16),
+                
+                // 1. MEDICATION NAME (Autocomplete / Custom)
+                const Text("Medication Name", style: TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 8),
+                dictAsync.when(
+                  loading: () => const LinearProgressIndicator(),
+                  error: (e, s) => const Text("Error loading dictionary"),
+                  data: (dictionaryList) {
+                    final dictionary = dictionaryList.cast<Map<String, dynamic>>();
+
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        return Autocomplete<Map<String, dynamic>>(
+                          initialValue: TextEditingValue(text: _nameController.text),
+                          displayStringForOption: (option) => (option['brand_name'] ?? option['generic_name']).toString(),
+                          optionsBuilder: (TextEditingValue textEditingValue) {
+                            if (textEditingValue.text.isEmpty) return const Iterable<Map<String, dynamic>>.empty();
+                            return dictionary.where((med) {
+                              final brand = (med['brand_name']?.toString() ?? '').toLowerCase();
+                              final generic = (med['generic_name']?.toString() ?? '').toLowerCase();
+                              final query = textEditingValue.text.toLowerCase();
+                              return brand.contains(query) || generic.contains(query);
+                            });
+                          },
+                          onSelected: (selection) {
+                            setState(() => _selectedDictionaryItem = selection);
+                          },
+                          optionsViewBuilder: (context, onSelected, options) {
+                            return Align(
+                              alignment: Alignment.topLeft,
+                              child: Material(
+                                color: menuBackgroundColor,
+                                elevation: 4,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: borderColor),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth: constraints.maxWidth, 
+                                    maxHeight: 250,
+                                  ),
+                                  child: ListView.builder(
+                                    padding: EdgeInsets.zero,
+                                    shrinkWrap: true,
+                                    itemCount: options.length,
+                                    itemBuilder: (context, index) {
+                                      final option = options.elementAt(index);
+                                      final name = option['brand_name'] ?? option['generic_name'];
+                                      return InkWell(
+                                        onTap: () => onSelected(option),
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
+                                          child: Text(name.toString()),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                          fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+                            // Keep our local controller in sync so we can read the raw text for custom meds
+                            controller.addListener(() {
+                              _nameController.text = controller.text;
+                              // If they alter the text after selecting, wipe the dictionary selection so it becomes custom
+                              if (_selectedDictionaryItem != null && 
+                                  controller.text != _selectedDictionaryItem!['brand_name']) {
+                                _selectedDictionaryItem = null; 
+                              }
+                            });
+                            
+                            return TextFormField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                              decoration: _getCustomInputDecoration(
+                                context, 
+                                hint: "Search dictionary or type custom name...", 
+                                suffixIcon: const Icon(Icons.search)
+                              ),
+                            );
+                          },
+                        );
+                      }
+                    );
+                  },
+                ),
+                
+                const SizedBox(height: 16),
+
+                // 2. AMOUNT & TYPE ROW
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Amount", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _amountController,
+                            validator: (val) => val == null || val.isEmpty ? 'Required' : null,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'^\d*[\.\,]?\d*')),
+                            ],
+                            decoration: _getCustomInputDecoration(context, hint: "e.g. 1, 1.5"),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("Type", style: TextStyle(fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 8),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              return DropdownButtonFormField<String>(
+                                initialValue: _selectedType,
+                                isExpanded: true,
+                                dropdownColor: menuBackgroundColor,
+                                borderRadius: BorderRadius.circular(16),
+                                elevation: 4,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                decoration: _getCustomInputDecoration(context, hint: "Type"),
+                                items: _medicationTypes.map((t) => DropdownMenuItem(
+                                  value: t, 
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                    child: Text(t, overflow: TextOverflow.ellipsis),
+                                  )
+                                )).toList(),
+                                onChanged: (val) => setState(() => _selectedType = val!),
+                              );
+                            }
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // 3. FREQUENCY ROW
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Frequency", style: TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 8),
+                    freqAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (e, s) => const Text("Error"),
+                      data: (frequencies) {
+                        if (widget.isEdit && _selectedFrequency == null) {
+                          try {
+                            _selectedFrequency = frequencies.firstWhere(
+                              (f) => f['id'] == widget.medication!.frequencyId
+                            );
+                          } catch (_) {}
+                        }
+
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            return DropdownButtonFormField<dynamic>(
+                              initialValue: _selectedFrequency,
+                              isExpanded: true,
+                              validator: (val) => val == null ? 'Required' : null,
+                              dropdownColor: menuBackgroundColor,
+                              borderRadius: BorderRadius.circular(16),
+                              elevation: 4,
+                              icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                              decoration: _getCustomInputDecoration(context, hint: "Select frequency"),
+                              items: frequencies.map((f) {
+                                return DropdownMenuItem(
+                                  value: f, 
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                    child: Text(
+                                      f['patient_text'] ?? f['latin_code'],
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  )
+                                );
+                              }).toList(),
+                              onChanged: _onFrequencyChanged,
+                            );
+                          }
+                        );
+                      },
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+                const Divider(),
+                const SizedBox(height: 8),
+
+                // 3. DYNAMIC TIMING DROPDOWNS
+                const Text("Specific Timings", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                
+                ...List.generate(_selectedTimings.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            "${_selectedTimings.length > 1 ? _getOrdinalLabel(index + 1) : 'Daily'} Dose:", 
+                            style: TextStyle(color: AppTheme.textSecondaryColor, fontWeight: FontWeight.w600)
+                          ),
+                        ),
+                        Expanded(
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              return DropdownButtonFormField<String>(
+                                initialValue: _selectedTimings[index],
+                                isExpanded: true,
+                                dropdownColor: menuBackgroundColor,
+                                borderRadius: BorderRadius.circular(16),
+                                elevation: 4,
+                                icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textSecondaryColor),
+                                decoration: _getCustomInputDecoration(context, hint: "Timing"),
+                                items: _timingInstructions.map((t) {
+                                  final formatted = t.replaceAll('_', ' ').toLowerCase();
+                                  return DropdownMenuItem(
+                                    value: t, 
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(maxWidth: constraints.maxWidth - 40),
+                                      child: Text(
+                                        formatted[0].toUpperCase() + formatted.substring(1),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    )
+                                  );
+                                }).toList(),
+                                onChanged: (val) {
+                                  setState(() => _selectedTimings[index] = val!);
+                                },
+                              );
+                            }
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                
+                const SizedBox(height: 24),
+                
+                // Actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: _submitForm,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryBlue,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shadowColor: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: Text(widget.isEdit ? "Save Changes" : "Add Medication"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

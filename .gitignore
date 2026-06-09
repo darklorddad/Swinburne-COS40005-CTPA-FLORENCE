@@ -1,6 +1,19 @@
 # darklorddad's
 .aider*
 dld*
+.cecli*
+
+# Basilagas21's
+.claude*
+Claude/
+Basilagas21/
+
+# Crazyfier's
+czy*
+
+# Harriz's
+Harriz/*
+ProjectFileTree.md
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -30,10 +43,37 @@ Documents/Computing-Technology-Project-A/Video-Presentation-(Due-Week-12)/Submis
 Documents/Git-history/
 Documents/Group-to-Client-Email/
 Documents/swinburne-cos40005-florence-cb2eeb034529.json
-~$*
 Documents/COS40005-or-EAT40005-(S2,-2025)/General/Group-List.xlsx
 Documents/COS40005-or-EAT40005-(S2,-2025)/Project-selection.jpg
 Documents/Computing-Technology-Project-A/Individual/Research-Report-(Due-Week-6)/
+Documents/Computing-Technology-Project-B/Final-Compiled-Documentation/
+Documents/Computing-Technology-Project-B/In-class-presentation/
+Documents/Computing-Technology-Project-B/Individual/
+Documents/Computing-Technology-Project-B/Poster/Submission/
+Documents/Computing-Technology-Project-B/Presentation/presentation_v2.html
+Documents/Computing-Technology-Project-B/Sprint-1-Report/COS40006-Sprint-1.docx
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Submission/
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 213348.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 211218.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 211209.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 211111.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 192832.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 192822.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 192812.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 192753.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 114818.png
+Documents/Computing-Technology-Project-B/Sprint-1-Report/Images/Screenshot 2026-03-24 114840.png
+Documents/Computing-Technology-Project-B/Sprint-2-Report/Submission/
+Documents/Computing-Technology-Project-B/Sprint-2-Report/.~lock.COS40006-Sprint-2.docx#
+Documents/Computing-Technology-Project-B/Sprint-2-Report/COS40006-Sprint-2.docx
+Documents/Computing-Technology-Project-B/Sprint-2-Report/Swinburne-COS40005-CTPA-FLORENCE-2026-04-11.csv
+Documents/Computing-Technology-Project-B/Sprint-3-Report/Images/Screenshot from 2026-05-08 23-50-37.png
+Documents/Computing-Technology-Project-B/Sprint-3-Report/Images/Screenshot from 2026-05-08 23-50-45.png
+Documents/Computing-Technology-Project-B/Sprint-3-Report/Images/Screenshot from 2026-05-08 23-50-49.png
+Documents/Computing-Technology-Project-B/Sprint-3-Report/Submission/
+Documents/Computing-Technology-Project-B/Sprint-3-Report/COS40006-Sprint-3.docx
+Documents/Computing-Technology-Project-B/Sprint-3-Report/Swinburne-COS40005-CTPA-FLORENCE - Product Backlog-before.tsv
+Documents/Computing-Technology-Project-B/Sprint-3-Report/Swinburne-COS40005-CTPA-FLORENCE - Product Backlog-current.tsv
 
 # Environment variables (API keys, database credentials, secret tokens and etc. goes here)
 .env
@@ -41,9 +81,8 @@ Documents/Computing-Technology-Project-A/Individual/Research-Report-(Due-Week-6)
 *.sql
 *.tmp
 supabase/
-.claude/
-CLAUDE.md
 *.bkp
+~$*
 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -388,7 +427,8 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# AI security test suite (kept local, not published)
+florence/security_tests/
+
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 

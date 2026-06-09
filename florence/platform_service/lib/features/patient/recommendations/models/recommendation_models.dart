@@ -32,6 +32,7 @@ enum RecommendationStatus {
 @immutable
 class HealthRecommendation {
   final String id;
+  final String timeframe; // 'daily' or 'weekly'
   final RecommendationCategory category;
   final String title;
   final String description;
@@ -45,6 +46,7 @@ class HealthRecommendation {
 
   const HealthRecommendation({
     required this.id,
+    required this.timeframe,
     required this.category,
     required this.title,
     required this.description,
@@ -105,6 +107,7 @@ class HealthRecommendation {
 
   HealthRecommendation copyWith({
     String? id,
+    String? timeframe,
     RecommendationCategory? category,
     String? title,
     String? description,
@@ -118,6 +121,7 @@ class HealthRecommendation {
   }) {
     return HealthRecommendation(
       id: id ?? this.id,
+      timeframe: timeframe ?? this.timeframe,
       category: category ?? this.category,
       title: title ?? this.title,
       description: description ?? this.description,
@@ -134,45 +138,50 @@ class HealthRecommendation {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'timeframe': timeframe,
       'category': category.name,
       'title': title,
       'description': description,
       'priority': priority.name,
       'status': status.name,
-      'generatedAt': generatedAt.toIso8601String(),
-      'expiresAt': expiresAt?.toIso8601String(),
+      'generated_at': generatedAt.toIso8601String(),
+      'expires_at': expiresAt?.toIso8601String(),
       'explanation': explanation?.toJson(),
-      'actionItems': actionItems,
-      'dataSources': dataSources,
+      'action_items': actionItems,
+      'data_sources': dataSources,
     };
   }
 
   factory HealthRecommendation.fromJson(Map<String, dynamic> json) {
     return HealthRecommendation(
       id: json['id'] as String,
+      timeframe: json['timeframe'] as String? ?? 'weekly',
       category: RecommendationCategory.values.firstWhere(
-        (e) => e.name == json['category'],
+        (e) => e.name.toLowerCase() == json['category'].toString().toLowerCase(),
+        orElse: () => RecommendationCategory.lifestyle,
       ),
       title: json['title'] as String,
       description: json['description'] as String,
       priority: RecommendationPriority.values.firstWhere(
-        (e) => e.name == json['priority'],
+        (e) => e.name.toLowerCase() == json['priority'].toString().toLowerCase(),
+        orElse: () => RecommendationPriority.medium,
       ),
       status: RecommendationStatus.values.firstWhere(
-        (e) => e.name == json['status'],
+        (e) => e.name.toLowerCase() == json['status'].toString().toLowerCase(),
+        orElse: () => RecommendationStatus.active,
       ),
-      generatedAt: DateTime.parse(json['generatedAt'] as String),
-      expiresAt: json['expiresAt'] != null
-          ? DateTime.parse(json['expiresAt'] as String)
+      generatedAt: DateTime.parse((json['generated_at'] ?? json['generatedAt']) as String),
+      expiresAt: (json['expires_at'] ?? json['expiresAt']) != null
+          ? DateTime.parse((json['expires_at'] ?? json['expiresAt']) as String)
           : null,
       explanation: json['explanation'] != null
           ? RecommendationExplanation.fromJson(json['explanation'])
           : null,
-      actionItems: (json['actionItems'] as List<dynamic>?)
+      actionItems: ((json['action_items'] ?? json['actionItems']) as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
-      dataSources: json['dataSources'] as Map<String, dynamic>?,
+      dataSources: (json['data_sources'] ?? json['dataSources']) as Map<String, dynamic>?,
     );
   }
 }
@@ -195,23 +204,24 @@ class RecommendationExplanation {
   Map<String, dynamic> toJson() {
     return {
       'rationale': rationale,
-      'triggeringData': triggeringData.map((d) => d.toJson()).toList(),
-      'evidenceLinks': evidenceLinks,
-      'expectedImpact': expectedImpact,
+      'triggering_data': triggeringData.map((d) => d.toJson()).toList(),
+      'evidence_links': evidenceLinks,
+      'expected_impact': expectedImpact,
     };
   }
 
   factory RecommendationExplanation.fromJson(Map<String, dynamic> json) {
     return RecommendationExplanation(
       rationale: json['rationale'] as String,
-      triggeringData: (json['triggeringData'] as List<dynamic>)
-          .map((e) => DataPoint.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      evidenceLinks: (json['evidenceLinks'] as List<dynamic>?)
+      triggeringData: ((json['triggering_data'] ?? json['triggeringData']) as List<dynamic>?)
+              ?.map((e) => DataPoint.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      evidenceLinks: ((json['evidence_links'] ?? json['evidenceLinks']) as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],
-      expectedImpact: json['expectedImpact'] as String,
+      expectedImpact: (json['expected_impact'] ?? json['expectedImpact']) as String? ?? '',
     );
   }
 }

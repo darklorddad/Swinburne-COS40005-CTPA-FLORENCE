@@ -29,16 +29,35 @@ class ApiDataService implements DataService {
       if (data == null) return [];
       
       // Assuming data is a list of patient objects
-      return (data as List).map((json) => Patient(
-        id: json['id']?.toString() ?? '',
-        name: json['name'] ?? 'Unknown',
-        age: json['age'] ?? 0,
-        gender: json['gender'] ?? 'Unknown',
-        condition: _parseCondition(json['condition']),
-        riskLevel: _parseRiskLevel(json['risk_level']),
-        lastSync: json['last_sync'] != null ? DateTime.parse(json['last_sync']) : DateTime.now(),
-        contactInfo: json['contact_info'] ?? '',
-      )).toList();
+      return (data as List).map((json) {
+        final diseaseLogs = json['disease_logs'] as List? ?? [];
+        final monitorData = json['patient_monitor_data'] as List? ?? [];
+        
+        DateTime? latest;
+        for (var log in monitorData) {
+          final ts = log['measured_at'] != null ? DateTime.tryParse(log['measured_at']) : null;
+          if (ts != null && (latest == null || ts.isAfter(latest))) latest = ts;
+        }
+
+        final activeDiseases = diseaseLogs
+            .where((log) => log['status']?.toString().toLowerCase() == 'active')
+            .map((log) => log['condition_name']?.toString() ?? 'Unknown')
+            .toList();
+
+        return Patient(
+          id: json['id']?.toString() ?? '',
+          name: json['name'] ?? 'Unknown',
+          age: 0, // Age requires date_of_birth which is not in this endpoint
+          gender: 'Unknown',
+          activeDiseases: activeDiseases,
+          riskLevel: _parseRiskLevel(json['risk_level']),
+          lastUpdate: latest,
+          contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
+          emergencyContactName: json['emergency_contact_name'],
+          emergencyContactRelationship: json['emergency_contact_relationship'],
+          emergencyContactPhone: json['emergency_contact_phone'],
+        );
+      }).toList();
     } catch (e) {
       debugPrint('Error fetching patients: $e');
       return [];
@@ -51,16 +70,35 @@ class ApiDataService implements DataService {
       final data = await _api.get('/clinicians/available-patients');
       if (data == null) return [];
       
-      return (data as List).map((json) => Patient(
-        id: json['id']?.toString() ?? '',
-        name: json['name'] ?? 'Unknown',
-        age: json['age'] ?? 0,
-        gender: json['gender'] ?? 'Unknown',
-        condition: _parseCondition(json['condition']),
-        riskLevel: _parseRiskLevel(json['risk_level']),
-        lastSync: json['last_sync'] != null ? DateTime.parse(json['last_sync']) : DateTime.now(),
-        contactInfo: json['contact_info'] ?? '',
-      )).toList();
+      return (data as List).map((json) {
+        final diseaseLogs = json['disease_logs'] as List? ?? [];
+        final monitorData = json['patient_monitor_data'] as List? ?? [];
+        
+        DateTime? latest;
+        for (var log in monitorData) {
+          final ts = log['measured_at'] != null ? DateTime.tryParse(log['measured_at']) : null;
+          if (ts != null && (latest == null || ts.isAfter(latest))) latest = ts;
+        }
+
+        final activeDiseases = diseaseLogs
+            .where((log) => log['status']?.toString().toLowerCase() == 'active')
+            .map((log) => log['condition_name']?.toString() ?? 'Unknown')
+            .toList();
+
+        return Patient(
+          id: json['id']?.toString() ?? '',
+          name: json['name'] ?? 'Unknown',
+          age: 0,
+          gender: 'Unknown',
+          activeDiseases: activeDiseases,
+          riskLevel: _parseRiskLevel(json['risk_level']),
+          lastUpdate: latest,
+          contactInfo: json['phone_number'] ?? json['contact_info'] ?? '',
+          emergencyContactName: json['emergency_contact_name'],
+          emergencyContactRelationship: json['emergency_contact_relationship'],
+          emergencyContactPhone: json['emergency_contact_phone'],
+        );
+      }).toList();
     } catch (e) {
       debugPrint('Error fetching available patients: $e');
       return [];
@@ -75,6 +113,83 @@ class ApiDataService implements DataService {
   @override
   Future<void> unassignPatient(String patientId) async {
     await _api.post('/clinicians/patients/$patientId/unassign', {});
+  }
+
+  @override
+  Future<void> addPatientNote(String patientId, String noteContent) async {
+    await _api.post('/clinicians/me/patients/$patientId/notes', {
+      'note_content': noteContent,
+    });
+  }
+
+  @override
+  Future<void> updatePatientRiskLevel(String patientId, String riskLevel) async {
+    await _api.put('/clinicians/me/patients/$patientId/assess-risk', {
+      'risk_level': riskLevel.toUpperCase(),
+    });
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getPatientThresholds(String patientId) async {
+    final data = await _api.get('/clinicians/me/patients/$patientId/thresholds');
+    if (data == null) return [];
+    return List<Map<String, dynamic>>.from(data);
+  }
+
+  @override
+  Future<void> setPatientThresholds(String patientId, List<Map<String, dynamic>> thresholds) async {
+    await _api.put('/clinicians/me/patients/$patientId/thresholds', thresholds);
+  }
+
+  @override
+  Future<Patient> getPatient(String patientId) async {
+    try {
+      final data = await _api.get('/clinicians/me/patients/$patientId');
+      if (data == null) throw Exception('Patient data not found');
+
+      final profile = data['profile'];
+      if (profile == null) throw Exception('Patient profile not found');
+
+      int calculatedAge = 0;
+      if (profile['date_of_birth'] != null) {
+        final dob = DateTime.parse(profile['date_of_birth']);
+        final now = DateTime.now();
+        calculatedAge = now.year - dob.year;
+        if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+          calculatedAge--;
+        }
+      }
+
+      final diseaseLogs = data['disease_logs'] as List? ?? [];
+      final activeDiseases = diseaseLogs
+          .where((log) => log['status']?.toString().toLowerCase() == 'active')
+          .map((log) => log['condition_name']?.toString() ?? 'Unknown')
+          .toList();
+
+      final monitorData = data['monitor_data'] as List? ?? [];
+      DateTime? latest;
+      for (var log in monitorData) {
+        final ts = log['measured_at'] != null ? DateTime.tryParse(log['measured_at']) : null;
+        if (ts != null && (latest == null || ts.isAfter(latest))) latest = ts;
+      }
+
+      return Patient(
+        id: profile['id']?.toString() ?? '',
+        name: profile['name'] ?? 'Unknown',
+        age: calculatedAge,
+        gender: profile['gender'] ?? 'Unknown',
+        activeDiseases: activeDiseases,
+        riskLevel: _parseRiskLevel(profile['risk_level']),
+        lastUpdate: latest,
+        contactInfo: profile['phone_number'] ?? profile['contact_info'] ?? '',
+        emergencyContactName: profile['emergency_contact_name'],
+        emergencyContactRelationship: profile['emergency_contact_relationship'],
+        emergencyContactPhone: profile['emergency_contact_phone'],
+      );
+    } catch (e) {
+      debugPrint('Error fetching patient: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -148,10 +263,44 @@ class ApiDataService implements DataService {
               ))
           .toList();
 
-      // Parse BMI from monitor data (take latest)
+      // Parse daily_logs to mealEntries
+      final dailyLogs = data['daily_logs'] as List? ?? [];
+      final mealEntries = <MealEntry>[];
+
+      for (var log in dailyLogs) {
+        if (log['meal_desc'] != null || log['calories'] != null || log['photo_url'] != null) {
+          mealEntries.add(MealEntry(
+            timestamp: log['log_date'] != null ? DateTime.parse('${log['log_date']}T12:00:00Z') : DateTime.now(),
+            mealType: log['meal_time'] ?? 'Meal',
+            foodItems: log['meal_desc'] != null 
+                ? [FoodItem(name: log['meal_desc'], quantity: 1, unit: 'serving', nutrition: {'calories': (log['calories'] as num?)?.toDouble() ?? 0})] 
+                : [],
+            nutritionSummary: {
+              if (log['calories'] != null) 'calories': (log['calories'] as num).toDouble(),
+            },
+          ));
+        }
+      }
+      
+      mealEntries.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      // Parse BMI from monitor data
       double weight = 70.0; // Default
       double height = 170.0; // Default
       final bmiRecords = monitorData.where((r) => r['data_type'] == 'BMI').toList();
+      
+      final bmiReadings = bmiRecords.map((r) {
+        final val = (r['value'] as num).toDouble();
+        final w = val * (1.7 * 1.7);
+        return BmiReading(
+          timestamp: DateTime.parse(r['measured_at']),
+          value: val,
+          weight: w,
+          height: 170.0,
+        );
+      }).toList();
+      bmiReadings.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+
       if (bmiRecords.isNotEmpty) {
         // Reverse calculate weight if we assume height (or fetch height from profile if available)
         // For now, we'll just use the BMI value to display, but the model asks for weight/height.
@@ -159,6 +308,21 @@ class ApiDataService implements DataService {
         final latestBmi = (bmiRecords.last['value'] as num).toDouble();
         weight = latestBmi * (1.7 * 1.7);
       }
+
+      // Parse medications
+      final medsData = data['medications'] as List? ?? [];
+      final List<Medication> medications = medsData
+          .map((m) => Medication.fromJson(m as Map<String, dynamic>))
+          .toList();
+
+      // Parse automated actions
+      final actionsData = data['automated_actions'] as List? ?? [];
+      final automatedActions = actionsData.map((action) => AutomatedAction(
+        timestamp: DateTime.parse(action['created_at']),
+        type: action['type'] ?? 'Unknown',
+        description: action['description'] ?? '',
+        response: action['response'],
+      )).toList();
 
       return PatientHealthData(
         patientId: patientId,
@@ -168,10 +332,11 @@ class ApiDataService implements DataService {
         hbA1cReadings: hba1c,
         bloodPressureReadings: bpReadings,
         cholesterolReadings: cholReadings,
+        bmiReadings: bmiReadings,
         activityData: _parseActivityData(activityLogs),
-        mealEntries: [], 
-        automatedActions: [], 
-        medications: [], 
+        mealEntries: mealEntries, 
+        automatedActions: automatedActions, 
+        medications: medications, 
         aiGeneratedSummary: 'Patient data loaded successfully.',
         detectedPatterns: [], 
         recommendations: [], 
@@ -239,11 +404,6 @@ class ApiDataService implements DataService {
   }
 
   // Parsing helpers
-  ChronicCondition _parseCondition(String? condition) {
-    // Map string to enum
-    return ChronicCondition.type2Diabetes; // Default/Placeholder
-  }
-
   RiskLevel _parseRiskLevel(String? level) {
     switch (level?.toLowerCase()) {
       case 'high': return RiskLevel.high;
@@ -266,11 +426,12 @@ class ApiDataService implements DataService {
   List<ActivityData> _parseActivityData(List? logs) {
     if (logs == null) return [];
     return logs.map((log) => ActivityData(
-      date: DateTime.parse(log['performed_at']),
+      date: log['start_time'] != null 
+          ? DateTime.parse(log['start_time']) 
+          : DateTime.parse(log['created_at']),
       steps: 0, // Not in DB yet
-      activeMinutes: log['duration_minutes'] ?? 0,
-      caloriesBurned: 0, // Not in DB yet
+      activeMinutes: log['active_duration_minutes'] ?? 0,
+      caloriesBurned: log['calories_burned'] ?? 0,
     )).toList();
   }
 }
-

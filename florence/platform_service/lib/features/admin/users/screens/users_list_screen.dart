@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../core/widgets/admin_scaffold.dart';
-import '../../core/services/admin_auth_service.dart';
-import '../../core/services/permission_service.dart';
-import '../../../../config/admin_routes.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/config/admin_routes.dart';
 
 /// Users List Screen
 /// View and manage users (scoped by permissions)
@@ -168,7 +168,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 SizedBox(
                   width: 180,
                   child: DropdownButtonFormField<String>(
-                    value: _filterRole,
+                    initialValue: _filterRole,
                     decoration: InputDecoration(
                       labelText: 'Role',
                       border: OutlineInputBorder(
@@ -201,7 +201,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                 SizedBox(
                   width: 150,
                   child: DropdownButtonFormField<String>(
-                    value: _filterStatus,
+                    initialValue: _filterStatus,
                     decoration: InputDecoration(
                       labelText: 'Status',
                       border: OutlineInputBorder(
@@ -260,7 +260,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
         child: DataTable(
           columnSpacing: 48,
           horizontalMargin: 24,
-          headingRowColor: MaterialStateProperty.all(
+          headingRowColor: WidgetStateProperty.all(
             AdminTheme.backgroundColor,
           ),
           columns: const [
@@ -326,8 +326,8 @@ class _UsersListScreenState extends State<UsersListScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: user.isActive
-                          ? AdminTheme.successColor.withOpacity(0.1)
-                          : AdminTheme.textLightColor.withOpacity(0.1),
+                          ? AdminTheme.successColor.withValues(alpha: 0.1)
+                          : AdminTheme.textLightColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(

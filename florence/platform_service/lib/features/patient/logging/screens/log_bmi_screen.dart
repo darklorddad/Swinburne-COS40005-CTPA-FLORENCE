@@ -1,23 +1,25 @@
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/services/api_service.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
+import 'package:florence/core/utils/validators.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_providers;
+import 'package:florence/core/services/notifications/notification_service.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart' hide patientThresholdsProvider;
+import 'package:florence/features/patient/profile/providers/user_profile_provider.dart';
+import 'package:florence/features/patient/recommendations/services/recommendation_engine.dart';
+import 'package:florence/features/patient/dashboard/providers/insight_provider.dart';
+import 'package:florence/shared/widgets/button_widgets.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../../core/services/api_service.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../shared/widgets/button_widgets.dart';
-import '../../../../shared/widgets/input_widgets.dart';
-import '../../../../shared/widgets/card_widgets.dart';
-import '../../../../config/theme.dart';
-import '../../../../config/routes.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_providers;
-import '../../core/repositories/monitor_data_repository.dart';
-import '../../dashboard/providers/dashboard_providers.dart';
 
 /// Log BMI Screen
 class LogBmiScreen extends ConsumerStatefulWidget {
-  const LogBmiScreen({super.key});
+  final VoidCallback? onSwitchToHistory;
+  const LogBmiScreen({super.key, this.onSwitchToHistory});
 
   @override
   ConsumerState<LogBmiScreen> createState() => _LogBmiScreenState();
@@ -29,15 +31,37 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   final _weightController = TextEditingController();
   // final ApiService _apiService = ApiService(); // Removed
 
+  bool _forcePop = false;
   bool _isLoading = false;
   DateTime _selectedDateTime = DateTime.now();
+  late DateTime _initialDateTime;
   double? _calculatedBmi;
+
+  // Track pre-filled data to prevent false "hasChanges" triggers
+  String _initialHeight = '';
+  String _initialWeight = '';
 
   @override
   void initState() {
     super.initState();
+    _initialDateTime = _selectedDateTime;
     _heightController.addListener(_calculateBmi);
     _weightController.addListener(_calculateBmi);
+    
+    // Pre-fill from profile
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final profile = ref.read(userProfileProvider).value;
+      if (profile != null) {
+        if (profile['height'] != null) {
+          _initialHeight = profile['height'].toString();
+          _heightController.text = _initialHeight;
+        }
+        if (profile['weight'] != null) {
+          _initialWeight = profile['weight'].toString();
+          _weightController.text = _initialWeight;
+        }
+      }
+    });
   }
 
   @override
@@ -106,17 +130,29 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(monitorDataRepositoryProvider).addMonitorData(
-        'BMI',
-        _calculatedBmi!,
-        _selectedDateTime.toUtc(),
-      );
+      final apiService = ApiService();
       
-      ref.invalidate(core_providers.monitorDataProvider);
+      // Update profile - backend will auto-log the BMI entry
+      await apiService.put('/patients/me', {
+        'height': double.tryParse(_heightController.text.replaceAll(',', '.')),
+        'weight': double.tryParse(_weightController.text.replaceAll(',', '.')),
+      });
+      
+      ref.invalidate(userProfileProvider);
+      await ref.refresh(core_providers.monitorDataProvider.future);
+      
+      ref.read(notificationProvider.notifier).checkAfterBmiLog(_calculatedBmi);
+
+      ref.read(recommendationProvider.notifier).generateRecommendations(
+        timeframe: 'daily',
+      );
 
       if (mounted) {
-        Helpers.showSuccess(context, 'BMI logged successfully!');
-        AppRoutes.pop(context);
+        AppRoutes.pushAndRemoveUntil(
+          context, 
+          AppRoutes.dashboard,
+          arguments: {'message': 'BMI logged and profile updated!'},
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -127,6 +163,32 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// Get BMI color based on value and user thresholds
+  Color? _getBmiColor(double? value, HealthThreshold? threshold) {
+    if (value == null) return null;
+    final minNormal = threshold?.minValue ?? 18.5;
+    final maxNormal = threshold?.maxValue ?? 24.9;
+    final obeseCutoff = maxNormal + 5.0;
+
+    if (value < minNormal) return AppTheme.primaryBlue;
+    if (value <= maxNormal) return AppTheme.primaryGreen;
+    if (value <= obeseCutoff) return AppTheme.warningColor;
+    return AppTheme.errorColor;
+  }
+
+  /// Get BMI status text
+  String _getBmiStatus(double? value, HealthThreshold? threshold) {
+    if (value == null) return '';
+    final minNormal = threshold?.minValue ?? 18.5;
+    final maxNormal = threshold?.maxValue ?? 24.9;
+    final obeseCutoff = maxNormal + 5.0;
+
+    if (value < minNormal) return 'Underweight';
+    if (value <= maxNormal) return 'Normal';
+    if (value <= obeseCutoff) return 'Overweight';
+    return 'Obese';
   }
 
   Future<void> _selectDateTime() async {
@@ -157,59 +219,270 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     }
   }
 
+  Future<bool> _showDiscardDialog() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard Changes?'),
+        content: const Text('You have entered data. Are you sure you want to go back without saving?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep Editing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppTheme.errorColor),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    ) ?? false;
+  }
+
+  void _resetForm() {
+    setState(() {
+      _forcePop = false;
+      _heightController.text = _initialHeight;
+      _weightController.text = _initialWeight;
+      _selectedDateTime = _initialDateTime;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Log BMI'),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildInfoCard(),
-              const SizedBox(height: 24),
-              _buildInputSection(),
-              const SizedBox(height: 24),
-              if (_calculatedBmi != null) ...[
-                _buildBmiResultCard(),
-                const SizedBox(height: 24),
-              ],
-              _buildDateTimeSection(),
-              const SizedBox(height: 24),
-              PrimaryButton(
-                text: 'Save Reading',
-                onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
-                isLoading: _isLoading,
-                width: double.infinity,
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    // Fetch thresholds
+    final healthData =
+        ref.watch(core_providers.monitorDataProvider).asData?.value;
+    HealthThreshold? bmiThreshold;
+    try {
+      bmiThreshold = healthData?.healthThresholds.firstWhere(
+          (t) => t.dataType == MonitorDataType.BMI);
+    } catch (_) {}
+
+    final bool hasChanges = !_forcePop &&
+        (_heightController.text != _initialHeight || 
+         _weightController.text != _initialWeight ||
+         _selectedDateTime != _initialDateTime);
+
+    return PopScope(
+      canPop: !hasChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        final shouldDiscard = await _showDiscardDialog();
+
+        if (shouldDiscard && context.mounted) {
+          setState(() => _forcePop = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (context.mounted) Navigator.of(context).pop();
+          });
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Log BMI'),
+          elevation: 0,
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1.0),
+            child: Container(
+              color: AppTheme.getBorderColor(context),
+              height: 1.0,
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 4),
+              child: IconButton(
+                icon: const Icon(Icons.history),
+                onPressed: () async {
+                  if (hasChanges) {
+                    final shouldDiscard = await _showDiscardDialog();
+                    if (!shouldDiscard) return;
+                    _resetForm();
+                  }
+                  if (widget.onSwitchToHistory != null) {
+                    widget.onSwitchToHistory!();
+                  } else {
+                    AppRoutes.pushReplacement(context, AppRoutes.bmiDetail);
+                  }
+                },
+                tooltip: 'View History',
               ),
-              const SizedBox(height: 24),
-            ],
+            ),
+          ],
+        ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: SingleChildScrollView(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 600),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Info & Target card
+                        _buildInfoCard(bmiThreshold),
+                        const SizedBox(height: 20),
+
+                        // Calculated BMI Section
+                        _buildCalculatedBmiSection(bmiThreshold),
+                        const SizedBox(height: 20),
+
+                        // Input Section
+                        _buildInputSection(),
+                        const SizedBox(height: 20),
+
+                        // Date and time
+                        _buildDateTimeSection(),
+                        const SizedBox(height: 32),
+
+                        // Save button
+                        PrimaryButton(
+                          text: 'Save Reading',
+                          onPressed: (_isLoading || _calculatedBmi == null) ? null : _handleSave,
+                          isLoading: _isLoading,
+                          width: double.infinity,
+                          padding: Helpers.isDesktop(context)
+                              ? const EdgeInsets.symmetric(horizontal: 24, vertical: 20)
+                              : null,
+                        ),
+                        SizedBox(height: MediaQuery.of(context).padding.bottom + 48),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
-      ),
-      ),
-      ),
       ),
     );
   }
 
-  Widget _buildInfoCard() {
-    return const BaseCard(
-      child: Row(
+  Widget _buildInfoCard(HealthThreshold? threshold) {
+    final thresholdsAsync = ref.watch(patientThresholdsProvider);
+
+    String targetText = "Target: Loading...";
+    if (thresholdsAsync.hasValue && thresholdsAsync.value != null) {
+      try {
+        final bmiTarget =
+            thresholdsAsync.value!.firstWhere((t) => t.dataType == 'BMI');
+        targetText =
+            "${bmiTarget.minValue.toStringAsFixed(1)} - ${bmiTarget.maxValue.toStringAsFixed(1)} kg/m²";
+      } catch (e) {
+        targetText = "Target: Not set";
+      }
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
         children: [
-          Icon(Icons.height, color: AppTheme.primaryGreen, size: 24),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Body Mass Index (BMI) is a measure of body fat based on height and weight.',
+          Row(
+            children: [
+              const Icon(
+                Icons.info_outline,
+                color: AppTheme.infoColor,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Body Mass Index (BMI) is a measure of body fat based on height and weight.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.infoColor,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Target Range Box
+          InkWell(
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.profile),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.track_changes,
+                            size: 18,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Target Range',
+                            style: TextStyle(
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20,
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.5),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('BMI',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primaryGreen.withValues(alpha: 0.8))),
+                      Text(
+                        targetText,
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryGreen),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -217,41 +490,201 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     );
   }
 
-  Widget _buildInputSection() {
-    return BaseCard(
+  Widget _buildCalculatedBmiSection(HealthThreshold? threshold) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bmiColor = _getBmiColor(_calculatedBmi, threshold);
+    
+    final containerColor = bmiColor != null 
+        ? bmiColor.withValues(alpha: 0.05) 
+        : (isDark ? AppTheme.midnightSurface : Colors.white);
+        
+    final borderColor = bmiColor ?? AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Your Measurements',
+            'Calculated BMI Level',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
           ),
           const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                _calculatedBmi?.toStringAsFixed(1) ?? '---',
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      fontSize: 64,
+                      fontWeight: FontWeight.bold,
+                      color: bmiColor ?? Colors.grey,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'kg/m²',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppTheme.textSecondaryColor,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _buildBmiStatusBadge(threshold),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputSection() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: borderColor,
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.monitor_weight_outlined,
+                  color: titleIconColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'Measurements',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: CustomTextField(
-                  label: 'Height (cm)',
-                  hint: 'e.g., 175',
-                  controller: _heightController,
-                  validator: (value) =>
-                      Validators.range(value, 50, 300, fieldName: 'Height'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.height),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Height (cm)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _heightController,
+                      validator: (value) =>
+                          Validators.range(value, 50, 300, fieldName: 'Height'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 175',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.height, color: AppTheme.textSecondaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: CustomTextField(
-                  label: 'Weight (kg)',
-                  hint: 'e.g., 70',
-                  controller: _weightController,
-                  validator: (value) =>
-                      Validators.range(value, 20, 500, fieldName: 'Weight'),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  prefixIcon: const Icon(Icons.scale),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Weight (kg)',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _weightController,
+                      validator: (value) =>
+                          Validators.range(value, 20, 500, fieldName: 'Weight'),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        hintText: 'e.g. 70',
+                        hintStyle: const TextStyle(color: AppTheme.textSecondaryColor),
+                        filled: true,
+                        fillColor: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(
+                            color: AppTheme.primaryBlue,
+                            width: 2,
+                          ),
+                        ),
+                        prefixIcon: const Icon(Icons.scale, color: AppTheme.textSecondaryColor),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -261,58 +694,56 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
     );
   }
 
-  Widget _buildBmiResultCard() {
-    // Fetch dynamic thresholds from the provider
-    final thresholdsAsync = ref.watch(patientThresholdsProvider);
-    final thresholds = thresholdsAsync.value ?? [];
-    
-    String bmiCategory;
-    
-    // Try to find dynamic BMI threshold
-    final t = thresholds.cast<HealthThreshold?>().firstWhere(
-          (t) => t?.dataType == MonitorDataType.BMI,
-          orElse: () => null,
-        );
+  Widget _buildBmiStatusBadge(HealthThreshold? threshold) {
+    final statusText = _calculatedBmi != null
+        ? _getBmiStatus(_calculatedBmi, threshold).toUpperCase()
+        : 'ENTER READING';
 
-    if (t != null) {
-      // Dynamic Logic
-      final maxNormal = t.maxValue;
-      final obeseCutoff = maxNormal + 5.0;
+    final bmiColor = _getBmiColor(_calculatedBmi, threshold);
+    final displayColor = bmiColor ?? AppTheme.textSecondaryColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bool isPending = _calculatedBmi == null;
 
-      if (_calculatedBmi! < t.minValue) {
-        bmiCategory = 'Underweight';
-      } else if (_calculatedBmi! <= maxNormal) {
-        bmiCategory = 'Normal';
-      } else if (_calculatedBmi! <= obeseCutoff) {
-        bmiCategory = 'Overweight';
-      } else {
-        bmiCategory = 'Obese';
-      }
+    IconData statusIcon;
+    if (isPending) {
+      statusIcon = Icons.edit;
+    } else if (statusText == 'UNDERWEIGHT') {
+      statusIcon = Icons.arrow_downward;
+    } else if (statusText == 'NORMAL') {
+      statusIcon = Icons.check;
     } else {
-      // Fallback to static helper if no data loaded
-      bmiCategory = Helpers.getBMICategory(_calculatedBmi!);
+      statusIcon = Icons.arrow_upward;
     }
 
-    return BaseCard(
-      child: Column(
+    return Container(
+      width: 140, // Fixed width matching Log Glucose
+      height: 32, // Fixed height matching Log Glucose
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: isPending
+            ? (isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor)
+            : displayColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: displayColor.withValues(alpha: 0.3),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'Your BMI',
-            style: Theme.of(context).textTheme.titleMedium,
+          Icon(
+            statusIcon,
+            size: 14,
+            color: displayColor,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(width: 6),
           Text(
-            _calculatedBmi!.toStringAsFixed(1),
-            style: Theme.of(context).textTheme.displayMedium?.copyWith(
+            statusText,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: displayColor,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.primaryGreen,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            bmiCategory,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppTheme.textSecondaryColor,
+                  fontSize: 12,
                 ),
           ),
         ],
@@ -321,56 +752,188 @@ class _LogBmiScreenState extends ConsumerState<LogBmiScreen> {
   }
 
   Widget _buildDateTimeSection() {
-    return BaseCard(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
+    final borderColor = AppTheme.getBorderColor(context);
+    final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Measurement Date',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: titleIconColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-          ),
-          const SizedBox(height: 16),
-          InkWell(
-            onTap: _selectDateTime,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppTheme.borderColor),
+                child: Icon(
+                  Icons.calendar_today,
+                  color: titleIconColor,
+                  size: 24,
+                ),
               ),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, color: AppTheme.primaryGreen),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          Formatters.date(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                        Text(
-                          Formatters.time(_selectedDateTime),
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.textSecondaryColor,
-                              ),
-                        ),
-                      ],
+              const SizedBox(width: 12),
+              Text(
+                'Date and Time',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
                     ),
-                  ),
-                  const Icon(Icons.chevron_right, color: AppTheme.textSecondaryColor),
-                ],
               ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            decoration: BoxDecoration(
+              color: isDark ? Colors.white.withValues(alpha: 0.05) : AppTheme.backgroundColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isDark ? Colors.white.withValues(alpha: 0.1) : AppTheme.borderColor,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildCompactPickerItem(
+                  label: 'Date',
+                  value: Formatters.date(_selectedDateTime),
+                  icon: Icons.calendar_today_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          picked.year,
+                          picked.month,
+                          picked.day,
+                          _selectedDateTime.hour,
+                          _selectedDateTime.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+                Divider(height: 1, color: AppTheme.borderColor.withValues(alpha: 0.5)),
+                _buildCompactPickerItem(
+                  label: 'Time',
+                  value: TimeOfDay.fromDateTime(_selectedDateTime).format(context),
+                  icon: Icons.access_time_outlined,
+                  onTap: () async {
+                    FocusScope.of(context).requestFocus(FocusNode());
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay.fromDateTime(_selectedDateTime),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            // Override tertiary colors so AM/PM selector is Blue, not Red
+                            colorScheme: Theme.of(context).colorScheme.copyWith(
+                              tertiary: AppTheme.primaryBlue,
+                              onTertiary: Colors.white,
+                              tertiaryContainer: AppTheme.primaryBlue.withValues(alpha: 0.2),
+                              onTertiaryContainer: AppTheme.primaryBlue,
+                            ),
+                            // Fix input field background to make cursor visible
+                            timePickerTheme: TimePickerThemeData(
+                              hourMinuteColor: WidgetStateColor.resolveWith((states) {
+                                return states.contains(WidgetState.selected)
+                                    ? AppTheme.primaryBlue.withValues(alpha: 0.1)
+                                    : Colors.grey.shade100;
+                              }),
+                              hourMinuteTextColor: WidgetStateColor.resolveWith((states) {
+                                return states.contains(WidgetState.selected)
+                                    ? AppTheme.primaryBlue
+                                    : AppTheme.textPrimaryColor;
+                              }),
+                            ),
+                            textSelectionTheme: TextSelectionThemeData(
+                              cursorColor: AppTheme.primaryBlue,
+                              selectionColor: AppTheme.primaryBlue.withValues(alpha: 0.3),
+                              selectionHandleColor: AppTheme.primaryBlue,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDateTime = DateTime(
+                          _selectedDateTime.year,
+                          _selectedDateTime.month,
+                          _selectedDateTime.day,
+                          picked.hour,
+                          picked.minute,
+                        );
+                      });
+                    }
+                  },
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCompactPickerItem({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.textSecondaryColor, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    '$label:',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textSecondaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_drop_down, color: AppTheme.textSecondaryColor),
+          ],
+        ),
       ),
     );
   }

@@ -1,21 +1,20 @@
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart'; // Updated import
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart';
+import 'package:florence/features/patient/core/providers/settings_providers.dart';
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/widgets/compact_health_card.dart';
 import 'package:flutter/material.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../core/models/health_data_models.dart'; // Updated import
-import '../../../../config/routes.dart';
-import 'compact_health_card.dart';
-import '../screens/cholesterol_detail_screen.dart';
-import '../screens/diet_detail_screen.dart';
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// Biometrics Section
 /// A container widget that groups all health metric cards
-class BiometricsSection extends StatelessWidget {
+class BiometricsSection extends ConsumerWidget {
   final List<MonitorData> monitorData;
   final ActivityLog? latestActivity;
   final DailyPatientLog? latestMeal;
-  final List<HealthThreshold> thresholds;
+  final List<PatientThreshold> thresholds;
 
   const BiometricsSection({
     super.key,
@@ -26,8 +25,12 @@ class BiometricsSection extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
-    final cards = _buildHealthCards(context);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(patientSettingsProvider);
+    final monitorState = ref.watch(monitorDataProvider);
+    final isRefreshing = monitorState.isLoading || monitorState.isRefreshing;
+
+    final cards = _buildHealthCards(context, settings, isRefreshing);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final containerColor = isDark ? AppTheme.midnightSurface : Colors.white;
     final titleIconColor = isDark ? Colors.blue.shade200 : AppTheme.primaryBlue;
@@ -46,7 +49,7 @@ class BiometricsSection extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -60,7 +63,7 @@ class BiometricsSection extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: titleIconColor.withOpacity(0.1),
+                  color: titleIconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -80,18 +83,18 @@ class BiometricsSection extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           ResponsiveCardLayout(
-            children: cards,
             mobileColumns: 1,
             tabletColumns: 2,
             desktopColumns: 3,
             spacing: 12.0,
+            children: cards,
           ),
         ],
       ),
     );
   }
 
-  List<Widget> _buildHealthCards(BuildContext context) {
+  List<Widget> _buildHealthCards(BuildContext context, PatientSettings settings, bool isRefreshing) {
     final cards = <Widget>[];
     
     MonitorData? getData(MonitorDataType type) {
@@ -123,6 +126,7 @@ class BiometricsSection extends StatelessWidget {
     }
 
     final glucose = getData(MonitorDataType.GLUCOSE);
+    final isGlucoseMmol = settings.glucoseUnit == 'mmol/L';
     final latestBP = getLatestBP();
     final bpSystolic = latestBP.sys;
     final bpDiastolic = latestBP.dia;
@@ -153,12 +157,15 @@ class BiometricsSection extends StatelessWidget {
     }
 
     final bmi = getData(MonitorDataType.BMI);
+    final isCholMmol = settings.cholesterolUnit == 'mmol/L';
 
     // Glucose (Always show)
     cards.add(CompactHealthCard(
       label: 'Glucose',
-      value: glucose?.value.toStringAsFixed(0) ?? '--',
-      unit: 'mg/dL',
+      value: isRefreshing
+          ? '...'
+          : (glucose?.value.toStringAsFixed(isGlucoseMmol ? 1 : 0) ?? '--'),
+      unit: settings.glucoseUnit,
       status: _getGlucoseStatus(glucose?.value, thresholds),
       timestamp: glucose?.measuredAt.toLocal(),
       icon: Icons.water_drop_outlined,
@@ -195,23 +202,24 @@ class BiometricsSection extends StatelessWidget {
     // Cholesterol (Always show)
     cards.add(CompactHealthCard(
       label: isLdlDisplay ? 'Cholesterol (LDL)' : 'Cholesterol',
-      value: cholesterolDisplay?.value.toStringAsFixed(0) ?? '--',
-      unit: 'mg/dL',
+      value: isRefreshing
+          ? '...'
+          : (cholesterolDisplay?.value.toStringAsFixed(isCholMmol ? 1 : 0) ??
+              '--'),
+      unit: settings.cholesterolUnit,
       status: _getCholesterolStatus(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
       timestamp: cholesterolDisplay?.measuredAt.toLocal(),
       icon: Icons.bloodtype_outlined,
       color: _getCholesterolColor(cholesterolDisplay?.value, thresholds, isLdl: isLdlDisplay),
-      onTap: () => Navigator.push(
-        context, 
-        MaterialPageRoute(builder: (context) => const CholesterolDetailScreen())
-      ),
+      onTap: () => AppRoutes.push(context, AppRoutes.cholesterolDetail),
     ));
 
+    final int activityMins = latestActivity?.duration ?? 0;
     // Activity (Always show)
     cards.add(CompactHealthCard(
       label: 'Activity',
-      value: latestActivity != null ? '${latestActivity!.duration}' : '--',
-      unit: 'min',
+      value: latestActivity != null ? '$activityMins' : '--',
+      unit: latestActivity == null ? 'minutes' : (activityMins == 1 ? 'minute' : 'minutes'),
       status: latestActivity != null ? 'Latest Log' : 'No Data',
       timestamp: latestActivity?.timestamp.toLocal(),
       icon: Icons.directions_run_outlined,
@@ -229,17 +237,14 @@ class BiometricsSection extends StatelessWidget {
       subtitleOverride: null, // Use default "Last updated: ..."
       icon: Icons.restaurant_menu,
       color: _getMealColor(latestMeal, thresholds),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const DietAnalyticsScreen()),
-      ),
+      onTap: () => AppRoutes.push(context, AppRoutes.mealDetail),
     ));
 
     // BMI (Always show)
     cards.add(CompactHealthCard(
       label: 'BMI',
       value: bmi?.value.toStringAsFixed(1) ?? '--',
-      unit: '',
+      unit: 'kg/m²',
       status: _getBmiStatus(bmi?.value, thresholds),
       timestamp: bmi?.measuredAt.toLocal(),
       icon: Icons.monitor_weight_outlined,
@@ -275,7 +280,7 @@ class BiometricsSection extends StatelessWidget {
     return 'No Glucose';
   }
 
-  Color _getMealColor(DailyPatientLog? meal, List<HealthThreshold> thresholds) {
+  Color _getMealColor(DailyPatientLog? meal, List<PatientThreshold> thresholds) {
     if (meal == null) return AppTheme.textSecondaryColor; // Grey (Empty)
 
     // Check if glucose tracking is configured
@@ -297,15 +302,15 @@ class BiometricsSection extends StatelessWidget {
 
   // --- Helper Methods (Updated to handle nulls) ---
 
-  HealthThreshold? _getThreshold(List<HealthThreshold> thresholds, MonitorDataType type) {
+  PatientThreshold? _getThreshold(List<PatientThreshold> thresholds, MonitorDataType type) {
     try {
-      return thresholds.firstWhere((t) => t.dataType == type);
+      return thresholds.firstWhere((t) => t.dataType == type.name);
     } catch (_) {
       return null;
     }
   }
 
-  String _getGlucoseStatus(double? value, List<HealthThreshold> thresholds) {
+  String _getGlucoseStatus(double? value, List<PatientThreshold> thresholds) {
     if (value == null) return 'No Data';
     final t = _getThreshold(thresholds, MonitorDataType.GLUCOSE);
     if (t == null) return 'Recorded';
@@ -315,7 +320,7 @@ class BiometricsSection extends StatelessWidget {
     return 'Normal';
   }
   
-  Color _getGlucoseColor(double? value, List<HealthThreshold> thresholds) {
+  Color _getGlucoseColor(double? value, List<PatientThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
     final t = _getThreshold(thresholds, MonitorDataType.GLUCOSE);
     if (t == null) return AppTheme.primaryBlue; // Neutral blue if no target
@@ -325,7 +330,7 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  String _getBPStatus(double? sys, double? dia, List<HealthThreshold> thresholds) {
+  String _getBPStatus(double? sys, double? dia, List<PatientThreshold> thresholds) {
     if (sys == null || dia == null) return 'No Data';
     final tSys = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
     final tDia = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
@@ -337,7 +342,7 @@ class BiometricsSection extends StatelessWidget {
     return 'Normal';
   }
 
-  Color _getBPColor(double? sys, double? dia, List<HealthThreshold> thresholds) {
+  Color _getBPColor(double? sys, double? dia, List<PatientThreshold> thresholds) {
     if (sys == null || dia == null) return AppTheme.textSecondaryColor;
     final tSys = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_SYSTOLIC);
     final tDia = _getThreshold(thresholds, MonitorDataType.BLOOD_PRESSURE_DIASTOLIC);
@@ -349,7 +354,7 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  String _getHba1cStatus(double? value, List<HealthThreshold> thresholds) {
+  String _getHba1cStatus(double? value, List<PatientThreshold> thresholds) {
     if (value == null) return 'No Data';
     final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
     if (t == null) return 'Recorded';
@@ -359,7 +364,7 @@ class BiometricsSection extends StatelessWidget {
     return 'Normal';
   }
 
-  Color _getHba1cColor(double? value, List<HealthThreshold> thresholds) {
+  Color _getHba1cColor(double? value, List<PatientThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
     final t = _getThreshold(thresholds, MonitorDataType.HBA1C);
     if (t == null) return AppTheme.primaryBlue;
@@ -369,7 +374,7 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  String _getCholesterolStatus(double? value, List<HealthThreshold> thresholds, {bool isLdl = false}) {
+  String _getCholesterolStatus(double? value, List<PatientThreshold> thresholds, {bool isLdl = false}) {
     if (value == null) return 'No Data';
     final type = isLdl ? MonitorDataType.CHOLESTEROL_LDL : MonitorDataType.CHOLESTEROL_TOTAL;
     final t = _getThreshold(thresholds, type);
@@ -380,7 +385,7 @@ class BiometricsSection extends StatelessWidget {
     return 'Desirable';
   }
 
-  Color _getCholesterolColor(double? value, List<HealthThreshold> thresholds, {bool isLdl = false}) {
+  Color _getCholesterolColor(double? value, List<PatientThreshold> thresholds, {bool isLdl = false}) {
     if (value == null) return AppTheme.textSecondaryColor;
     final type = isLdl ? MonitorDataType.CHOLESTEROL_LDL : MonitorDataType.CHOLESTEROL_TOTAL;
     final t = _getThreshold(thresholds, type);
@@ -391,7 +396,7 @@ class BiometricsSection extends StatelessWidget {
     return AppTheme.primaryGreen;
   }
 
-  String _getBmiStatus(double? value, List<HealthThreshold> thresholds) {
+  String _getBmiStatus(double? value, List<PatientThreshold> thresholds) {
     if (value == null) return 'No Data';
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return 'Recorded';
@@ -406,7 +411,7 @@ class BiometricsSection extends StatelessWidget {
     return 'Normal';
   }
 
-  Color _getBmiColor(double? value, List<HealthThreshold> thresholds) {
+  Color _getBmiColor(double? value, List<PatientThreshold> thresholds) {
     if (value == null) return AppTheme.textSecondaryColor;
     final t = _getThreshold(thresholds, MonitorDataType.BMI);
     if (t == null) return AppTheme.primaryBlue;

@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-import '../../main.dart';
-import '../config/environment.dart';
+import 'package:florence/main.dart';
+import 'package:florence/core/config/environment.dart';
 
 class ApiService {
   Future<Map<String, String>> _getHeaders() async {
@@ -24,10 +24,22 @@ class ApiService {
   }
 
   Future<dynamic> get(String endpoint) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('[ApiService] Short-circuiting GET to $endpoint: No token found.');
+      if (endpoint.contains('logs') || 
+          endpoint.contains('schedule') || 
+          endpoint.contains('thresholds') || 
+          endpoint.contains('medications') || 
+          endpoint.contains('monitor-data')) {
+        return [];
+      }
+      return {};
+    }
     try {
       var response = await http.get(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
       );
 
       if (response.statusCode == 401) {
@@ -60,10 +72,15 @@ class ApiService {
   }
 
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient POST to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       var response = await http.post(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
         body: jsonEncode(data),
       );
 
@@ -88,10 +105,15 @@ class ApiService {
   }
 
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient PUT to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       var response = await http.put(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
         body: jsonEncode(data),
       );
 
@@ -116,10 +138,15 @@ class ApiService {
   }
 
   Future<dynamic> patch(String endpoint, Map<String, dynamic> data) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient PATCH to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       final response = await http.patch(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
         body: jsonEncode(data),
       );
       return _processResponse(response);
@@ -130,10 +157,15 @@ class ApiService {
   }
 
   Future<dynamic> delete(String endpoint) async {
+    final headers = await _getHeaders();
+    if (!headers.containsKey('Authorization') && !endpoint.contains('/auth/')) {
+      debugPrint('ℹ️ Short-circuiting Patient DELETE to $endpoint: No token found (User logging out).');
+      return {};
+    }
     try {
       final response = await http.delete(
         Uri.parse('${Environment.dataServiceUrl}$endpoint'),
-        headers: await _getHeaders(),
+        headers: headers,
       );
       return _processResponse(response);
     } catch (e) {
@@ -144,16 +176,29 @@ class ApiService {
 
   
   /// Upload a file via Multipart Request
-  Future<dynamic> uploadFile(String endpoint, String fieldName, List<int> fileBytes, String filename) async {
+  Future<dynamic> uploadFile(
+    String endpoint,
+    String fieldName,
+    List<int> fileBytes,
+    String filename, {
+    Map<String, String>? additionalFields,
+    String? baseUrlOverride,
+  }) async {
     try {
-      final uri = Uri.parse('${Environment.dataServiceUrl}$endpoint');
+      final baseUrl = baseUrlOverride ?? Environment.dataServiceUrl;
+      final uri = Uri.parse('$baseUrl$endpoint');
       final request = http.MultipartRequest('POST', uri);
 
       // Add Headers (Auth)
       final headers = await _getHeaders();
       request.headers.addAll(headers);
       // Remove Content-Type as MultipartRequest sets it automatically
-      request.headers.remove('Content-Type'); 
+      request.headers.remove('Content-Type');
+
+      // Add additional form fields
+      if (additionalFields != null) {
+        request.fields.addAll(additionalFields);
+      }
 
       // Add File
       request.files.add(

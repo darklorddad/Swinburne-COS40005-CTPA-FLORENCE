@@ -68,7 +68,9 @@ async def send_message(
         assistant_content = await llm_service.chat_completion(
             health_context=health_context_formatted,
             history=lc_history,
-            current_message=request.message
+            current_message=request.message,
+            local_time=request.local_time,
+            timezone_offset=request.timezone_offset
         )
         logger.info(f"LLM responded to patient {patient_id}")
 

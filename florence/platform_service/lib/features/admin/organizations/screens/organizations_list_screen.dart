@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../../config/admin_theme.dart';
-import '../../core/widgets/admin_scaffold.dart';
-import '../../core/services/admin_auth_service.dart';
-import '../../../../config/admin_routes.dart';
+import 'package:florence/config/admin_theme.dart';
+import 'package:florence/features/admin/core/widgets/admin_scaffold.dart';
+import 'package:florence/features/admin/core/services/admin_auth_service.dart';
+import 'package:florence/config/admin_routes.dart';
 
 /// Organizations List Screen
 /// View and manage all organizations in the system (Global Admin only)
@@ -139,7 +139,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
             SizedBox(
               width: 180,
               child: DropdownButtonFormField<String>(
-                value: _filterStatus,
+                initialValue: _filterStatus,
                 decoration: InputDecoration(
                   labelText: 'Status',
                   border: OutlineInputBorder(
@@ -211,7 +211,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: AdminTheme.primaryIndigo.withOpacity(0.1),
+                      color: AdminTheme.primaryIndigo.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
@@ -355,7 +355,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -376,7 +376,7 @@ class _OrganizationsListScreenState extends State<OrganizationsListScreen> {
               Text(
                 label,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: color.withOpacity(0.8),
+                      color: color.withValues(alpha: 0.8),
                       fontSize: 11,
                     ),
               ),

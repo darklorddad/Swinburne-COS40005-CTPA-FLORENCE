@@ -5,15 +5,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../config/routes.dart';
-import '../../../../config/theme.dart';
-import '../../../../core/layout/responsive_layout_system.dart';
-import '../../core/models/health_data_models.dart';
-import '../../core/providers/monitor_data_providers.dart' as core_data;
-import '../../dashboard/providers/dashboard_providers.dart';
+import 'package:florence/config/routes.dart';
+import 'package:florence/config/theme.dart';
+import 'package:florence/core/layout/responsive_layout_system.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/monitor_data_providers.dart' as core_data;
+import 'package:florence/features/patient/core/providers/threshold_providers.dart';
+import 'package:florence/features/patient/dashboard/providers/dashboard_providers.dart';
 
 class BloodPressureDetailScreen extends ConsumerWidget {
-  const BloodPressureDetailScreen({super.key});
+  final VoidCallback? onSwitchToLog;
+  const BloodPressureDetailScreen({super.key, this.onSwitchToLog});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +32,7 @@ class BloodPressureDetailScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(right: 4),
             child: IconButton(
               icon: const Icon(Icons.add),
-              onPressed: () => AppRoutes.push(context, AppRoutes.logBloodPressure),
+              onPressed: onSwitchToLog ?? () => AppRoutes.pushReplacement(context, AppRoutes.logBloodPressure),
               tooltip: 'Add Log',
             ),
           ),
@@ -55,10 +57,10 @@ class BloodPressureDetailScreen extends ConsumerWidget {
           final thresholds = thresholdsAsync.value ?? [];
           
           // Check for user-defined thresholds
-          HealthThreshold? userSys;
-          HealthThreshold? userDia;
-          try { userSys = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_SYSTOLIC); } catch (_) {}
-          try { userDia = thresholds.firstWhere((t) => t.dataType == MonitorDataType.BLOOD_PRESSURE_DIASTOLIC); } catch (_) {}
+          PatientThreshold? userSys;
+          PatientThreshold? userDia;
+          try { userSys = thresholds.firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_SYSTOLIC'); } catch (_) {}
+          try { userDia = thresholds.firstWhere((t) => t.dataType == 'BLOOD_PRESSURE_DIASTOLIC'); } catch (_) {}
 
           final isDefault = userSys == null || userDia == null;
 
@@ -294,7 +296,7 @@ class _ChartSectionState extends State<_ChartSection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,7 +306,7 @@ class _ChartSectionState extends State<_ChartSection> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                 child: Icon(widget.icon, color: AppTheme.primaryBlue, size: 24),
               ),
               const SizedBox(width: 12),
@@ -320,7 +322,7 @@ class _ChartSectionState extends State<_ChartSection> {
           // Tabs
           Container(
             height: 36,
-            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
+            decoration: BoxDecoration(color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade100, borderRadius: BorderRadius.circular(10)),
             padding: const EdgeInsets.all(4),
             child: Row(
               children: widget.ranges.map((range) {
@@ -362,8 +364,8 @@ class _ChartSectionState extends State<_ChartSection> {
 
 class _StatisticsSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
   final bool isDefault;
 
   const _StatisticsSection({
@@ -402,9 +404,9 @@ class _StatisticsSection extends StatelessWidget {
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryGreen.withOpacity(0.1),
+                  color: AppTheme.primaryGreen.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.primaryGreen.withOpacity(0.3)),
+                  border: Border.all(color: AppTheme.primaryGreen.withValues(alpha: 0.3)),
                 ),
                 child: Column(
                   children: [
@@ -417,14 +419,14 @@ class _StatisticsSection extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               'Target Ranges',
-                              style: TextStyle(color: AppTheme.primaryGreen.withOpacity(0.8), fontWeight: FontWeight.w600),
+                              style: TextStyle(color: AppTheme.primaryGreen.withValues(alpha: 0.8), fontWeight: FontWeight.w600),
                             ),
                           ],
                         ),
                         Icon(
                           Icons.chevron_right,
                           size: 20,
-                          color: AppTheme.primaryGreen.withOpacity(0.5),
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.5),
                         ),
                       ],
                     ),
@@ -446,9 +448,9 @@ class _StatisticsSection extends StatelessWidget {
             // Stats Grid
             Row(
               children: [
-                Expanded(child: _buildStatBox(context, 'Avg Systolic', avgSys > 0 ? avgSys.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryRed)),
+                Expanded(child: _buildStatBox(context, 'Average Systolic', avgSys > 0 ? avgSys.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryRed)),
                 const SizedBox(width: 12),
-                Expanded(child: _buildStatBox(context, 'Avg Diastolic', avgDia > 0 ? avgDia.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryBlue)),
+                Expanded(child: _buildStatBox(context, 'Average Diastolic', avgDia > 0 ? avgDia.toStringAsFixed(0) : '--', 'mmHg', AppTheme.primaryBlue)),
                 const SizedBox(width: 12),
                 Expanded(child: _buildStatBox(context, 'Pulse Pressure', avgPulse > 0 ? avgPulse.toStringAsFixed(0) : '--', 'mmHg', AppTheme.textSecondaryColor)),
               ],
@@ -463,7 +465,7 @@ class _StatisticsSection extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: color.withOpacity(0.8))),
+        Text(label, style: TextStyle(fontSize: 12, color: color.withValues(alpha: 0.8))),
         Text(val, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
       ],
     );
@@ -474,7 +476,7 @@ class _StatisticsSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.shade50,
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.grey.shade50,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
       ),
@@ -500,8 +502,8 @@ class _StatisticsSection extends StatelessWidget {
 
 class _DualTrendSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
 
   const _DualTrendSection({required this.readings, this.sysThreshold, this.diaThreshold});
 
@@ -530,8 +532,9 @@ class _DualTrendSection extends StatelessWidget {
         } else {
            final now = DateTime.now();
            Duration d = const Duration(days: 7);
-           if (range == '14D') d = const Duration(days: 14);
-           else if (range == '30D') d = const Duration(days: 30);
+           if (range == '14D') {
+             d = const Duration(days: 14);
+           } else if (range == '30D') d = const Duration(days: 30);
            minX = now.subtract(d).millisecondsSinceEpoch.toDouble();
            maxX = now.millisecondsSinceEpoch.toDouble();
         }
@@ -546,8 +549,8 @@ class _DualTrendSection extends StatelessWidget {
                   gridData: FlGridData(
                     show: true,
                     drawVerticalLine: true,
-                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
-                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1),
+                    getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
+                    getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1),
                   ),
                   titlesData: FlTitlesData(
                     leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -564,9 +567,9 @@ class _DualTrendSection extends StatelessWidget {
                           }
 
                           final date = DateTime.fromMillisecondsSinceEpoch(value.toInt());
-                          // 1D shows Time (HH:mm), others show Date (d/M)
+                          // 1D shows Time (h a), others show Date (d/M)
                           final text = range == '1D' 
-                              ? DateFormat('HH:mm').format(date) 
+                              ? DateFormat('h a').format(date) 
                               : DateFormat('d/M').format(date);
                           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
                         },
@@ -575,26 +578,26 @@ class _DualTrendSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   // Safe Zones
                   rangeAnnotations: RangeAnnotations(
                     horizontalRangeAnnotations: [
                       if (sysThreshold != null)
-                        HorizontalRangeAnnotation(y1: sysThreshold!.minValue, y2: sysThreshold!.maxValue, color: AppTheme.primaryRed.withOpacity(0.05)),
+                        HorizontalRangeAnnotation(y1: sysThreshold!.minValue, y2: sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.05)),
                       if (diaThreshold != null)
-                        HorizontalRangeAnnotation(y1: diaThreshold!.minValue, y2: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withOpacity(0.05)),
+                        HorizontalRangeAnnotation(y1: diaThreshold!.minValue, y2: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.05)),
                     ]
                   ),
                   // Dotted Threshold Lines
                   extraLinesData: ExtraLinesData(
                     horizontalLines: [
                       if (sysThreshold != null) ...[
-                        HorizontalLine(y: sysThreshold!.minValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: sysThreshold!.maxValue, color: AppTheme.primaryRed.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: sysThreshold!.minValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: sysThreshold!.maxValue, color: AppTheme.primaryRed.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
                       ],
                       if (diaThreshold != null) ...[
-                        HorizontalLine(y: diaThreshold!.minValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
-                        HorizontalLine(y: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withOpacity(0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: diaThreshold!.minValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
+                        HorizontalLine(y: diaThreshold!.maxValue, color: AppTheme.primaryBlue.withValues(alpha: 0.5), strokeWidth: 1, dashArray: [4, 4]),
                       ],
                     ],
                   ),
@@ -629,7 +632,7 @@ class _DualTrendSection extends StatelessWidget {
                       }).toList();
                     },
                     touchTooltipData: LineTouchTooltipData(
-                      getTooltipColor: (touchedSpot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (touchedSpot) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItems: (touchedSpots) {
                         return touchedSpots.map((spot) {
                            final isSys = spot.barIndex == 0;
@@ -650,10 +653,10 @@ class _DualTrendSection extends StatelessWidget {
               spacing: 16,
               runSpacing: 8,
               children: [
-               _buildLegendItem('Systolic', AppTheme.primaryRed, isCircle: true),
-               _buildLegendItem('Diastolic', AppTheme.primaryBlue, isCircle: true),
-               _buildLegendItem('Sys Limit', AppTheme.primaryRed.withOpacity(0.5), isBox: true),
-               _buildLegendItem('Dia Limit', AppTheme.primaryBlue.withOpacity(0.5), isBox: true),
+               const _LegendItem('Systolic', AppTheme.primaryRed, isCircle: true),
+               const _LegendItem('Diastolic', AppTheme.primaryBlue, isCircle: true),
+               const _LegendItem('Systolic Limit', AppTheme.primaryRed, isBox: true),
+               const _LegendItem('Diastolic Limit', AppTheme.primaryBlue, isBox: true),
             ]),
           ],
         );
@@ -694,7 +697,7 @@ class _FloatingBarSection extends StatelessWidget {
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
-                        interval: range == '1D' ? (data.length > 0 ? data.length / 6 : 1) : 1,
+                        interval: range == '1D' ? (data.isNotEmpty ? data.length / 6 : 1) : 1,
                         getTitlesWidget: (v, meta) {
                           if (v.toInt() >= data.length) return const SizedBox();
 
@@ -705,12 +708,14 @@ class _FloatingBarSection extends StatelessWidget {
                           // Smartly skip labels to avoid clutter
                           switch (range) {
                             case '1D':
-                              if (total > 12) shouldSkip = index % 3 != 0; // Show every 3rd
-                              else if (total > 5) shouldSkip = index % 2 != 0; // Show every 2nd
+                              if (total > 12) {
+                                shouldSkip = index % 3 != 0; // Show every 3rd
+                              } else if (total > 5) shouldSkip = index % 2 != 0; // Show every 2nd
                               break;
                             case '30D':
-                              if (total > 15) shouldSkip = index % 5 != 0; // Show every 5th
-                              else if (total > 8) shouldSkip = index % 3 != 0; // Show every 3rd
+                              if (total > 15) {
+                                shouldSkip = index % 5 != 0; // Show every 5th
+                              } else if (total > 8) shouldSkip = index % 3 != 0; // Show every 3rd
                               break;
                             default: // 7D, 14D
                               if (total > 10) shouldSkip = index % 2 != 0;
@@ -726,7 +731,7 @@ class _FloatingBarSection extends StatelessWidget {
 
                           final date = data[index].timestamp.toLocal();
                           final text = range == '1D'
-                              ? DateFormat('HH:mm').format(date)
+                              ? DateFormat('h a').format(date)
                               : DateFormat('d/M').format(date);
 
                           return Padding(padding: const EdgeInsets.only(top: 8), child: Text(text, style: const TextStyle(fontSize: 10)));
@@ -734,11 +739,11 @@ class _FloatingBarSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))), // Added border
+                  gridData: FlGridData(show: true, drawVerticalLine: false, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))), // Added border
                   barTouchData: BarTouchData(
                     touchTooltipData: BarTouchTooltipData(
-                      getTooltipColor: (group) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (group) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItem: (group, groupIndex, rod, rodIndex) {
                          final r = data[group.x.toInt()];
                          return BarTooltipItem(
@@ -757,7 +762,7 @@ class _FloatingBarSection extends StatelessWidget {
                         BarChartRodData(
                           toY: r.systolic,
                           fromY: r.diastolic,
-                          color: AppTheme.primaryBlue.withOpacity(0.6),
+                          color: AppTheme.primaryBlue.withValues(alpha: 0.6),
                           width: 12,
                           borderRadius: BorderRadius.circular(4),
                         )
@@ -771,9 +776,9 @@ class _FloatingBarSection extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildLegendItem('Systolic (Top Bound)', AppTheme.primaryBlue.withOpacity(0.6), isBox: true),
+                const _LegendItem('Systolic (Top Bound)', AppTheme.primaryBlue, isBox: true),
                 const SizedBox(width: 16),
-                _buildLegendItem('Diastolic (Bottom Bound)', AppTheme.primaryBlue.withOpacity(0.6), isBox: true),
+                const _LegendItem('Diastolic (Bottom Bound)', AppTheme.primaryBlue, isBox: true),
               ],
             )
           ],
@@ -785,8 +790,8 @@ class _FloatingBarSection extends StatelessWidget {
 
 class _ScatterSection extends StatelessWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
 
   const _ScatterSection({required this.readings, this.sysThreshold, this.diaThreshold});
 
@@ -833,7 +838,7 @@ class _ScatterSection extends StatelessWidget {
                   }).toList(),
                   minX: 40, maxX: 130,
                   minY: 80, maxY: 200,
-                  gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withOpacity(0.2), strokeWidth: 1)),
+                  gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1), getDrawingVerticalLine: (_) => FlLine(color: AppTheme.getBorderColor(context).withValues(alpha: 0.2), strokeWidth: 1)),
                   titlesData: FlTitlesData(
                     bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, interval: 20, getTitlesWidget: (value, meta) {
                       if (value <= meta.min || value >= meta.max) return const SizedBox();
@@ -843,10 +848,10 @@ class _ScatterSection extends StatelessWidget {
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                   ),
-                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withOpacity(0.5))),
+                  borderData: FlBorderData(show: true, border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: 0.5))),
                   scatterTouchData: ScatterTouchData(
                     touchTooltipData: ScatterTouchTooltipData(
-                      getTooltipColor: (spot) => Colors.black.withOpacity(0.8),
+                      getTooltipColor: (spot) => Colors.black.withValues(alpha: 0.8),
                       getTooltipItems: (spot) {
                         return ScatterTooltipItem(
                           'Sys: ${spot.y.toInt()}\nDia: ${spot.x.toInt()}',
@@ -861,13 +866,13 @@ class _ScatterSection extends StatelessWidget {
             const SizedBox(height: 8),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                if (sysThreshold != null && diaThreshold != null) ...[
-                 _buildLegendItem('Low', AppTheme.warningColor, isCircle: true),
+                 const _LegendItem('Low', AppTheme.warningColor, isCircle: true),
                  const SizedBox(width: 16),
-                 _buildLegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
+                 const _LegendItem('Normal', AppTheme.primaryGreen, isCircle: true),
                  const SizedBox(width: 16),
-                 _buildLegendItem('Elevated', AppTheme.errorColor, isCircle: true),
+                 const _LegendItem('Elevated', AppTheme.errorColor, isCircle: true),
                ] else
-                 _buildLegendItem('Recorded', AppTheme.primaryBlue, isCircle: true),
+                 const _LegendItem('Recorded', AppTheme.primaryBlue, isCircle: true),
             ]),
           ],
         );
@@ -878,8 +883,8 @@ class _ScatterSection extends StatelessWidget {
 
 class _HistorySection extends StatefulWidget {
   final List<_BpReading> readings;
-  final HealthThreshold? sysThreshold;
-  final HealthThreshold? diaThreshold;
+  final PatientThreshold? sysThreshold;
+  final PatientThreshold? diaThreshold;
 
   const _HistorySection({
     required this.readings,
@@ -918,7 +923,7 @@ class _HistorySectionState extends State<_HistorySection> {
         color: containerColor,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: borderColor),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -930,7 +935,7 @@ class _HistorySectionState extends State<_HistorySection> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                     child: const Icon(Icons.history, color: AppTheme.primaryBlue, size: 24)
                   ),
                   const SizedBox(width: 12),
@@ -1004,13 +1009,13 @@ class _HistorySectionState extends State<_HistorySection> {
                  borderRadius: BorderRadius.circular(12),
                  boxShadow: [
                    BoxShadow(
-                     color: Colors.black.withOpacity(0.03),
+                     color: Colors.black.withValues(alpha: 0.03),
                      blurRadius: 8,
                      offset: const Offset(0, 2)
                    )
                  ],
                  border: Border.all(
-                   color: statusColor.withOpacity(0.3),
+                   color: statusColor.withValues(alpha: 0.3),
                    width: 1,
                  ),
                ),
@@ -1047,7 +1052,7 @@ class _HistorySectionState extends State<_HistorySection> {
                        Container(
                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                          decoration: BoxDecoration(
-                           color: statusColor.withOpacity(0.1),
+                           color: statusColor.withValues(alpha: 0.1),
                            borderRadius: BorderRadius.circular(8),
                          ),
                          child: Text(
@@ -1079,62 +1084,32 @@ class _HistorySectionState extends State<_HistorySection> {
   }
 }
 
-Widget _emptyTitle(double value, TitleMeta meta) => const SizedBox.shrink();
 
-class _ChartContainer extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final Widget child;
+class _LegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isBox;
+  final bool isCircle;
+  final bool isDashed;
 
-  const _ChartContainer({super.key, required this.title, required this.icon, required this.child});
+  const _LegendItem(this.label, this.color, {this.isBox = false, this.isCircle = false, this.isDashed = false});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: isDark ? AppTheme.midnightSurface : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppTheme.getBorderColor(context)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                child: Icon(icon, color: AppTheme.primaryBlue, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-            ],
-          ),
-          const SizedBox(height: 20),
-          child,
-        ],
-      ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isBox)
+          Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
+        else if (isCircle)
+          Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
+        else if (isDashed)
+          SizedBox(width: 16, height: 2, child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color), Container(width: 4, height: 2, color: color)]))
+        else
+          Container(width: 12, height: 2, color: color),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(fontSize: 11)),
+      ],
     );
   }
-}
-
-Widget _buildLegendItem(String label, Color color, {bool isBox = false, bool isCircle = false, bool isDashed = false}) {
-  return Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (isBox)
-        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)))
-      else if (isCircle)
-        Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle))
-      else if (isDashed)
-        Container(width: 2, height: 12, color: color)
-      else
-        Container(width: 12, height: 2, color: color),
-      const SizedBox(width: 4),
-      Text(label, style: const TextStyle(fontSize: 11)),
-    ],
-  );
 }

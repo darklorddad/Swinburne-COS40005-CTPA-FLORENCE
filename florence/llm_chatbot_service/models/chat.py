@@ -19,6 +19,8 @@ class ChatMessageRequest(BaseModel):
     """Request model for sending a chat message."""
     message: str = Field(..., min_length=1, max_length=2000)
     include_history: bool = True
+    local_time: Optional[str] = None
+    timezone_offset: Optional[int] = None
 
 
 class ChatMessageResponse(BaseModel):

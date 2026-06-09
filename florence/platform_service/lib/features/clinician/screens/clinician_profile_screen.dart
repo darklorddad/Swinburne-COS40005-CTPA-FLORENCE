@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:florence/core/utils/helpers.dart';
 import 'package:florence/features/clinician/theme/app_theme.dart';
 import 'package:florence/features/clinician/services/data_service.dart';
 import 'package:florence/features/clinician/services/api_data_service.dart';
+import 'package:florence/features/clinician/services/api_service.dart';
 import 'package:florence/features/clinician/models/clinician.dart';
 
 class ClinicianProfileScreen extends StatefulWidget {
@@ -22,6 +23,8 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
   
   // Dropdown values
   String? _selectedGender;
+  String _glucoseUnit = 'mmol/L';
+  String _cholesterolUnit = 'mmol/L';
   
   bool _isEditing = false;
   bool _isLoading = true;
@@ -41,7 +44,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
     setState(() => _isLoading = true);
     try {
       final clinician = await _dataService.getClinicianProfile();
-      final email = Supabase.instance.client.auth.currentUser?.email;
+      final email = ApiService().currentUserEmail;
       
       if (mounted) {
         setState(() {
@@ -50,8 +53,24 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
           _nameController.text = clinician.name;
           _mobileController.text = clinician.phoneNumber;
           _selectedGender = clinician.gender.isNotEmpty ? clinician.gender : null;
-          _isLoading = false;
+          _isLoading = true;
         });
+
+        try {
+          final settings = await ApiService().get('/clinicians/me/settings');
+          if (settings != null && mounted) {
+            setState(() {
+              _glucoseUnit = settings['glucose_unit'] ?? 'mmol/L';
+              _cholesterolUnit = settings['cholesterol_unit'] ?? 'mmol/L';
+            });
+          }
+        } catch (e) {
+          debugPrint('Failed loading unit settings: $e');
+        }
+
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -78,6 +97,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
 
   Future<void> _saveProfile() async {
     if (_formKey.currentState!.validate() && _clinician != null) {
+      setState(() => _isLoading = true);
       try {
         final updatedClinician = Clinician(
           id: _clinician!.id,
@@ -86,6 +106,9 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
           phoneNumber: _mobileController.text,
           gender: _selectedGender ?? '',
           organisationId: _clinician!.organisationId,
+          organisationName: _clinician!.organisationName,
+          organisationEmail: _clinician!.organisationEmail,
+          organisationPhone: _clinician!.organisationPhone,
         );
 
         await _dataService.updateClinicianProfile(updatedClinician);
@@ -94,6 +117,7 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
           setState(() {
             _clinician = updatedClinician;
             _isEditing = false;
+            _isLoading = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully')),
@@ -101,12 +125,80 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
         }
       } catch (e) {
         if (mounted) {
+          setState(() => _isLoading = false);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error updating profile: $e')),
           );
         }
       }
     }
+  }
+
+  Future<void> _saveInlineSettings() async {
+    try {
+      await ApiService().put('/clinicians/me/settings', {
+        'glucose_unit': _glucoseUnit,
+        'cholesterol_unit': _cholesterolUnit,
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Preferences updated successfully!'),
+              duration: Duration(seconds: 1)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update preferences: $e')),
+        );
+      }
+    }
+  }
+
+  void _showOnTheSpotUnitSelector(String title, List<String> options,
+      String currentSelection, Function(String) onSelected) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Select $title',
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 12),
+              ...options.map((option) => ListTile(
+                    title: Text(option,
+                        style: TextStyle(
+                          color: option == currentSelection
+                              ? AppTheme.primaryColor
+                              : AppTheme.textPrimary,
+                          fontWeight: option == currentSelection
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        )),
+                    trailing: option == currentSelection
+                        ? const Icon(Icons.check, color: AppTheme.primaryColor)
+                        : null,
+                    onTap: () {
+                      onSelected(option);
+                      Navigator.pop(context);
+                    },
+                  )),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _cancelEdit() {
@@ -132,110 +224,105 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Clinician Profile'),
-        actions: [
-          if (!_isEditing)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: _toggleEdit,
-              tooltip: 'Edit Profile',
-            )
-          else
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(
-                  onPressed: _cancelEdit,
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: _saveProfile,
-                  child: const Text('Save'),
-                ),
-              ],
-            ),
-        ],
+        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2.0),
+          child: Container(
+            color: AppTheme.dividerColor,
+            height: 1.0,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profile Header Card
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      // Avatar
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+              // Profile Header
+              Center(
+                child: Column(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          width: 4,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
                         child: Text(
                           _nameController.text.isNotEmpty 
-                            ? _nameController.text.split(' ').map((e) => e.isNotEmpty ? e[0] : '').join('')
+                            ? _nameController.text.split(' ').where((e) => e.isNotEmpty).map((e) => e[0]).take(2).join('').toUpperCase()
                             : '?',
                           style: const TextStyle(
-                            fontSize: 32,
+                            fontSize: 36,
                             fontWeight: FontWeight.bold,
                             color: AppTheme.primaryColor,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _nameController.text,
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: AppTheme.textSecondary,
-                              ),
-                            ),
-                          ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      _nameController.text.isEmpty ? 'Loading...' : _nameController.text,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        _clinician?.organisationName ?? 'Organisation ID: ${_clinician?.organisationId ?? "N/A"}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryColor,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               
-              // Personal Information Section
+              // Account Information Section
               const Text(
-                'Personal Information',
+                'Account Information',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 12),
-              
+              const SizedBox(height: 16),
+
               Card(
+                margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
                       // Name
                       TextFormField(
                         controller: _nameController,
-                        enabled: _isEditing,
+                        readOnly: !_isEditing,
+                        style: const TextStyle(color: AppTheme.textPrimary),
                         decoration: const InputDecoration(
-                          labelText: 'Name',
-                          prefixIcon: Icon(Icons.person),
-                          border: OutlineInputBorder(),
+                          labelText: 'Full Name',
+                          prefixIcon: Icon(Icons.person_outline),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -244,43 +331,54 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                           return null;
                         },
                       ),
-                      
-                      const SizedBox(height: 16),
-                      
+
+                      const SizedBox(height: 20),
+
                       // Gender
-                      DropdownButtonFormField<String>(
-                        value: _selectedGender,
-                        decoration: const InputDecoration(
-                          labelText: 'Gender',
-                          prefixIcon: Icon(Icons.people),
-                          border: OutlineInputBorder(),
+                      if (_isEditing)
+                        DropdownButtonFormField<String>(
+                          value: _selectedGender,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
+                          items: _genders.map((gender) {
+                            return DropdownMenuItem(
+                              value: gender,
+                              child: Text(gender),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedGender = value;
+                              });
+                            }
+                          },
+                        )
+                      else
+                        TextFormField(
+                          initialValue: _selectedGender ?? 'Not Set',
+                          readOnly: true,
+                          style: const TextStyle(color: AppTheme.textPrimary),
+                          decoration: const InputDecoration(
+                            labelText: 'Gender',
+                            prefixIcon: Icon(Icons.wc_outlined),
+                          ),
                         ),
-                        items: _genders.map((gender) {
-                          return DropdownMenuItem(
-                            value: gender,
-                            child: Text(gender),
-                          );
-                        }).toList(),
-                        onChanged: _isEditing
-                            ? (value) {
-                                setState(() {
-                                  _selectedGender = value!;
-                                });
-                              }
-                            : null,
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
+
+                      const SizedBox(height: 20),
+
                       // Mobile Phone
                       TextFormField(
                         controller: _mobileController,
-                        enabled: _isEditing,
+                        readOnly: !_isEditing,
+                        style: const TextStyle(color: AppTheme.textPrimary),
                         keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
-                          labelText: 'Mobile Phone Number',
-                          prefixIcon: Icon(Icons.phone),
-                          border: OutlineInputBorder(),
+                          labelText: 'Mobile Number',
+                          prefixIcon: Icon(Icons.phone_outlined),
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
@@ -289,26 +387,142 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                           return null;
                         },
                       ),
+
+                      const SizedBox(height: 20),
+
+                      // Action Buttons
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (!_isEditing)
+                            ElevatedButton.icon(
+                              onPressed: _toggleEdit,
+                              icon: const Icon(Icons.edit, size: 18),
+                              label: const Text('Edit Profile'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            )
+                          else ...[
+                            OutlinedButton(
+                              onPressed: _cancelEdit,
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Cancel'),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton(
+                              onPressed: _saveProfile,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Save Changes'),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Unit Preferences Section
+              const Text(
+                'Unit Preferences',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.water_drop_outlined,
+                            color: AppTheme.primaryColor),
+                        title: const Text('Glucose Unit'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_glucoseUnit,
+                                style: const TextStyle(
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.bold)),
+                            const Icon(Icons.chevron_right,
+                                size: 20, color: AppTheme.textTertiary),
+                          ],
+                        ),
+                        onTap: () => _showOnTheSpotUnitSelector(
+                            'Glucose Unit', ['mmol/L', 'mg/dL'], _glucoseUnit,
+                            (newUnit) async {
+                          setState(() => _glucoseUnit = newUnit);
+                          await _saveInlineSettings();
+                        }),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.bloodtype_outlined,
+                            color: AppTheme.primaryColor),
+                        title: const Text('Cholesterol Unit'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_cholesterolUnit,
+                                style: const TextStyle(
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.bold)),
+                            const Icon(Icons.chevron_right,
+                                size: 20, color: AppTheme.textTertiary),
+                          ],
+                        ),
+                        onTap: () => _showOnTheSpotUnitSelector(
+                            'Cholesterol Unit',
+                            ['mmol/L', 'mg/dL'],
+                            _cholesterolUnit, (newUnit) async {
+                          setState(() => _cholesterolUnit = newUnit);
+                          await _saveInlineSettings();
+                        }),
+                      ),
                     ],
                   ),
                 ),
               ),
               
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               
-              // Account Information Section
+              // System Information Section
               const Text(
-                'Account Information',
+                'System Information',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-              const SizedBox(height: 12),
-              
+              const SizedBox(height: 16),
+
               Card(
+                margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     children: [
                       // Email (Read-only)
@@ -316,22 +530,8 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
                         initialValue: _email,
                         enabled: false,
                         decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email),
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Organisation ID (Read-only)
-                      TextFormField(
-                        initialValue: _clinician?.organisationId.toString(),
-                        enabled: false,
-                        decoration: const InputDecoration(
-                          labelText: 'Organisation ID',
-                          prefixIcon: Icon(Icons.business),
-                          border: OutlineInputBorder(),
+                          labelText: 'Email Address',
+                          prefixIcon: Icon(Icons.email_outlined),
                         ),
                       ),
                     ],
@@ -340,21 +540,84 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
               ),
               
               const SizedBox(height: 32),
+              
+              // Organisation Information Section
+              const Text(
+                'Organisation Information',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              Card(
+                margin: EdgeInsets.zero,
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      // Organisation Name (Read-only)
+                      TextFormField(
+                        initialValue: _clinician?.organisationName ?? 'Not Set',
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Organisation Name',
+                          prefixIcon: Icon(Icons.business_outlined),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Organisation Email (Read-only)
+                      TextFormField(
+                        initialValue: _clinician?.organisationEmail ?? 'Not Set',
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Organisation Email',
+                          prefixIcon: Icon(Icons.email_outlined),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Organisation Phone (Read-only)
+                      TextFormField(
+                        initialValue: _clinician?.organisationPhone ?? 'Not Set',
+                        enabled: false,
+                        decoration: const InputDecoration(
+                          labelText: 'Organisation Phone Number',
+                          prefixIcon: Icon(Icons.phone_outlined),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 40),
 
               if (!_isEditing)
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: _handleLogout,
-                    icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    icon: const Icon(Icons.logout, color: AppTheme.highRiskColor),
+                    label: const Text('Logout',
+                        style: TextStyle(
+                            color: AppTheme.highRiskColor,
+                            fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
+                      side: const BorderSide(
+                          color: AppTheme.highRiskColor, width: 1.5),
                       padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ),
-                
+
               const SizedBox(height: 32),
             ],
           ),
@@ -364,37 +627,26 @@ class _ClinicianProfileScreenState extends State<ClinicianProfileScreen> {
   }
 
   Future<void> _handleLogout() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
+    final confirmed = await Helpers.showConfirmDialog(
+      context,
+      title: 'Sign Out',
+      message: 'Are you sure you want to sign out?',
+      confirmText: 'Sign Out',
+      cancelText: 'Cancel',
+      isDangerous: true,
     );
 
-    if (confirmed == true && mounted) {
+    if (confirmed) {
+      setState(() => _isLoading = true);
       try {
-        await Supabase.instance.client.auth.signOut();
+        await ApiService().signOut();
       } catch (e) {
-        debugPrint('Logout error: $e');
-      }
-      
-      if (mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to sign out: $e')),
+          );
+        }
       }
     }
   }

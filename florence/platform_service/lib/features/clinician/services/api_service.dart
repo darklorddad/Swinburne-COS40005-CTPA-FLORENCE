@@ -43,7 +43,7 @@ class ApiService {
     return _handleResponse(response);
   }
 
-  Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
+  Future<dynamic> put(String endpoint, dynamic data) async {
     final response = await http.put(
       Uri.parse('$baseUrl$endpoint'),
       headers: await _getHeaders(),
@@ -58,6 +58,15 @@ class ApiService {
       headers: await _getHeaders(),
     );
     return _handleResponse(response);
+  }
+
+  // Auth helper methods
+  String? get currentUserEmail {
+    return Supabase.instance.client.auth.currentUser?.email;
+  }
+
+  Future<void> signOut() async {
+    await Supabase.instance.client.auth.signOut();
   }
 
   dynamic _handleResponse(http.Response response) {

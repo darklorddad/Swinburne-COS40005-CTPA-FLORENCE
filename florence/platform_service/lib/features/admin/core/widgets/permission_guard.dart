@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../models/admin_enums.dart';
-import '../services/permission_service.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
 
 /// Permission Guard Widget
 /// Conditionally renders child widget based on user permissions

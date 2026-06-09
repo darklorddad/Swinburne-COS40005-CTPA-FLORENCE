@@ -3,8 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../../core/config/environment.dart';
-import '../models/chat_message.dart';
+import 'package:florence/core/config/environment.dart';
+import 'package:florence/features/patient/chat/models/chat_message.dart';
 
 class ChatState {
   final List<ChatMessage> messages;
@@ -67,12 +67,15 @@ class ChatNotifier extends Notifier<ChatState> {
     state = state.copyWith(messages: [...previousMessages, userMsg]);
 
     try {
+      final now = DateTime.now();
       final response = await http.post(
         Uri.parse('$_baseUrl/chat/message'),
         headers: _getHeaders(),
         body: jsonEncode({
           'message': message,
           'include_history': true,
+          'local_time': now.toIso8601String(),
+          'timezone_offset': now.timeZoneOffset.inHours,
         }),
       );
 

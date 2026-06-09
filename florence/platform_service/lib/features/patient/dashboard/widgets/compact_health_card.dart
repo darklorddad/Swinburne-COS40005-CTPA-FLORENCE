@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/formatters.dart';
-import '../../../../core/utils/helpers.dart';
+import 'package:florence/core/utils/formatters.dart';
+import 'package:florence/core/utils/helpers.dart';
 
 class CompactHealthCard extends StatelessWidget {
   final String label;
@@ -36,17 +36,17 @@ class CompactHealthCard extends StatelessWidget {
     // In dark mode, use a much darker version of the color (lower opacity or mixed with black)
     final bgColors = isDark
         ? [
-            color.withOpacity(0.15), // Very subtle in dark mode
-            color.withOpacity(0.05),
+            color.withValues(alpha: 0.15), // Very subtle in dark mode
+            color.withValues(alpha: 0.05),
           ]
         : [
             color,
             Helpers.darken(color, 0.1),
           ];
 
-    final textColor = isDark ? color.withOpacity(0.9) : Colors.white.withOpacity(0.9);
+    final textColor = isDark ? color.withValues(alpha: 0.9) : Colors.white.withValues(alpha: 0.9);
     final valueColor = isDark ? Colors.white : Colors.white;
-    final shadowColor = isDark ? Colors.transparent : color.withOpacity(0.2);
+    final shadowColor = isDark ? Colors.transparent : color.withValues(alpha: 0.2);
 
     Widget content = InkWell(
       onTap: onTap,
@@ -68,7 +68,7 @@ class CompactHealthCard extends StatelessWidget {
             ),
           ],
           // Optional: Add border in dark mode for definition
-          border: isDark ? Border.all(color: color.withOpacity(0.3)) : null,
+          border: isDark ? Border.all(color: color.withValues(alpha: 0.3)) : null,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,9 +115,9 @@ class CompactHealthCard extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: isDark ? color.withOpacity(0.2) : Colors.white.withOpacity(0.2),
+            color: isDark ? color.withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.2),
             borderRadius: BorderRadius.circular(100),
-            border: isDark ? Border.all(color: color.withOpacity(0.5)) : null,
+            border: isDark ? Border.all(color: color.withValues(alpha: 0.5)) : null,
           ),
           child: Text(
             status,
@@ -165,7 +165,7 @@ class CompactHealthCard extends StatelessWidget {
               ? 'Last updated: ${Formatters.timeAgo(timestamp!)}'
               : 'No history'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: unitColor.withOpacity(0.7),
+                color: unitColor.withValues(alpha: 0.7),
               ),
         ),
       ],

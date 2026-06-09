@@ -9,45 +9,127 @@ class GlucoseChart extends StatelessWidget {
   final List<HbA1cReading> hbA1cReadings;
   final double highThreshold;
   final double lowThreshold;
+  final String unit;
+  final String filter;
+  final DateTime focusedDate;
 
   const GlucoseChart({
     super.key,
     required this.readings,
+    required this.unit,
+    required this.filter,
+    required this.focusedDate,
     this.hbA1cReadings = const [],
     this.highThreshold = 180.0,
     this.lowThreshold = 70.0,
   });
 
+  List<GlucoseReading> _getAggregatedReadings() {
+    if (readings.isEmpty) return [];
+
+    if (filter == 'Hourly') {
+      final Map<int, List<double>> grouped = {};
+      for (var r in readings) {
+        grouped.putIfAbsent(r.timestamp.hour, () => []).add(r.value);
+      }
+      final List<GlucoseReading> result = [];
+      final start = DateTime(focusedDate.year, focusedDate.month, focusedDate.day);
+      for (int hour = 0; hour < 24; hour++) {
+        if (grouped.containsKey(hour)) {
+          final avg = grouped[hour]!.reduce((a, b) => a + b) / grouped[hour]!.length;
+          result.add(GlucoseReading(
+            timestamp: DateTime(start.year, start.month, start.day, hour),
+            value: avg,
+            context: 'Hourly Average',
+          ));
+        }
+      }
+      return result;
+    } else if (filter == 'Daily') {
+      final Map<int, List<double>> grouped = {};
+      for (var r in readings) {
+        grouped.putIfAbsent(r.timestamp.weekday, () => []).add(r.value);
+      }
+      final List<GlucoseReading> result = [];
+      final startOfWeek = DateTime(focusedDate.year, focusedDate.month, focusedDate.day).subtract(Duration(days: focusedDate.weekday - 1));
+      for (int day = 1; day <= 7; day++) {
+        if (grouped.containsKey(day)) {
+          final avg = grouped[day]!.reduce((a, b) => a + b) / grouped[day]!.length;
+          result.add(GlucoseReading(
+            timestamp: startOfWeek.add(Duration(days: day - 1)),
+            value: avg,
+            context: 'Daily Average',
+          ));
+        }
+      }
+      return result;
+    } else {
+      final Map<int, List<double>> grouped = {};
+      for (var r in readings) {
+        grouped.putIfAbsent(r.timestamp.month, () => []).add(r.value);
+      }
+      final List<GlucoseReading> result = [];
+      for (int month = 1; month <= 12; month++) {
+        if (grouped.containsKey(month)) {
+          final avg = grouped[month]!.reduce((a, b) => a + b) / grouped[month]!.length;
+          result.add(GlucoseReading(
+            timestamp: DateTime(focusedDate.year, month, 1),
+            value: avg,
+            context: 'Monthly Average',
+          ));
+        }
+      }
+      return result;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (readings.isEmpty) {
+    final aggregatedReadings = _getAggregatedReadings();
+    if (aggregatedReadings.isEmpty) {
       return const Center(child: Text('No glucose data available'));
     }
-
-    // Sort readings by date
-    final sortedReadings = [...readings]..sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: LineChart(
-        _glucoseChartData(sortedReadings),
+        _glucoseChartData(aggregatedReadings),
       ),
     );
   }
 
   LineChartData _glucoseChartData(List<GlucoseReading> sortedReadings) {
+    final minY = _getMinY(sortedReadings);
+    final maxY = _getMaxY(sortedReadings);
+    final range = maxY - minY;
+    
+    // Calculate dynamic interval to prevent overlapping labels
+    double interval = 50.0;
+    if (range <= 15) {
+      interval = 2.0;
+    } else if (range <= 30) {
+      interval = 5.0;
+    } else if (range <= 60) {
+      interval = 10.0;
+    } else if (range <= 150) {
+      interval = 25.0;
+    } else if (range <= 300) {
+      interval = 50.0;
+    } else {
+      interval = 100.0;
+    }
     
     return LineChartData(
       gridData: FlGridData(
         show: true,
         drawVerticalLine: true,
-        horizontalInterval: 50,
+        horizontalInterval: interval,
         getDrawingHorizontalLine: (value) {
           if (value == highThreshold || value == lowThreshold) {
             return FlLine(
             color: value == highThreshold
                 ? AppTheme.highRiskColor.withValues(alpha: 0.5)
-                : AppTheme.secondaryColor.withValues(alpha: 0.5),
+                : AppTheme.primaryColor.withValues(alpha: 0.5),
               strokeWidth: 1,
               dashArray: [4, 4], // Tighter dash
             );
@@ -72,47 +154,50 @@ class GlucoseChart extends StatelessWidget {
             reservedSize: 44,
             interval: 1,
             getTitlesWidget: (value, meta) {
-              if (value < 0 || value >= sortedReadings.length) {
-                return const Text('');
-              }
+              final index = value.toInt();
+              if (index < 0) return const Text('');
               
-              // Show dates spaced evenly
-              if (sortedReadings.length > 10) {
-                if (value % (sortedReadings.length ~/ 5) != 0) {
-                  return const Text('');
+              String label = '';
+              if (filter == 'Hourly') {
+                if (index % 4 == 0 && index < 24) {
+                  label = '${index.toString().padLeft(2, '0')}:00';
+                }
+              } else if (filter == 'Daily') {
+                if (index >= 0 && index < 7) {
+                  final weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                  label = weekdays[index];
+                }
+              } else {
+                if (index >= 0 && index < 12) {
+                  final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                  label = months[index];
                 }
               }
-              
-              final index = value.toInt();
-              if (index >= 0 && index < sortedReadings.length) {
-                final date = sortedReadings[index].timestamp;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 2.0),
-                  child: Text(
-                    DateFormat('MM/dd\nHH:mm').format(date),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 10, height: 1.1),
-                  ),
-                );
-              }
-              return const Text('');
+              return Padding(
+                padding: const EdgeInsets.only(top: 8.0),
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 10, height: 1.1, color: AppTheme.textSecondary),
+                ),
+              );
             },
           ),
         ),
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
             showTitles: true,
-            interval: 50,
+            interval: interval,
             getTitlesWidget: (value, meta) {
               return Text(
-                value.toInt().toString(),
+                interval < 5.0 ? value.toStringAsFixed(1) : value.toInt().toString(),
                 style: const TextStyle(
                   color: Colors.grey,
                   fontSize: 10,
                 ),
               );
             },
-            reservedSize: 28,
+            reservedSize: 35,
           ),
         ),
       ),
@@ -121,14 +206,14 @@ class GlucoseChart extends StatelessWidget {
         border: Border(
           bottom: BorderSide(color: Colors.grey[300]!),
           left: BorderSide(color: Colors.grey[300]!),
-          right: BorderSide(color: Colors.transparent),
-          top: BorderSide(color: Colors.transparent),
+          right: const BorderSide(color: Colors.transparent),
+          top: const BorderSide(color: Colors.transparent),
         ),
       ),
       minX: 0,
-      maxX: sortedReadings.length - 1,
-      minY: _getMinY(),
-      maxY: _getMaxY(),
+      maxX: filter == 'Hourly' ? 23 : (filter == 'Daily' ? 6 : 11),
+      minY: minY,
+      maxY: maxY,
       rangeAnnotations: RangeAnnotations(
         horizontalRangeAnnotations: [
           HorizontalRangeAnnotation(
@@ -143,11 +228,25 @@ class GlucoseChart extends StatelessWidget {
           tooltipBorder: const BorderSide(color: AppTheme.primaryColor),
           getTooltipItems: (List<LineBarSpot> lineBarsSpot) {
             return lineBarsSpot.map((lineBarSpot) {
-              final index = lineBarSpot.x.toInt();
-              if (index >= 0 && index < sortedReadings.length) {
-                final reading = sortedReadings[index];
+              final xVal = lineBarSpot.x.toInt();
+              GlucoseReading? reading;
+              for (var r in sortedReadings) {
+                int rX = 0;
+                if (filter == 'Hourly') {
+                  rX = r.timestamp.hour;
+                } else if (filter == 'Daily') {
+                  rX = r.timestamp.weekday - 1;
+                } else {
+                  rX = r.timestamp.month - 1;
+                }
+                if (rX == xVal) {
+                  reading = r;
+                  break;
+                }
+              }
+              if (reading != null) {
                 return LineTooltipItem(
-                  '${reading.value} mg/dL\n',
+                  '${reading.value.toStringAsFixed(1)} $unit\n',
                   const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
                   children: [
                     TextSpan(
@@ -178,10 +277,16 @@ class GlucoseChart extends StatelessWidget {
         // Main glucose line
         LineChartBarData(
           spots: List.generate(sortedReadings.length, (index) {
-            return FlSpot(
-              index.toDouble(),
-              sortedReadings[index].value,
-            );
+            final r = sortedReadings[index];
+            double x = 0;
+            if (filter == 'Hourly') {
+              x = r.timestamp.hour.toDouble();
+            } else if (filter == 'Daily') {
+              x = (r.timestamp.weekday - 1).toDouble();
+            } else {
+              x = (r.timestamp.month - 1).toDouble();
+            }
+            return FlSpot(x, r.value);
           }),
           isCurved: true,
           gradient: LinearGradient(
@@ -199,7 +304,7 @@ class GlucoseChart extends StatelessWidget {
               if (reading.value >= highThreshold) {
                 dotColor = AppTheme.highRiskColor;
               } else if (reading.value <= lowThreshold) {
-                dotColor = AppTheme.secondaryColor;
+                dotColor = AppTheme.primaryColor;
               }
               
               return FlDotCirclePainter(
@@ -264,7 +369,7 @@ class GlucoseChart extends StatelessWidget {
           ),
           HorizontalLine(
             y: lowThreshold,
-            color: AppTheme.secondaryColor,
+            color: AppTheme.primaryColor,
             strokeWidth: 1,
             dashArray: [5, 5],
             label: HorizontalLineLabel(
@@ -272,7 +377,7 @@ class GlucoseChart extends StatelessWidget {
               alignment: Alignment.bottomRight,
               padding: const EdgeInsets.only(right: 5, top: 5),
               style: const TextStyle(
-                color: AppTheme.secondaryColor,
+                color: AppTheme.primaryColor,
                 fontSize: 10,
                 fontWeight: FontWeight.bold,
               ),
@@ -312,19 +417,19 @@ class GlucoseChart extends StatelessWidget {
     return spots;
   }
 
-  double _getMinY() {
-    if (readings.isEmpty) return 0;
+  double _getMinY(List<GlucoseReading> sortedReadings) {
+    if (sortedReadings.isEmpty) return 0;
     
-    double minValue = readings.map((e) => e.value).reduce((a, b) => a < b ? a : b);
-    // Give some padding below the minimum value and ensure we show the low threshold
-    return (minValue < lowThreshold ? minValue : lowThreshold) - 20;
+    double minValue = sortedReadings.map((e) => e.value).reduce((a, b) => a < b ? a : b);
+    double limit = (minValue < lowThreshold ? minValue : lowThreshold);
+    return limit * 0.85;
   }
 
-  double _getMaxY() {
-    if (readings.isEmpty) return 300;
+  double _getMaxY(List<GlucoseReading> sortedReadings) {
+    if (sortedReadings.isEmpty) return unit == 'mmol/L' ? 15 : 300;
     
-    double maxValue = readings.map((e) => e.value).reduce((a, b) => a > b ? a : b);
-    // Give some padding above the maximum value and ensure we show the high threshold
-    return (maxValue > highThreshold ? maxValue : highThreshold) + 20;
+    double maxValue = sortedReadings.map((e) => e.value).reduce((a, b) => a > b ? a : b);
+    double limit = (maxValue > highThreshold ? maxValue : highThreshold);
+    return limit * 1.15;
   }
 }

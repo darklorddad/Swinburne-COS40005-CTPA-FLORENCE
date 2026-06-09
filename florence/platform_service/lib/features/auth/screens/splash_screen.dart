@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../config/theme.dart';
+import 'package:florence/config/theme.dart';
 
 /// A simple splash screen that displays the app logo and name.
 /// It no longer contains any logic. Navigation is now handled by the
@@ -40,7 +40,7 @@ class SplashScreen extends StatelessWidget {
             Text(
               'Monitor your health, improve your life',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withOpacity(0.9),
+                    color: Colors.white.withValues(alpha: 0.9),
                   ),
               textAlign: TextAlign.center,
             ),

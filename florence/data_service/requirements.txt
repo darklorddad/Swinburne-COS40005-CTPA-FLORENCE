@@ -1,7 +1,0 @@
-fastapi
-uvicorn[standard]
-supabase
-python-dotenv
-httpx
-pydantic[email]
-python-multipart

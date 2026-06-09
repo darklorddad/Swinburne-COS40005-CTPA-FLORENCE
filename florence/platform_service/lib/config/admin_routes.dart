@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import '../features/admin/auth/screens/admin_login_screen.dart';
-import '../features/admin/core/widgets/access_denied_screen.dart';
-import '../features/admin/core/services/permission_service.dart';
-import '../features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/auth/screens/admin_login_screen.dart';
+import 'package:florence/features/admin/core/widgets/access_denied_screen.dart';
+import 'package:florence/features/admin/core/services/permission_service.dart';
+import 'package:florence/features/admin/core/models/admin_enums.dart';
+import 'package:florence/features/admin/patients/screens/patient_directory_screen.dart';
+import 'package:florence/features/admin/patients/screens/admin_patient_detail_screen.dart';
+import 'package:florence/features/admin/simulator/screens/data_simulator_screen.dart';
 
 /// Admin Routes Configuration
 /// Centralized routing for admin-side of the application
@@ -33,11 +36,13 @@ class AdminRoutes {
 
   // Patients
   static const String patients = '/admin/patients';
+  static const String patientDirectory = '/admin/patients/directory';
   static const String patientDetail = '/admin/patients/:id';
   static const String createPatient = '/admin/patients/create';
   static const String editPatient = '/admin/patients/:id/edit';
   static const String patientHealthData = '/admin/patients/:id/health-data';
   static const String mergePatients = '/admin/patients/merge';
+  static const String dataSimulator = '/admin/data-simulator';
 
   // Roles & Permissions
   static const String roles = '/admin/roles';
@@ -195,6 +200,29 @@ class AdminRoutes {
           ),
         );
 
+      case AdminRoutes.patientDirectory:
+        return _buildGuardedRoute(
+          settings: settings,
+          anyPermissions: [
+            AdminPermission.viewAllPatients,
+            AdminPermission.viewOrgPatients,
+          ],
+          builder: (_) => _PlaceholderScreen(
+            title: 'Patient Directory',
+            route: patientDirectory,
+          ),
+        );
+
+      // case AdminRoutes.patientDetail:
+      //   return _buildGuardedRoute(
+      //     settings: settings,
+      //     requiredPermission: AdminPermission.viewAllPatients, // or viewOrgPatients
+      //     builder: (_) {
+      //       final patientData = settings.arguments as Map<String, dynamic>? ?? {};
+      //       return AdminPatientDetailScreen();
+      //     },
+      //   );
+
       case AdminRoutes.createPatient:
         return _buildGuardedRoute(
           settings: settings,
@@ -213,6 +241,12 @@ class AdminRoutes {
             title: 'Merge Patients',
             route: mergePatients,
           ),
+        );
+
+      case AdminRoutes.dataSimulator:
+        return MaterialPageRoute(
+          builder: (_) => const DataSimulatorScreen(),
+          settings: settings,
         );
 
       // ==================== ROLES & PERMISSIONS ====================

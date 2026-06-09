@@ -10,8 +10,10 @@ class Helpers {
   
   /// Show success snackbar
   static void showSuccess(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
@@ -32,8 +34,10 @@ class Helpers {
   
   /// Show error snackbar
   static void showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
@@ -54,8 +58,10 @@ class Helpers {
   
   /// Show info snackbar
   static void showInfo(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),
@@ -76,8 +82,10 @@ class Helpers {
   
   /// Show warning snackbar
   static void showWarning(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
+        key: UniqueKey(),
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50),

@@ -62,9 +62,12 @@ class HealthDataService:
         
         filtered_data = []
         for item in raw_data:
+            # Fallback to created_at if start_time is missing
+            if not item.get("start_time"):
+                item["start_time"] = item.get("created_at")
             filtered_data.append(ActivityLog(**item))
         
-        filtered_data.sort(key=lambda x: x.performed_at, reverse=True)
+        filtered_data.sort(key=lambda x: x.start_time, reverse=True)
         return filtered_data
 
     async def get_daily_logs(
@@ -106,6 +109,12 @@ class HealthDataService:
         """
         return await self._fetch_data("/patients/me", token)
 
+    async def get_medications(self, token: str) -> List[dict]:
+        return await self._fetch_data("/patients/me/medications", token)
+
+    async def get_diagnoses(self, token: str) -> List[dict]:
+        return await self._fetch_data("/patients/me/disease-logs", token)
+
     async def get_health_context(self, token: str) -> HealthContext:
         """
         Get formatted health context for LLM prompt.
@@ -117,6 +126,8 @@ class HealthDataService:
         activity_logs = await self.get_activity_logs(token, dummy_date, dummy_date)
         daily_logs = await self.get_daily_logs(token, dummy_date, dummy_date)
         thresholds = await self.get_patient_thresholds(token)
+        meds = await self.get_medications(token)
+        diagnoses = await self.get_diagnoses(token)
 
         # Format Profile
         profile_lines = []
@@ -131,6 +142,10 @@ class HealthDataService:
                 profile_lines.append(f"Date of Birth: {profile.get('date_of_birth')}")
             if profile.get("risk_level"):
                 profile_lines.append(f"Risk Level: {profile.get('risk_level')}")
+            if profile.get("settings") and isinstance(profile.get("settings"), dict):
+                s = profile.get("settings")
+                profile_lines.append(f"Preferred Glucose Unit: {s.get('glucose_unit', 'mmol/L')}")
+                profile_lines.append(f"Preferred Cholesterol Unit: {s.get('cholesterol_unit', 'mmol/L')}")
 
         # Format Monitor Data
         monitor_lines = []
@@ -148,7 +163,7 @@ class HealthDataService:
             activity_lines.append("No activity logs available.")
         else:
             for a in activity_logs:
-                activity_lines.append(f"- {a.performed_at.strftime('%Y-%m-%d %H:%M')}: {a.activity_description} ({a.duration_minutes} mins)")
+                activity_lines.append(f"- {a.start_time.strftime('%Y-%m-%d %H:%M')}: {a.activity_description} ({a.active_duration_minutes} mins)")
 
         # Format Daily Logs
         daily_lines = []
@@ -159,6 +174,8 @@ class HealthDataService:
                 entry = f"- {d.log_date.strftime('%Y-%m-%d')} {d.meal_time}:"
                 if d.meal_desc:
                     entry += f" {d.meal_desc}"
+                if d.calories:
+                    entry += f" [{d.calories} kcal]"
                 if d.glucose_before_meal:
                     entry += f" (Before: {d.glucose_before_meal})"
                 if d.glucose_after_meal:
@@ -173,12 +190,34 @@ class HealthDataService:
             for dtype, limits in thresholds.items():
                 threshold_lines.append(f"- {dtype}: Min {limits['min']}, Max {limits['max']}")
 
+        # Format Medications
+        med_lines = []
+        active_meds = [m for m in meds if m.get("status") == "CURRENT"]
+        if not active_meds:
+            med_lines.append("No active medications.")
+        else:
+            for m in active_meds:
+                name = m.get("custom_medication_name") or m.get("medication_dictionary", {}).get("brand_name", "Unknown")
+                timing = ", ".join(m.get("timing_instructions", []))
+                med_lines.append(f"- {name} {m.get('amount')} ({m.get('medication_type')}): Take {timing}")
+
+        # Format Diagnoses
+        diag_lines = []
+        active_diags = [d for d in diagnoses if d.get("status") == "active"]
+        if not active_diags:
+            diag_lines.append("No active diagnoses.")
+        else:
+            for d in active_diags:
+                diag_lines.append(f"- {d.get('condition_name')} (Since {d.get('diagnosed_date')})")
+
         return HealthContext(
             patient_profile="\n".join(profile_lines),
             raw_monitor_data="\n".join(monitor_lines),
             raw_activity_logs="\n".join(activity_lines),
             raw_daily_logs="\n".join(daily_lines),
             patient_thresholds="\n".join(threshold_lines),
+            medications="\n".join(med_lines),
+            diagnoses="\n".join(diag_lines),
             data_timestamp=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         )
 

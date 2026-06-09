@@ -69,7 +69,7 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
   }
 
   List<Patient> get _filteredPatients {
-    return _patients.where((patient) {
+    final filtered = _patients.where((patient) {
       // Apply search filter
       final nameMatches = patient.name.toLowerCase().contains(_searchQuery.toLowerCase());
       final idMatches = patient.id.toLowerCase().contains(_searchQuery.toLowerCase());
@@ -80,22 +80,43 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
       // Apply last update filter
       final now = DateTime.now();
       bool updateMatches = true;
-      if (_selectedUpdateFilter == 1) {
-        // Today only
-        updateMatches = now.difference(patient.lastSync).inHours < 24;
-      } else if (_selectedUpdateFilter == 2) {
-        // Last 3 days
-        updateMatches = now.difference(patient.lastSync).inHours < 72;
-      } else if (_selectedUpdateFilter == 3) {
-        // Last week
-        updateMatches = now.difference(patient.lastSync).inDays < 7;
-      } else if (_selectedUpdateFilter == 4) {
-        // Last 3 weeks
-        updateMatches = now.difference(patient.lastSync).inDays < 21;
+      final lastUpdate = patient.lastUpdate ?? DateTime.fromMillisecondsSinceEpoch(0);
+
+      switch (_selectedUpdateFilter) {
+        case 1: // Today only
+          updateMatches = now.difference(lastUpdate).inHours < 24;
+          break;
+        case 2: // Last 3 days
+          updateMatches = now.difference(lastUpdate).inHours < 72;
+          break;
+        case 3: // Last week
+          updateMatches = now.difference(lastUpdate).inDays < 7;
+          break;
+        case 4: // Last 3 weeks
+          updateMatches = now.difference(lastUpdate).inDays < 21;
+          break;
+        default:
+          updateMatches = true;
       }
       
       return (nameMatches || idMatches) && riskMatches && updateMatches;
     }).toList();
+
+    // Sort by Risk Level (HIGH > MEDIUM > LOW)
+    filtered.sort((a, b) {
+      int getRiskWeight(RiskLevel? level) {
+        if (level == null) return 0;
+        switch (level) {
+          case RiskLevel.high: return 3;
+          case RiskLevel.medium: return 2;
+          case RiskLevel.low: return 1;
+          default: return 0;
+        }
+      }
+      return getRiskWeight(b.riskLevel).compareTo(getRiskWeight(a.riskLevel));
+    });
+
+    return filtered;
   }
 
   @override
@@ -128,11 +149,38 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                 },
               ),
             ],
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'Patients'),
-                Tab(text: 'Priority Alerts'),
-              ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: TabBar(
+                  indicator: BoxDecoration(
+                    borderRadius: BorderRadius.circular(30),
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 4,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  labelColor: AppTheme.primaryColor,
+                  unselectedLabelColor: AppTheme.textSecondary,
+                  labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  padding: const EdgeInsets.all(4),
+                  tabs: const [
+                    Tab(text: 'Patients'),
+                    Tab(text: 'Priority Alerts'),
+                  ],
+                ),
+              ),
             ),
           ),
           body: _isLoading
@@ -174,9 +222,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                                   });
                                 },
                               ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
                             ),
                             onChanged: (value) {
                               setState(() {
@@ -213,12 +258,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                         ),
                       ],
                     ),
-          floatingActionButton: FloatingActionButton(
-            child: const Icon(Icons.add),
-            onPressed: () {
-              _showAddPatientDialog();
-            },
-          ),
         ),
       );
     }
@@ -284,9 +323,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
                                 _showFilters = !_showFilters;
                               });
                             },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
                           ),
                         ),
                         onChanged: (value) {
@@ -453,12 +489,6 @@ class _ClinicianHomeScreenState extends State<ClinicianHomeScreen> {
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        child: const Icon(Icons.add),
-        onPressed: () {
-          _showAddPatientDialog();
-        },
       ),
     );
   }

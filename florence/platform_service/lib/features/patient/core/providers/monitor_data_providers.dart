@@ -1,24 +1,70 @@
+import 'package:florence/core/models/medication_models.dart';
+import 'package:florence/features/patient/core/models/health_data_models.dart';
+import 'package:florence/features/patient/core/providers/disease_providers.dart';
+import 'package:florence/features/patient/core/repositories/monitor_data_repository.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../repositories/monitor_data_repository.dart';
-import '../models/health_data_models.dart';
 
 /// Main provider that fetches and holds all health data
 final monitorDataProvider = AsyncNotifierProvider<MonitorDataNotifier, HealthDataState>(MonitorDataNotifier.new, isAutoDispose: true);
 
 class MonitorDataNotifier extends AsyncNotifier<HealthDataState> {
+  int _offset = 0;
+  final int _limit = 20;
+  bool _hasReachedMax = false;
+
   @override
   Future<HealthDataState> build() async {
+    _offset = 0;
+    _hasReachedMax = false;
     final repository = ref.read(monitorDataRepositoryProvider);
-    return repository.fetchAllData();
+    return repository.fetchAllData(limit: _limit, offset: _offset);
   }
-  
+
   /// Force refresh of data
   Future<void> refresh() async {
+    _offset = 0;
+    _hasReachedMax = false;
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-       final repository = ref.read(monitorDataRepositoryProvider);
-       return repository.fetchAllData();
+      final repository = ref.read(monitorDataRepositoryProvider);
+      return repository.fetchAllData(limit: _limit, offset: _offset);
     });
+  }
+
+  Future<void> fetchNextPage() async {
+    if (state.isLoading || _hasReachedMax) return;
+
+    debugPrint('[MonitorData] Fetching older data at offset: $_offset');
+
+    final repository = ref.read(monitorDataRepositoryProvider);
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    _offset += _limit;
+
+    // We don't set state to loading here to keep the UI stable while fetching
+    try {
+      final newMonitorData = await repository.fetchMonitorDataPage(
+        limit: _limit,
+        offset: _offset,
+      );
+
+      if (newMonitorData.length < _limit) {
+        _hasReachedMax = true;
+        debugPrint('[MonitorData] Reached end of data stream.');
+      }
+
+      // We need to re-process the HealthDataState with the appended monitor data
+      // For simplicity in this implementation, we append to allMonitorData 
+      // and let the UI logic handle the filtering/sorting as it already does.
+      state = AsyncValue.data(currentState.copyWith(
+        allMonitorData: [...currentState.allMonitorData, ...newMonitorData],
+      ));
+    } catch (e, stack) {
+      _offset -= _limit; // Rollback offset on error
+      debugPrint('❌ ERROR fetching next page: $e');
+    }
   }
 }
 
@@ -36,16 +82,16 @@ final activitiesProvider = Provider<List<ActivityLog>>((ref) {
   return ref.watch(monitorDataProvider).asData?.value.activities ?? [];
 }, isAutoDispose: true);
 
-final medicationsProvider = Provider<List<MedicationLog>>((ref) {
-  return ref.watch(monitorDataProvider).asData?.value.medications ?? [];
+final patientMedicationsFromStateProvider = Provider<List<PatientMedication>>((ref) {
+  return ref.watch(monitorDataProvider).asData?.value.patientMedications ?? [];
+}, isAutoDispose: true);
+
+final diseaseLogsFromStateProvider = Provider<List<DiseaseLog>>((ref) {
+  return ref.watch(monitorDataProvider).asData?.value.diseaseLogs ?? [];
 }, isAutoDispose: true);
 
 final hba1cResultsProvider = Provider<List<HbA1cResult>>((ref) {
   return ref.watch(monitorDataProvider).asData?.value.hba1cResults ?? [];
-}, isAutoDispose: true);
-
-final sleepLogsProvider = Provider<List<SleepLog>>((ref) {
-  return ref.watch(monitorDataProvider).asData?.value.sleepLogs ?? [];
 }, isAutoDispose: true);
 
 final bloodPressureReadingsProvider = Provider<List<BloodPressureReading>>((ref) {
