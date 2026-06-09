@@ -1011,6 +1011,38 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+  void _confirmDeleteMedication(
+      BuildContext context, WidgetRef ref, dynamic med, String medName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text("Delete Medication"),
+        content: Text(
+            "Are you sure you want to permanently delete $medName?"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ref
+                  .read(medicationRepositoryProvider).deletePatientMedication(med.id);
+              ref.invalidate(patientMedicationsProvider);
+              ref.invalidate(todaysScheduleProvider);
+              if (context.mounted) Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                elevation: 0),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _confirmRestart(
       BuildContext context, WidgetRef ref, dynamic med, String medName) {
     showDialog(

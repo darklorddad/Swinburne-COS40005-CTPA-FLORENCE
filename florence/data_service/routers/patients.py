@@ -949,6 +949,28 @@ async def update_patient_medication(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
+@router.delete("/me/medications/{med_id}", summary="Delete a medication entry")
+async def delete_patient_medication(
+    med_id: int, 
+    patient_profile: dict = Depends(get_current_patient_profile)
+):
+    """Deletes a specific medication entry for the authenticated patient."""
+    try:
+        response = supabase.table("patient_medications") \
+            .delete() \
+            .eq("id", med_id) \
+            .eq("patient_id", patient_profile['id']) \
+            .execute()
+
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Medication not found or access denied")
+            
+        return {"status": "success", "message": "Medication deleted"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
 @router.get("/me/medication-schedule", summary="Get medication schedule and logs for a date")
 async def get_medication_schedule(
     patient_profile: dict = Depends(get_current_patient_profile)

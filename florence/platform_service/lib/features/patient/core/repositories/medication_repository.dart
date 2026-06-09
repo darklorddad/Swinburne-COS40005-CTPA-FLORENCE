@@ -69,6 +69,11 @@ class MedicationRepository {
     await _apiService.patch('/patients/me/medications/$id', data);
   }
 
+  /// Deletes an existing medication.
+  Future<void> deletePatientMedication(int id) async {
+    await _apiService.delete('/patients/me/medications/$id');
+  }
+
   /// Updates the status of a medication (e.g., to 'PAST').
   Future<void> updateMedicationStatus(int id, String status) async {
     await _apiService.patch('/patients/me/medications/$id', {'status': status});
