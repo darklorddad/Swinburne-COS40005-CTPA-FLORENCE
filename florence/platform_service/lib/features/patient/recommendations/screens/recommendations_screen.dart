@@ -917,7 +917,7 @@ class _RecommendationsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'This screen combines advanced clinical AI with local rule-based algorithms to help you manage your metabolic health.',
+                        'This screen combines Google Gemini AI with local rule-based algorithms to help you manage your metabolic health.',
                         style: TextStyle(
                           color: textColor,
                           fontSize: 14,
@@ -941,7 +941,7 @@ class _RecommendationsScreenState
                       _buildMetricInfoCard(
                         title: 'Glucose Control',
                         weight: '40%',
-                        description: 'Based on your Time in Range (70–180 mg/dL or 3.9–10.0 mmol/L).',
+                        description: 'Based on your Time in Range ($minStr to $maxStr $unitStr).',
                         icon: Icons.water_drop_outlined,
                         color: const Color(0xFFEF4444),
                         isDark: isDark,
@@ -959,7 +959,7 @@ class _RecommendationsScreenState
                       _buildMetricInfoCard(
                         title: 'Physical Activity',
                         weight: '15%',
-                        description: 'Based on your total active minutes, targeting 150 minutes per week.',
+                        description: 'Based on your total active minutes, targeting 150 minutes per week in line with World Health Organisation guidelines.',
                         icon: Icons.directions_run_rounded,
                         color: const Color(0xFF10B981),
                         isDark: isDark,
