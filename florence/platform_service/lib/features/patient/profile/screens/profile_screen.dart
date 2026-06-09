@@ -883,6 +883,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             _confirmStop(context, ref, med, brandName);
                           } else if (value == 'restart') {
                             _confirmRestart(context, ref, med, brandName);
+                          } else if (value == 'delete') {
+                            _confirmDeleteMedication(context, ref, med, brandName);
                           }
                         },
                         itemBuilder: (context) => [
@@ -913,6 +915,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                   Text('Restart',
                                       style: TextStyle(color: Colors.green))
                                 ])),
+                          const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(children: [
+                                Icon(Icons.delete, size: 18, color: Colors.red),
+                                SizedBox(width: 8),
+                                Text('Delete', style: TextStyle(color: Colors.red))
+                              ])),
                         ],
                       ),
                     ),
