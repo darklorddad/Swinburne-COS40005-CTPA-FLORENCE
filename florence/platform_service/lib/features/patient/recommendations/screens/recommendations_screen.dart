@@ -917,7 +917,7 @@ class _RecommendationsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'This screen combines Google Gemini AI with local rule-based algorithms to help you manage your metabolic health.',
+                        'This screen combines AI with local rule-based algorithms to help you manage your metabolic health.',
                         style: TextStyle(
                           color: textColor,
                           fontSize: 14,
