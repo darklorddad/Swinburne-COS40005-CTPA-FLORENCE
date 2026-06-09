@@ -877,7 +877,7 @@ class _RecommendationsScreenState
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Personalised clinical guidance & tracking',
+                        'Personalised clinical guidance and tracking',
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.85),
                           fontSize: 13,
@@ -943,9 +943,9 @@ class _RecommendationsScreenState
                       ),
                       const SizedBox(height: 8),
                       _buildMetricInfoCard(
-                        title: 'Engagement & Habits',
+                        title: 'Engagement and Habits',
                         weight: '25%',
-                        description: 'Rewards consistent tracking. Calculated from your total logs (readings, meals, activities).',
+                        description: 'Rewards consistent tracking. Calculated from your total logs (readings, meals and activities).',
                         icon: Icons.star_outline_rounded,
                         color: const Color(0xFFFBBF24),
                         isDark: isDark,
