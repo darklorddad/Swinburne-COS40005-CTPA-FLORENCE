@@ -820,72 +820,281 @@ class _RecommendationsScreenState
   }
 
   void _showInfoDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dialogBg = AppTheme.getSurfaceColor(context);
+    final textColor = AppTheme.getTextPrimaryColor(context);
+    final subTextColor = AppTheme.getTextSecondaryColor(context);
+    final borderColor = AppTheme.getBorderColor(context);
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About Insights & Vitality Index'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'This page provides AI-generated health recommendations based on your recent logs.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'How the Vitality Index is Calculated',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Your score (0–100) is calculated locally by the app\'s clinical algorithm using your health data from the last 7 days:',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 12),
-              _buildInfoBullet(context, 'Glucose Control (40 pts)', 'Based on your Time in Range (70–180 mg/dL or 3.9–10.0 mmol/L).'),
-              _buildInfoBullet(context, 'Medication Adherence (20 pts)', 'Based on your medication adherence. If you have no medications, you get full points.'),
-              _buildInfoBullet(context, 'Physical Activity (15 pts)', 'Based on your total active minutes, capped at 150 mins/week.'),
-              _buildInfoBullet(context, 'Engagement (25 pts)', 'Rewards the habit of tracking. Based on total logs (readings, meals, activity) over the week.'),
-              const SizedBox(height: 12),
-              Text(
-                'Note: If you haven\'t logged any data in the last 7 days, your score drops to 0 to reflect unmonitored risk. The final score is strictly clamped between 0 and 100.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontStyle: FontStyle.italic, 
-                  color: AppTheme.textSecondaryColor,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: dialogBg,
+        clipBehavior: Clip.antiAlias,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header with Gradient
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppTheme.primaryBlue,
+                        Color(0xFF3B82F6),
+                      ],
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.insights_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'About Your Insights',
+                        style: GoogleFonts.atkinsonHyperlegible(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Personalised clinical guidance & tracking',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                
+                // Content
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'This screen combines advanced clinical AI with local rule-based algorithms to help you manage your metabolic health.',
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 14,
+                          height: 1.5,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      
+                      Text(
+                        'HOW VITALITY INDEX IS CALCULATED',
+                        style: TextStyle(
+                          color: subTextColor,
+                          fontSize: 11,
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      
+                      _buildMetricInfoCard(
+                        title: 'Glucose Control',
+                        weight: '40%',
+                        description: 'Based on your Time in Range (70–180 mg/dL or 3.9–10.0 mmol/L).',
+                        icon: Icons.water_drop_outlined,
+                        color: const Color(0xFFEF4444),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildMetricInfoCard(
+                        title: 'Medication Adherence',
+                        weight: '20%',
+                        description: 'Based on your logged doses. If no medications are prescribed, you receive full points.',
+                        icon: Icons.medication_outlined,
+                        color: const Color(0xFF2563EB),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildMetricInfoCard(
+                        title: 'Physical Activity',
+                        weight: '15%',
+                        description: 'Based on your total active minutes, targeting 150 minutes per week.',
+                        icon: Icons.directions_run_rounded,
+                        color: const Color(0xFF10B981),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 8),
+                      _buildMetricInfoCard(
+                        title: 'Engagement & Habits',
+                        weight: '25%',
+                        description: 'Rewards consistent tracking. Calculated from your total logs (readings, meals, activities).',
+                        icon: Icons.star_outline_rounded,
+                        color: const Color(0xFFFBBF24),
+                        isDark: isDark,
+                      ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // Inactivity Warning Box
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppTheme.warningColor.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.warningColor.withValues(alpha: 0.25),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.info_outline_rounded,
+                              color: AppTheme.warningColor,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Important: If you do not log any data for 7 days, your Vitality Index drops to 0 to reflect unmonitored risk. Keep logging to maintain an accurate index!',
+                                style: TextStyle(
+                                  color: isDark ? Colors.amber.shade200 : const Color(0xFFB45309),
+                                  fontSize: 12,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Actions
+                Divider(height: 1, color: borderColor),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppTheme.primaryBlue,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Got it',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Got it'),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildInfoBullet(BuildContext context, String title, String description) {
-    final textColor = AppTheme.getTextPrimaryColor(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+  Widget _buildMetricInfoCard({
+    required String title,
+    required String weight,
+    required String description,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppTheme.getBorderColor(context),
+        ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('• ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: textColor)),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
-            child: RichText(
-              text: TextSpan(
-                style: TextStyle(color: textColor, fontSize: 14, height: 1.4),
-                children: [
-                  TextSpan(text: '$title: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  TextSpan(text: description),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        weight,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: TextStyle(
+                    color: AppTheme.getTextSecondaryColor(context),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
