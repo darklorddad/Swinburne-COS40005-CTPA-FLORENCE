@@ -1,26 +1,26 @@
-# 03 SUPABASE
+# Florence: Infrastructure - Supabase
+
+---
 
 ## 1. Overview and Purpose
 Supabase serves as the foundational Backend-as-a-Service (BaaS) for the Florence platform. It provides the core PostgreSQL database, user authentication via GoTrue and file storage. A critical feature utilised in this project is PostgreSQL Row Level Security (RLS) which ensures strict data segregation between patients, clinicians and administrators at the database level.
 
-## 2. Access and Ownership Transfer
-*   **Current Owner:** Daniel Tiong / Group 7
-*   **Transfer Process for Client or IT Staff:**
-    1. The Supabase Dashboard is accessed and the Organisation settings are opened.
-    2. An invitation is sent to Dr Vong via email: `wantze.vong@gmail.com`.
-    3. The **Owner** role is assigned to grant full administrative and billing privileges.
-*   **Dashboard URL:** [Insert Supabase Project URL]
+---
 
-## 3. Configuration and Secrets Management
+## 2. Configuration and Secrets Management
+**Dashboard URL:** `https://supabase.com/dashboard/project/opltjtmmiuwbaikvlive`
+
 Environment variables are required by the Python microservices and the Flutter frontend to communicate securely with Supabase.
 
 | Environment Variable | Description | Where it is stored | Required By |
 | :--- | :--- | :--- | :--- |
-| `SUPABASE_URL` | The unique project API URL | Vercel Env Vars, Flutter `.env` | Backend, Frontend |
-| `SUPABASE_ANON_KEY` | Public key for client-side authentication | Vercel Env Vars, Flutter `.env` | Backend, Frontend |
-| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS for admin background tasks | Vercel Env Vars | Backend Microservices |
+| `SUPABASE_URL` | The unique project API URL | Vercel Environment Variables, Flutter `.env` | Backend, Frontend |
+| `SUPABASE_ANON_KEY` | Public key for client-side authentication | Vercel Environment Variables, Flutter `.env` | Backend, Frontend |
+| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS for admin background tasks | Vercel Environment Variables | Backend Microservices |
 
-## 4. Technical Implementation Details
+---
+
+## 3. Technical Implementation Details
 
 ### Database Schema Overview
 The relational schema is designed to support a multi-tenant healthcare environment. Key tables include:
@@ -52,8 +52,28 @@ Supabase Storage is utilised for managing user-generated and clinical files.
 *   `meal_photos`: Stores images of food for AI nutritional analysis.
 *   `clinical_documents`: Stores uploaded PDFs or images of lab reports for biometric parsing.
 
-## 5. Billing, Limits and Day 2 Operations
-*   **Current Tier:** [Insert Current Tier e.g., Free / Pro]
-*   **Database Pausing:** If on the Free Tier, Supabase will pause the database after 7 days of inactivity. The client must add a credit card in the Billing settings or upgrade to the Pro Tier to prevent service interruption.
+---
+
+## 4. Billing, Limits and Day 2 Operations
+*   **Current Tier:** Free
+*   **Database Pausing:** If on the Free Tier, Supabase will pause the database after 7 days of inactivity. A credit card must be added in the Billing settings or upgrade to the Pro Tier to prevent service interruption.
 *   **Backups:** The Pro Tier includes daily automated backups and Point-in-Time Recovery. If remaining on the Free Tier, manual SQL dumps must be taken regularly via the Supabase dashboard or CLI.
 *   **Auth Limits:** Monitor the Monthly Active Users limit. The Free Tier allows 50,000 MAU which is sufficient for initial deployment but must be monitored as the user base grows.
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
+
+    .markdown-preview {
+        font-family: 'Funnel Display', sans-serif;
+        text-align: justify;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3,
+    .markdown-preview h4,
+    .markdown-preview h5,
+    .markdown-preview h6 {
+        text-align: left; 
+    }
+</style>

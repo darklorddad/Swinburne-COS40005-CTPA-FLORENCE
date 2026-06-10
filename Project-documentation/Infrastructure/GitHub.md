@@ -1,7 +1,13 @@
+# Florence: Infrastructure - GitHub Repository
+
+---
+
 ## 1. Overview and Purpose
 *   **Repository Name:** `Swinburne-COS40005-CTPA-FLORENCE`
 *   **Repository URL:** `https://github.com/darklorddad/Swinburne-COS40005-CTPA-FLORENCE`
 *   **Purpose:** This repository serves as the single source of truth and centralised version control system for the entire Florence platform. It is structured as a monorepo containing the cross-platform Flutter frontend (Patient, Clinician and Admin dashboards) and the Python-based backend microservices.
+
+---
 
 ## 2. Repository Structure (The Monorepo)
 The codebase is organised into distinct service folders to separate concerns whilst keeping all project artefacts centralised:
@@ -12,13 +18,17 @@ The codebase is organised into distinct service folders to separate concerns whi
 *   **`Project-documentation/`**: Contains the compiled User Manuals, Architecture diagrams and Handover documents.
 *   **`.github/`**: Contains GitHub Actions workflows (`.yml` files) that automate CI/CD pipelines.
 
+---
+
 ## 3. Branching Strategy and Version Control
 The team utilises a streamlined branching model optimised for continuous integration, rapid deployment and repository hygiene:
 
 *   **`main` branch:** The primary integration branch for all ongoing development. All new features, bug fixes and updates are merged here. This represents the latest stable development state.
-*   **`production` branch:** The stable, release-ready branch. Code is strictly merged from `main` to `production` when a milestone is reached or a stable release is ready for deployment to live production environments and app stores.
+*   **`production` branch:** The stable, release-ready branch. Code is strictly merged from `main` to `production` when a milestone is reached or a stable release is ready for deployment to live production environments.
 *   **Feature and Backup Branches:** Created dynamically from `main` for isolated feature development or as backup snapshots before major refactors. To maintain a clean repository, these branches are constantly managed and deleted once they are merged or no longer needed.
-*   **Pull Requests (PRs):** Used to merge feature branches into `main` to allow for code review and automated CI checks before integration.
+*   **Pull Requests (PRs):** Used to merge feature branches into `main` to allow for code review.
+
+---
 
 ## 4. GitHub Environments and Vercel Integration
 To manage deployments securely and separate staging from live systems, the repository utilises GitHub Environments. These environments are directly managed and triggered by Vercel to handle continuous deployment for the backend microservices and the web frontend.
@@ -35,6 +45,8 @@ To manage deployments securely and separate staging from live systems, the repos
 
 Vercel monitors the repository and automatically routes deployments to the correct GitHub Environment based on the branch and directory structure. This ensures that preview links are generated for pull requests whilst production environments are strictly updated only when code is merged into the designated release branches.
 
+---
+
 ## 5. Secrets Management
 GitHub Secrets are used to securely pass credentials to GitHub Actions without exposing them in the source code. The following **Repository-level Secrets** are currently configured:
 
@@ -44,7 +56,9 @@ GitHub Secrets are used to securely pass credentials to GitHub Actions without e
 | `FIREBASE_APP_ID` | The unique identifier for the Firebase project, used by CI/CD to target the correct project for App Distribution (beta testing). |
 | `FIREBASE_SERVICE_ACCOUNT_JSON_BASE64` | Base64 encoded service account key. Allows GitHub Actions to authenticate with Firebase securely to deploy builds or manage App Distribution. |
 | `FIREBASE_TOKEN` | CLI token used for Firebase hosting deployments or automated testing environments. |
-| `SHOREBIRD_TOKEN` | Authentication token for the Shorebird CLI. Allows GitHub Actions to push Over-The-Air (OTA) patches to the Flutter mobile app without requiring App Store or Play Store review. |
+| `SHOREBIRD_TOKEN` | Authentication token for the Shorebird CLI. Allows GitHub Actions to push Over-The-Air (OTA) patches to the Flutter mobile app. |
+
+---
 
 ## 6. Local Development Setup (Quick Start)
 The following steps outline the process for a new developer to clone and work with the repository:
@@ -63,3 +77,21 @@ The following steps outline the process for a new developer to clone and work wi
     git pull origin main
     ```
 *The respective backend and frontend documentation should be referenced for environment setup, dependency installation and local execution commands.*
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
+
+    .markdown-preview {
+        font-family: 'Funnel Display', sans-serif;
+        text-align: justify;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3,
+    .markdown-preview h4,
+    .markdown-preview h5,
+    .markdown-preview h6 {
+        text-align: left; 
+    }
+</style>
