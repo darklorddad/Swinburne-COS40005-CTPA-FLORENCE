@@ -1,10 +1,16 @@
-# Florence Data Service Documentation
+# Florence: Architecture - Data Service
+
+---
 
 ## Overview
 The Florence Data Service is a RESTful application programming interface built with FastAPI and Python 3.13. It functions as the primary backend for the Florence platform. The system interfaces directly with a Supabase database to manage user authentication, health data tracking, clinical workflows and global administration. The service handles data validation, business logic enforcement and secure communication with frontend clients.
 
+---
+
 ## Architecture
 The application routes are divided into domain-specific modules. It implements a singleton proxy pattern for the database client to enable lazy initialisation. This design prevents missing environment variables from causing import errors during test execution. The service configures cross-origin resource sharing middleware to allow requests from the frontend application. It relies on JSON Web Tokens for secure endpoint access.
+
+---
 
 ## Environment Configuration
 The system requires specific environment variables to function correctly. The developer must supply these values in a local configuration file or via the hosting platform settings.
@@ -12,6 +18,8 @@ The system requires specific environment variables to function correctly. The de
 * `SUPABASE_URL`: The specific project URL provided by the database host.
 * `SUPABASE_SERVICE_KEY`: The master service role key required for administrative actions.
 * `LLM_ENGINE_SERVICE_URL`: The optional endpoint for the external language model service used to generate synthetic patient data.
+
+---
 
 ## Directory Structure
 The data service repository contains several core files and directories that govern its operation.
@@ -22,10 +30,14 @@ The data service repository contains several core files and directories that gov
 * `vercel.json`: The deployment configuration file that instructs the hosting platform on how to route incoming requests.
 * `routers/`: A subdirectory containing all domain-specific application logic separated into modular files (`authentication.py`, `patients.py`, `clinicians.py`, `admin.py` and `chat_history.py`).
 
+---
+
 ## Package Management with uv
 The project relies on a standard Python configuration file but the architecture is optimised for the `uv` package manager. The `uv` tool is an extremely fast Python package installer and resolver written in Rust. It significantly reduces the time required to install dependencies and manage virtual environments compared to traditional tools. 
 
 The developer can utilise `uv` to synchronise the project environment directly from the `pyproject.toml` file. This ensures all required packages such as FastAPI, Uvicorn and the Supabase client are installed rapidly and consistently across different development machines.
+
+---
 
 ## Installation Instructions
 The developer must follow these steps to set up the local environment.
@@ -34,6 +46,8 @@ The developer must follow these steps to set up the local environment.
 2. Execute the appropriate `uv` command to create a virtual environment and install the dependencies listed in the configuration file.
 3. Populate the local environment file in the project root with the required database credentials.
 4. Start the application using the Uvicorn server gateway interface.
+
+---
 
 ## API Modules
 
@@ -139,5 +153,38 @@ The chat history module persists conversations between the patient and the conve
 * `POST /chat/history`: Appends a new conversation entry to the log.
 * `DELETE /chat/history`: Erases all conversation entries for the authenticated patient.
 
+---
+
 ## Deployment Details
 The repository includes a configuration file explicitly formatted for the Vercel hosting environment. The configuration directs all incoming traffic to the primary FastAPI application script to handle routing natively.
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
+
+    .markdown-preview {
+        font-family: 'Funnel Display', sans-serif;
+        text-align: justify;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3,
+    .markdown-preview h4,
+    .markdown-preview h5,
+    .markdown-preview h6 {
+        text-align: left; 
+    }
+
+    img {
+        display: block;
+        margin: 0 auto;
+        max-height: 11cm !important;
+    }
+
+    @media print {
+        hr {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
+</style>

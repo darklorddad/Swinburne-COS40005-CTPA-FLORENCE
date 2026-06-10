@@ -121,4 +121,17 @@ The Organisations module is used to onboard and manage the various healthcare fa
     .markdown-preview h6 {
         text-align: left; 
     }
+
+    img {
+        display: block;
+        margin: 0 auto;
+        max-height: 11cm !important;
+    }
+
+    @media print {
+        hr {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
 </style>

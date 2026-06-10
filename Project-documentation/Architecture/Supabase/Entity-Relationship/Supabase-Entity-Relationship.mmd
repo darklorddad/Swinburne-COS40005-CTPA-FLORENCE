@@ -1,0 +1,266 @@
+erDiagram
+    %% --- Core Identity & Settings ---
+    auth_users {
+        uuid id PK
+    }
+
+    user_settings {
+        uuid user_id PK "FK to auth.users"
+        text glucose_unit
+        text cholesterol_unit
+        timestamptz updated_at
+        bool show_quick_actions
+    }
+
+    admin_profiles {
+        int8 id PK
+        uuid user_id FK "Unique"
+        text name
+        text phone_number
+    }
+
+    %% --- Organizational & Profile Data ---
+    organisations {
+        int8 id PK
+        text name
+        text phone_number
+        text email
+        text website
+        text sector
+        text facility_type
+        text full_address
+        text state
+        bool is_24_hours
+        text operating_hours
+    }
+
+    clinician_profiles {
+        int8 id PK
+        uuid user_id FK "Unique"
+        text name
+        text phone_number
+        text gender
+        int8 organisation_id FK
+        text profile_picture_url
+    }
+
+    patient_profiles {
+        int8 id PK
+        uuid user_id FK "Unique"
+        text name
+        text phone_number
+        text gender
+        date date_of_birth
+        int8 organisation_id FK
+        int8 clinician_id FK
+        text emergency_contact_name
+        text emergency_contact_relationship
+        text emergency_contact_phone
+        text risk_level
+        timestamptz last_risk_assessment
+        text profile_picture_url
+        numeric height
+        numeric weight
+        text risk_rationale
+        text daily_insight
+    }
+
+    %% --- Clinical Notes & Automations ---
+    clinician_notes {
+        int8 id PK
+        int8 patient_id FK
+        int8 clinician_id FK
+        text clinician_name_snapshot
+        text note_content
+        timestamptz created_at
+    }
+
+    automated_actions {
+        int8 id PK
+        int4 patient_id FK
+        varchar type
+        text description
+        text response
+        timestamptz created_at
+    }
+
+    clinical_documents {
+        int8 id PK
+        int8 patient_id FK
+        text document_path
+        text document_type
+        timestamptz uploaded_at
+    }
+
+    %% --- Patient Daily Logs & Activity ---
+    daily_patient_logs {
+        int8 id PK
+        int8 patient_id FK
+        date log_date
+        text meal_time
+        numeric glucose_before_meal
+        numeric glucose_after_meal
+        text meal_desc
+        timestamptz glucose_before_meal_time
+        timestamptz glucose_after_meal_time
+        int4 calories
+        text photo_url
+    }
+
+    patient_activity_logs {
+        int8 id PK
+        int8 patient_id FK
+        text activity_description
+        int4 active_duration_minutes
+        timestamptz created_at
+        timestamptz start_time
+        timestamptz end_time
+        int4 calories_burned
+    }
+
+    disease_logs {
+        int8 id PK
+        int8 patient_id FK
+        text condition_name
+        text status
+        date diagnosed_date
+        date resolved_date
+        text notes
+    }
+
+    patient_chat_history {
+        uuid id PK
+        int8 patient_id FK
+        text role
+        text content
+        timestamptz timestamp
+        jsonb context
+    }
+
+    %% --- Medications ---
+    medication_dictionary {
+        int8 id PK
+        text brand_name
+        text generic_name
+        bool is_popular
+    }
+
+    dosage_frequencies {
+        int8 id PK
+        text latin_code
+        text patient_text
+    }
+
+    patient_medications {
+        int8 id PK
+        int8 patient_id FK
+        int8 clinician_id FK
+        int8 medication_id FK
+        int8 frequency_id FK
+        text amount
+        text status
+        text notes
+        timestamptz created_at
+        timestamptz updated_at
+        text medication_type
+        text custom_medication_name
+        text_array timing_instructions
+    }
+
+    medication_intake_logs {
+        int8 id PK
+        int8 patient_id FK
+        int8 patient_medication_id FK
+        timestamptz taken_at
+        text status
+        text notes
+        timestamptz created_at
+    }
+
+    %% --- Monitoring & Recommendations ---
+    patient_monitor_data {
+        int8 id PK
+        int8 patient_id FK
+        text data_type
+        numeric value
+        timestamptz measured_at
+        int8 document_id FK
+    }
+
+    patient_recommendations {
+        text id PK
+        int8 patient_id FK
+        text timeframe
+        text category
+        text title
+        text description
+        text priority
+        text status
+        timestamptz generated_at
+        timestamptz expires_at
+        text_array action_items
+        jsonb explanation
+        jsonb data_sources
+    }
+
+    patient_thresholds {
+        int8 id PK
+        int8 patient_id FK
+        text data_type
+        numeric min_value
+        numeric max_value
+    }
+
+    %% =======================
+    %%      RELATIONSHIPS
+    %% =======================
+
+    %% Identity & Authentication (0 or 1 mapping per role to auth.users)
+    auth_users ||--o| admin_profiles : "has profile"
+    auth_users ||--o| clinician_profiles : "has profile"
+    auth_users ||--o| patient_profiles : "has profile"
+    auth_users ||--o| user_settings : "has settings"
+
+    %% Organizations
+    organisations ||--o{ clinician_profiles : "employs"
+    
+    %% organisation_id is nullable
+    organisations |o--o{ patient_profiles : "serves"
+
+    %% Clinician-Patient Assignments
+    %% clinician_id is nullable
+    clinician_profiles |o--o{ patient_profiles : "assigned to"
+    
+    %% clinician_id is nullable
+    clinician_profiles |o--o{ clinician_notes : "authors"
+    
+    %% clinician_id is nullable
+    clinician_profiles |o--o{ patient_medications : "prescribes"
+
+    %% Patient Dependencies
+    patient_profiles ||--o{ clinician_notes : "has"
+    
+    %% patient_id is nullable
+    patient_profiles |o--o{ automated_actions : "triggers"
+    
+    patient_profiles ||--o{ clinical_documents : "owns"          
+    patient_profiles ||--o{ daily_patient_logs : "records"       
+    patient_profiles ||--o{ disease_logs : "has"                 
+    patient_profiles ||--o{ patient_medications : "is prescribed"
+    patient_profiles ||--o{ medication_intake_logs : "logs intake" 
+    patient_profiles ||--o{ patient_activity_logs : "records"    
+    patient_profiles ||--o{ patient_chat_history : "chats"       
+    patient_profiles ||--o{ patient_monitor_data : "tracks"      
+    patient_profiles ||--o{ patient_recommendations : "receives" 
+    patient_profiles ||--o{ patient_thresholds : "has boundaries" 
+
+    %% Medication Specifics
+    %% medication_id is nullable
+    medication_dictionary |o--o{ patient_medications : "references"
+    
+    dosage_frequencies ||--o{ patient_medications : "specifies frequency" 
+    patient_medications ||--o{ medication_intake_logs : "tracks" 
+    
+    %% Document Extractions
+    %% document_id is nullable and allows multiple extractions
+    clinical_documents |o--o{ patient_monitor_data : "extracts data into"

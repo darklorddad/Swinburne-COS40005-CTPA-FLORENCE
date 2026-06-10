@@ -1,10 +1,16 @@
 # Florence Platform Service Documentation
 
+---
+
 ## Overview
 The Florence Platform Service is a comprehensive cross-platform frontend application built with the Flutter framework. It provides the primary user interface for all system participants including patients, clinicians and administrators. The application delegates complex processing to external backend services to manage health data, trigger artificial intelligence pipelines and display real-time clinical insights. The system enforces a strict separation of concerns where the frontend handles state representation and the backend manages data integrity.
 
+---
+
 ## Architecture
 The application follows a feature-first architectural pattern to group related screens, providers and models. It heavily utilises the Riverpod package for reactive state management and dependency injection. The system connects directly to the Supabase client solely for secure user authentication and token persistence. All clinical data operations route through a custom application programming interface service that attaches the active session token to outgoing requests. This design ensures the frontend never bypasses backend business logic.
+
+---
 
 ## Core Configuration
 The system requires specific environment variables to resolve backend endpoints and authenticate with the infrastructure. The developer must supply these values during the build process using Dart define flags.
@@ -14,6 +20,8 @@ The system requires specific environment variables to resolve backend endpoints 
 * `LLM_ENGINE_SERVICE_URL`: The endpoint for the artificial intelligence engine.
 * `SUPABASE_URL`: The project URL provided by the authentication host.
 * `SUPABASE_ANON_KEY`: The public key required for client-side authentication.
+
+---
 
 ## Directory Structure
 The repository contains modular directories that govern the frontend functionality.
@@ -28,14 +36,20 @@ The repository contains modular directories that govern the frontend functionali
 * `shorebird.yaml`: The configuration file for over-the-air application updates.
 * `vercel.json`: The deployment configuration file for web hosting.
 
+---
+
 ## Security and Privacy
 The platform implements dedicated services to handle sensitive clinical information.
 
 * **Encryption Service**: The system provides utilities to hash passwords, generate secure tokens and encrypt specific data payloads before transit.
 * **Data Anonymisation**: The application includes algorithms to mask personally identifiable information. The system can obscure names, email addresses, phone numbers and identification strings to produce safe analytical datasets.
 
+---
+
 ## Package Management
 This repository contains a Dart and Flutter application. It relies on the standard Flutter pub package manager to resolve dependencies such as Riverpod, graphical charting libraries and image processing tools. The application integrates Shorebird to enable seamless over-the-air updates for deployed mobile applications.
+
+---
 
 ## Installation Instructions
 The developer must follow these steps to prepare the local environment.
@@ -44,6 +58,8 @@ The developer must follow these steps to prepare the local environment.
 2. Execute the package retrieval command to install the required dependencies.
 3. Define the required environment variables during the build process or via a configuration file.
 4. Launch the application on a web browser, simulator or physical device.
+
+---
 
 ## Core Services
 
@@ -55,6 +71,8 @@ The frontend includes a local pattern detection service to identify critical hea
 
 ### Notification System
 The notification service acts upon the patterns detected in the health data. It generates local alerts, educational tips and motivational messages. If the user records a dangerously high blood pressure or an extreme glucose drop, the system immediately surfaces a critical priority alert prompting them to seek medical attention.
+
+---
 
 ## Patient Interface Features
 
@@ -88,6 +106,8 @@ The platform synthesises recent data to produce actionable guidance.
 ### Conversational Agent
 The application includes a chat interface where patients can ask questions about their health data. The system renders the agent responses using Markdown to support lists and bold formatting. 
 
+---
+
 ## Clinician Interface Features
 
 ### Caseload Dashboard
@@ -99,6 +119,8 @@ When reviewing a specific patient, the clinician has access to a comprehensive p
 * **Medical Profile**: The clinician can review active and resolved diseases, adjust customised clinical thresholds and manage the active medication schedule.
 * **Analytics**: The clinician views the exact same interactive charts available to the patient but framed within the context of clinical supervision.
 * **Clinical Notes**: The system provides a private scratchpad where the clinician can log secure observations regarding the patient treatment plan.
+
+---
 
 ## Administrator Interface Features
 
@@ -114,3 +136,34 @@ The administrative dashboard presents key performance indicators including total
 
 ### Simulation Engine
 The administration module includes a testing interface to generate synthetic data. The administrator can input a mock patient name and select a clinical persona. The application then instructs the external language model engine to orchestrate thirty days of realistic meals, activities and biometric readings to populate the test account.
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
+
+    .markdown-preview {
+        font-family: 'Funnel Display', sans-serif;
+        text-align: justify;
+    }
+
+    .markdown-preview h1,
+    .markdown-preview h2,
+    .markdown-preview h3,
+    .markdown-preview h4,
+    .markdown-preview h5,
+    .markdown-preview h6 {
+        text-align: left; 
+    }
+
+    img {
+        display: block;
+        margin: 0 auto;
+        max-height: 11cm !important;
+    }
+
+    @media print {
+        hr {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
+</style>

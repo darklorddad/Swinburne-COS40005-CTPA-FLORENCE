@@ -91,6 +91,8 @@ Documents/Computing-Technology-Project-B/Outlook.md
 *.sql
 *.tmp
 supabase/
+!Project-documentation/Infrastructure/Supabase/
+!Project-documentation/Architecture/Supabase/
 *.bkp
 ~$*
 

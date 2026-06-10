@@ -50,4 +50,17 @@ The backend utilises a centralised `LLMFactory` class within the LLM Engine Serv
     .markdown-preview h6 {
         text-align: left; 
     }
+
+    img {
+        display: block;
+        margin: 0 auto;
+        max-height: 11cm !important;
+    }
+
+    @media print {
+        hr {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
 </style>

@@ -91,4 +91,17 @@ The monorepo is split into four distinct Vercel projects to ensure that updates 
     .markdown-preview h6 {
         text-align: left; 
     }
+
+    img {
+        display: block;
+        margin: 0 auto;
+        max-height: 11cm !important;
+    }
+
+    @media print {
+        hr {
+            page-break-after: avoid;
+            break-after: avoid;
+        }
+    }
 </style>
