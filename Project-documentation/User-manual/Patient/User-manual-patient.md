@@ -1,4 +1,4 @@
-# FLORENCE: Patient App - User Manual
+# FLORENCE: Patient Portal - User Manual
 
 ---
 
