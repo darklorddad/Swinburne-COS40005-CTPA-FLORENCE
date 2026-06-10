@@ -1,7 +1,7 @@
-# FLORENCE: Clinician Dashboard - User Manual
+# Florence: Clinician Dashboard - User Manual
 
 ## 1. Introduction
-The FLORENCE Clinician Dashboard is built for speed and secured for healthcare. It provides medical professionals with a streamlined, high-priority command centre that turns scattered patient logs into actionable clinical insights. The goal: Less noise. More signal.
+The Florence Clinician Dashboard is built for speed and secured for healthcare. It provides medical professionals with a streamlined, high-priority command centre that turns scattered patient logs into actionable clinical insights. The goal: Less noise. More signal.
 
 ---
 
@@ -193,7 +193,7 @@ To record observations, treatment adjustments or consultation summaries, the cli
 
 #### **Clinical Actions:**
 1.  **Enter Note [Box 1]**: The clinician types clinical observations or treatment adjustments.
-2.  **Save Note [Box 2]**: The clinician taps **Save Note**. Because the dashboard operates on a strict "Zero Direct Database" policy, the note is securely routed through the FLORENCE middleware REST API. The note immediately syncs across the platform, updating the priority queue and context for the entire clinical team in real-time.
+2.  **Save Note [Box 2]**: The clinician taps **Save Note**. Because the dashboard operates on a strict "Zero Direct Database" policy, the note is securely routed through the Florence middleware REST API. The note immediately syncs across the platform, updating the priority queue and context for the entire clinical team in real-time.
 
 ---
 

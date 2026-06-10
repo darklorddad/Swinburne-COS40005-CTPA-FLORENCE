@@ -1,4 +1,4 @@
-# FLORENCE: Admin Portal - User Manual
+# Florence: Admin Portal - User Manual
 
 ## 1. Introduction
 This centralised dashboard is designed exclusively for system administrators to oversee the AI-Enabled Digital Health Platform for Chronic Disease Monitoring. Through this portal, administrators can monitor high-risk patients, manage healthcare organisations, onboard clinicians and track system security via comprehensive audit logs.

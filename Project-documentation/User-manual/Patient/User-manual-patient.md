@@ -1,11 +1,11 @@
-# FLORENCE: Patient Portal - User Manual
+# Florence: Patient Portal - User Manual
 
 ---
 
 ## 1. Introduction
-Welcome to the FLORENCE Patient App. FLORENCE is an AI-powered health companion designed to monitor chronic conditions, guide daily habits and alert the patient and the clinician when things go out of range. It supports the patient every single day between doctor visits.
+Welcome to the Florence Patient App. Florence is an AI-powered health companion designed to monitor chronic conditions, guide daily habits and alert the patient and the clinician when things go out of range. It supports the patient every single day between doctor visits.
 
-FLORENCE is also built to be easy to read and comfortable to use for patients of all ages, with large text and clear, high-contrast colours throughout.
+Florence is also built to be easy to read and comfortable to use for patients of all ages, with large text and clear, high-contrast colours throughout.
 
 ---
 
@@ -17,7 +17,7 @@ FLORENCE is also built to be easy to read and comfortable to use for patients of
 
 *Figure 1: The login screen.*
 
-- The patient opens the FLORENCE app on the device.
+- The patient opens the Florence app on the device.
 - The patient logs in using a registered email and password.
 - New patients can create an account by tapping **Sign Up**, where they will be asked to provide their Name, Email and a secure Password (email verification may be required).
 - Once logged in, patients should navigate to the **Profile** tab to complete their setup by adding baseline health metrics such as Height, Weight and Medical Conditions.
@@ -40,7 +40,7 @@ When a patient is new and has not logged any data yet, the dashboard displays a 
 *Figure 3: The dashboard before any data is logged.*
 
 ### 2.3 Navigating the App
-The bottom navigation bar gives quick access to the main areas of FLORENCE:
+The bottom navigation bar gives quick access to the main areas of Florence:
 - **Home**: the dashboard, with the AI Daily Insight, health metric cards and Quick Actions. Tapping any metric card opens its detailed **Analytics & Trends** screen.
 - **Chatbot**: the AI health assistant.
 - **Centre (+) button**: opens the "Log Health Data" menu to record a new reading.
@@ -48,7 +48,7 @@ The bottom navigation bar gives quick access to the main areas of FLORENCE:
 - **Profile**: allows the patient to view and edit personal info, medical records, thresholds and settings.
 
 ## 3. Logging Data
-Logging daily health data is crucial for FLORENCE to understand patient patterns.
+Logging daily health data is crucial for Florence to understand patient patterns.
 
 ### 3.1 Vital Health Data
 - The patient navigates to the **Log Data** section.
@@ -65,7 +65,7 @@ Logging daily health data is crucial for FLORENCE to understand patient patterns
 
 ### 3.2 Meals & Meal Vision AI
 - **Manual Entry**: The patient types in the food consumed and its estimated calories.
-- **Meal Vision**: The patient taps the camera icon and takes a photo of the meal. FLORENCE's AI analyses the image, identifies the food and estimates the calories and macronutrients (carbohydrates, protein and fat), then logs them automatically. The patient can review and adjust any value before saving, maintaining control of what gets recorded. No manual typing is required.
+- **Meal Vision**: The patient taps the camera icon and takes a photo of the meal. Florence's AI analyses the image, identifies the food and estimates the calories and macronutrients (carbohydrates, protein and fat), then logs them automatically. The patient can review and adjust any value before saving, maintaining control of what gets recorded. No manual typing is required.
 
 <img src="meal-logging.png" width="250" alt="Meal logging" />
 
@@ -73,7 +73,7 @@ Logging daily health data is crucial for FLORENCE to understand patient patterns
 
 ### 3.3 Physical Activity
 - The patient can log physical activity by providing the duration and type of exercise.
-- **AI Calorie Estimation**: Based on the activity duration, description and the patient's physical profile (Height, Weight, Age and Gender), FLORENCE can automatically estimate the calories burned.
+- **AI Calorie Estimation**: Based on the activity duration, description and the patient's physical profile (Height, Weight, Age and Gender), Florence can automatically estimate the calories burned.
 
 ### 3.4 Medication
 - Prescribed medications can be added to the schedule from the **Medication Cabinet**.
@@ -83,7 +83,7 @@ Logging daily health data is crucial for FLORENCE to understand patient patterns
 
 ### 3.5 Health Records & Lab Reports
 - **Symptoms**: The patient can log any unusual symptoms experienced.
-- **Lab Report Reader**: The patient taps **Upload Report** and takes a photo of the physical blood test or lab results. FLORENCE's AI reads the document and extracts the key metrics (for example HbA1c, total cholesterol, LDL, HDL and triglycerides), logs each value to the correct place and explains in plain language what the numbers mean for the patient's condition. This saves the patient from typing results in by hand and helps the patient understand them without medical jargon.
+- **Lab Report Reader**: The patient taps **Upload Report** and takes a photo of the physical blood test or lab results. Florence's AI reads the document and extracts the key metrics (for example HbA1c, total cholesterol, LDL, HDL and triglycerides), logs each value to the correct place and explains in plain language what the numbers mean for the patient's condition. This saves the patient from typing results in by hand and helps the patient understand them without medical jargon.
 
 ## 4. Analytics & Trends
 Tapping on any health metric card on the Dashboard opens its detailed Analytics screen, which provides deep insights into historical data:
@@ -99,7 +99,7 @@ The Profile section is the central hub for managing personal information and app
 - **Personal & Care Team**: Update height, weight, emergency contacts and view the assigned clinician.
 - **Medical Conditions**: Maintain a Disease Log of 'Active' and 'Resolved' conditions.
 - **Medication Cabinet**: Add new medications, set dosage frequencies (e.g. Twice daily, Before meals) and move discontinued medications to 'Past'.
-- **Health Thresholds**: Customise personal target ranges for Glucose, Blood Pressure, BMI, HbA1c and Cholesterol. FLORENCE uses these exact bounds to colour-code the dashboard and trigger alerts.
+- **Health Thresholds**: Customise personal target ranges for Glucose, Blood Pressure, BMI, HbA1c and Cholesterol. Florence uses these exact bounds to colour-code the dashboard and trigger alerts.
 - **Settings**: Toggle Dark Mode, switch measurement units (mmol/L vs mg/dL), enable/disable Quick Actions on the dashboard and adjust the background Health Check Interval (e.g. 15, 30 or 60 minutes).
 
 ## 6. AI Features & Guidance
@@ -119,9 +119,9 @@ At the top of the Insights screen, the **Vitality Index** provides a single scor
 
 The score reflects four things: how often glucose stays in range, physical activity, medication adherence and how consistently data is logged. Tapping the **information (i) icon** in the header opens "About Insights & Vitality Index", which explains exactly how the score is calculated. Just below the ring, FLORENCE displays how many **active health signals** have been found in recent logs.
 
-If the patient is new and has not logged anything yet, the Vitality Index starts at 0 with a "Depleted" label and FLORENCE invites the patient to begin logging. As soon as the first readings are recorded, the score and recommendations come to life.
+If the patient is new and has not logged anything yet, the Vitality Index starts at 0 with a "Depleted" label and Florence invites the patient to begin logging. As soon as the first readings are recorded, the score and recommendations come to life.
 
-FLORENCE then turns those signals into clear, prioritised actions, grouped into two sections:
+Florence then turns those signals into clear, prioritised actions, grouped into two sections:
 - **Daily Recommendations**: the most important things to act on today.
 - **Weekly Action Plan**: longer-term habits to maintain or build.
 
@@ -139,9 +139,9 @@ Tapping any recommendation card expands it to reveal the full detail:
 - A key **metric** behind the recommendation (for example "Adherence from Thursday: 0%").
 - A short **explanation** of why it matters (for example how consistent medication use prevents glucose spikes and reduces long-term risk).
 - **Steps to Take**: clear, numbered actions to follow right away.
-- **Data Analysed Based On**: the type of data FLORENCE used to generate the recommendation, showing what is being responded to.
+- **Data Analysed Based On**: the type of data Florence used to generate the recommendation, showing what is being responded to.
 
-For example, if glucose is high at night, FLORENCE might recommend a 15-minute post-dinner walk.
+For example, if glucose is high at night, Florence might recommend a 15-minute post-dinner walk.
 
 **Recommendation History.** Once a recommendation has been acted on or is no longer current, it moves into a **History** section further down the screen, allowing past guidance to be reviewed.
 
@@ -149,7 +149,7 @@ For example, if glucose is high at night, FLORENCE might recommend a 15-minute p
 
 *Figure 9: The Recommendation History, with past recommendations across multiple pages.*
 
-**Keeping recommendations up to date.** FLORENCE refreshes the Daily Recommendations about once a day, or sooner if new data is logged, and the Weekly Action Plan about once a week. When the guidance is due for an update, a "Stale, tap to refresh" hint is displayed. Because recommendations are generated from logged data, the more data is logged, the more tailored they become. Tapping the **refresh** icon next to a section regenerates it at any time.
+**Keeping recommendations up to date.** Florence refreshes the Daily Recommendations about once a day, or sooner if new data is logged, and the Weekly Action Plan about once a week. When the guidance is due for an update, a "Stale, tap to refresh" hint is displayed. Because recommendations are generated from logged data, the more data is logged, the more tailored they become. Tapping the **refresh** icon next to a section regenerates it at any time.
 
 ### 4.2 AI Health Chatbot
 
@@ -157,11 +157,11 @@ For example, if glucose is high at night, FLORENCE might recommend a 15-minute p
 
 *Figure 10: The AI Health Chatbot.*
 
-- Tapping the **Chat** icon opens the conversation with FLORENCE.
+- Tapping the **Chat** icon opens the conversation with Florence.
 - Health-related questions can be asked in plain language, for example "Why was glucose high after dinner?" or "What does the latest HbA1c mean?".
-- FLORENCE has access to the medical history and recent logs, so it answers in the context of the patient's specific condition instead of giving generic advice.
+- Florence has access to the medical history and recent logs, so it answers in the context of the patient's specific condition instead of giving generic advice.
 - The conversation is saved so it can be resumed later, and it can be cleared at any time.
-- FLORENCE is a guidance and education tool. It will not diagnose the patient or change a prescription. For those decisions, it will always point the patient back to the clinician.
+- Florence is a guidance and education tool. It will not diagnose the patient or change a prescription. For those decisions, it will always point the patient back to the clinician.
 
 ### 4.3 Smart Notifications
 
@@ -169,21 +169,21 @@ For example, if glucose is high at night, FLORENCE might recommend a 15-minute p
 
 *Figure 11: Smart notifications.*
 
-FLORENCE monitors data in two ways so nothing important is missed:
-- **Right after logging**: if a reading is out of the safe range (for example a very high or low glucose or high blood pressure), FLORENCE alerts the patient straight away with what happened and what to do about it.
-- **In the background**: FLORENCE also reviews recent logs on a regular schedule to catch developing patterns, even when the app is not actively being used.
+Florence monitors data in two ways so nothing important is missed:
+- **Right after logging**: if a reading is out of the safe range (for example a very high or low glucose or high blood pressure), Florence alerts the patient straight away with what happened and what to do about it.
+- **In the background**: Florence also reviews recent logs on a regular schedule to catch developing patterns, even when the app is not actively being used.
 - **Achievements**: encouraging notifications are received for hitting logging streaks and reaching health targets.
 
 The frequency of background checks can be adjusted from the notification settings.
 
-## 7. Understanding FLORENCE's AI
+## 7. Understanding Florence's AI
 
-FLORENCE uses AI to make health data easier to understand and act on. Here is what that means for the patient.
+Florence uses AI to make health data easier to understand and act on. Here is what that means for the patient.
 
-- **It works from logged data.** Every insight, recommendation and chatbot answer is based on the health information logged. The more consistently data is logged, the more accurate and tailored FLORENCE becomes.
-- **It is a guide, not a doctor.** FLORENCE helps the patient understand data and build better habits, but it does not diagnose conditions or change medication. For any medical decision, it will encourage the patient to speak with the clinician.
+- **It works from logged data.** Every insight, recommendation and chatbot answer is based on the health information logged. The more consistently data is logged, the more accurate and tailored Florence becomes.
+- **It is a guide, not a doctor.** Florence helps the patient understand data and build better habits, but it does not diagnose conditions or change medication. For any medical decision, it will encourage the patient to speak with the clinician.
 - **Data stays private.** Information is kept secure and is never shared publicly. The AI only ever uses the data needed to help the patient, and only the patient and the assigned clinician can see the records.
-- **The AI has been safety-tested.** Before release, FLORENCE's AI features were tested against deliberate attempts to trick them into giving unsafe or off-topic advice and against revealing private data. The AI resisted these attempts, so it can be trusted to stay focused on supporting health.
+- **The AI has been safety-tested.** Before release, Florence's AI features were tested against deliberate attempts to trick them into giving unsafe or off-topic advice and against revealing private data. The AI resisted these attempts, so it can be trusted to stay focused on supporting health.
 - **Always sense-check AI estimates.** Features like Meal Vision and the Lab Report Reader give best-effort estimates from a photo. They are designed to save typing, so the patient should review the values before saving and confirm anything important with the clinician.
 
 ## 8. Getting Help
@@ -191,8 +191,8 @@ FLORENCE uses AI to make health data easier to understand and act on. Here is wh
 If something does not look right, these steps usually help:
 - **A reading looks wrong.** The patient can open the metric from the dashboard, check the logged entry and edit or re-log it if needed.
 - **Recommendations or insights seem out of date.** Tapping the refresh icon on the Insights screen regenerates them from the latest data.
-- **Notifications are not being received.** Ensure notifications are enabled for FLORENCE in the device settings, then check the Health Check Interval in the app's Settings.
+- **Notifications are not being received.** Ensure notifications are enabled for Florence in the device settings, then check the Health Check Interval in the app's Settings.
 - **Details need to be updated.** The patient can edit the personal or health profile from the Profile tab.
-- **Data and privacy.** Records are private to the patient and the assigned clinician. To request changes to the account or data, the clinic or the FLORENCE support team should be contacted.
+- **Data and privacy.** Records are private to the patient and the assigned clinician. To request changes to the account or data, the clinic or the Florence support team should be contacted.
 
-Remember that FLORENCE supports care between visits, but it does not replace the clinician. For any medical concern, the healthcare provider should be contacted.
+Remember that Florence supports care between visits, but it does not replace the clinician. For any medical concern, the healthcare provider should be contacted.
