@@ -70,79 +70,76 @@ The developer must follow these steps to prepare the local environment.
 
 ---
 
-## Core Services
+## Core Services and Repositories
 
-### Pattern Detection
-The frontend includes a local pattern detection service to identify critical health events immediately after a user logs data. The system evaluates newly inserted readings against personalised clinical thresholds to generate real-time local state objects for severe glucose spikes, consecutive high readings, missed medications or prolonged physical inactivity.
+### API and Network Client
+The `ApiService` class operates as a singleton wrapper around the standard HTTP client. It automatically evaluates the active Supabase authentication session to inject Bearer tokens into outgoing request headers. The service maps specific uniform resource identifiers to backend targets, processes multipart file requests for image uploads and intercepts HTTP 401 responses to trigger seamless token refreshes.
 
-### Notification System
-The notification service acts upon the patterns detected in the health data to generate in-memory alerts, educational tips and motivational messages. If the user records a dangerously high blood pressure or an extreme glucose drop, the system immediately surfaces a critical priority alert prompting them to seek medical attention. The system transmits high-priority alert states back to the data service to populate the clinician monitoring dashboard.
+### Pattern Detection Engine
+The `PatternDetectionService` evaluates the `HealthDataState` payload locally to identify clinical anomalies immediately after data entry. It applies deterministic rules to detect glucose spikes exceeding 50 milligrams per decilitre, prolonged physical inactivity or consecutive high carbohydrate meals. The engine outputs `DetectedPattern` objects mapped to severity scales.
 
----
-
-## Patient Application Features
-
-### Home Dashboard
-The patient dashboard provides a high-level summary of the user health state. It displays a dynamically generated artificial intelligence insight card featuring a repeating sinusoidal scanning animation that terminates via a callback once the network request resolves. It features a grid of quick actions for rapid data entry and compact cards summarising recent biometrics.
-
-### Health Analytics
-The system offers dedicated analytical views for every supported biometric. Each detail screen executes complex client-side mapping to parse flat arrays of readings into distinct data series for plotting against target safe zones.
-
-* **Glucose**: Displays linear trends, time in range percentages and a twenty-four hour modal view mapping daily patterns.
-* **Blood Pressure**: Plots systolic and diastolic readings simultaneously and calculates average pulse pressure.
-* **Cholesterol**: Features a stacked bar chart dividing total cholesterol into distinct lipid types and evaluates the overall ratio via a custom painted pie chart.
-* **Body Mass Index**: Tracks weight fluctuations, calculates the body mass index dynamically and categorises the current index into standard or personalised risk brackets using a custom visual gauge.
-* **Activity**: Renders a GitHub style heatmap to track daily activity streaks and logs total active minutes.
-* **Diet**: Evaluates the glucose impact of meals by correlating pre-meal and post-meal readings to calculate the average spike. It renders a traffic light calendar indicating daily dietary control.
-
-### Data Logging
-The platform provides robust data entry forms built on standard form keys with regular expression validators to prevent clinically impossible values. A unified sliding bottom sheet allows patients to quickly select which metric they wish to log.
-
-* **Artificial Intelligence Auto-Fill**: When logging a meal or uploading a laboratory report, the user can utilise artificial intelligence features. The application uses the `http.MultipartRequest` construct to transmit byte streams to the external vision model. The model returns JSON objects containing estimated calories, parsed lipid panel values or parsed blood sugar levels which the frontend uses to automatically update the local form controllers.
-
-### Medication Management
-The medication section features a tabbed interface splitting the daily schedule from the permanent clinical cabinet. The daily schedule acts as a dynamic checklist allowing patients to tap specific doses to dispatch intake confirmation requests to the backend. The application automatically calculates adherence rates based on these daily interactions. The clinical cabinet allows users to query an asynchronous autocomplete widget powered by a global medication dictionary to add new prescriptions.
-
-### Clinical Insights
-The platform synthesises recent data models to produce actionable guidance.
-
-* **Vitality Index**: The frontend calculates a proprietary score out of one hundred based on time in range, activity levels, medication adherence and logging consistency. It renders a circular progress gauge to display the score visually.
-* **Recommendations**: The system displays a tiered list of health recommendations generated by the external language model. Each recommendation includes specific action items, an explanation of the expected impact and references the exact data points that triggered the advice.
-
-### Conversational Agent
-The application includes a persistent chat interface where patients can ask questions about their health data. The system renders the agent responses using Markdown to support complex text formatting. It includes suggested quick reply chips to help patients begin the conversation.
+### Notification and Automation Handlers
+The `NotificationNotifier` class persists a local array of `HealthNotification` objects. It listens to state transitions in the health data providers to dispatch alerts automatically. If the pattern detection engine identifies a critical event such as a hypertensive crisis or severe hypoglycaemia, the service instantly triggers a high-priority alert prompting the user to seek medical attention. The system transmits automated action records to the backend to maintain a verifiable clinical audit trail.
 
 ---
 
-## Clinician Portal Features
+## State Management Providers
 
-### Patient Roster
-The clinician dashboard provides immediate visibility into patient status. It features a priority alerts feed highlighting patients who recently breached clinical thresholds or missed medications. The primary patient list implements local state filtering arrays to allow rapid searching by name, calculated risk level or the recency of logged entries.
+The application relies on Riverpod providers to orchestrate data flow between the backend services and the user interface.
 
-### Patient Oversight
-When reviewing a specific patient, the clinician has access to a comprehensive clinical profile spanning multiple tabs.
-
-* **Overview**: The clinician can review recent metrics, adjust risk levels via backend PUT requests and examine automated actions logged by the artificial intelligence engine.
-* **Medical Profile**: The clinician can review active and resolved diseases, adjust customised clinical thresholds and prescribe new medications directly to the patient cabinet.
-* **Analytics**: The clinician views detailed interactive charts framing patient data over varied time horizons to support diagnostic supervision.
-* **Clinical Notes**: The system provides a private scratchpad where the clinician can log secure timestamped observations regarding the patient treatment plan.
+* `monitorDataProvider`: An asynchronous notifier that executes parallel HTTP requests to compile glucose readings, blood pressure logs, dietary records, physical activities and active diseases into a unified `HealthDataState` object.
+* `recommendationProvider`: An asynchronous notifier that transmits a simplified health summary to the `LlmRecommendationService`. It parses the language model response into actionable `HealthRecommendation` models.
+* `patientSettingsProvider`: A standard notifier that synchronises unit preferences such as millimoles per litre versus milligrams per decilitre. It triggers global state invalidation when units are modified to force chart recalculations.
+* `chatProvider`: A notifier managing the chronological `ChatMessage` history. It streams user queries to the external chatbot service and appends the generated responses to the local array.
 
 ---
 
-## Administrative Console Features
+## Routing Architecture
 
-### Access Control
-The administrative system enforces strict role-based access. Global administrators possess full visibility across all system organisations while hospital administrators are restricted to managing users within their specific facility. The frontend utilises a dedicated `PermissionGuard` widget that checks the active user claims against a defined `AdminPermission` enumerator to conditionally render user interface elements.
+The application implements a central routing generator parsing URI string paths. It separates routing trees into general application routes and protected administrative routes.
 
-### System Management
-The administrative dashboard presents key performance indicators including total user counts, active clinician ratios and system-wide critical alerts.
+### Patient Routes
+* `/dashboard`: The primary patient hub hosting the vitality index and intelligent insight widgets.
+* `/log/glucose`, `/log/blood-pressure`, `/log/meal`, `/log/activity`: Dedicated form controllers with strict validators and artificial intelligence auto-fill triggers.
+* `/trends`, `/hba1c-detail`, `/cholesterol-detail`: Complex data visualisation screens implementing `fl_chart` Cartesian grids to display historical progression against dynamic `PatientThreshold` boundaries.
+* `/chat`: The conversational interface parsing Markdown strings from the language model service.
+* `/recommendations`: The actionable health guidance feed displaying rationale explanations and triggering data references.
 
-* **Organisations**: Administrators can dispatch JSON payloads to register new clinics or hospitals, specifying their facility type, operating hours and contact details.
-* **Clinician Directory**: The interface provides tools to register new medical professionals, assign them to specific facilities via referential identifiers and manage their authentication credentials.
-* **Patient Directory**: Administrators can fetch the global patient list, manually assign patients to specific clinicians, modify risk tiers or trigger cascading delete endpoints to permanently wipe protected health information.
+### Clinician Routes
+* `/clinician-dashboard`: The medical portal compiling priority alerts and an active patient roster.
+* `/clinician/patient-detail`: The comprehensive oversight view allowing clinicians to append notes, override risk stratifications and manage patient medication cabinets.
 
-### Simulation Engine
-The administration module includes a sophisticated testing interface to generate synthetic data. The administrator can input a mock patient name and select a specific clinical persona. The application then instructs the external language model engine to orchestrate thirty days of realistic meals, activities and biometric readings to populate the test account automatically.
+### Administrator Routes
+* `/admin-dashboard`: The macro-level control centre featuring aggregate system metrics and audit logs.
+* `/admin/patients`: The administrative table for manual clinician assignment and destructive data wiping operations.
+* `/admin/organizations`: The registration interface for provisioning new hospital identifiers.
+* `/admin/data-simulator`: The testing orchestrator that transmits simulation constraints to the language model engine to generate synthetic patient histories.
+
+---
+
+## Interface and Rendering Engines
+
+### Responsive Layout System
+The platform implements a distinct `ResponsiveLayoutSystem` class defining strict breakpoints at 600px, 1024px and 1440px. The system calculates cross-axis counts dynamically for grid views and switches between bottom navigation bars and persistent side rails depending on the available viewport width.
+
+### Custom Data Visualisation
+The application bypasses standard widgets to render complex clinical visualisations using low-level canvas instructions.
+
+* **Vitality Index Gauge**: The `_ScoreRingPainter` calculates trigonometric angles to draw a sweep gradient arc representing the patient health score.
+* **Cholesterol Ratio**: The `_RatioPainter` renders segmented arcs to visually compare high-density lipoproteins against remaining cholesterol volume.
+* **Body Mass Index Indicator**: The system plots dynamic bounds across a linear track, calculating fractional offsets to place the patient marker accurately within underweight, normal, overweight or obese zones.
+* **Scatter Matrices**: The blood pressure analytics screen utilises `ScatterChart` implementations to plot systolic values against diastolic values, mapping standard deviation clusters against clinical danger zones.
+* **Traffic Light Calendar**: The dietary impact view renders a twenty-eight day grid, calculating post-prandial glucose spikes to colour individual date cells green, yellow or red.
+
+---
+
+## Security and Privacy Implementations
+
+### Administrative Access Control
+The administrative system enforces strict role-based access control directly within the routing logic and widget trees. The system maps the Supabase authentication metadata to internal `AdminRole` enumerators. Global administrators possess full database access while hospital administrators inherit an `organization_id` bound to all subsequent queries. The frontend utilises a custom `PermissionGuard` widget that intercepts rendering pipelines, hiding sensitive elements if the active user lacks specific `AdminPermission` claims.
+
+### Client-Side Encryption and Data Masking
+The application includes a `DataAnonymizationService` designed to sanitise datasets locally before aggregation operations. The class utilises regular expression replacement to mask patient names, truncate email addresses and obscure phone numbers. This ensures that any statistical views generated for administrative oversight do not expose protected health information inadvertently.
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
