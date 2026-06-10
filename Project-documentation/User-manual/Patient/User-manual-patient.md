@@ -40,11 +40,11 @@ When a patient is new and has not logged any data yet, the dashboard displays a 
 
 ### 2.3 Navigating the App
 The bottom navigation bar gives quick access to the main areas of FLORENCE:
-- **Home**: the dashboard, with the AI Daily Insight and health metric cards.
+- **Home**: the dashboard, with the AI Daily Insight, health metric cards and Quick Actions. Tapping any metric card opens its detailed **Analytics & Trends** screen.
 - **Chatbot**: the AI health assistant.
 - **Centre (+) button**: opens the "Log Health Data" menu to record a new reading.
-- **Profile**: allows the patient to view and edit a personal and health profile.
-- **Settings**: allows management of preferences, including how often FLORENCE checks data and signing out.
+- **Notifications (Bell icon)**: view all alerts, reminders and achievements.
+- **Profile**: allows the patient to view and edit personal info, medical records, thresholds and settings.
 
 ## 3. Logging Data
 Logging daily health data is crucial for FLORENCE to understand patient patterns.
@@ -70,16 +70,38 @@ Logging daily health data is crucial for FLORENCE to understand patient patterns
 
 *Figure 6: Logging a meal.*
 
-### 3.3 Medication
-- Prescribed medications can be added to the schedule.
-- Daily dosage reminders are received.
-- Tapping the checkmark next to a medication logs it as taken, maintaining the adherence streak.
+### 3.3 Physical Activity
+- The patient can log physical activity by providing the duration and type of exercise.
+- **AI Calorie Estimation**: Based on the activity duration, description and the patient's physical profile (Height, Weight, Age and Gender), FLORENCE can automatically estimate the calories burned.
 
-### 3.4 Health Records & Lab Reports
+### 3.4 Medication
+- Prescribed medications can be added to the schedule from the **Medication Cabinet**.
+- The **Today's Schedule** view shows pending and taken medications.
+- Tapping the checkmark next to a medication logs it as taken, maintaining the adherence streak.
+- Doses can also be unlogged if marked by mistake.
+
+### 3.5 Health Records & Lab Reports
 - **Symptoms**: The patient can log any unusual symptoms experienced.
 - **Lab Report Reader**: The patient taps **Upload Report** and takes a photo of the physical blood test or lab results. FLORENCE's AI reads the document and extracts the key metrics (for example HbA1c, total cholesterol, LDL, HDL and triglycerides), logs each value to the correct place and explains in plain language what the numbers mean for the patient's condition. This saves the patient from typing results in by hand and helps the patient understand them without medical jargon.
 
-## 4. AI Features & Guidance
+## 4. Analytics & Trends
+Tapping on any health metric card on the Dashboard opens its detailed Analytics screen, which provides deep insights into historical data:
+- **Glucose Analytics**: View Time in Range, Glucose Management Indicator (GMI), Variability (CV) and a Modal Day chart overlapping 24-hour patterns.
+- **Blood Pressure**: Track Average Systolic/Diastolic, Pulse Pressure and view a scatter plot correlating Systolic vs. Diastolic readings.
+- **Diet Analytics**: Features a "Traffic Light Consistency Calendar" showing 28 days of meal control and charts tracking the Average Glucose Spike per meal type (Breakfast, Lunch and Dinner).
+- **Activity Analytics**: Review movement volume, a 28-day GitHub-style Streak Heatmap, Weekly Consistency and calculate how specific activities impacted glucose levels.
+- **BMI & Weight**: Gauge relative to target, trends and correlation with HbA1c.
+- **Cholesterol & HbA1c**: Visualises Cholesterol Ratios (HDL vs Non-HDL), LDL Target tracking and plots HbA1c against BMI trends to spot weight-correlation patterns.
+
+## 5. Profile, Medical Records & Settings
+The Profile section is the central hub for managing personal information and app preferences:
+- **Personal & Care Team**: Update height, weight, emergency contacts and view the assigned clinician.
+- **Medical Conditions**: Maintain a Disease Log of 'Active' and 'Resolved' conditions.
+- **Medication Cabinet**: Add new medications, set dosage frequencies (e.g. Twice daily, Before meals) and move discontinued medications to 'Past'.
+- **Health Thresholds**: Customise personal target ranges for Glucose, Blood Pressure, BMI, HbA1c and Cholesterol. FLORENCE uses these exact bounds to colour-code the dashboard and trigger alerts.
+- **Settings**: Toggle Dark Mode, switch measurement units (mmol/L vs mg/dL), enable/disable Quick Actions on the dashboard and adjust the background Health Check Interval (e.g. 15, 30 or 60 minutes).
+
+## 6. AI Features & Guidance
 The **Insights** screen is a personal AI guidance hub. It is opened by tapping the AI Daily Insight banner at the top of the dashboard.
 
 ### 4.1 Vitality Index & Personalised Recommendations
@@ -153,7 +175,7 @@ FLORENCE monitors data in two ways so nothing important is missed:
 
 The frequency of background checks can be adjusted from the notification settings.
 
-## 5. Understanding FLORENCE's AI
+## 7. Understanding FLORENCE's AI
 
 FLORENCE uses AI to make health data easier to understand and act on. Here is what that means for the patient.
 
@@ -163,7 +185,7 @@ FLORENCE uses AI to make health data easier to understand and act on. Here is wh
 - **The AI has been safety-tested.** Before release, FLORENCE's AI features were tested against deliberate attempts to trick them into giving unsafe or off-topic advice and against revealing private data. The AI resisted these attempts, so it can be trusted to stay focused on supporting health.
 - **Always sense-check AI estimates.** Features like Meal Vision and the Lab Report Reader give best-effort estimates from a photo. They are designed to save typing, so the patient should review the values before saving and confirm anything important with the clinician.
 
-## 6. Getting Help
+## 8. Getting Help
 
 If something does not look right, these steps usually help:
 - **A reading looks wrong.** The patient can open the metric from the dashboard, check the logged entry and edit or re-log it if needed.
