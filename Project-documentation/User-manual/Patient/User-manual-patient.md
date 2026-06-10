@@ -19,7 +19,8 @@ FLORENCE is also built to be easy to read and comfortable to use for patients of
 
 - The patient opens the FLORENCE app on the device.
 - The patient logs in using a registered email and password.
-- New patients follow the on-screen prompts to set up a profile, including baseline health metrics (Height, Weight and Condition).
+- New patients can create an account by tapping **Sign Up**, where they will be asked to provide their Name, Email and a secure Password (email verification may be required).
+- Once logged in, patients should navigate to the **Profile** tab to complete their setup by adding baseline health metrics such as Height, Weight and Medical Conditions.
 
 ### 2.2 The Dashboard
 Upon opening the app, the patient is presented with a unified health dashboard:
