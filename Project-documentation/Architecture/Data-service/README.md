@@ -13,12 +13,27 @@ The system requires specific environment variables to function correctly. The de
 * `SUPABASE_SERVICE_KEY`: The master service role key required for administrative actions.
 * `LLM_ENGINE_SERVICE_URL`: The optional endpoint for the external language model service used to generate synthetic patient data.
 
-## Installation Instructions
-The project uses a standard Python package configuration. The developer must install the dependencies listed in the configuration file.
+## Directory Structure
+The data service repository contains several core files and directories that govern its operation.
 
-1. Install the required packages via the preferred package manager.
-2. Populate the environment file in the project root.
-3. Start the application using the Uvicorn server gateway interface.
+* `main.py`: The primary entry point that initialises the FastAPI application and configures the middleware.
+* `client.py`: The database configuration file that implements the singleton proxy pattern for the Supabase client.
+* `pyproject.toml`: The configuration file that defines project metadata and lists the necessary Python dependencies.
+* `vercel.json`: The deployment configuration file that instructs the hosting platform on how to route incoming requests.
+* `routers/`: A subdirectory containing all domain-specific application logic separated into modular files (`authentication.py`, `patients.py`, `clinicians.py`, `admin.py` and `chat_history.py`).
+
+## Package Management with uv
+The project relies on a standard Python configuration file but the architecture is optimised for the `uv` package manager. The `uv` tool is an extremely fast Python package installer and resolver written in Rust. It significantly reduces the time required to install dependencies and manage virtual environments compared to traditional tools. 
+
+The developer can utilise `uv` to synchronise the project environment directly from the `pyproject.toml` file. This ensures all required packages such as FastAPI, Uvicorn and the Supabase client are installed rapidly and consistently across different development machines.
+
+## Installation Instructions
+The developer must follow these steps to set up the local environment.
+
+1. Install the `uv` package manager on the host system.
+2. Execute the appropriate `uv` command to create a virtual environment and install the dependencies listed in the configuration file.
+3. Populate the local environment file in the project root with the required database credentials.
+4. Start the application using the Uvicorn server gateway interface.
 
 ## API Modules
 
