@@ -1,14 +1,19 @@
 # FLORENCE: Patient App - User Manual
 
+---
+
 ## 1. Introduction
 Welcome to the FLORENCE Patient App. FLORENCE is an AI-powered health companion designed to monitor chronic conditions, guide daily habits and alert the patient and the clinician when things go out of range. It supports the patient every single day between doctor visits.
 
 FLORENCE is also built to be easy to read and comfortable to use for patients of all ages, with large text and clear, high-contrast colours throughout.
 
-## 2. Getting Started
-### 2.1 Login / Registration
+---
 
-<img src="login.png" width="250" alt="Login screen" />
+## 2. Getting Started
+
+### 2.1 Login/Registration
+
+![alt text](login.png)
 
 *Figure 1: The login screen.*
 
