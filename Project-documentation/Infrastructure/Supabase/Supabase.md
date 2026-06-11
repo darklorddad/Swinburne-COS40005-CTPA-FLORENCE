@@ -36,7 +36,7 @@ The relational schema is designed to support a multi-tenant healthcare environme
 RLS is enabled on all tables to enforce strict access control without relying solely on backend middleware.
 *   **Patients:** Can only read, insert, update and delete their own health data, logs and chat history. This is enforced by joining the target table with `patient_profiles` and verifying the `auth.uid()`.
 *   **Clinicians:** Can only view and manage data for patients explicitly assigned to them. Policies join `patient_profiles` with `clinician_profiles` to verify that the `clinician_id` matches the authenticated user.
-*   **Administrators:** Global admins possess full access across all tables to manage the platform, users and organisations.
+*   **Administrators:** Global admins possess full access across almost all tables to manage the platform, users and organisations. However, to enforce strict patient privacy, administrators are explicitly denied RLS access to highly sensitive private data, specifically `patient_chat_history`, `clinical_documents` and `automated_actions`.
 *   **Role Verification:** A secure PostgreSQL function `get_user_role()` reads the `role` claim from the Supabase JWT `app_metadata` to determine user permissions dynamically.
 
 ### Database Functions and Triggers
