@@ -45,6 +45,7 @@ Custom PostgreSQL functions handle complex transactions securely:
 *   `create_clinician_with_profile`: Provisions a new clinician and links them to an organisation.
 *   `handle_new_user_settings`: A trigger that automatically creates a `user_settings` row (defaulting to mmol/L) when a new user signs up.
 *   `delete_clinician_and_clean_up`: Safely removes a clinician, unassigns their patients and anonymises their name in existing clinical notes before deleting the underlying auth user.
+*   `get_all_table_names`: A utility function that returns a list of all ordinary tables within the `public` schema, typically utilised by administrative scripts or the LLM data simulator.
 
 ### Storage Buckets
 Supabase Storage is utilised for managing user-generated and clinical files.
