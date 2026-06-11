@@ -16,7 +16,7 @@ Environment variables are required by the Python microservices and the Flutter f
 | :--- | :--- | :--- | :--- |
 | `SUPABASE_URL` | The unique project API URL | Vercel Environment Variables, Flutter `.env` | Backend, Frontend |
 | `SUPABASE_ANON_KEY` | Public key for client-side authentication | Vercel Environment Variables, Flutter `.env` | Backend, Frontend |
-| `SUPABASE_SERVICE_ROLE_KEY` | Bypasses RLS for admin background tasks | Vercel Environment Variables | Backend Microservices |
+| `SUPABASE_SERVICE_KEY` | Bypasses RLS for admin background tasks | Vercel Environment Variables | Backend Microservices |
 
 ---
 
