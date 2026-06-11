@@ -43,7 +43,7 @@ RLS is enabled on all tables to enforce strict access control without relying so
 Custom PostgreSQL functions handle complex transactions securely:
 *   `create_patient_with_profile_and_thresholds`: Automatically generates a patient profile and seeds default clinical thresholds (glucose, HbA1c, BMI and blood pressure) upon registration.
 *   `create_clinician_with_profile`: Provisions a new clinician and links them to an organisation.
-*   `handle_new_user_settings`: A trigger that automatically creates a `user_settings` row (defaulting to mmol/L) when a new user signs up.
+*   `handle_new_user_settings`: A function that automatically creates a `user_settings` row (defaulting to mmol/L) when a new user signs up. **Trigger Binding:** Executed `AFTER INSERT` on the `auth.users` table via the `on_auth_user_created` trigger.
 *   `delete_clinician_and_clean_up`: Safely removes a clinician, unassigns their patients and anonymises their name in existing clinical notes before deleting the underlying auth user.
 *   `get_all_table_names`: A utility function that returns a list of all ordinary tables within the `public` schema, typically utilised by administrative scripts or the LLM data simulator.
 
@@ -52,6 +52,9 @@ Supabase Storage is utilised for managing user-generated and clinical files.
 *   `avatars`: Stores patient and clinician profile pictures.
 *   `meal_photos`: Stores images of food for AI nutritional analysis.
 *   `clinical_documents`: Stores uploaded PDFs or images of lab reports for biometric parsing.
+
+### Realtime Configuration
+The `supabase_realtime` publication is currently owned by the `postgres` role. However, no specific public tables are explicitly added to the publication in the schema dump. This indicates that Supabase Realtime WebSocket subscriptions are currently **disabled** for all database tables, and the frontend relies on standard REST API polling or manual cache invalidation (via Riverpod) to reflect data changes.
 
 ---
 
