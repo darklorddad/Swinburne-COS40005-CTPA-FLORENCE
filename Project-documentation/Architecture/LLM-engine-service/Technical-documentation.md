@@ -53,6 +53,9 @@ The developer must follow these steps to set up the local environment.
 
 ## API Modules
 
+### General
+* `GET /`: Root endpoint with service information.
+
 ### Nutrition Module
 The nutrition module processes meal imagery.
 
