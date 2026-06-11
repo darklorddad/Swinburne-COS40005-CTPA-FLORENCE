@@ -13,6 +13,16 @@ Chronic disease patients often face challenges with fragmented health informatio
 
 ---
 
+![alt text](Project-documentation/Architecture/Supabase/Entity-Relationship/Supabase-Entity-Relationship.png)
+
+![alt text](Project-documentation/Architecture/Supabase/Role-Based-Access-Control/Role-Based-Access-Control.png)
+
+![alt text](Project-documentation/Architecture/System-architecture/System-architecture.png)
+
+![alt text](Project-documentation/Architecture/CI-CD-pipeline/CI-CD-pipeline.png)
+
+---
+
 ### License
 
 This project is licensed under the **GNU Affero General Public License v3.0**. See the [LICENSE](LICENSE) file for full details.
