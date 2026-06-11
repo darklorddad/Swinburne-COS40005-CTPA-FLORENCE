@@ -39,11 +39,10 @@ RLS is enabled on all tables to enforce strict access control without relying so
 *   **Administrators:** Global admins possess full access across almost all tables to manage the platform, users and organisations. However, to enforce strict patient privacy, administrators are explicitly denied RLS access to highly sensitive private data, specifically `patient_chat_history`, `clinical_documents` and `automated_actions`.
 *   **Role Verification:** A secure PostgreSQL function `get_user_role()` reads the `role` claim from the Supabase JWT `app_metadata` to determine user permissions dynamically.
 
-### Database Functions and Triggers
+### Database Functions
 Custom PostgreSQL functions handle complex transactions securely:
 *   `create_patient_with_profile_and_thresholds`: Automatically generates a patient profile and seeds default clinical thresholds (glucose, HbA1c, BMI and blood pressure) upon registration.
 *   `create_clinician_with_profile`: Provisions a new clinician and links them to an organisation.
-*   `handle_new_user_settings`: A function that automatically creates a `user_settings` row (defaulting to mmol/L) when a new user signs up. *Trigger Binding:* Executed `AFTER INSERT` on the `auth.users` table via the `on_auth_user_created` trigger.
 *   `delete_clinician_and_clean_up`: Safely removes a clinician, unassigns their patients and anonymises their name in existing clinical notes before deleting the underlying auth user.
 *   `get_all_table_names`: A utility function that returns a list of all ordinary tables within the `public` schema.
 *   `get_user_role`: A utility function that extracts the user's role from the JWT `app_metadata` to support dynamic permission checks.
