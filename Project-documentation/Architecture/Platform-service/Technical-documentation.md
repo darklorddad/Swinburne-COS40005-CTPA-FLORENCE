@@ -56,6 +56,7 @@ The platform enforces a strict zero-trust security model by delegating authentic
 
 * **Authentication & Session Management**: The application utilises Supabase Auth for secure user authentication, deep link resolution and session persistence. Password hashing and credential storage are handled entirely by the Supabase infrastructure.
 * **Data Protection**: All clinical data operations route through a custom singleton `ApiService` that intercepts HTTP requests to append the active JSON Web Token (JWT) to the authorisation header. Data privacy and row-level access control are strictly enforced at the database layer via Supabase Row Level Security (RLS) policies, ensuring users can only access their own health records.
+* **Administrative Access Control**: The administrative portal enforces strict Role-Based Access Control (RBAC) directly within the routing logic and widget trees. The system maps Supabase authentication metadata to internal `AdminRole` enumerators (e.g., Global Administrator, Hospital Administrator). The frontend utilises a custom `PermissionGuard` widget that intercepts rendering pipelines, hiding sensitive UI elements and blocking unauthorised navigation if the active user lacks specific `AdminPermission` claims.
 
 ---
 
@@ -136,11 +137,6 @@ The application bypasses standard widgets to render complex clinical visualisati
 * **Traffic Light Calendar**: The dietary impact view renders a twenty-eight day grid, calculating post-prandial glucose spikes to colour individual date cells green, yellow or red.
 
 ---
-
-## Security and Privacy Implementations
-
-### Administrative Access Control
-The administrative system enforces strict role-based access control (RBAC) directly within the routing logic and widget trees. The system maps the Supabase authentication metadata to internal `AdminRole` enumerators. Global administrators possess full system access while hospital administrators inherit an `organization_id` bound to all subsequent queries. The frontend utilises a custom `PermissionGuard` widget that intercepts rendering pipelines, hiding sensitive UI elements and blocking unauthorised navigation if the active user lacks specific `AdminPermission` claims.
 
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Funnel+Display&display=swap');
