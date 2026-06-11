@@ -43,6 +43,7 @@ RLS is enabled on all tables to enforce strict access control without relying so
 Custom PostgreSQL functions handle complex transactions securely:
 *   `create_patient_with_profile_and_thresholds`: Automatically generates a patient profile and seeds default clinical thresholds (glucose, HbA1c, BMI and blood pressure) upon registration.
 *   `create_clinician_with_profile`: Provisions a new clinician and links them to an organisation.
+*   `handle_new_user_settings`: A trigger function designed to automatically create a `user_settings` row for new users. *(Note: The function exists in the database, but the corresponding trigger is not currently bound to the `auth.users` table).*
 *   `delete_clinician_and_clean_up`: Safely removes a clinician, unassigns their patients and anonymises their name in existing clinical notes before deleting the underlying auth user.
 *   `get_all_table_names`: A utility function that returns a list of all ordinary tables within the `public` schema.
 *   `get_user_role`: A utility function that extracts the user's role from the JWT `app_metadata` to support dynamic permission checks.
