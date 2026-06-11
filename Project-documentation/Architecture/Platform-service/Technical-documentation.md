@@ -1,4 +1,4 @@
-# Florence Platform Service Documentation
+# Florence: Architecture - Platform Service
 
 ---
 
@@ -10,10 +10,14 @@ The Florence Platform Service is a highly scalable cross-platform frontend appli
 ## Architecture and State Management
 The application follows a feature-first architectural pattern to group related screens, providers and data models. It heavily utilises the Riverpod package for reactive state management, dependency injection and asynchronous data caching. State is primarily managed via `AsyncNotifier` and `FutureProvider` implementations to gracefully handle loading and error states during network operations. The application automatically invalidates these cached data providers upon sign-in or sign-out to guarantee state isolation between different user sessions.
 
-The system connects directly to the Supabase client solely for secure user authentication, deep link resolution and session persistence. All clinical data operations route through a custom singleton `ApiService` that intercepts HTTP requests to append the active JSON Web Token to the authorization header. This service includes internal logic to catch HTTP 401 responses, trigger a token refresh via the Supabase client and automatically retry the failed request.
+The system connects directly to the Supabase client solely for secure user authentication, deep link resolution and session persistence. All clinical data operations route through a custom singleton `ApiService` that intercepts HTTP requests to append the active JSON Web Token to the authorisation header. This service includes internal logic to catch HTTP 401 responses, trigger a token refresh via the Supabase client and automatically retry the failed request.
+
+---
 
 ## Routing and Deep Linking
 The application implements a central routing generator to handle navigation requests. The router evaluates the requested path and yields specific transition animations based on the context. Patient and clinician interfaces utilise native mobile page routes for fluid navigation while the administrative portal utilises zero-duration page builders to simulate a responsive web environment. The system integrates the `app_links` package to intercept incoming universal links. This allows the application to capture refresh tokens from email verification links and manually establish secure sessions.
+
+---
 
 ## User Interface and Responsive Design
 The platform implements a robust layout system via `LayoutBuilder` and custom responsive helpers to adapt seamlessly across mobile, tablet and desktop environments. The system dynamically adjusts grid columns, font sizes and padding metrics based on the active viewport. It utilises distinct Material 3 theme configurations for different user roles to provide immediate visual context. 
