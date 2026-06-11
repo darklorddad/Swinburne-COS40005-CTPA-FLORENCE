@@ -99,8 +99,8 @@
 <h3 id="storage-buckets">Storage Buckets </h3>
 <p>Supabase Storage is utilised for managing user-generated and clinical files.</p>
 <ul>
-<li><code>Bucket</code>: Stores patient and clinician profile pictures. RLS policies enforce that users can only upload, view, and update files within their own <code>Profile_Picture/{auth.uid()}/</code> directory.</li>
-<li><code>meal_photos</code>: Intended to store images of food for AI nutritional analysis. <em>(Note: This bucket currently lacks explicit RLS policies in the provisioned schema dump and may require manual configuration via the Supabase dashboard to secure uploads).</em></li>
+<li><code>Bucket</code>: Stores patient and clinician profile pictures. RLS policies enforce that users can only upload, view and update files within their own <code>Profile_Picture/{auth.uid()}/</code> directory.</li>
+<li><code>meal_photos</code>: Intended to store images of food for AI analysis. <em>(Note: This bucket currently lacks explicit RLS policies.)</em></li>
 <li><code>clinical-documents</code>: Stores uploaded PDFs or images of lab reports for biometric parsing. RLS policies restrict access to folders matching the authenticated user's UUID.</li>
 </ul>
 <hr>

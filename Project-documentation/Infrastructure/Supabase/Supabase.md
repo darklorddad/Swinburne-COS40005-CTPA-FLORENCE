@@ -50,8 +50,8 @@ Custom PostgreSQL functions handle complex transactions securely:
 
 ### Storage Buckets
 Supabase Storage is utilised for managing user-generated and clinical files.
-*   `Bucket`: Stores patient and clinician profile pictures. RLS policies enforce that users can only upload, view, and update files within their own `Profile_Picture/{auth.uid()}/` directory.
-*   `meal_photos`: Intended to store images of food for AI nutritional analysis. *(Note: This bucket currently lacks explicit RLS policies in the provisioned schema dump and may require manual configuration via the Supabase dashboard to secure uploads).*
+*   `Bucket`: Stores patient and clinician profile pictures. RLS policies enforce that users can only upload, view and update files within their own `Profile_Picture/{auth.uid()}/` directory.
+*   `meal_photos`: Intended to store images of food for AI analysis. *(Note: This bucket currently lacks explicit RLS policies.)*
 *   `clinical-documents`: Stores uploaded PDFs or images of lab reports for biometric parsing. RLS policies restrict access to folders matching the authenticated user's UUID.
 
 ---
