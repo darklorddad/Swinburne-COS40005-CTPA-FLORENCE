@@ -54,9 +54,6 @@ Supabase Storage is utilised for managing user-generated and clinical files.
 *   `meal_photos`: Intended to store images of food for AI nutritional analysis. *(Note: This bucket currently lacks explicit RLS policies in the provisioned schema dump and may require manual configuration via the Supabase dashboard to secure uploads).*
 *   `clinical-documents`: Stores uploaded PDFs or images of lab reports for biometric parsing. RLS policies restrict access to folders matching the authenticated user's UUID.
 
-### Realtime Configuration
-The `supabase_realtime` publication is currently owned by the `postgres` role. However, no specific public tables are explicitly added to the publication in the schema dump. This indicates that Supabase Realtime WebSocket subscriptions are currently **disabled** for all database tables, and the frontend relies on standard REST API polling or manual cache invalidation (via Riverpod) to reflect data changes.
-
 ---
 
 ## 4. Billing, Limits and Day 2 Operations
