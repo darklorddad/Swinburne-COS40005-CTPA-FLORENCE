@@ -54,6 +54,10 @@ The developer must follow these steps to prepare the local environment.
 
 ## API Modules
 
+### General
+* `GET /`: Root endpoint with service information.
+* `GET /health`: Global health check endpoint.
+
 ### Chat Module
 The chat module processes incoming user messages and returns generated responses. It relies on custom helper functions to extract the bearer token from the request header and validate it against the data service.
 
